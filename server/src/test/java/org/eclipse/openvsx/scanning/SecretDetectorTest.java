@@ -33,10 +33,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Focused tests for {@link SecretScanner} that exercise keyword routing, allowlists,
+ * Focused tests for {@link SecretDetector} that exercise keyword routing, allowlists,
  * inline suppressions, and excluded path handling without using the full service.
  */
-class SecretScannerTest {
+class SecretDetectorTest {
 
     private final List<Path> toDelete = new ArrayList<>();
 
@@ -57,7 +57,7 @@ class SecretScannerTest {
                 .keywords("token")
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of("token", List.of(rule)),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -69,12 +69,12 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("src/file.txt", "here is tokenABCDEF123 on line\n");
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "src/file.txt", findings);
 
         assertTrue(scanned, "File should be scanned");
         assertEquals(1, findings.size(), "One finding should be recorded");
-        SecretFinding finding = findings.get(0);
+        var finding = findings.get(0);
         assertEquals("rule-kw", finding.getRuleId());
         assertEquals("src/file.txt", finding.getFilePath());
         assertEquals(1, finding.getLineNumber());
@@ -91,7 +91,7 @@ class SecretScannerTest {
                 .allowlistRegexes(List.of("ALLOWED123"))
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of("password", List.of(rule)),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -107,7 +107,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("pkg/secret.txt", content);
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "pkg/secret.txt", findings);
 
         assertTrue(scanned, "File should be scanned");
@@ -122,7 +122,7 @@ class SecretScannerTest {
                 .regex("secret-([A-Za-z0-9]{8})")
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of(),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -134,7 +134,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("node_modules/secret.txt", "secret-ABCDEF12\n");
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "node_modules/secret.txt", findings);
 
         assertFalse(scanned, "Excluded paths should be skipped");
@@ -151,7 +151,7 @@ class SecretScannerTest {
                 .build();
 
         // Global allowlist and stopwords should prevent recording.
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of("token-", List.of(rule)),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(Pattern.compile("ALLOWED", Pattern.CASE_INSENSITIVE)),
@@ -164,7 +164,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("src/stopword.txt", content);
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "src/stopword.txt", findings);
 
         assertTrue(scanned, "File should be scanned");
@@ -179,7 +179,7 @@ class SecretScannerTest {
                 .regex("secret-([A-Za-z0-9]{8})")
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of(),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -191,7 +191,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("notes/secret.log", "secret-ABCD1234\n");
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "notes/secret.log", findings);
 
         assertFalse(scanned, "Excluded extensions should prevent scanning");
@@ -208,7 +208,7 @@ class SecretScannerTest {
                 .secretGroup(5) // invalid index, should fall back to group 1
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of(),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -220,7 +220,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("src/group.txt", "prefix supersecret999 suffix\n");
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "src/group.txt", findings);
 
         assertTrue(scanned, "File should be scanned");
@@ -238,7 +238,7 @@ class SecretScannerTest {
                 .entropy(4.5)
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of("token", List.of(rule)),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -254,7 +254,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("src/entropy.txt", content);
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "src/entropy.txt", findings);
 
         assertTrue(scanned, "File should be scanned");
@@ -270,7 +270,7 @@ class SecretScannerTest {
                 .regex("secret-[A-Za-z0-9]+")
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of(),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -285,27 +285,29 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("src/long.txt", longLine);
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         boolean scanned = runScan(scanner, zipPath, "src/long.txt", findings);
 
         assertEquals(0, findings.size(), "No findings should be recorded for skipped files");
         assertTrue(findings.isEmpty(), "No findings should be recorded for skipped files");
     }
 
-    private SecretScanner buildScanner(Map<String, List<SecretRule>> keywordToRules,
+    private SecretDetector buildScanner(Map<String, List<SecretRule>> keywordToRules,
                                        List<SecretRule> rules,
                                        List<Pattern> allowlistPatterns,
                                        List<String> stopwords,
                                        List<String> inlineSuppressions,
                                        List<String> excludedPathPatterns,
                                        List<String> excludedExtensions) {
-        AhoCorasick keywordMatcher = new AhoCorasick();
-        keywordMatcher.build(keywordToRules.keySet());
+        AhoCorasick keywordMatcher = AhoCorasick.builder()
+            .addKeywords(keywordToRules.keySet())
+            .build();
 
         AhoCorasick stopwordMatcher = null;
         if (!stopwords.isEmpty()) {
-            stopwordMatcher = new AhoCorasick();
-            stopwordMatcher.build(new java.util.HashSet<>(stopwords));
+            stopwordMatcher = AhoCorasick.builder()
+                .addKeywords(stopwords)
+                .build();
         }
 
         List<Pattern> pathPatterns = null;
@@ -317,18 +319,20 @@ class SecretScannerTest {
 
         AhoCorasick excludedExtensionMatcher = null;
         if (!excludedExtensions.isEmpty()) {
-            excludedExtensionMatcher = new AhoCorasick();
-            excludedExtensionMatcher.build(new java.util.HashSet<>(excludedExtensions));
+            excludedExtensionMatcher = AhoCorasick.builder()
+                .addKeywords(excludedExtensions)
+                .build();
         }
 
         // Build Aho-Corasick matcher for inline suppressions
         AhoCorasick inlineSuppressionMatcher = null;
         if (!inlineSuppressions.isEmpty()) {
-            inlineSuppressionMatcher = new AhoCorasick();
-            inlineSuppressionMatcher.build(new java.util.HashSet<>(inlineSuppressions));
+            inlineSuppressionMatcher = AhoCorasick.builder()
+                .addKeywords(inlineSuppressions)
+                .build();
         }
 
-        return new SecretScanner(
+        return new SecretDetector(
                 keywordMatcher,
                 keywordToRules,
                 rules,
@@ -360,10 +364,10 @@ class SecretScannerTest {
         return zipPath;
     }
 
-    private boolean runScan(SecretScanner scanner,
+    private boolean runScan(SecretDetector scanner,
                             Path zipPath,
                             String entryName,
-                            List<SecretFinding> findings) throws Exception {
+                            List<SecretDetector.Finding> findings) throws Exception {
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
             ZipEntry entry = zipFile.getEntry(entryName);
             assertNotNull(entry, "Zip entry should exist");
@@ -387,10 +391,10 @@ class SecretScannerTest {
         }
     }
 
-    private boolean runScanWithTimeout(SecretScanner scanner,
+    private boolean runScanWithTimeout(SecretDetector scanner,
                                        Path zipPath,
                                        String entryName,
-                                       List<SecretFinding> findings,
+                                       List<SecretDetector.Finding> findings,
                                        long startTime,
                                        long timeoutMillis) throws Exception {
         try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
@@ -425,10 +429,11 @@ class SecretScannerTest {
                 .build();
 
         Map<String, List<SecretRule>> keywordIndex = Map.of("secret", List.of(rule));
-        AhoCorasick keywordMatcher = new AhoCorasick();
-        keywordMatcher.build(Set.of("secret"));
+        AhoCorasick keywordMatcher = AhoCorasick.builder()
+            .addKeywords(Set.of("secret"))
+            .build();
 
-        SecretScanner scanner = new SecretScanner(
+        SecretDetector scanner = new SecretDetector(
                 keywordMatcher,
                 keywordIndex,
                 List.of(rule),
@@ -455,7 +460,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("test.txt", content.toString());
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         
         // Set start time in the past to simulate timeout
         long startTime = System.currentTimeMillis() - 10_000; // 10 seconds ago
@@ -479,7 +484,7 @@ class SecretScannerTest {
                 .regex("secret-[0-9]+")
                 .build();
 
-        SecretScanner scanner = buildScanner(
+        SecretDetector scanner = buildScanner(
                 Map.of(),
                 List.of(rule),
                 /*allowlistPatterns*/ List.of(),
@@ -497,7 +502,7 @@ class SecretScannerTest {
         Path zipPath = createZipWithEntry("test.txt", content.toString());
         toDelete.add(zipPath);
 
-        List<SecretFinding> findings = new ArrayList<>();
+        List<SecretDetector.Finding> findings = new ArrayList<>();
         
         // Use a reasonable timeout that won't be exceeded during normal execution
         long startTime = System.currentTimeMillis();
@@ -523,12 +528,13 @@ class SecretScannerTest {
                 .build();
 
         Map<String, List<SecretRule>> keywordIndex = Map.of("secret", List.of(rule));
-        AhoCorasick keywordMatcher = new AhoCorasick();
-        keywordMatcher.build(Set.of("secret"));
+        AhoCorasick keywordMatcher = AhoCorasick.builder()
+            .addKeywords(Set.of("secret"))
+            .build();
 
         long maxFileSizeBytes = 100;
 
-        SecretScanner scanner = new SecretScanner(
+        SecretDetector scanner = new SecretDetector(
                 keywordMatcher,
                 keywordIndex,
                 List.of(rule),
@@ -565,7 +571,7 @@ class SecretScannerTest {
             ZipEntry entry = zipFile.getEntry("large.txt");
             long declaredSize = entry.getSize();
             
-            List<SecretFinding> findings = new ArrayList<>();
+            List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
             
             // Early check will reject this
@@ -598,12 +604,13 @@ class SecretScannerTest {
                 .build();
 
         Map<String, List<SecretRule>> keywordIndex = Map.of("secret", List.of(rule));
-        AhoCorasick keywordMatcher = new AhoCorasick();
-        keywordMatcher.build(Set.of("secret"));
+        AhoCorasick keywordMatcher = AhoCorasick.builder()
+            .addKeywords(Set.of("secret"))
+            .build();
 
         long maxFileSizeBytes = 100;
 
-        SecretScanner scanner = new SecretScanner(
+        SecretDetector scanner = new SecretDetector(
                 keywordMatcher,
                 keywordIndex,
                 List.of(rule),
@@ -638,7 +645,7 @@ class SecretScannerTest {
         // Scan should succeed
         try (ZipFile zipFile = new ZipFile(validPath.toFile())) {
             ZipEntry entry = zipFile.getEntry("valid.txt");
-            List<SecretFinding> findings = new ArrayList<>();
+            List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
             
             boolean result = scanner.scanFile(
@@ -678,12 +685,13 @@ class SecretScannerTest {
                 .build();
 
         Map<String, List<SecretRule>> keywordIndex = Map.of("secret", List.of(rule));
-        AhoCorasick keywordMatcher = new AhoCorasick();
-        keywordMatcher.build(Set.of("secret"));
+        AhoCorasick keywordMatcher = AhoCorasick.builder()
+            .addKeywords(Set.of("secret"))
+            .build();
 
         long maxFileSizeBytes = 100;
 
-        SecretScanner scanner = new SecretScanner(
+        SecretDetector scanner = new SecretDetector(
                 keywordMatcher,
                 keywordIndex,
                 List.of(rule),
@@ -732,7 +740,7 @@ class SecretScannerTest {
             when(mockedZipFile.getInputStream(mockedEntry))
                     .thenReturn(realZipFile.getInputStream(realEntry));
             
-            List<SecretFinding> findings = new ArrayList<>();
+            List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
             
             // The early check sees 50 bytes and passes

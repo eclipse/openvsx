@@ -18,8 +18,9 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.ValidationCheck;
+import org.eclipse.openvsx.scanning.PublishCheck;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -32,8 +33,9 @@ import java.util.List;
  * Implements ValidationCheck to be auto-discovered by ExtensionScanService.
  */
 @Service
-@ConditionalOnProperty(name = "ovsx.similarity.enabled", havingValue = "true")
-public class SimilarityCheckService implements ValidationCheck {
+@Order(1)  // Run first: name squatting check
+@ConditionalOnProperty(name = "ovsx.scanning.similarity.enabled", havingValue = "true")
+public class SimilarityCheckService implements PublishCheck {
 
     public static final String CHECK_TYPE = "NAME_SQUATTING";
 
@@ -69,20 +71,20 @@ public class SimilarityCheckService implements ValidationCheck {
     }
 
     @Override
-    public ValidationCheck.Result check(ValidationCheck.Context context) {
+    public PublishCheck.Result check(PublishCheck.Context context) {
         var scan = context.scan();
         var namespaceName = scan.getNamespaceName();
         var extensionName = scan.getExtensionName();
         var displayName = scan.getExtensionDisplayName();
 
-        if (config.isNewExtensionsOnly() && repositories.countVersions(namespaceName, extensionName) > 1) {
-            return ValidationCheck.Result.pass();
+        if (config.isOnlyCheckNewExtensions() && repositories.countVersions(namespaceName, extensionName) > 1) {
+            return PublishCheck.Result.pass();
         }
 
-        if (config.isSkipVerifiedPublishers()) {
+        if (config.isSkipIfPublisherVerified()) {
             var namespace = repositories.findNamespace(namespaceName);
             if (namespace != null && repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)) {
-                return ValidationCheck.Result.pass();
+                return PublishCheck.Result.pass();
             }
         }
 
@@ -94,7 +96,7 @@ public class SimilarityCheckService implements ValidationCheck {
         );
 
         if (similarExtensions.isEmpty()) {
-            return ValidationCheck.Result.pass();
+            return PublishCheck.Result.pass();
         }
 
         var similarExt = similarExtensions.get(0);
@@ -111,7 +113,7 @@ public class SimilarityCheckService implements ValidationCheck {
             similarDisplayName != null ? similarDisplayName : ""
         );
 
-        return ValidationCheck.Result.fail("Levenshtein Distance", reason);
+        return PublishCheck.Result.fail("Levenshtein Distance", reason);
     }
 
     /**
@@ -129,8 +131,8 @@ public class SimilarityCheckService implements ValidationCheck {
             namespaceName,
             displayName,
             getExcludedNamespaces(publishingUser),
-            config.getLevenshteinThreshold(),
-            config.isCheckAgainstVerifiedOnly(),
+            config.getSimilarityThreshold(),
+            config.isOnlyProtectVerifiedNames(),
             LIMIT
         );
     }
@@ -146,8 +148,8 @@ public class SimilarityCheckService implements ValidationCheck {
         return similarityService.findSimilarNamespaces(
             namespaceName,
             getExcludedNamespaces(publishingUser),
-            config.getLevenshteinThreshold(),
-            config.isCheckAgainstVerifiedOnly(),
+            config.getSimilarityThreshold(),
+            config.isOnlyProtectVerifiedNames(),
             LIMIT
         );
     }
@@ -157,7 +159,7 @@ public class SimilarityCheckService implements ValidationCheck {
      * When configured, excludes namespaces where the user is an owner.
      */
     private List<String> getExcludedNamespaces(@NotNull UserData user) {
-        if (!config.isExcludeOwnerNamespaces()) {
+        if (!config.isAllowSimilarityToOwnNames()) {
             return List.of();
         }
         return repositories.findMemberships(user)

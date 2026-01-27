@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Repository for accessing ExtensionScan entities.
@@ -53,6 +54,20 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
 
     /** Find all scans with a specific status */
     Streamable<ExtensionScan> findByStatus(ScanStatus status);
+    
+    /** Find oldest N scans with a specific status (for batch processing) */
+    @Query(value = """
+        SELECT s.* FROM extension_scan s
+        WHERE s.status = :status
+        ORDER BY s.started_at ASC NULLS LAST
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<ExtensionScan> findOldestByStatus(@Param("status") String status, @Param("limit") int limit);
+    
+    /** Find oldest N scans with a specific status (convenience overload) */
+    default List<ExtensionScan> findOldestByStatus(ScanStatus status, int limit) {
+        return findOldestByStatus(status.name(), limit);
+    }
 
     /** Find all scans that are still in progress */
     Streamable<ExtensionScan> findByCompletedAtIsNull();
@@ -64,7 +79,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
     Streamable<ExtensionScan> findByStatusAndStartedAtAfter(ScanStatus status, LocalDateTime date);
 
     /** Count all scans with a specific status */
-    long countByStatus(ScanStatus status);
+    long countByStatus(ScanStatus scanning);
 
     /** Count scans for a specific extension */
     long countByNamespaceNameAndExtensionName(String namespaceName, String extensionName);

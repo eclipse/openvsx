@@ -34,10 +34,10 @@ import java.util.Map;
 
 /**
  * Loads secret detection rules from a YAML file.
- * Only loaded when secret scanning is enabled via configuration.
+ * Only loaded when secret detection is enabled via configuration.
  */
 @Component
-@ConditionalOnProperty(name = "ovsx.secret-scanning.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "ovsx.scanning.secret-detection.enabled", havingValue = "true")
 public class SecretRuleLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(SecretRuleLoader.class);
@@ -91,7 +91,7 @@ public class SecretRuleLoader {
      */
     public LoadedRules loadAll(@NotNull List<String> paths) {
         if (paths.isEmpty()) {
-            logger.warn("Secret scanning rules path list is empty");
+            logger.warn("Secret detection rules path list is empty");
             return new LoadedRules(List.of(), null);
         }
 
@@ -154,21 +154,21 @@ public class SecretRuleLoader {
     private RuleFileData loadSingle(@NotNull String path) {
         // Fail when we cannot read rules and scanning is enabled.
         if (path.isBlank()) {
-            var message = "Secret scanning rules path is empty";
+            var message = "Secret detection rules path is empty";
             logger.error(message);
             throw new IllegalStateException(message);
         }
 
         try (InputStream is = openStream(path)) {
             if (is == null) {
-                var message = "Secret scanning rules YAML not found at '" + path + "'";
+                var message = "Secret detection rules YAML not found at '" + path + "'";
                 logger.error(message);
                 throw new IllegalStateException(message);
             }
 
             RuleFile ruleFile = yamlMapper.readValue(is, RuleFile.class);
             if (ruleFile == null || ruleFile.rules == null || ruleFile.rules.isEmpty()) {
-                var message = "Secret scanning rules YAML at '" + path + "' contained no rules";
+                var message = "Secret detection rules YAML at '" + path + "' contained no rules";
                 logger.error(message);
                 throw new IllegalStateException(message);
             }
@@ -221,7 +221,7 @@ public class SecretRuleLoader {
 
             return new RuleFileData(result, globalAllowlist);
         } catch (IOException e) {
-            var message = "Failed to load secret scanning rules from YAML '" + path + "'";
+            var message = "Failed to load secret detection rules from YAML '" + path + "'";
             logger.error(message, e);
             throw new IllegalStateException(message, e);
         }

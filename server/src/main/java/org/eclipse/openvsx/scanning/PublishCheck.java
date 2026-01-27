@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation 
  *
- * See the NOTICE file(s) distributed with this work for additional
+ * See the NOTICE file(s) distributed with this work for additional 
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the
+ * This program and the accompanying materials are made available under the 
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: EPL-2.0 
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -18,14 +18,15 @@ import org.eclipse.openvsx.util.TempFile;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Interface for validation checks that run during extension publishing.
+ * Interface for checks that run during extension publishing.
  * 
- * Implementations are auto-discovered by Spring and executed by ExtensionScanService.
- * To add a new validation check, create a @Component that implements this interface.
+ * Implementations are auto-discovered by Spring and executed by PublishCheckRunner.
+ * To add a new publish check, create a @Component that implements this interface.
  */
-public interface ValidationCheck {
+public interface PublishCheck {
 
     /**
      * Unique identifier for this check type.
@@ -45,12 +46,38 @@ public interface ValidationCheck {
     boolean isEnforced();
 
     /**
-     * Execute the validation check.
+     * Execute the check.
      */
     Result check(Context context);
 
     /**
-     * Context passed to validation checks during extension publishing.
+     * Generate the user-facing error message for failures from this check.
+     * 
+     * Override this method to customize what users see when publication is blocked.
+     * The detailed failure reasons are still stored in the database for admin review.
+     * 
+     * Default implementation shows up to 3 failure reasons.
+     */
+    default String getUserFacingMessage(List<Failure> failures) {
+        if (failures.isEmpty()) {
+            return getCheckType() + " check failed";
+        }
+        
+        int maxToShow = Math.min(3, failures.size());
+        var reasons = failures.stream()
+                .limit(maxToShow)
+                .map(Failure::reason)
+                .collect(Collectors.joining(", "));
+        
+        if (failures.size() > maxToShow) {
+            reasons += " ... and " + (failures.size() - maxToShow) + " more";
+        }
+        
+        return reasons;
+    }
+
+    /**
+     * Context passed to publish checks during extension publishing.
      * 
      * Contains the scan record (with extension metadata), the extension file,
      * and the publishing user. Use scan.getNamespaceName(), scan.getExtensionName(),
@@ -75,7 +102,7 @@ public interface ValidationCheck {
     }
 
     /**
-     * Result of a validation check execution.
+     * Result of a publish check execution.
      */
     record Result(
         boolean passed,
@@ -95,7 +122,7 @@ public interface ValidationCheck {
     }
 
     /**
-     * A single validation failure with details for recording.
+     * A single check failure with details for recording.
      */
     record Failure(
         String ruleName,

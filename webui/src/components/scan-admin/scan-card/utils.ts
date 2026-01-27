@@ -172,7 +172,8 @@ export const getStatusBarColor = (status: ScanResult['status'], theme: any) => {
 
 export const shouldShowExpandButton = (scan: ScanResult): boolean => {
     const hasErrorMessage = scan.status === 'ERROR' && !!scan.errorMessage;
-    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasErrorMessage;
+    const hasCheckResults = scan.checkResults && scan.checkResults.length > 0;
+    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasErrorMessage;
 };
 
 export const hasDownload = (scan: ScanResult): boolean => {

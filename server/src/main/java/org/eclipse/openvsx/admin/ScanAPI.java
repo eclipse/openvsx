@@ -25,6 +25,7 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.*;
@@ -64,15 +65,18 @@ public class ScanAPI {
     private final RepositoryService repositories;
     private final AdminService admins;
     private final StorageUtilService storageUtil;
+    private final org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService;
 
     public ScanAPI(
             RepositoryService repositories,
             AdminService admins,
-            StorageUtilService storageUtil
+            StorageUtilService storageUtil,
+            org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService
     ) {
         this.repositories = repositories;
         this.admins = admins;
         this.storageUtil = storageUtil;
+        this.completionService = completionService;
     }
 
     /**
@@ -112,10 +116,10 @@ public class ScanAPI {
         List<String> validationType,
         @RequestParam(name = "threatScannerName", required = false)
         @Parameter(
-            description = "Filter by threat scanner name (comma-separated for multiple values, e.g., Yara, ClamAV)",
+            description = "Filter by threat scanner name (comma-separated for multiple values).",
             style = ParameterStyle.FORM,
             explode = Explode.FALSE,
-            array = @ArraySchema(schema = @Schema(type = "string", example = "Yara"))
+            array = @ArraySchema(schema = @Schema(type = "string", example = "ClamAV"))
         )
         List<String> threatScannerName
     ) {
@@ -290,7 +294,7 @@ public class ScanAPI {
             description = "Filter by threat scanner name (comma-separated for multiple values).",
             style = ParameterStyle.FORM,
             explode = Explode.FALSE,
-            array = @ArraySchema(schema = @Schema(type = "string", example = "Yara"))
+            array = @ArraySchema(schema = @Schema(type = "string", example = "ClamAV"))
         )
         List<String> threatScannerName,
         @RequestParam(defaultValue = "all")
@@ -562,6 +566,15 @@ public class ScanAPI {
      * Make security decisions for one or more quarantined scans.
      * Only valid for scans with QUARANTINED status.
      * Pass a single scanId for individual decisions, or multiple scanIds for bulk operations.
+     * 
+     * When a scan is allowed:
+     * - The extension is automatically activated
+     * - The scan status is updated to PASSED
+     * - File decisions are created to add enforced threat files to allow list
+     * 
+     * When a scan is blocked:
+     * - The extension remains inactive
+     * - File decisions are created to add enforced threat files to block list
      */
     @PostMapping(
         path = "/decisions",
@@ -643,6 +656,16 @@ public class ScanAPI {
                         }
                     }
                     
+                    // If allowed, activate the extension
+                    boolean activated = false;
+                    if (AdminScanDecision.ALLOWED.equals(decisionValue)) {
+                        activated = completionService.adminAllowScan(scan);
+                    }
+                    
+                    // Log the admin decision to /admin/log
+                    var logMessage = formatDecisionLogMessage(scan, decisionValue, threats.size(), activated);
+                    admins.logAdminAction(adminUser, ResultJson.success(logMessage));
+                    
                     results.add(ScanDecisionResultJson.success(scanIdStr));
                     successful++;
                 } catch (NumberFormatException e) {
@@ -676,6 +699,30 @@ public class ScanAPI {
                 HttpStatus.BAD_REQUEST
             );
         };
+    }
+
+    /**
+     * Format a log message for a scan decision.
+     */
+    private String formatDecisionLogMessage(ExtensionScan scan, String decisionValue, int threatCount, boolean activated) {
+        var action = AdminScanDecision.ALLOWED.equals(decisionValue) ? "Allowed" : "Blocked";
+        var extensionId = String.format("%s.%s v%s", 
+            scan.getNamespaceName(), 
+            scan.getExtensionName(), 
+            scan.getExtensionVersion());
+        
+        var details = new java.util.ArrayList<String>();
+        if (threatCount > 0) {
+            details.add(String.format("%d threat%s reviewed", threatCount, threatCount == 1 ? "" : "s"));
+        }
+        if (AdminScanDecision.ALLOWED.equals(decisionValue)) {
+            details.add(activated ? "extension activated" : "activation failed");
+        }
+        
+        var detailsStr = details.isEmpty() ? "" : " (" + String.join(", ", details) + ")";
+        
+        return String.format("%s scan #%d for extension %s%s", 
+            action, scan.getId(), extensionId, detailsStr);
     }
 
     /**
@@ -793,6 +840,35 @@ public class ScanAPI {
             json.setAdminDecision(toAdminDecisionJson(adminDecision));
         }
 
+        // Include all check results for audit trail
+        var checkResults = repositories.findScanCheckResultsByScanId(scan.getId());
+        if (!checkResults.isEmpty()) {
+            var checkResultJsons = checkResults.stream()
+                .map(this::toCheckResultJson)
+                .collect(Collectors.toList());
+            json.setCheckResults(checkResultJsons);
+        }
+
+        return json;
+    }
+
+    /**
+     * Converts a ScanCheckResult entity to a CheckResultJson DTO.
+     */
+    private CheckResultJson toCheckResultJson(ScanCheckResult checkResult) {
+        var json = new CheckResultJson();
+        json.setCheckType(checkResult.getCheckType());
+        json.setCategory(checkResult.getCategory().name());
+        json.setResult(checkResult.getResult().name());
+        json.setStartedAt(TimeUtil.toUTCString(checkResult.getStartedAt()));
+        if (checkResult.getCompletedAt() != null) {
+            json.setCompletedAt(TimeUtil.toUTCString(checkResult.getCompletedAt()));
+        }
+        json.setDurationMs(checkResult.getDurationMs());
+        json.setFilesScanned(checkResult.getFilesScanned());
+        json.setFindingsCount(checkResult.getFindingsCount());
+        json.setSummary(checkResult.getSummary());
+        json.setErrorMessage(checkResult.getErrorMessage());
         return json;
     }
 

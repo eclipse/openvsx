@@ -20,7 +20,6 @@ import { ScanResult } from '../../../context/scan-admin';
 
 /**
  * Get only the enforced threats from a scan.
- * Only enforced threats should have file decisions made on them.
  */
 const getEnforcedThreats = (scan: ScanResult) => {
     return scan.threats?.filter(threat => threat.enforcedFlag) || [];
@@ -31,6 +30,22 @@ const getEnforcedThreats = (scan: ScanResult) => {
  */
 const getUnenforcedThreats = (scan: ScanResult) => {
     return scan.threats?.filter(threat => !threat.enforcedFlag) || [];
+};
+
+/**
+ * Get actionable threats - enforced threats that have file information.
+ * Only these can be added to allow/block lists.
+ */
+const getActionableThreats = (scan: ScanResult) => {
+    return scan.threats?.filter(threat => threat.enforcedFlag && threat.fileName) || [];
+};
+
+/**
+ * Get threats without file information (not actionable for allow/block).
+ * These are from scanners that don't report individual files.
+ */
+const getThreatsWithoutFileInfo = (scan: ScanResult) => {
+    return scan.threats?.filter(threat => !threat.fileName) || [];
 };
 
 /**
@@ -50,10 +65,16 @@ export const QuarantineDialog: FunctionComponent = () => {
         return confirmDialog.selectedExtensions.some((scan: ScanResult) => getUnenforcedThreats(scan).length > 0);
     }, [confirmDialog.selectedExtensions]);
 
-    // Calculate total enforced files across all selected extensions
-    const totalEnforcedFiles = useMemo(() => {
+    // Check if any extension has threats without file info (not actionable)
+    const hasThreatsWithoutFileInfo = useMemo(() => {
+        return confirmDialog.selectedExtensions.some((scan: ScanResult) => getThreatsWithoutFileInfo(scan).length > 0);
+    }, [confirmDialog.selectedExtensions]);
+
+    // Calculate total actionable files across all selected extensions
+    // Only counts enforced threats that have file information
+    const totalActionableFiles = useMemo(() => {
         return confirmDialog.selectedExtensions.reduce(
-            (total: number, scan: ScanResult) => total + getEnforcedThreats(scan).length,
+            (total: number, scan: ScanResult) => total + getActionableThreats(scan).length,
             0
         );
     }, [confirmDialog.selectedExtensions]);
@@ -70,7 +91,7 @@ export const QuarantineDialog: FunctionComponent = () => {
             </DialogTitle>
             <DialogContent>
                 <Typography variant='body1' sx={{ mb: 2 }}>
-                    Are you sure you want to {confirmDialog.action} {totalEnforcedFiles} enforced file{totalEnforcedFiles !== 1 ? 's' : ''} from {confirmDialog.selectedExtensions.length !== 1 ? 'these' : 'this'} {confirmDialog.selectedExtensions.length} extension{confirmDialog.selectedExtensions.length !== 1 ? 's' : ''}?
+                    Are you sure you want to {confirmDialog.action} {totalActionableFiles} file{totalActionableFiles !== 1 ? 's' : ''} from {confirmDialog.selectedExtensions.length !== 1 ? 'these' : 'this'} {confirmDialog.selectedExtensions.length} extension{confirmDialog.selectedExtensions.length !== 1 ? 's' : ''}?
                 </Typography>
 
                 {/* Info message about unenforced threats */}
@@ -92,6 +113,25 @@ export const QuarantineDialog: FunctionComponent = () => {
                     </Box>
                 )}
 
+                {/* Info message about threats without file info */}
+                {hasThreatsWithoutFileInfo && (
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 1,
+                        mb: 2,
+                        p: 1.5,
+                        backgroundColor: theme.palette.info.dark + '20',
+                        borderRadius: 1,
+                        border: `1px solid ${theme.palette.info.dark}40`,
+                    }}>
+                        <InfoIcon sx={{ fontSize: 18, color: theme.palette.info.main, mt: 0.25 }} />
+                        <Typography variant='body2' color='text.secondary'>
+                            Some threats do not have file-level information (e.g., from scanners that analyze the whole package). These cannot be added to allow/block lists.
+                        </Typography>
+                    </Box>
+                )}
+
                 <List sx={{
                     maxHeight: '400px',
                     overflow: 'auto',
@@ -99,6 +139,7 @@ export const QuarantineDialog: FunctionComponent = () => {
                     borderRadius: 1,
                 }}>
                     {confirmDialog.selectedExtensions.map((scan: ScanResult) => {
+                        const actionableThreats = getActionableThreats(scan);
                         const enforcedThreats = getEnforcedThreats(scan);
                         const unenforcedThreats = getUnenforcedThreats(scan);
 
@@ -168,31 +209,19 @@ export const QuarantineDialog: FunctionComponent = () => {
                                 />
                                 <Tooltip
                                     title={
-                                        enforcedThreats.length > 0 ? (
+                                        actionableThreats.length > 0 ? (
                                             <Box>
                                                 <Typography variant='caption' sx={{ fontWeight: 600 }}>
                                                     Files to {confirmDialog.action}:
                                                 </Typography>
                                                 <Box sx={{ whiteSpace: 'pre-line', mt: 0.5 }}>
-                                                    {enforcedThreats.map((threat, index) => (
+                                                    {actionableThreats.map((threat, index) => (
                                                         <div key={index}>{threat.fileName}</div>
                                                     ))}
                                                 </Box>
-                                                {unenforcedThreats.length > 0 && (
-                                                    <>
-                                                        <Typography variant='caption' sx={{ fontWeight: 600, mt: 1, display: 'block' }}>
-                                                            Unenforced (not included):
-                                                        </Typography>
-                                                        <Box sx={{ whiteSpace: 'pre-line', mt: 0.5, opacity: 0.7 }}>
-                                                            {unenforcedThreats.map((threat, index) => (
-                                                                <div key={index}>{threat.fileName}</div>
-                                                            ))}
-                                                        </Box>
-                                                    </>
-                                                )}
                                             </Box>
                                         ) : (
-                                            'No enforced threats to action'
+                                            'No actionable files (no file-level info)'
                                         )
                                     }
                                     arrow
@@ -205,8 +234,13 @@ export const QuarantineDialog: FunctionComponent = () => {
                                         textAlign: 'right',
                                     }}>
                                         <Typography variant='body2' color='text.secondary'>
-                                            {enforcedThreats.length} file{enforcedThreats.length !== 1 ? 's' : ''}
+                                            {actionableThreats.length} file{actionableThreats.length !== 1 ? 's' : ''}
                                         </Typography>
+                                        {(enforcedThreats.length - actionableThreats.length) > 0 && (
+                                            <Typography variant='caption' sx={{ color: 'text.disabled', display: 'block' }}>
+                                                +{enforcedThreats.length - actionableThreats.length} without file info
+                                            </Typography>
+                                        )}
                                         {unenforcedThreats.length > 0 && (
                                             <Typography variant='caption' sx={{ color: 'text.disabled', display: 'block' }}>
                                                 +{unenforcedThreats.length} unenforced

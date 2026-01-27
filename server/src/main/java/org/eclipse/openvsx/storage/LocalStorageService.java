@@ -55,7 +55,9 @@ public class LocalStorageService implements IStorageService {
     @Override
     public void removeFile(FileResource resource) {
         try {
-            Files.delete(getPath(resource));
+            // Use deleteIfExists to handle already-deleted files gracefully.
+            // Multiple deletion jobs may be queued for the same extension.
+            Files.deleteIfExists(getPath(resource));
         } catch (IOException e) {
             throw new ServerErrorException("Failed to remove file", e);
         }
@@ -121,7 +123,8 @@ public class LocalStorageService implements IStorageService {
     @Override
     public void removeNamespaceLogo(Namespace namespace) {
         try {
-            Files.delete(getLogoPath(namespace));
+            // Use deleteIfExists to handle already-deleted files gracefully
+            Files.deleteIfExists(getLogoPath(namespace));
         } catch (IOException e) {
             throw new ServerErrorException("Failed to remove namespace logo file", e);
         }

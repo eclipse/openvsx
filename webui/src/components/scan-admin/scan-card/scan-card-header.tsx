@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import {
     CheckCircle as CheckCircleIcon,
@@ -58,6 +58,9 @@ const getStatusIcon = (status: ScanResult['status']) => {
  */
 export const ScanCardHeader: React.FC<ScanCardHeaderProps> = ({ scan }) => {
     const theme = useTheme();
+    const [imageError, setImageError] = useState(false);
+
+    const hasValidIcon = scan.extensionIcon && !imageError;
 
     return (
         <>
@@ -68,7 +71,7 @@ export const ScanCardHeader: React.FC<ScanCardHeaderProps> = ({ scan }) => {
                     gridColumn: '1',
                     width: ICON_SIZE,
                     height: ICON_SIZE,
-                    bgcolor: scan.extensionIcon ? 'transparent' : 'action.hover',
+                    bgcolor: hasValidIcon ? 'transparent' : 'action.hover',
                     borderRadius: 1,
                     display: 'flex',
                     alignItems: 'center',
@@ -76,10 +79,11 @@ export const ScanCardHeader: React.FC<ScanCardHeaderProps> = ({ scan }) => {
                     overflow: 'hidden',
                 }}
             >
-                {scan.extensionIcon ? (
+                {hasValidIcon ? (
                     <img
                         src={scan.extensionIcon}
                         alt={scan.displayName}
+                        onError={() => setImageError(true)}
                         style={{
                             width: '100%',
                             height: '100%',

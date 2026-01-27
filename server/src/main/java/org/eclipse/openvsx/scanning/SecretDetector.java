@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,14 +39,14 @@ import com.google.re2j.Pattern;
 /**
  * Scans individual files for secrets using keyword routing and regex validation.
  */
-class SecretScanner {
+class SecretDetector {
 
     @FunctionalInterface
     interface FindingRecorder {
-        boolean record(@NotNull List<SecretFinding> findings, @NotNull AtomicInteger count, @NotNull SecretFinding finding);
+        boolean record(@NotNull List<Finding> findings, @NotNull AtomicInteger count, @NotNull Finding finding);
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(SecretScanner.class);
+    private static final Logger logger = LoggerFactory.getLogger(SecretDetector.class);
     private final AhoCorasick keywordMatcher;
     private final Map<String, List<SecretRule>> keywordToRules;
     private final List<SecretRule> rules;
@@ -61,7 +63,7 @@ class SecretScanner {
     private final int keywordContextChars;
     private final int logAllowlistedPreviewLength;
 
-    SecretScanner(@NotNull AhoCorasick keywordMatcher,
+    SecretDetector(@NotNull AhoCorasick keywordMatcher,
                   @NotNull Map<String, List<SecretRule>> keywordToRules,
                   @NotNull List<SecretRule> rules,
                   @Nullable List<Pattern> allowlistPatterns,
@@ -95,7 +97,7 @@ class SecretScanner {
 
     boolean scanFile(@NotNull ZipFile zipFile,
                      @NotNull ZipEntry entry,
-                     @NotNull List<SecretFinding> findings,
+                     @NotNull List<SecretDetector.Finding> findings,
                      long startTime,
                      long timeoutMillis,
                      @NotNull AtomicInteger findingsCount,
@@ -140,7 +142,7 @@ class SecretScanner {
 
             while ((line = reader.readLine()) != null) {
                 if (lineNumber % timeoutCheckEveryNLines == 0 && System.currentTimeMillis() - startTime > timeoutMillis) {
-                    throw new SecretScanningTimeoutException("Secret scanning timed out during file: " + filePath);
+                    throw new SecretScanningTimeoutException("Secret detection timed out during file: " + filePath);
                 }
 
                 lineNumber++;
@@ -178,7 +180,7 @@ class SecretScanner {
                                              @NotNull String lowerLine,
                                              @NotNull String filePath,
                                              int lineNumber,
-                                             @NotNull List<SecretFinding> findings,
+                                             @NotNull List<SecretDetector.Finding> findings,
                                              @NotNull AtomicInteger findingsCount,
                                              @NotNull FindingRecorder recorder) {
         if (Thread.currentThread().isInterrupted()) {
@@ -225,7 +227,7 @@ class SecretScanner {
                                   @NotNull String chunk,
                                   @NotNull String filePath,
                                   int lineNumber,
-                                  @NotNull List<SecretFinding> findings,
+                                  @NotNull List<SecretDetector.Finding> findings,
                                   @NotNull AtomicInteger findingsCount,
                                   @NotNull FindingRecorder recorder) {
         if (Thread.currentThread().isInterrupted()) {
@@ -295,7 +297,7 @@ class SecretScanner {
             logger.debug("Secret detected in {}:{} (rule: {}, entropy: {})",
                     filePath, lineNumber, rule.getId(), entropy);
 
-            SecretFinding finding = new SecretFinding(filePath, lineNumber, entropy, secretValue, rule.getId());
+            var finding = new SecretDetector.Finding(filePath, lineNumber, entropy, secretValue, rule.getId());
             if (!recorder.record(findings, findingsCount, finding)) {
                 return;
             }
@@ -360,6 +362,90 @@ class SecretScanner {
         }
 
         return false;
+    }
+    
+    // ========================================================================
+    // RESULT TYPES
+    // ========================================================================
+    
+    /**
+     * Result of a secret scan. Immutable.
+     */
+    static final class Result {
+        private final boolean secretsFound;
+        private final @NotNull List<Finding> findings;
+
+        private Result(boolean secretsFound, @NotNull List<Finding> findings) {
+            this.secretsFound = secretsFound;
+            this.findings = Collections.unmodifiableList(new ArrayList<>(findings));
+        }
+
+        public static Result secretsFound(@NotNull List<Finding> findings) {
+            if (findings.isEmpty()) {
+                throw new IllegalArgumentException("Cannot create secretsFound result with empty findings");
+            }
+            return new Result(true, findings);
+        }
+
+        public static Result noSecretsFound() {
+            return new Result(false, List.of());
+        }
+
+        public static Result skipped() {
+            return new Result(false, List.of());
+        }
+
+        public boolean isSecretsFound() { return secretsFound; }
+        public @NotNull List<Finding> getFindings() { return findings; }
+
+        public @NotNull String getSummaryMessage() {
+            if (!secretsFound) {
+                return "No secrets detected";
+            }
+            return String.format("Found %d potential secret%s in extension package",
+                findings.size(), findings.size() == 1 ? "" : "s");
+        }
+    }
+    
+    /**
+     * A single secret finding. Secrets are redacted immediately.
+     */
+    static final class Finding {
+        private final @NotNull String filePath;
+        private final int lineNumber;
+        private final double entropy;
+        private final @NotNull String redactedSecret;
+        private final @NotNull String ruleId;
+
+        Finding(@NotNull String filePath, int lineNumber, double entropy,
+                @Nullable String secretValue, @NotNull String ruleId) {
+            this.filePath = filePath;
+            this.lineNumber = lineNumber;
+            this.entropy = entropy;
+            this.redactedSecret = redactSecret(secretValue);
+            this.ruleId = ruleId;
+        }
+
+        public @NotNull String getFilePath() { return filePath; }
+        public int getLineNumber() { return lineNumber; }
+        public double getEntropy() { return entropy; }
+        public @NotNull String getSecretValue() { return redactedSecret; }
+        public @NotNull String getRuleId() { return ruleId; }
+
+        @Override
+        public String toString() {
+            return String.format("Potential secret found in %s:%d (rule: %s, entropy: %f): %s",
+                filePath, lineNumber, ruleId, entropy, redactedSecret);
+        }
+
+        private static @NotNull String redactSecret(@Nullable String secret) {
+            if (secret == null || secret.length() <= 6) {
+                return "***";
+            }
+            int prefixLen = Math.min(3, secret.length() / 3);
+            int suffixLen = Math.min(3, secret.length() / 3);
+            return secret.substring(0, prefixLen) + "***" + secret.substring(secret.length() - suffixLen);
+        }
     }
 }
 
