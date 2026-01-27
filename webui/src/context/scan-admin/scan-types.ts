@@ -28,9 +28,9 @@ export interface ValidationFailure {
 
 export interface Threat {
     id: string;
-    fileName: string;
-    fileHash: string;
-    fileExtension: string;
+    fileName: string | null;      // Null if scanner doesn't report file-level info
+    fileHash: string | null;      // Null if scanner doesn't report file hashes
+    fileExtension: string | null;
     type: string;
     ruleName: string;
     severity?: string;
@@ -43,6 +43,19 @@ export interface AdminDecision {
     decision: string;
     decidedBy: string;
     dateDecided: string;
+}
+
+export interface CheckResult {
+    checkType: string;
+    category: 'PUBLISH_CHECK' | 'SCANNER_JOB';
+    result: 'PASSED' | 'QUARANTINE' | 'REJECT' | 'ERROR';
+    startedAt: string;
+    completedAt: string | null;
+    durationMs: number | null;
+    filesScanned: number | null;
+    findingsCount: number | null;
+    summary: string | null;
+    errorMessage: string | null;
 }
 
 export interface ScanResult {
@@ -63,6 +76,7 @@ export interface ScanResult {
     adminDecision: AdminDecision | null;
     threats: Threat[];
     validationFailures: ValidationFailure[];
+    checkResults: CheckResult[];
     extensionIcon?: string;
     downloadUrl: string | null;
     errorMessage: string | null;

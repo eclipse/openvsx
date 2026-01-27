@@ -46,6 +46,13 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
     /** Check if a decision exists for a file hash */
     boolean existsByFileHash(String fileHash);
 
+    /**
+     * Find all blocked decisions for a set of file hashes.
+     * Used by BlocklistCheckService for efficient batch lookups during publishing.
+     */
+    @Query("SELECT f FROM FileDecision f JOIN FETCH f.decidedBy WHERE f.fileHash IN :fileHashes AND f.decision = 'BLOCKED'")
+    List<FileDecision> findBlockedByFileHashIn(@Param("fileHashes") java.util.Set<String> fileHashes);
+
     /** Find all decisions with a specific decision value */
     Streamable<FileDecision> findByDecision(String decision);
 

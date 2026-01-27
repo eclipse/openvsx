@@ -67,6 +67,7 @@ public class RepositoryService {
     private final AdminScanDecisionRepository adminScanDecisionRepo;
     private final ExtensionThreatRepository extensionThreatRepo;
     private final FileDecisionRepository fileDecisionRepo;
+    private final ScanCheckResultRepository scanCheckResultRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -96,7 +97,8 @@ public class RepositoryService {
             AdminScanDecisionRepository adminScanDecisionRepo,
             ExtensionValidationFailureRepository extensionValidationFailureRepo,
             ExtensionThreatRepository extensionThreatRepo,
-            FileDecisionRepository fileDecisionRepo
+            FileDecisionRepository fileDecisionRepo,
+            ScanCheckResultRepository scanCheckResultRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -126,6 +128,7 @@ public class RepositoryService {
         this.extensionValidationFailureRepo = extensionValidationFailureRepo;
         this.extensionThreatRepo = extensionThreatRepo;
         this.fileDecisionRepo = fileDecisionRepo;
+        this.scanCheckResultRepo = scanCheckResultRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -563,6 +566,14 @@ public class RepositoryService {
 
     public ExtensionVersion findExtensionVersion(String namespace, String extension, String targetPlatform, String version) {
         return extensionVersionJooqRepo.find(namespace, extension, targetPlatform, version);
+    }
+
+    /**
+     * Find an extension version regardless of active status.
+     * Use this for admin operations on quarantined/inactive extensions.
+     */
+    public ExtensionVersion findExtensionVersionIncludingInactive(String namespace, String extension, String targetPlatform, String version) {
+        return extensionVersionJooqRepo.findIncludingInactive(namespace, extension, targetPlatform, version);
     }
 
     public ExtensionVersion findLatestVersionForAllUrls(Extension extension, String targetPlatform, boolean onlyPreRelease, boolean onlyActive) {
@@ -1153,5 +1164,21 @@ public class RepositoryService {
             return List.of();
         }
         return fileDecisionRepo.findByIdIn(ids);
+    }
+
+    public ScanCheckResult saveScanCheckResult(ScanCheckResult result) {
+        return scanCheckResultRepo.save(result);
+    }
+
+    public List<ScanCheckResult> findScanCheckResults(ExtensionScan scan) {
+        return scanCheckResultRepo.findByScanOrderByStartedAtAsc(scan);
+    }
+
+    public List<ScanCheckResult> findScanCheckResultsByScanId(long scanId) {
+        return scanCheckResultRepo.findByScanIdOrderByStartedAtAsc(scanId);
+    }
+
+    public boolean hasScanCheckResult(long scanId, String checkType) {
+        return scanCheckResultRepo.existsByScanIdAndCheckType(scanId, checkType);
     }
 }

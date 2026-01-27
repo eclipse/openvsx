@@ -78,6 +78,8 @@ export interface Extension {
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
     active?: boolean;
+    reviewStatus?: 'published' | 'under_review' | 'rejected';
+    reviewMessage?: string;
 
     averageRating?: number;
     downloadCount: number;

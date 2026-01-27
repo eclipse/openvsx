@@ -39,12 +39,16 @@ public class ExtensionThreat implements Serializable {
     @JoinColumn(name = "scan_id", nullable = false)
     private ExtensionScan scan;
 
-    /** Path to file within extension package */
-    @Column(name = "file_name", nullable = false, length = 1024)
+    /** Reference to the parent job that this threat belongs to */
+    @Column(name = "job_id", nullable = false)
+    private long jobId;
+
+    /** Path to file within extension package (null if scanner scans whole package) */
+    @Column(name = "file_name", length = 1024)
     private String fileName;
 
-    /** SHA256 hash of the flagged file */
-    @Column(name = "file_hash", nullable = false, length = 128)
+    /** SHA256 hash of the flagged file (null if not available) */
+    @Column(name = "file_hash", length = 128)
     private String fileHash;
 
     /** File extension */
@@ -89,6 +93,14 @@ public class ExtensionThreat implements Serializable {
 
     public void setScan(ExtensionScan scan) {
         this.scan = scan;
+    }
+
+    public long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(long jobId) {
+        this.jobId = jobId;
     }
 
     public String getFileName() {

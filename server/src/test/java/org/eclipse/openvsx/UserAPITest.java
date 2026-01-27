@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
@@ -72,7 +73,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @MockitoBean(types = {
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
-        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class
+        JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class,
+        ExtensionScanPersistenceService.class
 })
 class UserAPITest {
 
@@ -84,6 +86,9 @@ class UserAPITest {
     
     @MockitoBean
     RepositoryService repositories;
+
+    @MockitoBean
+    org.eclipse.openvsx.repositories.ExtensionScanRepository scanRepository;
 
     @Autowired
     MockMvc mockMvc;
@@ -867,7 +872,8 @@ class UserAPITest {
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
-                ExtensionScanService extensionScanService
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
                     entityManager,
@@ -876,7 +882,8 @@ class UserAPITest {
                     cache,
                     publishHandler,
                     scheduler,
-                    extensionScanService
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
     }
