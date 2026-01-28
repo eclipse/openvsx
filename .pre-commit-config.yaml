@@ -1,0 +1,29 @@
+repos:
+#- repo: https://github.com/pre-commit/pre-commit-hooks
+#  rev: v6.0.0
+#  hooks:
+#    - id: check-yaml
+#    - id: end-of-file-fixer
+#    - id: mixed-line-ending
+#    - id: trailing-whitespace
+#- repo: https://github.com/Lucas-C/pre-commit-hooks
+#  rev: v1.5.5
+#  hooks:
+#    - id: insert-license
+#      name: Add license for all Java files
+#      files: ^server/.*\.java$
+#      args:
+#        - --comment-style
+#        - "/*| *| */"
+#        - --license-filepath
+#        - LICENSE-template.txt
+#        - --fuzzy-match-generates-todo
+- repo: https://github.com/shellcheck-py/shellcheck-py
+  rev: v0.11.0.1
+  hooks:
+  -   id: shellcheck
+- repo: https://github.com/woodruffw/zizmor-pre-commit
+  rev: v1.20.0
+  hooks:
+    - id: zizmor
+      args: [ --min-severity, low ]

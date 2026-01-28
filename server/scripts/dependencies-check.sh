@@ -3,14 +3,14 @@
 # Clone and build license tool
 if [ ! -d "/workspace/dash-licenses" ] 
 then
-    cd /workspace
+    cd /workspace || exit
     git clone https://github.com/eclipse/dash-licenses.git
-    cd dash-licenses
+    cd dash-licenses || exit
     mvn package
 fi
 
 # Generate build/dependencies/list.txt
-cd /workspace/openvsx/server
+cd /workspace/openvsx/server || exit
 ./gradlew listDependencies
 
 # Generate DEPENDENCIES report

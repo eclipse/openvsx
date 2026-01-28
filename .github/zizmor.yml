@@ -1,0 +1,7 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      - sonar.yml
+  template-injection:
+    ignore:
+      - sonar.yml

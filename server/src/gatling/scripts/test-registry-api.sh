@@ -15,4 +15,4 @@ cd ../../..
 ./gradlew --rerun-tasks gatlingRun --simulation=org.eclipse.openvsx.RegistryAPIGetQueryV2Simulation
 ./gradlew --rerun-tasks gatlingRun --simulation=org.eclipse.openvsx.RegistryAPISearchSimulation
 ./gradlew --rerun-tasks gatlingRun --simulation=org.eclipse.openvsx.RegistryAPIVerifyTokenSimulation
-cd src/gatling/scripts
+cd src/gatling/scripts || exit

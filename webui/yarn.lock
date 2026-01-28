@@ -759,6 +759,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mdit/plugin-alert@npm:^0.22.3":
+  version: 0.22.3
+  resolution: "@mdit/plugin-alert@npm:0.22.3"
+  dependencies:
+    "@types/markdown-it": "npm:^14.1.2"
+  peerDependencies:
+    markdown-it: ^14.1.0
+  peerDependenciesMeta:
+    markdown-it:
+      optional: true
+  checksum: 10/59215807519c878d56cfdf09a86153b25702dfb08da89489ecdfc23b6dceec864a30f772588e14cb40c439fc18d3fad3fdc13e4a28ae8137859eca8ad7d032b6
+  languageName: node
+  linkType: hard
+
 "@mui/base@npm:5.0.0-beta.40":
   version: 5.0.0-beta.40
   resolution: "@mui/base@npm:5.0.0-beta.40"
@@ -1295,10 +1309,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@remix-run/router@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@remix-run/router@npm:1.16.1"
-  checksum: 10/0bfbf2a04707e7f7fde5c76614e7990945a6d854d50c1f9f63cea50208ff864a8920420534ff7ddff6a0bcb584c84456d2f7613d6d6e896db46cafcc70d8fb65
+"@remix-run/router@npm:1.23.2":
+  version: 1.23.2
+  resolution: "@remix-run/router@npm:1.23.2"
+  checksum: 10/50eb497854881bbd2e1016d4eb83c935ecd618e1c3888b74718851317e3b04edbaae9fe1baa49ec08c5c52cfe7118f4664e37144813d9500f45f922d6602a782
   languageName: node
   linkType: hard
 
@@ -1512,10 +1526,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/linkify-it@npm:^3":
-  version: 3.0.5
-  resolution: "@types/linkify-it@npm:3.0.5"
-  checksum: 10/fac28f41a6e576282300a459d70ea0d33aab70dbb77c3d09582bb0335bb00d862b6de69585792a4d590aae4173fbab0bf28861e2d90ca7b2b1439b52688e9ff6
+"@types/linkify-it@npm:^5":
+  version: 5.0.0
+  resolution: "@types/linkify-it@npm:5.0.0"
+  checksum: 10/c3919044d4876f9d71d037e861745cd2485c95ac8c36a4fa67b132d4e60eb1d067e123cc7965c9cf5110eea351517d767f0d306af5e9147d6d0af87bc374ddcf
   languageName: node
   linkType: hard
 
@@ -1526,20 +1540,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/markdown-it@npm:^13.0.1":
-  version: 13.0.8
-  resolution: "@types/markdown-it@npm:13.0.8"
+"@types/markdown-it@npm:^14, @types/markdown-it@npm:^14.1.2":
+  version: 14.1.2
+  resolution: "@types/markdown-it@npm:14.1.2"
   dependencies:
-    "@types/linkify-it": "npm:^3"
-    "@types/mdurl": "npm:^1"
-  checksum: 10/0e1d2ac44bb6dda78707dcec2eb1bf617a37f1654a4710aef3ae92295db7689349b51900ff76f0ce307c1485eecad52971dfc0ec71fc8b125fc0ddcf05584691
+    "@types/linkify-it": "npm:^5"
+    "@types/mdurl": "npm:^2"
+  checksum: 10/ca2f239c8d59610b9f936fd40261a6ccf2fa1ae27a21816c031e5712542dcf9ee01e2fe29b31118df90716e11ade54e47d92a498e9b6488800e77ca8827255a2
   languageName: node
   linkType: hard
 
-"@types/mdurl@npm:^1":
-  version: 1.0.5
-  resolution: "@types/mdurl@npm:1.0.5"
-  checksum: 10/e8e872e8da8f517a9c748b06cec61c947cb73fd3069e8aeb0926670ec5dfac5d30549b3d0f1634950401633e812f9b7263f2d5dbe7e98fce12bcb2c659aa4b21
+"@types/mdurl@npm:^2":
+  version: 2.0.0
+  resolution: "@types/mdurl@npm:2.0.0"
+  checksum: 10/78746e96c655ceed63db06382da466fd52c7e9dc54d60b12973dfdd110cae06b9439c4b90e17bb8d4461109184b3ea9f3e9f96b3e4bf4aa9fe18b6ac35f283c8
   languageName: node
   linkType: hard
 
@@ -3220,10 +3234,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"entities@npm:~3.0.1":
-  version: 3.0.1
-  resolution: "entities@npm:3.0.1"
-  checksum: 10/3706e0292ea3f3679720b3d3b1ed6290b164aaeb11116691a922a3acea144503871e0de2170b47671c3b735549b8b7f4741d0d3c2987e8f985ccaa0dd3762eba
+"entities@npm:^4.4.0":
+  version: 4.5.0
+  resolution: "entities@npm:4.5.0"
+  checksum: 10/ede2a35c9bce1aeccd055a1b445d41c75a14a2bb1cd22e242f20cf04d236cdcd7f9c859eb83f76885327bfae0c25bf03303665ee1ce3d47c5927b98b0e3e3d48
   languageName: node
   linkType: hard
 
@@ -4873,12 +4887,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"linkify-it@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "linkify-it@npm:4.0.1"
+"linkify-it@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "linkify-it@npm:5.0.0"
   dependencies:
-    uc.micro: "npm:^1.0.1"
-  checksum: 10/d0a786d2e3f02f46b6f4a9b466af9eb936fb68e86b7cd305933d5457b12fdc53a4d0e0b697b02dc2e7d84a51d2425d719598bb7b47af7e01911e492e07a97957
+    uc.micro: "npm:^2.0.0"
+  checksum: 10/ef3b7609dda6ec0c0be8a7b879cea195f0d36387b0011660cd6711bba0ad82137f59b458b7e703ec74f11d88e7c1328e2ad9b855a8500c0ded67461a8c4519e6
   languageName: node
   linkType: hard
 
@@ -4922,9 +4936,9 @@ __metadata:
   linkType: hard
 
 "lodash@npm:^4.17.21":
-  version: 4.17.21
-  resolution: "lodash@npm:4.17.21"
-  checksum: 10/c08619c038846ea6ac754abd6dd29d2568aa705feb69339e836dfa8d8b09abbb2f859371e86863eda41848221f9af43714491467b5b0299122431e202bb0c532
+  version: 4.17.23
+  resolution: "lodash@npm:4.17.23"
+  checksum: 10/82504c88250f58da7a5a4289f57a4f759c44946c005dd232821c7688b5fcfbf4a6268f6a6cdde4b792c91edd2f3b5398c1d2a0998274432cff76def48735e233
   languageName: node
   linkType: hard
 
@@ -5008,28 +5022,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-anchor@npm:^8.6.7":
-  version: 8.6.7
-  resolution: "markdown-it-anchor@npm:8.6.7"
+"markdown-it-anchor@npm:^9.2.0":
+  version: 9.2.0
+  resolution: "markdown-it-anchor@npm:9.2.0"
   peerDependencies:
     "@types/markdown-it": "*"
     markdown-it: "*"
-  checksum: 10/1b061e9c8fb093dab6040725f9f3cedae7da1160a14ee8f29d144534be7ee5c788f02a4de4019f55eb8514cae5f12d350baaa7d08732c26a62abc60e5e66c7f7
+  checksum: 10/ececb857a621946be9da08a9abdec98b954fa2f14493261293bf1868146f840d419042be7028317851940ecb7f6d2db318916d13bd38c9d398507c7802d6f70f
   languageName: node
   linkType: hard
 
-"markdown-it@npm:^13.0.1":
-  version: 13.0.2
-  resolution: "markdown-it@npm:13.0.2"
+"markdown-it@npm:^14.1.0":
+  version: 14.1.0
+  resolution: "markdown-it@npm:14.1.0"
   dependencies:
     argparse: "npm:^2.0.1"
-    entities: "npm:~3.0.1"
-    linkify-it: "npm:^4.0.1"
-    mdurl: "npm:^1.0.1"
-    uc.micro: "npm:^1.0.5"
+    entities: "npm:^4.4.0"
+    linkify-it: "npm:^5.0.0"
+    mdurl: "npm:^2.0.0"
+    punycode.js: "npm:^2.3.1"
+    uc.micro: "npm:^2.1.0"
   bin:
-    markdown-it: bin/markdown-it.js
-  checksum: 10/4f48271bbd44d16502efd4148d7c05ca1fb4b50719a07d34c91e8d16f8d065c558fed0fafe07cd13ca5958096bfe295b37cd4f042add7ec49f73c70154e75f58
+    markdown-it: bin/markdown-it.mjs
+  checksum: 10/f34f921be178ed0607ba9e3e27c733642be445e9bb6b1dba88da7aafe8ba1bc5d2f1c3aa8f3fc33b49a902da4e4c08c2feadfafb290b8c7dda766208bb6483a9
   languageName: node
   linkType: hard
 
@@ -5040,10 +5055,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mdurl@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "mdurl@npm:1.0.1"
-  checksum: 10/ada367d01c9e81d07328101f187d5bd8641b71f33eab075df4caed935a24fa679e625f07108801d8250a5e4a99e5cd4be7679957a11424a3aa3e740d2bb2d5cb
+"mdurl@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "mdurl@npm:2.0.0"
+  checksum: 10/1720349d4a53e401aa993241368e35c0ad13d816ad0b28388928c58ca9faa0cf755fa45f18ccbf64f4ce54a845a50ddce5c84e4016897b513096a68dac4b0158
   languageName: node
   linkType: hard
 
@@ -5466,6 +5481,7 @@ __metadata:
     "@emotion/styled": "npm:^11.11.0"
     "@eslint/eslintrc": "npm:^3.2.0"
     "@eslint/js": "npm:^9.15.0"
+    "@mdit/plugin-alert": "npm:^0.22.3"
     "@mui/base": "npm:^5.0.0-beta.9"
     "@mui/icons-material": "npm:^5.13.7"
     "@mui/material": "npm:^5.13.7"
@@ -5482,7 +5498,7 @@ __metadata:
     "@types/dompurify": "npm:^3.0.2"
     "@types/express": "npm:^4.17.21"
     "@types/lodash": "npm:^4.14.195"
-    "@types/markdown-it": "npm:^13.0.1"
+    "@types/markdown-it": "npm:^14"
     "@types/mocha": "npm:^10.0.9"
     "@types/node": "npm:^20.4.0"
     "@types/prop-types": "npm:^15.7.5"
@@ -5507,8 +5523,8 @@ __metadata:
     express-rate-limit: "npm:^7.4.0"
     fetch-retry: "npm:^5.0.6"
     lodash: "npm:^4.17.21"
-    markdown-it: "npm:^13.0.1"
-    markdown-it-anchor: "npm:^8.6.7"
+    markdown-it: "npm:^14.1.0"
+    markdown-it-anchor: "npm:^9.2.0"
     mocha: "npm:^11.7.5"
     prop-types: "npm:^15.8.1"
     punycode: "npm:^2.3.0"
@@ -5518,8 +5534,8 @@ __metadata:
     react-dropzone: "npm:^14.2.3"
     react-helmet-async: "npm:^1.3.0"
     react-infinite-scroller: "npm:^1.2.6"
-    react-router: "npm:^6.14.2"
-    react-router-dom: "npm:^6.14.1"
+    react-router: "npm:^6.30.3"
+    react-router-dom: "npm:^6.30.3"
     rimraf: "npm:^6.1.2"
     source-map-loader: "npm:^4.0.1"
     style-loader: "npm:^3.3.3"
@@ -5886,6 +5902,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"punycode.js@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "punycode.js@npm:2.3.1"
+  checksum: 10/f0e946d1edf063f9e3d30a32ca86d8ff90ed13ca40dad9c75d37510a04473340cfc98db23a905cc1e517b1e9deb0f6021dce6f422ace235c60d3c9ac47c5a16a
+  languageName: node
+  linkType: hard
+
 "punycode@npm:^2.1.0, punycode@npm:^2.3.0":
   version: 2.3.1
   resolution: "punycode@npm:2.3.1"
@@ -6038,27 +6061,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-router-dom@npm:^6.14.1":
-  version: 6.23.1
-  resolution: "react-router-dom@npm:6.23.1"
+"react-router-dom@npm:^6.30.3":
+  version: 6.30.3
+  resolution: "react-router-dom@npm:6.30.3"
   dependencies:
-    "@remix-run/router": "npm:1.16.1"
-    react-router: "npm:6.23.1"
+    "@remix-run/router": "npm:1.23.2"
+    react-router: "npm:6.30.3"
   peerDependencies:
     react: ">=16.8"
     react-dom: ">=16.8"
-  checksum: 10/29004176608e879c57830ed02ecd70bf2b54c07acfb050fbbd61c7d28a0c2c8abf1287c2c69222c588afd028763ffe2c61015f03a3360359b250cc019234d76b
+  checksum: 10/db974d801070e9967a076b31edca902e127793e02dc79f364461b94e81846a588c241d72e069f5b586b4a90ffd99798f5cb97753ac9d22fe90afa6dc008ab520
   languageName: node
   linkType: hard
 
-"react-router@npm:6.23.1, react-router@npm:^6.14.2":
-  version: 6.23.1
-  resolution: "react-router@npm:6.23.1"
+"react-router@npm:6.30.3, react-router@npm:^6.30.3":
+  version: 6.30.3
+  resolution: "react-router@npm:6.30.3"
   dependencies:
-    "@remix-run/router": "npm:1.16.1"
+    "@remix-run/router": "npm:1.23.2"
   peerDependencies:
     react: ">=16.8"
-  checksum: 10/72747878fd851b8fc9a6c2f1ee7a3f3a69f18df0c45d7857851b57930d4f55686190f5df0b8d9064ce9e8594bd9ac6a6f479bd8c91552f0b825beb012fa5a770
+  checksum: 10/1a51bdcc42b8d7979228dea8b5c44a28a4add9b681781f75b74f5f920d20058a92ffe5f1d0ba0621f03abe1384b36025b53b402515ecb35f27a6a2f2f25d6fbe
   languageName: node
   linkType: hard
 
@@ -7033,10 +7056,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uc.micro@npm:^1.0.1, uc.micro@npm:^1.0.5":
-  version: 1.0.6
-  resolution: "uc.micro@npm:1.0.6"
-  checksum: 10/6898bb556319a38e9cf175e3628689347bd26fec15fc6b29fa38e0045af63075ff3fea4cf1fdba9db46c9f0cbf07f2348cd8844889dd31ebd288c29fe0d27e7a
+"uc.micro@npm:^2.0.0, uc.micro@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "uc.micro@npm:2.1.0"
+  checksum: 10/37197358242eb9afe367502d4638ac8c5838b78792ab218eafe48287b0ed28aaca268ec0392cc5729f6c90266744de32c06ae938549aee041fc93b0f9672d6b2
   languageName: node
   linkType: hard
 
