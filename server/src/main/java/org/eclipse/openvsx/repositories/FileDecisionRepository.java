@@ -72,7 +72,7 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
      * Paginated query with optional filters for decision, publisher, namespace, name, and date range.
      */
     @Query(value = """
-        SELECT f.*, u.id AS user_id, u.login_name, u.email, u.full_name, u.avatar_url, 
+        SELECT f.*, u.id AS user_id, u.login_name, u.email, u.full_name, u.avatar_url,
                u.provider, u.provider_url, u.auth_id, u.role, u.eclipse_token, u.eclipse_person_id
         FROM file_decision f
         JOIN user_data u ON u.id = f.decided_by_id

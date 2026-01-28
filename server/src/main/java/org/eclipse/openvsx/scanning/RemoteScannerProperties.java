@@ -23,10 +23,10 @@ import java.util.Map;
 
 /**
  * Configuration properties for remote scanners (ovsx.scanning.configured.*).
- * 
+ * <p>
  * Defines scanner behavior via YAML: HTTP request templates, response extraction
  * rules (JSONPath), state mapping, and timeout policies. Validated at startup.
- * 
+ * <p>
  * Environment variables (${VAR_NAME} syntax) are resolved by Spring when loading
  * application.yml. Sensitive values like API keys should use this mechanism.
  */
@@ -596,7 +596,7 @@ public class RemoteScannerProperties {
     
     /**
      * OAuth2 client credentials flow configuration.
-     * 
+     * <p>
      * Tokens are automatically refreshed when they expire.
      */
     public static class OAuth2Auth {
@@ -634,7 +634,7 @@ public class RemoteScannerProperties {
     
     /**
      * Polling configuration for async scanners.
-     * 
+     * <p>
      * Controls how frequently to poll for scan status and when to stop.
      * Only applies when scanner is configured with async=true.
      */

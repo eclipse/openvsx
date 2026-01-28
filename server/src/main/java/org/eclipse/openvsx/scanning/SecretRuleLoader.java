@@ -45,7 +45,7 @@ public class SecretRuleLoader {
 
     /**
      * Container for loaded rules and global allowlist configuration.
-     * 
+     * <p>
      * This is returned by {@link #loadAll(List)} and contains:
      *   Compiled secret detection rules from all YAML files (deduplicated by ID)
      *   Global allowlist configuration from the last YAML file
@@ -245,7 +245,7 @@ public class SecretRuleLoader {
 
     /**
      * DTO for YAML root structure.
-     * 
+     * <p>
      * allowlist:
      *   paths:
      *     - "\.test\."
@@ -271,7 +271,7 @@ public class SecretRuleLoader {
 
     /**
      * DTO for individual rule definitions in YAML.
-     * 
+     * <p>
      * Each rule defines how to detect a specific type of secret (API key, token, etc.).
      */
     public static class RuleDefinition {
@@ -299,7 +299,7 @@ public class SecretRuleLoader {
 
     /**
      * DTO for rule-specific allowlist configuration.
-     * 
+     * <p>
      * Defines patterns that, when matched, cause a potential secret match to be excluded
      * as a known safe value.
      */
@@ -310,14 +310,14 @@ public class SecretRuleLoader {
 
     /**
      * DTO for global allowlist configuration.
-     * 
+     * <p>
      * Global allowlists apply to all rules and define:
-     *
+     * <p>
      *   paths: Regex patterns for file paths to exclude from scanning
      *   regexes: Regex patterns for content to exclude as known safe values
      *   stopwords: Exact strings to exclude (e.g., "example", "placeholder", "test")
      *   file-extensions: File extensions to exclude from scanning (e.g., ".png", ".jpg")
-     *
+     * <p>
      * These are loaded from the YAML files and merged with configuration from application.yml.
      */
     public static class GlobalAllowlist {

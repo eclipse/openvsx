@@ -57,13 +57,13 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
     
     /**
      * Poll a single scan job.
-     * 
+     * <p>
      * This method:
      * 1. Loads the scan job from database
      * 2. Gets the appropriate scanner using the scanner type
      * 3. Polls the scanner for status
      * 4. Updates the database based on the result
-     * 
+     * <p>
      * JobRunr automatically:
      * - Runs this in a worker thread
      * - Retries on failure (up to 3 times)
@@ -149,7 +149,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
     
     /**
      * Handle the scan status response.
-     * 
+     * <p>
      * Updates the scan job in the database based on the status.
      * If the scan is complete, retrieves the results.
      */
@@ -222,7 +222,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
     
     /**
      * Handle PROCESSING/SUBMITTED status: schedule next poll.
-     * 
+     * <p>
      * Uses scanner's poll config for interval, backoff, and max attempts.
      * Falls back to defaults if scanner has no poll config.
      */
@@ -265,7 +265,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
     
     /**
      * Calculate poll delay based on scanner's poll configuration.
-     * 
+     * <p>
      * If exponential backoff is enabled:
      *   delay = min(interval * multiplier^(attempt-1), maxInterval)
      * Otherwise:

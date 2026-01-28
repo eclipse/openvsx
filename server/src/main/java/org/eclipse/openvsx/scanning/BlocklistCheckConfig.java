@@ -17,13 +17,13 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Configuration for blocklist checking during extension publishing.
- * 
+ * <p>
  * The blocklist check compares file SHA256 hashes against the file_decision table.
  * Files marked as BLOCKED will prevent publication.
- * 
+ * <p>
  * Note: Archive limits (max-archive-size-bytes, max-single-file-bytes, max-entry-count)
  * are configured centrally in ExtensionScanConfig and shared by all scanning checks.
- * 
+ * <p>
  * Configuration example:
  * ovsx:
  *   scanning:
@@ -36,7 +36,7 @@ public class BlocklistCheckConfig {
 
     /**
      * Enables or disables blocklist checking for extension publishing.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.blocklist-check.enabled}
      * Default: {@code false}
      */
@@ -45,9 +45,9 @@ public class BlocklistCheckConfig {
 
     /**
      * Whether blocklist matches are enforced (block publishing) when detected.
-     * 
+     * <p>
      * When false, matches are recorded but publication proceeds (monitor-only mode).
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.blocklist-check.enforced}
      * Default: {@code true}
      */
@@ -56,7 +56,7 @@ public class BlocklistCheckConfig {
 
     /**
      * Message shown to users when their extension is blocked.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.blocklist-check.user-message}
      * Default: {@code "Extension blocked due to policy violation"}
      */

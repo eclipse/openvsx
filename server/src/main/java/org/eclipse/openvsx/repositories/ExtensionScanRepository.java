@@ -55,7 +55,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
     /** Find all scans with a specific status */
     Streamable<ExtensionScan> findByStatus(ScanStatus status);
     
-    /** Find oldest N scans with a specific status (for batch processing) */
+    /** Find the oldest N scans with a specific status (for batch processing) */
     @Query(value = """
         SELECT s.* FROM extension_scan s
         WHERE s.status = :status
@@ -173,7 +173,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
           AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
           AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
           AND EXISTS (
-              SELECT 1 FROM extension_validation_failure f 
+              SELECT 1 FROM extension_validation_failure f
               WHERE f.scan_id = s.id AND f.enforced = :enforcedOnly)
         """, nativeQuery = true)
     long countByStatusDateRangeAndEnforcement(
@@ -197,17 +197,17 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
           AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
           AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
           AND (:applyCheckTypesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_validation_failure f 
-               WHERE f.scan_id = s.id 
+               SELECT 1 FROM extension_validation_failure f
+               WHERE f.scan_id = s.id
                  AND f.validation_type IN (:checkTypes)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR f.enforced = :enforcedOnly)))
           AND (:applyScannerNamesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_threat t 
-               WHERE t.scan_id = s.id 
+               SELECT 1 FROM extension_threat t
+               WHERE t.scan_id = s.id
                  AND t.scanner_type IN (:scannerNames)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR t.enforced = :enforcedOnly)))
-          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL 
-               OR :applyCheckTypesFilter = true 
+          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL
+               OR :applyCheckTypesFilter = true
                OR :applyScannerNamesFilter = true
                OR EXISTS (SELECT 1 FROM extension_validation_failure f WHERE f.scan_id = s.id AND f.enforced = :enforcedOnly)
                OR EXISTS (SELECT 1 FROM extension_threat t WHERE t.scan_id = s.id AND t.enforced = :enforcedOnly))
@@ -241,17 +241,17 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
           AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
           AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
           AND (:applyCheckTypesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_validation_failure f 
-               WHERE f.scan_id = s.id 
+               SELECT 1 FROM extension_validation_failure f
+               WHERE f.scan_id = s.id
                  AND f.validation_type IN (:checkTypes)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR f.enforced = :enforcedOnly)))
           AND (:applyScannerNamesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_threat t 
-               WHERE t.scan_id = s.id 
+               SELECT 1 FROM extension_threat t
+               WHERE t.scan_id = s.id
                  AND t.scanner_type IN (:scannerNames)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR t.enforced = :enforcedOnly)))
-          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL 
-               OR :applyCheckTypesFilter = true 
+          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL
+               OR :applyCheckTypesFilter = true
                OR :applyScannerNamesFilter = true
                OR EXISTS (SELECT 1 FROM extension_validation_failure f WHERE f.scan_id = s.id AND f.enforced = :enforcedOnly)
                OR EXISTS (SELECT 1 FROM extension_threat t WHERE t.scan_id = s.id AND t.enforced = :enforcedOnly))
@@ -292,17 +292,17 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
           AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
           AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
           AND (:applyCheckTypesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_validation_failure f 
-               WHERE f.scan_id = s.id 
+               SELECT 1 FROM extension_validation_failure f
+               WHERE f.scan_id = s.id
                  AND f.validation_type IN (:checkTypes)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR f.enforced = :enforcedOnly)))
           AND (:applyScannerNamesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_threat t 
-               WHERE t.scan_id = s.id 
+               SELECT 1 FROM extension_threat t
+               WHERE t.scan_id = s.id
                  AND t.scanner_type IN (:scannerNames)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR t.enforced = :enforcedOnly)))
-          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL 
-               OR :applyCheckTypesFilter = true 
+          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL
+               OR :applyCheckTypesFilter = true
                OR :applyScannerNamesFilter = true
                OR EXISTS (SELECT 1 FROM extension_validation_failure f WHERE f.scan_id = s.id AND f.enforced = :enforcedOnly)
                OR EXISTS (SELECT 1 FROM extension_threat t WHERE t.scan_id = s.id AND t.enforced = :enforcedOnly))

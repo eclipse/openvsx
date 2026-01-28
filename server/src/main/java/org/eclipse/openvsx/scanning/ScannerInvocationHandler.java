@@ -59,10 +59,10 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     
     /**
      * Invoke a single scanner and persist the result.
-     * 
+     * <p>
      * This method creates the ScanJob record BEFORE invoking the scanner
      * to avoid creating duplicate records when JobRunr retries.
-     * 
+     * <p>
      * Flow:
      * 1. Find or create ScanJob record (unique by scanId + scannerType) - status: QUEUED
      * 2. Get scanner from registry
@@ -71,22 +71,22 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
      * 5. Update job based on result:
      *    - Sync scanner: COMPLETE (with results)
      *    - Async scanner: SUBMITTED (with external job ID for polling)
-     * 
+     * <p>
      * On retry (if step 4 fails):
      * - Same ScanJob is found and updated
      * - No duplicate records created
      * - Status transitions tracked via updatedAt
-     * 
+     * <p>
      * For sync scanners:
      * - startScan() returns immediate results
      * - Job marked COMPLETE
      * - Threats saved via ExtensionScanPersistenceService
-     * 
+     * <p>
      * For async scanners:
      * - startScan() returns external job ID
      * - Job marked SUBMITTED
      * - Polling service will check status periodically
-     * 
+     * <p>
      * JobRunr automatically:
      * - Runs this in a worker thread
      * - Retries on failure (up to 2 times)

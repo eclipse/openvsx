@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 /**
  * Template engine for runtime placeholder substitution in HTTP templates.
  * Handles {placeholder} syntax for dynamic values like jobId, fileName, etc.
- * 
+ * <p>
  * Note: ${VAR} environment variables are resolved by Spring when loading
  * application.yml, so they're already substituted before reaching this class.
  */
@@ -34,7 +34,7 @@ public class HttpTemplateEngine {
     
     /**
      * Process a template by substituting placeholders.
-     * 
+     * <p>
      * Example: "https://api.example.com/jobs/{jobId}"
      * becomes: "https://api.example.com/jobs/12345"
      */

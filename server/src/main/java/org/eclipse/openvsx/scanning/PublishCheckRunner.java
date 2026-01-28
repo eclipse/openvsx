@@ -62,7 +62,7 @@ public class PublishCheckRunner{
 
     /**
      * Run all publish checks and return the aggregated result.
-     * 
+     * <p>
      * This method does not persist anything. It only executes checks and returns findings.
      * The caller is responsible for recording failures and managing state.
      */
