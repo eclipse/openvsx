@@ -18,14 +18,14 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Central configuration for extension scanning during publishing.
- * 
+ * <p>
  * This controls:
  * - Overall scan lifecycle and behavior
  * - Shared archive limits used by all scanning checks (secret detection, blocklist, etc.)
- * 
+ * <p>
  * Individual checks can have additional check-specific configuration, but archive
  * limits are centralized here to ensure consistency.
- * 
+ * <p>
  * Configuration example:
  * ovsx:
  *   scanning:

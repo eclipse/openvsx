@@ -16,7 +16,7 @@ import org.jobrunr.jobs.lambdas.JobRequest;
 
 /**
  * JobRunr request to poll a single scan job.
- * 
+ * <p>
  * This request is enqueued by the AsyncScanPollingService every 30 seconds
  * for each pending async scan job. JobRunr workers process these requests
  * in parallel, calling the appropriate scanner to check job status.

@@ -20,15 +20,15 @@ import java.util.List;
 
 /**
  * Single secret rule definition plus builder.
- * 
+ * <p>
  * A secret rule defines:
- * 
+ * <p>
  *   A regex pattern to match potential secrets
  *   Optional keywords to filter lines before applying the regex (performance optimization)
  *   Optional entropy threshold to reduce false positives
  *   Optional allowlist patterns to exclude known safe matches
  *   Optional capture group specification to extract the actual secret value
- * 
+ * <p>
  * 
  * Rules are loaded from YAML files and compiled into efficient Pattern objects.
  */

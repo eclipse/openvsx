@@ -42,16 +42,12 @@ public class HttpResponseExtractor {
             return null;
         }
 
-        switch (format.toLowerCase()) {
-            case "json":
-                return extractJsonString(response, path);
-            case "xml":
-                throw new UnsupportedOperationException("XML extraction not yet implemented");
-            case "text":
-                throw new UnsupportedOperationException("Text extraction not yet implemented");
-            default:
-                throw new IllegalArgumentException("Unsupported format: " + format);
-        }
+        return switch (format.toLowerCase()) {
+            case "json" -> extractJsonString(response, path);
+            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
+            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
+            default -> throw new IllegalArgumentException("Unsupported format: " + format);
+        };
     }
 
     /**
@@ -62,16 +58,12 @@ public class HttpResponseExtractor {
             return new ArrayList<>();
         }
 
-        switch (format.toLowerCase()) {
-            case "json":
-                return extractJsonList(response, path);
-            case "xml":
-                throw new UnsupportedOperationException("XML extraction not yet implemented");
-            case "text":
-                throw new UnsupportedOperationException("Text extraction not yet implemented");
-            default:
-                throw new IllegalArgumentException("Unsupported format: " + format);
-        }
+        return switch (format.toLowerCase()) {
+            case "json" -> extractJsonList(response, path);
+            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
+            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
+            default -> throw new IllegalArgumentException("Unsupported format: " + format);
+        };
     }
 
     private JsonNode parseJson(String json) throws ScannerException {
@@ -119,7 +111,7 @@ public class HttpResponseExtractor {
 
     private JsonNode pickFirst(JsonNode root, String jsonPath) {
         List<JsonNode> nodes = evaluateJsonPath(root, jsonPath);
-        return nodes.isEmpty() ? null : nodes.get(0);
+        return nodes.isEmpty() ? null : nodes.getFirst();
     }
 
     private List<JsonNode> evaluateJsonPath(JsonNode node, String jsonPath) {
@@ -230,23 +222,15 @@ public class HttpResponseExtractor {
         Object actualValue = extractValueFromMap(object, path);
         
         // Compare based on operator
-        switch (operator) {
-            case "==":
-            case "=":
-                return String.valueOf(actualValue).equals(expectedValue);
-            case "!=":
-                return !String.valueOf(actualValue).equals(expectedValue);
-            case ">":
-                return compareNumeric(actualValue, expectedValue) > 0;
-            case "<":
-                return compareNumeric(actualValue, expectedValue) < 0;
-            case ">=":
-                return compareNumeric(actualValue, expectedValue) >= 0;
-            case "<=":
-                return compareNumeric(actualValue, expectedValue) <= 0;
-            default:
-                throw new IllegalArgumentException("Unsupported operator: " + operator);
-        }
+        return switch (operator) {
+            case "==", "=" -> String.valueOf(actualValue).equals(expectedValue);
+            case "!=" -> !String.valueOf(actualValue).equals(expectedValue);
+            case ">" -> compareNumeric(actualValue, expectedValue) > 0;
+            case "<" -> compareNumeric(actualValue, expectedValue) < 0;
+            case ">=" -> compareNumeric(actualValue, expectedValue) >= 0;
+            case "<=" -> compareNumeric(actualValue, expectedValue) <= 0;
+            default -> throw new IllegalArgumentException("Unsupported operator: " + operator);
+        };
     }
     
     /**

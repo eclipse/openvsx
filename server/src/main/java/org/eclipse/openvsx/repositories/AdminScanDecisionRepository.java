@@ -89,17 +89,17 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
           AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
           AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
           AND (:applyCheckTypesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_validation_failure f 
-               WHERE f.scan_id = d.scan_id 
+               SELECT 1 FROM extension_validation_failure f
+               WHERE f.scan_id = d.scan_id
                  AND f.validation_type IN (:checkTypes)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR f.enforced = :enforcedOnly)))
           AND (:applyScannerNamesFilter = false OR EXISTS (
-               SELECT 1 FROM extension_threat t 
-               WHERE t.scan_id = d.scan_id 
+               SELECT 1 FROM extension_threat t
+               WHERE t.scan_id = d.scan_id
                  AND t.scanner_type IN (:scannerNames)
                  AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL OR t.enforced = :enforcedOnly)))
-          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL 
-               OR :applyCheckTypesFilter = true 
+          AND (CAST(:enforcedOnly AS BOOLEAN) IS NULL
+               OR :applyCheckTypesFilter = true
                OR :applyScannerNamesFilter = true
                OR EXISTS (SELECT 1 FROM extension_validation_failure f WHERE f.scan_id = d.scan_id AND f.enforced = :enforcedOnly)
                OR EXISTS (SELECT 1 FROM extension_threat t WHERE t.scan_id = d.scan_id AND t.enforced = :enforcedOnly))

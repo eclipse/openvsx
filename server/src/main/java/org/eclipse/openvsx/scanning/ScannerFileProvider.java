@@ -28,7 +28,7 @@ import java.io.IOException;
 
 /**
  * Service for retrieving extension files for scanning.
- * 
+ * <p>
  * Downloads files to temporary locations with automatic cleanup via TempFile.
  * Works with all storage backends (local, S3, Azure, Google Cloud).
  */

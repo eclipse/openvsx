@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * Base interface for all scanner implementations.
- * 
+ * <p>
  * Each scanner implementation (internal checks, external scanners, etc.)
  * must implement this interface. Scanners can be either synchronous
  * (returning results immediately) or asynchronous (requiring polling).
@@ -130,7 +130,7 @@ public interface Scanner {
     
     /**
      * Result of invoking a scanner.
-     * 
+     * <p>
      * A scanner returns either:
      * - Completed: Sync scan with immediate results
      * - Submitted: Async scan that requires polling

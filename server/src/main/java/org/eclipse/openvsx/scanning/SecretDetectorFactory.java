@@ -30,12 +30,12 @@ import java.util.Set;
 
 /**
  * Builds and wires the secret-detection primitives once at startup.
- * 
+ * <p>
  * The factory only initializes if rule paths are configured (via {@code rules-path})
  * or auto-generation is enabled (via {@code gitleaks.auto-fetch}).
  * If neither is configured, initialization is skipped, allowing the application
  * to start without requiring secret detection infrastructure.
- * 
+ * <p>
  * If auto-generation is enabled, this depends on {@link GitleaksRulesService} 
  * to ensure rules are generated before we try to load them.
  * Only loaded when secret detection is enabled via configuration.
@@ -142,7 +142,7 @@ public class SecretDetectorFactory {
         initialize();
     }
 
-    public @Nullable SecretDetector getScanner() {
+    @Nullable SecretDetector getScanner() {
         return scanner;
     }
 

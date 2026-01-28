@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 
 /**
  * Interface for checks that run during extension publishing.
- * 
+ * <p>
  * Implementations are auto-discovered by Spring and executed by PublishCheckRunner.
- * To add a new publish check, create a @Component that implements this interface.
+ * To add a new publishing check, create a @Component that implements this interface.
  */
 public interface PublishCheck {
 
@@ -52,10 +52,10 @@ public interface PublishCheck {
 
     /**
      * Generate the user-facing error message for failures from this check.
-     * 
+     * <p>
      * Override this method to customize what users see when publication is blocked.
      * The detailed failure reasons are still stored in the database for admin review.
-     * 
+     * <p>
      * Default implementation shows up to 3 failure reasons.
      */
     default String getUserFacingMessage(List<Failure> failures) {
@@ -78,7 +78,7 @@ public interface PublishCheck {
 
     /**
      * Context passed to publish checks during extension publishing.
-     * 
+     * <p>
      * Contains the scan record (with extension metadata), the extension file,
      * and the publishing user. Use scan.getNamespaceName(), scan.getExtensionName(),
      * etc. to access extension metadata.
