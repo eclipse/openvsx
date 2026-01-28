@@ -98,7 +98,10 @@ jobs:
                   github.actor != 'dependabot[bot]'   &&
                   (
                      github.event_name == 'push' ||
-                     github.event.pull_request.head.repo.full_name == github.repository
+                     (
+                       contains(github.event.pull_request.labels.*.name, 'snapshot') &&
+                       github.event.pull_request.head.repo.full_name == github.repository
+                     )
                   ) }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -164,7 +167,10 @@ jobs:
                   github.actor != 'dependabot[bot]'   &&
                   (
                      github.event_name == 'push' ||
-                     github.event.pull_request.head.repo.full_name == github.repository
+                     (
+                       contains(github.event.pull_request.labels.*.name, 'snapshot') &&
+                       github.event.pull_request.head.repo.full_name == github.repository
+                     )
                   ) }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
