@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Focused tests for "enforced vs monitor-only" behavior.
- *
+ * <p>
  * Goal:
  * - failures are always persisted
  * - publishing is only blocked when enforcement is enabled (throws ErrorResultException)

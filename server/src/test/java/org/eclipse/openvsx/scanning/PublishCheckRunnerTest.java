@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import org.mockito.Mockito;
+import org.mockito.quality.Strictness;
 
 /**
  * Tests for {@link PublishCheckRunner} orchestration logic.
@@ -65,7 +66,7 @@ class PublishCheckRunnerTest {
         assertFalse(result.passed());
         assertTrue(result.hasEnforcedFailure());
         assertEquals(1, result.findings().size());
-        assertEquals("RULE_001", result.findings().get(0).ruleName());
+        assertEquals("RULE_001", result.findings().getFirst().ruleName());
     }
 
     @Test
@@ -79,7 +80,7 @@ class PublishCheckRunnerTest {
         assertTrue(result.passed());
         assertFalse(result.hasEnforcedFailure());
         assertEquals(1, result.findings().size());
-        assertFalse(result.findings().get(0).enforced());
+        assertFalse(result.findings().getFirst().enforced());
     }
 
     @Test
@@ -93,7 +94,7 @@ class PublishCheckRunnerTest {
         assertTrue(result.passed());
         // Only enabled check should have an execution record
         assertEquals(1, result.checkExecutions().size());
-        assertEquals("ENABLED", result.checkExecutions().get(0).checkType());
+        assertEquals("ENABLED", result.checkExecutions().getFirst().checkType());
     }
 
     @Test
@@ -168,9 +169,9 @@ class PublishCheckRunnerTest {
         var warnings = result.getWarningFindings();
 
         assertEquals(1, enforced.size());
-        assertEquals("RULE1", enforced.get(0).ruleName());
+        assertEquals("RULE1", enforced.getFirst().ruleName());
         assertEquals(1, warnings.size());
-        assertEquals("RULE2", warnings.get(0).ruleName());
+        assertEquals("RULE2", warnings.getFirst().ruleName());
     }
 
     @Test
@@ -181,7 +182,7 @@ class PublishCheckRunnerTest {
 
         var result = runner.runChecks(scan, extensionFile, user);
 
-        var execution = result.checkExecutions().get(0);
+        var execution = result.checkExecutions().getFirst();
         assertEquals("TEST", execution.checkType());
         assertEquals(ScanCheckResult.CheckResult.REJECT, execution.result());
         assertEquals(1, execution.findingsCount());
@@ -193,7 +194,7 @@ class PublishCheckRunnerTest {
      * Create a mock PublishCheck with lenient stubbing to avoid strict stubbing errors.
      */
     private PublishCheck mockCheck(String type, boolean enabled, boolean enforced, PublishCheck.Result result) {
-        var check = mock(PublishCheck.class, Mockito.withSettings().lenient());
+        var check = mock(PublishCheck.class, Mockito.withSettings().strictness(Strictness.LENIENT));
         when(check.getCheckType()).thenReturn(type);
         when(check.isEnabled()).thenReturn(enabled);
         when(check.isEnforced()).thenReturn(enforced);

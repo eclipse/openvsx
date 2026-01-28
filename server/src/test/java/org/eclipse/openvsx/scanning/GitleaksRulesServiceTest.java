@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for {@link GitleaksRulesService}.
- * 
+ * <p>
  * These tests verify configuration validation, path resolution, and file generation logic
  * without requiring network access or actual rule generation.
  */
@@ -188,8 +188,7 @@ class GitleaksRulesServiceTest {
         
         // Unwrap the InvocationTargetException
         Throwable cause = exception.getCause();
-        assertTrue(cause instanceof IllegalStateException,
-            "Cause should be IllegalStateException");
+        assertInstanceOf(IllegalStateException.class, cause, "Cause should be IllegalStateException");
         assertTrue(cause.getMessage().contains("not configured"),
             "Error message should explain the configuration is missing");
     }

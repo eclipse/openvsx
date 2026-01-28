@@ -14,7 +14,6 @@ package org.eclipse.openvsx.scanning;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,9 +32,9 @@ class AhoCorasickTest {
         var matches = ac.search("this is a secret value");
 
         assertEquals(1, matches.size());
-        assertEquals("secret", matches.get(0).getKeyword());
-        assertEquals(10, matches.get(0).getStartPos());
-        assertEquals(16, matches.get(0).getEndPos());
+        assertEquals("secret", matches.getFirst().getKeyword());
+        assertEquals(10, matches.getFirst().getStartPos());
+        assertEquals(16, matches.getFirst().getEndPos());
     }
 
     @Test
@@ -131,7 +130,7 @@ class AhoCorasickTest {
         var matches = ac.search("valid keyword");
 
         assertEquals(1, matches.size());
-        assertEquals("valid", matches.get(0).getKeyword());
+        assertEquals("valid", matches.getFirst().getKeyword());
     }
 
     @Test
@@ -143,7 +142,7 @@ class AhoCorasickTest {
         var matches = ac.search("start of text");
 
         assertEquals(1, matches.size());
-        assertEquals(0, matches.get(0).getStartPos());
+        assertEquals(0, matches.getFirst().getStartPos());
     }
 
     @Test
@@ -155,7 +154,7 @@ class AhoCorasickTest {
         var matches = ac.search("at the end");
 
         assertEquals(1, matches.size());
-        assertEquals(7, matches.get(0).getStartPos());
+        assertEquals(7, matches.getFirst().getStartPos());
     }
 
     @Test
