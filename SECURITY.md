@@ -1,8 +1,3 @@
-<!--
-    For any questions about implementing security best practices, contact the
-    Eclipse Foundation Security Team at security@eclipse-foundation.org
--->
-
 # How To Report a Vulnerability
 
 If you think you have found a vulnerability in Eclipse Open VSX you can report it using one of the following ways:
