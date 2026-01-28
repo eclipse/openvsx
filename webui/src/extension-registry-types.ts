@@ -258,3 +258,50 @@ export interface LoginProviders {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+export enum RefillStrategy {
+    GREEDY = 'GREEDY',
+    INTERVAL = 'INTERVAL',
+}
+
+export interface Tier {
+    name: string;
+    description?: string;
+    capacity: number;
+    duration: number;
+    refillStrategy: RefillStrategy;
+}
+
+export interface TierList {
+    tiers: Tier[];
+}
+
+export enum EnforcementState {
+    EVALUATION = 'EVALUATION',
+    ENFORCEMENT = 'ENFORCEMENT'
+}
+
+export interface Customer {
+    name: string;
+    tier?: Tier;
+    state: EnforcementState;
+    cidrBlocks: string[];
+}
+
+export interface CustomerList {
+    customers: Customer[];
+}
+
+export interface UsageStats {
+    id: number;
+    customerId: number;
+    windowStart: string; // ISO timestamp
+    duration: number; // in seconds
+    count: number;
+}
+
+export interface UsageStatsList {
+    usageStats: UsageStats[];
+}
+
+export type UsageStatsPeriod = 'daily' | 'weekly' | 'monthly';

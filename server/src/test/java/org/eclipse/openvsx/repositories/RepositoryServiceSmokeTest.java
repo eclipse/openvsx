@@ -13,14 +13,17 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.Invocation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
@@ -38,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@RunWith(SpringRunner.class)
 class RepositoryServiceSmokeTest {
 
     private static final List<String> STRING_LIST = List.of("id1", "id2");
@@ -68,7 +72,13 @@ class RepositoryServiceSmokeTest {
         var keyPair = new SignatureKeyPair();
         keyPair.setPrivateKey(new byte[0]);
         keyPair.setPublicKeyText("");
-        Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair).forEach(em::persist);
+        var tier = new Tier();
+        tier.setName("tier");
+        var customer = new Customer();
+        customer.setName("customer");
+        var usageStats = new UsageStats();
+        usageStats.setCustomer(customer);
+        Stream.of(extension, namespace, userData, extVersion, personalAccessToken, keyPair, tier, customer).forEach(em::persist);
         em.flush();
 
         var page = PageRequest.ofSize(1);
@@ -221,7 +231,19 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findVersion(userData,"version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
-                () -> repositories.deactivateAccessTokens(userData)
+                () -> repositories.deactivateAccessTokens(userData),
+                () -> repositories.findAllCustomers(),
+                () -> repositories.findCustomersByTier(tier),
+                () -> repositories.countCustomersByTier(tier),
+                () -> repositories.findCustomerById(1L),
+                () -> repositories.findCustomer("customer"),
+                () -> repositories.upsertCustomer(customer),
+                () -> repositories.deleteCustomer(customer),
+                () -> repositories.findAllTiers(),
+                () -> repositories.findTier("tier"),
+                () -> repositories.upsertTier(tier),
+                () -> repositories.deleteTier(tier),
+                () -> repositories.saveUsageStats(usageStats)
         );
 
         // check that we did not miss anything

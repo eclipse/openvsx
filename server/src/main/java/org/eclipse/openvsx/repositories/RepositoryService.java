@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 
@@ -60,6 +62,9 @@ public class RepositoryService {
     private final MigrationItemJooqRepository migrationItemJooqRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
+    private final TierRepository tierRepo;
+    private final CustomerRepository customerRepo;
+    private final UsageStatsRepository usageStatsRepository;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -84,7 +89,10 @@ public class RepositoryService {
             MigrationItemRepository migrationItemRepo,
             MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
-            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo
+            SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
+            TierRepository tierRepo,
+            CustomerRepository customerRepo,
+            UsageStatsRepository usageStatsRepository
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -109,6 +117,9 @@ public class RepositoryService {
         this.migrationItemJooqRepo = migrationItemJooqRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
+        this.tierRepo = tierRepo;
+        this.customerRepo = customerRepo;
+        this.usageStatsRepository = usageStatsRepository;
     }
 
     public Namespace findNamespace(String name) {
@@ -662,5 +673,53 @@ public class RepositoryService {
 
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
+    }
+
+    public List<Tier> findAllTiers() {
+        return tierRepo.findAll();
+    }
+
+    public Tier findTier(String name) {
+        return tierRepo.findByNameIgnoreCase(name);
+    }
+
+    public Tier upsertTier(Tier tier) {
+        return tierRepo.save(tier);
+    }
+
+    public void deleteTier(Tier tier) {
+        tierRepo.delete(tier);
+    }
+
+    public List<Customer> findAllCustomers() {
+        return customerRepo.findAll();
+    }
+
+    public List<Customer> findCustomersByTier(Tier tier) {
+        return customerRepo.findByTier(tier);
+    }
+
+    public int countCustomersByTier(Tier tier) {
+        return customerRepo.countCustomersByTier(tier);
+    }
+
+    public Optional<Customer> findCustomerById(long id) {
+        return customerRepo.findById(id);
+    }
+
+    public Customer findCustomer(String name) {
+        return customerRepo.findByNameIgnoreCase(name);
+    }
+
+    public Customer upsertCustomer(Customer customer) {
+        return customerRepo.save(customer);
+    }
+
+    public void deleteCustomer(Customer customer) {
+        customerRepo.delete(customer);
+    }
+
+    public UsageStats saveUsageStats(UsageStats usageStats) {
+        return usageStatsRepository.save(usageStats);
     }
 }

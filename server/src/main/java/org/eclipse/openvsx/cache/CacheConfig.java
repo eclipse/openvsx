@@ -111,6 +111,7 @@ public class CacheConfig {
         caffeineCacheManager.registerCustomCache(CACHE_EXTENSION_FILES, extensionCache);
         caffeineCacheManager.registerCustomCache(CACHE_WEB_RESOURCE_FILES, webResourceCache);
         caffeineCacheManager.registerCustomCache(CACHE_BROWSE_EXTENSION_FILES, browseCache);
+
         return caffeineCacheManager;
     }
 
