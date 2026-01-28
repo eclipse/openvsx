@@ -66,7 +66,7 @@ export const PublisherAdmin: FunctionComponent = props => {
     let listContainer: ReactNode = '';
     if (publisher && pageSettings && user) {
         listContainer = <UpdateContext.Provider value={{ handleUpdate }}>
-            <PublisherDetails publisherInfo={publisher} />
+            <PublisherDetails publisherInfo={publisher} agreement={pageSettings.agreement} />
         </UpdateContext.Provider>;
     } else if (notFound) {
         listContainer = <Box display='flex' flexDirection='column'>
