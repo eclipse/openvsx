@@ -12,6 +12,8 @@
  */
 package org.eclipse.openvsx.ratelimit.config;
 
+import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnFilterConfigCacheEnabled;
+import com.giffing.bucket4j.spring.boot.starter.context.properties.Bucket4JConfiguration;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Scheduler;
@@ -20,6 +22,8 @@ import io.github.bucket4j.distributed.proxy.ClientSideConfig;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import io.micrometer.common.util.StringUtils;
+import org.eclipse.openvsx.cache.JedisClusterCacheListener;
+import org.eclipse.openvsx.cache.JedisClusterCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +34,7 @@ import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.DefaultJedisClientConfig;
@@ -45,6 +50,8 @@ import java.util.stream.Collectors;
 public class TieredRateLimitConfig  {
 
     private final Logger logger = LoggerFactory.getLogger(TieredRateLimitConfig.class);
+
+    public static final String CONFIG_CACHE = "ratelimit.config";
 
     public static final String CACHE_RATE_LIMIT_CUSTOMER = "ratelimit.customer";
     public static final String CACHE_RATE_LIMIT_TOKEN = "ratelimit.token";
@@ -68,6 +75,19 @@ public class TieredRateLimitConfig  {
                 .collect(Collectors.toSet());
 
         return new JedisCluster(nodes, configBuilder.build());
+    }
+
+    @Bean
+    public JedisClusterCacheManager<String, String> configCacheManager(JedisCluster jedisCluster) {
+        return new JedisClusterCacheManager<>(jedisCluster, CONFIG_CACHE, String.class);
+    }
+
+    @Bean
+    public JedisClusterCacheListener<String, String> configCacheListener(
+            JedisCluster jedisCluster,
+            ApplicationEventPublisher eventPublisher
+    ) {
+        return new JedisClusterCacheListener<>(jedisCluster, CONFIG_CACHE, String.class, String.class, eventPublisher);
     }
 
     @Bean

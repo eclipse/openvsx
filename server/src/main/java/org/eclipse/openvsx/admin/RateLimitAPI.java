@@ -15,6 +15,7 @@ package org.eclipse.openvsx.admin;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.ratelimit.RateLimitService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.slf4j.Logger;
@@ -24,6 +25,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 
 @RestController
 @RequestMapping("/admin/ratelimit")
@@ -32,13 +35,16 @@ public class RateLimitAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private RateLimitService rateLimitService;
 
     public RateLimitAPI(
             RepositoryService repositories,
-            AdminService admins
+            AdminService admins,
+            Optional<RateLimitService> rateLimitService
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        rateLimitService.ifPresent(service -> this.rateLimitService = service);
     }
 
     @GetMapping(
@@ -103,6 +109,10 @@ public class RateLimitAPI {
 
             var result = ResultJson.success("Updated tier '" + savedTier.getName() + "'");
             admins.logAdminAction(adminUser, result);
+
+            if (rateLimitService != null) {
+                rateLimitService.evictConfigurationCache();
+            }
 
             return ResponseEntity.ok(savedTier.toJson());
         } catch (Exception exc) {

@@ -12,6 +12,10 @@
  */
 package org.eclipse.openvsx.ratelimit.config;
 
+import com.giffing.bucket4j.spring.boot.starter.config.cache.CacheUpdateEvent;
+import com.giffing.bucket4j.spring.boot.starter.context.FilterMethod;
+import com.giffing.bucket4j.spring.boot.starter.context.properties.Bucket4JConfiguration;
+import com.giffing.bucket4j.spring.boot.starter.filter.servlet.ServletRateLimitFilter;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilter;
 import org.eclipse.openvsx.ratelimit.filter.TieredRateLimitServletFilterFactory;
 import org.slf4j.Logger;
@@ -20,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.StringUtils;
 
