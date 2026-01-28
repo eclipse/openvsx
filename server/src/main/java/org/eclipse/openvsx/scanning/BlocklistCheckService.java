@@ -32,11 +32,11 @@ import java.util.zip.ZipFile;
 
 /**
  * Service for checking extension files against the blocklist during publishing.
- * 
+ * <p>
  * This service computes SHA256 hashes of all files in the extension package
  * and checks them against the file_decision table. Any file with a BLOCKED
  * decision will cause the extension to be rejected.
- * 
+ * <p>
  * Implements PublishCheck to be auto-discovered by PublishCheckRunner.
  * Only loaded when blocklist checking is enabled via configuration.
  */

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Handles authentication for scanner HTTP requests.
- * 
+ * <p>
  * Supports api-key, bearer, basic, and oauth2 (client credentials with auto refresh).
  * Thread-safe with per-scanner OAuth2 token caching.
  */

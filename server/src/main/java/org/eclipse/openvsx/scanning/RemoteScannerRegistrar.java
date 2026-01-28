@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * Registers remote scanners from application configuration at startup.
- * 
+ * <p>
  * Scanner configuration changes require server restart to take effect.
  */
 @Component

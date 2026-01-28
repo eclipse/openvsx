@@ -37,7 +37,7 @@ import java.util.zip.ZipFile;
  * Service for scanning extension packages for potential secrets before publication.
  * This service analyzes VSIX files to detect potential secrets like API keys, tokens,
  * passwords, and other sensitive credentials that should not be published publicly.
- * 
+ * <p>
  * Uses Spring's default async executor for parallel file scanning within extension packages.
  * Implements ValidationCheck to be auto-discovered by ExtensionScanService.
  * Only loaded when secret detection is enabled via configuration.

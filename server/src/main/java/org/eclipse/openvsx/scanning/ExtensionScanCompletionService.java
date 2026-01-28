@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 /**
  * Service that checks when all scans are complete and activates extensions.
- * 
+ * <p>
  * Primary: event-driven via checkSingleScanCompletion() for immediate activation.
  * Fallback: polls every 60s to catch missed completions.
  */
@@ -376,7 +376,7 @@ public class ExtensionScanCompletionService {
             logger.warn("Cannot create missing scan jobs - no existing jobs to get extensionVersionId from. scanId={}", scanId);
             return;
         }
-        long extensionVersionId = existingJobs.get(0).getExtensionVersionId();
+        long extensionVersionId = existingJobs.getFirst().getExtensionVersionId();
         
         for (String scannerType : missingScannerTypes) {
             try {
@@ -430,7 +430,7 @@ public class ExtensionScanCompletionService {
     private boolean completeExtensionScan(String scanId, List<ScannerJob> jobs) {
         // Get extension version ID from first job
         // All jobs in a scan group scan the same extension version
-        long extensionVersionId = jobs.get(0).getExtensionVersionId();
+        long extensionVersionId = jobs.getFirst().getExtensionVersionId();
         
         // Load extension version entity
         ExtensionVersion extVersion = entityManager.find(ExtensionVersion.class, extensionVersionId);
@@ -452,7 +452,7 @@ public class ExtensionScanCompletionService {
         // Check for failed jobs (ignore REMOVED jobs - those are from removed scanners)
         List<ScannerJob> failedJobs = jobs.stream()
             .filter(job -> job.getStatus() == ScannerJob.JobStatus.FAILED)
-            .collect(Collectors.toList());
+            .toList();
         
         if (!failedJobs.isEmpty()) {
             // Check if any REQUIRED scanners failed
@@ -543,10 +543,10 @@ public class ExtensionScanCompletionService {
                 // Separate enforced vs non-enforced threats
                 List<ExtensionThreat> enforcedThreats = threats.stream()
                     .filter(ExtensionThreat::isEnforced)
-                    .collect(Collectors.toList());
+                    .toList();
                 List<ExtensionThreat> warningThreats = threats.stream()
                     .filter(t -> !t.isEnforced())
-                    .collect(Collectors.toList());
+                    .toList();
                 
                 enforcedThreatCount += enforcedThreats.size();
                 warningThreatCount += warningThreats.size();

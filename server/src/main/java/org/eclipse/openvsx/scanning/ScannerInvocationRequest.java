@@ -17,11 +17,11 @@ import org.springframework.lang.NonNull;
 
 /**
  * JobRunr request to invoke a scanner for an extension version.
- * 
+ * <p>
  * This request is enqueued by the ScanningService for each registered scanner.
  * JobRunr workers process these requests in parallel, invoking scanners
  * and creating ScanJob records.
- * 
+ * <p>
  * The actual file is retrieved by scanners using ScanFileService,
  * avoiding the need to pass file paths through JobRunr.
  */

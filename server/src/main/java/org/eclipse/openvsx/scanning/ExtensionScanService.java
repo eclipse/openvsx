@@ -380,7 +380,7 @@ public class ExtensionScanService {
         var parts = new java.util.ArrayList<String>();
         for (var entry : messagesByType.entrySet()) {
             var typeFindings = entry.getValue();
-            String userMessage = typeFindings.get(0).userFacingMessage();
+            String userMessage = typeFindings.getFirst().userFacingMessage();
             if (userMessage != null && !userMessage.isBlank()) {
                 parts.add(userMessage);
             }

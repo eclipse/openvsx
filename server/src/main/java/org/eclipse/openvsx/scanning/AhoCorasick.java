@@ -17,16 +17,16 @@ import java.util.*;
 
 /**
  * Aho-Corasick string matching automaton for efficient multi-pattern search.
- * 
+ * <p>
  * This implementation allows searching for thousands of keywords in linear time.
  * Instead of running hundreds of regexes on the entire file, we:
  * 1. Build a trie (prefix tree) from all keywords
  * 2. Add failure links for efficient state transitions
  * 3. Search the text once to find all keyword matches in O(n + m + z) time
  *    where n = text length, m = total pattern length, z = number of matches
- * 
+ * <p>
  * Based on the algorithm used by TruffleHog for secret detection optimization.
- * 
+ * <p>
  * This class is immutable after construction. Use {@link #builder()} to create instances.
  */
 public final class AhoCorasick {

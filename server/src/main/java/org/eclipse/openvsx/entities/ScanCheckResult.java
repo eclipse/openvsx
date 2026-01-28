@@ -20,7 +20,7 @@ import java.util.Objects;
 
 /**
  * Records the result of each check/scan executed on an extension.
- * 
+ * <p>
  * Unlike ExtensionThreat and ExtensionValidationFailure which only record
  * failures, this entity records ALL check executions - both pass and fail.
  * This provides admins with a complete audit trail of what scans were run.

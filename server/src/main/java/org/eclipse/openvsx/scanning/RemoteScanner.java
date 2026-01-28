@@ -24,10 +24,10 @@ import java.util.Map;
 
 /**
  * HTTP-based scanner driven entirely by YAML configuration.
- * 
+ * <p>
  * Reads HTTP operation configs (URLs, headers, body templates), executes
  * requests via HttpClientExecutor, and parses responses via ResponseExtractor.
- * 
+ * <p>
  * Adding new scanners requires only YAML configuration - no Java code needed.
  */
 public class RemoteScanner implements Scanner {
@@ -90,7 +90,7 @@ public class RemoteScanner implements Scanner {
     
     /**
      * Start a scan by sending the entire .vsix file to the scanner.
-     * 
+     * <p>
      * For sync scanners: Parses result immediately from start response
      * For async scanners: Extracts job ID from start response
      */
@@ -196,7 +196,7 @@ public class RemoteScanner implements Scanner {
     
     /**
      * Retrieve results from a completed async scan.
-     * 
+     * <p>
      * Executes the configured result operation and parses threats.
      */
     @Override

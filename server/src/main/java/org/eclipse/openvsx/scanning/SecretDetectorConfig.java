@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * Configuration for secret detection in extension packages.
- * 
+ * <p>
  * Note: Archive limits (max-archive-size-bytes, max-single-file-bytes, max-entry-count)
  * are configured centrally in ExtensionScanConfig and shared by all scanning checks.
  */
@@ -40,10 +40,10 @@ public class SecretDetectorConfig {
 
     /**
      * Automatically fetch and generate secret detection rules from gitleaks.toml at startup.
-     * 
+     * <p>
      * When enabled, the application will download and convert the official gitleaks
      * configuration to YAML format at startup if the rules file does not exist.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.auto-fetch}
      * Default: {@code false}
      */
@@ -52,10 +52,10 @@ public class SecretDetectorConfig {
 
     /**
      * Force refresh of gitleaks rules even if they already exist.
-     * 
+     * <p>
      * Only has an effect when {@code gitleaks.auto-fetch} is enabled.
      * Use this to ensure rules are refreshed on every startup.
-     *
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.force-refresh}
      * Default: {@code false}
      */
@@ -64,12 +64,12 @@ public class SecretDetectorConfig {
 
     /**
      * Full path where the auto-generated gitleaks rules will be written.
-     * 
+     * <p>
      * This should be an absolute path to a writable location. The directory
      * will be created automatically if it doesn't exist.
-     * 
+     * <p>
      * Only used when {@code gitleaks.auto-fetch} is enabled.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.output-path}
      * Default: empty
      * Required when {@code gitleaks.auto-fetch} is true
@@ -80,12 +80,12 @@ public class SecretDetectorConfig {
 
     /**
      * Enable scheduled refresh of gitleaks rules.
-     * 
+     * <p>
      * When enabled, the application will periodically download fresh rules
      * and reload the scanner. This ensures all pods stay up to date.
-     * 
+     * <p>
      * Only has an effect when {@code gitleaks.auto-fetch} is enabled.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.scheduled-refresh}
      * Default: {@code false}
      */
@@ -94,9 +94,9 @@ public class SecretDetectorConfig {
 
     /**
      * Cron expression for scheduled gitleaks rules refresh.
-     * 
+     * <p>
      * Only used when {@code gitleaks.scheduled-refresh} is enabled.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.refresh-cron}
      * Default: {@code 0 0 3 * * *} (daily at 3 AM)
      */
@@ -105,9 +105,9 @@ public class SecretDetectorConfig {
 
     /**
      * Comma-separated list of gitleaks rule IDs to skip when generating rules.
-     * 
+     * <p>
      * Some rules produce too many false positives. Use this to exclude them.
-     * 
+     * <p>
      * Property: {@code ovsx.scanning.secret-detection.gitleaks.skip-rule-ids}
      * Default: {@code generic-api-key}
      * Example: {@code generic-api-key,another-noisy-rule}
@@ -117,11 +117,11 @@ public class SecretDetectorConfig {
 
     /**
      * Whether secret scan findings are enforced (i.e. block publishing) when detected.
-     *
+     * <p>
      * Why this exists:
      * - We sometimes want to run secret detection and record audit data,
      *   but not reject publication (monitor-only mode).
-     *
+     * <p>
      * Default is true to preserve historic behavior: when secret detection is enabled,
      * findings will block publishing unless explicitly configured otherwise.
      */
@@ -131,7 +131,7 @@ public class SecretDetectorConfig {
     /**
      * Maximum line length to process in characters. Files with longer lines are skipped.
      * Very long lines (>10K) typically indicate minified/bundled code and may cause performance issues.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.minified-line-threshold}
      * Default: {@code 10000}
      */
@@ -140,7 +140,7 @@ public class SecretDetectorConfig {
 
     /**
      * Comma-separated list of inline suppression markers that skip an entire line from scanning.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.suppression-markers}
      * Default: empty
      * Example: {@code "secret-scanner:ignore,gitleaks:allow"}
@@ -151,7 +151,7 @@ public class SecretDetectorConfig {
 
     /**
      * Timeout for scanning in seconds. If scanning takes longer, it will be aborted.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.timeout-seconds}
      * Default: {@code 5}
      */
@@ -160,7 +160,7 @@ public class SecretDetectorConfig {
     
     /**
      * Maximum findings to collect before aborting to protect memory and UX.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.max-findings}
      * Default: {@code 200}
      */
@@ -170,7 +170,7 @@ public class SecretDetectorConfig {
     /**
      * Comma-separated YAML rule file paths. Later entries override earlier by rule id.
      * Supports {@code classpath:} prefix for classpath resources.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.rules-path}
      * Default: empty
      */
@@ -179,7 +179,7 @@ public class SecretDetectorConfig {
 
     /**
      * How often (in lines) to check for scan timeout while reading files.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.timeout-check-interval}
      * Default: {@code 100}
      */
@@ -188,7 +188,7 @@ public class SecretDetectorConfig {
 
     /**
      * Lines longer than this threshold without spaces are skipped to avoid minified blobs.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.long-line-no-space-threshold}
      * Default: {@code 1000}
      */
@@ -197,7 +197,7 @@ public class SecretDetectorConfig {
 
     /**
      * Characters of context around a keyword when applying regex matching.
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.regex-context-chars}
      * Default: {@code 100}
      */
@@ -206,7 +206,7 @@ public class SecretDetectorConfig {
 
     /**
      * Characters to include when logging secret preview values (for debugging allowlisted secrets).
-     *
+     * <p>
      * Property: {@code ovsx.secret-detection.debug-preview-chars}
      * Default: {@code 10}
      */

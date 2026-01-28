@@ -373,20 +373,21 @@ public class GitleaksRulesService extends JedisPubSub {
     }
 
     private String downloadGitleaksToml() throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(GITLEAKS_URL))
-            .GET()
-            .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Failed to download gitleaks.toml: HTTP " + response.statusCode());
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(GITLEAKS_URL))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new IOException("Failed to download gitleaks.toml: HTTP " + response.statusCode());
+            }
+            String body = response.body();
+            if (body == null || body.isEmpty()) {
+                throw new IOException("Downloaded gitleaks.toml is empty");
+            }
+            return body;
         }
-        String body = response.body();
-        if (body == null || body.isEmpty()) {
-            throw new IOException("Downloaded gitleaks.toml is empty");
-        }
-        return body;
     }
 
     private GitleaksToml parseToml(String tomlContent) throws IOException {
