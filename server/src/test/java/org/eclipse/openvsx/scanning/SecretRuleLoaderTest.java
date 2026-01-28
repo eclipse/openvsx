@@ -70,10 +70,10 @@ class SecretRuleLoaderTest {
         List<SecretRule> rules = loader.load("classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml");
 
         assertEquals(1, rules.size());
-        SecretRule rule = rules.get(0);
+        SecretRule rule = rules.getFirst();
 
         assertEquals(2, rule.getAllowlistPatterns().size());
-        assertEquals("test", rule.getAllowlistPatterns().get(0).pattern());
+        assertEquals("test", rule.getAllowlistPatterns().getFirst().pattern());
         assertEquals(1, rule.getSecretGroup());
         assertEquals(3.5, rule.getEntropy());
         assertEquals(List.of("token", "shared"), rule.getKeywords());
@@ -206,7 +206,7 @@ class SecretRuleLoaderTest {
         // Verify both components are present
         assertNotNull(result.getRules());
         assertEquals(1, result.getRules().size());
-        assertEquals("test-rule-1", result.getRules().get(0).getId());
+        assertEquals("test-rule-1", result.getRules().getFirst().getId());
         
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);

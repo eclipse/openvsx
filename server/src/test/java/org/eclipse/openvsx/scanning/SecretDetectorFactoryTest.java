@@ -81,12 +81,12 @@ class SecretDetectorFactoryTest {
 
         // Keyword index should include the lower-cased keyword from the override rule.
         assertTrue(factory.getKeywordToRules().containsKey("overridekey"));
-        assertEquals("rule-a", factory.getKeywordToRules().get("overridekey").get(0).getId());
+        assertEquals("rule-a", factory.getKeywordToRules().get("overridekey").getFirst().getId());
 
         // The matcher should actually find the keyword in a sample string.
         List<AhoCorasick.Match> matches = factory.getKeywordMatcher().search("prefix overridekey suffix");
         assertFalse(matches.isEmpty(), "Keyword matcher should find at least one match");
-        assertEquals("overridekey", matches.get(0).getKeyword());
+        assertEquals("overridekey", matches.getFirst().getKeyword());
     }
 
     @Test

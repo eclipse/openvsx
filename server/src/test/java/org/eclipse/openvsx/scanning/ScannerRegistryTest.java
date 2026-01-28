@@ -144,8 +144,7 @@ class ScannerRegistryTest {
 
         var scanners = registry.getAllScanners();
 
-        assertThrows(UnsupportedOperationException.class, () ->
-                scanners.clear());
+        assertThrows(UnsupportedOperationException.class, scanners::clear);
     }
 
     @Test
