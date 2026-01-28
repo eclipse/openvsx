@@ -13,6 +13,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - Move `ovsx` script to `bin` directory ([#1538](https://github.com/eclipse/openvsx/pull/1538))
 - Disable the automatic execution of lifecycle scripts by yarn ([#1546](https://github.com/eclipse/openvsx/pull/1546))
 
+#### Dependencies
+
+- Upgrade `lodash` from `4.17.21` to `4.17.23`
+
 ### [v0.10.8] (Jan. 2026)
 
 #### Dependencies
