@@ -21,9 +21,27 @@ public class TempFile implements AutoCloseable {
     private final Path path;
     private FileResource resource;
     private Namespace namespace;
+    
+    /** Original name of the file (e.g., path within archive) */
+    private String originalName;
+    
+    /** SHA256 hash of the file content */
+    private String sha256Hash;
 
     public TempFile(String prefix, String suffix) throws IOException {
         path = Files.createTempFile(prefix, suffix);
+    }
+
+    /**
+     * Create a TempFile from an existing path.
+     * 
+     * Used when extracting files to a pre-created temp location.
+     * The file will be deleted when close() is called.
+     * 
+     * @param existingPath Path to an existing temp file
+     */
+    public TempFile(Path existingPath) {
+        this.path = existingPath;
     }
 
     public Path getPath() {
@@ -44,6 +62,22 @@ public class TempFile implements AutoCloseable {
 
     public void setNamespace(Namespace namespace) {
         this.namespace = namespace;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
+    }
+
+    public String getSha256Hash() {
+        return sha256Hash;
+    }
+
+    public void setSha256Hash(String sha256Hash) {
+        this.sha256Hash = sha256Hash;
     }
 
     @Override
