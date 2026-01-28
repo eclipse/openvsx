@@ -13,8 +13,8 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.UsageStats;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.Repository;
 
-public interface UsageStatsRepository extends CrudRepository<UsageStats, Long> {
-
+public interface UsageStatsRepository extends Repository<UsageStats, Long> {
+    UsageStats save(UsageStats usageStats);
 }

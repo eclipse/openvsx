@@ -62,8 +62,8 @@ public class RepositoryService {
     private final MigrationItemJooqRepository migrationItemJooqRepo;
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
-    private final CustomerRepository customerRepo;
     private final TierRepository tierRepo;
+    private final CustomerRepository customerRepo;
     private final UsageStatsRepository usageStatsRepository;
 
     public RepositoryService(
@@ -90,8 +90,8 @@ public class RepositoryService {
             MigrationItemJooqRepository migrationItemJooqRepo,
             SignatureKeyPairRepository signatureKeyPairRepo,
             SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
-            CustomerRepository customerRepo,
             TierRepository tierRepo,
+            CustomerRepository customerRepo,
             UsageStatsRepository usageStatsRepository
     ) {
         this.namespaceRepo = namespaceRepo;
@@ -117,8 +117,8 @@ public class RepositoryService {
         this.migrationItemJooqRepo = migrationItemJooqRepo;
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
-        this.customerRepo = customerRepo;
         this.tierRepo = tierRepo;
+        this.customerRepo = customerRepo;
         this.usageStatsRepository = usageStatsRepository;
     }
 
@@ -675,6 +675,22 @@ public class RepositoryService {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
 
+    public List<Tier> findAllTiers() {
+        return tierRepo.findAll();
+    }
+
+    public Tier findTier(String name) {
+        return tierRepo.findByNameIgnoreCase(name);
+    }
+
+    public Tier upsertTier(Tier tier) {
+        return tierRepo.save(tier);
+    }
+
+    public void deleteTier(Tier tier) {
+        tierRepo.delete(tier);
+    }
+
     public List<Customer> findAllCustomers() {
         return customerRepo.findAll();
     }
@@ -703,24 +719,7 @@ public class RepositoryService {
         customerRepo.delete(customer);
     }
 
-    public List<Tier> findAllTiers() {
-        return tierRepo.findAll();
-    }
-
-    public Tier findTier(String name) {
-        return tierRepo.findByNameIgnoreCase(name);
-    }
-
-    public Tier upsertTier(Tier tier) {
-        return tierRepo.save(tier);
-    }
-
-    public void deleteTier(Tier tier) {
-        tierRepo.delete(tier);
-    }
-
-    @Transactional
-    public void saveUsageStats(UsageStats usageStats) {
-        usageStatsRepository.save(usageStats);
+    public UsageStats saveUsageStats(UsageStats usageStats) {
+        return usageStatsRepository.save(usageStats);
     }
 }

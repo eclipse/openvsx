@@ -11,16 +11,23 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.Tier;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CustomerRepository extends JpaRepository<Customer, Long> {
+public interface CustomerRepository extends Repository<Customer, Long> {
+    List<Customer> findAll();
+
+    Optional<Customer> findById(long id);
+
     Customer findByNameIgnoreCase(String name);
 
     List<Customer> findByTier(Tier tier);
 
     int countCustomersByTier(Tier tier);
+
+    Customer save(Customer customer);
+
+    void delete(Customer customer);
 }
