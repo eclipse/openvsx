@@ -15,7 +15,6 @@ package org.eclipse.openvsx.scanning;
 import com.google.re2j.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -74,7 +73,7 @@ class SecretDetectorTest {
 
         assertTrue(scanned, "File should be scanned");
         assertEquals(1, findings.size(), "One finding should be recorded");
-        var finding = findings.get(0);
+        var finding = findings.getFirst();
         assertEquals("rule-kw", finding.getRuleId());
         assertEquals("src/file.txt", finding.getFilePath());
         assertEquals(1, finding.getLineNumber());
@@ -225,7 +224,7 @@ class SecretDetectorTest {
 
         assertTrue(scanned, "File should be scanned");
         assertEquals(1, findings.size(), "Fallback to default group should still record a finding");
-        assertEquals("rule-group", findings.get(0).getRuleId());
+        assertEquals("rule-group", findings.getFirst().getRuleId());
     }
 
     @Test
@@ -259,7 +258,7 @@ class SecretDetectorTest {
 
         assertTrue(scanned, "File should be scanned");
         assertEquals(1, findings.size(), "Only high-entropy secret should be recorded");
-        assertEquals("rule-entropy", findings.get(0).getRuleId());
+        assertEquals("rule-entropy", findings.getFirst().getRuleId());
     }
 
     @Test

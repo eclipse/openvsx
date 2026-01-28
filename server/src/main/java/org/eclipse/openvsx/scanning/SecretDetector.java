@@ -377,7 +377,7 @@ class SecretDetector {
 
         private Result(boolean secretsFound, @NotNull List<Finding> findings) {
             this.secretsFound = secretsFound;
-            this.findings = Collections.unmodifiableList(new ArrayList<>(findings));
+            this.findings = List.copyOf(findings);
         }
 
         public static Result secretsFound(@NotNull List<Finding> findings) {

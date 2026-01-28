@@ -23,7 +23,6 @@ import java.util.Base64;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link HttpAuthHandler} authentication handling.

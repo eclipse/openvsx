@@ -80,7 +80,7 @@ class ScannerTest {
 
         assertFalse(result.isClean());
         assertEquals(1, result.getThreats().size());
-        assertEquals("malware", result.getThreats().get(0).getName());
+        assertEquals("malware", result.getThreats().getFirst().getName());
     }
 
     @Test

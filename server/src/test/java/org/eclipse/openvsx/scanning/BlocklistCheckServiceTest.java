@@ -45,7 +45,6 @@ class BlocklistCheckServiceTest {
     Path tempDir;
 
     private BlocklistCheckConfig config;
-    private ExtensionScanConfig scanConfig;
     private FileDecisionRepository fileDecisionRepository;
     private BlocklistCheckService service;
 
@@ -56,7 +55,7 @@ class BlocklistCheckServiceTest {
         setField(config, "enforced", true);
         setField(config, "userMessage", "Extension blocked due to policy violation");
 
-        scanConfig = new ExtensionScanConfig();
+        ExtensionScanConfig scanConfig = new ExtensionScanConfig();
         setField(scanConfig, "enabled", true);
         setField(scanConfig, "maxArchiveSizeBytes", 100 * 1024 * 1024L);  // 100MB
         setField(scanConfig, "maxSingleFileBytes", 10 * 1024 * 1024L);    // 10MB
@@ -129,9 +128,9 @@ class BlocklistCheckServiceTest {
 
         assertFalse(result.passed());
         assertEquals(1, result.failures().size());
-        assertEquals("BLOCKED_FILE", result.failures().get(0).ruleName());
-        assertTrue(result.failures().get(0).reason().contains("blocked.txt"));
-        assertTrue(result.failures().get(0).reason().contains(blockedHash));
+        assertEquals("BLOCKED_FILE", result.failures().getFirst().ruleName());
+        assertTrue(result.failures().getFirst().reason().contains("blocked.txt"));
+        assertTrue(result.failures().getFirst().reason().contains(blockedHash));
     }
 
     @Test

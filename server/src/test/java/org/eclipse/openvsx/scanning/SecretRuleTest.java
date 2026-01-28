@@ -143,7 +143,7 @@ class SecretRuleTest {
                 .allowlistRegexes(List.of("EXAMPLE"))
                 .build();
 
-        var allowlistPattern = rule.getAllowlistPatterns().get(0);
+        var allowlistPattern = rule.getAllowlistPatterns().getFirst();
         assertTrue(allowlistPattern.matcher("example").find());
         assertTrue(allowlistPattern.matcher("EXAMPLE").find());
     }

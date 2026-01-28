@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link SecretDetector.Result}.
- * These keep the simple value object behavior well defined and documented.
+ * These keep the simple value object behavior well-defined and documented.
  */
 class SecretDetectorResultTest {
 
