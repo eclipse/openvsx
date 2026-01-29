@@ -118,10 +118,10 @@ public class SecretCheckService implements PublishCheck {
     
     /**
      * Scans an extension package for potential secrets.
-     * 
+     * <p>
      * Callers should check {@link #isEnabled()} before invoking this method.
      */
-    public SecretDetector.Result scanForSecrets(@NotNull TempFile extensionFile) {
+    private SecretDetector.Result scanForSecrets(@NotNull TempFile extensionFile) {
         // Use thread-safe collection for parallel processing
         List<SecretDetector.Finding> findings = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger findingsCount = new AtomicInteger(0); // Cap findings to protect memory
