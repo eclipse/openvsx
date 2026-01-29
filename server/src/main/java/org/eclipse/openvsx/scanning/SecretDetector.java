@@ -242,8 +242,7 @@ class SecretDetector {
             }
 
             // Extract the secret value from the matched group
-            int defaultGroup = matcher.groupCount() > 0 ? 1 : 0;
-            int groupIndex = defaultGroup;
+            int groupIndex = matcher.groupCount() > 0 ? 1 : 0;
             Integer configuredGroup = rule.getSecretGroup();
             
             if (configuredGroup != null) {
