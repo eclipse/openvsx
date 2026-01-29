@@ -29,9 +29,7 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": {
-        "ovsx": "bin/ovsx"
-    },
+    "bin": "bin/ovsx",
     "engines": {
         "node": ">= 20"
     },
@@ -64,7 +62,8 @@
     },
     "resolutions": {
         "glob": "^11.1.0",
-        "jws": "^4.0.1"
+        "jws": "^4.0.1",
+        "tar": "^7.5.4"
     },
     "scripts": {
         "clean": "rimraf lib",

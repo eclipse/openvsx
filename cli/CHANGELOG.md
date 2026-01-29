@@ -16,6 +16,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump lodash from 4.17.21 to 4.17.23 ([#1567](https://github.com/eclipse/openvsx/pull/1567))
+- Bump tar from 6.2.1 to 7.5.7
 
 ### [v0.10.8] (Jan. 2026)
 
