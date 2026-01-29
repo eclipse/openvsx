@@ -34,7 +34,7 @@
         "node": ">= 20"
     },
     "dependencies": {
-        "@vscode/vsce": "^3.2.1",
+        "@vscode/vsce": "^3.7.1",
         "commander": "^6.2.1",
         "follow-redirects": "^1.14.6",
         "is-ci": "^2.0.0",
@@ -59,10 +59,6 @@
         "limiter": "^2.1.0",
         "rimraf": "^6.0.1",
         "typescript": "^5.6.3"
-    },
-    "resolutions": {
-        "glob": "^11.1.0",
-        "jws": "^4.0.1"
     },
     "scripts": {
         "clean": "rimraf lib",
