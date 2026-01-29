@@ -8,6 +8,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Support removing reviews by admins ([#1403](https://github.com/eclipse/openvsx/pull/1403))
 - Support for GitHub flavored markdown alerts ([#1535](https://github.com/eclipse/openvsx/pull/1535))
+- Support customizing the publisher agreement name and contact email ([#1550](https://github.com/eclipse/openvsx/pull/1550))
 
 ### Changed
 
