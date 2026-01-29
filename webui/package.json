@@ -68,7 +68,7 @@
         "@babel/core": "^7.25.2",
         "@eslint/eslintrc": "^3.2.0",
         "@eslint/js": "^9.15.0",
-        "@playwright/test": "^1.55.1",
+        "@playwright/test": "^1.58.0",
         "@stylistic/eslint-plugin": "^2.11.0",
         "@types/babel__core": "^7",
         "@types/chai": "^4.3.5",
