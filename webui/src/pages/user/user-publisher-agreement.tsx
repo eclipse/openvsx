@@ -99,7 +99,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
 
     let content: ReactNode;
     if (publisherAgreementSigned) {
-        content = <Box display="flex" justifyContent='space-between' alignItems='start'>
+        content = <Box display='flex' justifyContent='space-between' alignItems='start'>
             <Typography variant='body1'>
             {
                 user.publisherAgreement.timestamp
