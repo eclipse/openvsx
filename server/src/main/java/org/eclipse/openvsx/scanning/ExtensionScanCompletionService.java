@@ -426,7 +426,6 @@ public class ExtensionScanCompletionService {
      * 3. If no failures and no threats: activate extension
      * 4. If failures or threats: log and skip (keep inactive)
      */
-    @Transactional
     private boolean completeExtensionScan(String scanId, List<ScannerJob> jobs) {
         // Get extension version ID from first job
         // All jobs in a scan group scan the same extension version
