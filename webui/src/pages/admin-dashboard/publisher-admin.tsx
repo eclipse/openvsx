@@ -17,7 +17,7 @@ import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
 
 export const UpdateContext = createContext({ handleUpdate: () => { } });
-export const PublisherAdmin: FunctionComponent = props => {
+export const PublisherAdmin: FunctionComponent = () => {
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const abortController = useRef<AbortController>(new AbortController());

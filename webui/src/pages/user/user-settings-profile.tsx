@@ -8,12 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode } from 'react';
+import React, { FunctionComponent, ReactNode, useContext } from 'react';
 import { Theme, Grid, Typography, Avatar } from '@mui/material';
 import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
 import { UserPublisherAgreement } from './user-publisher-agreement';
 import styled from '@mui/material/styles/styled';
+import { MainContext } from "../../context";
 
 const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
     [theme.breakpoints.up('lg')]: {
@@ -37,12 +38,13 @@ const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
     marginBottom: theme.spacing(2)
 }));
 
-export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = props => {
+export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = ({ user, isAdmin }) => {
 
-    const user = props.user;
+    const { pageSettings } = useContext(MainContext);
+
     let publisherAgreementPanel: ReactNode = null;
     if (user.publisherAgreement) {
-        if (props.isAdmin) {
+        if (isAdmin) {
             let statusText = 'has not signed';
             if (user.publisherAgreement.status === 'signed') {
                 statusText = 'has signed';
@@ -50,8 +52,10 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
                 statusText = 'has signed an outdated version of';
             }
 
+            const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
+
             publisherAgreementPanel = <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
-                {user.loginName} {statusText} the Eclipse publisher agreement.
+                {user.loginName} {statusText} the {publisherAgreementName} Publisher Agreement.
             </Typography>;
         } else {
             publisherAgreementPanel = <Grid container>

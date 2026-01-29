@@ -16,6 +16,10 @@ import { Cookie } from './utils';
 export interface PageSettings {
     pageTitle: string;
     themeType?: 'light' | 'dark';
+    publisherAgreement?: {
+        name?: string;
+        email?: string;
+    };
     elements: {
         toolbarContent?: ComponentType;
         defaultMenuContent?: ComponentType;

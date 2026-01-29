@@ -39,6 +39,10 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         }
     }, [dialogOpen]);
 
+    const closePublisherAgreement = () => {
+        setDialogOpen(false);
+    };
+
     const signPublisherAgreement = async (): Promise<void> => {
         try {
             setWorking(true);
@@ -89,19 +93,29 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         return null;
     }
 
+    const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
+    const publisherAgreementSigned = user.publisherAgreement.status == 'signed';
+
     let content: ReactNode;
-    if (user.publisherAgreement.status === 'signed') {
-        content = <Typography variant='body1'>
+    if (publisherAgreementSigned) {
+        content = <Box display='flex' justifyContent='space-between' alignItems='start'>
+            <Typography variant='body1'>
             {
                 user.publisherAgreement.timestamp
-                    ? <>You signed the Eclipse Foundation Open VSX Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
-                    : 'You signed the Eclipse Foundation Open VSX Publisher Agreement.'
+                    ? <>You signed the {publisherAgreementName} Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
+                    : <>You signed the {publisherAgreementName} Publisher Agreement.</>
             }
-        </Typography>;
+            </Typography>
+            <Box display='flex' justifyContent='flex-end'>
+                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                    Show Publisher Agreement
+                </Button>
+            </Box>
+        </Box>;
     } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
         content = <>
             <Typography variant='body1'>
-                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish
                 any extension to this registry.
             </Typography>
             <Box mt={2} display='flex' justifyContent='flex-end'>
@@ -113,7 +127,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     } else {
         content = <>
             <Typography variant='body1'>
-                You need to sign the Eclipse Foundation Open VSX Publisher Agreement before you can publish
+                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish
                 any extension to this registry. To start the signing process, please log in with
                 an Eclipse Foundation account.
             </Typography>
@@ -132,7 +146,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         <Dialog
             open={dialogOpen}
             onClose={onClose}
-            maxWidth='md'
+            maxWidth='xl'
             sx={{ paperScrollPaper: { height: '75%', width: '100%' } }}>
             <DialogContent>
                 {
@@ -143,9 +157,14 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                                 sanitize={false}
                                 linkify={false} />
                             <Box display='flex' justifyContent='flex-end' >
-                                <ButtonWithProgress working={working} onClick={signPublisherAgreement}>
-                                    Agree
-                                </ButtonWithProgress>
+                                <Button onClick={closePublisherAgreement}>
+                                    Close
+                                </Button>
+                                { !publisherAgreementSigned &&
+                                    <ButtonWithProgress working={working} onClick={signPublisherAgreement}>
+                                        Agree
+                                    </ButtonWithProgress>
+                                }
                             </Box>
                         </DialogContentText>
                         :
