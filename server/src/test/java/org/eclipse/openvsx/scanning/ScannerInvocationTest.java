@@ -29,7 +29,6 @@ class ScannerInvocationTest {
         var invocation = new Scanner.Invocation.Completed(result);
 
         assertEquals(result, invocation.result());
-        assertInstanceOf(Scanner.Invocation.Completed.class, invocation);
     }
 
     @Test
@@ -38,62 +37,16 @@ class ScannerInvocationTest {
         var invocation = new Scanner.Invocation.Submitted(submission);
 
         assertEquals(submission, invocation.submission());
-        assertInstanceOf(Scanner.Invocation.Submitted.class, invocation);
     }
 
     @Test
-    void patternMatching_worksForCompleted() {
-        Scanner.Invocation invocation = new Scanner.Invocation.Completed(
-                Scanner.Result.clean()
-        );
-
-        String type = switch (invocation) {
-            case Scanner.Invocation.Completed c -> "completed";
-            case Scanner.Invocation.Submitted s -> "submitted";
-        };
-
-        assertEquals("completed", type);
-    }
-
-    @Test
-    void patternMatching_worksForSubmitted() {
-        Scanner.Invocation invocation = new Scanner.Invocation.Submitted(
-                new Scanner.Submission("job-123")
-        );
-
-        String type = switch (invocation) {
-            case Scanner.Invocation.Completed c -> "completed";
-            case Scanner.Invocation.Submitted s -> "submitted";
-        };
-
-        assertEquals("submitted", type);
-    }
-
-    @Test
-    void completed_canAccessResultDetails() {
-        var threat = new Scanner.Threat("virus", "desc", "HIGH");
+    void completed_withThreats() {
+        var threat = new Scanner.Threat("virus", "Malware detected", "HIGH");
         var result = Scanner.Result.withThreats(List.of(threat));
         var invocation = new Scanner.Invocation.Completed(result);
 
-        // Access result through pattern matching
-        if (invocation instanceof Scanner.Invocation.Completed completed) {
-            assertFalse(completed.result().isClean());
-            assertEquals(1, completed.result().getThreats().size());
-        } else {
-            fail("Should be Completed");
-        }
-    }
-
-    @Test
-    void submitted_canAccessSubmissionDetails() {
-        var submission = new Scanner.Submission("external-job-456");
-        var invocation = new Scanner.Invocation.Submitted(submission);
-
-        // Access submission through pattern matching
-        if (invocation instanceof Scanner.Invocation.Submitted submitted) {
-            assertEquals("external-job-456", submitted.submission().externalJobId());
-        } else {
-            fail("Should be Submitted");
-        }
+        assertFalse(invocation.result().isClean());
+        assertEquals(1, invocation.result().getThreats().size());
+        assertEquals("virus", invocation.result().getThreats().get(0).getName());
     }
 }

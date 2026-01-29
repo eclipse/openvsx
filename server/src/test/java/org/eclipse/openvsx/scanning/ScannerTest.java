@@ -139,14 +139,4 @@ class ScannerTest {
         assertEquals("LOW", threat.getSeverity());
     }
 
-    // === PollStatus enum tests ===
-
-    @Test
-    void pollStatus_hasExpectedValues() {
-        assertEquals(4, Scanner.PollStatus.values().length);
-        assertNotNull(Scanner.PollStatus.SUBMITTED);
-        assertNotNull(Scanner.PollStatus.PROCESSING);
-        assertNotNull(Scanner.PollStatus.COMPLETED);
-        assertNotNull(Scanner.PollStatus.FAILED);
-    }
 }

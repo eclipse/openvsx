@@ -16,6 +16,7 @@ import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -72,7 +73,7 @@ public class SecretCheckService implements PublishCheck {
             SecretDetectorConfig config,
             ExtensionScanConfig scanConfig,
             SecretDetectorFactory scannerFactory,
-            AsyncTaskExecutor taskExecutor) {
+            @Qualifier("applicationTaskExecutor") AsyncTaskExecutor taskExecutor) {
         this.config = config;
         this.scanConfig = scanConfig;
         this.taskExecutor = taskExecutor;
