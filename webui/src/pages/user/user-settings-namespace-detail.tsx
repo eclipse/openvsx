@@ -9,16 +9,18 @@
  ********************************************************************************/
 
 import React, { FunctionComponent, createContext, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, Link, Paper, Grid, Typography } from '@mui/material';
 import { styled, Theme } from '@mui/material/styles';
 import WarningIcon from '@mui/icons-material/Warning';
 import { UserNamespaceExtensionListContainer } from './user-namespace-extension-list';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
-import { Namespace, UserData } from '../../extension-registry-types';
+import { Namespace, UserData, isError } from '../../extension-registry-types';
 import { NamespaceChangeDialog } from '../admin-dashboard/namespace-change-dialog';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
 import { UserNamespaceDetails } from './user-namespace-details';
+import { MainContext } from '../../context';
+import { ButtonWithProgress } from '../../components/button-with-progress';
 
 export interface NamespaceDetailConfig {
     defaultMemberRole?: 'contributor' | 'owner';
@@ -59,13 +61,41 @@ const NamespaceHeader = styled(Box)(({ theme }: { theme: Theme }) => ({
 
 export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props => {
     const [changeDialogIsOpen, setChangeDialogIsOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const { pathname } = useLocation();
+    const navigate = useNavigate();
+    const { service, handleError } = React.useContext(MainContext);
 
     const handleCloseChangeDialog = async () => {
         setChangeDialogIsOpen(false);
     };
     const handleOpenChangeDialog = () => {
         setChangeDialogIsOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete the namespace "${props.namespace.name}" and all its extensions? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            setDeleting(true);
+            props.setLoadingState(true);
+            const abortController = new AbortController();
+            const result = await service.admin.deleteNamespace(abortController, props.namespace.name);
+            
+            if (isError(result)) {
+                throw result;
+            }
+            
+            // Navigate back to namespace admin page after successful deletion
+            navigate(AdminDashboardRoutes.NAMESPACE_ADMIN);
+        } catch (err) {
+            handleError(err);
+        } finally {
+            setDeleting(false);
+            props.setLoadingState(false);
+        }
     };
 
     const warningColor = props.theme === 'dark' ? '#fff' : '#151515';
@@ -99,9 +129,18 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
                 <NamespaceHeader>
                     <Typography variant='h4'>{props.namespace.name}</Typography>
                     { pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN)
-                        ? <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' onClick={handleOpenChangeDialog}>
-                            Change Namespace
-                        </Button>
+                        ? <Box sx={{ display: 'flex', gap: 1, ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}>
+                            <Button variant='outlined' onClick={handleOpenChangeDialog}>
+                                Change Namespace
+                            </Button>
+                            <ButtonWithProgress
+                                variant='outlined'
+                                color='error'
+                                working={deleting}
+                                onClick={handleDelete}>
+                                Delete Namespace
+                            </ButtonWithProgress>
+                        </Box>
                         : null
                     }
                 </NamespaceHeader>
