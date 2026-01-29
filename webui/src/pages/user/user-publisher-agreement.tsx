@@ -75,7 +75,6 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
         if (agreementURL) {
             try {
                 const agreementMd = await service.getStaticContent(abortController.current, agreementURL);
-                console.log(agreementMd);
                 setAgreementText(agreementMd);
             } catch (err) {
                 handleError(err);
