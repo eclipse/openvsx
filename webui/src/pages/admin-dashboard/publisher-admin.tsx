@@ -17,7 +17,7 @@ import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
 
 export const UpdateContext = createContext({ handleUpdate: () => { } });
-export const PublisherAdmin: FunctionComponent = props => {
+export const PublisherAdmin: FunctionComponent = () => {
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const abortController = useRef<AbortController>(new AbortController());
@@ -66,7 +66,7 @@ export const PublisherAdmin: FunctionComponent = props => {
     let listContainer: ReactNode = '';
     if (publisher && pageSettings && user) {
         listContainer = <UpdateContext.Provider value={{ handleUpdate }}>
-            <PublisherDetails publisherInfo={publisher} agreement={pageSettings.agreement} />
+            <PublisherDetails publisherInfo={publisher} />
         </UpdateContext.Provider>;
     } else if (notFound) {
         listContainer = <Box display='flex' flexDirection='column'>

@@ -94,7 +94,7 @@ const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
             }
         },
         '& .markdown-alert-title:before': {
-            content: " ",
+            content: '" "',
             width: '16px',
             height: '16px',
             marginRight: '8px',

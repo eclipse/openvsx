@@ -16,6 +16,10 @@ import { Cookie } from './utils';
 export interface PageSettings {
     pageTitle: string;
     themeType?: 'light' | 'dark';
+    publisherAgreement?: {
+        name?: string;
+        email?: string;
+    };
     elements: {
         toolbarContent?: ComponentType;
         defaultMenuContent?: ComponentType;
@@ -46,12 +50,6 @@ export interface PageSettings {
         mainHeadTags?: ComponentType<{ pageSettings: PageSettings }>;
         extensionHeadTags?: ComponentType<{ extension?: Extension, pageSettings: PageSettings }>;
         namespaceHeadTags?: ComponentType<{ namespaceDetails?: NamespaceDetails, name: string, pageSettings: PageSettings }>;
-        agreement: {
-          notSignedContent: ComponentType<{ pageSettings: PageSettings }>;
-        }
-    };
-    agreement: {
-        name: string;
     };
     urls: {
         extensionDefaultIcon: string;

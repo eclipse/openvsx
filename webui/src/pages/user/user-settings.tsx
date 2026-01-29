@@ -46,7 +46,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
         switch (tab) {
             case 'profile':
-                return <UserSettingsProfile user={user} agreement={pageSettings.agreement} />;
+                return <UserSettingsProfile user={user} />;
             case 'tokens':
                 return <UserSettingsTokens />;
             case 'namespaces':
