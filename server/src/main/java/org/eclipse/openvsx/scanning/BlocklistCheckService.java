@@ -19,13 +19,17 @@ import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -52,15 +56,18 @@ public class BlocklistCheckService implements PublishCheck {
     private final BlocklistCheckConfig config;
     private final ExtensionScanConfig scanConfig;
     private final FileDecisionRepository fileDecisionRepository;
+    private final AsyncTaskExecutor taskExecutor;
 
     public BlocklistCheckService(
             BlocklistCheckConfig config,
             ExtensionScanConfig scanConfig,
-            FileDecisionRepository fileDecisionRepository
+            FileDecisionRepository fileDecisionRepository,
+            @Qualifier("applicationTaskExecutor") AsyncTaskExecutor taskExecutor
     ) {
         this.config = config;
         this.scanConfig = scanConfig;
         this.fileDecisionRepository = fileDecisionRepository;
+        this.taskExecutor = taskExecutor;
     }
 
     @Override
@@ -121,7 +128,8 @@ public class BlocklistCheckService implements PublishCheck {
      * Check extension files against the blocklist.
      */
     private List<BlockedFileInfo> checkForBlockedFiles(TempFile extensionFile) {
-        Map<String, String> fileHashes = new LinkedHashMap<>();
+        // Thread-safe map for parallel hashing: hash -> filePath
+        Map<String, String> fileHashes = new ConcurrentHashMap<>();
 
         try (ZipFile zipFile = new ZipFile(extensionFile.getPath().toFile())) {
             List<? extends ZipEntry> entries = Collections.list(zipFile.entries());
@@ -132,33 +140,30 @@ public class BlocklistCheckService implements PublishCheck {
                     scanConfig.getMaxArchiveSizeBytes()
             );
 
-            int filesHashed = 0;
-            int filesSkipped = 0;
+            var hashableEntries = entries.stream()
+                    .filter(entry -> !entry.isDirectory())
+                    .filter(entry -> ArchiveUtil.isSafePath(entry.getName()))
+                    .toList();
 
-            for (ZipEntry entry : entries) {
-                if (entry.isDirectory()) {
-                    continue;
-                }
-
-                String filePath = entry.getName();
-
-                if (!ArchiveUtil.isSafePath(filePath)) {
-                    logger.debug("Skipping unsafe path: {}", filePath);
-                    filesSkipped++;
-                    continue;
-                }
-
-                try {
-                    String hash = computeHash(zipFile, entry);
-                    fileHashes.put(hash, filePath);
-                    filesHashed++;
-                } catch (IOException e) {
-                    logger.warn("Failed to hash file {}: {}", filePath, e.getMessage());
-                    filesSkipped++;
-                }
+            List<CompletableFuture<Void>> futures = new ArrayList<>(hashableEntries.size());
+            
+            for (ZipEntry entry : hashableEntries) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        String hash = computeHash(zipFile, entry);
+                        fileHashes.put(hash, entry.getName());
+                    } catch (IOException e) {
+                        logger.warn("Failed to hash file {}: {}", entry.getName(), e.getMessage());
+                    }
+                }, taskExecutor);
+                futures.add(future);
             }
 
-            logger.debug("Blocklist check: hashed {} files, skipped {}", filesHashed, filesSkipped);
+            // Wait for all hashing to complete (non-blocking wait)
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+            logger.debug("Blocklist check: hashed {} files, skipped {}", 
+                    fileHashes.size(), entries.size() - hashableEntries.size());
 
         } catch (ZipException e) {
             logger.error("Failed to open extension file as zip: {}", e.getMessage());

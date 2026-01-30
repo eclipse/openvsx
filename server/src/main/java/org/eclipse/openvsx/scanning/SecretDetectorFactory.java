@@ -93,6 +93,7 @@ public class SecretDetectorFactory {
         List<Pattern> globalAllowlistPatterns = getGlobalAllowlistPatterns(globalAllowlist, config);
         List<String> globalStopwords = getGlobalStopwords(globalAllowlist, config);
         List<String> globalExcludedExtensions = getGlobalExcludedExtensions(globalAllowlist, config);
+        List<Pattern> skipMimeTypePatterns = getSkipMimeTypePatterns(globalAllowlist);
 
         // Build the matchers for global stopwords, excluded extensions, and inline suppressions
         AhoCorasick globalStopwordMatcher = buildMatcher(globalStopwords);
@@ -116,6 +117,7 @@ public class SecretDetectorFactory {
                 globalStopwordMatcher,
                 globalExcludedExtensionMatcher,
                 suppressionMarkerMatcher,
+                skipMimeTypePatterns,
                 entropyCalculator,
                 scanConfig.getMaxSingleFileBytes(),
                 config.getMinifiedLineThreshold(),
@@ -280,6 +282,32 @@ public class SecretDetectorFactory {
         return config.getSuppressionMarkers().stream()
                 .map(String::toLowerCase)
                 .toList();
+    }
+
+    /**
+     * Get skip MIME type patterns from YAML allowlist.
+     * Compiles regex patterns for MIME types that should be skipped during scanning.
+     * Uses case-insensitive matching.
+     */
+    private List<Pattern> getSkipMimeTypePatterns(
+            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist) {
+        List<Pattern> result = new ArrayList<>();
+
+        if (globalAllowlist != null && globalAllowlist.skipMimeTypes != null) {
+            for (String pattern : globalAllowlist.skipMimeTypes) {
+                if (pattern == null || pattern.isBlank()) {
+                    continue;
+                }
+                try {
+                    result.add(Pattern.compile(pattern.trim(), Pattern.CASE_INSENSITIVE));
+                } catch (Exception e) {
+                    logger.warn("Invalid skip-mime-type regex pattern '{}': {}", pattern, e.getMessage());
+                }
+            }
+        }
+
+        logger.debug("Compiled {} skip-mime-type patterns", result.size());
+        return result;
     }
 
     /**
