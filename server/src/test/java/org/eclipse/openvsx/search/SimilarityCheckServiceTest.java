@@ -96,7 +96,7 @@ class SimilarityCheckServiceTest {
         membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
 
         when(repositories.findMemberships(user)).thenReturn(Streamable.of(membership1, membership2));
-        when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of("owned-ns"), 0.15, false, 10))
+        when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of("owned-ns", "contributor-ns"), 0.15, false, 10))
                 .thenReturn(List.of());
 
         var result = similarityCheckService.findSimilarExtensionsForPublishing(
@@ -105,7 +105,7 @@ class SimilarityCheckServiceTest {
 
         assertThat(result).isEmpty();
         verify(repositories).findMemberships(user);
-        verify(similarityService).findSimilarExtensions("ext", "ns", "Display", List.of("owned-ns"), 0.15, false, 10);
+        verify(similarityService).findSimilarExtensions("ext", "ns", "Display", List.of("owned-ns", "contributor-ns"), 0.15, false, 10);
     }
 
     @Test
@@ -165,7 +165,7 @@ class SimilarityCheckServiceTest {
         when(config.isAllowSimilarityToOwnNames()).thenReturn(false);
         when(config.getSimilarityThreshold()).thenReturn(0.15);
         when(config.isOnlyProtectVerifiedNames()).thenReturn(false);
-        when(repositories.countVersions("ns", "ext")).thenReturn(1);
+        when(repositories.countVersions("ns", "ext")).thenReturn(0);
         when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10))
                 .thenReturn(List.of());
 
