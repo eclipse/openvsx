@@ -77,7 +77,7 @@ public class SimilarityCheckService implements PublishCheck {
         var extensionName = scan.getExtensionName();
         var displayName = scan.getExtensionDisplayName();
 
-        if (config.isOnlyCheckNewExtensions() && repositories.countVersions(namespaceName, extensionName) > 1) {
+        if (config.isOnlyCheckNewExtensions() && repositories.countVersions(namespaceName, extensionName) > 0) {
             return PublishCheck.Result.pass();
         }
 
@@ -156,15 +156,17 @@ public class SimilarityCheckService implements PublishCheck {
 
     /**
      * Get the list of namespaces to exclude from similarity checks.
-     * When configured, excludes namespaces where the user is an owner.
+     * When configured, excludes namespaces where the user is a member (owner OR contributor).
+     * This prevents false positives when uploading to namespaces the user legitimately controls.
      */
     private List<String> getExcludedNamespaces(@NotNull UserData user) {
         if (!config.isAllowSimilarityToOwnNames()) {
             return List.of();
         }
+        // Exclude ALL namespaces where user is a member (owner or contributor)
+        // Both roles should be able to upload new versions without similarity blocking
         return repositories.findMemberships(user)
                 .stream()
-                .filter(m -> NamespaceMembership.ROLE_OWNER.equals(m.getRole()))
                 .map(m -> m.getNamespace().getName())
                 .toList();
     }
