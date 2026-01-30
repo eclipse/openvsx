@@ -99,8 +99,9 @@ public class SimilarityConfig {
     private boolean onlyProtectVerifiedNames;
 
     /**
-     * If enabled, exclude namespaces where the publishing user is an owner from similarity checks.
-     * This prevents false positives when a user legitimately controls multiple namespaces.
+     * If enabled, exclude namespaces where the publishing user is a member (owner or contributor)
+     * from similarity checks. This prevents false positives when a user uploads to namespaces
+     * they legitimately have access to.
      *
      * Property: {@code ovsx.similarity.allow-similarity-to-own-names}
      * Default: {@code true}

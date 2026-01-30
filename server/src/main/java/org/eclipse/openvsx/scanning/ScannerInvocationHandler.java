@@ -140,8 +140,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
      * Prepare the scanner job for invocation.
      * Creates or finds the job, validates it's not terminal, marks as PROCESSING.
      * Single entity operations - each save() auto-commits.
-     * 
-     * @return PreparedJob with scanner and jobId, or null if job is already terminal
      */
     private PreparedJob prepareJob(String scanId, String scannerType, long extensionVersionId) {
         // 1. CREATE OR FIND EXISTING SCANJOB FIRST
@@ -194,10 +192,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     
     /**
      * Save the scanner invocation results.
-     * 
-     * IMPORTANT: Job status must be saved BEFORE checking completion.
-     * The completion check queries the database to see if all jobs are terminal.
-     * If we check before saving, it sees the old (non-terminal) status.
      */
     private void saveResults(Long jobId, Scanner.Invocation invocation, Scanner scanner, 
                              String scannerType, long extensionVersionId) {
@@ -217,9 +211,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
                 handleSubmittedScan(job, s, scanner, scannerType, extensionVersionId);
         }
         
-        // CRITICAL: Save job status BEFORE completion check.
-        // The completion check queries the database to see if all jobs are terminal.
-        // If we check before saving, it sees the old (PROCESSING) status.
         scanJobRepository.save(job);
         
         // Now check if all jobs for this scan are complete.
@@ -257,9 +248,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     /**
      * Handle a completed (synchronous) scan result.
      * Marks job as complete, saves any threats found, and records result for audit.
-     * 
-     * NOTE: Completion check is triggered by saveResults() AFTER the job status is saved.
-     * This ensures the completion check sees the committed COMPLETE status.
      */
     private void handleCompletedScan(
             ScannerJob job, 
@@ -287,7 +275,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
                 scannerType, processed.summary(), extensionVersionId);
         }
         // Clean results (threatCount == 0) are not logged - too noisy
-        // Completion check is triggered by saveResults() after job is saved
     }
     
     /**
