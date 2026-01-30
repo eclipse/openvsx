@@ -1257,6 +1257,21 @@ public class ExtensionVersionJooqRepository {
     public ExtensionVersion find(String namespaceName, String extensionName, String targetPlatform, String version) {
         var onlyPreRelease = VersionAlias.PRE_RELEASE.equals(version);
         var query = findLatestQuery(targetPlatform, onlyPreRelease, true);
+        return findInternal(query, namespaceName, extensionName, version);
+    }
+
+    /**
+     * Find an extension version regardless of active status.
+     * Use this for admin operations on quarantined/inactive extensions.
+     */
+    public ExtensionVersion findIncludingInactive(String namespaceName, String extensionName, String targetPlatform, String version) {
+        var onlyPreRelease = VersionAlias.PRE_RELEASE.equals(version);
+        // Pass false for onlyActive to include inactive (quarantined) extensions
+        var query = findLatestQuery(targetPlatform, onlyPreRelease, false);
+        return findInternal(query, namespaceName, extensionName, version);
+    }
+
+    private ExtensionVersion findInternal(SelectQuery<Record> query, String namespaceName, String extensionName, String version) {
         query.addSelect(
                 USER_DATA.ID,
                 USER_DATA.ROLE,

@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
@@ -52,6 +53,7 @@ public class AdminService {
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
     private final MailService mail;
+    private final ExtensionScanPersistenceService scanPersistenceService;
 
     public AdminService(
             RepositoryService repositories,
@@ -64,7 +66,8 @@ public class AdminService {
             StorageUtilService storageUtil,
             CacheService cache,
             JobRequestScheduler scheduler,
-            MailService mail
+            MailService mail,
+            ExtensionScanPersistenceService scanPersistenceService
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -77,6 +80,7 @@ public class AdminService {
         this.cache = cache;
         this.scheduler = scheduler;
         this.mail = mail;
+        this.scanPersistenceService = scanPersistenceService;
     }
 
     @EventListener
@@ -240,6 +244,10 @@ public class AdminService {
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
+        // Clean up any pending scan jobs for this extension version
+        // to prevent "file not found" errors after deletion
+        scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
+        
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);
