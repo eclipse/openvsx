@@ -15,18 +15,18 @@ package org.eclipse.openvsx.scanning;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.Tika;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.SizeLimitInputStream;
 import jakarta.validation.constraints.NotNull;
 import javax.annotation.Nullable;
 
 import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +47,10 @@ class SecretDetector {
     }
 
     private static final Logger logger = LoggerFactory.getLogger(SecretDetector.class);
+    
+    // Tika for content-based file type detection (thread-safe, reusable)
+    private static final Tika tika = new Tika();
+    
     private final AhoCorasick keywordMatcher;
     private final Map<String, List<SecretRule>> keywordToRules;
     private final List<SecretRule> rules;
@@ -55,6 +59,7 @@ class SecretDetector {
     private final AhoCorasick globalStopwordMatcher;
     private final AhoCorasick globalExcludedExtensionMatcher;
     private final AhoCorasick inlineSuppressionMatcher;
+    private final List<Pattern> skipMimeTypePatterns;
     private final EntropyCalculator entropyCalculator;
     private final long maxFileSizeBytes;
     private final int maxLineLength;
@@ -71,6 +76,7 @@ class SecretDetector {
                   @Nullable AhoCorasick stopwordMatcher,
                   @Nullable AhoCorasick excludedExtensionMatcher,
                   @Nullable AhoCorasick inlineSuppressionMatcher,
+                  @Nullable List<Pattern> skipMimeTypePatterns,
                   @NotNull EntropyCalculator entropyCalculator,
                   long maxFileSizeBytes,
                   int maxLineLength,
@@ -86,6 +92,7 @@ class SecretDetector {
         this.globalStopwordMatcher = stopwordMatcher;
         this.globalExcludedExtensionMatcher = excludedExtensionMatcher;
         this.inlineSuppressionMatcher = inlineSuppressionMatcher;
+        this.skipMimeTypePatterns = skipMimeTypePatterns != null ? skipMimeTypePatterns : List.of();
         this.entropyCalculator = entropyCalculator;
         this.maxFileSizeBytes = maxFileSizeBytes;
         this.maxLineLength = maxLineLength;
@@ -127,6 +134,11 @@ class SecretDetector {
 
         // Check if the file is excluded by any of the global excluded patterns
         if (shouldExcludeFile(filePath)) {
+            return false;
+        }
+
+        // Check if file should be skipped based on MIME type
+        if (shouldExcludeByMimeType(zipFile, entry)) {
             return false;
         }
 
@@ -362,10 +374,52 @@ class SecretDetector {
 
         return false;
     }
-    
-    // ========================================================================
-    // RESULT TYPES
-    // ========================================================================
+
+    /**
+     * Check if file should be skipped based on MIME type detection using Apache Tika.
+     * 
+     * Uses Tika to detect MIME type from file content (magic bytes, structure, heuristics).
+     * This is more reliable than extension-based detection for files without extensions
+     * or with misleading extensions.
+     * 
+     * Skip patterns are configured via {@code allowlist.skip-mime-types} in the YAML config.
+     * Each pattern is a regex matched against the detected MIME type.
+     * 
+     * @return true if file should be skipped, false if it should be scanned
+     */
+    private boolean shouldExcludeByMimeType(@NotNull ZipFile zipFile, @NotNull ZipEntry entry) {
+        // If no skip patterns configured, don't skip any files based on MIME type
+        if (skipMimeTypePatterns.isEmpty()) {
+            return false;
+        }
+        
+        try (InputStream is = zipFile.getInputStream(entry);
+             BufferedInputStream bis = new BufferedInputStream(is)) {
+            
+            // Tika.detect() reads only the bytes needed for detection
+            String mimeType = tika.detect(bis, entry.getName());
+            
+            if (mimeType == null) {
+                return false;  // Unknown type, scan it to be safe
+            }
+            
+            // Check against configured skip patterns (regex)
+            for (Pattern pattern : skipMimeTypePatterns) {
+                if (pattern.matcher(mimeType).find()) {
+                    logger.debug("Skipping file (MIME {} matches pattern {}): {}", 
+                            mimeType, pattern.pattern(), entry.getName());
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (IOException e) {
+            // If we can't detect type, don't skip - let the main scan handle errors
+            logger.debug("Could not detect file type for {}: {}", entry.getName(), e.getMessage());
+            return false;
+        }
+    }
     
     /**
      * Result of a secret scan. Immutable.
