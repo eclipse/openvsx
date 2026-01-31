@@ -18,6 +18,7 @@ services:
   elasticsearch:
     image: elasticsearch:8.7.1
     environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
       - xpack.ml.enabled=false
       - discovery.type=single-node
@@ -26,6 +27,10 @@ services:
     ports:
       - 9200:9200
       - 9300:9300
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     healthcheck:
       test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
       interval: 10s
