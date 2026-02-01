@@ -217,3 +217,8 @@ CREATE INDEX idx_file_decision_decision ON file_decision(decision);
 CREATE INDEX idx_file_decision_namespace ON file_decision(namespace_name);
 CREATE INDEX idx_file_decision_publisher ON file_decision(publisher);
 CREATE INDEX idx_file_decision_decided_by ON file_decision(decided_by_id);
+
+-- Composite index for fast blocklist lookups during extension publishing
+-- Optimizes BlocklistCheckService.findBlockedByFileHashIn() query
+-- PostgreSQL can check the decision filter directly from the index without table access
+CREATE INDEX idx_file_decision_hash_decision ON file_decision(file_hash, decision);
