@@ -21,6 +21,8 @@ import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
@@ -62,7 +64,10 @@ class BlocklistCheckServiceTest {
         setField(scanConfig, "maxEntryCount", 10000);
 
         fileDecisionRepository = mock(FileDecisionRepository.class);
-        service = new BlocklistCheckService(config, scanConfig, fileDecisionRepository);
+        
+        // Use SimpleAsyncTaskExecutor for test execution
+        AsyncTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
+        service = new BlocklistCheckService(config, scanConfig, fileDecisionRepository, taskExecutor);
     }
 
     @Test

@@ -100,6 +100,7 @@ public class SecretRuleLoader {
         List<String> allRegexes = new ArrayList<>();
         List<String> allStopwords = new ArrayList<>();
         List<String> allFileExtensions = new ArrayList<>();
+        List<String> allSkipMimeTypes = new ArrayList<>();
 
         for (String path : paths) {
             RuleFileData loaded = loadSingle(path);
@@ -121,17 +122,22 @@ public class SecretRuleLoader {
                 if (loaded.globalAllowlist.fileExtensions != null) {
                     allFileExtensions.addAll(loaded.globalAllowlist.fileExtensions);
                 }
+                if (loaded.globalAllowlist.skipMimeTypes != null) {
+                    allSkipMimeTypes.addAll(loaded.globalAllowlist.skipMimeTypes);
+                }
             }
         }
 
         // Create combined global allowlist if any items were found
         GlobalAllowlist combinedAllowlist = null;
-        if (!allPaths.isEmpty() || !allRegexes.isEmpty() || !allStopwords.isEmpty() || !allFileExtensions.isEmpty()) {
+        if (!allPaths.isEmpty() || !allRegexes.isEmpty() || !allStopwords.isEmpty() || 
+            !allFileExtensions.isEmpty() || !allSkipMimeTypes.isEmpty()) {
             combinedAllowlist = new GlobalAllowlist();
             combinedAllowlist.paths = allPaths;
             combinedAllowlist.regexes = allRegexes;
             combinedAllowlist.stopwords = allStopwords;
             combinedAllowlist.fileExtensions = allFileExtensions;
+            combinedAllowlist.skipMimeTypes = allSkipMimeTypes;
         }
 
         logger.info("Loaded {} rules from {} YAML files", merged.size(), paths.size());
@@ -215,8 +221,9 @@ public class SecretRuleLoader {
                 int regexCount = globalAllowlist.regexes != null ? globalAllowlist.regexes.size() : 0;
                 int stopwordCount = globalAllowlist.stopwords != null ? globalAllowlist.stopwords.size() : 0;
                 int extensionCount = globalAllowlist.fileExtensions != null ? globalAllowlist.fileExtensions.size() : 0;
-                logger.debug("Loaded global allowlist from YAML: {} paths, {} regexes, {} stopwords, {} file extensions",
-                        pathCount, regexCount, stopwordCount, extensionCount);
+                int mimeTypeCount = globalAllowlist.skipMimeTypes != null ? globalAllowlist.skipMimeTypes.size() : 0;
+                logger.debug("Loaded global allowlist from YAML: {} paths, {} regexes, {} stopwords, {} file extensions, {} mime-types",
+                        pathCount, regexCount, stopwordCount, extensionCount, mimeTypeCount);
             }
 
             return new RuleFileData(result, globalAllowlist);
@@ -317,6 +324,7 @@ public class SecretRuleLoader {
      *   regexes: Regex patterns for content to exclude as known safe values
      *   stopwords: Exact strings to exclude (e.g., "example", "placeholder", "test")
      *   file-extensions: File extensions to exclude from scanning (e.g., ".png", ".jpg")
+     *   mime-types: Regex patterns for MIME types to skip (detected via Apache Tika)
      * <p>
      * These are loaded from the YAML files and merged with configuration from application.yml.
      */
@@ -333,6 +341,14 @@ public class SecretRuleLoader {
         /** File extensions to skip scanning (e.g., ".png", ".jpg", ".pdf") */
         @JsonProperty("file-extensions")
         public List<String> fileExtensions;
+        
+        /** 
+         * Regex patterns for MIME types to skip during scanning.
+         * Uses Apache Tika for content-based MIME detection.
+         * Examples: "^image/.*", "^application/x-(elf|msdownload|mach)", "^video/.*"
+         */
+        @JsonProperty("mime-types")
+        public List<String> skipMimeTypes;
     }
 }
 

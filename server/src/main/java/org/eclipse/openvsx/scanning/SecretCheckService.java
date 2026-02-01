@@ -27,8 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -122,81 +121,77 @@ public class SecretCheckService implements PublishCheck {
      * Callers should check {@link #isEnabled()} before invoking this method.
      */
     private SecretDetector.Result scanForSecrets(@NotNull TempFile extensionFile) {
-        // Use thread-safe collection for parallel processing
+        // Thread-safe collection for parallel processing
         List<SecretDetector.Finding> findings = Collections.synchronizedList(new ArrayList<>());
-        AtomicInteger findingsCount = new AtomicInteger(0); // Cap findings to protect memory
+        AtomicInteger findingsCount = new AtomicInteger(0);
         
         try (ZipFile zipFile = new ZipFile(extensionFile.getPath().toFile())) {
             List<? extends ZipEntry> entries = Collections.list(zipFile.entries());
             ArchiveUtil.enforceArchiveLimits(entries, scanConfig.getMaxEntryCount(), scanConfig.getMaxArchiveSizeBytes());
+            
+            // Filter to only scannable entries BEFORE creating tasks (optimization)
+            List<? extends ZipEntry> scannableEntries = entries.stream()
+                    .filter(entry -> !entry.isDirectory())
+                    .toList();
             
             AtomicInteger filesScanned = new AtomicInteger(0);
             AtomicInteger filesSkipped = new AtomicInteger(0);
             
             long startTime = System.currentTimeMillis();
             long timeoutMillis = config.getTimeoutSeconds() * 1000L;
-            List<Future<?>> tasks = new ArrayList<>(entries.size());
             
-            try {
-                for (ZipEntry entry : entries) {
-                    tasks.add(taskExecutor.submit(() -> {
-                        if (System.currentTimeMillis() - startTime > timeoutMillis) {
-                            throw new SecretScanningTimeoutException("Secret detection timed out");
-                        }
-                        
-                        if (Thread.currentThread().isInterrupted()) {
-                            return null;
-                        }
-
-                        if (entry.isDirectory()) {
-                            return null;
-                        }
-                        
-                        String filePath = entry.getName();
-                        try {
-                            boolean scanned = fileContentScanner.scanFile(
-                                zipFile,
-                                entry,
-                                findings,
-                                startTime,
-                                timeoutMillis,
-                                findingsCount,
-                                this::recordFinding
-                            );
-                            if (scanned) {
-                                filesScanned.incrementAndGet();
-                            } else {
-                                filesSkipped.incrementAndGet();
-                            }
-                        } catch (SecretScanningTimeoutException | ScanCancelledException e) {
-                            throw e;
-                        } catch (Exception e) {
-                            logger.error("Failed to scan file {}: {}", filePath, e.getMessage());
-                        }
-                        return null;
-                    }));
-                }
-                
-                for (Future<?> task : tasks) {
-                    try {
-                        task.get();
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    } catch (ExecutionException ee) {
-                        Throwable cause = ee.getCause();
-                        if (cause instanceof SecretScanningTimeoutException) {
-                            throw (SecretScanningTimeoutException) ee.getCause();
-                        } else if (cause instanceof ScanCancelledException) {
-                            break;
-                        }
+            // Submit all tasks and collect CompletableFutures
+            List<CompletableFuture<Void>> futures = new ArrayList<>(scannableEntries.size());
+            
+            for (ZipEntry entry : scannableEntries) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    // Check timeout at start of each task
+                    if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                        throw new SecretScanningTimeoutException("Secret detection timed out");
                     }
+                    
+                    if (Thread.currentThread().isInterrupted()) {
+                        return;
+                    }
+                    
+                    String filePath = entry.getName();
+                    try {
+                        boolean scanned = fileContentScanner.scanFile(
+                            zipFile,
+                            entry,
+                            findings,
+                            startTime,
+                            timeoutMillis,
+                            findingsCount,
+                            this::recordFinding
+                        );
+                        if (scanned) {
+                            filesScanned.incrementAndGet();
+                        } else {
+                            filesSkipped.incrementAndGet();
+                        }
+                    } catch (SecretScanningTimeoutException | ScanCancelledException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        logger.error("Failed to scan file {}: {}", filePath, e.getMessage());
+                        filesSkipped.incrementAndGet();
+                    }
+                }, taskExecutor);
+                futures.add(future);
+            }
+            
+            // Wait for all tasks to complete (or fail)
+            try {
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            } catch (java.util.concurrent.CompletionException ce) {
+                Throwable cause = ce.getCause();
+                if (cause instanceof SecretScanningTimeoutException) {
+                    throw (SecretScanningTimeoutException) cause;
+                } else if (cause instanceof ScanCancelledException) {
+                    // Max findings reached - continue with what we have
+                    logger.debug("Scan cancelled early: {}", cause.getMessage());
                 }
-            } finally {
-                // Ensure we cancel any remaining tasks if the loop exits early
-                for (Future<?> f : tasks) {
-                    f.cancel(true);
-                }
+                // Other exceptions: log and continue
             }
             
             logger.debug("Secret scan complete: {} files scanned, {} files skipped, {} findings", 
@@ -214,7 +209,7 @@ public class SecretCheckService implements PublishCheck {
             logger.error("Failed to scan extension file: {}", e.getMessage());
             throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
         } catch (SecretScanningException e) {
-            throw e;  // Re-throw already wrapped exceptions
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to scan extension file: {}", e.getMessage());
             throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
