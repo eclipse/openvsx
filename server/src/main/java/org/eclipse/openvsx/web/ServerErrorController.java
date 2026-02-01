@@ -12,18 +12,25 @@ package org.eclipse.openvsx.web;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
+import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @ConditionalOnProperty(value = "server.error.path", havingValue = "/server-error")
-public class ServerErrorController implements ErrorController {
+public class ServerErrorController extends BasicErrorController {
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @RequestMapping("/server-error")
+    public ServerErrorController(ErrorAttributes errorAttributes, ServerProperties serverProperties) {
+        super(errorAttributes, serverProperties.getError());
+    }
+
+    @RequestMapping(value = "/server-error", produces = {MediaType.TEXT_HTML_VALUE})
     public String handleError() {
         return "redirect:" + UrlUtil.createApiUrl(webuiUrl, "error");
     }
