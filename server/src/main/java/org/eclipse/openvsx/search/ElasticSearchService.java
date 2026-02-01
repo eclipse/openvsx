@@ -331,7 +331,7 @@ public class ElasticSearchService implements ISearchService {
                         .boost(10f)
         ));
 
-        // Fuzzy matching of search query in multiple fields
+        // matching of search query in multiple fields with boost
         var multiMatchQuery = QueryBuilders.multiMatch(builder ->
                 builder.query(options.queryString())
                         .fields("name").boost(5f)
@@ -339,11 +339,23 @@ public class ElasticSearchService implements ISearchService {
                         .fields("tags").boost(3f)
                         .fields("namespace").boost(2f)
                         .fields("description")
+        );
+
+        boolQuery.should(multiMatchQuery).boost(5f);
+
+        // Fuzzy matching of search query in multiple fields without boost
+        // Same as above except does not fuzzy match tags
+        var fuzzyMultiMatchQuery = QueryBuilders.multiMatch(builder ->
+                builder.query(options.queryString())
+                        .fields("name")
+                        .fields("displayName")
+                        .fields("namespace")
+                        .fields("description")
                         .fuzziness("AUTO")
                         .prefixLength(2)
         );
 
-        boolQuery.should(multiMatchQuery).boost(5f);
+        boolQuery.should(fuzzyMultiMatchQuery);
 
         // Prefix matching of search query in display name and namespace
         var prefixString = options.queryString().trim().toLowerCase();
