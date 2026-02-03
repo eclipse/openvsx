@@ -28,9 +28,11 @@ import { ScanAdmin } from './scan-admin';
 import SecurityIcon from '@mui/icons-material/Security';
 import StarIcon from '@mui/icons-material/Star';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import HistoryIcon from '@mui/icons-material/History';
 import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
 import { UsageStatsView } from './usage-stats/usage-stats';
+import { Logs } from './logs/logs';
 import { LoginComponent } from "../../default/login";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
 
@@ -44,6 +46,7 @@ export namespace AdminDashboardRoutes {
     export const TIERS = createRoute([ROOT, 'tiers']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
     export const USAGE_STATS = createRoute([ROOT, 'usage']);
+    export const LOGS = createRoute([ROOT, 'logs']);
 }
 
 const Message: FunctionComponent<{message: string}> = ({ message }) => {
@@ -77,6 +80,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.TIERS} label='Tiers' icon={<StarIcon />} route={AdminDashboardRoutes.TIERS} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.CUSTOMERS} label='Customers' icon={<PeopleIcon />} route={AdminDashboardRoutes.CUSTOMERS} />
                 <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage?.startsWith(AdminDashboardRoutes.USAGE_STATS)} label='Usage Stats' icon={<BarChartIcon />} route={AdminDashboardRoutes.USAGE_STATS} />
+                <NavigationItem onOpenRoute={handleOpenRoute} active={currentPage === AdminDashboardRoutes.LOGS} label='Logs' icon={<HistoryIcon />} route={AdminDashboardRoutes.LOGS} />
             </Sidepanel>
             <Box
                 overflow='auto'
@@ -111,6 +115,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                         <Route path='/customers' element={<Customers/>} />
                         <Route path='/usage' element={<UsageStatsView/>} />
                         <Route path='/usage/:customer' element={<UsageStatsView/>} />
+                        <Route path='/logs' element={<Logs/>} />
                         <Route path='*' element={<Welcome/>} />
                     </Routes>
                 </Container>
