@@ -129,6 +129,21 @@ public class SecretDetectorConfig {
     private boolean enforced;
 
     /**
+     * Whether errors (exceptions) from this check should block publishing.
+     * <p>
+     * If true (default): an error during secret scanning will cause publishing to fail.
+     * If false: errors are logged and recorded, but publishing continues.
+     * <p>
+     * Use false for non-critical deployments where secret detection availability
+     * issues (e.g., timeout, out of memory) shouldn't block all publishing.
+     * <p>
+     * Property: {@code ovsx.scanning.secret-detection.required}
+     * Default: {@code true}
+     */
+    @Value("${ovsx.scanning.secret-detection.required:true}")
+    private boolean required;
+
+    /**
      * Maximum line length to process in characters. Files with longer lines are skipped.
      * Very long lines (>10K) typically indicate minified/bundled code and may cause performance issues.
      * <p>
@@ -219,6 +234,10 @@ public class SecretDetectorConfig {
 
     public boolean isEnforced() {
         return enforced;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     public int getMinifiedLineThreshold() {

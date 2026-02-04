@@ -125,6 +125,13 @@ public class ScanCheckResult implements Serializable {
     @Column(name = "scanner_job_id")
     private Long scannerJobId;
 
+    /**
+     * Whether this check was required (errors block publishing).
+     * When false, errors are logged but don't block publishing.
+     */
+    @Column(name = "required")
+    private Boolean required;
+
     // Getters and setters
 
     public long getId() {
@@ -229,6 +236,14 @@ public class ScanCheckResult implements Serializable {
 
     public void setScannerJobId(Long scannerJobId) {
         this.scannerJobId = scannerJobId;
+    }
+
+    public Boolean getRequired() {
+        return required;
+    }
+
+    public void setRequired(Boolean required) {
+        this.required = required;
     }
 
     /**

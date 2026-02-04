@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS scan_check_result (
     summary VARCHAR(512),
     error_message VARCHAR(2048),
     scanner_job_id BIGINT,
+    required BOOLEAN,
     PRIMARY KEY (id),
     CONSTRAINT fk_scan_check_result_scan FOREIGN KEY (scan_id) 
         REFERENCES extension_scan(id) ON DELETE CASCADE
@@ -103,6 +104,7 @@ COMMENT ON COLUMN scan_check_result.check_type IS 'Type of check: BLOCKLIST, SEC
 COMMENT ON COLUMN scan_check_result.category IS 'PUBLISH_CHECK (sync) or SCANNER_JOB (async/sync scanner)';
 COMMENT ON COLUMN scan_check_result.result IS 'PASSED, FAILED, WARNING, ERROR, or SKIPPED';
 COMMENT ON COLUMN scan_check_result.summary IS 'Brief description like "Scanned 348 files, no threats found"';
+COMMENT ON COLUMN scan_check_result.required IS 'Whether check errors block publishing';
 
 
 -- ============================================================================

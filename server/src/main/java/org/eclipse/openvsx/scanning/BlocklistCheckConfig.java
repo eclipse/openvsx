@@ -55,6 +55,18 @@ public class BlocklistCheckConfig {
     private boolean enforced;
 
     /**
+     * Whether errors during blocklist checking should block publication.
+     * <p>
+     * When true (default), exceptions during the check will block publishing.
+     * When false, exceptions are logged but publishing continues.
+     * <p>
+     * Property: {@code ovsx.scanning.blocklist-check.required}
+     * Default: {@code true}
+     */
+    @Value("${ovsx.scanning.blocklist-check.required:true}")
+    private boolean required;
+
+    /**
      * Message shown to users when their extension is blocked.
      * <p>
      * Property: {@code ovsx.scanning.blocklist-check.user-message}
@@ -69,6 +81,10 @@ public class BlocklistCheckConfig {
 
     public boolean isEnforced() {
         return enforced;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     public String getUserMessage() {

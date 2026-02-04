@@ -136,13 +136,16 @@ public class ExtensionScanService {
                 execution.findingsCount(),
                 execution.summary(),
                 execution.errorMessage(),
-                null   // scannerJobId - not applicable for publish checks
+                null,  // scannerJobId - not applicable for publish checks
+                execution.required()
             );
         }
 
-        if (checkResult.hasError()) {
+        // Handle required check errors - block publication
+        if (checkResult.hasRequiredCheckError()) {
+            var requiredError = checkResult.getRequiredErrors().get(0);
             markScanAsErrored(scan, checkResult.getErrorMessage());
-            throw new ErrorResultException(checkResult.getErrorMessage(), checkResult.error());
+            throw new ErrorResultException(checkResult.getErrorMessage(), requiredError.exception());
         }
 
         // Record all findings in the database (detailed failure records).

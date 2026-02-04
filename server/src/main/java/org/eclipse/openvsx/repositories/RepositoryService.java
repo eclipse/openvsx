@@ -850,6 +850,7 @@ public class RepositoryService {
             @Nullable Collection<String> scannerNames,
             @Nullable Boolean enforcedOnly,
             @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter,
+            boolean includeCheckErrors,
             org.springframework.data.domain.Pageable pageable
     ) {
         // Convert enums to strings for native query
@@ -877,7 +878,7 @@ public class RepositoryService {
             startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
             applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview,
-            pageable
+            includeCheckErrors, pageable
         );
     }
 
@@ -891,7 +892,8 @@ public class RepositoryService {
             @Nullable Collection<String> checkTypes,
             @Nullable Collection<String> scannerNames,
             @Nullable Boolean enforcedOnly,
-            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter
+            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter,
+            boolean includeCheckErrors
     ) {
         // Convert enums to strings for native query
         var statusesParam = (statuses == null || statuses.isEmpty()) 
@@ -917,7 +919,8 @@ public class RepositoryService {
             statusesParam, namespaceParam, publisherParam, nameParam, 
             startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
-            applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview
+            applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview,
+            includeCheckErrors
         );
     }
 

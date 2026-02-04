@@ -179,9 +179,11 @@ ovsx:
     blocklist-check:
       enabled: true
       enforced: false
+      required: false
     similarity:
       enabled: true
       enforced: false
+      required: false
       similarity-threshold: 0.2
       skip-if-publisher-verified: false
       only-protect-verified-names: false
@@ -190,6 +192,7 @@ ovsx:
     secret-detection:
       enabled: true
       enforced: false
+      required: false
       rules-path: 'classpath:scanning/secret-detection-custom-rules.yaml'
       suppression-markers: 'secret-detector:ignore,gitleaks:allow,nosecret,@suppress-secret'
       gitleaks:

@@ -66,6 +66,11 @@ public class SimilarityCheckService implements PublishCheck {
     }
 
     @Override
+    public boolean isRequired() {
+        return config.isRequired();
+    }
+
+    @Override
     public String getCheckType() {
         return CHECK_TYPE;
     }

@@ -56,6 +56,8 @@ export interface CheckResult {
     findingsCount: number | null;
     summary: string | null;
     errorMessage: string | null;
+    /** Whether this check was required (errors block publishing). Null for scanner jobs. */
+    required: boolean | null;
 }
 
 export interface ScanResult {

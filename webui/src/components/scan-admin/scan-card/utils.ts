@@ -20,7 +20,7 @@ import { ScanResult } from '../../../context/scan-admin';
 export interface DetailBadge {
     label: string;
     isEnforced: boolean;
-    type: 'threat' | 'validation';
+    type: 'threat' | 'validation' | 'error';
 }
 
 // ============================================================================
@@ -103,6 +103,18 @@ export const getDetailBadges = (scan: ScanResult): DetailBadge[] => {
             isEnforced: failure.enforcedFlag,
             type: 'validation'
         });
+    });
+
+    // Add badges for check results with ERROR status
+    scan.checkResults?.forEach(checkResult => {
+        if (checkResult.result === 'ERROR') {
+            badges.push({
+                label: checkResult.checkType,
+                // Use "enforced" styling (solid) for required checks, striped for optional
+                isEnforced: checkResult.required !== false,
+                type: 'error'
+            });
+        }
     });
 
     return badges;

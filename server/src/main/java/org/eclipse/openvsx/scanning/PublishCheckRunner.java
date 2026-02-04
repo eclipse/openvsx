@@ -75,9 +75,9 @@ public class PublishCheckRunner{
         var context = new PublishCheck.Context(scan, extensionFile, user);
         var allFindings = new ArrayList<Finding>();
         var checkExecutions = new ArrayList<CheckExecution>();
+        var allErrors = new ArrayList<CheckError>();
         boolean hasEnforcedFailure = false;
-        Exception checkError = null;
-        String errorCheckType = null;
+        boolean hasRequiredCheckError = false;
 
         String extId = scan.getNamespaceName() + "." + scan.getExtensionName() + " " + scan.getExtensionVersion();
         
@@ -143,19 +143,15 @@ public class PublishCheckRunner{
                     checkResult,
                     findingsCount,
                     null,
-                    summary
+                    summary,
+                    check.isRequired()
                 ));
                 
             } catch (Exception e) {
                 var endTime = LocalDateTime.now();
-                // Capture the error but don't throw yet.
-                // Let the caller decide how to handle it.
-                checkError = e;
-                errorCheckType = check.getCheckType();
-                logger.warn("Scan {} ({}.{}.{}) - {} check threw exception: {}",
-                    scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
-                    scan.getExtensionVersion(), check.getCheckType(), e.getMessage());
+                boolean isRequired = check.isRequired();
                 
+                // Record the check execution with ERROR result
                 checkExecutions.add(new CheckExecution(
                     check.getCheckType(),
                     startTime,
@@ -163,13 +159,29 @@ public class PublishCheckRunner{
                     ScanCheckResult.CheckResult.ERROR,
                     0,
                     e.getMessage(),
-                    "Error: " + e.getMessage()
+                    "Error: " + e.getMessage(),
+                    isRequired
                 ));
-                break;
+                
+                allErrors.add(new CheckError(check.getCheckType(), e, isRequired));
+                
+                if (isRequired) {
+                    // Required check error - stop processing remaining checks
+                    hasRequiredCheckError = true;
+                    logger.warn("Scan {} ({}.{}.{}) - Required check {} threw exception, blocking publish: {}",
+                        scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
+                        scan.getExtensionVersion(), check.getCheckType(), e.getMessage());
+                    break;
+                } else {
+                    // Non-required check error - log and continue with remaining checks
+                    logger.warn("Scan {} ({}.{}.{}) - Non-required check {} threw exception, continuing: {}",
+                        scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
+                        scan.getExtensionVersion(), check.getCheckType(), e.getMessage());
+                }
             }
         }
 
-        return new Result(allFindings, checkExecutions, hasEnforcedFailure, checkError, errorCheckType);
+        return new Result(allFindings, checkExecutions, allErrors, hasEnforcedFailure, hasRequiredCheckError);
     }
 
 
@@ -179,33 +191,78 @@ public class PublishCheckRunner{
     public record Result(
         @NonNull List<Finding> findings,
         @NonNull List<CheckExecution> checkExecutions,
+        @NonNull List<CheckError> errors,
         boolean hasEnforcedFailure,
-        @Nullable Exception error,
-        @Nullable String errorCheckType
+        boolean hasRequiredCheckError
     ) {
         /**
-         * Check if all checks passed (no enforced failures and no errors).
+         * Check if all checks passed (no enforced failures and no required check errors).
+         * <p>
+         * Non-required check errors are logged but don't block publishing.
          */
         public boolean passed() {
-            return !hasEnforcedFailure && error == null;
+            return !hasEnforcedFailure && !hasRequiredCheckError;
         }
 
         /**
-         * Check if there was an error during checks.
+         * Check if there was any error during checks (required or not).
          */
         public boolean hasError() {
-            return error != null;
+            return !errors.isEmpty();
         }
 
         /**
-         * Get the error message if there was an error.
+         * Get errors from required checks (these block publishing).
+         */
+        @NonNull
+        public List<CheckError> getRequiredErrors() {
+            return errors.stream()
+                .filter(CheckError::required)
+                .toList();
+        }
+
+        /**
+         * Get errors from non-required checks (these don't block publishing).
+         */
+        @NonNull
+        public List<CheckError> getNonRequiredErrors() {
+            return errors.stream()
+                .filter(e -> !e.required())
+                .toList();
+        }
+
+        /**
+         * Get the error message summarizing all required errors.
+         * If multiple required checks failed, lists them all.
          */
         @Nullable
         public String getErrorMessage() {
-            if (error == null) {
+            if (errors.isEmpty()) {
                 return null;
             }
-            return error.getMessage() + " For details, see: https://github.com/eclipse/openvsx/wiki/Publishing-Extensions";
+            
+            var requiredErrors = getRequiredErrors();
+            if (requiredErrors.isEmpty()) {
+                var error = errors.get(0);
+                return error.checkType() + " check failed: " + error.exception().getMessage();
+            }
+            
+            if (requiredErrors.size() == 1) {
+                var error = requiredErrors.get(0);
+                return error.checkType() + " check failed: " + error.exception().getMessage();
+            }
+            
+            // Multiple required errors - list them all with count
+            var sb = new StringBuilder();
+            sb.append(requiredErrors.size()).append(" required checks failed: ");
+            for (int i = 0; i < requiredErrors.size(); i++) {
+                var error = requiredErrors.get(i);
+                if (i > 0) {
+                    sb.append("; ");
+                }
+                sb.append(error.checkType()).append(": ").append(error.exception().getMessage());
+            }
+            return sb.toString();
         }
 
         /**
@@ -230,6 +287,15 @@ public class PublishCheckRunner{
     }
 
     /**
+     * An error that occurred during a check execution.
+     */
+    public record CheckError(
+        @NonNull String checkType,
+        @NonNull Exception exception,
+        boolean required
+    ) {}
+
+    /**
      * A single finding from a publish check.
      * Contains all info needed for the service to record the failure.
      */
@@ -252,6 +318,7 @@ public class PublishCheckRunner{
         @NonNull ScanCheckResult.CheckResult result,
         int findingsCount,
         @Nullable String errorMessage,
-        @Nullable String summary
+        @Nullable String summary,
+        boolean required
     ) {}
 }

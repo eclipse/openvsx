@@ -95,12 +95,18 @@ export const ScanCardExpandStripBadges: React.FC<ScanCardExpandStripBadgesProps>
         height: '20px',
         fontSize: '0.7rem',
         flexShrink: 0,
-        ...(badge.type === 'threat' ? {
-            backgroundColor: badge.isEnforced ? theme.palette.quarantined.dark : undefined,
+        ...(badge.type === 'error' ? {
+            // Error badges: solid grey for required, striped for optional
+            // Must set backgroundColor to 'transparent' when using striped background to override Chip defaults
+            backgroundColor: badge.isEnforced ? theme.palette.errorStatus.dark : 'transparent',
+            color: theme.palette.errorStatus.light,
+            background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.errorStatus.dark}` : undefined,
+        } : badge.type === 'threat' ? {
+            backgroundColor: badge.isEnforced ? theme.palette.quarantined.dark : 'transparent',
             color: theme.palette.quarantined.light,
             background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.quarantined.dark}` : undefined,
         } : {
-            backgroundColor: badge.isEnforced ? theme.palette.rejected.dark : undefined,
+            backgroundColor: badge.isEnforced ? theme.palette.rejected.dark : 'transparent',
             color: theme.palette.rejected.light,
             background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.rejected.dark}` : undefined,
         }),
