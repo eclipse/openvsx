@@ -209,6 +209,7 @@ export const useScansEffect = (
                             findingsCount: result.findingsCount || null,
                             summary: result.summary || null,
                             errorMessage: result.errorMessage || null,
+                            required: result.required ?? null,
                         })),
                         extensionIcon: scan.extensionIcon,
                         downloadUrl: scan.downloadUrl || null,

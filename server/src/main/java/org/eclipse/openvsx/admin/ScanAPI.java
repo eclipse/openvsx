@@ -348,6 +348,9 @@ public class ScanAPI {
             var pageNumber = offset / Math.max(size, 1);
             var pageable = PageRequest.of(pageNumber, size, sort);
             
+            // Automatically include scans with errored check results when filtering by ERRORED status
+            var includeCheckErrors = statusFilter.contains(ScanStatus.ERRORED);
+            
             var page = repositories.findScansFullyFiltered(
                 statusFilter.isEmpty() ? null : statusFilter,
                 normalizedNamespace.isEmpty() ? null : normalizedNamespace,
@@ -359,6 +362,7 @@ public class ScanAPI {
                 scannerNames,
                 enforcedOnly,
                 adminDecisionFilter,
+                includeCheckErrors,
                 pageable
             );
 
@@ -869,6 +873,7 @@ public class ScanAPI {
         json.setFindingsCount(checkResult.getFindingsCount());
         json.setSummary(checkResult.getSummary());
         json.setErrorMessage(checkResult.getErrorMessage());
+        json.setRequired(checkResult.getRequired());
         return json;
     }
 

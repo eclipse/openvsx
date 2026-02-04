@@ -86,6 +86,11 @@ public class SecretCheckService implements PublishCheck {
     public boolean isEnforced() {
         return config.isEnforced();
     }
+
+    @Override
+    public boolean isRequired() {
+        return config.isRequired();
+    }
     
     @Override
     public boolean isEnabled() {
@@ -181,12 +186,24 @@ public class SecretCheckService implements PublishCheck {
             }
             
             // Wait for all tasks to complete (or fail)
+            boolean timedOut = false;
             try {
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             } catch (java.util.concurrent.CompletionException ce) {
                 Throwable cause = ce.getCause();
                 if (cause instanceof SecretScanningTimeoutException) {
-                    throw (SecretScanningTimeoutException) cause;
+                    timedOut = true;
+                    // Only return partial results if we found something - otherwise throw
+                    if (findings.isEmpty()) {
+                        logger.error("Secret detection timed out after {} seconds with no findings",
+                                config.getTimeoutSeconds());
+                        throw new SecretScanningException(
+                                "Secret detection timed out after " + config.getTimeoutSeconds() + " seconds. " +
+                                "Please reduce the file size or exclude large files.",
+                                (SecretScanningTimeoutException) cause);
+                    }
+                    logger.warn("Secret detection timed out after {} seconds with {} partial findings",
+                            config.getTimeoutSeconds(), findings.size());
                 } else if (cause instanceof ScanCancelledException) {
                     // Max findings reached - continue with what we have
                     logger.debug("Scan cancelled early: {}", cause.getMessage());
@@ -194,10 +211,20 @@ public class SecretCheckService implements PublishCheck {
                 // Other exceptions: log and continue
             }
             
-            logger.debug("Secret scan complete: {} files scanned, {} files skipped, {} findings", 
-                        filesScanned.get(), filesSkipped.get(), findings.size());
+            logger.debug("Secret scan complete: {} files scanned, {} files skipped, {} findings, timedOut={}",
+                        filesScanned.get(), filesSkipped.get(), findings.size(), timedOut);
+            
+            // Return results (partial if timed out with findings)
+            if (timedOut) {
+                return SecretDetector.Result.timedOut(findings);
+            } else if (findings.isEmpty()) {
+                return SecretDetector.Result.noSecretsFound();
+            } else {
+                return SecretDetector.Result.secretsFound(findings);
+            }
             
         } catch (SecretScanningTimeoutException e) {
+            // Timeout at top level (before parallel processing started) - no partial results possible
             logger.error("Secret detection timed out after {} seconds", config.getTimeoutSeconds());
             throw new SecretScanningException(
                     "Secret detection timed out after " + config.getTimeoutSeconds() + " seconds. " +
@@ -213,12 +240,6 @@ public class SecretCheckService implements PublishCheck {
         } catch (Exception e) {
             logger.error("Failed to scan extension file: {}", e.getMessage());
             throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
-        }
-        
-        if (findings.isEmpty()) {
-            return SecretDetector.Result.noSecretsFound();
-        } else {
-            return SecretDetector.Result.secretsFound(findings);
         }
     }
     

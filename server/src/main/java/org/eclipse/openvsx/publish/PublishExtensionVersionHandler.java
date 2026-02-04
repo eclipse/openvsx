@@ -272,7 +272,8 @@ public class PublishExtensionVersionHandler {
                             1,                       // findingsCount
                             reason,
                             null,                    // errorMessage
-                            null                     // scannerJobId - not a scanner job
+                            null,                    // scannerJobId - not a scanner job
+                            true
                     );
                     
                     // Also record as validation failure for the failures list

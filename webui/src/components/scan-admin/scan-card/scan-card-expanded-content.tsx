@@ -123,6 +123,9 @@ const CheckResultItem: React.FC<CheckResultItemProps> = ({ checkResult }) => {
     const theme = useTheme();
     const colors = getCheckResultColor(checkResult.result, theme);
     const isPassed = checkResult.result === 'PASSED';
+    const isError = checkResult.result === 'ERROR';
+    // Non-required errors get striped styling to indicate they didn't block publishing
+    const isOptionalError = isError && checkResult.required === false;
 
     return (
         <Box sx={{
@@ -139,7 +142,10 @@ const CheckResultItem: React.FC<CheckResultItemProps> = ({ checkResult }) => {
                     label={checkResult.result}
                     size='small'
                     sx={{
-                        bgcolor: colors.bg,
+                        bgcolor: isOptionalError ? 'transparent' : colors.bg,
+                        background: isOptionalError
+                            ? `${theme.palette.unenforced.stripe}, ${colors.bg}`
+                            : undefined,
                         color: colors.text,
                         fontWeight: 600,
                         fontSize: '0.7rem',

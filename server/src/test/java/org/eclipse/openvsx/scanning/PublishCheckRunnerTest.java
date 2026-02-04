@@ -102,6 +102,7 @@ class PublishCheckRunnerTest {
         var errorCheck = mock(PublishCheck.class);
         when(errorCheck.getCheckType()).thenReturn("ERROR_CHECK");
         when(errorCheck.isEnabled()).thenReturn(true);
+        when(errorCheck.isRequired()).thenReturn(true);
         when(errorCheck.check(any())).thenThrow(new RuntimeException("Check failed"));
         var runner = new PublishCheckRunner(List.of(errorCheck));
 
@@ -109,7 +110,7 @@ class PublishCheckRunnerTest {
 
         assertFalse(result.passed());
         assertTrue(result.hasError());
-        assertEquals("ERROR_CHECK", result.errorCheckType());
+        assertEquals("ERROR_CHECK", result.getRequiredErrors().get(0).checkType());
         assertNotNull(result.getErrorMessage());
     }
 
@@ -118,6 +119,7 @@ class PublishCheckRunnerTest {
         var errorCheck = mock(PublishCheck.class);
         when(errorCheck.getCheckType()).thenReturn("ERROR");
         when(errorCheck.isEnabled()).thenReturn(true);
+        when(errorCheck.isRequired()).thenReturn(true);
         when(errorCheck.check(any())).thenThrow(new RuntimeException("Boom"));
 
         // Create a simple mock that won't be called
@@ -160,9 +162,9 @@ class PublishCheckRunnerTest {
         var result = new PublishCheckRunner.Result(
                 List.of(enforcedFinding, warningFinding),
                 List.of(),
+                List.of(),
                 true,
-                null,
-                null
+                false
         );
 
         var enforced = result.getEnforcedFindings();
@@ -198,6 +200,7 @@ class PublishCheckRunnerTest {
         when(check.getCheckType()).thenReturn(type);
         when(check.isEnabled()).thenReturn(enabled);
         when(check.isEnforced()).thenReturn(enforced);
+        when(check.isRequired()).thenReturn(true);
         when(check.check(any())).thenReturn(result);
         when(check.getUserFacingMessage(any())).thenReturn("User message");
         return check;

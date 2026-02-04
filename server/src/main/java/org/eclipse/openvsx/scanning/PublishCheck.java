@@ -46,6 +46,18 @@ public interface PublishCheck {
     boolean isEnforced();
 
     /**
+     * Whether errors (exceptions) from this check should block publication.
+     * <p>
+     * If true (default): an exception during check execution will cause publishing to fail.
+     * If false: an exception is logged and recorded, but publishing continues.
+     * <p>
+     * This is useful for non-critical checks where availability issues shouldn't block publishing.
+     */
+    default boolean isRequired() {
+        return true;
+    }
+
+    /**
      * Execute the check.
      */
     Result check(Context context);

@@ -57,6 +57,9 @@ public class CheckResultJson {
     @Schema(description = "Error message if check failed with error")
     private String errorMessage;
 
+    @Schema(description = "Whether this check was required (errors block publishing). Null for scanner jobs.")
+    private Boolean required;
+
     // Getters and setters
 
     public String getCheckType() {
@@ -137,5 +140,13 @@ public class CheckResultJson {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public Boolean getRequired() {
+        return required;
+    }
+
+    public void setRequired(Boolean required) {
+        this.required = required;
     }
 }

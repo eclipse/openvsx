@@ -109,7 +109,8 @@ class ExtensionScanServiceEnforcementTest {
             result,
             0,
             null,
-            "summary"
+            "summary",
+            true
         );
     }
 
@@ -122,9 +123,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 List.of(),
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act - should not throw
@@ -142,9 +143,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 List.of(),
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act
@@ -167,9 +168,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act: should NOT throw because nothing is enforced
@@ -190,9 +191,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.REJECT)),
+                List.of(),
                 true,
-                null,
-                null
+                false
             ));
 
         // Act & Assert: should throw ErrorResultException
@@ -213,9 +214,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.REJECT)),
+                List.of(),
                 true,
-                null,
-                null
+                false
             ));
 
         // Act & Assert
@@ -237,9 +238,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.REJECT)),
+                List.of(),
                 true,
-                null,
-                null
+                false
             ));
 
         // Act & Assert: blocked because at least one enforced check failed
@@ -265,16 +266,17 @@ class ExtensionScanServiceEnforcementTest {
                     ScanCheckResult.CheckResult.ERROR,
                     0,
                     "Check failed unexpectedly",
-                    "Error"
+                    "Error",
+                    true
                 )),
+                List.of(new PublishCheckRunner.CheckError("CHECK_1", exception, true)),  // errors
                 false,
-                exception,
-                "CHECK_1"
+                true
             ));
 
         // Act & Assert
         assertThatThrownBy(() -> svc.runValidation(scan, extensionFile, user))
-            .isInstanceOf(RuntimeException.class)
+            .isInstanceOf(ErrorResultException.class)
             .hasMessageContaining("Check failed unexpectedly");
 
         verify(persistenceService).markAsErrored(eq(scan), anyString());
@@ -288,9 +290,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 List.of(),
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act
@@ -311,9 +313,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act - should not throw
@@ -332,9 +334,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.REJECT)),
+                List.of(),
                 true,
-                null,
-                null
+                false
             ));
 
         // Act & Assert: throws and transitions to REJECTED
@@ -358,9 +360,9 @@ class ExtensionScanServiceEnforcementTest {
             .thenReturn(new PublishCheckRunner.Result(
                 findings,
                 List.of(checkExecution("CHECK_1", ScanCheckResult.CheckResult.PASSED)),
+                List.of(),
                 false,
-                null,
-                null
+                false
             ));
 
         // Act

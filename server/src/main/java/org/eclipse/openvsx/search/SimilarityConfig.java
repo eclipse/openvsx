@@ -65,6 +65,17 @@ public class SimilarityConfig {
     @Value("${ovsx.scanning.similarity.enforced:true}")
     private boolean enforced;
 
+    /**
+     * Whether errors (exceptions) from this check should block publishing.
+     * <p>
+     * If true (default): an error during similarity checking will cause publishing to fail.
+     * If false: errors are logged and recorded, but publishing continues.
+     * <p>
+     * Property: {@code ovsx.scanning.similarity.required}
+     * Default: {@code true}
+     */
+    @Value("${ovsx.scanning.similarity.required:true}")
+    private boolean required;
 
     /**
      * Threshold used to decide whether two extension identifiers are "too similar".
@@ -119,6 +130,10 @@ public class SimilarityConfig {
     
     public boolean isEnforced() {
         return enforced;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     public double getSimilarityThreshold() {

@@ -55,17 +55,20 @@ public class ExtensionScanPersistenceService {
     private final ObjectMapper objectMapper;
     private final FileDecisionRepository fileDecisionRepository;
     private final ScannerJobRepository scannerJobRepository;
+    private final ScannerRegistry scannerRegistry;
 
     public ExtensionScanPersistenceService(
             RepositoryService repositories,
             ObjectMapper objectMapper,
             FileDecisionRepository fileDecisionRepository,
-            ScannerJobRepository scannerJobRepository
+            ScannerJobRepository scannerJobRepository,
+            ScannerRegistry scannerRegistry
     ) {
         this.repositories = repositories;
         this.objectMapper = objectMapper;
         this.fileDecisionRepository = fileDecisionRepository;
         this.scannerJobRepository = scannerJobRepository;
+        this.scannerRegistry = scannerRegistry;
     }
 
     /**
@@ -207,7 +210,8 @@ public class ExtensionScanPersistenceService {
             int findingsCount,
             @Nullable String summary,
             @Nullable String errorMessage,
-            @Nullable Long scannerJobId
+            @Nullable Long scannerJobId,
+            @Nullable Boolean required
     ) {
         var checkResult = new ScanCheckResult();
         checkResult.setScan(scan);
@@ -222,12 +226,13 @@ public class ExtensionScanPersistenceService {
         checkResult.setSummary(summary);
         checkResult.setErrorMessage(errorMessage);
         checkResult.setScannerJobId(scannerJobId);
+        checkResult.setRequired(required);
         
         repositories.saveScanCheckResult(checkResult);
         
-        logger.debug("Recorded check result: {}.{} {} (scan={}) type={}, result={}, duration={}ms",
+        logger.debug("Recorded check result: {}.{} {} (scan={}) type={}, result={}, duration={}ms, required={}",
             scan.getNamespaceName(), scan.getExtensionName(), scan.getExtensionVersion(),
-            scan.getId(), checkType, result, checkResult.getDurationMs());
+            scan.getId(), checkType, result, checkResult.getDurationMs(), required);
     }
 
     /**
@@ -251,6 +256,10 @@ public class ExtensionScanPersistenceService {
             return;
         }
         
+        // Look up the scanner to get its "required" configuration
+        Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
+        Boolean required = scanner != null ? scanner.isRequired() : true;  // Default to required if scanner not found
+        
         recordCheckResult(
             scan,
             job.getScannerType(),
@@ -262,7 +271,8 @@ public class ExtensionScanPersistenceService {
             findingsCount,
             summary,
             errorMessage,
-            job.getId()
+            job.getId(),
+            required
         );
     }
 

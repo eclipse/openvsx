@@ -86,6 +86,11 @@ public class BlocklistCheckService implements PublishCheck {
     }
 
     @Override
+    public boolean isRequired() {
+        return config.isRequired();
+    }
+
+    @Override
     public String getUserFacingMessage(List<Failure> failures) {
         return config.getUserMessage();
     }

@@ -294,8 +294,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countExtensionScansByStatusDateRangeAndEnforcement(ScanStatus.STARTED, NOW, NOW, true),
                 () -> repositories.findScansFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, page),
                 () -> repositories.countScansFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW),
-                () -> repositories.findScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null, page),
-                () -> repositories.countScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null),
+                () -> repositories.findScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null, false, page),
+                () -> repositories.countScansFullyFiltered(List.of(ScanStatus.STARTED), "namespaceName", "publisher", "extensionName", NOW, NOW, List.of("checkType"), List.of("scanner"), true, null, false),
                 // Statistics queries with full filter support
                 () -> repositories.countScansForStatistics(ScanStatus.STARTED, NOW, NOW, List.of("checkType"), List.of("scanner"), true),
                 () -> repositories.countAdminDecisionsForStatistics("ALLOWED", NOW, NOW, List.of("checkType"), List.of("scanner"), true),

@@ -77,7 +77,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanC), org.springframework.data.domain.PageRequest.of(0, 1), 2));
         
         Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
@@ -118,7 +118,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
         
         Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
@@ -155,7 +155,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
 
         // Match by displayName partial (case-insensitive)
@@ -170,7 +170,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanB)));
 
         // Match by extensionName partial
@@ -193,7 +193,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanPassed, scanErrored)));
         
         Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
@@ -220,7 +220,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
 
         Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
@@ -344,7 +344,7 @@ class ScanAPITest {
         Mockito.when(repositories.findScansFullyFiltered(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any()
+            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
         )).thenReturn(new PageImpl<>(List.of(scan)));
         
         Mockito.when(repositories.findVersion("0.0.1", "universal", "ext", "ns")).thenReturn(null);

@@ -426,10 +426,12 @@ class SecretDetector {
      */
     static final class Result {
         private final boolean secretsFound;
+        private final boolean timedOut;
         private final @NotNull List<Finding> findings;
 
-        private Result(boolean secretsFound, @NotNull List<Finding> findings) {
+        private Result(boolean secretsFound, boolean timedOut, @NotNull List<Finding> findings) {
             this.secretsFound = secretsFound;
+            this.timedOut = timedOut;
             this.findings = List.copyOf(findings);
         }
 
@@ -437,25 +439,39 @@ class SecretDetector {
             if (findings.isEmpty()) {
                 throw new IllegalArgumentException("Cannot create secretsFound result with empty findings");
             }
-            return new Result(true, findings);
+            return new Result(true, false, findings);
+        }
+
+        /**
+         * Create a result for a scan that timed out with partial findings.
+         * Only use this when there are actual findings to report.
+         * If no findings were found before timeout, throw an exception instead.
+         */
+        public static Result timedOut(@NotNull List<Finding> partialFindings) {
+            if (partialFindings.isEmpty()) {
+                throw new IllegalArgumentException("Cannot create timedOut result with empty findings - throw exception instead");
+            }
+            return new Result(true, true, partialFindings);
         }
 
         public static Result noSecretsFound() {
-            return new Result(false, List.of());
+            return new Result(false, false, List.of());
         }
 
         public static Result skipped() {
-            return new Result(false, List.of());
+            return new Result(false, false, List.of());
         }
 
         public boolean isSecretsFound() { return secretsFound; }
+        public boolean isTimedOut() { return timedOut; }
         public @NotNull List<Finding> getFindings() { return findings; }
 
         public @NotNull String getSummaryMessage() {
+            String prefix = timedOut ? "(PARTIAL - timed out) " : "";
             if (!secretsFound) {
-                return "No secrets detected";
+                return prefix + "No secrets detected";
             }
-            return String.format("Found %d potential secret%s in extension package",
+            return prefix + String.format("Found %d potential secret%s in extension package",
                 findings.size(), findings.size() == 1 ? "" : "s");
         }
     }

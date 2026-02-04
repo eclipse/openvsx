@@ -224,7 +224,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
     );
 
     /**
-     * Full paginated query with ALL filters including validationType, scannerNames, enforcement, and adminDecision.
+     * Full paginated query with ALL filters including validationType, scannerNames, enforcement, adminDecision, and check errors.
      * 
      * Enforcement behavior:
      * - When validationType is specified: enforcement modifies that filter (AND logic)
@@ -233,7 +233,9 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
      */
     @Query(value = """
         SELECT s.* FROM extension_scan s
-        WHERE (CAST(:statuses AS TEXT) IS NULL OR s.status IN (:statuses))
+        WHERE (CAST(:statuses AS TEXT) IS NULL OR s.status IN (:statuses)
+               OR (:includeCheckErrors = true AND EXISTS (
+                   SELECT 1 FROM scan_check_result r WHERE r.scan_id = s.id AND r.result = 'ERROR')))
           AND (CAST(:namespace AS TEXT) IS NULL OR LOWER(s.namespace_name) LIKE LOWER('%' || :namespace || '%'))
           AND (CAST(:publisher AS TEXT) IS NULL OR LOWER(s.publisher) LIKE LOWER('%' || :publisher || '%'))
           AND (CAST(:name AS TEXT) IS NULL OR LOWER(s.extension_name) LIKE LOWER('%' || :name || '%')
@@ -276,6 +278,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
         @Param("filterAllowed") boolean filterAllowed,
         @Param("filterBlocked") boolean filterBlocked,
         @Param("filterNeedsReview") boolean filterNeedsReview,
+        @Param("includeCheckErrors") boolean includeCheckErrors,
         Pageable pageable
     );
 
@@ -284,7 +287,9 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
      */
     @Query(value = """
         SELECT COUNT(*) FROM extension_scan s
-        WHERE (CAST(:statuses AS TEXT) IS NULL OR s.status IN (:statuses))
+        WHERE (CAST(:statuses AS TEXT) IS NULL OR s.status IN (:statuses)
+               OR (:includeCheckErrors = true AND EXISTS (
+                   SELECT 1 FROM scan_check_result r WHERE r.scan_id = s.id AND r.result = 'ERROR')))
           AND (CAST(:namespace AS TEXT) IS NULL OR LOWER(s.namespace_name) LIKE LOWER('%' || :namespace || '%'))
           AND (CAST(:publisher AS TEXT) IS NULL OR LOWER(s.publisher) LIKE LOWER('%' || :publisher || '%'))
           AND (CAST(:name AS TEXT) IS NULL OR LOWER(s.extension_name) LIKE LOWER('%' || :name || '%')
@@ -326,7 +331,8 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
         @Param("applyAdminDecisionFilter") boolean applyAdminDecisionFilter,
         @Param("filterAllowed") boolean filterAllowed,
         @Param("filterBlocked") boolean filterBlocked,
-        @Param("filterNeedsReview") boolean filterNeedsReview
+        @Param("filterNeedsReview") boolean filterNeedsReview,
+        @Param("includeCheckErrors") boolean includeCheckErrors
     );
 }
 
