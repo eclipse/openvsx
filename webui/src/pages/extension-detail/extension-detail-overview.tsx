@@ -353,6 +353,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             <Box sx={resourcesGroup}>
                 <Box>
                     <Typography variant='h6'>Resources</Typography>
+                    <Typography variant='body2'><strong>Unique Identifier:</strong>{' '}<code>{`${extension.namespace}.${extension.name}`}</code></Typography>
                     {renderResourceLink('Homepage', resourceLink, extension.homepage)}
                     {renderResourceLink('Repository', resourceLink, extension.repository)}
                     {renderResourceLink('Bugs', resourceLink, extension.bugs)}
