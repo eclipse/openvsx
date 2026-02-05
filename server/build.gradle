@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.hibernate.orm:hibernate-gradle-plugin:6.2.2.Final"
+        classpath "org.hibernate.orm:hibernate-gradle-plugin:6.6.39.Final"
         classpath "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin:4.0.0"
     }
 }
@@ -13,7 +13,7 @@ plugins {
     id 'jacoco'
     id 'org.jooq.jooq-codegen-gradle' version '3.19.26'
     id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.5.6'
+    id 'org.springframework.boot' version '3.5.10'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'io.gatling.gradle' version '3.14.9'
     id 'maven-publish'
@@ -24,7 +24,7 @@ apply plugin: 'com.adarshr.test-logger'
 def jooqSrcDir = 'src/main/jooq-gen'
 def versions = [
     java: '25',
-    flyway: '9.19.1',
+    flyway: '11.20.3',
     springdoc: '2.8.13',
     gcloud: '2.50.0',
     azure: '12.23.0',
@@ -33,12 +33,12 @@ def versions = [
     testcontainers: '1.19.3',
     jackson: '2.15.2',
     woodstox: '6.4.0',
-    jobrunr: '7.5.0',
+    jobrunr: '7.5.3',
     bucket4j: '0.12.7',
     bucket4j_redis: '8.10.1',
     tika: '3.2.2',
     bouncycastle: '1.80',
-    commons_lang3: '3.12.0',
+    commons_lang3: '3.20.0',
     jaxb_api: '2.3.1',
     jaxb_impl: '2.3.8',
     gatling: '3.14.9',
@@ -119,6 +119,7 @@ dependencies {
     implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
     implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
     implementation "org.flywaydb:flyway-core:${versions.flyway}"
+    implementation "org.flywaydb:flyway-database-postgresql:${versions.flyway}"
     implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
     implementation "com.azure:azure-storage-blob:${versions.azure}"
     implementation "software.amazon.awssdk:s3:${versions.aws}"
@@ -201,8 +202,8 @@ publishing {
     }
 }
 
-task runServer(type: JavaExec) {
-//    jvmArgs = ['-Xverify:none']
+tasks.register('runServer', JavaExec) {
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED'] // due to https://github.com/netty/netty/issues/15161
     classpath = sourceSets.dev.runtimeClasspath
     mainClass = 'org.eclipse.openvsx.RegistryApplication'
 }
@@ -211,7 +212,7 @@ test {
     useJUnitPlatform()
 }
 
-task unitTests(type: Test) {
+tasks.register('unitTests', Test) {
     description = 'Runs unit tests (excluding integration tests).'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
@@ -223,7 +224,7 @@ task unitTests(type: Test) {
     exclude 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
 }
 
-task s3IntegrationTests(type: Test) {
+tasks.register('s3IntegrationTests', Test) {
     description = 'Runs S3 integration tests using LocalStack (requires Docker/Podman).'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
