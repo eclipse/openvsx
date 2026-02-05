@@ -1,6 +1,9 @@
 logging:
   pattern:
-    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+    level: '%5p'
+    console: '%d{yyyy-MM-dd HH:mm:ss} | %-5level | %logger{5} | %msg%n'
+  level:
+    root: "info"
 
 server:
   port: 8080
@@ -33,9 +36,6 @@ spring:
     baseline-description: JobRunr tables
   jpa:
     open-in-view: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
   session:
@@ -157,11 +157,11 @@ ovsx:
     publisher-agreement:
       timezone: US/Eastern
   extension-control:
-    update-on-start: true
+    update-on-start: false
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:
-    version: 'v0.14.3'
+    version: 'v0.32.0-dev'
   storage:
     local:
       directory: /tmp
