@@ -20,14 +20,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.eclipse.openvsx.entities.AdminScanDecision;
-import org.eclipse.openvsx.entities.ExtensionScan;
-import org.eclipse.openvsx.entities.ExtensionThreat;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.FileDecision;
-import org.eclipse.openvsx.entities.ScanCheckResult;
-import org.eclipse.openvsx.entities.ScanStatus;
-import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -799,7 +792,7 @@ public class ScanAPI {
         );
 
         if (version != null) {
-            populateExtensionMetadata(json, version);
+            populateExtensionMetadata(scan.getStatus(), json, version);
         } else if (json.getDisplayName() == null) {
             json.setDisplayName(scan.getExtensionName());
         }
@@ -913,14 +906,18 @@ public class ScanAPI {
      * Note: Publisher is set from the scan record, not from current namespace data,
      * to preserve the publisher name as it was at the time of scan.
      */
-    private void populateExtensionMetadata(ScanResultJson json, ExtensionVersion version) {
+    private void populateExtensionMetadata(ScanStatus scanStatus, ScanResultJson json, ExtensionVersion version) {
         json.setDisplayName(version.getDisplayName());
+
+        var isQuarantined = scanStatus == ScanStatus.QUARANTINED;
+        var fileTypes = isQuarantined ?
+                new String[] { FileResource.ICON } :
+                new String[] { FileResource.ICON, FileResource.DOWNLOAD };
 
         var fileUrls = storageUtil.getFileUrls(
             List.of(version),
             UrlUtil.getBaseUrl(),
-            org.eclipse.openvsx.entities.FileResource.ICON,
-            org.eclipse.openvsx.entities.FileResource.DOWNLOAD
+            fileTypes
         );
 
         var files = fileUrls.get(version.getId());
@@ -930,9 +927,21 @@ public class ScanAPI {
                 json.setExtensionIcon(iconUrl);
             }
 
-            var downloadUrl = files.get(org.eclipse.openvsx.entities.FileResource.DOWNLOAD);
-            if (downloadUrl != null) {
-                json.setDownloadUrl(downloadUrl);
+            // if the extension is quarantined,
+            // resolve the download location as the api endpoint will return 404.
+            if (isQuarantined) {
+                var downloadResource = repositories.findFileByType(version, FileResource.DOWNLOAD);
+                if (downloadResource != null) {
+                    var url = storageUtil.getLocation(downloadResource);
+                    if (url != null) {
+                        json.setDownloadUrl(url.toString());
+                    }
+                }
+            } else {
+                var downloadUrl = files.get(FileResource.DOWNLOAD);
+                if (downloadUrl != null) {
+                    json.setDownloadUrl(downloadUrl);
+                }
             }
         }
     }
