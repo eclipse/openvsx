@@ -34,6 +34,10 @@ import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandle
 import org.springframework.security.web.firewall.RequestRejectedHandler;
 
 @SpringBootApplication(exclude = {
+        // currently no redis / elasticsearch repositories are being used
+        // exclude autoconfiguration for them to avoid unnecessary logging
+        // messages due to existing jpa repositories
+        // can be removed once such repositories are in use
         ElasticsearchRepositoriesAutoConfiguration.class,
         ReactiveElasticsearchRepositoriesAutoConfiguration.class,
         RedisRepositoriesAutoConfiguration.class,
