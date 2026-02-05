@@ -70,6 +70,13 @@ configurations {
     devRuntimeOnly.extendsFrom runtimeOnly
 
     gatling.exclude group: "io.gatling.highcharts", module: "gatling-charts-highcharts"
+
+    // exclude commons-logging to avoid runtime warnings like these
+    // Standard Commons Logging discovery in action with spring-jcl:
+    //    please remove commons-logging.jar from classpath in order to avoid potential conflicts
+    configureEach {
+        exclude group: "commons-logging", module: "commons-logging"
+    }
 }
 
 dependencyManagement {
