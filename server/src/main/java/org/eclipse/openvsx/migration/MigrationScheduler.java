@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?>> {
 
+    private final static String SCHEDULE_MIGRATION_ITEMS_JOB = "schedule-migration-items";
+
     private final OrphanNamespaceMigration orphanNamespaceMigration;
     private final JobRequestScheduler scheduler;
 
@@ -41,6 +43,14 @@ public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?
             scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
         }
 
-        scheduler.scheduleRecurrently(MigrationItemJobRequestHandler.getJobName(), Cron.every15minutes(), new HandlerJobRequest<>(MigrationItemJobRequestHandler.class));
+        scheduler.scheduleRecurrently(
+                SCHEDULE_MIGRATION_ITEMS_JOB,
+                Cron.every15minutes(),
+                new HandlerJobRequest<>(MigrationItemJobRequestHandler.class)
+        );
+    }
+
+    public void deleteScheduleMigrationItemsJob() {
+        scheduler.deleteRecurringJob(SCHEDULE_MIGRATION_ITEMS_JOB);
     }
 }
