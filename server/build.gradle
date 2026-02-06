@@ -224,6 +224,7 @@ tasks.register('runServer', JavaExec) {
 }
 
 test {
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
 }
 
