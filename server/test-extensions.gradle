@@ -1,4 +1,6 @@
-task downloadTestExtensions {
+tasks.register('downloadTestExtensions') {
+    def buildDir = rootProject.layout.buildDirectory.get().toString()
+
     doLast {
         download.run {
             src "https://open-vsx.org/api/vscode/sql/1.54.1/file/vscode.sql-1.54.1.vsix"
