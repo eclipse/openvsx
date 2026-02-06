@@ -663,4 +663,12 @@ public class RepositoryService {
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
     }
+
+    public Streamable<PersonalAccessToken> findAccessTokensCreatedBefore(LocalDateTime timestamp) {
+        return tokenRepo.findByCreatedTimestampLessThanEqualAndActiveTrue(timestamp);
+    }
+
+    public void expireAccessTokens(LocalDateTime timestamp) {
+        tokenRepo.expireAccessTokens(timestamp);
+    }
 }

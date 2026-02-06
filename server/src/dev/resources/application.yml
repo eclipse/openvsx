@@ -170,3 +170,6 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+    access-token-expiry:
+      subject: 'Open VSX Access Token Expiry Notification'
+      template: 'access-token-expiry-notification.html'
