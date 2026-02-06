@@ -170,3 +170,42 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  scanning:
+    enabled: true
+    # Shared archive limits for all scanning checks (secret detection, blocklist, etc.)
+    max-archive-size-bytes: 1073741824   # 1 GB total archive limit
+    max-single-file-bytes: 268435456     # 256 MB per-file limit
+    max-entry-count: 100000              # Max ZIP entries to process
+    blocklist-check:
+      enabled: true
+      enforced: false
+      required: false
+    similarity:
+      enabled: true
+      enforced: false
+      required: false
+      similarity-threshold: 0.2
+      skip-if-publisher-verified: false
+      only-protect-verified-names: false
+      allow-similarity-to-own-names: true
+      only-check-new-extensions: true
+    secret-detection:
+      enabled: true
+      enforced: false
+      required: false
+      rules-path: 'classpath:scanning/secret-detection-custom-rules.yaml'
+      suppression-markers: 'secret-detector:ignore,gitleaks:allow,nosecret,@suppress-secret'
+      gitleaks:
+        auto-fetch: true
+        force-refresh: true
+        output-path: '/tmp/secret-detection-rules-gitleaks.yaml'
+        scheduled-refresh: true
+        refresh-cron: '0 0 3 * * *'  # Daily at 3 AM
+        skip-rule-ids: 'generic-api-key'  # Rule IDs that produce too many false positives
+      max-findings: 200
+      minified-line-threshold: 10000
+      long-line-no-space-threshold: 1000
+      regex-context-chars: 100
+      debug-preview-chars: 10
+      timeout-seconds: 10
+      timeout-check-interval: 100

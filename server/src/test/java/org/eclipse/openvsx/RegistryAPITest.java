@@ -27,6 +27,8 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
@@ -87,7 +89,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
-    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class
+    JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
+    ExtensionScanPersistenceService.class
 })
 class RegistryAPITest {
 
@@ -105,6 +108,9 @@ class RegistryAPITest {
 
     @MockitoBean
     EntityManager entityManager;
+
+    @MockitoBean
+    ExtensionScanService extensionScanService;
 
     @Autowired
     MockMvc mockMvc;
@@ -1402,7 +1408,10 @@ class RegistryAPITest {
 
     @Test
     void testCreateNamespace() throws Exception {
-        mockAccessToken();
+        var token = mockAccessToken();
+        // Mock findMemberships(user) for similarity check during namespace creation
+        Mockito.when(repositories.findMemberships(token.getUser()))
+                .thenReturn(Streamable.empty());
         mockMvc.perform(post("/api/-/namespace/create?token={token}", "my_token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.setName("foobar"); })))
@@ -2364,6 +2373,9 @@ class RegistryAPITest {
                     .thenReturn(true);
             Mockito.when(repositories.isVerified(namespace, token.getUser()))
                     .thenReturn(true);
+            // Mock findMemberships(user) for similarity check
+            Mockito.when(repositories.findMemberships(token.getUser()))
+                    .thenReturn(Streamable.of(ownerMem));
         } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
             Mockito.when(repositories.canPublishInNamespace(token.getUser(), namespace))
                     .thenReturn(true);
@@ -2380,11 +2392,25 @@ class RegistryAPITest {
                         .thenReturn(Streamable.of(ownerMem));
                 Mockito.when(repositories.isVerified(namespace, token.getUser()))
                         .thenReturn(true);
+                // Mock findMemberships(user) for similarity check - user is a contributor
+                var contributorMem = new NamespaceMembership();
+                contributorMem.setUser(token.getUser());
+                contributorMem.setNamespace(namespace);
+                contributorMem.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+                Mockito.when(repositories.findMemberships(token.getUser()))
+                        .thenReturn(Streamable.of(contributorMem));
             } else {
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
                 Mockito.when(repositories.isVerified(namespace, token.getUser()))
                         .thenReturn(false);
+                // Mock findMemberships(user) for similarity check - user might be sole contributor
+                var contributorMem = new NamespaceMembership();
+                contributorMem.setUser(token.getUser());
+                contributorMem.setNamespace(namespace);
+                contributorMem.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+                Mockito.when(repositories.findMemberships(token.getUser()))
+                        .thenReturn(Streamable.of(contributorMem));
             }
         } else if (mode.equals("privileged") || mode.equals("unrelated")) {
             var otherUser = new UserData();
@@ -2399,12 +2425,22 @@ class RegistryAPITest {
                     .thenReturn(true);
             if (mode.equals("privileged")) {
                 token.getUser().setRole(UserData.ROLE_PRIVILEGED);
+                // Mock findMemberships(user) for similarity check - privileged user might have memberships
+                Mockito.when(repositories.findMemberships(token.getUser()))
+                        .thenReturn(Streamable.empty());
+            } else {
+                // Mock findMemberships(user) for similarity check - unrelated user has no memberships
+                Mockito.when(repositories.findMemberships(token.getUser()))
+                        .thenReturn(Streamable.empty());
             }
         } else {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
             Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(false);
+            // Mock findMemberships(user) for similarity check - default to empty
+            Mockito.when(repositories.findMemberships(token.getUser()))
+                    .thenReturn(Streamable.empty());
         }
 
         Mockito.when(entityManager.merge(any(Extension.class)))
@@ -2546,7 +2582,8 @@ class RegistryAPITest {
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                SimilarityService similarityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2559,7 +2596,8 @@ class RegistryAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService
+                    integrityService,
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
         }
 
@@ -2570,9 +2608,20 @@ class RegistryAPITest {
                 SearchUtilService search,
                 CacheService cache,
                 PublishExtensionVersionHandler publishHandler,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
+            return new ExtensionService(
+                    entityManager,
+                    repositories,
+                    search,
+                    cache,
+                    publishHandler,
+                    scheduler,
+                    extensionScanService,
+                    scanPersistenceService
+            );
         }
 
         @Bean
@@ -2628,6 +2677,25 @@ class RegistryAPITest {
         }
 
         @Bean
+        SimilarityConfig similarityConfig() {
+            return new SimilarityConfig();
+        }
+
+        @Bean
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
+                SimilarityConfig config,
+                SimilarityService similarityService,
+                RepositoryService repositories
+        ) {
+            return new SimilarityCheckService(config, similarityService, repositories);
+        }
+
+        @Bean
         PublishExtensionVersionHandler publishExtensionVersionHandler(
                 PublishExtensionVersionService service,
                 ExtensionVersionIntegrityService integrityService,
@@ -2636,7 +2704,9 @@ class RegistryAPITest {
                 JobRequestScheduler scheduler,
                 UserService users,
                 ExtensionValidator validator,
-                ExtensionControlService extensionControl
+                ExtensionControlService extensionControl,
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new PublishExtensionVersionHandler(
                     service,
@@ -2646,7 +2716,9 @@ class RegistryAPITest {
                     scheduler,
                     users,
                     validator,
-                    extensionControl
+                    extensionControl,
+                    extensionScanService,
+                    scanPersistenceService
             );
         }
     }

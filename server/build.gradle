@@ -7,6 +7,7 @@ buildscript {
         classpath "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin:4.0.0"
     }
 }
+
 plugins {
     id 'java'
     id 'scala'
@@ -18,6 +19,7 @@ plugins {
     id 'io.gatling.gradle' version '3.14.9'
     id 'maven-publish'
 }
+
 apply plugin: 'org.hibernate.orm'
 apply plugin: 'com.adarshr.test-logger'
 
@@ -43,7 +45,9 @@ def versions = [
     jaxb_impl: '2.3.8',
     gatling: '3.14.9',
     loki4j: '1.4.2',
-    jedis: '6.2.0'
+    jedis: '6.2.0',
+    re2j: '1.7',
+    jsonpath: '2.9.0'
 ]
 ext['junit-jupiter.version'] = versions.junit
 java {
@@ -138,11 +142,15 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${versions.jackson}"
     implementation "com.fasterxml.woodstox:woodstox-core:${versions.woodstox}"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${versions.jackson}"
     implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
     implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
     implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
     implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "org.apache.tika:tika-core:${versions.tika}"
+    implementation "com.google.re2j:re2j:${versions.re2j}"
+    implementation "com.jayway.jsonpath:json-path:${versions.jsonpath}"
     implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"

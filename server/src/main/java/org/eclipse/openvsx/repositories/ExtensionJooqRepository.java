@@ -25,7 +25,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
+import static org.eclipse.openvsx.jooq.Tables.EXTENSION_VERSION;
 import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
+import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
 
 @Component
 public class ExtensionJooqRepository {
@@ -269,5 +271,170 @@ public class ExtensionJooqRepository {
                         .where(NAMESPACE.NAME.equalIgnoreCase(namespace))
                         .and(EXTENSION.NAME.equalIgnoreCase(extension))
         );
+    }
+
+    /**
+     * Find extensions similar to the given fields using PostgreSQL's Levenshtein distance.
+     */
+    public List<Extension> findSimilarExtensionsByLevenshtein(
+            String extensionName,
+            String namespaceName,
+            String displayName,
+            List<String> excludeNamespaces,
+            double levenshteinThreshold,
+            boolean verifiedOnly,
+            int limit
+    ) {
+        var query = dsl.selectQuery();
+        query.addSelect(
+                EXTENSION.ID,
+                EXTENSION.PUBLIC_ID,
+                EXTENSION.NAME,
+                EXTENSION.AVERAGE_RATING,
+                EXTENSION.REVIEW_COUNT,
+                EXTENSION.DOWNLOAD_COUNT,
+                EXTENSION.PUBLISHED_DATE,
+                EXTENSION.LAST_UPDATED_DATE,
+                NAMESPACE.ID,
+                NAMESPACE.PUBLIC_ID,
+                NAMESPACE.NAME,
+                NAMESPACE.DISPLAY_NAME
+        );
+
+        query.addFrom(EXTENSION);
+        query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+
+        query.addConditions(EXTENSION.ACTIVE.eq(true));
+
+        if (excludeNamespaces != null && !excludeNamespaces.isEmpty()) {
+            query.addConditions(NAMESPACE.NAME.notIn(excludeNamespaces));
+        }
+
+        if (verifiedOnly) {
+            var hasOwnerSubquery = DSL.selectOne()
+                    .from(NAMESPACE_MEMBERSHIP)
+                    .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(NAMESPACE.ID))
+                    .and(NAMESPACE_MEMBERSHIP.ROLE.eq("owner"));
+            
+            query.addConditions(DSL.exists(hasOwnerSubquery));
+        }
+
+        var conditions = new ArrayList<Condition>();
+
+        if (extensionName != null && !extensionName.isEmpty()) {
+            var lowerExtensionName = extensionName.toLowerCase();
+            
+            var conditionList = new ArrayList<Condition>();
+            
+            int inputLen = extensionName.length();
+            int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
+            int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
+            conditionList.add(DSL.length(EXTENSION.NAME).between(minLen, lenMax));
+            
+            var maxLen = DSL.greatest(
+                    DSL.val(lowerExtensionName.length()),
+                    DSL.length(EXTENSION.NAME)
+            );
+            var maxDistance = maxLen.mul(levenshteinThreshold);
+            
+            var levenshteinDist = DSL.function("levenshtein_less_equal", Integer.class,
+                    DSL.val(lowerExtensionName),
+                    DSL.lower(EXTENSION.NAME),
+                    DSL.val(1), // insertion cost
+                    DSL.val(1), // deletion cost
+                    DSL.val(1), // substitution cost
+                    maxDistance.cast(Integer.class)
+            );
+            
+            conditionList.add(levenshteinDist.le(maxDistance));
+            
+            conditions.add(DSL.and(conditionList));
+        }
+
+        if (namespaceName != null && !namespaceName.isEmpty()) {
+            var lowerNamespaceName = namespaceName.toLowerCase();
+            
+            var conditionList = new ArrayList<Condition>();
+            
+            int inputLen = namespaceName.length();
+            int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
+            int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
+            conditionList.add(DSL.length(NAMESPACE.NAME).between(minLen, lenMax));
+            
+            var maxLen = DSL.greatest(
+                    DSL.val(lowerNamespaceName.length()),
+                    DSL.length(NAMESPACE.NAME)
+            );
+            var maxDistance = maxLen.mul(levenshteinThreshold);
+            
+            var levenshteinDist = DSL.function("levenshtein_less_equal", Integer.class,
+                    DSL.val(lowerNamespaceName),
+                    DSL.lower(NAMESPACE.NAME),
+                    DSL.val(1), // insertion cost
+                    DSL.val(1), // deletion cost
+                    DSL.val(1), // substitution cost
+                    maxDistance.cast(Integer.class)
+            );
+            
+            conditionList.add(levenshteinDist.le(maxDistance));
+            
+            conditions.add(DSL.and(conditionList));
+        }
+
+        if (displayName != null && !displayName.isEmpty()) {
+            var evLatest = EXTENSION_VERSION.as("ev_latest");
+            
+            var lowerDisplayName = displayName.toLowerCase();
+            
+            int inputLen = displayName.length();
+            int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
+            int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
+            
+            var maxDisplayNameLen = DSL.greatest(
+                DSL.val(lowerDisplayName.length()),
+                DSL.length(evLatest.DISPLAY_NAME)
+            );
+            var maxDisplayNameDistance = maxDisplayNameLen.mul(levenshteinThreshold);
+            
+            var displayNameLevenshtein = DSL.function("levenshtein_less_equal", Integer.class,
+                    DSL.val(lowerDisplayName),
+                    DSL.lower(evLatest.DISPLAY_NAME),
+                    DSL.val(1), // insertion cost
+                    DSL.val(1), // deletion cost
+                    DSL.val(1), // substitution cost
+                    maxDisplayNameDistance.cast(Integer.class)
+            );
+            
+            var displayNameSimilaritySubquery = DSL.selectOne()
+                    .from(evLatest)
+                    .where(evLatest.EXTENSION_ID.eq(EXTENSION.ID))
+                    .and(evLatest.ACTIVE.eq(true))
+                    .and(evLatest.DISPLAY_NAME.isNotNull())
+                    .and(evLatest.DISPLAY_NAME.ne(""))
+                    .and(DSL.length(evLatest.DISPLAY_NAME).between(minLen, lenMax))
+                    .and(displayNameLevenshtein.le(maxDisplayNameDistance));
+            
+            conditions.add(DSL.exists(displayNameSimilaritySubquery));
+        }
+
+        if (!conditions.isEmpty()) {
+            query.addConditions(DSL.or(conditions));
+        } else {
+            return List.of();
+        }
+
+        // Order by best match first (lowest Levenshtein distance)
+        if (extensionName != null && !extensionName.isEmpty()) {
+            var lowerExtensionName = extensionName.toLowerCase();
+            var levenshteinDist = DSL.function("levenshtein", Integer.class,
+                    DSL.val(lowerExtensionName),
+                    DSL.lower(EXTENSION.NAME)
+            );
+            query.addOrderBy(levenshteinDist.asc());
+        }
+
+        query.addLimit(limit);
+        
+        return query.fetch().map(this::toExtension);
     }
 }
