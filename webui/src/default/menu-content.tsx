@@ -29,6 +29,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard';
 import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
+import { SearchBox } from '../components/search/search-box';
 
 //-------------------- Mobile View --------------------//
 
@@ -118,9 +119,14 @@ export const MobileUserAvatar: FunctionComponent = () => {
 
 export const MobileMenuContent: FunctionComponent = () => {
     const location = useLocation();
-    const { user, loginProviders } = useContext(MainContext);
+    const { user, loginProviders, pageSettings } = useContext(MainContext);
 
     return <>
+        {pageSettings.showSearch && (
+            <MobileMenuItem>
+                <SearchBox />
+            </MobileMenuItem>   
+        )}
         {loginProviders && (
             user ? (
                 <MobileUserAvatar />
@@ -129,12 +135,14 @@ export const MobileMenuContent: FunctionComponent = () => {
                     <LoginComponent
                         loginProviders={loginProviders}
                         renderButton={(href, onClick) => {
-                            return (<Link href={href} onClick={onClick}>
-                                <MobileMenuItemText>
-                                    <AccountBoxIcon sx={itemIcon} />
-                                    Log In
-                                </MobileMenuItemText>
-                            </Link>);
+                            return (
+                                <Link href={href} onClick={onClick}>
+                                    <MobileMenuItemText>
+                                        <AccountBoxIcon sx={itemIcon} />
+                                        Log In
+                                    </MobileMenuItemText>
+                                </Link>
+                            );
                         }}
                     />
                 </MobileMenuItem>
@@ -205,8 +213,12 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { user, loginProviders } = useContext(MainContext);
+    const { user, loginProviders, pageSettings } = useContext(MainContext);
+
     return <>
+        {pageSettings.showSearch && (
+            <SearchBox />
+        )}
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
         </MenuLink>
@@ -218,35 +230,47 @@ export const DefaultMenuContent: FunctionComponent = () => {
         </MenuRouteLink>
         {loginProviders && (
             <>
-                <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    href='/user-settings/extensions'
+                    sx={{ mx: 2.5 }}
+                >
                     Publish
                 </Button>
-                {
-                    user ?
-                        <UserAvatar />
-                        :
-                        <LoginComponent
-                            loginProviders={loginProviders}
-                            renderButton={(href, onClick) => {
-                                if (href) {
-                                    return (<IconButton
+
+                {user ? (
+                    <UserAvatar />
+                ) : (
+                    <LoginComponent
+                        loginProviders={loginProviders}
+                        renderButton={(href, onClick) => {
+                            if (href) {
+                                return (
+                                    <IconButton
                                         href={href}
                                         title='Log In'
-                                        aria-label='Log In' >
+                                        aria-label='Log In'
+                                    >
                                         <AccountBoxIcon />
-                                    </IconButton>);
-                                } else {
-                                    return (<IconButton
+                                    </IconButton>
+                                );
+                            } else {
+                                return (
+                                    <IconButton
                                         onClick={onClick}
                                         title='Log In'
-                                        aria-label='Log In' >
+                                        aria-label='Log In'
+                                    >
                                         <AccountBoxIcon />
-                                    </IconButton>);
-                                }
-                            }}
-                        />
-                }
+                                    </IconButton>
+                                );
+                            }
+                        }}
+                    />
+                )}
             </>
         )}
     </>;
 };
+

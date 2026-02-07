@@ -19,6 +19,7 @@ import { UserData, isError, ReportedError, isSuccess, LoginProviders } from './e
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { ErrorResponse } from './server-request';
+import { DefaultApp } from './default/default-app';
 
 import '../src/main.css';
 import { OtherPages } from './other-pages';
@@ -123,7 +124,12 @@ export const Main: FunctionComponent<MainProps> = props => {
     return <>
         <CssBaseline />
         <MainContext.Provider value={mainContext}>
-            {renderPageContent()}
+            <DefaultApp
+                pageSettings={props.pageSettings}
+                service={props.service}
+            >
+                {renderPageContent()}
+            </DefaultApp>
         </MainContext.Provider>
     </>;
 };

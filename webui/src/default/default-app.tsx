@@ -55,7 +55,11 @@ const App = () => {
         [prefersDarkMode],
     );
 
-    const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion());
+    const pageSettings = {
+        ...createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion()),
+        showSearch: true
+    };
+
     return (
         <HelmetProvider>
             <ThemeProvider theme={theme}>
