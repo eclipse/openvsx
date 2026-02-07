@@ -141,6 +141,13 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         </>;
     };
 
+    const renderIdentifierSection = (): ReactNode => {
+        return <>
+            <Typography variant='h6'>Unique Identifier</Typography>
+            <Typography variant='body2'><code>{`${extension.namespace}.${extension.name}`}</code></Typography>
+        </>;
+    };
+
     const renderAliasesSection = (otherAliases: string[], sx: SxProps<Theme>): ReactNode => {
         const { extension } = props;
         const aliasButtons = otherAliases.length ?
@@ -323,7 +330,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         Search extensions
                     </Button>
                 </Box>
-
                 <Box>
                     {renderVersionSection()}
                 </Box>
@@ -331,6 +337,13 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
                 }
             </Box>
+
+            <Box sx={resourcesGroup}>
+                <Box>
+                    {renderIdentifierSection()}
+                </Box>
+            </Box>
+
             <Box sx={resourcesGroup}>
                 {
                     extension.categories && extension.categories.length > 0 ?
@@ -341,7 +354,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 }
                 {
                     tags && tags.length > 0 ?
-                        <Box mt={2}>
+                        <Box mt={extension.categories && extension.categories.length > 0 ? 2 : 0}>
                             {renderButtonList('search', 'Tags', tags, tagButton)}
                         </Box>
                         : null
