@@ -12,6 +12,7 @@
   <a href="https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A"><img alt="Slack workspace" src="https://img.shields.io/badge/Slack-Join%20workspace-4A154B?logo=slack&logoColor=white" /></a>
   <a href="https://github.com/eclipse/openvsx/blob/master/LICENSE"><img alt="EPLv2 License" src="https://img.shields.io/github/license/eclipse/openvsx" /></a>
   <a href="https://github.com/eclipse/openvsx/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/eclipse/openvsx?sort=semver" /></a>
+  <a href="https://www.npmjs.com/package/ovsx"><img alt="cli" src="https://img.shields.io/npm/v/ovsx?label=cli" /></a>
   <a href="https://github.com/eclipse/openvsx/actions/workflows/main.yml?query=branch%3Amaster"><img alt="Build Status" src="https://github.com/eclipse/openvsx/actions/workflows/main.yml/badge.svg?branch:master" /></a>
   <a href="https://develocity-staging.eclipse.org/"><img alt="Revved up by Develocity" src="https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/eclipse/openvsx"><img alt="OpenSSF Scorecard" src="https://api.securityscorecards.dev/projects/github.com/eclipse/openvsx/badge" /></a>

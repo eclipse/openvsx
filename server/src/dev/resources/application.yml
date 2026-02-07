@@ -1,6 +1,9 @@
 logging:
   pattern:
-    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+    level: '%5p'
+    console: '%d{yyyy-MM-dd HH:mm:ss} | %-5level | %logger{5} | %msg%n'
+  level:
+    root: "info"
 
 server:
   port: 8080
@@ -33,9 +36,6 @@ spring:
     baseline-description: JobRunr tables
   jpa:
     open-in-view: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
   session:
@@ -157,11 +157,11 @@ ovsx:
     publisher-agreement:
       timezone: US/Eastern
   extension-control:
-    update-on-start: true
+    update-on-start: false
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:
-    version: 'v0.14.3'
+    version: 'v0.32.0-dev'
   storage:
     local:
       directory: /tmp
@@ -170,3 +170,42 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  scanning:
+    enabled: true
+    # Shared archive limits for all scanning checks (secret detection, blocklist, etc.)
+    max-archive-size-bytes: 1073741824   # 1 GB total archive limit
+    max-single-file-bytes: 268435456     # 256 MB per-file limit
+    max-entry-count: 100000              # Max ZIP entries to process
+    blocklist-check:
+      enabled: true
+      enforced: false
+      required: false
+    similarity:
+      enabled: true
+      enforced: false
+      required: false
+      similarity-threshold: 0.2
+      skip-if-publisher-verified: false
+      only-protect-verified-names: false
+      allow-similarity-to-own-names: true
+      only-check-new-extensions: true
+    secret-detection:
+      enabled: true
+      enforced: false
+      required: false
+      rules-path: 'classpath:scanning/secret-detection-custom-rules.yaml'
+      suppression-markers: 'secret-detector:ignore,gitleaks:allow,nosecret,@suppress-secret'
+      gitleaks:
+        auto-fetch: true
+        force-refresh: true
+        output-path: '/tmp/secret-detection-rules-gitleaks.yaml'
+        scheduled-refresh: true
+        refresh-cron: '0 0 3 * * *'  # Daily at 3 AM
+        skip-rule-ids: 'generic-api-key'  # Rule IDs that produce too many false positives
+      max-findings: 200
+      minified-line-threshold: 10000
+      long-line-no-space-threshold: 1000
+      regex-context-chars: 100
+      debug-preview-chars: 10
+      timeout-seconds: 10
+      timeout-check-interval: 100

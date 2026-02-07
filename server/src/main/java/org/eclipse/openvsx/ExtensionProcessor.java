@@ -262,13 +262,23 @@ public class ExtensionProcessor implements AutoCloseable {
         return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Version").asText();
     }
 
-    private String getTargetPlatform() {
+    public String getTargetPlatform() {
+        loadVsixManifest();
         var targetPlatform = vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("TargetPlatform").asText();
         if (targetPlatform.isEmpty()) {
             targetPlatform = TargetPlatform.NAME_UNIVERSAL;
         }
 
         return targetPlatform;
+    }
+
+    public String getDisplayName() {
+        loadVsixManifest();
+        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asText();
+        if (StringUtils.isBlank(displayName)) {
+            return getExtensionName();
+        }
+        return displayName;
     }
 
     private List<String> getTags() {
