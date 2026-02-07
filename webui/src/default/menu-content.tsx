@@ -128,14 +128,14 @@ export const MobileMenuContent: FunctionComponent = () => {
                 <MobileMenuItem>
                     <LoginComponent
                         loginProviders={loginProviders}
-                        renderButton={(href, onClick) => (
-                            <Link href={href} onClick={onClick}>
+                        renderButton={(href, onClick) => {
+                            return <Link href={href} onClick={onClick}>
                                 <MobileMenuItemText>
                                     <AccountBoxIcon sx={itemIcon} />
                                     Log In
                                 </MobileMenuItemText>
-                            </Link>
-                        )}
+                            </Link>;
+                        }}
                     />
                 </MobileMenuItem>
             )
@@ -205,15 +205,8 @@ export const MenuLink = styled(Link)(headerItem);
 export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
-    const { user, loginProviders, pageSettings } = useContext(MainContext);
-
+    const { user, loginProviders } = useContext(MainContext);
     return <>
-        {pageSettings.showSearch && (
-            <MenuLink href='/search'>
-                Search Extensions
-            </MenuLink>
-
-        )}
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation
         </MenuLink>
@@ -225,45 +218,34 @@ export const DefaultMenuContent: FunctionComponent = () => {
         </MenuRouteLink>
         {loginProviders && (
             <>
-                <Button
-                    variant='contained'
-                    color='secondary'
-                    href='/user-settings/extensions'
-                    sx={{ mx: 2.5 }}
-                >
+                <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
                     Publish
                 </Button>
-
-                {user ? (
-                    <UserAvatar />
-                ) : (
-                    <LoginComponent
-                        loginProviders={loginProviders}
-                        renderButton={(href, onClick) => {
-                            if (href) {
-                                return (
-                                    <IconButton
+                {
+                    user ?
+                        <UserAvatar />
+                        :
+                        <LoginComponent
+                            loginProviders={loginProviders}
+                            renderButton={(href, onClick) => {
+                                if (href) {
+                                    return (<IconButton
                                         href={href}
                                         title='Log In'
-                                        aria-label='Log In'
-                                    >
+                                        aria-label='Log In' >
                                         <AccountBoxIcon />
-                                    </IconButton>
-                                );
-                            } else {
-                                return (
-                                    <IconButton
+                                    </IconButton>);
+                                } else {
+                                    return (<IconButton
                                         onClick={onClick}
                                         title='Log In'
-                                        aria-label='Log In'
-                                    >
+                                        aria-label='Log In' >
                                         <AccountBoxIcon />
-                                    </IconButton>
-                                );
-                            }
-                        }}
-                    />
-                )}
+                                    </IconButton>);
+                                }
+                            }}
+                        />
+                }
             </>
         )}
     </>;

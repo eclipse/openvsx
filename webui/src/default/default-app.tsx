@@ -55,10 +55,7 @@ const App = () => {
         [prefersDarkMode],
     );
 
-    const pageSettings = {
-        ...createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion()),
-        showSearch: true
-    };
+    const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion());
 
     return (
         <HelmetProvider>

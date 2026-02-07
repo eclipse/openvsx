@@ -110,7 +110,6 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     return {
         pageTitle: 'Open VSX Registry',
         themeType: prefersDarkMode ? 'dark' : 'light',
-        showSearch: false,
         publisherAgreement: {
             name: 'Open VSX'
         },
