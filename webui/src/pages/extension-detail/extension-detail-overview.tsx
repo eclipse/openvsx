@@ -329,7 +329,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 </Box>
                 {
                     (otherAliases.length || extension.versionAlias.length) ? <Box>{renderAliasesSection(otherAliases, tagButton)}</Box> : ''
-                }   
+                }
             </Box>
             <Box sx={resourcesGroup}>
                 {
