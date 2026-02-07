@@ -29,7 +29,6 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard';
 import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
-import { SearchBox } from '../components/search/search-box';
 
 //-------------------- Mobile View --------------------//
 
@@ -119,14 +118,9 @@ export const MobileUserAvatar: FunctionComponent = () => {
 
 export const MobileMenuContent: FunctionComponent = () => {
     const location = useLocation();
-    const { user, loginProviders, pageSettings } = useContext(MainContext);
+    const { user, loginProviders } = useContext(MainContext);
 
     return <>
-        {pageSettings.showSearch && (
-            <MobileMenuItem>
-                <SearchBox />
-            </MobileMenuItem>   
-        )}
         {loginProviders && (
             user ? (
                 <MobileUserAvatar />
@@ -134,16 +128,14 @@ export const MobileMenuContent: FunctionComponent = () => {
                 <MobileMenuItem>
                     <LoginComponent
                         loginProviders={loginProviders}
-                        renderButton={(href, onClick) => {
-                            return (
-                                <Link href={href} onClick={onClick}>
-                                    <MobileMenuItemText>
-                                        <AccountBoxIcon sx={itemIcon} />
-                                        Log In
-                                    </MobileMenuItemText>
-                                </Link>
-                            );
-                        }}
+                        renderButton={(href, onClick) => (
+                            <Link href={href} onClick={onClick}>
+                                <MobileMenuItemText>
+                                    <AccountBoxIcon sx={itemIcon} />
+                                    Log In
+                                </MobileMenuItemText>
+                            </Link>
+                        )}
                     />
                 </MobileMenuItem>
             )
@@ -217,7 +209,10 @@ export const DefaultMenuContent: FunctionComponent = () => {
 
     return <>
         {pageSettings.showSearch && (
-            <SearchBox />
+            <MenuLink href='/search'>
+                Search Extensions
+            </MenuLink>
+
         )}
         <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
             Documentation

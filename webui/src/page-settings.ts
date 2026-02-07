@@ -20,6 +20,7 @@ export interface PageSettings {
         name?: string;
         email?: string;
     };
+    showSearch?: boolean;
     elements: {
         toolbarContent?: ComponentType;
         defaultMenuContent?: ComponentType;
