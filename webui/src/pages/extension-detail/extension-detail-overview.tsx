@@ -72,7 +72,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             {
                 Object.keys(props.extension.downloads).map((targetPlatform, index) => {
                     const displayName = getTargetPlatformDisplayName(targetPlatform);
-                    return displayName ? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span> : null;
+                    return displayName? <span key={targetPlatform}>{index > 0 ? ', ' : ''}{displayName}</span>: null;
                 })
             }
         </Grid>);
