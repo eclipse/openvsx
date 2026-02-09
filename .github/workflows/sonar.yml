@@ -7,7 +7,7 @@ jobs:
   sonar:
     name: Sonar
     permissions:
-      contents: write
+      contents: read
     runs-on: ubuntu-latest
     if: github.repository == 'eclipse/openvsx'
     steps:
@@ -29,8 +29,6 @@ jobs:
         java-version: 25
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
-      with:
-        dependency-graph: generate-and-submit
     - name: Generate JaCoCo test report
       run: server/gradlew --no-daemon -p server jacocoTestReport
     - name: Make server libraries directory

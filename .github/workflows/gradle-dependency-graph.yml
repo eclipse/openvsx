@@ -1,0 +1,29 @@
+name: Gradle Dependency Submission
+on:
+  push:
+    branches:
+      - master
+jobs:
+  sonar:
+    name: Sonar
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    if: github.repository == 'eclipse/openvsx'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      with:
+          persist-credentials: false
+    - name: Set up JDK
+      uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e  # v5.1.0
+      with:
+        distribution: 'temurin'
+        java-version: 25
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
+      with:
+        dependency-graph: 'generate-and-submit'
+    - run: server/gradlew --no-daemon -p server assemble
+      env:
+        DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: 'productionRuntimeClasspath'
