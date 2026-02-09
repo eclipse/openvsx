@@ -15,8 +15,8 @@ package org.eclipse.openvsx.scanning;
 import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TempFile;
-import org.springframework.lang.NonNull;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -96,25 +96,13 @@ public interface PublishCheck {
      * etc. to access extension metadata.
      */
     record Context(
-        @NonNull ExtensionScan scan,
-        @NonNull TempFile extensionFile,
-        @NonNull UserData user
-    ) {
-        public Context {
-            if (scan == null) {
-                throw new IllegalArgumentException("scan cannot be null");
-            }
-            if (extensionFile == null) {
-                throw new IllegalArgumentException("extensionFile cannot be null");
-            }
-            if (user == null) {
-                throw new IllegalArgumentException("user cannot be null");
-            }
-        }
-    }
+        @Nonnull ExtensionScan scan,
+        @Nonnull TempFile extensionFile,
+        @Nonnull UserData user
+    ) {}
 
     /**
-     * Result of a publish check execution.
+     * Result of a publishing check execution.
      */
     record Result(
         boolean passed,

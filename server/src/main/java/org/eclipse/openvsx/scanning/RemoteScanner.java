@@ -14,8 +14,8 @@ package org.eclipse.openvsx.scanning;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,12 +42,12 @@ public class RemoteScanner implements Scanner {
     private final ScannerFileProvider scanFileService;
     
     public RemoteScanner(
-        @NonNull String scannerName,
-        @NonNull RemoteScannerProperties.ScannerConfig config,
-        @NonNull HttpTemplateEngine templateEngine,
-        @NonNull HttpClientExecutor httpExecutor,
-        @NonNull HttpResponseExtractor responseExtractor,
-        @NonNull ScannerFileProvider scanFileService
+        @Nonnull String scannerName,
+        @Nonnull RemoteScannerProperties.ScannerConfig config,
+        @Nonnull HttpTemplateEngine templateEngine,
+        @Nonnull HttpClientExecutor httpExecutor,
+        @Nonnull HttpResponseExtractor responseExtractor,
+        @Nonnull ScannerFileProvider scanFileService
     ) {
         this.scannerName = scannerName;
         this.config = config;
@@ -58,7 +58,7 @@ public class RemoteScanner implements Scanner {
     }
     
     @Override
-    @NonNull
+    @Nonnull
     public String getScannerType() {
         return config.getType();
     }
@@ -95,8 +95,8 @@ public class RemoteScanner implements Scanner {
      * For async scanners: Extracts job ID from start response
      */
     @Override
-    @NonNull
-    public Scanner.Invocation startScan(@NonNull Command command) throws ScannerException {
+    @Nonnull
+    public Scanner.Invocation startScan(@Nonnull Command command) throws ScannerException {
         logger.debug("Starting {} scan for extension version {}", 
             scannerName, command.extensionVersionId());
         
@@ -155,8 +155,8 @@ public class RemoteScanner implements Scanner {
      * to PollStatus.
      */
     @Override
-    @NonNull
-    public PollStatus pollStatus(@NonNull Submission submission) throws ScannerException {
+    @Nonnull
+    public PollStatus pollStatus(@Nonnull Submission submission) throws ScannerException {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
@@ -200,8 +200,8 @@ public class RemoteScanner implements Scanner {
      * Executes the configured result operation and parses threats.
      */
     @Override
-    @NonNull
-    public Scanner.Result fetchResults(@NonNull Submission submission) throws ScannerException {
+    @Nonnull
+    public Scanner.Result fetchResults(@Nonnull Submission submission) throws ScannerException {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
@@ -450,7 +450,7 @@ public class RemoteScanner implements Scanner {
      * Extract threat severity using path or expression.
      * Always returns a non-null value (defaults to "MEDIUM").
      */
-    @NonNull
+    @Nonnull
     private String extractThreatSeverity(
         Map<String, Object> threatObj,
         RemoteScannerProperties.ThreatMapping threatMapping

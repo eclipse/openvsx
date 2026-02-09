@@ -13,11 +13,12 @@
 package org.eclipse.openvsx.web;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.jspecify.annotations.NonNull;
 import org.springframework.core.Ordered;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
+
+import javax.annotation.Nonnull;
 
 @RestControllerAdvice
 public class ServerExceptionResolver extends DefaultHandlerExceptionResolver {
@@ -28,7 +29,7 @@ public class ServerExceptionResolver extends DefaultHandlerExceptionResolver {
     }
 
     @Override
-    protected void logException(@NonNull Exception ex, @NonNull HttpServletRequest request) {
+    protected void logException(@Nonnull Exception ex, @Nonnull HttpServletRequest request) {
         // do not log HttpMediaTypeNotSupportedException, see https://github.com/eclipse/openvsx/issues/1505
         // this just pollutes the server logs but bringing no added value
         if (!(ex instanceof HttpMediaTypeNotSupportedException)) {

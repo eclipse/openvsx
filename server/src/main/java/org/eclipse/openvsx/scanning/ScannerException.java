@@ -12,19 +12,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Exception thrown when a scan operation fails.
  */
 public class ScannerException extends Exception {
     
-    public ScannerException(@NonNull String message) {
+    public ScannerException(@Nonnull String message) {
         super(message);
     }
     
-    public ScannerException(@NonNull String message, @Nullable Throwable cause) {
+    public ScannerException(@Nonnull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }
