@@ -13,8 +13,6 @@
 package org.eclipse.openvsx.scanning;
 
 import org.eclipse.openvsx.ExtensionProcessor;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -25,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,8 +75,8 @@ public class ExtensionScanService {
      * Creates a scan record from ExtensionProcessor metadata.
      * Use this when validation runs BEFORE extension creation.
      */
-    @NonNull
-    public ExtensionScan initializeScan(@NonNull ExtensionProcessor processor, @NonNull UserData user) {
+    @Nonnull
+    public ExtensionScan initializeScan(@Nonnull ExtensionProcessor processor, @Nonnull UserData user) {
         return initializeScan(
             processor.getNamespace(),
             processor.getExtensionName(),
@@ -114,9 +114,9 @@ public class ExtensionScanService {
      * then records findings and manages state transitions.
      */
     public void runValidation(
-            @NonNull ExtensionScan scan,
-            @NonNull TempFile extensionFile,
-            @NonNull UserData user
+            @Nonnull ExtensionScan scan,
+            @Nonnull TempFile extensionFile,
+            @Nonnull UserData user
     ) {
         transitionTo(scan, ScanStatus.VALIDATING);
 
@@ -143,7 +143,7 @@ public class ExtensionScanService {
 
         // Handle required check errors - block publication
         if (checkResult.hasRequiredCheckError()) {
-            var requiredError = checkResult.getRequiredErrors().get(0);
+            var requiredError = checkResult.getRequiredErrors().getFirst();
             markScanAsErrored(scan, checkResult.getErrorMessage());
             throw new ErrorResultException(checkResult.getErrorMessage(), requiredError.exception());
         }
@@ -199,7 +199,7 @@ public class ExtensionScanService {
      * JobRunr handles parallel execution, automatic retry, and persistence.
      * AsyncScanCompletionService will activate extensions when all scans complete.
      */
-    public boolean submitScannerJobs(@NonNull ExtensionScan scan, @NonNull ExtensionVersion extVersion) {
+    public boolean submitScannerJobs(@Nonnull ExtensionScan scan, @Nonnull ExtensionVersion extVersion) {
         if (!config.isEnabled()) {
             logger.debug("Scanning is disabled, skipping scanner jobs for: {}", 
                 NamingUtil.toLogFormat(extVersion));
@@ -361,7 +361,7 @@ public class ExtensionScanService {
         };
     }
 
-    public void removeScan(@NonNull ExtensionScan scan) {
+    public void removeScan(@Nonnull ExtensionScan scan) {
         persistenceService.removeScan(scan);
     }
 

@@ -23,13 +23,13 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.lang.Nullable;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -225,18 +225,13 @@ public class HttpClientExecutor {
         }
         
         String bodyType = bodyConfig.getType();
-        switch (bodyType.toLowerCase()) {
-            case "multipart":
-                return buildMultipartEntity(bodyConfig, file, headers);
-            case "json":
-                return buildJsonEntity(bodyConfig, headers);
-            case "form-urlencoded":
-                return buildFormEntity(bodyConfig, headers);
-            case "raw":
-                return buildRawEntity(bodyConfig, headers);
-            default:
-                throw new IllegalArgumentException("Unsupported body type: " + bodyType);
-        }
+        return switch (bodyType.toLowerCase()) {
+            case "multipart" -> buildMultipartEntity(bodyConfig, file, headers);
+            case "json" -> buildJsonEntity(bodyConfig, headers);
+            case "form-urlencoded" -> buildFormEntity(bodyConfig, headers);
+            case "raw" -> buildRawEntity(bodyConfig, headers);
+            default -> throw new IllegalArgumentException("Unsupported body type: " + bodyType);
+        };
     }
     
     /**

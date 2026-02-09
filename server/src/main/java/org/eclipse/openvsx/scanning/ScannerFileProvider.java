@@ -13,7 +13,6 @@
 package org.eclipse.openvsx.scanning;
 
 import jakarta.persistence.EntityManager;
-import org.springframework.lang.NonNull;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -24,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
@@ -57,7 +57,7 @@ public class ScannerFileProvider {
      * Downloads the .vsix file to a temp location. Use in try-with-resources
      * for automatic cleanup.
      */
-    @NonNull
+    @Nonnull
     public TempFile getExtensionFile(long extensionVersionId) throws ScannerException {
         try {
             // Find the extension version using EntityManager

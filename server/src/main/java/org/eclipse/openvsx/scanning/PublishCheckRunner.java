@@ -18,10 +18,10 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,11 +66,11 @@ public class PublishCheckRunner{
      * This method does not persist anything. It only executes checks and returns findings.
      * The caller is responsible for recording failures and managing state.
      */
-    @NonNull
+    @Nonnull
     public Result runChecks(
-            @NonNull ExtensionScan scan,
-            @NonNull TempFile extensionFile,
-            @NonNull UserData user
+            @Nonnull ExtensionScan scan,
+            @Nonnull TempFile extensionFile,
+            @Nonnull UserData user
     ) {
         var context = new PublishCheck.Context(scan, extensionFile, user);
         var allFindings = new ArrayList<Finding>();
@@ -189,9 +189,9 @@ public class PublishCheckRunner{
      * Result of running all publish checks.
      */
     public record Result(
-        @NonNull List<Finding> findings,
-        @NonNull List<CheckExecution> checkExecutions,
-        @NonNull List<CheckError> errors,
+        @Nonnull List<Finding> findings,
+        @Nonnull List<CheckExecution> checkExecutions,
+        @Nonnull List<CheckError> errors,
         boolean hasEnforcedFailure,
         boolean hasRequiredCheckError
     ) {
@@ -214,7 +214,7 @@ public class PublishCheckRunner{
         /**
          * Get errors from required checks (these block publishing).
          */
-        @NonNull
+        @Nonnull
         public List<CheckError> getRequiredErrors() {
             return errors.stream()
                 .filter(CheckError::required)
@@ -224,7 +224,7 @@ public class PublishCheckRunner{
         /**
          * Get errors from non-required checks (these don't block publishing).
          */
-        @NonNull
+        @Nonnull
         public List<CheckError> getNonRequiredErrors() {
             return errors.stream()
                 .filter(e -> !e.required())
@@ -243,12 +243,12 @@ public class PublishCheckRunner{
             
             var requiredErrors = getRequiredErrors();
             if (requiredErrors.isEmpty()) {
-                var error = errors.get(0);
+                var error = errors.getFirst();
                 return error.checkType() + " check failed: " + error.exception().getMessage();
             }
             
             if (requiredErrors.size() == 1) {
-                var error = requiredErrors.get(0);
+                var error = requiredErrors.getFirst();
                 return error.checkType() + " check failed: " + error.exception().getMessage();
             }
             
@@ -268,7 +268,7 @@ public class PublishCheckRunner{
         /**
          * Get findings that are enforced (would block publication).
          */
-        @NonNull
+        @Nonnull
         public List<Finding> getEnforcedFindings() {
             return findings.stream()
                 .filter(Finding::enforced)
@@ -278,7 +278,7 @@ public class PublishCheckRunner{
         /**
          * Get findings that are not enforced (warnings only).
          */
-        @NonNull
+        @Nonnull
         public List<Finding> getWarningFindings() {
             return findings.stream()
                 .filter(f -> !f.enforced())
@@ -290,8 +290,8 @@ public class PublishCheckRunner{
      * An error that occurred during a check execution.
      */
     public record CheckError(
-        @NonNull String checkType,
-        @NonNull Exception exception,
+        @Nonnull String checkType,
+        @Nonnull Exception exception,
         boolean required
     ) {}
 
@@ -300,8 +300,8 @@ public class PublishCheckRunner{
      * Contains all info needed for the service to record the failure.
      */
     public record Finding(
-        @NonNull String checkType,
-        @NonNull String ruleName,
+        @Nonnull String checkType,
+        @Nonnull String ruleName,
         @Nullable String reason,
         boolean enforced,
         @Nullable String userFacingMessage
@@ -312,10 +312,10 @@ public class PublishCheckRunner{
      * Used to record all checks that were run for audit trail.
      */
     public record CheckExecution(
-        @NonNull String checkType,
-        @NonNull LocalDateTime startedAt,
-        @NonNull LocalDateTime completedAt,
-        @NonNull ScanCheckResult.CheckResult result,
+        @Nonnull String checkType,
+        @Nonnull LocalDateTime startedAt,
+        @Nonnull LocalDateTime completedAt,
+        @Nonnull ScanCheckResult.CheckResult result,
         int findingsCount,
         @Nullable String errorMessage,
         @Nullable String summary,

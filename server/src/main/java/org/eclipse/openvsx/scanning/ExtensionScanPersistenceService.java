@@ -22,10 +22,10 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
@@ -75,14 +75,14 @@ public class ExtensionScanPersistenceService {
      * Creates and persists a new scan record BEFORE an extension version exists.
      */
     @Transactional(TxType.REQUIRES_NEW)
-    @NonNull
+    @Nonnull
     public ExtensionScan initializeScan(
-            @NonNull String namespaceName,
-            @NonNull String extensionName,
-            @NonNull String version,
+            @Nonnull String namespaceName,
+            @Nonnull String extensionName,
+            @Nonnull String version,
             @Nullable String targetPlatform,
             @Nullable String displayName,
-            @NonNull UserData user
+            @Nonnull UserData user
     ) {
         var isUniversal = targetPlatform == null || "universal".equals(targetPlatform);
         if (displayName == null || displayName.isBlank()) {
@@ -141,7 +141,7 @@ public class ExtensionScanPersistenceService {
      * Persists a status change. The caller is responsible for validating the transition.
      */
     @Transactional(TxType.REQUIRES_NEW)
-    public void updateStatus(@NonNull ExtensionScan scan, @NonNull ScanStatus newStatus) {
+    public void updateStatus(@Nonnull ExtensionScan scan, @Nonnull ScanStatus newStatus) {
         scan.setStatus(newStatus);
         repositories.saveExtensionScan(scan);
     }
@@ -150,7 +150,7 @@ public class ExtensionScanPersistenceService {
      * Persists a terminal status change with completion timestamp.
      */
     @Transactional(TxType.REQUIRES_NEW)
-    public void completeWithStatus(@NonNull ExtensionScan scan, @NonNull ScanStatus newStatus) {
+    public void completeWithStatus(@Nonnull ExtensionScan scan, @Nonnull ScanStatus newStatus) {
         scan.setStatus(newStatus);
         scan.setCompletedAt(LocalDateTime.now());
         repositories.saveExtensionScan(scan);
@@ -160,7 +160,7 @@ public class ExtensionScanPersistenceService {
      * Persists an error status with message.
      */
     @Transactional(TxType.REQUIRES_NEW)
-    public void markAsErrored(@NonNull ExtensionScan scan, @Nullable String errorMessage) {
+    public void markAsErrored(@Nonnull ExtensionScan scan, @Nullable String errorMessage) {
         scan.setStatus(ScanStatus.ERRORED);
         scan.setErrorMessage(errorMessage);
         scan.setCompletedAt(LocalDateTime.now());
@@ -171,7 +171,7 @@ public class ExtensionScanPersistenceService {
      * Removes a scan.
      */
     @Transactional(TxType.REQUIRES_NEW)
-    public void removeScan(@NonNull ExtensionScan scan) {
+    public void removeScan(@Nonnull ExtensionScan scan) {
         repositories.deleteExtensionScan(scan);
     }
 
@@ -180,10 +180,10 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public void recordValidationFailure(
-            @NonNull ExtensionScan scan, 
-            @NonNull String checkType, 
-            @NonNull String ruleName, 
-            @Nullable String reason, 
+            @Nonnull ExtensionScan scan,
+            @Nonnull String checkType,
+            @Nonnull String ruleName,
+            @Nullable String reason,
             boolean enforced
     ) {
         var failure = ExtensionValidationFailure.create(checkType, ruleName, reason);
@@ -200,12 +200,12 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public void recordCheckResult(
-            @NonNull ExtensionScan scan,
-            @NonNull String checkType,
-            @NonNull ScanCheckResult.CheckCategory category,
-            @NonNull ScanCheckResult.CheckResult result,
-            @NonNull LocalDateTime startedAt,
-            @NonNull LocalDateTime completedAt,
+            @Nonnull ExtensionScan scan,
+            @Nonnull String checkType,
+            @Nonnull ScanCheckResult.CheckCategory category,
+            @Nonnull ScanCheckResult.CheckResult result,
+            @Nonnull LocalDateTime startedAt,
+            @Nonnull LocalDateTime completedAt,
             @Nullable Integer filesScanned,
             int findingsCount,
             @Nullable String summary,
@@ -242,9 +242,9 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public void recordScannerJobResult(
-            @NonNull String scanId,
-            @NonNull ScannerJob job,
-            @NonNull ScanCheckResult.CheckResult result,
+            @Nonnull String scanId,
+            @Nonnull ScannerJob job,
+            @Nonnull ScanCheckResult.CheckResult result,
             @Nullable Integer filesScanned,
             int findingsCount,
             @Nullable String summary,
@@ -314,7 +314,7 @@ public class ExtensionScanPersistenceService {
      * - If enforced threats exist → check FOUND (blocks publication)
      */
     @Transactional(TxType.REQUIRES_NEW)
-    public ThreatSaveResult saveThreats(@NonNull ScannerJob job, @NonNull Scanner.Result result, boolean scannerEnforced) {
+    public ThreatSaveResult saveThreats(@Nonnull ScannerJob job, @Nonnull Scanner.Result result, boolean scannerEnforced) {
         if (result.isClean()) {
             logger.debug("No threats to save for scanner job {}", job.getId());
             return ThreatSaveResult.clean();
@@ -386,8 +386,8 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public CompletedScanResult processCompletedScan(
-            @NonNull ScannerJob job,
-            @NonNull Scanner.Result result,
+            @Nonnull ScannerJob job,
+            @Nonnull Scanner.Result result,
             boolean scannerEnforced
     ) {
         int threatCount = 0;
@@ -435,14 +435,14 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public void recordThreat(
-            @NonNull ExtensionScan scan,
-            @NonNull String fileName,
+            @Nonnull ExtensionScan scan,
+            @Nonnull String fileName,
             @Nullable String fileHash,
             @Nullable String fileExtension,
-            @NonNull String scannerType,
-            @NonNull String ruleName,
+            @Nonnull String scannerType,
+            @Nonnull String ruleName,
             @Nullable String reason,
-            @NonNull String severity,
+            @Nonnull String severity,
             boolean enforced
     ) {
         var threat = ExtensionThreat.create(
