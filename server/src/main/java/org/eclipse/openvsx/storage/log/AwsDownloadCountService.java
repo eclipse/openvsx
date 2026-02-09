@@ -11,7 +11,6 @@ package org.eclipse.openvsx.storage.log;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -240,7 +239,7 @@ public class AwsDownloadCountService {
     }
 
     private boolean isGetOperation(LogRecord record) {
-        return record.operation().equalsIgnoreCase("GET");
+        return record.method().equalsIgnoreCase("GET");
     }
 
     private boolean isStatusOk(LogRecord record) {
@@ -280,7 +279,7 @@ public class AwsDownloadCountService {
     }
 }
 
-record LogRecord(String operation, int status, String url) {}
+record LogRecord(String method, int status, String url) {}
 
 interface LogFileParser {
     @Nullable

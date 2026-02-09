@@ -32,7 +32,7 @@ public class FastlyLogFileParserTest {
             try (var reader = new BufferedReader(new InputStreamReader(is))) {
                 var record = parser.parse(reader.readLine());
                 assertNotNull(record);
-                assertEquals("GET", record.operation());
+                assertEquals("GET", record.method());
                 assertEquals(301, record.status());
                 assertEquals("/favicon.ico", record.url());
             }

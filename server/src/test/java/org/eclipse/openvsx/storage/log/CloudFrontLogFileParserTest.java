@@ -37,7 +37,7 @@ public class CloudFrontLogFileParserTest {
                 assertNull(record);
 
                 record = parser.parse(reader.readLine());
-                assertEquals("OPTIONS", record.operation());
+                assertEquals("OPTIONS", record.method());
                 assertEquals(200, record.status());
                 assertEquals("/vscjava/vscode-java-pack/0.30.4/package.json", record.url());
             }
