@@ -35,7 +35,8 @@ import { LoginComponent } from './login';
 export const MobileMenuItem = styled(MenuItem)({
     cursor: 'auto',
     '&>a': {
-        textDecoration: 'none'
+        textDecoration: 'none',
+        width: '100%',
     }
 });
 
