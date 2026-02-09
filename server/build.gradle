@@ -156,6 +156,12 @@ dependencies {
     gatling libs.gatling.app
 }
 
+configurations.configureEach {
+    resolutionStrategy {
+        force 'org.apache.commons:commons-compress:1.26.0+'
+    }
+}
+
 jooq {
     configuration {
         logging = "WARN"
