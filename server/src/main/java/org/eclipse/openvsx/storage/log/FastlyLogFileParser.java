@@ -19,11 +19,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 
 class FastlyLogFileParser implements LogFileParser {
+    private final Logger logger = LoggerFactory.getLogger(FastlyLogFileParser.class);
+
     private final ObjectMapper mapper;
 
     public FastlyLogFileParser() {
@@ -39,6 +43,7 @@ class FastlyLogFileParser implements LogFileParser {
         try {
             return mapper.readValue(line, LogRecord.class);
         } catch (JacksonException ex) {
+            logger.error("could not parse log line {}", line, ex);
             return null;
         }
     }
