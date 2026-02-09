@@ -23,7 +23,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
       with:
-        dependency-graph: 'generate-and-submit'
+        dependency-graph: 'generate-submit-and-upload'
     - run: server/gradlew --no-daemon -p server assemble
       env:
         DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: 'productionRuntimeClasspath'
