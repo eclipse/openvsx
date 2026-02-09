@@ -10,24 +10,37 @@
 package org.eclipse.openvsx.storage.log;
 
 import org.eclipse.openvsx.entities.FileResource;
-import org.springframework.stereotype.Component;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Service;
+
+import java.time.ZoneId;
 
 /**
  * A utility service to determine whether an optimized download count service
  * is available for a specific {@link FileResource}.
  */
-@Component
+@Service
 public class DownloadCountService {
 
-    private final AwsDownloadCountService awsDownloadCountService;
-    private final AzureDownloadCountService azureDownloadCountService;
+    protected final Logger logger = LoggerFactory.getLogger(DownloadCountService.class);
+
+    private final JobRequestScheduler scheduler;
+    private final AwsDownloadCountHandler awsDownloadCountHandler;
+    private final AzureDownloadCountHandler azureDownloadCountHandler;
 
     public DownloadCountService(
-            AwsDownloadCountService awsDownloadCountService,
-            AzureDownloadCountService azureDownloadCountService
+            JobRequestScheduler scheduler,
+            AwsDownloadCountHandler awsDownloadCountHandler,
+            AzureDownloadCountHandler azureDownloadCountHandler
     ) {
-        this.awsDownloadCountService = awsDownloadCountService;
-        this.azureDownloadCountService = azureDownloadCountService;
+        this.scheduler = scheduler;
+        this.awsDownloadCountHandler = awsDownloadCountHandler;
+        this.azureDownloadCountHandler = azureDownloadCountHandler;
     }
 
     /**
@@ -38,9 +51,36 @@ public class DownloadCountService {
      */
     public boolean isEnabled(FileResource resource) {
         return switch (resource.getStorageType()) {
-            case FileResource.STORAGE_AWS -> awsDownloadCountService.isEnabled();
-            case FileResource.STORAGE_AZURE -> azureDownloadCountService.isEnabled();
+            case FileResource.STORAGE_AWS -> awsDownloadCountHandler.isEnabled();
+            case FileResource.STORAGE_AZURE -> azureDownloadCountHandler.isEnabled();
             default -> false;
         };
+    }
+
+    @EventListener
+    public void applicationStarted(ApplicationStartedEvent event) {
+        if (awsDownloadCountHandler.isEnabled()) {
+            logger.info("Scheduling AWS download count handler with cron '{}'", awsDownloadCountHandler.getCronSchedule());
+            scheduler.scheduleRecurrently(
+                    awsDownloadCountHandler.getRecurringJobId(),
+                    awsDownloadCountHandler.getCronSchedule(),
+                    ZoneId.of("UTC"),
+                    new HandlerJobRequest<>(AwsDownloadCountHandler.class)
+            );
+        } else {
+            scheduler.deleteRecurringJob(awsDownloadCountHandler.getRecurringJobId());
+        }
+
+        if (azureDownloadCountHandler.isEnabled()) {
+            logger.info("Scheduling Azure download count handler with cron '{}'", azureDownloadCountHandler.getCronSchedule());
+            scheduler.scheduleRecurrently(
+                    azureDownloadCountHandler.getRecurringJobId(),
+                    azureDownloadCountHandler.getCronSchedule(),
+                    ZoneId.of("UTC"),
+                    new HandlerJobRequest<>(AwsDownloadCountHandler.class)
+            );
+        } else {
+            scheduler.deleteRecurringJob(azureDownloadCountHandler.getRecurringJobId());
+        }
     }
 }

@@ -12,21 +12,22 @@ package org.eclipse.openvsx.storage.log;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
-import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,17 +42,22 @@ import java.util.zip.GZIPInputStream;
 /**
  * Pulls logs from an Amazon S3 bucket, extracts downloads from the logs and updates download counts in the database.
  * <p>
- * Currently only log files uploaded by Amazon CloudFront are supported.
- * <p>
- * Links:
+ * The following log file formats are supported:
  * <ul>
- *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html">CloudFront standard logging</a></li>
- *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html">CloudFront log format</a></li>
+ *     <li>cloudfront</li>
+ *     <li>fastly</li>
+ * </ul>
+ * <p>
+ * See
+ * <ul>
+ *   <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html">CloudFront standard logging</a></li>
+ *   <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html">CloudFront log format</a></li>
+ *   <li><a href="https://www.fastly.com/documentation/guides/integrations/streaming-logs/custom-log-formats/">Fastly custom log format</a></li>
  * </ul>
  */
 @Component
-public class AwsDownloadCountService {
-    private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountService.class);
+public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequest<?>> {
+    private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountHandler.class);
 
     private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
     private static final int MAX_KEYS = 100;
@@ -65,9 +71,34 @@ public class AwsDownloadCountService {
     @Value("${ovsx.logs.aws.log-location-prefix:" + LOG_LOCATION_PREFIX + "}")
     String logLocationPrefix;
 
-    public AwsDownloadCountService(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
+    @Value("${ovsx.logs.aws.format:cloudfront}")
+    String logFormat;
+
+    @Value("${ovsx.logs.aws.cron:0 10 * * * *}")
+    String cronSchedule;
+
+    LogFileParser logFileParser;
+
+    public AwsDownloadCountHandler(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
         this.awsStorageService = awsStorageService;
         this.processor = processor;
+    }
+
+    @PostConstruct
+    public void initialize() {
+        logFileParser = switch (logFormat.toLowerCase()) {
+            case "cloudfront" -> new CloudFrontLogFileParser();
+            case "fastly" -> new FastlyLogFileParser();
+            default -> throw new IllegalArgumentException("unsupported log file format '" + logFormat + "'");
+        };
+    }
+
+    public String getRecurringJobId() {
+        return "update-aws-download-counts";
+    }
+
+    public String getCronSchedule() {
+        return cronSchedule;
     }
 
     /**
@@ -82,11 +113,11 @@ public class AwsDownloadCountService {
     }
 
     /**
-     * Task scheduled once per hour to pull logs from AWS S3 Storage and update extension download counts.
+     * Scheduled task to pull logs from AWS S3 Storage and update extension download counts.
      */
+    @Override
     @Job(name = "Update AWS Download Counts", retries = 0)
-    @Recurring(id = "update-aws-download-counts", cron = "0 10 * * * *", zoneId = "UTC")
-    public void updateDownloadCounts() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         if (!isEnabled()) {
             return;
         }
@@ -193,16 +224,14 @@ public class AwsDownloadCountService {
             var lines = reader.lines().iterator();
             while (lines.hasNext()) {
                 var line = lines.next();
-                if (line.startsWith("#")) {
+
+                var record = logFileParser.parse(line);
+                if (record == null) {
                     continue;
                 }
 
-                // Format:
-                // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
-                var components = line.split("[ \t]+");
-
-                if (isGetOperation(components) && isStatusOk(components) && isExtensionPackageUri(components)) {
-                    var uri = components[7];
+                if (isGetOperation(record) && isStatusOk(record) && isExtensionPackageUri(record)) {
+                    var uri = record.url();
                     var uriComponents = uri.split("/");
                     var vsixFile = UriUtils.decode(uriComponents[uriComponents.length - 1], StandardCharsets.UTF_8).toUpperCase();
                     fileCounts.merge(vsixFile, 1, Integer::sum);
@@ -212,16 +241,16 @@ public class AwsDownloadCountService {
         }
     }
 
-    private boolean isGetOperation(String[] components) {
-        return components[5].equalsIgnoreCase("GET");
+    private boolean isGetOperation(LogRecord record) {
+        return record.method().equalsIgnoreCase("GET");
     }
 
-    private boolean isStatusOk(String[] components) {
-        return Integer.parseInt(components[8]) == 200;
+    private boolean isStatusOk(LogRecord record) {
+        return record.status() == 200;
     }
 
-    private boolean isExtensionPackageUri(String[] components) {
-        return components[7].endsWith(".vsix");
+    private boolean isExtensionPackageUri(LogRecord record) {
+        return record.url().endsWith(".vsix");
     }
 
     private TempFile downloadFile(String objectKey) throws IOException {
