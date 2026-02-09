@@ -4,8 +4,8 @@ on:
     branches:
       - master
 jobs:
-  sonar:
-    name: Sonar
+  dependency-submission:
+    name: Gradle dependency submission
     permissions:
       contents: write
     runs-on: ubuntu-latest
