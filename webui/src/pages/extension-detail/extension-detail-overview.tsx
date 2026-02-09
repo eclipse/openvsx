@@ -200,8 +200,8 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         key={buttonLabel}
                         title={
                             kind === 'category'
-                                ? `Search for extensions in '${buttonLabel}' category`
-                                : `Search for extensions containing '${buttonLabel}'`
+                                ? `Search for extensions in "${buttonLabel}" category`
+                                : `Search for extensions containing "${buttonLabel}"`
                         }
                         onClick={() => {
                             const route = addQuery(ExtensionListRoutes.MAIN, [{ key: kind, value: buttonLabel }]);
@@ -321,15 +321,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             }}
         >
             <Box sx={resourcesGroup}>
-                <Box mb={2}>
-                    <Button
-                        size='small'
-                        variant='outlined'
-                        onClick={() => navigate(ExtensionListRoutes.MAIN)}
-                    >
-                        Search extensions
-                    </Button>
-                </Box>
                 <Box>
                     {renderVersionSection()}
                 </Box>
