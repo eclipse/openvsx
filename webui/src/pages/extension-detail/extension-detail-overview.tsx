@@ -146,7 +146,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
             <Typography variant='h6'>Unique Identifier</Typography>
             <Typography variant='body2'><code>{`${extension.namespace}.${extension.name}`}</code></Typography>
         </>;
-    }
+    };
 
     const renderAliasesSection = (otherAliases: string[], sx: SxProps<Theme>): ReactNode => {
         const { extension } = props;
