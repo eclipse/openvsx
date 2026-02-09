@@ -9,32 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage.log;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
-import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -64,8 +56,8 @@ import java.util.zip.GZIPInputStream;
  * </ul>
  */
 @Component
-public class AwsDownloadCountService {
-    private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountService.class);
+public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequest<?>> {
+    private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountHandler.class);
 
     private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
     private static final int MAX_KEYS = 100;
@@ -82,9 +74,12 @@ public class AwsDownloadCountService {
     @Value("${ovsx.logs.aws.format:cloudfront}")
     String logFormat;
 
+    @Value("${ovsx.logs.aws.cron:0 10 * * * *}")
+    String cronSchedule;
+
     LogFileParser logFileParser;
 
-    public AwsDownloadCountService(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
+    public AwsDownloadCountHandler(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
         this.awsStorageService = awsStorageService;
         this.processor = processor;
     }
@@ -96,6 +91,14 @@ public class AwsDownloadCountService {
             case "fastly" -> new FastlyLogFileParser();
             default -> throw new IllegalArgumentException("unsupported log file format '" + logFormat + "'");
         };
+    }
+
+    public String getRecurringJobId() {
+        return "update-aws-download-counts";
+    }
+
+    public String getCronSchedule() {
+        return cronSchedule;
     }
 
     /**
@@ -110,11 +113,11 @@ public class AwsDownloadCountService {
     }
 
     /**
-     * Task scheduled once per hour to pull logs from AWS S3 Storage and update extension download counts.
+     * Scheduled task to pull logs from AWS S3 Storage and update extension download counts.
      */
+    @Override
     @Job(name = "Update AWS Download Counts", retries = 0)
-    @Recurring(id = "update-aws-download-counts", cron = "0 10 * * * *", zoneId = "UTC")
-    public void updateDownloadCounts() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         if (!isEnabled()) {
             return;
         }
@@ -276,68 +279,5 @@ public class AwsDownloadCountService {
         }
 
         return getS3Client().listObjectsV2(builder.build());
-    }
-}
-
-record LogRecord(String method, int status, String url) {}
-
-interface LogFileParser {
-    @Nullable
-    LogRecord parse(String line);
-}
-
-class CloudFrontLogFileParser implements LogFileParser {
-    @Override
-    public LogRecord parse(String line) {
-        if (line.startsWith("#")) {
-            return null;
-        }
-
-        // Format:
-        // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
-        var components = line.split("[ \t]+");
-        return new LogRecord(components[5], Integer.parseInt(components[8]), components[7]);
-    }
-}
-
-class FastlyLogFileParser implements LogFileParser {
-    private final ObjectMapper mapper;
-
-    public FastlyLogFileParser() {
-        this.mapper = new ObjectMapper();
-
-        SimpleModule module = new SimpleModule();
-        module.addDeserializer(LogRecord.class, new LogRecordDeserializer());
-        mapper.registerModule(module);
-    }
-
-    @Override
-    public @Nullable LogRecord parse(String line) {
-        try {
-            return mapper.readValue(line, LogRecord.class);
-        } catch (JacksonException ex) {
-            return null;
-        }
-    }
-}
-
-class LogRecordDeserializer extends StdDeserializer<LogRecord> {
-
-    public LogRecordDeserializer() {
-        this(null);
-    }
-
-    public LogRecordDeserializer(Class<?> vc) {
-        super(vc);
-    }
-
-    @Override
-    public LogRecord deserialize(JsonParser jp, DeserializationContext ctxt)
-            throws IOException {
-        JsonNode node = jp.getCodec().readTree(jp);
-        String operation = node.get("request_method").asText();
-        int status = (Integer) node.get("response_status").numberValue();
-        String url = node.get("url").asText();
-        return new LogRecord(operation, status, url);
     }
 }

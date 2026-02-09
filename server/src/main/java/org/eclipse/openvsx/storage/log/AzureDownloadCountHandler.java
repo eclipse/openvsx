@@ -21,9 +21,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,9 +53,9 @@ import static org.eclipse.openvsx.storage.AzureBlobStorageService.AZURE_USER_AGE
  * and updates download counts in the database.
  */
 @Component
-public class AzureDownloadCountService {
+public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountService.class);
+    protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountHandler.class);
 
     private final DownloadCountProcessor processor;
     private BlobContainerClient containerClient;
@@ -75,8 +77,19 @@ public class AzureDownloadCountService {
     @Value("${ovsx.storage.azure.blob-container:openvsx-resources}")
     String storageBlobContainer;
 
-    public AzureDownloadCountService(DownloadCountProcessor processor) {
+    @Value("${ovsx.logs.azure.cron:0 5 * * * *}")
+    String cronSchedule;
+
+    public AzureDownloadCountHandler(DownloadCountProcessor processor) {
         this.processor = processor;
+    }
+
+    public String getRecurringJobId() {
+        return "update-azure-download-counts";
+    }
+
+    public String getCronSchedule() {
+        return cronSchedule;
     }
 
     /**
@@ -96,8 +109,7 @@ public class AzureDownloadCountService {
      * Task scheduled once per hour to pull logs from Azure Blob Storage and update extension download counts.
      */
     @Job(name = "Update Azure Download Counts", retries = 0)
-    @Recurring(id = "update-azure-download-counts", cron = "0 5 * * * *", zoneId = "UTC")
-    public void updateDownloadCounts() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         if (!isEnabled()) {
             return;
         }
