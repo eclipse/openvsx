@@ -228,11 +228,8 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
                 var record = logFileParser.parse(line);
                 if (record == null) {
                     continue;
-                } else {
-                    logger.info("got no log record");
                 }
 
-                logger.info("got log record {}", record);
                 if (isGetOperation(record) && isStatusOk(record) && isExtensionPackageUri(record)) {
                     var uri = record.url();
                     var uriComponents = uri.split("/");

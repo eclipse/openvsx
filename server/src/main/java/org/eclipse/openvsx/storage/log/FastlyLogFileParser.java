@@ -41,9 +41,14 @@ class FastlyLogFileParser implements LogFileParser {
     @Override
     public @Nullable LogRecord parse(String line) {
         try {
-            return mapper.readValue(line, LogRecord.class);
+            var jsonStartIndex = line.indexOf("{");
+            if (jsonStartIndex != -1) {
+                return mapper.readValue(line.substring(jsonStartIndex), LogRecord.class);
+            } else {
+                return null;
+            }
         } catch (JacksonException ex) {
-            logger.error("could not parse log line {}", line, ex);
+            logger.error("could not parse log line '{}'", line, ex);
             return null;
         }
     }

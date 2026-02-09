@@ -60,7 +60,7 @@ public class DownloadCountService {
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
         if (awsDownloadCountHandler.isEnabled()) {
-            logger.info("scheduling AWS download count handler with cron {}", awsDownloadCountHandler.getCronSchedule());
+            logger.info("Scheduling AWS download count handler with cron '{}'", awsDownloadCountHandler.getCronSchedule());
             scheduler.scheduleRecurrently(
                     awsDownloadCountHandler.getRecurringJobId(),
                     awsDownloadCountHandler.getCronSchedule(),
@@ -72,7 +72,7 @@ public class DownloadCountService {
         }
 
         if (azureDownloadCountHandler.isEnabled()) {
-            logger.info("scheduling Azure download count handler with cron {}", azureDownloadCountHandler.getCronSchedule());
+            logger.info("Scheduling Azure download count handler with cron '{}'", azureDownloadCountHandler.getCronSchedule());
             scheduler.scheduleRecurrently(
                     azureDownloadCountHandler.getRecurringJobId(),
                     azureDownloadCountHandler.getCronSchedule(),
