@@ -9,6 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage.log;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
@@ -27,6 +35,8 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import javax.annotation.Nullable;
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,12 +51,17 @@ import java.util.zip.GZIPInputStream;
 /**
  * Pulls logs from an Amazon S3 bucket, extracts downloads from the logs and updates download counts in the database.
  * <p>
- * Currently only log files uploaded by Amazon CloudFront are supported.
- * <p>
- * Links:
+ * The following log file formats are supported:
  * <ul>
- *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html">CloudFront standard logging</a></li>
- *     <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html">CloudFront log format</a></li>
+ *     <li>cloudfront</li>
+ *     <li>fastly</li>
+ * </ul>
+ * <p>
+ * See
+ * <ul>
+ *   <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html">CloudFront standard logging</a></li>
+ *   <li><a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logs-reference.html">CloudFront log format</a></li>
+ *   <li><a href="https://www.fastly.com/documentation/guides/integrations/streaming-logs/custom-log-formats/">Fastly custom log format</a></li>
  * </ul>
  */
 @Component
@@ -65,9 +80,23 @@ public class AwsDownloadCountService {
     @Value("${ovsx.logs.aws.log-location-prefix:" + LOG_LOCATION_PREFIX + "}")
     String logLocationPrefix;
 
+    @Value("${ovsx.logs.aws.format:cloudfront}")
+    String logFormat;
+
+    LogFileParser logFileParser;
+
     public AwsDownloadCountService(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
         this.awsStorageService = awsStorageService;
         this.processor = processor;
+    }
+
+    @PostConstruct
+    public void initialize() {
+        logFileParser = switch (logFormat.toLowerCase()) {
+            case "cloudfront" -> new CloudFrontLogFileParser();
+            case "fastly" -> new FastlyLogFileParser();
+            default -> throw new IllegalArgumentException("unsupported log file format '" + logFormat + "'");
+        };
     }
 
     /**
@@ -193,16 +222,14 @@ public class AwsDownloadCountService {
             var lines = reader.lines().iterator();
             while (lines.hasNext()) {
                 var line = lines.next();
-                if (line.startsWith("#")) {
+
+                var record = logFileParser.parse(line);
+                if (record == null) {
                     continue;
                 }
 
-                // Format:
-                // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
-                var components = line.split("[ \t]+");
-
-                if (isGetOperation(components) && isStatusOk(components) && isExtensionPackageUri(components)) {
-                    var uri = components[7];
+                if (isGetOperation(record) && isStatusOk(record) && isExtensionPackageUri(record)) {
+                    var uri = record.url();
                     var uriComponents = uri.split("/");
                     var vsixFile = UriUtils.decode(uriComponents[uriComponents.length - 1], StandardCharsets.UTF_8).toUpperCase();
                     fileCounts.merge(vsixFile, 1, Integer::sum);
@@ -212,16 +239,16 @@ public class AwsDownloadCountService {
         }
     }
 
-    private boolean isGetOperation(String[] components) {
-        return components[5].equalsIgnoreCase("GET");
+    private boolean isGetOperation(LogRecord record) {
+        return record.operation().equalsIgnoreCase("GET");
     }
 
-    private boolean isStatusOk(String[] components) {
-        return Integer.parseInt(components[8]) == 200;
+    private boolean isStatusOk(LogRecord record) {
+        return record.status() == 200;
     }
 
-    private boolean isExtensionPackageUri(String[] components) {
-        return components[7].endsWith(".vsix");
+    private boolean isExtensionPackageUri(LogRecord record) {
+        return record.url().endsWith(".vsix");
     }
 
     private TempFile downloadFile(String objectKey) throws IOException {
@@ -250,5 +277,68 @@ public class AwsDownloadCountService {
         }
 
         return getS3Client().listObjectsV2(builder.build());
+    }
+}
+
+record LogRecord(String operation, int status, String url) {}
+
+interface LogFileParser {
+    @Nullable
+    LogRecord parse(String line);
+}
+
+class CloudFrontLogFileParser implements LogFileParser {
+    @Override
+    public LogRecord parse(String line) {
+        if (line.startsWith("#")) {
+            return null;
+        }
+
+        // Format:
+        // date	time x-edge-location sc-bytes c-ip cs-method cs(Host) cs-uri-stem sc-status	cs(Referer)	cs(User-Agent) cs-uri-query cs(Cookie) x-edge-result-type	x-edge-request-id	x-host-header	cs-protocol	cs-bytes	time-taken	x-forwarded-for	ssl-protocol	ssl-cipher	x-edge-response-result-type	cs-protocol-version	fle-status	fle-encrypted-fields	c-port	time-to-first-byte	x-edge-detailed-result-type	sc-content-type	sc-content-len	sc-range-start	sc-range-end
+        var components = line.split("[ \t]+");
+        return new LogRecord(components[5], Integer.parseInt(components[8]), components[7]);
+    }
+}
+
+class FastlyLogFileParser implements LogFileParser {
+    private final ObjectMapper mapper;
+
+    public FastlyLogFileParser() {
+        this.mapper = new ObjectMapper();
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(LogRecord.class, new LogRecordDeserializer());
+        mapper.registerModule(module);
+    }
+
+    @Override
+    public @Nullable LogRecord parse(String line) {
+        try {
+            return mapper.readValue(line, LogRecord.class);
+        } catch (JacksonException ex) {
+            return null;
+        }
+    }
+}
+
+class LogRecordDeserializer extends StdDeserializer<LogRecord> {
+
+    public LogRecordDeserializer() {
+        this(null);
+    }
+
+    public LogRecordDeserializer(Class<?> vc) {
+        super(vc);
+    }
+
+    @Override
+    public LogRecord deserialize(JsonParser jp, DeserializationContext ctxt)
+            throws IOException {
+        JsonNode node = jp.getCodec().readTree(jp);
+        String operation = node.get("request_method").asText();
+        int status = (Integer) node.get("response_status").numberValue();
+        String url = node.get("url").asText();
+        return new LogRecord(operation, status, url);
     }
 }
