@@ -46,7 +46,7 @@ import { ExtensionListRoutes } from '../pages/extension-list/extension-list-cont
 
 // -------------------- Shared Search -------------------- //
 
-const GlobalSearch: FunctionComponent<{ fullWidth?: boolean }> = ({ fullWidth }) => {
+export const GlobalSearch: FunctionComponent = () => {
     const [value, setValue] = useState('');
     const navigate = useNavigate();
 
@@ -56,7 +56,7 @@ const GlobalSearch: FunctionComponent<{ fullWidth?: boolean }> = ({ fullWidth })
         }
         navigate(
             addQuery(ExtensionListRoutes.MAIN, [
-                { key: 'query', value }
+                { key: 'search', value }
             ])
         );
         setValue('');
@@ -75,10 +75,6 @@ const GlobalSearch: FunctionComponent<{ fullWidth?: boolean }> = ({ fullWidth })
             }}
             InputProps={{
                 startAdornment: <SearchIcon sx={{ mr: 1 }} />
-            }}
-            sx={{
-                mx: 2,
-                width: fullWidth ? '100%' : 260
             }}
         />
     );
@@ -151,9 +147,11 @@ export const MobileMenuContent: FunctionComponent = () => {
 
     return (
         <>
-            <Box sx={{ px: 2, pb: 1 }}>
-                <GlobalSearch fullWidth />
-            </Box>
+            {location.pathname !== ExtensionListRoutes.MAIN && (
+                <Box sx={{ px: 2, pb: 1 }}>
+                    <GlobalSearch />
+                </Box>
+            )}
 
             {loginProviders && (
                 user ? (
@@ -175,7 +173,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                 )
             )}
 
-            {!location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
+            {loginProviders && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
                 <MobileMenuItem>
                     <RouteLink to='/user-settings/extensions'>
                         <MobileMenuItemText>
@@ -210,7 +208,9 @@ export const DefaultMenuContent: FunctionComponent = () => {
 
     return (
         <>
-            <GlobalSearch />
+            <Box mx={2.5}>
+                <GlobalSearch />
+            </Box>
 
             <MenuLink href='https://github.com/eclipse/openvsx/wiki'>
                 Documentation
