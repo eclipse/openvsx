@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
@@ -39,6 +40,32 @@ public class LocalStorageService implements IStorageService {
     @Override
     public boolean isEnabled() {
         return !StringUtils.isEmpty(storageDirectory);
+    }
+    
+    @PostConstruct
+    public void validateStorageDirectory() {
+        if (!isEnabled()) {
+            return;
+        }
+
+        try {
+            Path dir = Path.of(storageDirectory).toAbsolutePath();
+
+            // Ensure directory exists
+            Files.createDirectories(dir);
+
+            // Verify directory is writable by creating a temp file
+            Path testFile = dir.resolve(".ovsx_write_test");
+            Files.writeString(testFile, "test");
+            Files.deleteIfExists(testFile);
+
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Local storage directory is not writable: " + storageDirectory +
+                ". Please check permissions for 'ovsx.storage.local.directory'.",
+                e
+            );
+        }
     }
 
     @Override
