@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
+
 import jakarta.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
@@ -54,10 +55,16 @@ public class LocalStorageService implements IStorageService {
             // Ensure directory exists
             Files.createDirectories(dir);
 
-            // Verify directory is writable by creating a temp file
-            Path testFile = dir.resolve(".ovsx_write_test");
-            Files.writeString(testFile, "test");
-            Files.deleteIfExists(testFile);
+            // Verify directory is writable by creating and removing a temp file  
+            Path testFile = null;  
+            try {  
+                testFile = Files.createTempFile(dir, ".ovsx_write_test", null);  
+                Files.writeString(testFile, "test");  
+            } finally {  
+                if (testFile != null) {  
+                    Files.deleteIfExists(testFile);  
+                }  
+            } 
 
         } catch (Exception e) {
             throw new IllegalStateException(
