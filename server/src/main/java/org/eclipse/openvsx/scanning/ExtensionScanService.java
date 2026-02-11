@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 /**
  * Service for managing extension scans.
- * 
+ * <p>
  * Owns scan lifecycle (STARTED → VALIDATING → SCANNING → PASSED/QUARANTINED),
  * runs validation checks, and submits scanner jobs via JobRunr.
  */
@@ -181,23 +181,10 @@ public class ExtensionScanService {
 
     /**
      * Submit long-running scanner jobs for an extension version.
-     * 
-     * This method:
-     * 1. Gets all registered scanners from the registry
-     * 2. Creates ScanJob records in QUEUED status
-     * 3. Enqueues each scanner invocation to JobRunr for parallel execution
-     * 4. Transitions the ExtensionScan to SCANNING status
-     * 5. Returns the scan ID for tracking
-     * 
-     * The scan ID is the ExtensionScan.id  which links
-     * the high-level scan record with individual ScanJob records.
-     * 
-     * IMPORTANT: ScanJob records are created BEFORE JobRunr jobs are enqueued.
-     * This avoids a race condition where AsyncScanCompletionService checks for
-     * scan jobs before the JobRunr handler has created them.
-     * 
-     * JobRunr handles parallel execution, automatic retry, and persistence.
-     * AsyncScanCompletionService will activate extensions when all scans complete.
+     * <p>
+     * Flow: transition scan to SCANNING, then for each scanner create a ScanJob (QUEUED)
+     * and try to enqueue a JobRunr request. On enqueue failure we only log since the watchdog
+     * will re-enqueue them for retry.
      */
     public boolean submitScannerJobs(@Nonnull ExtensionScan scan, @Nonnull ExtensionVersion extVersion) {
         if (!config.isEnabled()) {
@@ -225,54 +212,46 @@ public class ExtensionScanService {
         // Transition to SCANNING status before submitting jobs
         transitionTo(scan, ScanStatus.SCANNING);
         
-        // Create ScanJob records and enqueue JobRunr jobs
         int enqueuedCount = 0;
-        for (Scanner scannerDef : scanners) {
+
+        for (Scanner scanner : scanners) {
+            String scannerType = scanner.getScannerType();
+
+            ScannerJob job = new ScannerJob();
+            job.setScanId(scanId);
+            job.setScannerType(scannerType);
+            job.setExtensionVersionId(extensionVersionId);
+            job.setStatus(ScannerJob.JobStatus.QUEUED);
+            job.setCreatedAt(LocalDateTime.now());
+            job.setUpdatedAt(LocalDateTime.now());
+            job.setPollLeaseUntil(null);
+            job.setPollAttempts(0);
+            job.setRecoveryInProgress(false);
+            scanJobRepository.save(job);
+
+            logger.debug("Created ScanJob record: {} for {} (scanId={})",
+                scannerType, NamingUtil.toLogFormat(extVersion), scanId);
+
             try {
-                String scannerType = scannerDef.getScannerType();
-                
-                // Create ScanJob record FIRST (before enqueuing to JobRunr)
-                // This ensures AsyncScanCompletionService can find the job records
-                // even if it runs before the JobRunr handler executes
-                ScannerJob job = new ScannerJob();
-                job.setScanId(scanId);
-                job.setScannerType(scannerType);
-                job.setExtensionVersionId(extensionVersionId);
-                job.setStatus(ScannerJob.JobStatus.QUEUED);
-                job.setCreatedAt(LocalDateTime.now());
-                job.setUpdatedAt(LocalDateTime.now());
-                job.setPollLeaseUntil(null);
-                job.setPollAttempts(0);
-                job.setRecoveryInProgress(false);
-                scanJobRepository.save(job);
-                
-                logger.debug("Created ScanJob record: {} for {} (scanId={})", 
-                    scannerType, NamingUtil.toLogFormat(extVersion), scanId);
-                
-                // Now enqueue to JobRunr - the handler will find the existing ScanJob
                 ScannerInvocationRequest jobRequest = new ScannerInvocationRequest(
-                    scannerType,
-                    extensionVersionId,
-                    scanId
-                );
-                
+                    scannerType, extensionVersionId, scanId);
+
                 jobScheduler.enqueue(jobRequest);
                 enqueuedCount++;
-                
-                logger.debug("Enqueued scanner job: {} for {} (scanId={})", 
+
+                logger.debug("Enqueued scanner job: {} for {} (scanId={})",
                     scannerType, NamingUtil.toLogFormat(extVersion), scanId);
-                
+
             } catch (Exception e) {
-                logger.error("Failed to enqueue scanner {} for scanId={}", 
-                    scannerDef.getScannerType(), scanId, e);
-                // Continue with other scanners even if one fails to enqueue
+                logger.error("Failed to enqueue scanner {} for scanId={}: {}. ",
+                    scannerType, scanId, e.getMessage(), e);
             }
         }
-        
+
         logger.debug("Enqueued {} of {} scanner jobs for: {} (scanId={})",
             enqueuedCount, scanners.size(), NamingUtil.toLogFormat(extVersion), scanId);
-        
-        return enqueuedCount > 0;
+
+        return true;
     }
 
     /**
