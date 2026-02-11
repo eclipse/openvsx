@@ -12,7 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.storage.log;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 public interface LogFileParser {
     @Nullable LogRecord parse(String line);

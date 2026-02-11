@@ -13,7 +13,7 @@
 package org.eclipse.openvsx.scanning;
 
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import org.jobrunr.jobs.lambdas.JobRequest;
 

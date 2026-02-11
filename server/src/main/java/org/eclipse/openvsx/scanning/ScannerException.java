@@ -13,8 +13,8 @@
 package org.eclipse.openvsx.scanning;
 
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Exception thrown when a scan operation fails.

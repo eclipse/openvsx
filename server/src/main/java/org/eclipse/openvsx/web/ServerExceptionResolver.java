@@ -18,7 +18,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 @RestControllerAdvice
 public class ServerExceptionResolver extends DefaultHandlerExceptionResolver {

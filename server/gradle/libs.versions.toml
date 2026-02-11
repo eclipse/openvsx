@@ -20,6 +20,7 @@ jsonpath        = "2.9.0"
 junit           = "5.14.2"
 loki4j          = "1.4.2"
 re2j            = "1.7"
+rewrite-java    = "3.26.0"
 spring-boot     = "3.5.10"
 springdoc       = "2.8.13"
 testcontainers  = "1.21.4"
@@ -34,6 +35,7 @@ jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle", version.re
 spring-boot                  = { id = "org.springframework.boot", version.ref = "spring-boot"}
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 test-logger                  = { id = "com.adarshr.test-logger", version = "4.0.0" }
+rewrite                      = { id = "org.openrewrite.rewrite", version = "7.25.0" }
 
 [libraries]
 awssdk-s3                    = { module = "software.amazon.awssdk:s3", version.ref = "aws" }
@@ -64,6 +66,7 @@ junit-jupiter-api            = { module = "org.junit.jupiter:junit-jupiter-api",
 junit-jupiter-engine         = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 loki-logback-appender        = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
 re2j                         = { module = "com.google.re2j:re2j", version.ref = "re2j" }
+rewrite-java                 = { module = "org.openrewrite.recipe:rewrite-migrate-java", version.ref = "rewrite-java"}
 springdoc                    = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
