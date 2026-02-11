@@ -26,6 +26,7 @@ import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -59,7 +60,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @ExtendWith(SpringExtension.class)
 @MockitoBean(types = {
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, CacheService.class,
+    AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class, CacheService.class,
     UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class,
     JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class, ExtensionScanPersistenceService.class
 })
@@ -440,6 +441,7 @@ class EclipseServiceTest {
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
                 DownloadCountService downloadCountService,
+                ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -453,6 +455,7 @@ class EclipseServiceTest {
                     localStorage,
                     awsStorage,
                     downloadCountService,
+                    downloadMetrics,
                     search,
                     cache,
                     entityManager,

@@ -19,6 +19,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
@@ -54,6 +55,7 @@ public class StorageUtilService implements IStorageService {
     private final LocalStorageService localStorage;
     private final AwsStorageService awsStorage;
     private final DownloadCountService downloadCountService;
+    private final ExtensionDownloadMetrics downloadMetrics;
     private final SearchUtilService search;
     private final CacheService cache;
     private final EntityManager entityManager;
@@ -75,6 +77,7 @@ public class StorageUtilService implements IStorageService {
             LocalStorageService localStorage,
             AwsStorageService awsStorage,
             DownloadCountService downloadCountService,
+            ExtensionDownloadMetrics downloadMetrics,
             SearchUtilService search,
             CacheService cache,
             EntityManager entityManager,
@@ -87,6 +90,7 @@ public class StorageUtilService implements IStorageService {
         this.localStorage = localStorage;
         this.awsStorage = awsStorage;
         this.downloadCountService = downloadCountService;
+        this.downloadMetrics = downloadMetrics;
         this.search = search;
         this.cache = cache;
         this.entityManager = entityManager;
@@ -278,6 +282,8 @@ public class StorageUtilService implements IStorageService {
 
     @Transactional
     public void increaseDownloadCount(FileResource resource) {
+        downloadMetrics.recordDownload(resource);
+
         if(downloadCountService.isEnabled(resource)) {
             // don't count downloads twice
             return;
