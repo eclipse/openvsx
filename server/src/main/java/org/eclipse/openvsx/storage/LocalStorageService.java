@@ -44,25 +44,23 @@ public class LocalStorageService implements IStorageService {
     }
     
     @PostConstruct
-    public void validateStorageDirectory() {
+    public void validateStorageDirectory() throws IOException {
         if (!isEnabled()) {
             return;
         }
-        Path dir = Path.of(storageDirectory).toAbsolutePath();
-        try {
-            Files.createDirectories(dir);
-            if (!Files.isDirectory(dir) || !Files.isWritable(dir)) {
-                throw new IllegalStateException(
-                    "Local storage directory is not writable: " + dir +
-                    ". Please check permissions for 'ovsx.storage.local.directory'."
-                );
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(
-                "Failed to initialize local storage directory: " + dir +
-                ". Please check permissions for 'ovsx.storage.local.directory'.",
-                e
-            );
+
+        var storageDirectoryPath = Path.of(storageDirectory).toAbsolutePath();
+
+        if (!Files.exists(storageDirectoryPath)) {
+            Files.createDirectories(storageDirectoryPath);
+        }
+
+        if (!Files.isDirectory(storageDirectoryPath)) {
+            throw new IllegalStateException("Local storage directory '" + storageDirectory + "' is not a directory");
+        }
+
+        if (!Files.isWritable(storageDirectoryPath)) {
+            throw new IllegalStateException("Local storage directory '" + storageDirectory + "' is not writable");
         }
     }
 
