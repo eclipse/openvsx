@@ -19,7 +19,7 @@ import org.apache.tika.Tika;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.SizeLimitInputStream;
 import jakarta.validation.constraints.NotNull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.BufferedInputStream;

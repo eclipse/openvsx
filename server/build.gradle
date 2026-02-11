@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.hibernate.orm)
     alias(libs.plugins.test.logger)
     alias(libs.plugins.gatling)
+    alias(libs.plugins.rewrite)
     id 'maven-publish'
 }
 
@@ -154,6 +155,8 @@ dependencies {
 
     gatling libs.gatling.core
     gatling libs.gatling.app
+
+    rewrite libs.rewrite.java
 }
 
 configurations.configureEach {
@@ -192,6 +195,11 @@ jooq {
             }
         }
     }
+}
+
+rewrite {
+    activeRecipe("org.openrewrite.java.migrate.jakarta.JavaxAnnotationMigrationToJakartaAnnotation")
+    setExportDatatables(true)
 }
 
 publishing {

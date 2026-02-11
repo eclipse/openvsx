@@ -25,7 +25,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

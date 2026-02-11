@@ -26,9 +26,9 @@ import org.springframework.stereotype.Service;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
 
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.Nullable;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;

@@ -21,7 +21,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.util.Streamable;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.Collection;

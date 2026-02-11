@@ -20,7 +20,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;

@@ -15,7 +15,7 @@ package org.eclipse.openvsx.scanning;
 import com.google.re2j.Pattern;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

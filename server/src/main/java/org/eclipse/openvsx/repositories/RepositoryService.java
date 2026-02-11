@@ -20,7 +20,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
