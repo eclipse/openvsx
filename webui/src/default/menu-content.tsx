@@ -8,10 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, PropsWithChildren, useContext } from 'react';
+import { FunctionComponent, PropsWithChildren, useContext, useRef } from 'react';
 import { Typography, MenuItem, Link, Button, IconButton, Accordion, AccordionSummary, Avatar, AccordionDetails } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import { Link as RouteLink } from 'react-router-dom';
+import { useLocation, Link as RouteLink  } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -31,22 +30,13 @@ import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
 
 //-------------------- Mobile View --------------------//
-
-export const MobileMenuItem = styled(MenuItem)({
-    cursor: 'auto',
-    '&>a': {
-        textDecoration: 'none',
-        width: '100%',
-    }
-});
-
 export const itemIcon = {
     mr: 1,
     width: '16px',
     height: '16px',
 };
 
-export const MobileMenuItemText: FunctionComponent<PropsWithChildren> = ({ children }) => {
+export const MenuItemText: FunctionComponent<PropsWithChildren> = ({ children }) => {
     return (
         <Typography variant='body2' color='text.primary' sx={{ display: 'flex', alignItems: 'center', textTransform: 'none' }}>
             {children}
@@ -57,6 +47,7 @@ export const MobileMenuItemText: FunctionComponent<PropsWithChildren> = ({ child
 export const MobileUserAvatar: FunctionComponent = () => {
     const context = useContext(MainContext);
     const user = context.user;
+    const logoutFormRef = useRef<HTMLFormElement>(null);
     if (!user) {
         return null;
     }
@@ -67,52 +58,46 @@ export const MobileUserAvatar: FunctionComponent = () => {
             aria-controls='user-actions'
             id='user-avatar'
         >
-            <MobileMenuItemText>
+            <MenuItemText>
                 <Avatar
                     src={user.avatarUrl}
                     alt={user.loginName}
                     variant='rounded'
                     sx={itemIcon} />
                 {user.loginName}
-            </MobileMenuItemText>
+            </MenuItemText>
         </AccordionSummary>
         <AccordionDetails>
-            <MobileMenuItem>
-                <Link href={user.homepage}>
-                    <MobileMenuItemText>
-                        <GitHubIcon sx={itemIcon} />
-                        {user.loginName}
-                    </MobileMenuItemText>
-                </Link>
-            </MobileMenuItem>
-            <MobileMenuItem>
-                <RouteLink to={UserSettingsRoutes.PROFILE}>
-                    <MobileMenuItemText>
-                        <SettingsIcon sx={itemIcon} />
-                        Settings
-                    </MobileMenuItemText>
-                </RouteLink>
-            </MobileMenuItem>
+            <MenuItem component={Link} href={user.homepage}>
+                <MenuItemText>
+                    <GitHubIcon sx={itemIcon} />
+                    {user.loginName}
+                </MenuItemText>
+            </MenuItem>
+            <MenuItem component={RouteLink} to={UserSettingsRoutes.PROFILE}>
+                <MenuItemText>
+                    <SettingsIcon sx={itemIcon} />
+                    Settings
+                </MenuItemText>
+            </MenuItem>
             {
                 user.role === 'admin'
-                    ? <MobileMenuItem>
-                        <RouteLink to={AdminDashboardRoutes.MAIN}>
-                            <MobileMenuItemText>
-                                <AdminPanelSettingsIcon sx={itemIcon} />
-                                Admin Dashboard
-                            </MobileMenuItemText>
-                        </RouteLink>
-                    </MobileMenuItem>
+                    ? <MenuItem component={RouteLink} to={AdminDashboardRoutes.MAIN}>
+                        <MenuItemText>
+                            <AdminPanelSettingsIcon sx={itemIcon} />
+                            Admin Dashboard
+                        </MenuItemText>
+                    </MenuItem>
                     : null
             }
-            <MobileMenuItem>
-                <LogoutForm>
-                    <MobileMenuItemText>
+            <MenuItem onClick={() => logoutFormRef.current?.submit()}>
+                <LogoutForm ref={logoutFormRef}>
+                    <MenuItemText>
                         <LogoutIcon sx={itemIcon} />
                         Log Out
-                    </MobileMenuItemText>
+                    </MenuItemText>
                 </LogoutForm>
-            </MobileMenuItem>
+            </MenuItem>
         </AccordionDetails>
     </Accordion>;
 };
@@ -126,63 +111,51 @@ export const MobileMenuContent: FunctionComponent = () => {
             user ? (
                 <MobileUserAvatar />
             ) : (
-                <MobileMenuItem>
-                    <LoginComponent
-                        loginProviders={loginProviders}
-                        renderButton={(href, onClick) => {
-                            return (<Link href={href} onClick={onClick}>
-                                <MobileMenuItemText>
-                                    <AccountBoxIcon sx={itemIcon} />
-                                    Log In
-                                </MobileMenuItemText>
-                            </Link>);
-                        }}
-                    />
-                </MobileMenuItem>
+                <LoginComponent
+                    loginProviders={loginProviders}
+                    renderButton={(href, onClick) => (
+                        <MenuItem component={Link} href={href} onClick={onClick}>
+                            <MenuItemText>
+                                <AccountBoxIcon sx={itemIcon} />
+                                Log In
+                            </MenuItemText>
+                        </MenuItem>
+                    )}
+                />
             )
         )}
         {loginProviders && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
-            <MobileMenuItem>
-                <RouteLink to='/user-settings/extensions'>
-                    <MobileMenuItemText>
-                        <PublishIcon sx={itemIcon} />
-                        Publish Extension
-                    </MobileMenuItemText>
-                </RouteLink>
-            </MobileMenuItem>
+            <MenuItem component={RouteLink} to='/user-settings/extensions'>
+                <MenuItemText>
+                    <PublishIcon sx={itemIcon} />
+                    Publish Extension
+                </MenuItemText>
+            </MenuItem>
         )}
-        <MobileMenuItem>
-            <Link target='_blank' href='https://github.com/eclipse/openvsx'>
-                <MobileMenuItemText>
-                    <GitHubIcon sx={itemIcon} />
-                    Source Code
-                </MobileMenuItemText>
-            </Link>
-        </MobileMenuItem>
-        <MobileMenuItem>
-            <Link href='https://github.com/eclipse/openvsx/wiki'>
-                <MobileMenuItemText>
-                    <MenuBookIcon sx={itemIcon} />
-                    Documentation
-                </MobileMenuItemText>
-            </Link>
-        </MobileMenuItem>
-        <MobileMenuItem>
-            <Link href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
-                <MobileMenuItemText>
-                    <ForumIcon sx={itemIcon} />
-                    Slack Workspace
-                </MobileMenuItemText>
-            </Link>
-        </MobileMenuItem>
-        <MobileMenuItem>
-            <RouteLink to='/about'>
-                <MobileMenuItemText>
-                    <InfoIcon sx={itemIcon} />
-                    About This Service
-                </MobileMenuItemText>
-            </RouteLink>
-        </MobileMenuItem>
+        <MenuItem component={Link} href='https://github.com/eclipse/openvsx' target='_blank'>
+            <MenuItemText>
+                <GitHubIcon sx={itemIcon} />
+                Source Code
+            </MenuItemText>
+        </MenuItem>
+        <MenuItem component={Link} href='https://github.com/eclipse/openvsx/wiki'>
+            <MenuItemText>
+                <MenuBookIcon sx={itemIcon} />
+                Documentation
+            </MenuItemText>
+        </MenuItem>
+        <MenuItem component={Link} href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
+            <MenuItemText>
+                <ForumIcon sx={itemIcon} />
+                Slack Workspace
+            </MenuItemText>
+        </MenuItem>
+        <MenuItem component={RouteLink} to='/about'>
+            <MenuItemText>
+                <InfoIcon sx={itemIcon} />
+                About This Service
+            </MenuItemText>
+        </MenuItem>
     </>;
 };
 
