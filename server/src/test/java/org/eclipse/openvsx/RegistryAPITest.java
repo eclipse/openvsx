@@ -34,6 +34,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -87,7 +88,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
+    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
     JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
     ExtensionScanPersistenceService.class
@@ -2637,6 +2638,7 @@ class RegistryAPITest {
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
                 DownloadCountService downloadCountService,
+                ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -2650,6 +2652,7 @@ class RegistryAPITest {
                     localStorage,
                     awsStorage,
                     downloadCountService,
+                    downloadMetrics,
                     search,
                     cache,
                     entityManager,
