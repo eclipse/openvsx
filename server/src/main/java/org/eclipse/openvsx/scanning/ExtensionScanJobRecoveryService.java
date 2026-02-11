@@ -263,16 +263,25 @@ public class ExtensionScanJobRecoveryService {
             return RecoveryResult.ERRORED;
         }
         
-        boolean scannersSubmitted = scanService.submitScannerJobs(scan, extVersion);
-        if (!scannersSubmitted) {
-            logger.info("Scan {} ({}.{}.{}) has no scanners, activating extension", 
+        try {
+            boolean submitted = scanService.submitScannerJobs(scan, extVersion);
+            if (!submitted) {
+                // No scanners configured — safe to activate
+                logger.info("Scan {} ({}.{}.{}) has no scanners, activating extension", 
+                    scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
+                    scan.getExtensionVersion());
+                publishService.activateExtension(extVersion, extensionService);
+                scanService.markScanPassed(scan);
+            }
+            return RecoveryResult.RECOVERED;
+        } catch (Exception e) {
+            // Enqueue attempts failed — do NOT activate. Mark as errored.
+            logger.error("Scan {} ({}.{}.{}) failed to submit scanner jobs during recovery",
                 scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
-                scan.getExtensionVersion());
-            publishService.activateExtension(extVersion, extensionService);
-            scanService.markScanPassed(scan);
+                scan.getExtensionVersion(), e);
+            persistenceService.markAsErrored(scan, "Recovery failed to submit scanner jobs: " + e.getMessage());
+            return RecoveryResult.ERRORED;
         }
-        
-        return RecoveryResult.RECOVERED;
     }
     
     private ExtensionVersion findExtensionVersion(ExtensionScan scan) {
@@ -410,6 +419,7 @@ public class ExtensionScanJobRecoveryService {
             
             if (job.getCreatedAt().isBefore(oneHourAgo)) {
                 markFailed(job, "Stuck in QUEUED for over 1 hour");
+                completionService.checkCompletionSafely(job.getScanId());
             } else {
                 try {
                     job.setRecoveryInProgress(true);
@@ -423,6 +433,7 @@ public class ExtensionScanJobRecoveryService {
                     logger.error("Failed to re-enqueue job {}", job.getScanId());
                     job.setRecoveryInProgress(false);
                     markFailed(job, "Recovery failed: " + e.getMessage());
+                    completionService.checkCompletionSafely(job.getScanId());
                 }
             }
         }
@@ -447,6 +458,7 @@ public class ExtensionScanJobRecoveryService {
             
             if (ageMinutes >= timeoutMinutes) {
                 markFailed(job, String.format("Timeout: exceeded %d min limit (age: %d min)", timeoutMinutes, ageMinutes));
+                completionService.checkCompletionSafely(job.getScanId());
                 timedOut++;
                 logger.error("Job {} timed out: scanner={}, age={}min", job.getId(), job.getScannerType(), ageMinutes);
             }
