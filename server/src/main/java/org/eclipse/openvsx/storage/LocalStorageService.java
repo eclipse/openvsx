@@ -9,7 +9,13 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
 
-import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
@@ -24,13 +30,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class LocalStorageService implements IStorageService {
@@ -48,27 +48,18 @@ public class LocalStorageService implements IStorageService {
         if (!isEnabled()) {
             return;
         }
-
+        Path dir = Path.of(storageDirectory).toAbsolutePath();
         try {
-            Path dir = Path.of(storageDirectory).toAbsolutePath();
-
-            // Ensure directory exists
             Files.createDirectories(dir);
-
-            // Verify directory is writable by creating and removing a temp file  
-            Path testFile = null;  
-            try {  
-                testFile = Files.createTempFile(dir, ".ovsx_write_test", null);  
-                Files.writeString(testFile, "test");  
-            } finally {  
-                if (testFile != null) {  
-                    Files.deleteIfExists(testFile);  
-                }  
-            } 
-
-        } catch (Exception e) {
+            if (!Files.isDirectory(dir) || !Files.isWritable(dir)) {
+                throw new IllegalStateException(
+                    "Local storage directory is not writable: " + dir +
+                    ". Please check permissions for 'ovsx.storage.local.directory'."
+                );
+            }
+        } catch (IOException e) {
             throw new IllegalStateException(
-                "Local storage directory is not writable: " + storageDirectory +
+                "Failed to initialize local storage directory: " + dir +
                 ". Please check permissions for 'ovsx.storage.local.directory'.",
                 e
             );
