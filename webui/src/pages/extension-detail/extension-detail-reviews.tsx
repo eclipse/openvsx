@@ -138,7 +138,8 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
             sx={{ ml: 1 }}
             onClick={() => {
                 setRemoveCommentFromUser(r.user);
-                setRemoveDialogOpen(true)}}>
+                setRemoveDialogOpen(true);
+            }}>
             Remove review
         </Button>;
     };
@@ -169,8 +170,8 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
                     Remove review
                 </ButtonWithProgress>
             </DialogActions>
-        </Dialog>
-    }
+        </Dialog>;
+    };
 
     const renderReviewList = (list?: ExtensionReviewList): ReactNode => {
         if (!list) {
