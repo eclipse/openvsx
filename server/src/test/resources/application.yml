@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    url: jdbc:tc:postgresql:12.7:///test
+    url: jdbc:tc:postgresql:16.2:///test
   jpa:
     properties:
       hibernate:

@@ -2,13 +2,14 @@
 aws             = "2.29.29"
 azure           = "12.23.0"
 bouncycastle    = "1.80"
-bucket4j-spring = "0.12.7"
+bucket4j-spring = "0.12.10"
 bucket4j        = "8.10.1"
 commons-lang3   = "3.20.0"
 flyway          = "11.20.3"
 gatling         = "3.14.9"
 gcloud          = "2.62.1"
 hibernate       = "6.6.42.Final"
+ipaddress       = "5.5.1"
 jackson         = "2.15.4"
 java            = "25"
 jaxb-api        = "2.3.1"
@@ -50,6 +51,7 @@ flyway-database-postgresql   = { module = "org.flywaydb:flyway-database-postgres
 gatling-app                  = { module = "io.gatling:gatling-app", version.ref = "gatling" }
 gatling-core                 = { module = "io.gatling:gatling-core", version.ref = "gatling" }
 google-cloud-storage         = { module = "com.google.cloud:google-cloud-storage", version.ref = "gcloud" }
+ipaddress                    = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress"}
 jackson-annotations          = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
 jackson-core                 = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind             = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }

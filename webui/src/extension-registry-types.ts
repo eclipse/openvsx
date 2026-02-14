@@ -415,3 +415,53 @@ export interface FileDecisionDeleteResponse {
     failed: number;
     results: FileDecisionDeleteResult[];
 }
+
+export enum TierType {
+    FREE = 'FREE',
+    SAFETY = 'SAFETY',
+    NON_FREE = 'NON_FREE'
+}
+
+export enum RefillStrategy {
+    GREEDY = 'GREEDY',
+    INTERVAL = 'INTERVAL'
+}
+
+export interface Tier {
+    name: string;
+    description?: string;
+    tierType: TierType;
+    capacity: number;
+    duration: number;
+    refillStrategy: RefillStrategy;
+}
+
+export interface TierList {
+    tiers: Tier[];
+}
+
+export enum EnforcementState {
+    EVALUATION = 'EVALUATION',
+    ENFORCEMENT = 'ENFORCEMENT'
+}
+
+export interface Customer {
+    name: string;
+    tier?: Tier;
+    state: EnforcementState;
+    cidrBlocks: string[];
+}
+
+export interface CustomerList {
+    customers: Customer[];
+}
+
+export interface UsageStats {
+    windowStart: number; // epoch seconds in UTC
+    duration: number; // in seconds
+    count: number;
+}
+
+export interface UsageStatsList {
+    stats: UsageStats[];
+}

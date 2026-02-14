@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +72,7 @@ class RepositoryServiceSmokeTest {
         var keyPair = new SignatureKeyPair();
         keyPair.setPrivateKey(new byte[0]);
         keyPair.setPublicKeyText("");
-        
+
         var scan = new ExtensionScan();
         scan.setNamespaceName(namespace.getName());
         scan.setExtensionName(extension.getName());
@@ -81,14 +83,14 @@ class RepositoryServiceSmokeTest {
         scan.setExtensionVersion(extVersion.getVersion());
         scan.setStartedAt(LocalDateTime.now());
         scan.setStatus(ScanStatus.STARTED);
-        
+
         var validationFailure = ExtensionValidationFailure.create("NAME_SQUATTING", "validation-name", "reason");
         validationFailure.setEnforced(true);
         validationFailure.setScan(scan);
-        
+
         // Admin scan decision entity for testing
         var adminDecision = AdminScanDecision.allowed(scan, userData);
-        
+
         // File decision entity for testing
         var fileDecision = FileDecision.allowed("fileHash", userData);
         fileDecision.setScan(scan);
@@ -99,21 +101,32 @@ class RepositoryServiceSmokeTest {
         fileDecision.setDisplayName("Display Name");
         fileDecision.setPublisher("publisher");
         fileDecision.setVersion("1.0.0");
-        
+
         // Extension threat entity for testing
         var threat = ExtensionThreat.create("test.js", "threatFileHash", ".js", "testScanner", "test-rule", "Test threat", "high");
         threat.setScan(scan);
-        
+
         // Scan check result entity for testing
         var scanCheckResult = ScanCheckResult.passed("SECRET_SCANNING", ScanCheckResult.CheckCategory.PUBLISH_CHECK, NOW, 10, "All checks passed");
         scanCheckResult.setScan(scan);
-        
+
+        var tier = new Tier();
+        tier.setName("tier");
+        var customer = new Customer();
+        customer.setName("customer");
+        customer.setTier(tier);
+        var usageStats = new UsageStats();
+        usageStats.setCustomer(customer);
+        usageStats.setWindowStart(LocalDateTime.now());
+        usageStats.setDuration(Duration.ofMinutes(1));
+
         // Persist all entities consistently using EntityManager
         Stream.of(namespace, extension, userData, extVersion, personalAccessToken, keyPair,
-                  scan, validationFailure, adminDecision, fileDecision, threat, scanCheckResult)
+                  scan, validationFailure, adminDecision, fileDecision, threat, scanCheckResult,
+                  tier, customer, usageStats)
               .forEach(em::persist);
         em.flush();
-        
+
         var page = PageRequest.ofSize(1);
         var queryRequest = new QueryRequest(null, null, null, null, null, null, false, null, 1, 0);
 
@@ -274,7 +287,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findExtensionScansByStatus(ScanStatus.STARTED),
                 () -> repositories.findInProgressExtensionScans(),
                 () -> repositories.countExtensionScansByStatus(ScanStatus.STARTED),
-                () -> repositories.findExtensionScan(scan.getId()),
+                () -> repositories.findExtensionScan(1L),
                 () -> repositories.hasExtensionScanWithStatus(extVersion, ScanStatus.STARTED),
                 () -> repositories.findAllExtensionScans(),
                 () -> repositories.findValidationFailures(scan),
@@ -301,20 +314,20 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countAdminDecisionsForStatistics("ALLOWED", NOW, NOW, List.of("checkType"), List.of("scanner"), true),
                 // Admin scan decision methods
                 () -> repositories.findAdminScanDecision(scan),
-                () -> repositories.findAdminScanDecision(scan.getId()),
+                () -> repositories.findAdminScanDecision(1L),
                 () -> repositories.saveAdminScanDecision(adminDecision),
-                () -> repositories.deleteAdminScanDecision(adminDecision.getId()),
-                () -> repositories.hasAdminScanDecisionByScanId(scan.getId()),
+                () -> repositories.deleteAdminScanDecision(1L),
+                () -> repositories.hasAdminScanDecisionByScanId(1L),
                 () -> repositories.countAdminScanDecisions("ALLOWED"),
                 // Note: We pass valid LocalDateTime values to avoid PostgreSQL null parameter type issues
                 () -> repositories.countAdminScanDecisionsByDateRange("ALLOWED", NOW.minusYears(1), NOW.plusYears(1)),
                 () -> repositories.countAdminScanDecisionsByEnforcement("ALLOWED", true),
-                () -> repositories.findAdminScanDecisionByScanId(scan.getId()),
+                () -> repositories.findAdminScanDecisionByScanId(1L),
                 // File decision methods
                 () -> repositories.hasFileDecision("fileHash"),
-                () -> repositories.findFileDecision(fileDecision.getId()),
+                () -> repositories.findFileDecision(1L),
                 () -> repositories.saveFileDecision(fileDecision),
-                () -> repositories.deleteFileDecision(fileDecision.getId()),
+                () -> repositories.deleteFileDecision(1L),
                 () -> repositories.deleteFileDecisionByHash("fileHash"),
                 () -> repositories.findFileDecisionsByIds(LONG_LIST),
                 () -> repositories.findFileDecisionByHash("fileHash"),
@@ -324,12 +337,12 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countFileDecisionsByDateRange("ALLOWED", NOW.minusYears(1), NOW.plusYears(1)),
                 // Extension threat methods
                 () -> repositories.saveExtensionThreat(threat),
-                () -> repositories.findExtensionThreat(threat.getId()),
+                () -> repositories.findExtensionThreat(1L),
                 () -> repositories.findExtensionThreats(scan),
                 () -> repositories.hasExtensionThreats(scan),
                 () -> repositories.countExtensionThreats(scan),
                 () -> repositories.findDistinctThreatScannerTypes(),
-                () -> repositories.findExtensionThreatsByScanId(scan.getId()),
+                () -> repositories.findExtensionThreatsByScanId(1L),
                 () -> repositories.findExtensionThreatsByFileHash("fileHash"),
                 () -> repositories.findDistinctThreatRuleNames(),
                 () -> repositories.findExtensionThreatsByType("testType"),
@@ -340,18 +353,34 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.hasExtensionThreatsOfType(scan, "testType"),
                 // Additional admin scan decision methods
                 () -> repositories.hasAdminScanDecision(scan),
-                // Additional file decision methods  
+                // Additional file decision methods
                 () -> repositories.countFileDecisions("ALLOWED"),
                 // Scan check result methods
                 () -> repositories.saveScanCheckResult(scanCheckResult),
-                () -> repositories.hasScanCheckResult(scan.getId(), "SECRET_SCANNING"),
+                () -> repositories.hasScanCheckResult(1L, "SECRET_SCANNING"),
                 () -> repositories.findScanCheckResults(scan),
-                () -> repositories.findScanCheckResultsByScanId(scan.getId()),
+                () -> repositories.findScanCheckResultsByScanId(1L),
                 // Extension version lookup including inactive
                 () -> repositories.findExtensionVersionIncludingInactive(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion()),
-                // Extension scan delete method
+                // Rate limit tests
+                () -> repositories.upsertTier(tier),
+                () -> repositories.findTier("tier"),
+                () -> repositories.findTiersByTierType(TierType.FREE),
+                () -> repositories.findTiersByTierTypeExcludingTier(TierType.FREE, tier),
+                () -> repositories.findAllTiers(),
+                () -> repositories.upsertCustomer(customer),
+                () -> repositories.findCustomer("customer"),
+                () -> repositories.findCustomerById(1L),
+                () -> repositories.findCustomersByTier(tier),
+                () -> repositories.countCustomersByTier(tier),
+                () -> repositories.findAllCustomers(),
+                () -> repositories.saveUsageStats(usageStats),
+                () -> repositories.findUsageStatsByCustomerAndDate(customer, LocalDateTime.now()),
+                () -> repositories.deleteTier(tier),
+                () -> repositories.deleteCustomer(customer),
+                // Extension scan delete method - add last, still not clear why but otherwise the test fails
                 () -> repositories.deleteExtensionScan(scan)
-        );
+            );
 
         // check that we did not miss anything
         // (remember to add new queries also to this test)

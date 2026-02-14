@@ -11,6 +11,7 @@ package org.eclipse.openvsx.cache;
 
 import com.giffing.bucket4j.spring.boot.starter.config.cache.CacheManager;
 import com.giffing.bucket4j.spring.boot.starter.config.cache.SyncCacheResolver;
+import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnBucket4jEnabled;
 import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnCache;
 import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnFilterConfigCacheEnabled;
 import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnSynchronousPropertyCondition;
@@ -26,6 +27,7 @@ import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisCluster;
 
 @Configuration
+@ConditionalOnBucket4jEnabled
 @ConditionalOnSynchronousPropertyCondition
 @ConditionalOnClass(JedisBasedProxyManager.JedisBasedProxyManagerBuilder.class)
 @ConditionalOnBean(JedisCluster.class)

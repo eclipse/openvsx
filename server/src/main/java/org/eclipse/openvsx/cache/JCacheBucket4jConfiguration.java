@@ -11,6 +11,7 @@ package org.eclipse.openvsx.cache;
 
 import com.giffing.bucket4j.spring.boot.starter.config.cache.SyncCacheResolver;
 import com.giffing.bucket4j.spring.boot.starter.config.cache.jcache.JCacheCacheResolver;
+import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnBucket4jEnabled;
 import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnCache;
 import com.giffing.bucket4j.spring.boot.starter.config.condition.ConditionalOnSynchronousPropertyCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnBucket4jEnabled
 @ConditionalOnSynchronousPropertyCondition
 @ConditionalOnCache("jcache")
 public class JCacheBucket4jConfiguration {

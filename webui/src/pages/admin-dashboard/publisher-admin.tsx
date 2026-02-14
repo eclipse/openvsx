@@ -39,13 +39,13 @@ export const PublisherAdmin: FunctionComponent = () => {
         const publisherName = inputValue;
         try {
             setLoading(true);
-            if (publisherName !== '') {
+            if (publisherName === '') {
+                setNotFound('');
+                setPublisher(undefined);
+            } else {
                 const publisher = await service.admin.getPublisherInfo(abortController.current, 'github', publisherName);
                 setNotFound('');
                 setPublisher(publisher);
-            } else {
-                setNotFound('');
-                setPublisher(undefined);
             }
             setLoading(false);
         } catch (err) {
