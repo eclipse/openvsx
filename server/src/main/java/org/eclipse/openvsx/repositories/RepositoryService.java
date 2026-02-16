@@ -16,7 +16,11 @@ import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
@@ -392,6 +396,14 @@ public class RepositoryService {
 
     public Streamable<PersistedLog> findPersistedLogsAfter(LocalDateTime dateTime) {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampAsc(dateTime);
+    }
+
+    public Page<PersistedLog> findPersistedLogsPaginated(Pageable pageable) {
+        return persistedLogRepo.findAllByOrderByTimestampDesc(pageable);
+    }
+
+    public Page<PersistedLog> findPersistedLogsAfterPaginated(LocalDateTime dateTime, Pageable pageable) {
+        return persistedLogRepo.findByTimestampAfterOrderByTimestampDesc(dateTime, pageable);
     }
 
     public List<String> findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(String storageType, List<String> names) {

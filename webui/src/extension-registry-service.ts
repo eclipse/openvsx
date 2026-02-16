@@ -15,7 +15,7 @@ import {
     LoginProviders, ScanResultJson, ScanCounts, ScanResultsResponse, ScanFilterOptions,
     FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
     FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse,
-    Tier, TierList, Customer, CustomerList, UsageStatsList,
+    Tier, TierList, Customer, CustomerList, UsageStatsList, LogPageableList,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -509,6 +509,7 @@ export interface AdminService {
     updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
     deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>>;
+    getLogs(abortController: AbortController, page?: number, size?: number, period?: string): Promise<Readonly<LogPageableList>>;
 }
 
 export interface AdminServiceConstructor {
@@ -961,6 +962,27 @@ export class AdminServiceImpl implements AdminService {
         return sendRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'], query),
+            credentials: true
+        }, false);
+    }
+
+    async getLogs(
+        abortController: AbortController,
+        page: number = 0,
+        size: number = 20,
+        period?: string
+    ): Promise<Readonly<LogPageableList>> {
+        const query: { key: string, value: string | number }[] = [
+            { key: 'page', value: page },
+            { key: 'size', value: size }
+        ];
+        if (period) {
+            query.push({ key: 'period', value: period });
+        }
+        const endpoint = addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'logs']), query);
+        return sendRequest({
+            abortController,
+            endpoint,
             credentials: true
         }, false);
     }

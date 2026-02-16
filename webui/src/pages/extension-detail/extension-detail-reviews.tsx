@@ -222,7 +222,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
                 </Box>
                 {
                     context.user?.role === 'admin' ?
-                        <Box mb={2} sx={{ mb:2, minWidth: 160 }} display='flex' alignItems='end'>
+                        <Box sx={{ mb: 2, minWidth: 160 }} display='flex' alignItems='end'>
                             {renderAdminRemoveButton(r)}
                         </Box>
                         :

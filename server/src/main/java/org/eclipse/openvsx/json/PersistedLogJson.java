@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
+package org.eclipse.openvsx.json;
 
-export {
-  MultiSelectFilterInput,
-  createMultiSelectFilterOperators,
-  createArrayContainsFilterOperators
-} from './data-grid-filter-operators';
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record PersistedLogJson(String timestamp, String user, String message) {}

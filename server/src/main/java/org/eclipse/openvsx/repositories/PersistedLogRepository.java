@@ -12,6 +12,8 @@ package org.eclipse.openvsx.repositories;
 import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.entities.PersistedLog;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
@@ -21,4 +23,7 @@ public interface PersistedLogRepository extends Repository<PersistedLog, Long> {
 
     Streamable<PersistedLog> findByTimestampAfterOrderByTimestampAsc(LocalDateTime dateTime);
 
+    Page<PersistedLog> findAllByOrderByTimestampDesc(Pageable pageable);
+
+    Page<PersistedLog> findByTimestampAfterOrderByTimestampDesc(LocalDateTime dateTime, Pageable pageable);
 }

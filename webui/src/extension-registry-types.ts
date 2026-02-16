@@ -465,3 +465,30 @@ export interface UsageStats {
 export interface UsageStatsList {
     stats: UsageStats[];
 }
+
+export interface Log {
+    timestamp: string;
+    user: string;
+    message: string;
+}
+
+export interface LogPageableList {
+    content: Log[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+        sort: { sorted: boolean; empty: boolean; unsorted: boolean };
+        offset: number;
+        paged: boolean;
+        unpaged: boolean;
+    };
+    totalElements: number;
+    totalPages: number;
+    last: boolean;
+    first: boolean;
+    size: number;
+    number: number;
+    numberOfElements: number;
+    sort: { sorted: boolean; empty: boolean; unsorted: boolean };
+    empty: boolean;
+}
