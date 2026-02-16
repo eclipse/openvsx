@@ -21,6 +21,7 @@ import org.mockito.invocation.Invocation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Modifier;
@@ -81,7 +82,7 @@ class RepositoryServiceSmokeTest {
         scan.setPublisher("publisher");
         scan.setPublisherUrl("https://example.com");
         scan.setExtensionVersion(extVersion.getVersion());
-        scan.setStartedAt(LocalDateTime.now());
+        scan.setStartedAt(NOW);
         scan.setStatus(ScanStatus.STARTED);
 
         var validationFailure = ExtensionValidationFailure.create("NAME_SQUATTING", "validation-name", "reason");
@@ -117,7 +118,7 @@ class RepositoryServiceSmokeTest {
         customer.setTier(tier);
         var usageStats = new UsageStats();
         usageStats.setCustomer(customer);
-        usageStats.setWindowStart(LocalDateTime.now());
+        usageStats.setWindowStart(NOW);
         usageStats.setDuration(Duration.ofMinutes(1));
 
         // Persist all entities consistently using EntityManager
@@ -161,6 +162,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensions(),
                 () -> repositories.findAllPersistedLogs(),
+                () -> repositories.findPersistedLogsAfter(NOW),
+                () -> repositories.findPersistedLogsPaginated(page),
+                () -> repositories.findPersistedLogsAfterPaginated(NOW, page),
                 () -> repositories.findAllReviews(extension),
                 () -> repositories.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn("storageType", STRING_LIST),
                 () -> repositories.findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn("storageType", STRING_LIST),
@@ -375,7 +379,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.countCustomersByTier(tier),
                 () -> repositories.findAllCustomers(),
                 () -> repositories.saveUsageStats(usageStats),
-                () -> repositories.findUsageStatsByCustomerAndDate(customer, LocalDateTime.now()),
+                () -> repositories.findUsageStatsByCustomerAndDate(customer, NOW),
                 () -> repositories.deleteTier(tier),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails
