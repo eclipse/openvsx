@@ -47,17 +47,20 @@ public class AdminAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private final LogService logs;
     private final LocalRegistryService local;
     private final SearchUtilService search;
 
     public AdminAPI(
             RepositoryService repositories,
             AdminService admins,
+            LogService logs,
             LocalRegistryService local,
             SearchUtilService search
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        this.logs = logs;
         this.local = local;
         this.search = search;
     }
@@ -181,7 +184,7 @@ public class AdminAPI {
             search.updateSearchIndex(true);
 
             var result = ResultJson.success("Updated search index");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -307,7 +310,7 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkAdminUser();
             var result = admins.deleteReview(namespace, extension, loginName, provider);
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();

@@ -29,6 +29,7 @@ import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,8 @@ import static org.mockito.ArgumentMatchers.eq;
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
     AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class, CacheService.class,
     UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class,
-    JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class, ExtensionScanPersistenceService.class
+    JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class, ExtensionScanPersistenceService.class,
+    LogService.class
 })
 class EclipseServiceTest {
 
@@ -411,6 +413,7 @@ class EclipseServiceTest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
                 ExtensionScanService extensionScanService,
@@ -421,6 +424,7 @@ class EclipseServiceTest {
                     repositories,
                     search,
                     cache,
+                    logs,
                     publishHandler,
                     scheduler,
                     extensionScanService,

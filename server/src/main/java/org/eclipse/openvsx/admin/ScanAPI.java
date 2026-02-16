@@ -25,6 +25,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.http.HttpStatus;
@@ -57,17 +58,20 @@ public class ScanAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private final LogService logs;
     private final StorageUtilService storageUtil;
     private final org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService;
 
     public ScanAPI(
             RepositoryService repositories,
             AdminService admins,
+            LogService logs,
             StorageUtilService storageUtil,
             org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        this.logs = logs;
         this.storageUtil = storageUtil;
         this.completionService = completionService;
     }
@@ -661,7 +665,7 @@ public class ScanAPI {
                     
                     // Log the admin decision to /admin/log
                     var logMessage = formatDecisionLogMessage(scan, decisionValue, threats.size(), activated);
-                    admins.logAdminAction(adminUser, ResultJson.success(logMessage));
+                    logs.logAction(adminUser, ResultJson.success(logMessage));
                     
                     results.add(ScanDecisionResultJson.success(scanIdStr));
                     successful++;

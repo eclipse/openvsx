@@ -53,6 +53,7 @@ public class AdminService {
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
     private final MailService mail;
+    private final LogService logs;
     private final ExtensionScanPersistenceService scanPersistenceService;
 
     public AdminService(
@@ -67,6 +68,7 @@ public class AdminService {
             CacheService cache,
             JobRequestScheduler scheduler,
             MailService mail,
+            LogService logs,
             ExtensionScanPersistenceService scanPersistenceService
     ) {
         this.repositories = repositories;
@@ -80,6 +82,7 @@ public class AdminService {
         this.cache = cache;
         this.scheduler = scheduler;
         this.mail = mail;
+        this.logs = logs;
         this.scanPersistenceService = scanPersistenceService;
     }
 
@@ -131,7 +134,7 @@ public class AdminService {
 
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
-        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
+        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
     }
 
     protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
@@ -144,7 +147,7 @@ public class AdminService {
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
-        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -228,7 +231,7 @@ public class AdminService {
         search.removeSearchEntry(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -239,7 +242,7 @@ public class AdminService {
         extensions.updateExtension(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -311,7 +314,7 @@ public class AdminService {
                 : users.addNamespaceMember(namespace, user, role);
 
         search.updateSearchEntries(repositories.findActiveExtensions(namespace).toList());
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -449,7 +452,7 @@ public class AdminService {
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
                 + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
                 + provider + "/" + loginName + ".");
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -462,7 +465,7 @@ public class AdminService {
 
         var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         mail.scheduleRevokedAccessTokensMail(user);
         return result;
     }
@@ -485,17 +488,6 @@ public class AdminService {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }
         return user;
-    }
-
-    @Transactional
-    public void logAdminAction(UserData admin, ResultJson result) {
-        if (result.getSuccess() != null) {
-            var log = new PersistedLog();
-            log.setUser(admin);
-            log.setTimestamp(TimeUtil.getCurrentUTC());
-            log.setMessage(result.getSuccess());
-            entityManager.persist(log);
-        }
     }
 
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {

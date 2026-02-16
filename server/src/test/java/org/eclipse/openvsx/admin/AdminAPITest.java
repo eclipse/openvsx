@@ -37,12 +37,14 @@ import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -78,7 +80,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
     SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
-    ExtensionScanService.class, ExtensionScanPersistenceService.class
+    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class
 })
 class AdminAPITest {
     
@@ -1486,6 +1488,7 @@ class AdminAPITest {
                 CacheService cache,
                 JobRequestScheduler scheduler,
                 MailService mail,
+                LogService logs,
                 ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new AdminService(
@@ -1500,6 +1503,7 @@ class AdminAPITest {
                     cache,
                     scheduler,
                     mail,
+                    logs,
                     scanPersistenceService
             );
         }
@@ -1509,7 +1513,7 @@ class AdminAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 ExtensionService extensions,
-                VersionService versions,
+                @Qualifier("adminTest") VersionService versions,
                 UserService users,
                 SearchUtilService search,
                 ExtensionValidator validator,
@@ -1561,6 +1565,7 @@ class AdminAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
                 ExtensionScanService extensionScanService,
@@ -1571,6 +1576,7 @@ class AdminAPITest {
                     repositories,
                     search,
                     cache,
+                    logs,
                     publishHandler,
                     scheduler,
                     extensionScanService,
@@ -1620,6 +1626,7 @@ class AdminAPITest {
         }
 
         @Bean
+        @Qualifier("adminTest")
         VersionService versionService() {
             return new VersionService();
         }

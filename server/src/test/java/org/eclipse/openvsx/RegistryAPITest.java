@@ -36,6 +36,7 @@ import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
@@ -46,6 +47,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -91,7 +93,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
     JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
-    ExtensionScanPersistenceService.class
+    ExtensionScanPersistenceService.class, LogService.class
 })
 class RegistryAPITest {
 
@@ -2576,7 +2578,7 @@ class RegistryAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 ExtensionService extensions,
-                VersionService versions,
+                @Qualifier("registryTest") VersionService versions,
                 UserService users,
                 SearchUtilService search,
                 ExtensionValidator validator,
@@ -2608,6 +2610,7 @@ class RegistryAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
                 ExtensionScanService extensionScanService,
@@ -2618,6 +2621,7 @@ class RegistryAPITest {
                     repositories,
                     search,
                     cache,
+                    logs,
                     publishHandler,
                     scheduler,
                     extensionScanService,
@@ -2670,6 +2674,7 @@ class RegistryAPITest {
         ExtensionJsonCacheKeyGenerator extensionJsonCacheKeyGenerator() { return new ExtensionJsonCacheKeyGenerator(); }
 
         @Bean
+        @Qualifier("registryTest")
         VersionService versionService() {
             return new VersionService();
         }

@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,9 @@ class ScanAPITest {
 
     @MockitoBean
     AdminService admins;
+
+    @MockitoBean
+    LogService logs;
 
     @MockitoBean
     StorageUtilService storageUtil;
