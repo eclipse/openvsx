@@ -19,6 +19,7 @@ import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.ratelimit.cache.RateLimitCacheService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +38,18 @@ public class RateLimitAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private final LogService logs;
     private RateLimitCacheService rateLimitCacheService;
 
     public RateLimitAPI(
             RepositoryService repositories,
             AdminService admins,
+            LogService logs,
             Optional<RateLimitCacheService> rateLimitCacheService
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        this.logs = logs;
         rateLimitCacheService.ifPresent(service -> this.rateLimitCacheService = service);
     }
 
@@ -92,7 +96,7 @@ public class RateLimitAPI {
 
             var result = savedTier.toJson();
             result.setSuccess("Created tier '" + savedTier.getName() + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_TIER);
@@ -132,7 +136,7 @@ public class RateLimitAPI {
 
             var result = savedTier.toJson();
             result.setSuccess("Updated tier '" + savedTier.getName() + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_TIER);
@@ -166,7 +170,7 @@ public class RateLimitAPI {
             repositories.deleteTier(tier);
 
             var result = ResultJson.success("Deleted tier '" + name + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_TIER);
@@ -248,7 +252,7 @@ public class RateLimitAPI {
 
             var result = savedCustomer.toJson();
             result.setSuccess("Created customer '" + savedCustomer.getName() + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_CUSTOMER);
@@ -289,7 +293,7 @@ public class RateLimitAPI {
 
             var result = savedCustomer.toJson();
             result.setSuccess("Updated customer '" + savedCustomer.getName() + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_CUSTOMER);
@@ -318,7 +322,7 @@ public class RateLimitAPI {
             repositories.deleteCustomer(customer);
 
             var result = ResultJson.success("Deleted customer '" + name + "'");
-            admins.logAdminAction(adminUser, result);
+            logs.logAction(adminUser, result);
 
             if (rateLimitCacheService != null) {
                 rateLimitCacheService.publishConfigUpdate(RateLimitCacheService.CACHE_CUSTOMER);
