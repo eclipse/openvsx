@@ -14,7 +14,8 @@ import {
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
     LoginProviders, ScanResultJson, ScanCounts, ScanResultsResponse, ScanFilterOptions,
     FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
-    FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse
+    FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse,
+    Tier, TierList, Customer, CustomerList, UsageStatsList,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -499,6 +500,15 @@ export interface AdminService {
     makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
     makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
     deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
+    getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
+    createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
+    updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
+    deleteTier(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
+    createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>>;
+    updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
+    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>>;
 }
 
 export interface AdminServiceConstructor {
@@ -807,6 +817,152 @@ export class AdminServiceImpl implements AdminService {
             headers,
             payload: request
         });
+    }
+
+    async getTiers(abortController: AbortController): Promise<Readonly<TierList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),
+            credentials: true
+        }, false);
+    }
+
+    async createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', 'create']),
+            headers
+        }, false);
+    }
+
+    async updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
+    }
+
+    async deleteTier(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
+    }
+
+    async getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers']),
+            credentials: true
+        }, false);
+    }
+
+    async createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', 'create']),
+            headers
+        }, false);
+    }
+
+    async updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
+    }
+
+    async deleteCustomer(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
+    }
+
+    /**
+     * Get usage stats for a customer within an optional date range.
+     */
+    async getUsageStats(
+        abortController: AbortController,
+        customerName: string,
+        date: Date,
+    ): Promise<Readonly<UsageStatsList>> {
+        const query: { key: string, value: string | number }[] = [];
+        query.push({ key: 'date', value: date.toISOString() });
+
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'], query),
+            credentials: true
+        }, false);
     }
 }
 

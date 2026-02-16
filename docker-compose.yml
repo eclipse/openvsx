@@ -60,7 +60,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-1:/data
+      - ./data/redis/node-1:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -81,7 +81,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-2:/data
+      - ./data/redis/node-2:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -102,7 +102,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-3:/data
+      - ./data/redis/node-3:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -123,7 +123,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-4:/data
+      - ./data/redis/node-4:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -144,7 +144,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-5:/data
+      - ./data/redis/node-5:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -165,7 +165,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-6:/data
+      - ./data/redis/node-6:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -223,7 +223,7 @@ services:
     profiles:
       - openvsx
       - backend
-    
+
   webui:
     image: node:18
     working_dir: /app

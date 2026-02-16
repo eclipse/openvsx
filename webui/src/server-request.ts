@@ -28,7 +28,7 @@ export interface ErrorResponse {
     trace?: string;
 }
 
-export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
+export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = true): Promise<Res> {
     req.method ??= 'GET';
     req.headers ??= {};
     if (!req.headers['Accept']) {
@@ -50,7 +50,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         param.credentials = 'include';
     }
 
-    const options: any = {
+    const options: any = retry ? {
         retries: 10,
         retryDelay: (attempt: number, error: Error, response: Response) => {
             return Math.pow(2, attempt) * 1000;
@@ -58,7 +58,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         retryOn: (attempt: number, error: Error, response: Response) => {
             return error !== null || response.status >= 500;
         }
-    };
+    } : {};
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {

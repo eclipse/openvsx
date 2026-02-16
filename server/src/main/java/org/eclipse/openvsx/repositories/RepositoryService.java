@@ -23,9 +23,11 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 
@@ -68,6 +70,9 @@ public class RepositoryService {
     private final ExtensionThreatRepository extensionThreatRepo;
     private final FileDecisionRepository fileDecisionRepo;
     private final ScanCheckResultRepository scanCheckResultRepo;
+    private final TierRepository tierRepo;
+    private final CustomerRepository customerRepo;
+    private final UsageStatsRepository usageStatsRepository;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -98,7 +103,10 @@ public class RepositoryService {
             ExtensionValidationFailureRepository extensionValidationFailureRepo,
             ExtensionThreatRepository extensionThreatRepo,
             FileDecisionRepository fileDecisionRepo,
-            ScanCheckResultRepository scanCheckResultRepo
+            ScanCheckResultRepository scanCheckResultRepo,
+            TierRepository tierRepo,
+            CustomerRepository customerRepo,
+            UsageStatsRepository usageStatsRepository
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -129,6 +137,9 @@ public class RepositoryService {
         this.extensionThreatRepo = extensionThreatRepo;
         this.fileDecisionRepo = fileDecisionRepo;
         this.scanCheckResultRepo = scanCheckResultRepo;
+        this.tierRepo = tierRepo;
+        this.customerRepo = customerRepo;
+        this.usageStatsRepository = usageStatsRepository;
     }
 
     public Namespace findNamespace(String name) {
@@ -797,13 +808,13 @@ public class RepositoryService {
             org.springframework.data.domain.Pageable pageable
     ) {
         // Convert empty collections to null, and enums to strings for native query
-        var statusesParam = (statuses == null || statuses.isEmpty()) 
-            ? null 
+        var statusesParam = (statuses == null || statuses.isEmpty())
+            ? null
             : statuses.stream().map(ScanStatus::name).toList();
         var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
         var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
         var nameParam = (name == null || name.isBlank()) ? null : name;
-        
+
         return extensionScanRepo.findScansFiltered(
             statusesParam, namespaceParam, publisherParam, nameParam, startedFrom, startedTo, pageable
         );
@@ -818,13 +829,13 @@ public class RepositoryService {
             LocalDateTime startedTo
     ) {
         // Convert enums to strings for native query
-        var statusesParam = (statuses == null || statuses.isEmpty()) 
-            ? null 
+        var statusesParam = (statuses == null || statuses.isEmpty())
+            ? null
             : statuses.stream().map(ScanStatus::name).toList();
         var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
         var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
         var nameParam = (name == null || name.isBlank()) ? null : name;
-        
+
         return extensionScanRepo.countScansFiltered(
             statusesParam, namespaceParam, publisherParam, nameParam, startedFrom, startedTo
         );
@@ -854,8 +865,8 @@ public class RepositoryService {
             org.springframework.data.domain.Pageable pageable
     ) {
         // Convert enums to strings for native query
-        var statusesParam = (statuses == null || statuses.isEmpty()) 
-            ? null 
+        var statusesParam = (statuses == null || statuses.isEmpty())
+            ? null
             : statuses.stream().map(ScanStatus::name).toList();
         var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
         var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
@@ -866,15 +877,15 @@ public class RepositoryService {
         var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
         var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
         var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
-        
+
         // Admin decision filter
         var applyAdminDecisionFilter = adminDecisionFilter != null && adminDecisionFilter.hasFilter();
         var filterAllowed = adminDecisionFilter != null && adminDecisionFilter.filterAllowed();
         var filterBlocked = adminDecisionFilter != null && adminDecisionFilter.filterBlocked();
         var filterNeedsReview = adminDecisionFilter != null && adminDecisionFilter.filterNeedsReview();
-        
+
         return extensionScanRepo.findScansFullyFiltered(
-            statusesParam, namespaceParam, publisherParam, nameParam, 
+            statusesParam, namespaceParam, publisherParam, nameParam,
             startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
             applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview,
@@ -896,8 +907,8 @@ public class RepositoryService {
             boolean includeCheckErrors
     ) {
         // Convert enums to strings for native query
-        var statusesParam = (statuses == null || statuses.isEmpty()) 
-            ? null 
+        var statusesParam = (statuses == null || statuses.isEmpty())
+            ? null
             : statuses.stream().map(ScanStatus::name).toList();
         var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
         var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
@@ -908,15 +919,15 @@ public class RepositoryService {
         var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
         var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
         var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
-        
+
         // Admin decision filter
         var applyAdminDecisionFilter = adminDecisionFilter != null && adminDecisionFilter.hasFilter();
         var filterAllowed = adminDecisionFilter != null && adminDecisionFilter.filterAllowed();
         var filterBlocked = adminDecisionFilter != null && adminDecisionFilter.filterBlocked();
         var filterNeedsReview = adminDecisionFilter != null && adminDecisionFilter.filterNeedsReview();
-        
+
         return extensionScanRepo.countScansFullyFiltered(
-            statusesParam, namespaceParam, publisherParam, nameParam, 
+            statusesParam, namespaceParam, publisherParam, nameParam,
             startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly,
             applyAdminDecisionFilter, filterAllowed, filterBlocked, filterNeedsReview,
@@ -938,9 +949,9 @@ public class RepositoryService {
         var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
         var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
         var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
-        
+
         return extensionScanRepo.countForStatistics(
-            status.name(), startedFrom, startedTo, 
+            status.name(), startedFrom, startedTo,
             checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly
         );
@@ -960,7 +971,7 @@ public class RepositoryService {
         var applyScannerNamesFilter = scannerNames != null && !scannerNames.isEmpty();
         var checkTypesParam = applyCheckTypesFilter ? checkTypes : List.of("");
         var scannerNamesParam = applyScannerNamesFilter ? scannerNames : List.of("");
-        
+
         return adminScanDecisionRepo.countForStatistics(
             decision, startedFrom, startedTo, checkTypesParam, applyCheckTypesFilter,
             scannerNamesParam, applyScannerNamesFilter, enforcedOnly
@@ -1160,7 +1171,7 @@ public class RepositoryService {
         var publisherParam = (publisher == null || publisher.isBlank()) ? null : publisher;
         var namespaceParam = (namespace == null || namespace.isBlank()) ? null : namespace;
         var nameParam = (name == null || name.isBlank()) ? null : name;
-        
+
         return fileDecisionRepo.findFilesFiltered(
             decisionParam, publisherParam, namespaceParam, nameParam, decidedFrom, decidedTo, pageable
         );
@@ -1187,5 +1198,68 @@ public class RepositoryService {
 
     public boolean hasScanCheckResult(long scanId, String checkType) {
         return scanCheckResultRepo.existsByScanIdAndCheckType(scanId, checkType);
+    }
+
+    public List<Tier> findAllTiers() {
+        return tierRepo.findAllByOrderByIdAsc();
+    }
+
+    public Tier findTier(String name) {
+        return tierRepo.findByNameIgnoreCase(name);
+    }
+
+    public List<Tier> findTiersByTierType(TierType tierType) {
+        return tierRepo.findByTierType(tierType);
+    }
+
+    public List<Tier> findTiersByTierTypeExcludingTier(TierType tierType, Tier tier) {
+        return tierRepo.findByTierTypeAndIdNot(tierType, tier.getId());
+    }
+
+    public Tier upsertTier(Tier tier) {
+        return tierRepo.save(tier);
+    }
+
+    public void deleteTier(Tier tier) {
+        tierRepo.delete(tier);
+    }
+
+    public List<Customer> findAllCustomers() {
+        return customerRepo.findAll();
+    }
+
+    public List<Customer> findCustomersByTier(Tier tier) {
+        return customerRepo.findByTier(tier);
+    }
+
+    public int countCustomersByTier(Tier tier) {
+        return customerRepo.countCustomersByTier(tier);
+    }
+
+    public Optional<Customer> findCustomerById(long id) {
+        return customerRepo.findById(id);
+    }
+
+    public Customer findCustomer(String name) {
+        return customerRepo.findByNameIgnoreCase(name);
+    }
+
+    public Customer upsertCustomer(Customer customer) {
+        return customerRepo.save(customer);
+    }
+
+    public void deleteCustomer(Customer customer) {
+        customerRepo.delete(customer);
+    }
+
+    public List<UsageStats> findUsageStatsByCustomerAndDate(Customer customer, LocalDateTime date) {
+        var startTime = date.truncatedTo(ChronoUnit.DAYS).minusMinutes(5);
+        var endTime = date.truncatedTo(ChronoUnit.DAYS).plusDays(1);
+
+        return usageStatsRepository.findUsageStatsByCustomerAndWindowStartBetween(customer, startTime, endTime);
+    }
+
+    public UsageStats saveUsageStats(UsageStats usageStats) {
+        return usageStatsRepository.save(usageStats);
     }
 }
