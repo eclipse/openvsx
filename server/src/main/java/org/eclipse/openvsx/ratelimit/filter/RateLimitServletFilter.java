@@ -36,7 +36,6 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
     private final static String HEADER_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
     private final static String HEADER_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     private final static String HEADER_RATE_LIMIT_RESET = "X-RateLimit-Reset";
-    private final static String HEADER_RATE_LIMIT_RETRY_AFTER_SECONDS = "X-RateLimit-Retry-After-Seconds";
 
     private final RateLimitFilterProperties filterProperties;
     private final UsageStatsService usageStatsService;
@@ -100,7 +99,6 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
         response.setHeader(HEADER_RATE_LIMIT_REMAINING, "0");
         response.setHeader(HEADER_RATE_LIMIT_RESET, "" + TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForReset()));
         var refillInSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill());
-        response.setHeader(HEADER_RATE_LIMIT_RETRY_AFTER_SECONDS, Long.toString(refillInSeconds));
         response.setHeader("Retry-After", Long.toString(refillInSeconds));
 
         filterProperties.getHttpResponseHeaders().forEach(response::setHeader);
