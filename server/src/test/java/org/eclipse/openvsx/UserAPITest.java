@@ -32,6 +32,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -74,7 +75,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
         JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class,
-        ExtensionScanPersistenceService.class
+        ExtensionScanPersistenceService.class, LogService.class
 })
 class UserAPITest {
 
@@ -870,6 +871,7 @@ class UserAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
                 JobRequestScheduler scheduler,
                 ExtensionScanService extensionScanService,
@@ -880,6 +882,7 @@ class UserAPITest {
                     repositories,
                     search,
                     cache,
+                    logs,
                     publishHandler,
                     scheduler,
                     extensionScanService,

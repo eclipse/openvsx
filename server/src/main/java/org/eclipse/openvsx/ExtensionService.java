@@ -25,10 +25,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -54,6 +51,7 @@ public class ExtensionService {
     private final RepositoryService repositories;
     private final SearchUtilService search;
     private final CacheService cache;
+    private final LogService logs;
     private final PublishExtensionVersionHandler publishHandler;
     private final JobRequestScheduler scheduler;
     private final ExtensionScanService scanService;
@@ -70,6 +68,7 @@ public class ExtensionService {
             RepositoryService repositories,
             SearchUtilService search,
             CacheService cache,
+            LogService logs,
             PublishExtensionVersionHandler publishHandler,
             JobRequestScheduler scheduler,
             ExtensionScanService scanService,
@@ -79,6 +78,7 @@ public class ExtensionService {
         this.repositories = repositories;
         this.search = search;
         this.cache = cache;
+        this.logs = logs;
         this.publishHandler = publishHandler;
         this.scheduler = scheduler;
         this.scanService = scanService;
@@ -227,7 +227,7 @@ public class ExtensionService {
         var results = new ArrayList<ResultJson>();
         if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
             var extension = repositories.findExtension(extensionName, namespaceName);
-            results.add(deleteExtension(extension));
+            results.add(deleteExtension(user, extension));
         } else {
             for (var targetVersion : targetVersions) {
                 var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
@@ -236,7 +236,7 @@ public class ExtensionService {
                     throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
                 }
 
-                results.add(deleteExtension(extVersion));
+                results.add(deleteExtension(user, extVersion));
             }
         }
 
@@ -246,7 +246,7 @@ public class ExtensionService {
         return result;
     }
 
-    protected ResultJson deleteExtension(Extension extension) throws ErrorResultException {
+    protected ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         if (!bundledRefs.isEmpty()) {
             throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
@@ -280,16 +280,20 @@ public class ExtensionService {
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
 
-        return ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        logs.logAction(user, result);
+        return result;
     }
 
-    protected ResultJson deleteExtension(ExtensionVersion extVersion) {
+    protected ResultJson deleteExtension(UserData user, ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         updateExtension(extension);
 
-        return ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        logs.logAction(user, result);
+        return result;
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
