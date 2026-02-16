@@ -33,6 +33,11 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
 
     private final Logger logger = LoggerFactory.getLogger(RateLimitServletFilter.class);
 
+    private final static String HEADER_RATE_LIMIT_LIMIT = "X-RateLimit-Limit";
+    private final static String HEADER_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
+    private final static String HEADER_RATE_LIMIT_RESET = "X-RateLimit-Reset";
+    private final static String HEADER_RATE_LIMIT_RETRY_AFTER_SECONDS = "X-RateLimit-Retry-After-Seconds";
+
     private final RateLimitFilterProperties filterProperties;
     private final UsageStatsService usageStatsService;
     private final IdentityService identityService;
@@ -77,12 +82,12 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
             return;
         }
 
-        response.setHeader("X-Rate-Limit-Limit", Long.toString(bucketPair.availableTokens()));
+        response.setHeader(HEADER_RATE_LIMIT_LIMIT, Long.toString(bucketPair.availableTokens()));
 
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-        logger.debug(">>>>>>>> remainingTokens: {}", probe.getRemainingTokens());
+        logger.debug("remainingTokens: {}", probe.getRemainingTokens());
         if (probe.isConsumed()) {
-            response.setHeader("X-Rate-Limit-Remaining", Long.toString(probe.getRemainingTokens()));
+            response.setHeader(HEADER_RATE_LIMIT_REMAINING, Long.toString(probe.getRemainingTokens()));
             chain.doFilter(request, response);
         } else {
             handleHttpResponseOnRateLimiting(response, probe);
@@ -92,10 +97,10 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
     private void handleHttpResponseOnRateLimiting(HttpServletResponse response, ConsumptionProbe probe) throws IOException {
         response.setStatus(filterProperties.getHttpStatusCode().value());
 
-        response.setHeader("X-Rate-Limit-Remaining", "0");
-        response.setHeader("X-Rate-Limit-Reset", "" + TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForReset()));
+        response.setHeader(HEADER_RATE_LIMIT_REMAINING, "0");
+        response.setHeader(HEADER_RATE_LIMIT_RESET, "" + TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForReset()));
         var refillInSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill());
-        response.setHeader("X-Rate-Limit-Retry-After-Seconds", Long.toString(refillInSeconds));
+        response.setHeader(HEADER_RATE_LIMIT_RETRY_AFTER_SECONDS, Long.toString(refillInSeconds));
         response.setHeader("Retry-After", Long.toString(refillInSeconds));
 
         filterProperties.getHttpResponseHeaders().forEach(response::setHeader);
