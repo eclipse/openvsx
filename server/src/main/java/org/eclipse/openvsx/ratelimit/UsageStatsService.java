@@ -19,6 +19,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.params.ScanParams;
@@ -33,6 +34,7 @@ import java.util.Map;
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
 public class UsageStatsService {
+
     private final static String USAGE_DATA_KEY = "usage.customer";
     private final static int    WINDOW_MINUTES = 5;
 
@@ -48,6 +50,7 @@ public class UsageStatsService {
         this.jedisCluster = jedisCluster;
     }
 
+    @Async
     public void incrementUsage(Customer customer) {
         var key = customer.getId();
         var window = getCurrentUsageWindow();

@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
 public class RateLimitService {
+
     private final Logger logger = LoggerFactory.getLogger(RateLimitService.class);
 
     private final ProxyManager<byte[]> proxyManager;

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnBean(RateLimitConfig.class)
 public class RateLimitServletFilterFactory {
+
     private final UsageStatsService usageStatsService;
     private final IdentityService identityService;
     private final RateLimitService rateLimitService;

@@ -24,6 +24,7 @@ import java.util.Optional;
 
 @Component
 public class CollectUsageStatsHandler implements JobRequestHandler<HandlerJobRequest<?>> {
+
     private final Logger logger = LoggerFactory.getLogger(CollectUsageStatsHandler.class);
 
     private UsageStatsService usageStatsService;

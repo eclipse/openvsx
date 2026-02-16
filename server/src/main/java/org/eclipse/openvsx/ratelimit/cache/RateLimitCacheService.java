@@ -34,12 +34,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
 public class RateLimitCacheService extends JedisPubSub {
+
     public static final String CACHE_MANAGER = "rateLimitCacheManager";
-
-    private static final String CONFIG_UPDATE_CHANNEL = "ratelimit.config";
-
     public static final String CACHE_CUSTOMER = "ratelimit.customer";
     public static final String CACHE_TIER = "ratelimit.tier";
+
+    private static final String CONFIG_UPDATE_CHANNEL = "ratelimit.config";
 
     private final Logger logger = LoggerFactory.getLogger(RateLimitCacheService.class);
 
