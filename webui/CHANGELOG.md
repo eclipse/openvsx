@@ -10,6 +10,8 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Support for GitHub flavored markdown alerts ([#1535](https://github.com/eclipse/openvsx/pull/1535))
 - Support customizing the publisher agreement name and contact email ([#1550](https://github.com/eclipse/openvsx/pull/1550))
 - Display the unique identifier on the extension details page ([#1590](https://github.com/eclipse/openvsx/pull/1590))
+- Add admin pages to edit / view data for dynamic rate limits ([#1569](https://github.com/eclipse/openvsx/pull/1569))
+- Add ability to browse admin logs via the admin dashboard ([#1582](https://github.com/eclipse/openvsx/pull/1582))
 
 ### Changed
 
