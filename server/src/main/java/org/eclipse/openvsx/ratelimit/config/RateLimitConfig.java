@@ -32,6 +32,10 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
@@ -47,6 +51,15 @@ import static org.eclipse.openvsx.ratelimit.cache.RateLimitCacheService.*;
 public class RateLimitConfig {
 
     private final Logger logger = LoggerFactory.getLogger(RateLimitConfig.class);
+
+    @Bean
+    @ConditionalOnMissingBean(ExpressionParser.class)
+    public ExpressionParser expressionParser() {
+        SpelParserConfiguration config = new SpelParserConfiguration(
+                SpelCompilerMode.IMMEDIATE,
+                this.getClass().getClassLoader());
+        return new SpelExpressionParser(config);
+    }
 
     @Bean
     public JedisCluster jedisCluster(RedisProperties properties) {
@@ -70,8 +83,8 @@ public class RateLimitConfig {
 
     @Bean
     public Cache<Object, Object> customerCache(
-            @Value("${ovsx.caching.customer.tti:PT1H}") Duration timeToIdle,
-            @Value("${ovsx.caching.customer.max-size:10000}") long maxSize
+            @Value("${ovsx.caching.customer.tti:P1D}") Duration timeToIdle,
+            @Value("${ovsx.caching.customer.max-size:100}") long maxSize
     ) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(timeToIdle)
@@ -83,21 +96,8 @@ public class RateLimitConfig {
 
     @Bean
     public Cache<Object, Object> tierCache(
-            @Value("${ovsx.caching.tier.tti:PT1H}") Duration timeToIdle,
-            @Value("${ovsx.caching.tier.max-size:10000}") long maxSize
-    ) {
-        return Caffeine.newBuilder()
-                .expireAfterAccess(timeToIdle)
-                .maximumSize(maxSize)
-                .scheduler(Scheduler.systemScheduler())
-                .recordStats()
-                .build();
-    }
-
-    @Bean
-    public Cache<Object, Object> bucketCache(
-            @Value("${ovsx.caching.bucket.tti:PT1H}") Duration timeToIdle,
-            @Value("${ovsx.caching.bucket.max-size:10000}") long maxSize
+            @Value("${ovsx.caching.tier.tti:P1D}") Duration timeToIdle,
+            @Value("${ovsx.caching.tier.max-size:20}") long maxSize
     ) {
         return Caffeine.newBuilder()
                 .expireAfterAccess(timeToIdle)

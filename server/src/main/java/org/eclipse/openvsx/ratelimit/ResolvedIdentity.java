@@ -33,7 +33,7 @@ public record ResolvedIdentity(
         if (isCustomer()) {
             return customer;
         } else {
-            throw new RuntimeException("no customer associated with identity");
+            throw new RuntimeException("No customer associated with this identity.");
         }
     }
 }

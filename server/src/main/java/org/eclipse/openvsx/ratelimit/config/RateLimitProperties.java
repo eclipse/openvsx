@@ -33,6 +33,9 @@ public class RateLimitProperties {
     @NotNull
     private Boolean enabled = false;
 
+    @NotBlank
+    private String ipAddressFunction = "getRemoteAddr()";
+
     @Valid
     private UsageStatsProperties usageStats = new UsageStatsProperties();
 
@@ -56,6 +59,14 @@ public class RateLimitProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getIpAddressFunction() {
+        return ipAddressFunction;
+    }
+
+    public void setIpAddressFunction(String ipAddressFunction) {
+        this.ipAddressFunction = ipAddressFunction;
     }
 
     public UsageStatsProperties getUsageStats() {

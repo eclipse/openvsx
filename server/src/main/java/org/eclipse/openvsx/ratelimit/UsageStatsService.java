@@ -52,7 +52,7 @@ public class UsageStatsService {
         var key = customer.getId();
         var window = getCurrentUsageWindow();
         var old = jedisCluster.hincrBy(USAGE_DATA_KEY, key + ":" + window, 1);
-        logger.debug("usage count for {}: {}", customer.getName(), old + 1);
+        logger.debug("Usage count for {}: {}", customer.getName(), old + 1);
     }
 
     public void persistUsageStats() {
@@ -68,7 +68,7 @@ public class UsageStatsService {
                 var key = result.getKey();
                 var value = result.getValue();
 
-                logger.debug("usage stats: {} - {}", key, value);
+                logger.debug("Usage stats: {} - {}", key, value);
 
                 var component = key.split(":");
                 var customerId = Long.parseLong(component[0]);
@@ -77,7 +77,7 @@ public class UsageStatsService {
                 if (window < currentWindow) {
                     var customer = customerService.getCustomerById(customerId);
                     if (customer.isEmpty()) {
-                        logger.warn("failed to find customer with id {}", customerId);
+                        logger.warn("Failed to find customer with id {}", customerId);
                     } else {
                         UsageStats stats = new UsageStats();
 

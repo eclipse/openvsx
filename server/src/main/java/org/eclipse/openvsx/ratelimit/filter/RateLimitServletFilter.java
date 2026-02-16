@@ -66,7 +66,7 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
             @NonNull FilterChain chain
     ) throws ServletException, IOException {
         var identity = identityService.resolveIdentity(request);
-        logger.debug("rate limit filter: {}: {}", request.getRequestURI(), identity.ipAddress());
+        logger.debug("Rate limit filter: {}: {}", request.getRequestURI(), identity.ipAddress());
 
         if (identity.isCustomer()) {
             var customer = identity.getCustomer();
@@ -84,7 +84,7 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
         response.setHeader(HEADER_RATE_LIMIT_LIMIT, Long.toString(bucketPair.availableTokens()));
 
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-        logger.debug("remainingTokens: {}", probe.getRemainingTokens());
+        logger.debug("Remaining tokens for {}: {}", identity.cacheKey(), probe.getRemainingTokens());
         if (probe.isConsumed()) {
             response.setHeader(HEADER_RATE_LIMIT_REMAINING, Long.toString(probe.getRemainingTokens()));
             chain.doFilter(request, response);

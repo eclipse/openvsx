@@ -36,9 +36,9 @@ public class CollectUsageStatsHandler implements JobRequestHandler<HandlerJobReq
     @Job(name = "Collect usage stats")
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         if (usageStatsService != null) {
-            logger.debug(">> start collecting usage data");
+            logger.debug(">> Start collecting usage data");
             usageStatsService.persistUsageStats();
-            logger.debug("<< finished collecting usage data");
+            logger.debug("<< Finished collecting usage data");
         }
     }
 }

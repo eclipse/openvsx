@@ -12,21 +12,46 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit;
 
+import com.giffing.bucket4j.spring.boot.starter.context.ExpressionParams;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
+import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
 public class IdentityService {
 
+    private final Logger logger = LoggerFactory.getLogger(IdentityService.class);
+
+    private final ExpressionParser expressionParser;
+    private final ConfigurableBeanFactory beanFactory;
+
     private final TierService tierService;
     private final CustomerService customerService;
+    private final RateLimitProperties rateLimitProperties;
 
-    public IdentityService(TierService tierService, CustomerService customerService) {
+    public IdentityService(
+            ExpressionParser expressionParser,
+            ConfigurableBeanFactory beanFactory,
+            TierService tierService,
+            CustomerService customerService,
+            RateLimitProperties rateLimitProperties
+    ) {
+        this.expressionParser = expressionParser;
+        this.beanFactory = beanFactory;
         this.tierService = tierService;
         this.customerService = customerService;
+        this.rateLimitProperties = rateLimitProperties;
     }
 
     public ResolvedIdentity resolveIdentity(HttpServletRequest request) {
@@ -69,10 +94,19 @@ public class IdentityService {
     }
 
     private String getIPAddress(HttpServletRequest request) {
-        // TODO: make this configurable rather than hardcode,
-        //       if the server is run without proxy, someone
-        //       could fake the X-Forwarded-For header
-        var forwardedFor = request.getHeader("X-Forwarded-For");
-        return forwardedFor != null ? forwardedFor : request.getRemoteAddr();
+        var ipAddressFunction = rateLimitProperties.getIpAddressFunction();
+        var params = new ExpressionParams<>(request);
+        var context = getContext(params.getParams());
+        var expr = expressionParser.parseExpression(ipAddressFunction);
+        String result = expr.getValue(context, params.getRootObject(), String.class);
+        logger.trace("GetIPAddress -> result:{};expression:{}", result, ipAddressFunction);
+        return result;
+    }
+
+    private StandardEvaluationContext getContext(Map<String, Object> params) {
+        var context = new StandardEvaluationContext();
+        params.forEach(context::setVariable);
+        context.setBeanResolver(new BeanFactoryResolver(beanFactory));
+        return context;
     }
 }
