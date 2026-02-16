@@ -33,11 +33,7 @@ import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
@@ -216,8 +212,7 @@ public class AdminAPI {
 
             return ResponseEntity.ok(logsPage.map(log -> {
                 var timestamp = log.getTimestamp().minusNanos(log.getTimestamp().getNano());
-                var json = new PersistedLogJson(timestamp.toString(), log.getUser().getLoginName(), log.getMessage());
-                return json;
+                return new PersistedLogJson(timestamp.toString(), log.getUser().getLoginName(), log.getMessage());
             }));
         } catch (ErrorResultException exc) {
             var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;

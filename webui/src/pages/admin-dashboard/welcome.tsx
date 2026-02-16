@@ -31,6 +31,7 @@ export const Welcome: FunctionComponent = props => {
                     <WelcomeLinkItem route={AdminDashboardRoutes.TIERS} label='Tiers' description='Manage rate-limit tiers' />
                     <WelcomeLinkItem route={AdminDashboardRoutes.CUSTOMERS} label='Customers' description='Manage rate-limit customers' />
                     <WelcomeLinkItem route={AdminDashboardRoutes.USAGE_STATS} label='Usage Stats' description='Show usage stats for customers' />
+                    <WelcomeLinkItem route={AdminDashboardRoutes.LOGS} label='Logs' description='Browse persisted action logs' />
                 </Grid>
             </Paper>
         </Grid>
