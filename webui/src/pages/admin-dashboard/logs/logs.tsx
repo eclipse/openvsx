@@ -22,7 +22,6 @@ import {
     Select,
     MenuItem,
     SelectChangeEvent,
-    Chip,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams } from "@mui/x-data-grid";
 import { MainContext } from "../../../context";
@@ -113,11 +112,9 @@ export const Logs: FC = () => {
                 if (!params.value) return null;
                 const date = new Date(params.value as string);
                 return (
-                    <Chip
-                        label={date.toLocaleString()}
-                        size='small'
-                        variant='outlined'
-                    />
+                    <Typography variant='caption'>
+                        {date.toLocaleString()}
+                    </Typography>
                 );
             }
         },
@@ -132,15 +129,32 @@ export const Logs: FC = () => {
         {
             field: 'message',
             headerName: 'Message',
-            flex: 2,
+            flex: 5,
             minWidth: 300,
             sortable: false,
         },
     ];
 
     return (
-        <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{
+            width: 'min(1500px, 100vw - 280px)',
+            maxWidth: 'none',
+            mx: 'auto',
+            px: 2,
+            pb: 3,
+            position: 'relative',
+            left: '50%',
+            transform: 'translateX(-50%)',
+        }}>
+            <Box sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 2,
+                width: '100%',
+            }}>
                 <Typography variant='h4' component='h1'>
                     Admin Logs
                 </Typography>
