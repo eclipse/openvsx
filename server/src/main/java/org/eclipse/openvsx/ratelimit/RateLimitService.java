@@ -42,12 +42,25 @@ public class RateLimitService {
     private final Logger logger = LoggerFactory.getLogger(RateLimitService.class);
 
     private final ProxyManager<byte[]> proxyManager;
-    private final Map<Customer, BucketConfiguration> configurationByCustomer;
+    private final Map<Customer, BucketConfigurationWrapper> configurationByCustomer;
+    private final Customer anonymousCustomer;
 
     public RateLimitService(ProxyManager<byte[]> proxyManager) {
         this.proxyManager = proxyManager;
         this.configurationByCustomer = new ConcurrentHashMap<>();
+
+        // We need to set up a dummy customer for anonymous users as key for the configuration map
+        // as ConcurrentHashMap does not allow null keys or values.
+        var customer = new Customer();
+        customer.setName("internalAnonymousCustomer");
+        this.anonymousCustomer = customer;
     }
+
+    /**
+     * A wrapper for {@link BucketConfiguration} objects as {@link ConcurrentHashMap}
+     * does not support {@code null} values.
+     */
+    public record BucketConfigurationWrapper(@Nullable BucketConfiguration configuration) {}
 
     public record BucketPair(@Nullable Bucket bucket, long availableTokens) {
         public static BucketPair empty() {
@@ -83,11 +96,11 @@ public class RateLimitService {
     }
 
     private @Nullable BucketConfiguration getBucketConfiguration(ResolvedIdentity identity) {
+        var customer = identity.customer() != null ? identity.customer() : anonymousCustomer;
         return configurationByCustomer.computeIfAbsent(
-                // if the identity is not a customer, it will be null
-                identity.customer(),
-                (_) -> createBucketConfiguration(identity)
-        );
+                customer,
+                (_) -> new BucketConfigurationWrapper(createBucketConfiguration(identity))
+        ).configuration;
     }
 
     private @Nullable BucketConfiguration createBucketConfiguration(ResolvedIdentity identity) {
