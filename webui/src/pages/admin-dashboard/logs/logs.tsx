@@ -70,7 +70,7 @@ export const Logs: FC = () => {
                     periodFilter || undefined
                 );
                 setLogs(data.content);
-                setTotalElements(data.totalElements);
+                setTotalElements(data.page.totalElements);
             } catch (err: any) {
                 if (!abortController.signal.aborted) {
                     setError(handleError(err));

@@ -213,7 +213,11 @@ publishing {
 }
 
 tasks.register('runServer', JavaExec) {
-    jvmArgs = ['--enable-native-access=ALL-UNNAMED'] // due to https://github.com/netty/netty/issues/15161
+    jvmArgs = [
+        '-Dorg.jooq.no-logo=true',
+        '-Dorg.jooq.no-tips=true',
+        '--enable-native-access=ALL-UNNAMED' // due to https://github.com/netty/netty/issues/15161
+    ]
     classpath = sourceSets.dev.runtimeClasspath
     mainClass = 'org.eclipse.openvsx.RegistryApplication'
 }

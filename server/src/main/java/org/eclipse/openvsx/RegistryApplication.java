@@ -25,6 +25,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -32,6 +33,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
+
+import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
 @SpringBootApplication(exclude = {
         // currently no redis / elasticsearch repositories are being used
@@ -46,9 +49,12 @@ import org.springframework.security.web.firewall.RequestRejectedHandler;
 @EnableRetry
 @EnableAsync
 @EnableConfigurationProperties(OAuth2AttributesConfig.class)
+// Need to enable serialization support for spring data's Page, see:
+// https://stevenpg.com/posts/spring-data-page-impl-serialization-warning/
+@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 public class RegistryApplication {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(RegistryApplication.class, args);
     }
 
