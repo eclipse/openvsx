@@ -60,7 +60,6 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
     private final Logger logger = LoggerFactory.getLogger(AwsDownloadCountHandler.class);
 
     private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
-    private static final int MAX_KEYS = 100;
 
     private final AwsStorageService  awsStorageService;
     private final DownloadCountProcessor processor;
@@ -76,6 +75,9 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
 
     @Value("${ovsx.logs.aws.cron:0 10 * * * *}")
     String cronSchedule;
+
+    @Value("${ovsx.logs.aws.max-keys:100}")
+    int maxKeys;
 
     LogFileParser logFileParser;
 
@@ -272,7 +274,7 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
     }
 
     private ListObjectsV2Response listObjects(String continuationToken) {
-        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(MAX_KEYS).prefix(logLocationPrefix);
+        var builder = ListObjectsV2Request.builder().bucket(bucket).maxKeys(maxKeys).prefix(logLocationPrefix);
 
         if (continuationToken != null) {
             builder.continuationToken(continuationToken);
