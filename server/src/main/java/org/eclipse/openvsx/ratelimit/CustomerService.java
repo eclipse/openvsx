@@ -54,6 +54,11 @@ public class CustomerService {
 
     public Optional<Customer> getCustomerByIpAddress(String ipAddress) {
         var ip = new IPAddressString(ipAddress).getAddress().toIPv4();
+        if (ip == null) {
+            logger.warn("Could not determine IP address from string {}", ipAddress);
+            return Optional.empty();
+        }
+        
         var node = customersByIPAddress.elementsContaining(ip);
         if (node != null) {
             return Optional.of(node.getValue());
