@@ -27,6 +27,8 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -46,6 +48,8 @@ import java.util.stream.Collectors;
 @Component
 public class ExtensionService {
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
+
+    private final Logger logger = LoggerFactory.getLogger(ExtensionService.class);
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
@@ -97,7 +101,19 @@ public class ExtensionService {
             return publishVersionWithScan(content, token);
         } else {
             var extensionFile = createExtensionFile(content);
-            doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            try {
+                doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            } catch (ErrorResultException exc) {
+                // In case publication fails early on we need to
+                // delete the temporary extension file, otherwise
+                // it's deleted within the publishAsync method.
+                try {
+                    extensionFile.close();
+                } catch (IOException e) {
+                    logger.error("failed to delete temp file", e);
+                }
+                throw exc;
+            }
             publishHandler.publishAsync(extensionFile, this);
             var download = extensionFile.getResource();
             publishHandler.schedulePublicIdJob(download);
@@ -115,7 +131,7 @@ public class ExtensionService {
             scanService.runValidation(scan, extensionFile, token.getUser());
 
             doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-            
+
             // Publish async handles requesting the longrunning scans
             publishHandler.publishAsync(extensionFile, this, scan);
             var download = extensionFile.getResource();
@@ -126,6 +142,16 @@ public class ExtensionService {
             if (scan != null && !scan.isCompleted()) {
                 scanService.removeScan(scan);
             }
+
+            // In case publication fails early on we need to
+            // delete the temporary extension file, otherwise
+            // it's deleted within the publishAsync method.
+            try {
+                extensionFile.close();
+            } catch (IOException ioe) {
+                logger.error("failed to delete temp file", ioe);
+            }
+
             throw e;
         }  catch (Exception e) {
             if (scan != null && !scan.isCompleted()) {
