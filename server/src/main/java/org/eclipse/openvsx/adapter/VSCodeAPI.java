@@ -18,9 +18,12 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,6 +47,7 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
 public class VSCodeAPI {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final Logger logger = LoggerFactory.getLogger(VSCodeAPI.class);
 
     private final LocalVSCodeService local;
     private final UpstreamVSCodeService upstream;
@@ -81,7 +85,7 @@ public class VSCodeAPI {
     public ExtensionQueryResult extensionQuery(@RequestBody @Parameter(description = "Parameters of the extension query") ExtensionQueryParam param) {
         var size = 0;
         if(param.filters() != null && !param.filters().isEmpty()) {
-            size = param.filters().get(0).pageSize();
+            size = param.filters().getFirst().pageSize();
         }
         if(size <= 0) {
             size = DEFAULT_PAGE_SIZE;
@@ -149,15 +153,19 @@ public class VSCodeAPI {
             String targetPlatform
     ) {
         var restOfTheUrl = UrlUtil.extractWildcardPath(request);
-        for (var service : getVSCodeServices()) {
-            try {
-                return service.getAsset(namespaceName, extensionName, version, assetType, targetPlatform, restOfTheUrl);
-            } catch (NotFoundException exc) {
-                // Try the next registry
+        try {
+            for (var service : getVSCodeServices()) {
+                try {
+                    return service.getAsset(namespaceName, extensionName, version, assetType, targetPlatform, restOfTheUrl);
+                } catch (NotFoundException exc) {
+                    // Try the next registry
+                }
             }
+            return ResponseEntity.notFound().build();
+        } catch (ErrorResultException ex) {
+            logger.error(ex.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
-
-        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/vscode/item")
@@ -301,15 +309,19 @@ public class VSCodeAPI {
             @PathVariable @Parameter(description = "Extension version", example = "0.3.1710435722") String version
     ) {
         var path = UrlUtil.extractWildcardPath(request);
-        for (var service : getVSCodeServices()) {
-            try {
-                return service.browse(namespaceName, extensionName, version, path);
-            } catch (NotFoundException exc) {
-                // Try the next registry
+        try {
+            for (var service : getVSCodeServices()) {
+                try {
+                    return service.browse(namespaceName, extensionName, version, path);
+                } catch (NotFoundException exc) {
+                    // Try the next registry
+                }
             }
+            return ResponseEntity.notFound().build();
+        } catch (ErrorResultException ex) {
+            logger.error(ex.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
-
-        return ResponseEntity.notFound().build();
     }
 
     @GetMapping(
@@ -339,9 +351,9 @@ public class VSCodeAPI {
         var result = extensionQueryRequestHandler.getResult(param, 1, DEFAULT_PAGE_SIZE);
         var extension = Optional.of(result)
                 .filter(r -> !r.results().isEmpty())
-                .map(r -> r.results().get(0).extensions())
+                .map(r -> r.results().getFirst().extensions())
                 .filter(e -> !e.isEmpty())
-                .map(e -> e.get(0))
+                .map(List::getFirst)
                 .orElse(null);
 
         return extension != null

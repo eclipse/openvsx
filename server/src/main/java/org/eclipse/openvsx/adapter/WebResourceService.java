@@ -90,7 +90,11 @@ public class WebResourceService {
                 return null;
             }
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException(
+                    "Failed to read extension files for " +
+                    NamingUtil.toLogFormat(namespace, extension, targetPlatform, version) + ": " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -115,7 +119,11 @@ public class WebResourceService {
 
             return node;
         } catch (IOException | UncheckedIOException e) {
-            throw new ErrorResultException("Failed to read extension files for " + NamingUtil.toLogFormat(namespace, extension, targetPlatform, version), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException(
+                    "Failed to read extension files for " +
+                    NamingUtil.toLogFormat(namespace, extension, targetPlatform, version) + ": " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 
