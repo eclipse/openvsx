@@ -177,7 +177,7 @@ ovsx:
       - url: '/(api|vscode)/.*'
         http-response-headers:
           Access-Control-Allow-Origin: '*'
-          Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
+          Access-Control-Expose-Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After
     default-http-content-type: application/json
     default-http-response-body: >
       {
