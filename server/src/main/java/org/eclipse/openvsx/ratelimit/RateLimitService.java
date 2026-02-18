@@ -108,8 +108,10 @@ public class RateLimitService {
         var builder = BucketConfiguration.builder();
 
         var hasLimits = false;
+        var useCustomerBandwidth = identity.cacheKey().startsWith("customer_");
 
-        if (identity.customer() != null && identity.cacheKey().startsWith("customer_")) {
+        // if this request is coming from an identified customer
+        if (identity.customer() != null && useCustomerBandwidth) {
             var customer = identity.customer();
             if (customer.getState() == EnforcementState.ENFORCEMENT) {
                 builder.addLimit(getBandWidth(customer.getTier()));
@@ -117,8 +119,8 @@ public class RateLimitService {
             }
         }
 
-        // add the free tier bandwidth if no limits have been set so far
-        if (!hasLimits && identity.freeTier() != null) {
+        // add the free tier bandwidth for any other requests if available
+        if (!useCustomerBandwidth && identity.freeTier() != null) {
             builder.addLimit(getBandWidth(identity.freeTier()));
             hasLimits = true;
         }

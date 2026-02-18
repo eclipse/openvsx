@@ -14,6 +14,7 @@ package org.eclipse.openvsx.ratelimit;
 
 import com.giffing.bucket4j.spring.boot.starter.context.ExpressionParams;
 import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class IdentityService {
 
     private final TierService tierService;
     private final CustomerService customerService;
+    private final UserService userService;
     private final RateLimitProperties rateLimitProperties;
 
     public IdentityService(
@@ -45,12 +47,14 @@ public class IdentityService {
             ConfigurableBeanFactory beanFactory,
             TierService tierService,
             CustomerService customerService,
+            UserService userService,
             RateLimitProperties rateLimitProperties
     ) {
         this.expressionParser = expressionParser;
         this.beanFactory = beanFactory;
         this.tierService = tierService;
         this.customerService = customerService;
+        this.userService = userService;
         this.rateLimitProperties = rateLimitProperties;
     }
 
@@ -60,9 +64,14 @@ public class IdentityService {
 
         var token = request.getParameter("token");
         if (token != null) {
-            // we use the token as a cache key
-            // if the token is invalid, request will fail anyway
-            cacheKey = "token_" + token.hashCode();
+            // This will update the database with the time the token is last accessed,
+            // but we need to ensure that we only take valid tokens into account for rate limiting.
+            // If this turns out to be a bottleneck, we need to cache the token hashcode.
+            var tokenEntity = userService.useAccessToken(token);
+            if (tokenEntity != null) {
+                // if a valid token is present we use it as a cache key
+                cacheKey = "token_" + token.hashCode();
+            }
         }
 
         var customer = customerService.getCustomerByIpAddress(ipAddress);
@@ -75,7 +84,6 @@ public class IdentityService {
             var sessionId = session != null ? session.getId() : null;
             if (sessionId != null) {
                 // we use the session id as a cache key
-                // if the session is invalid, request will fail anyway
                 cacheKey = "session_" + sessionId.hashCode();
             }
         }
