@@ -335,6 +335,67 @@ public class AdminService {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteNamespace(String namespaceName, UserData admin) {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException("Namespace not found: " + namespaceName, HttpStatus.NOT_FOUND);
+        }
+
+        // Get all extensions in the namespace
+        var extensions = repositories.findExtensions(namespace);
+        
+        // Delete all extensions and their versions
+        for (var extension : extensions) {
+            // Remove reviews (associated with extension, not version)
+            var reviews = repositories.findAllReviews(extension);
+            for (var review : reviews) {
+                entityManager.remove(review);
+            }
+            
+            // Remove all versions and their resources
+            var versions = repositories.findVersions(extension);
+            for (var version : versions) {
+                // Remove file resources
+                var resources = repositories.findFiles(version);
+                for (var resource : resources) {
+                    storageUtil.removeFile(resource);
+                    entityManager.remove(resource);
+                }
+                
+                // Remove the version
+                entityManager.remove(version);
+            }
+            
+            // Clear cache for the extension
+            cache.evictExtensionJsons(extension);
+            cache.evictLatestExtensionVersion(extension);
+            
+            // Remove the extension
+            entityManager.remove(extension);
+        }
+        
+        // Remove all namespace memberships
+        var memberships = repositories.findMemberships(namespace);
+        for (var membership : memberships) {
+            entityManager.remove(membership);
+        }
+        
+        // Clear cache for the namespace
+        cache.evictNamespaceDetails(namespace);
+        cache.evictSitemap();
+        
+        // Remove the namespace
+        entityManager.remove(namespace);
+        
+        // Update search index
+        search.updateSearchEntries(extensions.toList());
+        
+        var result = ResultJson.success("Deleted namespace " + namespaceName + " with " + extensions.toList().size() + " extension(s)");
+        logAdminAction(admin, result);
+        return result;
+    }
+
     public void changeNamespace(ChangeNamespaceJson json) {
         if (StringUtils.isEmpty(json.oldNamespace())) {
             throw new ErrorResultException("Old namespace must have a value");

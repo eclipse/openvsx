@@ -556,6 +556,357 @@ class AdminAPITest {
     }
 
     @Test
+    void testDeleteNamespaceNotLoggedIn() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteNamespaceNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testDeleteNamespace() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 0 extension(s)")));
+    }
+
+    @Test
+    void testDeleteNonExistentNamespace() throws Exception {
+        mockAdminUser();
+        Mockito.when(repositories.findNamespace("nonexistent"))
+                .thenReturn(null);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "nonexistent")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isNotFound())
+                .andExpect(content().json(errorJson("Namespace not found: nonexistent")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithExtensions() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        // Mock extensions with versions
+        var extension = new Extension();
+        extension.setName("test-ext");
+        extension.setNamespace(namespace);
+        
+        var version1 = new ExtensionVersion();
+        version1.setId(1L);
+        version1.setVersion("1.0.0");
+        version1.setExtension(extension);
+        
+        var version2 = new ExtensionVersion();
+        version2.setId(2L);
+        version2.setVersion("2.0.0");
+        version2.setExtension(extension);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findVersions(extension))
+                .thenReturn(Streamable.of(version1, version2));
+        Mockito.when(repositories.findFiles(any(ExtensionVersion.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findAllReviews(extension))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 1 extension(s)")));
+        
+        // Verify that extension versions were deleted
+        Mockito.verify(entityManager, Mockito.times(2)).remove(any(ExtensionVersion.class));
+        // Verify that extension was deleted
+        Mockito.verify(entityManager).remove(extension);
+        // Verify that namespace was deleted
+        Mockito.verify(entityManager).remove(namespace);
+    }
+
+    @Test
+    void testDeleteNamespaceWithMemberships() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        var user1 = new UserData();
+        user1.setLoginName("user1");
+        var membership1 = new NamespaceMembership();
+        membership1.setNamespace(namespace);
+        membership1.setUser(user1);
+        membership1.setRole(NamespaceMembership.ROLE_OWNER);
+        
+        var user2 = new UserData();
+        user2.setLoginName("user2");
+        var membership2 = new NamespaceMembership();
+        membership2.setNamespace(namespace);
+        membership2.setUser(user2);
+        membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Arrays.asList(membership1, membership2));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 0 extension(s)")));
+        
+        // Verify memberships were deleted
+        Mockito.verify(entityManager).remove(membership1);
+        Mockito.verify(entityManager).remove(membership2);
+        Mockito.verify(entityManager).remove(namespace);
+    }
+
+    @Test
+    void testDeleteNamespaceWithFileResources() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        var extension = new Extension();
+        extension.setName("test-ext");
+        extension.setNamespace(namespace);
+        
+        var version = new ExtensionVersion();
+        version.setId(1L);
+        version.setVersion("1.0.0");
+        version.setExtension(extension);
+        
+        var fileResource1 = new FileResource();
+        fileResource1.setId(1L);
+        fileResource1.setExtension(version);
+        fileResource1.setType(FileResource.DOWNLOAD);
+        
+        var fileResource2 = new FileResource();
+        fileResource2.setId(2L);
+        fileResource2.setExtension(version);
+        fileResource2.setType(FileResource.MANIFEST);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findVersions(extension))
+                .thenReturn(Streamable.of(version));
+        Mockito.when(repositories.findFiles(version))
+                .thenReturn(Streamable.of(fileResource1, fileResource2));
+        Mockito.when(repositories.findAllReviews(extension))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk());
+        
+        // Verify files were removed from storage and database
+        Mockito.verify(entityManager).remove(fileResource1);
+        Mockito.verify(entityManager).remove(fileResource2);
+    }
+
+    @Test
+    void testDeleteNamespaceWithReviews() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        var extension = new Extension();
+        extension.setName("test-ext");
+        extension.setNamespace(namespace);
+        
+        var version = new ExtensionVersion();
+        version.setId(1L);
+        version.setVersion("1.0.0");
+        version.setExtension(extension);
+        
+        var user1 = new UserData();
+        user1.setLoginName("user1");
+        var review1 = new ExtensionReview();
+        review1.setId(1L);
+        review1.setExtension(extension);
+        review1.setUser(user1);
+        
+        var user2 = new UserData();
+        user2.setLoginName("user2");
+        var review2 = new ExtensionReview();
+        review2.setId(2L);
+        review2.setExtension(extension);
+        review2.setUser(user2);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findVersions(extension))
+                .thenReturn(Streamable.of(version));
+        Mockito.when(repositories.findFiles(version))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findAllReviews(extension))
+                .thenReturn(Streamable.of(review1, review2));
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk());
+        
+        // Verify reviews were deleted (should be called for each version)
+        Mockito.verify(entityManager, Mockito.atLeastOnce()).remove(review1);
+        Mockito.verify(entityManager, Mockito.atLeastOnce()).remove(review2);
+    }
+
+    @Test
+    void testDeleteNamespaceWithMultipleExtensions() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        var extension1 = new Extension();
+        extension1.setName("ext1");
+        extension1.setNamespace(namespace);
+        
+        var extension2 = new Extension();
+        extension2.setName("ext2");
+        extension2.setNamespace(namespace);
+        
+        var extension3 = new Extension();
+        extension3.setName("ext3");
+        extension3.setNamespace(namespace);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension1, extension2, extension3));
+        Mockito.when(repositories.findVersions(any(Extension.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findAllReviews(any(Extension.class)))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 3 extension(s)")));
+        
+        // Verify all extensions were deleted
+        Mockito.verify(entityManager).remove(extension1);
+        Mockito.verify(entityManager).remove(extension2);
+        Mockito.verify(entityManager).remove(extension3);
+    }
+
+    @Test
+    void testDeleteNamespaceComplexScenario() throws Exception {
+        mockAdminUser();
+        var namespace = mockNamespace();
+        
+        // Create extension with multiple versions, files, and reviews
+        var extension = new Extension();
+        extension.setName("complex-ext");
+        extension.setNamespace(namespace);
+        
+        var version1 = new ExtensionVersion();
+        version1.setId(1L);
+        version1.setVersion("1.0.0");
+        version1.setExtension(extension);
+        
+        var version2 = new ExtensionVersion();
+        version2.setId(2L);
+        version2.setVersion("2.0.0");
+        version2.setExtension(extension);
+        
+        var file1 = new FileResource();
+        file1.setId(1L);
+        file1.setExtension(version1);
+        
+        var file2 = new FileResource();
+        file2.setId(2L);
+        file2.setExtension(version2);
+        
+        var review = new ExtensionReview();
+        review.setId(1L);
+        review.setExtension(extension);
+        
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findVersions(extension))
+                .thenReturn(Streamable.of(version1, version2));
+        Mockito.when(repositories.findFiles(version1))
+                .thenReturn(Streamable.of(file1));
+        Mockito.when(repositories.findFiles(version2))
+                .thenReturn(Streamable.of(file2));
+        Mockito.when(repositories.findAllReviews(extension))
+                .thenReturn(Streamable.of(review));
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Arrays.asList(membership));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 1 extension(s)")));
+        
+        // Verify complete cleanup
+        Mockito.verify(entityManager).remove(file1);
+        Mockito.verify(entityManager).remove(file2);
+        Mockito.verify(entityManager, Mockito.atLeastOnce()).remove(review);
+        Mockito.verify(entityManager).remove(version1);
+        Mockito.verify(entityManager).remove(version2);
+        Mockito.verify(entityManager).remove(extension);
+        Mockito.verify(entityManager).remove(membership);
+        Mockito.verify(entityManager).remove(namespace);
+    }
+
+    @Test
+    void testDeleteNamespaceWithToken() throws Exception {
+        var token = mockAdminToken();
+        var namespace = mockNamespace();
+        
+        Mockito.when(repositories.findExtensions(namespace))
+                .thenReturn(Streamable.empty());
+        Mockito.when(repositories.findMemberships(namespace))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .param("token", "admin_token")
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted namespace foobar with 0 extension(s)")));
+    }
+
+    @Test
+    void testDeleteNamespaceWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        var namespace = mockNamespace();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/admin/namespace/{namespaceName}", "foobar")
+                .param("token", "normal_token")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testGetUserPublishInfoNotLoggedIn() throws Exception {
         mockNamespace();
         mockMvc.perform(get("/admin/publisher/{provider}/{loginName}", "github", "test")
