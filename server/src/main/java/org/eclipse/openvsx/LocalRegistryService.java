@@ -337,7 +337,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
                     var latestPreRelease = latestPreReleases.get(getLatestVersionKey(ev));
                     var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0L);
-                    var preview = previewsByExtensionId.get(ev.getExtension().getId());
+                    var preview = Boolean.TRUE.equals(previewsByExtensionId.getOrDefault(ev.getExtension().getId(), false));
                     var extensionVersionStrings = versionStrings.get(ev.getExtension().getId());
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
                     return toExtensionVersionJson(ev, latest, latestPreRelease, reviewCount, preview, extensionVersionStrings, targetPlatform, fileResources, membershipsByNamespaceId);
@@ -378,7 +378,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                     var latest = latestVersions.get(getLatestVersionKey(ev));
                     var latestPreRelease = latestPreReleases.get(getLatestVersionKey(ev));
                     var reviewCount = reviewCounts.getOrDefault(ev.getExtension().getId(), 0L);
-                    var preview = previewsByExtensionId.get(ev.getExtension().getId());
+                    var preview = Boolean.TRUE.equals(previewsByExtensionId.getOrDefault(ev.getExtension().getId(), false));
                     var fileResources = fileResourcesByExtensionVersionId.getOrDefault(ev.getId(), Collections.emptyList());
                     var globalLatest = addAllVersions ? latestGlobalVersions.get(ev.getExtension().getId()) : null;
                     var globalLatestPreRelease = addAllVersions ? latestGlobalPreReleases.get(ev.getExtension().getId()) : null;
