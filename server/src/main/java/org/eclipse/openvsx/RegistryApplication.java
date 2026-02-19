@@ -33,6 +33,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
+import org.springframework.web.filter.CharacterEncodingFilter;
 
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
@@ -72,6 +73,23 @@ public class RegistryApplication {
     public FilterRegistrationBean<ShallowEtagHeaderFilter> shallowEtagHeaderFilter() {
         var registrationBean = new FilterRegistrationBean<ShallowEtagHeaderFilter>();
         registrationBean.setFilter(new ShallowEtagHeaderFilter());
+        registrationBean.addUrlPatterns("/api/*");
+        registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
+
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<CharacterEncodingFilter> forceUTF8EncodingFilter() {
+        var registrationBean = new FilterRegistrationBean<CharacterEncodingFilter>();
+
+        // Enforce the use of utf-8 as character encoding for requests / responses as spring boot defaults to ISO-8859-1.
+        // This avoids the need to explicitly specify the charset in the returned Content-Type header for each mapping.
+        CharacterEncodingFilter filter = new CharacterEncodingFilter();
+        filter.setEncoding("UTF-8");
+        filter.setForceEncoding(true);
+
+        registrationBean.setFilter(filter);
         registrationBean.addUrlPatterns("/api/*");
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
 
