@@ -56,6 +56,7 @@ const App = () => {
     );
 
     const pageSettings = createPageSettings(prefersDarkMode, service.serverUrl, getServerVersion());
+
     return (
         <HelmetProvider>
             <ThemeProvider theme={theme}>

@@ -123,7 +123,7 @@ export const Main: FunctionComponent<MainProps> = props => {
     return <>
         <CssBaseline />
         <MainContext.Provider value={mainContext}>
-            {renderPageContent()}
+            { renderPageContent() }
         </MainContext.Provider>
     </>;
 };
