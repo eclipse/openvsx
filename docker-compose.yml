@@ -227,9 +227,10 @@ services:
   webui:
     image: node:22
     working_dir: /app
-    command: sh -c 'yarn install && yarn watch:default & ywarn start:default'
+    command: sh -c 'yarn install --immutable && yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
+      - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
@@ -239,7 +240,7 @@ services:
       - frontend
 
   cli:
-    image: node:18
+    image: node:22
     working_dir: /app
     command: sh -c 'yarn && yarn watch'
     volumes:
