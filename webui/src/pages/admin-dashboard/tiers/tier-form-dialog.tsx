@@ -11,7 +11,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useEffect, useState } from 'react';
+import type { ChangeEvent, FocusEvent } from "react";
+import { FC, useEffect, useState } from 'react';
 import type { SelectChangeEvent } from '@mui/material';
 import {
     Alert,
@@ -120,7 +121,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
         const { name, value } = e.target as any;
         clearFieldError(name);
 
@@ -130,7 +131,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
         } as Tier));
     };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleBlur = (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name } = e.target;
         setTouched(prev => ({ ...prev, [name]: true }));
         validateField(name);

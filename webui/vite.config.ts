@@ -1,8 +1,8 @@
-import path from 'node:path'
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import path from 'node:path';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
-const outRootDir = path.join(__dirname, "dist")
+const outRootDir = path.join(__dirname, "dist");
 
 export default defineConfig(() => ({
     plugins: [react()],
@@ -24,6 +24,12 @@ export default defineConfig(() => ({
         minify: true,
         sourcemap: true,
         outDir: outRootDir,
-        emptyOutDir: true
-    }
-}))
+        emptyOutDir: true,
+        rollupOptions: {
+            output: {
+                entryFileNames: 'bundle.js',
+                assetFileNames: 'bundle-[name].css',
+            }
+        }
+    },
+}));

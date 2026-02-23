@@ -11,7 +11,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC } from 'react';
+import type { SyntheticEvent } from "react";
+import { FC } from 'react';
 import { Autocomplete, TextField } from '@mui/material';
 import { GridFilterOperator, GridFilterInputValueProps } from '@mui/x-data-grid';
 
@@ -24,7 +25,7 @@ export const MultiSelectFilterInput: FC<GridFilterInputValueProps & { options: s
   applyValue,
   options
 }) => {
-  const handleChange = (_event: React.SyntheticEvent, newValue: string[]) => {
+  const handleChange = (_event: SyntheticEvent, newValue: string[]) => {
     applyValue({ ...item, value: newValue });
   };
 

@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+
 import { FunctionComponent, ReactElement, useState } from 'react';
 import copy from 'clipboard-copy';
 import { Tooltip, TooltipProps } from '@mui/material';

@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, FC } from 'react';
 import { Box } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -29,7 +29,7 @@ interface ScanCardExpandStripProps {
  * Expandable strip at the bottom of the card
  * Shows validationFailure/threat badges (click to expand/show detail cards)
  */
-export const ScanCardExpandStrip: React.FC<ScanCardExpandStripProps> = ({
+export const ScanCardExpandStrip: FC<ScanCardExpandStripProps> = ({
     expanded,
     onExpandClick,
     badges,

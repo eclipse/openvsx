@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState, useEffect, useMemo } from "react";
+import { FC, useContext, useState, useEffect, useMemo } from "react";
 import {
     Box,
     Paper,
@@ -41,7 +41,7 @@ const periodOptions: { value: PeriodFilter; label: string }[] = [
 ];
 
 export const Logs: FC = () => {
-    const { service } = React.useContext(MainContext);
+    const { service } = useContext(MainContext);
     const [logs, setLogs] = useState<Log[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useRef, useEffect, useState, useLayoutEffect } from 'react';
+import { useRef, useEffect, useState, useLayoutEffect, FC } from 'react';
 import { Box, Chip, Typography } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import { DetailBadge } from './utils';
@@ -26,7 +26,7 @@ interface ScanCardExpandStripBadgesProps {
  * Renders badges with overflow handling - shows as many badges as fit
  * within the available width, plus a "+ X more" indicator for hidden badges.
  */
-export const ScanCardExpandStripBadges: React.FC<ScanCardExpandStripBadgesProps> = ({
+export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
     badges,
     containerWidth,
     maxWidthPercent = 0.45,

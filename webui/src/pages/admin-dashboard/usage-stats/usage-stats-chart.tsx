@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useMemo } from "react";
+import { FC, useMemo } from "react";
 import {
     Box,
     Paper,

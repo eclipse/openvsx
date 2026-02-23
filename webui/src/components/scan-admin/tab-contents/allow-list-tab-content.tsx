@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { Box, Typography, Pagination, CircularProgress } from '@mui/material';
 import { SearchToolbar, CountsToolbar } from '../toolbars';
 import { FileTable, AutoRefresh } from '../common';

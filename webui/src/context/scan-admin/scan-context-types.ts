@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React from 'react';
+import type { Dispatch, ChangeEvent, MouseEvent, ReactNode } from 'react';
 import {
     ScanState,
     ScanAction,
@@ -28,7 +28,7 @@ import {
 
 export interface ScanContextValue {
     state: ScanState;
-    dispatch: React.Dispatch<ScanAction>;
+    dispatch: Dispatch<ScanAction>;
     actions: ScanActions;
     derived: DerivedData;
 }
@@ -41,9 +41,9 @@ export interface ScanActions {
     setPublisherQuery: (query: string) => void;
     setNamespaceQuery: (query: string) => void;
     setNameQuery: (query: string) => void;
-    handlePublisherChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    handleNamespaceChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    handleNameChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    handlePublisherChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    handleNamespaceChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    handleNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
 
     // Pagination
     setPage: (page: number) => void;
@@ -59,11 +59,11 @@ export interface ScanActions {
     toggleValidationTypeFilter: (type: string) => void;
 
     // Menu anchors
-    openFilterMenu: (event: React.MouseEvent<HTMLElement>) => void;
+    openFilterMenu: (event: MouseEvent<HTMLElement>) => void;
     closeFilterMenu: () => void;
-    openQuarantineFilterMenu: (event: React.MouseEvent<HTMLElement>) => void;
+    openQuarantineFilterMenu: (event: MouseEvent<HTMLElement>) => void;
     closeQuarantineFilterMenu: () => void;
-    openAutoRejectedFilterMenu: (event: React.MouseEvent<HTMLElement>) => void;
+    openAutoRejectedFilterMenu: (event: MouseEvent<HTMLElement>) => void;
     closeAutoRejectedFilterMenu: () => void;
 
     // Selection
@@ -96,7 +96,7 @@ export interface DerivedData {
 // ============================================================================
 
 export interface ScanProviderProps {
-    children: React.ReactNode;
+    children: ReactNode;
     service: any;
     handleError: (error: any) => void;
 }

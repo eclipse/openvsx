@@ -13,7 +13,7 @@
 
 import { useMemo } from 'react';
 import { useScanContext } from '../../context/scan-admin';
-import { ConfirmActionType, FileActionType, ScanResult, FileDecision } from '../../context/scan-admin/scan-types';
+import { ConfirmActionType, FileActionType, ScanResult, FileDecision } from '../../context/scan-admin';
 
 /**
  * Return type for the useDialogs hook

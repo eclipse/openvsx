@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React from 'react';
+import { FC } from "react";
 import { Box, Typography, Collapse, Chip } from '@mui/material';
 import { useTheme, Theme } from '@mui/material/styles';
 import { ScanResult, Threat, ValidationFailure, CheckResult } from '../../../context/scan-admin';
@@ -39,7 +39,7 @@ interface CheckResultItemProps {
 /**
  * A single threat item in the expanded content.
  */
-const ThreatItem: React.FC<ThreatItemProps> = ({ threat }) => {
+const ThreatItem: FC<ThreatItemProps> = ({ threat }) => {
     const theme = useTheme();
 
     return (

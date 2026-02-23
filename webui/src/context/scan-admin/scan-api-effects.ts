@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import type { Dispatch, MutableRefObject } from "react";
 import { useEffect } from 'react';
 import { ScanState, ScanAction, ScanResult } from './scan-types';
 import { getDateRangeParams, getFileDateRange } from './scan-helpers';
@@ -25,8 +26,8 @@ import { getDateRangeParams, getFileDateRange } from './scan-helpers';
 export const useFilterOptionsEffect = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     useEffect(() => {
         const abortController = new AbortController();
@@ -63,8 +64,8 @@ export const useFilterOptionsEffect = (
 export const useScansEffect = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     useEffect(() => {
         // Only fetch scans for tabs 0, 1, 2
@@ -263,8 +264,8 @@ export const useScansEffect = (
 export const useScanCountsEffect = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     useEffect(() => {
         const abortController = new AbortController();
@@ -340,8 +341,8 @@ export const useScanCountsEffect = (
 export const useFilesEffect = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     useEffect(() => {
         // Only fetch files for tabs 3 and 4
@@ -416,8 +417,8 @@ export const useFilesEffect = (
 export const useFileCountsEffect = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     useEffect(() => {
         // Only fetch file counts when on file tabs
@@ -468,7 +469,7 @@ export const useFileCountsEffect = (
  */
 export const useAutoRefreshEffect = (
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>
+    dispatch: Dispatch<ScanAction>
 ) => {
     useEffect(() => {
         if (!state.autoRefresh) {

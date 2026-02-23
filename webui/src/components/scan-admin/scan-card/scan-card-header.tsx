@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useState } from 'react';
+import { FC, useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import {
     CheckCircle as CheckCircleIcon,
@@ -56,7 +56,7 @@ const getStatusIcon = (status: ScanResult['status']) => {
  * - Display name and namespace
  * - Status badge
  */
-export const ScanCardHeader: React.FC<ScanCardHeaderProps> = ({ scan }) => {
+export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
     const theme = useTheme();
     const [imageError, setImageError] = useState(false);
 

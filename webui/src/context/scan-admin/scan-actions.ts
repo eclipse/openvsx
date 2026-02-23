@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import type { Dispatch, ChangeEvent, MouseEvent } from 'react';
 import { useMemo } from 'react';
 import { ScanAction, DateRangeType, EnforcementType, FileActionType, ScanResult } from './scan-types';
 import { ScanActions } from './scan-context-types';
@@ -23,7 +24,7 @@ import { ScanActions } from './scan-context-types';
  * Hook that creates memoized action creators for the scan context
  */
 export const useScanActions = (
-    dispatch: React.Dispatch<ScanAction>,
+    dispatch: Dispatch<ScanAction>,
     executeConfirmAction: () => void,
     executeFileAction: () => void
 ): ScanActions => {
@@ -35,11 +36,11 @@ export const useScanActions = (
         setPublisherQuery: (query: string) => dispatch({ type: 'SET_PUBLISHER_QUERY', payload: query }),
         setNamespaceQuery: (query: string) => dispatch({ type: 'SET_NAMESPACE_QUERY', payload: query }),
         setNameQuery: (query: string) => dispatch({ type: 'SET_NAME_QUERY', payload: query }),
-        handlePublisherChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+        handlePublisherChange: (event: ChangeEvent<HTMLInputElement>) =>
             dispatch({ type: 'SET_PUBLISHER_QUERY', payload: event.target.value }),
-        handleNamespaceChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+        handleNamespaceChange: (event: ChangeEvent<HTMLInputElement>) =>
             dispatch({ type: 'SET_NAMESPACE_QUERY', payload: event.target.value }),
-        handleNameChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+        handleNameChange: (event: ChangeEvent<HTMLInputElement>) =>
             dispatch({ type: 'SET_NAME_QUERY', payload: event.target.value }),
 
         // Pagination
@@ -56,13 +57,13 @@ export const useScanActions = (
         toggleValidationTypeFilter: (type: string) => dispatch({ type: 'TOGGLE_VALIDATION_TYPE_FILTER', payload: type }),
 
         // Menu anchors
-        openFilterMenu: (event: React.MouseEvent<HTMLElement>) =>
+        openFilterMenu: (event: MouseEvent<HTMLElement>) =>
             dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
         closeFilterMenu: () => dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: null }),
-        openQuarantineFilterMenu: (event: React.MouseEvent<HTMLElement>) =>
+        openQuarantineFilterMenu: (event: MouseEvent<HTMLElement>) =>
             dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
         closeQuarantineFilterMenu: () => dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: null }),
-        openAutoRejectedFilterMenu: (event: React.MouseEvent<HTMLElement>) =>
+        openAutoRejectedFilterMenu: (event: MouseEvent<HTMLElement>) =>
             dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
         closeAutoRejectedFilterMenu: () => dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: null }),
 

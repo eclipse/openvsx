@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState } from 'react';
+import { FC, useState } from 'react';
 import {
     Dialog,
     DialogTitle,

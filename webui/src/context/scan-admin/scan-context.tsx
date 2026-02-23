@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { createContext, useContext, useReducer, useMemo, useRef } from 'react';
+import { FC, createContext, useContext, useReducer, useMemo, useRef } from 'react';
 import { initialScanState, ScanResult, FileDecision } from './scan-types';
 import { scanReducer } from './scan-reducer';
 import { ScanContextValue, ScanProviderProps, DerivedData } from './scan-context-types';
@@ -36,7 +36,7 @@ const ScanContext = createContext<ScanContextValue | null>(null);
 // Provider Component
 // ============================================================================
 
-export const ScanProvider: React.FC<ScanProviderProps> = ({ children, service, handleError }) => {
+export const ScanProvider: FC<ScanProviderProps> = ({ children, service, handleError }) => {
     const [state, dispatch] = useReducer(scanReducer, initialScanState);
 
     // Use a ref for handleError to avoid re-running effects when parent re-renders

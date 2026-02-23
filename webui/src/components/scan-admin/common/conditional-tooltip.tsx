@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useRef, useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
+import { FunctionComponent, useRef, useState, useEffect, cloneElement } from 'react';
 import { Tooltip, TooltipProps } from '@mui/material';
-
 interface ConditionalTooltipProps extends Omit<TooltipProps, 'title'> {
     title: string;
 }
@@ -66,7 +66,7 @@ export const ConditionalTooltip: FunctionComponent<ConditionalTooltipProps> = ({
             }}
             {...tooltipProps}
         >
-            {React.cloneElement(children as React.ReactElement, {
+            {cloneElement(children as ReactElement, {
                 ref: textRef,
             })}
         </Tooltip>

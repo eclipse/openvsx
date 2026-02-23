@@ -4,9 +4,10 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "lib": ["es6"],
+    "skipLibCheck": true,
     "outDir": "../lib/default"
   },
-  "files": [
+  "include": [
     "../src/default/server.ts"
   ]
 }
