@@ -227,7 +227,7 @@ services:
   webui:
     image: node:22
     working_dir: /app
-    command: sh -c 'yarn install --immutable && yarn watch:default & yarn start:default'
+    command: sh -c 'yarn install --immutable && yarn build:server && yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
       - /app/node_modules
