@@ -11,6 +11,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Fixed
 
 - Check `Retry-After` http header when receiving `429` responses from the server ([#1637](https://github.com/eclipse/openvsx/pull/1637))
+- Menu items link clicks now capture the whole menu item area ([#1598](https://github.com/eclipse/openvsx/pull/1598))
 
 ### Dependencies
 
