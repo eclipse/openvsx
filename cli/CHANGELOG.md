@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump ajv from 6.12.6 to 6.14.0 ([#1632](https://github.com/eclipse/openvsx/pull/1632))
+- Bump ajv from 8.17.1 to 8.18.0
 - Bump tar from 7.5.7 to 7.5.9 ([#1624](https://github.com/eclipse/openvsx/pull/1624))
 
 ### [v0.10.9] (Feb. 2026)
