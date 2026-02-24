@@ -8,6 +8,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Switch from webpack to vite for building the bundle ([#1399](https://github.com/eclipse/openvsx/pull/1399))
 
+### Fixed
+
+- Check `Retry-After` http header when receiving `429` responses from the server ([#1637](https://github.com/eclipse/openvsx/pull/1637))
+
 ## [v0.18.0] (Feb. 2026)
 
 ### Added
