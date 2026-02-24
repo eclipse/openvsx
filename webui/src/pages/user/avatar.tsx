@@ -9,7 +9,6 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useRef, useState } from 'react';
-import { styled } from '@mui/material/styles';
 import { Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { UserSettingsRoutes } from './user-settings';
@@ -17,18 +16,12 @@ import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard';
 import { MainContext } from '../../context';
 import { LogoutForm } from './logout';
 
-const AvatarRouteLink = styled(RouteLink)({
-    cursor: 'pointer',
-    textDecoration: 'none'
-});
-
-const AvatarMenuItem = styled(MenuItem)({ cursor: 'auto' });
-
 
 export const UserAvatar: FunctionComponent = () => {
     const [open, setOpen] = useState<boolean>(false);
     const context = useContext(MainContext);
     const avatarButton = useRef<any>();
+    const logoutFormRef = useRef<HTMLFormElement>(null);
 
     const handleAvatarClick = () => {
         setOpen(!open);
@@ -60,43 +53,37 @@ export const UserAvatar: FunctionComponent = () => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             onClose={handleClose} >
-            <AvatarMenuItem>
-                <Link href={user.homepage} underline='hover'>
-                    <Typography variant='body2' color='text.primary'>
-                        Logged in as
-                    </Typography>
-                    <Typography variant='overline' color='text.primary'>
-                        {user.loginName}
-                    </Typography>
-                </Link>
-            </AvatarMenuItem>
+            <MenuItem component={Link} href={user.homepage}>
+                <Typography variant='body2' color='text.primary'>
+                    Logged in as
+                </Typography>
+                <Typography variant='overline' color='text.primary'>
+                    {user.loginName}
+                </Typography>
+            </MenuItem>
             <Divider />
-            <AvatarMenuItem>
-                <AvatarRouteLink onClick={handleClose} to={UserSettingsRoutes.PROFILE}>
-                    <Typography variant='button' color='text.primary'>
-                        Settings
-                    </Typography>
-                </AvatarRouteLink>
-            </AvatarMenuItem>
+            <MenuItem component={RouteLink} to={UserSettingsRoutes.PROFILE} onClick={handleClose}>
+                <Typography variant='button' color='text.primary'>
+                    Settings
+                </Typography>
+            </MenuItem>
             {
                 user.role && user.role === 'admin' ?
-                    <AvatarMenuItem>
-                        <AvatarRouteLink onClick={handleClose} to={AdminDashboardRoutes.MAIN}>
-                            <Typography variant='button' color='text.primary'>
-                                Admin Dashboard
-                            </Typography>
-                        </AvatarRouteLink>
-                    </AvatarMenuItem>
+                    <MenuItem component={RouteLink} to={AdminDashboardRoutes.MAIN} onClick={handleClose}>
+                        <Typography variant='button' color='text.primary'>
+                            Admin Dashboard
+                        </Typography>
+                    </MenuItem>
                     :
                     ''
             }
-            <AvatarMenuItem>
-                <LogoutForm>
+            <MenuItem onClick={() => logoutFormRef.current?.submit()}>
+                <LogoutForm ref={logoutFormRef}>
                     <Typography variant='button' sx={{ color: 'primary.dark' }}>
                         Log Out
                     </Typography>
                 </LogoutForm>
-            </AvatarMenuItem>
+            </MenuItem>
         </Menu>
     </>;
 };
