@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension, TargetPlatformVersion } from '../../extension-registry-types';

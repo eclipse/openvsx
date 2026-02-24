@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { FC, useContext, useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Box, Alert } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainContext } from "../../../context";
@@ -27,7 +27,7 @@ export const UsageStatsView: FC = () => {
     const { customer } = useParams<{ customer: string }>();
     const navigate = useNavigate();
     const abortController = useRef(new AbortController());
-    const { service, pageSettings } = React.useContext(MainContext);
+    const { service, pageSettings } = useContext(MainContext);
 
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [customersLoading, setCustomersLoading] = useState(true);

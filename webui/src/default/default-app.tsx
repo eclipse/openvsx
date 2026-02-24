@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { createRoot } from 'react-dom/client';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';

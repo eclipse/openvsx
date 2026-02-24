@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { Paper, Tabs, Tab } from '@mui/material';
 
 interface TabToolbarProps {

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useEffect } from 'react';
+import { FunctionComponent, useEffect } from 'react';
 import MarkdownIt from 'markdown-it';
 import * as MarkdownItAnchor from 'markdown-it-anchor';
 import { alert } from '@mdit/plugin-alert';

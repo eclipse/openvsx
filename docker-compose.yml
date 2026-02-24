@@ -189,9 +189,9 @@ services:
     entrypoint: >
       bash -c "
       sleep 10;
-      echo yes | redis-cli --user openvsx --cluster create 
-      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000 
-      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000 
+      echo yes | redis-cli --user openvsx --cluster create
+      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000
+      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000
       --cluster-replicas 1"
     profiles:
       - redis
@@ -225,11 +225,12 @@ services:
       - backend
 
   webui:
-    image: node:18
+    image: node:22
     working_dir: /app
-    command: sh -c 'yarn && yarn build && yarn build:default && yarn watch & yarn watch:default & yarn start:default'
+    command: sh -c 'yarn install --immutable && yarn build:server && yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
+      - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
@@ -239,7 +240,7 @@ services:
       - frontend
 
   cli:
-    image: node:18
+    image: node:22
     working_dir: /app
     command: sh -c 'yarn && yarn watch'
     volumes:

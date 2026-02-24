@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 
 const OpenVSXLogo: FunctionComponent<{width: string, height: string, marginTop: string, prefersDarkMode: boolean }> = props => {
     return (

@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent, useState, useEffect } from 'react';
 import { Card, CardContent, Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { ScanResult } from '../../../context/scan-admin';
@@ -52,7 +52,7 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
     checked,
 }) => {
     const theme = useTheme();
-    const [collapseComplete, setCollapseComplete] = React.useState(true);
+    const [collapseComplete, setCollapseComplete] = useState(true);
     const {
         expanded,
         handleExpandClick,
@@ -63,7 +63,7 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
     } = useScanCardState(scan);
 
     // Reset collapseComplete when expanding
-    React.useEffect(() => {
+    useEffect(() => {
         if (expanded) {
             setCollapseComplete(false);
         }

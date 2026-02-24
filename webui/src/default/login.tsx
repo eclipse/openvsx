@@ -7,7 +7,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-import React, { FunctionComponent, ReactNode, useState } from "react";
+
+import { FunctionComponent, ReactNode, useState } from "react";
 import { Button, Dialog, DialogContent, DialogTitle, Stack } from "@mui/material";
 
 export const LoginComponent: FunctionComponent<LoginComponentProps> = (props) => {

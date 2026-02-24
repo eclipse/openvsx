@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, KeyboardEvent, useContext, useEffect, useState } from 'react';
+import { ChangeEvent, FunctionComponent, KeyboardEvent, useContext, useEffect, useState } from 'react';
 import { Box, Paper, InputBase, Select, MenuItem, Container, SelectChangeEvent } from '@mui/material';
 import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';

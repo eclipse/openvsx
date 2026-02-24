@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useScanContext } from '../../context/scan-admin';
-import { DateRangeType, EnforcementType } from '../../context/scan-admin/scan-types';
+import { DateRangeType, EnforcementType } from '../../context/scan-admin';
 
 /**
  * URL parameter keys

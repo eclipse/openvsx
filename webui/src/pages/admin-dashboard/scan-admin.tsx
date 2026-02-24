@@ -11,7 +11,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext } from 'react';
+import type { SyntheticEvent } from "react";
+import { FunctionComponent, useContext } from 'react';
 import { Box, Typography } from '@mui/material';
 import { ScanProvider } from '../../context/scan-admin';
 import { useTabNavigation, useUrlSync } from '../../hooks/scan-admin';
@@ -38,7 +39,7 @@ const ScanAdminContent: FunctionComponent = () => {
     // Sync state with URL parameters for bookmarkable URLs and browser navigation
     useUrlSync();
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    const handleTabChange = (_event: SyntheticEvent, newValue: number) => {
         setTab(newValue);
     };
 

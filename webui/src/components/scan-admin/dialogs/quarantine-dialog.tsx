@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useMemo } from 'react';
+import { FunctionComponent, useMemo } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, List, ListItem, ListItemText, Box, Tooltip } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { useDialogs } from '../../../hooks/scan-admin';

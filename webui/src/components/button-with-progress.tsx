@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, MouseEventHandler, PropsWithChildren } from 'react';
+import { FunctionComponent, MouseEventHandler, PropsWithChildren } from 'react';
 import { Box, Button, CircularProgress, SxProps, Theme } from '@mui/material';
 
 export const ButtonWithProgress: FunctionComponent<PropsWithChildren<ButtonWithProgressProps>> = props => {

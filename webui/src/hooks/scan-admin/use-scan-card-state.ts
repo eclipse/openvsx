@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import type { RefObject } from "react";
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { ScanResult } from '../../context/scan-admin';
 import { formatDuration } from '../../components/scan-admin/common';
@@ -19,7 +20,7 @@ import {
     shouldShowExpandButton,
     getDetailBadges,
     DetailBadge,
-} from '../../components/scan-admin/scan-card/utils';
+} from '../../components/scan-admin';
 
 interface UseScanCardStateReturn {
     expanded: boolean;
@@ -28,7 +29,7 @@ interface UseScanCardStateReturn {
     badges: DetailBadge[];
     liveDuration: string;
     // Card ref for height tracking
-    cardRef: React.RefObject<HTMLDivElement>;
+    cardRef: RefObject<HTMLDivElement>;
 }
 
 /**

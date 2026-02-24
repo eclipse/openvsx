@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC } from "react";
+import { FC } from "react";
 import { Paper, Autocomplete, InputBase, IconButton } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import type { Customer } from "../../../extension-registry-types";

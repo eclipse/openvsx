@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React from 'react';
+import { FC, useState } from "react";
 import { Box, Typography, Link, IconButton, Tooltip } from '@mui/material';
 import {
     Check as CheckIcon,
@@ -40,7 +40,7 @@ interface ScanCardContentProps {
  * - Scan Start, Scan End, Duration, Decision Status (Row 3)
  * - Checkbox for selection
  */
-export const ScanCardContent: React.FC<ScanCardContentProps> = ({
+export const ScanCardContent: FC<ScanCardContentProps> = ({
     scan,
     showCheckbox,
     checked,
@@ -48,7 +48,7 @@ export const ScanCardContent: React.FC<ScanCardContentProps> = ({
     liveDuration,
 }) => {
     const theme = useTheme();
-    const [isCheckboxHovering, setIsCheckboxHovering] = React.useState(false);
+    const [isCheckboxHovering, setIsCheckboxHovering] = useState(false);
 
     return (
         <>

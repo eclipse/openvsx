@@ -8,10 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import {
-    Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
-} from '@mui/material';
+import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
+import { Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';

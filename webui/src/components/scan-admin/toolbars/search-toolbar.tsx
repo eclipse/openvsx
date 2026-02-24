@@ -11,10 +11,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
-import { Box, Typography, TextField, InputAdornment, Button, Checkbox, FormControlLabel } from '@mui/material';
+import type { ChangeEvent } from 'react';
+import { FunctionComponent } from 'react';
+import { Box, Typography, TextField, InputAdornment, Button, Checkbox, FormControlLabel, useTheme } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, RadioButtonUnchecked as RadioButtonUncheckedIcon, PersonOutlined as PersonIcon, AccountTreeOutlined as AccountTreeIcon, ExtensionOutlined as ExtensionIcon } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 
 interface FilterItem {
     label: string;
@@ -35,9 +35,9 @@ interface SearchToolbarProps {
     publisherQuery: string;
     namespaceQuery: string;
     nameQuery: string;
-    onPublisherChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    onNamespaceChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    onNameChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onPublisherChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    onNamespaceChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
 
     // Optional inline filters
     filters?: FilterItem[];

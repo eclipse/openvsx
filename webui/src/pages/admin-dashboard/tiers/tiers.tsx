@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState, useEffect, useRef, useMemo } from "react";
+import { FC, useContext, useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Button,
@@ -34,7 +34,7 @@ import { createMultiSelectFilterOperators } from "../components";
 
 export const Tiers: FC = () => {
   const abortController = useRef<AbortController>(new AbortController());
-  const { service } = React.useContext(MainContext);
+  const { service } = useContext(MainContext);
   const [tiers, setTiers] = useState<readonly Tier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -65,6 +65,7 @@ export default [...compat.extends(
         "@/semi": ["error", "always"],
         "@stylistic/type-annotation-spacing": "warn",
         "react/prop-types": "off",
+        "react/react-in-jsx-scope": ["off"],
         "array-bracket-spacing": ["warn", "never"],
 
         "arrow-spacing": ["warn", {

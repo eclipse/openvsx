@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { FC, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
     Box,
     Button,
@@ -39,7 +39,7 @@ import { Link } from "react-router-dom";
 
 export const Customers: FC = () => {
     const abortController = useRef<AbortController>(new AbortController());
-    const { service } = React.useContext(MainContext);
+    const { service } = useContext(MainContext);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

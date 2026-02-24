@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState } from 'react';
+import { FunctionComponent, useState } from 'react';
 import { Box, Typography, Button, Checkbox, FormControlLabel, Select, MenuItem, SelectChangeEvent, ToggleButtonGroup, ToggleButton, Menu, Badge } from '@mui/material';
 import { FilterList as FilterListIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';

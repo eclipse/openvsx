@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useScanContext } from '../../context/scan-admin';
 import { useScanFilters } from './use-scan-filters';
 import { usePagination } from './use-pagination';
@@ -35,8 +35,7 @@ export const useQuarantinedTab = () => {
     const selectableScans = useMemo(() => {
         return quarantinedScans.filter(scan => {
             const hasEnforcedThreat = scan.threats.some(t => t.enforcedFlag);
-            const needsReview = !scan.adminDecision?.decision && hasEnforcedThreat;
-            return needsReview;
+            return !scan.adminDecision?.decision && hasEnforcedThreat;
         });
     }, [quarantinedScans]);
 

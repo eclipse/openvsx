@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';

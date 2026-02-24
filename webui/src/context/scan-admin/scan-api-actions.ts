@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import type { Dispatch, MutableRefObject } from 'react';
 import { useCallback } from 'react';
 import { ScanState, ScanAction } from './scan-types';
 
@@ -26,8 +27,8 @@ import { ScanState, ScanAction } from './scan-types';
 export const useConfirmAction = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     return useCallback(async () => {
         const abortController = new AbortController();
@@ -82,8 +83,8 @@ export const useConfirmAction = (
 export const useFileAction = (
     service: any,
     state: ScanState,
-    dispatch: React.Dispatch<ScanAction>,
-    handleErrorRef: React.MutableRefObject<(error: any) => void>
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     return useCallback(async () => {
         const abortController = new AbortController();

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, TextField, Typography, Grid, Button, IconButton, Slider, Stack, Dialog, DialogActions, DialogTitle,
     DialogContent, InputAdornment, Select, MenuItem, Paper, SelectChangeEvent } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';

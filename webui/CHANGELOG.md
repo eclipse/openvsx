@@ -2,6 +2,12 @@
 
 This change log covers only the frontend library (webui) of Open VSX.
 
+## [v0.19.0] (unreleased)
+
+### Changed
+
+- Switch from webpack to vite for building the bundle ([#1399](https://github.com/eclipse/openvsx/pull/1399))
+
 ## [v0.18.0] (Feb. 2026)
 
 ### Added
