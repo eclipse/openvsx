@@ -53,16 +53,16 @@ export const UserAvatar: FunctionComponent = () => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             onClose={handleClose} >
-            <MenuItem component={Link}
-                      href={user.homepage}
-                      sx={{
-                        display: 'block',
-                        '&:hover': {
-                            textDecoration: 'underline'
-                        }
-                      }}
-            >
-                <Typography variant='body2' color='text.primary' sx={{marginRight: 1}}>
+            <MenuItem
+                component={Link}
+                href={user.homepage}
+                sx={{
+                    display: 'block',
+                    '&:hover': {
+                        textDecoration: 'underline'
+                    }
+                }} >
+                <Typography variant='body2' color='text.primary' sx={{mr: 1}}>
                     Logged in as
                 </Typography>
                 <Typography variant='overline' color='text.primary'>
