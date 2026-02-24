@@ -39,6 +39,7 @@
         "node": ">=22.0.0"
     },
     "dependencies": {
+        "@babel/core": "^7.29.0",
         "@emotion/react": "^11.11.1",
         "@emotion/styled": "^11.11.0",
         "@mdit/plugin-alert": "^0.22.3",
@@ -118,8 +119,8 @@
         "watch": "tsc -w -p ./tsconfig.json --preserveWatchOutput",
         "prepare": "yarn run clean && yarn run build",
         "build:server": "tsc -p ./configs/server.tsconfig.json",
-        "build:default": "yarn run build:server && vite build",
-        "watch:default": "yarn run build:server && vite build --watch",
+        "build:default": "yarn build:server && vite build",
+        "watch:default": "yarn build:server && vite build --watch",
         "start:default": "node lib/default/server",
         "dev": "vite dev",
         "link2server": "sh -c 'ln -sf $(realpath dist) ../server/build/resources/main/static'"

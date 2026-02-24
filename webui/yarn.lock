@@ -5841,6 +5841,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "openvsx-webui@workspace:."
   dependencies:
+    "@babel/core": "npm:^7.29.0"
     "@emotion/react": "npm:^11.11.1"
     "@emotion/styled": "npm:^11.11.0"
     "@eslint/eslintrc": "npm:^3.3.3"
