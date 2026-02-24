@@ -2,6 +2,12 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [v0.10.10] (unreleased)
+
+#### Dependencies
+
+- Bump ajv from 6.12.6 to 6.14.0 ([#1632](https://github.com/eclipse/openvsx/pull/1632))
+
 ### [v0.10.9] (Feb. 2026)
 
 #### Fixes
