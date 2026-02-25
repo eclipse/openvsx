@@ -2,7 +2,15 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-### [Unreleased]
+### [v0.10.10] (unreleased)
+
+#### Dependencies
+
+- Bump ajv from 6.12.6 to 6.14.0 ([#1632](https://github.com/eclipse/openvsx/pull/1632))
+- Bump ajv from 8.17.1 to 8.18.0
+- Bump tar from 7.5.7 to 7.5.9 ([#1624](https://github.com/eclipse/openvsx/pull/1624))
+
+### [v0.10.9] (Feb. 2026)
 
 #### Fixes
 
@@ -12,6 +20,11 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - Move `ovsx` script to `bin` directory ([#1538](https://github.com/eclipse/openvsx/pull/1538))
 - Disable the automatic execution of lifecycle scripts by yarn ([#1546](https://github.com/eclipse/openvsx/pull/1546))
+
+#### Dependencies
+
+- Bump lodash from 4.17.21 to 4.17.23 ([#1567](https://github.com/eclipse/openvsx/pull/1567))
+- Bump tar from 6.2.1 to 7.5.7
 
 ### [v0.10.8] (Jan. 2026)
 

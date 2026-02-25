@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useRef, useEffect } from 'react';
+import { FunctionComponent, useState, useRef, useEffect } from 'react';
 import { LinearProgress } from "@mui/material";
 
 export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> = props => {
@@ -34,7 +34,7 @@ export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> 
         tryClearTimeout();
         if (props.loading) {
             setWaiting(true);
-            timeout.current = setTimeout(() => setWaiting(false), props.delay ?? 200);
+            timeout.current = window.setTimeout(() => setWaiting(false), props.delay ?? 200);
         }
     };
 

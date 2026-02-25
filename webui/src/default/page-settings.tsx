@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode, Suspense, lazy } from 'react';
+import { FunctionComponent, ReactNode, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { styled, Theme } from '@mui/material/styles';
 import { Link, Typography, Box } from '@mui/material';
@@ -110,6 +110,9 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     return {
         pageTitle: 'Open VSX Registry',
         themeType: prefersDarkMode ? 'dark' : 'light',
+        publisherAgreement: {
+            name: 'Open VSX'
+        },
         elements: {
             toolbarContent,
             defaultMenuContent: DefaultMenuContent,

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
+import { FunctionComponent, useState, useContext, createContext, useEffect, useRef, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -17,7 +17,7 @@ import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
 
 export const UpdateContext = createContext({ handleUpdate: () => { } });
-export const PublisherAdmin: FunctionComponent = props => {
+export const PublisherAdmin: FunctionComponent = () => {
     const { pageSettings, service, user, handleError } = useContext(MainContext);
 
     const abortController = useRef<AbortController>(new AbortController());
@@ -39,13 +39,13 @@ export const PublisherAdmin: FunctionComponent = props => {
         const publisherName = inputValue;
         try {
             setLoading(true);
-            if (publisherName !== '') {
+            if (publisherName === '') {
+                setNotFound('');
+                setPublisher(undefined);
+            } else {
                 const publisher = await service.admin.getPublisherInfo(abortController.current, 'github', publisherName);
                 setNotFound('');
                 setPublisher(publisher);
-            } else {
-                setNotFound('');
-                setPublisher(undefined);
             }
             setLoading(false);
         } catch (err) {

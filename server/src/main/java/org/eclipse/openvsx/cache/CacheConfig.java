@@ -25,6 +25,7 @@ import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.search.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -101,7 +102,7 @@ public class CacheConfig {
     }
 
     @Bean
-    public CacheManager fileCacheManager(
+    public @Qualifier("fileCacheManager") CacheManager fileCacheManager(
             Cache<Object, Object> extensionCache,
             Cache<Object, Object> webResourceCache,
             Cache<Object, Object> browseCache
@@ -111,6 +112,7 @@ public class CacheConfig {
         caffeineCacheManager.registerCustomCache(CACHE_EXTENSION_FILES, extensionCache);
         caffeineCacheManager.registerCustomCache(CACHE_WEB_RESOURCE_FILES, webResourceCache);
         caffeineCacheManager.registerCustomCache(CACHE_BROWSE_EXTENSION_FILES, browseCache);
+
         return caffeineCacheManager;
     }
 

@@ -1,0 +1,78 @@
+[versions]
+aws             = "2.29.29"
+azure           = "12.23.0"
+bouncycastle    = "1.80"
+bucket4j-spring = "0.12.10"
+bucket4j        = "8.10.1"
+commons-lang3   = "3.20.0"
+flyway          = "11.20.3"
+gatling         = "3.14.9"
+gcloud          = "2.62.1"
+hibernate       = "6.6.42.Final"
+ipaddress       = "5.5.1"
+jackson         = "2.15.4"
+java            = "25"
+jaxb-api        = "2.3.1"
+jaxb-impl       = "2.3.8"
+jedis           = "6.2.0"
+jobrunr         = "7.5.3"
+jooq            = "3.19.30"
+jsonpath        = "2.9.0"
+junit           = "5.14.2"
+loki4j          = "1.4.2"
+re2j            = "1.7"
+rewrite-java    = "3.26.0"
+spring-boot     = "3.5.10"
+springdoc       = "2.8.13"
+testcontainers  = "1.21.4"
+tika            = "3.2.2"
+woodstox        = "6.4.0"
+
+[plugins]
+download                     = { id = "de.undercouch.download", version = "5.7.0" }
+gatling                      = { id = "io.gatling.gradle", version.ref = "gatling" }
+hibernate-orm                = { id = "org.hibernate.orm", version.ref = "hibernate" }
+jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+spring-boot                  = { id = "org.springframework.boot", version.ref = "spring-boot"}
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
+test-logger                  = { id = "com.adarshr.test-logger", version = "4.0.0" }
+rewrite                      = { id = "org.openrewrite.rewrite", version = "7.25.0" }
+
+[libraries]
+awssdk-s3                    = { module = "software.amazon.awssdk:s3", version.ref = "aws" }
+awssdk-sts                   = { module = "software.amazon.awssdk:sts", version.ref = "aws" }
+azure-storage-blob           = { module = "com.azure:azure-storage-blob", version.ref = "azure" }
+bouncycastle                 = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+bucket4j-redis               = { module = "com.bucket4j:bucket4j-redis", version.ref = "bucket4j" }
+bucket4j-spring              = { module = "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter", version.ref = "bucket4j-spring" }
+commons-lang3                = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+flyway-core                  = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql   = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+gatling-app                  = { module = "io.gatling:gatling-app", version.ref = "gatling" }
+gatling-core                 = { module = "io.gatling:gatling-core", version.ref = "gatling" }
+google-cloud-storage         = { module = "com.google.cloud:google-cloud-storage", version.ref = "gcloud" }
+ipaddress                    = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress"}
+jackson-annotations          = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-core                 = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind             = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-dataformat-toml      = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
+jackson-dataformat-xml       = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
+jackson-dataformat-yaml      = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-jaxb-annotations     = { module = "com.fasterxml.jackson.module:jackson-module-jaxb-annotations", version.ref = "jackson" }
+jaxb-api                     = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
+jaxb-impl                    = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
+jedis                        = { module = "redis.clients:jedis", version.ref = "jedis" }
+jobrunr-spring               = { module = "org.jobrunr:jobrunr-spring-boot-3-starter", version.ref = "jobrunr" }
+json-path                    = { module = "com.jayway.jsonpath:json-path", version.ref = "jsonpath" }
+junit-jupiter-api            = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine         = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+loki-logback-appender        = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
+re2j                         = { module = "com.google.re2j:re2j", version.ref = "re2j" }
+rewrite-java                 = { module = "org.openrewrite.recipe:rewrite-migrate-java", version.ref = "rewrite-java"}
+springdoc                    = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+testcontainers-elasticsearch = { module = "org.testcontainers:elasticsearch", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-localstack    = { module = "org.testcontainers:localstack", version.ref = "testcontainers" }
+testcontainers-postgresql    = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+tika-core                    = { module = "org.apache.tika:tika-core", version.ref = "tika" }
+woodstox-core                = { module = "com.fasterxml.woodstox:woodstox-core", version.ref = "woodstox" }

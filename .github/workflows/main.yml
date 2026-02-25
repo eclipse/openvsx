@@ -98,7 +98,10 @@ jobs:
                   github.actor != 'dependabot[bot]'   &&
                   (
                      github.event_name == 'push' ||
-                     github.event.pull_request.head.repo.full_name == github.repository
+                     (
+                       contains(github.event.pull_request.labels.*.name, 'snapshot') &&
+                       github.event.pull_request.head.repo.full_name == github.repository
+                     )
                   ) }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -164,24 +167,12 @@ jobs:
                   github.actor != 'dependabot[bot]'   &&
                   (
                      github.event_name == 'push' ||
-                     github.event.pull_request.head.repo.full_name == github.repository
+                     (
+                       contains(github.event.pull_request.labels.*.name, 'snapshot') &&
+                       github.event.pull_request.head.repo.full_name == github.repository
+                     )
                   ) }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         secret-envs: |
           "dv-key=DEVELOCITY_ACCESS_KEY"
-
-  save-pr-number:
-    permissions:
-      contents: none
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-    - name: Save PR number to file
-      run: echo ${{ github.event.number }} > PR_NUMBER.txt
-
-    - name: Archive PR number
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-      with:
-        name: PR_NUMBER
-        path: PR_NUMBER.txt

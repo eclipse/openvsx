@@ -9,6 +9,16 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.storage;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.annotation.PostConstruct;
+
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
@@ -22,14 +32,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-
 @Component
 public class LocalStorageService implements IStorageService {
 
@@ -39,6 +41,27 @@ public class LocalStorageService implements IStorageService {
     @Override
     public boolean isEnabled() {
         return !StringUtils.isEmpty(storageDirectory);
+    }
+    
+    @PostConstruct
+    public void validateStorageDirectory() throws IOException {
+        if (!isEnabled()) {
+            return;
+        }
+
+        var storageDirectoryPath = Path.of(storageDirectory).toAbsolutePath();
+
+        if (!Files.exists(storageDirectoryPath)) {
+            Files.createDirectories(storageDirectoryPath);
+        }
+
+        if (!Files.isDirectory(storageDirectoryPath)) {
+            throw new IllegalStateException("Local storage directory '" + storageDirectory + "' is not a directory");
+        }
+
+        if (!Files.isWritable(storageDirectoryPath)) {
+            throw new IllegalStateException("Local storage directory '" + storageDirectory + "' is not writable");
+        }
     }
 
     @Override
@@ -55,7 +78,9 @@ public class LocalStorageService implements IStorageService {
     @Override
     public void removeFile(FileResource resource) {
         try {
-            Files.delete(getPath(resource));
+            // Use deleteIfExists to handle already-deleted files gracefully.
+            // Multiple deletion jobs may be queued for the same extension.
+            Files.deleteIfExists(getPath(resource));
         } catch (IOException e) {
             throw new ServerErrorException("Failed to remove file", e);
         }
@@ -121,7 +146,8 @@ public class LocalStorageService implements IStorageService {
     @Override
     public void removeNamespaceLogo(Namespace namespace) {
         try {
-            Files.delete(getLogoPath(namespace));
+            // Use deleteIfExists to handle already-deleted files gracefully
+            Files.deleteIfExists(getLogoPath(namespace));
         } catch (IOException e) {
             throw new ServerErrorException("Failed to remove namespace logo file", e);
         }

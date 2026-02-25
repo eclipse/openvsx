@@ -22,10 +22,14 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,9 +61,10 @@ import static org.mockito.ArgumentMatchers.eq;
 @ExtendWith(SpringExtension.class)
 @MockitoBean(types = {
     EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class, AzureBlobStorageService.class,
-    AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, CacheService.class,
+    AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class, CacheService.class,
     UserService.class, PublishExtensionVersionHandler.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class,
-    JobRequestScheduler.class, CdnServiceConfig.class
+    JobRequestScheduler.class, CdnServiceConfig.class, ExtensionScanService.class, ExtensionScanPersistenceService.class,
+    LogService.class
 })
 class EclipseServiceTest {
 
@@ -408,10 +413,23 @@ class EclipseServiceTest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
+            return new ExtensionService(
+                    entityManager,
+                    repositories,
+                    search,
+                    cache,
+                    logs,
+                    publishHandler,
+                    scheduler,
+                    extensionScanService,
+                    scanPersistenceService
+            );
         }
 
         @Bean
@@ -427,6 +445,7 @@ class EclipseServiceTest {
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
                 DownloadCountService downloadCountService,
+                ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -440,6 +459,7 @@ class EclipseServiceTest {
                     localStorage,
                     awsStorage,
                     downloadCountService,
+                    downloadMetrics,
                     search,
                     cache,
                     entityManager,

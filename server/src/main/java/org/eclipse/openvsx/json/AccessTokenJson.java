@@ -9,7 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

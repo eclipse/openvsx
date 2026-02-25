@@ -14,6 +14,7 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.stereotype.Component;
@@ -40,6 +41,7 @@ public class CacheService {
     public static final String GENERATOR_FILES = "filesCacheKeyGenerator";
 
     private final CacheManager cacheManager;
+    private final CacheManager fileCacheManager;
     private final RepositoryService repositories;
     private final ExtensionJsonCacheKeyGenerator extensionJsonCacheKey;
     private final LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey;
@@ -47,12 +49,14 @@ public class CacheService {
 
     public CacheService(
             CacheManager cacheManager,
+            @Qualifier("fileCacheManager") CacheManager fileCacheManager,
             RepositoryService repositories,
             ExtensionJsonCacheKeyGenerator extensionJsonCacheKey,
             LatestExtensionVersionCacheKeyGenerator latestExtensionVersionCacheKey,
             FilesCacheKeyGenerator filesCacheKeyGenerator
     ) {
         this.cacheManager = cacheManager;
+        this.fileCacheManager = fileCacheManager;
         this.repositories = repositories;
         this.extensionJsonCacheKey = extensionJsonCacheKey;
         this.latestExtensionVersionCacheKey = latestExtensionVersionCacheKey;
@@ -187,7 +191,7 @@ public class CacheService {
     }
 
     public void evictExtensionFile(FileResource download) {
-        var cache = cacheManager.getCache(CACHE_EXTENSION_FILES);
+        var cache = fileCacheManager.getCache(CACHE_EXTENSION_FILES);
         if(cache == null) {
             return;
         }
@@ -197,7 +201,7 @@ public class CacheService {
 
     @Observed
     public void evictWebResourceFile(String namespaceName, String extensionName, String targetPlatform, String version, String path) {
-        var cache = cacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
+        var cache = fileCacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
         if(cache == null) {
             return;
         }

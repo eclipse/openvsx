@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';

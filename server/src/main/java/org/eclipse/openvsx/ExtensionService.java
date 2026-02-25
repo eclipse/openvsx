@@ -22,12 +22,13 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TempFile;
-import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -46,15 +47,19 @@ import java.util.stream.Collectors;
 
 @Component
 public class ExtensionService {
-
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
+
+    private final Logger logger = LoggerFactory.getLogger(ExtensionService.class);
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final SearchUtilService search;
     private final CacheService cache;
+    private final LogService logs;
     private final PublishExtensionVersionHandler publishHandler;
     private final JobRequestScheduler scheduler;
+    private final ExtensionScanService scanService;
+    private final ExtensionScanPersistenceService scanPersistenceService;
 
     @Value("${ovsx.publishing.require-license:false}")
     boolean requireLicense;
@@ -67,15 +72,21 @@ public class ExtensionService {
             RepositoryService repositories,
             SearchUtilService search,
             CacheService cache,
+            LogService logs,
             PublishExtensionVersionHandler publishHandler,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            ExtensionScanService scanService,
+            ExtensionScanPersistenceService scanPersistenceService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.search = search;
         this.cache = cache;
+        this.logs = logs;
         this.publishHandler = publishHandler;
         this.scheduler = scheduler;
+        this.scanService = scanService;
+        this.scanPersistenceService = scanPersistenceService;
     }
 
     @Transactional
@@ -86,12 +97,68 @@ public class ExtensionService {
     }
 
     public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
+        if (scanService.isEnabled()) {
+            return publishVersionWithScan(content, token);
+        } else {
+            var extensionFile = createExtensionFile(content);
+            try {
+                doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            } catch (ErrorResultException exc) {
+                // In case publication fails early on we need to
+                // delete the temporary extension file, otherwise
+                // it's deleted within the publishAsync method.
+                try {
+                    extensionFile.close();
+                } catch (IOException e) {
+                    logger.error("failed to delete temp file", e);
+                }
+                throw exc;
+            }
+            publishHandler.publishAsync(extensionFile, this);
+            var download = extensionFile.getResource();
+            publishHandler.schedulePublicIdJob(download);
+            return download.getExtension();
+        }
+    }
+
+    private ExtensionVersion publishVersionWithScan(InputStream content, PersonalAccessToken token) throws ErrorResultException {
         var extensionFile = createExtensionFile(content);
-        doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
-        publishHandler.publishAsync(extensionFile, this);
-        var download = extensionFile.getResource();
-        publishHandler.schedulePublicIdJob(download);
-        return download.getExtension();
+        ExtensionScan scan = null;
+        
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            scan = scanService.initializeScan(processor, token.getUser());
+
+            scanService.runValidation(scan, extensionFile, token.getUser());
+
+            doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+
+            // Publish async handles requesting the longrunning scans
+            publishHandler.publishAsync(extensionFile, this, scan);
+            var download = extensionFile.getResource();
+            publishHandler.schedulePublicIdJob(extensionFile.getResource());
+            return download.getExtension();
+        } catch (ErrorResultException e) {
+            // ErrorResultException is thrown by doPublish when the extension is not valid, so we can remove the scan
+            if (scan != null && !scan.isCompleted()) {
+                scanService.removeScan(scan);
+            }
+
+            // In case publication fails early on we need to
+            // delete the temporary extension file, otherwise
+            // it's deleted within the publishAsync method.
+            try {
+                extensionFile.close();
+            } catch (IOException ioe) {
+                logger.error("failed to delete temp file", ioe);
+            }
+
+            throw e;
+        }  catch (Exception e) {
+            if (scan != null && !scan.isCompleted()) {
+                scanService.markScanAsErrored(scan, "Unexpected error: " + e.getMessage());
+            }
+            throw e;
+        }
     }
 
     private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
@@ -186,7 +253,7 @@ public class ExtensionService {
         var results = new ArrayList<ResultJson>();
         if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
             var extension = repositories.findExtension(extensionName, namespaceName);
-            results.add(deleteExtension(extension));
+            results.add(deleteExtension(user, extension));
         } else {
             for (var targetVersion : targetVersions) {
                 var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
@@ -195,7 +262,7 @@ public class ExtensionService {
                     throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
                 }
 
-                results.add(deleteExtension(extVersion));
+                results.add(deleteExtension(user, extVersion));
             }
         }
 
@@ -205,7 +272,7 @@ public class ExtensionService {
         return result;
     }
 
-    protected ResultJson deleteExtension(Extension extension) throws ErrorResultException {
+    protected ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         if (!bundledRefs.isEmpty()) {
             throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
@@ -239,19 +306,27 @@ public class ExtensionService {
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
 
-        return ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        logs.logAction(user, result);
+        return result;
     }
 
-    protected ResultJson deleteExtension(ExtensionVersion extVersion) {
+    protected ResultJson deleteExtension(UserData user, ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         updateExtension(extension);
 
-        return ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        logs.logAction(user, result);
+        return result;
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
+        // Clean up any pending scan jobs for this extension version
+        // to prevent "file not found" errors after deletion
+        scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
+        
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);

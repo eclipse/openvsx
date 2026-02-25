@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
@@ -138,6 +139,7 @@ public class UserService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#namespace.name")
     public ResultJson removeNamespaceMember(Namespace namespace, UserData user) throws ErrorResultException {
         var membership = repositories.findMembership(user, namespace);
         if (membership == null) {
@@ -148,6 +150,7 @@ public class UserService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key="#namespace.name")
     public ResultJson addNamespaceMember(Namespace namespace, UserData user, String role) {
         if (!(role.equals(NamespaceMembership.ROLE_OWNER)
                 || role.equals(NamespaceMembership.ROLE_CONTRIBUTOR))) {
@@ -183,7 +186,7 @@ public class UserService {
         var issues = validator.validateNamespaceDetails(details);
         if (!issues.isEmpty()) {
             var message = issues.size() == 1
-                    ? issues.get(0).toString()
+                    ? issues.getFirst().toString()
                     : "Multiple issues were found in the extension metadata:\n" + Joiner.on("\n").join(issues);
 
             throw new ErrorResultException(message);
@@ -297,23 +300,23 @@ public class UserService {
             userData = newUser;
         } else {
             var updated = false;
-            if (!StringUtils.equals(userData.getLoginName(), newUser.getLoginName())) {
+            if (!Strings.CS.equals(userData.getLoginName(), newUser.getLoginName())) {
                 userData.setLoginName(newUser.getLoginName());
                 updated = true;
             }
-            if (!StringUtils.equals(userData.getFullName(), newUser.getFullName())) {
+            if (!Strings.CS.equals(userData.getFullName(), newUser.getFullName())) {
                 userData.setFullName(newUser.getFullName());
                 updated = true;
             }
-            if (!StringUtils.equals(userData.getEmail(), newUser.getEmail())) {
+            if (!Strings.CS.equals(userData.getEmail(), newUser.getEmail())) {
                 userData.setEmail(newUser.getEmail());
                 updated = true;
             }
-            if (!StringUtils.equals(userData.getProviderUrl(), newUser.getProviderUrl())) {
+            if (!Strings.CS.equals(userData.getProviderUrl(), newUser.getProviderUrl())) {
                 userData.setProviderUrl(newUser.getProviderUrl());
                 updated = true;
             }
-            if (!StringUtils.equals(userData.getAvatarUrl(), newUser.getAvatarUrl())) {
+            if (!Strings.CS.equals(userData.getAvatarUrl(), newUser.getAvatarUrl())) {
                 userData.setAvatarUrl(newUser.getAvatarUrl());
                 updated = true;
             }

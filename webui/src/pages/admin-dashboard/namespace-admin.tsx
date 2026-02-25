@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useState, useContext, useEffect, useRef, ReactNode } from 'react';
+import { FunctionComponent, useState, useContext, useEffect, useRef, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';

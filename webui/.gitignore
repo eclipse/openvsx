@@ -5,6 +5,7 @@
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+/dist/
 /lib/
 /static/bundle.*
 /static/*-report.html

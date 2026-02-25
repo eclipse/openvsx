@@ -22,6 +22,7 @@ import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
@@ -52,6 +53,8 @@ public class AdminService {
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
     private final MailService mail;
+    private final LogService logs;
+    private final ExtensionScanPersistenceService scanPersistenceService;
 
     public AdminService(
             RepositoryService repositories,
@@ -64,7 +67,9 @@ public class AdminService {
             StorageUtilService storageUtil,
             CacheService cache,
             JobRequestScheduler scheduler,
-            MailService mail
+            MailService mail,
+            LogService logs,
+            ExtensionScanPersistenceService scanPersistenceService
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -77,6 +82,8 @@ public class AdminService {
         this.cache = cache;
         this.scheduler = scheduler;
         this.mail = mail;
+        this.logs = logs;
+        this.scanPersistenceService = scanPersistenceService;
     }
 
     @EventListener
@@ -127,7 +134,7 @@ public class AdminService {
 
         entityManager.remove(extension);
         search.removeSearchEntry(extension);
-        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
+        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
     }
 
     protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
@@ -140,7 +147,7 @@ public class AdminService {
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
         extensions.updateExtension(extension);
-        logAdminAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -224,7 +231,7 @@ public class AdminService {
         search.removeSearchEntry(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -235,11 +242,15 @@ public class AdminService {
         extensions.updateExtension(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
     private void removeExtensionVersion(ExtensionVersion extVersion) {
+        // Clean up any pending scan jobs for this extension version
+        // to prevent "file not found" errors after deletion
+        scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
+        
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);
@@ -303,7 +314,7 @@ public class AdminService {
                 : users.addNamespaceMember(namespace, user, role);
 
         search.updateSearchEntries(repositories.findActiveExtensions(namespace).toList());
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -441,7 +452,7 @@ public class AdminService {
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
                 + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
                 + provider + "/" + loginName + ".");
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -454,7 +465,7 @@ public class AdminService {
 
         var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
-        logAdminAction(admin, result);
+        logs.logAction(admin, result);
         mail.scheduleRevokedAccessTokensMail(user);
         return result;
     }
@@ -477,17 +488,6 @@ public class AdminService {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }
         return user;
-    }
-
-    @Transactional
-    public void logAdminAction(UserData admin, ResultJson result) {
-        if (result.getSuccess() != null) {
-            var log = new PersistedLog();
-            log.setUser(admin);
-            log.setTimestamp(TimeUtil.getCurrentUTC());
-            log.setMessage(result.getSuccess());
-            entityManager.persist(log);
-        }
     }
 
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {

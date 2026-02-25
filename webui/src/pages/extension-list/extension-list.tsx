@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
-import * as InfiniteScroll from 'react-infinite-scroller';
+import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import InfiniteScroll from 'react-infinite-scroller';
 import { Box, Grid, CircularProgress, Container } from '@mui/material';
 import { ExtensionListItem } from './extension-list-item';
 import { isError, SearchEntry, SearchResult } from '../../extension-registry-types';

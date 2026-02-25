@@ -78,6 +78,8 @@ export interface Extension {
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
     active?: boolean;
+    reviewStatus?: 'published' | 'under_review' | 'rejected';
+    reviewMessage?: string;
 
     averageRating?: number;
     downloadCount: number;
@@ -258,3 +260,224 @@ export interface LoginProviders {
 export type MembershipRole = 'contributor' | 'owner';
 export type SortBy = 'relevance' | 'timestamp' | 'rating' | 'downloadCount';
 export type SortOrder = 'asc' | 'desc';
+
+// Scan and file decision types (used by admin scan UI)
+export interface ScanResultJson {
+    id: string;
+    namespace: string;
+    extensionName: string;
+    version: string;
+    displayName: string;
+    publisher: string;
+    extensionIcon?: string;
+    downloadUrl?: string;
+    publisherUrl?: string;
+    status: string;
+    dateScanStarted: string;
+    dateScanEnded?: string;
+    errorMessage?: string;
+    dateQuarantined?: string;
+    dateRejected?: string;
+    threats?: Array<{
+        id: string;
+        fileName: string;
+        fileHash: string;
+        type: string;
+        severity?: string;
+        reason: string;
+        fileExtension: string;
+        dateDetected: string;
+        ruleName: string;
+        enforcedFlag?: boolean;
+    }>;
+    validationFailures?: Array<{
+        id: string;
+        type: string;
+        ruleName: string;
+        reason: string;
+        dateDetected: string;
+        enforcedFlag: boolean;
+    }>;
+    adminDecision?: {
+        decision: string;
+        decidedBy: string;
+        dateDecided: string;
+    };
+}
+
+export interface ScanCounts {
+    STARTED: number;
+    VALIDATING: number;
+    SCANNING: number;
+    PASSED: number;
+    QUARANTINED: number;
+    AUTO_REJECTED: number;
+    ERROR: number;
+    ALLOWED: number;
+    BLOCKED: number;
+    NEEDS_REVIEW: number;
+}
+
+export interface ScanResultsResponse {
+    success?: string;
+    warning?: string;
+    error?: string;
+    offset: number;
+    totalSize: number;
+    scans: ScanResultJson[];
+}
+
+export interface ScanFilterOptions {
+    validationTypes: string[];
+    threatScannerNames: string[];
+}
+
+export interface FileDecisionJson {
+    id: string;
+    fileName: string;
+    fileHash: string;
+    fileType: string;
+    decision: string;
+    decidedBy: string;
+    dateDecided: string;
+    displayName: string;
+    namespace: string;
+    extensionName: string;
+    publisher: string;
+    version: string;
+    scanId?: string;
+}
+
+export interface FilesResponse {
+    success?: string;
+    warning?: string;
+    error?: string;
+    offset: number;
+    totalSize: number;
+    files: FileDecisionJson[];
+}
+
+export interface FileDecisionCountsJson {
+    allowed: number;
+    blocked: number;
+    total: number;
+}
+
+export interface ScanDecisionRequest {
+    scanIds: string[];
+    decision: string;
+}
+
+export interface ScanDecisionResult {
+    scanId: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface ScanDecisionResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: ScanDecisionResult[];
+}
+
+export interface FileDecisionRequest {
+    fileHashes: string[];
+    decision: string;
+}
+
+export interface FileDecisionResult {
+    fileHash: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface FileDecisionResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: FileDecisionResult[];
+}
+
+export interface FileDecisionDeleteRequest {
+    fileIds: string[];
+}
+
+export interface FileDecisionDeleteResult {
+    fileId: string;
+    success: boolean;
+    error?: string;
+}
+
+export interface FileDecisionDeleteResponse {
+    processed: number;
+    successful: number;
+    failed: number;
+    results: FileDecisionDeleteResult[];
+}
+
+export enum TierType {
+    FREE = 'FREE',
+    SAFETY = 'SAFETY',
+    NON_FREE = 'NON_FREE'
+}
+
+export enum RefillStrategy {
+    GREEDY = 'GREEDY',
+    INTERVAL = 'INTERVAL'
+}
+
+export interface Tier {
+    name: string;
+    description?: string;
+    tierType: TierType;
+    capacity: number;
+    duration: number;
+    refillStrategy: RefillStrategy;
+}
+
+export interface TierList {
+    tiers: Tier[];
+}
+
+export enum EnforcementState {
+    EVALUATION = 'EVALUATION',
+    ENFORCEMENT = 'ENFORCEMENT'
+}
+
+export interface Customer {
+    name: string;
+    tier?: Tier;
+    state: EnforcementState;
+    cidrBlocks: string[];
+}
+
+export interface CustomerList {
+    customers: Customer[];
+}
+
+export interface UsageStats {
+    windowStart: number; // epoch seconds in UTC
+    duration: number; // in seconds
+    count: number;
+}
+
+export interface UsageStatsList {
+    stats: UsageStats[];
+}
+
+export interface Log {
+    timestamp: string;
+    user: string;
+    message: string;
+}
+
+export interface LogPageableList {
+    content: Log[];
+    page: {
+        size: number;
+        number: number;
+        totalElements: number;
+        totalPages: number;
+    };
+}

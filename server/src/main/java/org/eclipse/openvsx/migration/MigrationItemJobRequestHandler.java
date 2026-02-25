@@ -24,35 +24,20 @@ import java.util.UUID;
 @Component
 public class MigrationItemJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    private static String JOB_NAME;
-
     protected final Logger logger = LoggerFactory.getLogger(MigrationItemJobRequestHandler.class);
 
     private final RepositoryService repositories;
     private final MigrationService migrations;
-    private final JobRequestScheduler scheduler;
+    private final MigrationScheduler scheduler;
 
     public MigrationItemJobRequestHandler(
             RepositoryService repositories,
             MigrationService migrations,
-            JobRequestScheduler scheduler,
-            @Value("${ovsx.registry.version:}") String version,
-            @Value("${ovsx.migrations.once-per-version:false}") boolean runMigrationsOncePerVersion
+            MigrationScheduler scheduler
     ) {
         this.repositories = repositories;
         this.migrations = migrations;
         this.scheduler = scheduler;
-
-        var jobIdText = "ScheduleMigrationItems";
-        if(runMigrationsOncePerVersion) {
-            jobIdText = jobIdText + "::" + version;
-        }
-
-        JOB_NAME = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8)).toString();
-    }
-
-    public static String getJobName() {
-        return JOB_NAME;
     }
 
     @Override
@@ -62,9 +47,10 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
             migrations.enqueueMigration(item);
         }
 
-        logger.info("Scheduled migration items: {}", items.getSize());
+        logger.info("Scheduled migration items: {}", items.getNumberOfElements());
         if(!items.hasNext()) {
-            scheduler.deleteRecurringJob(getJobName());
+            logger.info("Migration completed, deleting recurring job");
+            scheduler.deleteScheduleMigrationItemsJob();
         }
     }
 }

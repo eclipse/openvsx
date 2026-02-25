@@ -8,7 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { useContext, FunctionComponent, useState, useEffect, useRef, ReactNode, MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from "react";
+import { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled, IconButton } from '@mui/material';
 import { Link as RouteLink, useNavigate } from 'react-router-dom';
@@ -63,19 +64,44 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
         service.getExtensionIcon(abortController.current, extension).then(setIcon);
     }, [extension]);
 
-    let status: ReactNode = null;
-    if (inactive) {
-        status = <Box mt={0.25}>
-            Deactivated
-        </Box>;
-    } else if (extension.timestamp) {
-        status = <Paragraph mt={0.25}>
-            <span>Published:</span>
-            <Timestamp
-                value={extension.timestamp}
-                sx={noOverflow} />
-        </Paragraph>;
-    }
+    const renderStatus = (): ReactNode => {
+        if (extension.reviewStatus === 'under_review') {
+            return <Box mt={0.25}>
+                <Typography variant='body2' sx={{ fontWeight: 600 }}>Under review</Typography>
+                <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                    {extension.reviewMessage ?? 'Your extension is being reviewed. Please contact support for details.'}
+                </Typography>
+            </Box>;
+        }
+
+        if (extension.reviewStatus === 'rejected') {
+            return <Box mt={0.25}>
+                <Typography variant='body2' sx={{ fontWeight: 600, color: 'error.main' }}>Rejected</Typography>
+                <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                    {extension.reviewMessage ?? 'Your extension could not be published.'}
+                </Typography>
+            </Box>;
+        }
+
+        if (inactive) {
+            return <Box mt={0.25}>
+                Deactivated
+            </Box>;
+        }
+
+        if (extension.timestamp) {
+            return <Paragraph mt={0.25}>
+                <span>Published:</span>
+                <Timestamp
+                    value={extension.timestamp}
+                    sx={noOverflow} />
+            </Paragraph>;
+        }
+
+        return null;
+    };
+
+    const status = renderStatus();
 
     const gotoDeleteRoute = (e: MouseEvent) => {
         e.preventDefault();

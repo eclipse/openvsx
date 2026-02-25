@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import React, { FunctionComponent, PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
+import { PropsWithChildren, useContext, useEffect, useRef, useState, forwardRef } from 'react';
 import { Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { isError, CsrfTokenJson } from '../../extension-registry-types';
@@ -22,7 +22,7 @@ const LogoutButton = styled(Button)({
     padding: 0
 });
 
-export const LogoutForm: FunctionComponent<PropsWithChildren> = ({ children }) => {
+export const LogoutForm = forwardRef<HTMLFormElement, PropsWithChildren>(({ children }, ref) => {
     const [csrf, setCsrf] = useState<string>();
     const context = useContext(MainContext);
 
@@ -44,10 +44,12 @@ export const LogoutForm: FunctionComponent<PropsWithChildren> = ({ children }) =
         }
     };
 
-    return <form method='post' action={context.service.getLogoutUrl()}>
+    return <form ref={ref} method='post' action={context.service.getLogoutUrl()}>
         {csrf ? <input name='_csrf' type='hidden' value={csrf} /> : null}
         <LogoutButton type='submit'>
             {children}
         </LogoutButton>
     </form>;
-};
+});
+
+LogoutForm.displayName = 'LogoutForm';

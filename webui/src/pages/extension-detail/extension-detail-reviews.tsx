@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
+import { Fragment, FunctionComponent, ReactNode, useContext, useState, useEffect, useRef } from 'react';
 import {
     Box,
     Typography,
@@ -18,7 +18,8 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
-    DialogActions, Button
+    DialogActions,
+    Button
 } from '@mui/material';
 import { MainContext } from '../../context';
 import { toLocalTime } from '../../utils';
@@ -35,6 +36,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     const [loading, setLoading] = useState<boolean>(true);
     const [revoked, setRevoked] = useState<boolean>(false);
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+    const [removeCommentFromUser, setRemoveCommentFromUser] = useState<UserData | undefined>(undefined);
     const [removeReviewSet, setRemoveReviewSet] = useState(new Set<string>());
     const context = useContext(MainContext);
     const abortController = useRef<AbortController>(new AbortController());
@@ -111,56 +113,65 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         }
     };
 
-    const handleAdminRemoveReviewButton = async (r: ExtensionReview) => {
-        addRemoveReviewRequest(r.user.loginName);
+    const handleAdminRemoveReviewButton = async () => {
+        if (removeCommentFromUser === undefined) {
+            return;
+        }
+        addRemoveReviewRequest(removeCommentFromUser.loginName);
         try {
-            const result = await context.service.deleteUserReview(abortController.current, props.extension, r.user);
+            const result = await context.service.deleteUserReview(abortController.current, props.extension, removeCommentFromUser);
             if (isError(result)) {
                 throw result;
             }
             saveCompleted();
+            setRemoveDialogOpen(false);
         } catch (err) {
             context.handleError(err);
         } finally {
-            deleteRemoveReviewRequest(r.user.loginName);
+            deleteRemoveReviewRequest(removeCommentFromUser.loginName);
         }
     };
 
     const renderAdminRemoveButton = (r: ExtensionReview): ReactNode => {
-        return <>
-            <Button
-                variant='contained'
-                color='error'
-                onClick={() => setRemoveDialogOpen(true)} >
-                Remove review
-            </Button>
-            <Dialog
-                open={removeDialogOpen}
-                onClose={() => setRemoveDialogOpen(false)}>
-                <DialogTitle>Remove Review</DialogTitle>
-                <DialogContent>
-                    <DialogContentText component='div'>
-                        <Typography>Confirm removal of review comment from <code>{r.user.loginName}</code>?</Typography>
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        variant='contained'
-                        color='primary'
-                        onClick={() => setRemoveDialogOpen(false)} >
-                        Cancel
-                    </Button>
-                    <ButtonWithProgress
-                        autoFocus
-                        color='error'
-                        sx={{ ml: 1 }}
-                        working={removeReviewSet.has(r.user.loginName)}
-                        onClick={() => handleAdminRemoveReviewButton(r)} >
-                        Remove review
-                    </ButtonWithProgress>
-                </DialogActions>
-            </Dialog>
-            </>;
+        return <Button
+            variant='contained'
+            color='error'
+            sx={{ ml: 1 }}
+            onClick={() => {
+                setRemoveCommentFromUser(r.user);
+                setRemoveDialogOpen(true);
+            }}>
+            Remove review
+        </Button>;
+    };
+
+    const renderAdminRemoveDialog = () => {
+        return <Dialog
+            open={removeDialogOpen}
+            onClose={() => setRemoveDialogOpen(false)}>
+            <DialogTitle>Remove Review</DialogTitle>
+            <DialogContent>
+                <DialogContentText component='div'>
+                    <Typography>Confirm removal of review comment from <code>{removeCommentFromUser?.loginName}</code>?</Typography>
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    onClick={() => setRemoveDialogOpen(false)} >
+                    Cancel
+                </Button>
+                <ButtonWithProgress
+                    autoFocus
+                    color='error'
+                    sx={{ ml: 1 }}
+                    working={removeReviewSet.has(removeCommentFromUser?.loginName ?? '')}
+                    onClick={() => handleAdminRemoveReviewButton()} >
+                    Remove review
+                </ButtonWithProgress>
+            </DialogActions>
+        </Dialog>;
     };
 
     const renderReviewList = (list?: ExtensionReviewList): ReactNode => {
@@ -212,7 +223,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
                 </Box>
                 {
                     context.user?.role === 'admin' ?
-                        <Box mb={2} display='flex' alignItems='end'>
+                        <Box sx={{ mb: 2, minWidth: 160 }} display='flex' alignItems='end'>
                             {renderAdminRemoveButton(r)}
                         </Box>
                         :
@@ -251,6 +262,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         <Box>
             <DelayedLoadIndicator loading={loading}/>
             {renderReviewList(reviewList)}
+            {context.user?.role === 'admin' && renderAdminRemoveDialog()}
         </Box>
     </>;
 

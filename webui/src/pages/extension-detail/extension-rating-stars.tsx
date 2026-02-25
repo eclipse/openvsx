@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent, ReactNode } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import StarIcon from '@mui/icons-material/Star';
 import StarHalfIcon from '@mui/icons-material/StarHalf';
 import { Box } from '@mui/material';
@@ -31,7 +31,7 @@ export const ExtensionRatingStars: FunctionComponent<ExtensionRatingStarsProps> 
                 <StarIcon fontSize={fontSize} sx={{ display: 'block', color: '#bcbcbc' }}/>
             </Box>;
         }
-        return <StarIcon fontSize={fontSize} sx={{ color: '#bcbcbc' }}/>;
+        return <StarIcon key={i} fontSize={fontSize} sx={{ color: '#bcbcbc' }}/>;
     };
 
     return <>{[1, 2, 3, 4, 5].map(getStar)}</>;

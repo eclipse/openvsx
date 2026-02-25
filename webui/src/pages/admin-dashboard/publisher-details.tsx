@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import React, { FunctionComponent } from 'react';
+import { FunctionComponent } from 'react';
 import { PublisherInfo } from '../../extension-registry-types';
 import { UserSettingsProfile } from '../user/user-settings-profile';
 import { UserExtensionList } from '../user/user-extension-list';

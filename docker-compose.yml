@@ -1,7 +1,7 @@
 services:
 
   postgres:
-    image: postgres:latest
+    image: postgres:16.2
     environment:
       - POSTGRES_USER=openvsx
       - POSTGRES_PASSWORD=openvsx
@@ -18,6 +18,7 @@ services:
   elasticsearch:
     image: elasticsearch:8.7.1
     environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
       - xpack.ml.enabled=false
       - discovery.type=single-node
@@ -26,6 +27,10 @@ services:
     ports:
       - 9200:9200
       - 9300:9300
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     healthcheck:
       test: curl -s http://elasticsearch01:9200 >/dev/null || exit 1
       interval: 10s
@@ -55,7 +60,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-1:/data
+      - ./data/redis/node-1:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -76,7 +81,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-2:/data
+      - ./data/redis/node-2:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -97,7 +102,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-3:/data
+      - ./data/redis/node-3:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -118,7 +123,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-4:/data
+      - ./data/redis/node-4:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -139,7 +144,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-5:/data
+      - ./data/redis/node-5:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -160,7 +165,7 @@ services:
     command: redis-server /etc/redis.conf
     volumes:
       - ./redis.conf:/etc/redis.conf
-      - /redis/node-6:/data
+      - ./data/redis/node-6:/data
     environment:
       - REDISCLI_AUTH=openvsx
     healthcheck:
@@ -184,9 +189,9 @@ services:
     entrypoint: >
       bash -c "
       sleep 10;
-      echo yes | redis-cli --user openvsx --cluster create 
-      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000 
-      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000 
+      echo yes | redis-cli --user openvsx --cluster create
+      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000
+      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000
       --cluster-replicas 1"
     profiles:
       - redis
@@ -218,13 +223,14 @@ services:
     profiles:
       - openvsx
       - backend
-    
+
   webui:
-    image: node:18
+    image: node:22
     working_dir: /app
-    command: sh -c 'yarn && yarn build && yarn build:default && yarn watch & yarn watch:default & yarn start:default'
+    command: sh -c 'yarn install --immutable && yarn build:server && yarn watch:default & yarn start:default'
     volumes:
       - ./webui:/app
+      - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
@@ -234,7 +240,7 @@ services:
       - frontend
 
   cli:
-    image: node:18
+    image: node:22
     working_dir: /app
     command: sh -c 'yarn && yarn watch'
     volumes:

@@ -25,18 +25,26 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.search.SimilarityCheckService;
+import org.eclipse.openvsx.search.SimilarityConfig;
+import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -69,9 +77,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebClient
 @MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
+    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class
+    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
+    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class
 })
 class AdminAPITest {
     
@@ -1478,7 +1487,9 @@ class AdminAPITest {
                 StorageUtilService storageUtil,
                 CacheService cache,
                 JobRequestScheduler scheduler,
-                MailService mail
+                MailService mail,
+                LogService logs,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new AdminService(
                     repositories,
@@ -1491,7 +1502,9 @@ class AdminAPITest {
                     storageUtil,
                     cache,
                     scheduler,
-                    mail
+                    mail,
+                    logs,
+                    scanPersistenceService
             );
         }
 
@@ -1500,7 +1513,7 @@ class AdminAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 ExtensionService extensions,
-                VersionService versions,
+                @Qualifier("adminTest") VersionService versions,
                 UserService users,
                 SearchUtilService search,
                 ExtensionValidator validator,
@@ -1508,7 +1521,8 @@ class AdminAPITest {
                 EclipseService eclipse,
                 CacheService cache,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                ExtensionVersionIntegrityService integrityService
+                ExtensionVersionIntegrityService integrityService,
+                SimilarityService similarityService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -1521,8 +1535,28 @@ class AdminAPITest {
                     storageUtil,
                     eclipse,
                     cache,
-                    integrityService
+                    integrityService,
+                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
             );
+        }
+
+        @Bean
+        SimilarityConfig similarityConfig() {
+            return new SimilarityConfig();
+        }
+
+        @Bean
+        SimilarityService similarityService(RepositoryService repositories) {
+            return new SimilarityService(repositories);
+        }
+
+        @Bean
+        SimilarityCheckService similarityCheckService(
+                SimilarityConfig config,
+                SimilarityService similarityService,
+                RepositoryService repositories
+        ) {
+            return new SimilarityCheckService(config, similarityService, repositories);
         }
 
         @Bean
@@ -1531,10 +1565,23 @@ class AdminAPITest {
                 RepositoryService repositories,
                 SearchUtilService search,
                 CacheService cache,
+                LogService logs,
                 PublishExtensionVersionHandler publishHandler,
-                JobRequestScheduler scheduler
+                JobRequestScheduler scheduler,
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
         ) {
-            return new ExtensionService(entityManager, repositories, search, cache, publishHandler, scheduler);
+            return new ExtensionService(
+                    entityManager,
+                    repositories,
+                    search,
+                    cache,
+                    logs,
+                    publishHandler,
+                    scheduler,
+                    extensionScanService,
+                    scanPersistenceService
+            );
         }
 
         @Bean
@@ -1550,6 +1597,7 @@ class AdminAPITest {
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
                 DownloadCountService downloadCountService,
+                ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -1563,6 +1611,7 @@ class AdminAPITest {
                     localStorage,
                     awsStorage,
                     downloadCountService,
+                    downloadMetrics,
                     search,
                     cache,
                     entityManager,
@@ -1577,6 +1626,7 @@ class AdminAPITest {
         }
 
         @Bean
+        @Qualifier("adminTest")
         VersionService versionService() {
             return new VersionService();
         }

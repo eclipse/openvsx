@@ -12,7 +12,10 @@ import {
     Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
     SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
     SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders
+    LoginProviders, ScanResultJson, ScanCounts, ScanResultsResponse, ScanFilterOptions,
+    FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
+    FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse,
+    Tier, TierList, Customer, CustomerList, UsageStatsList, LogPageableList,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -486,6 +489,27 @@ export interface AdminService {
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
     revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+    getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all' }): Promise<Readonly<ScanResultsResponse>>
+    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
+    getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>>
+    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>
+    // Files API
+    getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>>;
+    getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>>
+    // Decision APIs
+    makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
+    makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
+    deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
+    getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
+    createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
+    updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
+    deleteTier(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
+    createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>>;
+    updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
+    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>>;
+    getLogs(abortController: AbortController, page?: number, size?: number, period?: string): Promise<Readonly<LogPageableList>>;
 }
 
 export interface AdminServiceConstructor {
@@ -608,6 +632,359 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
             headers
         });
+    }
+
+    getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; adminDecision?: string[] }): Promise<Readonly<ScanResultsResponse>> {
+        const query: { key: string, value: string | number }[] = [];
+        if (params) {
+            if (params.size !== undefined)
+                query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined)
+                query.push({ key: 'offset', value: params.offset });
+            if (params.status) {
+                const statusValue = Array.isArray(params.status) ? params.status.join(',') : params.status;
+                query.push({ key: 'status', value: statusValue });
+            }
+            if (params.publisher)
+                query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace)
+                query.push({ key: 'namespace', value: params.namespace });
+            if (params.name)
+                query.push({ key: 'name', value: params.name });
+            if (params.validationType && params.validationType.length > 0)
+                query.push({ key: 'validationType', value: params.validationType.join(',') });
+            if (params.threatScannerName && params.threatScannerName.length > 0)
+                query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
+            if (params.dateStartedFrom)
+                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo)
+                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement)
+                query.push({ key: 'enforcement', value: params.enforcement });
+            if (params.adminDecision && params.adminDecision.length > 0)
+                query.push({ key: 'adminDecision', value: params.adminDecision.join(',') });
+        }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans'], query);
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint
+        });
+    }
+
+    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>> {
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId])
+        });
+    }
+
+    getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>> {
+        const query: { key: string, value: string | number }[] = [];
+        if (params) {
+            if (params.dateStartedFrom)
+                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo)
+                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement)
+                query.push({ key: 'enforcement', value: params.enforcement });
+            if (params.threatScannerName && params.threatScannerName.length > 0) {
+                query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
+            }
+            if (params.validationType && params.validationType.length > 0) {
+                query.push({ key: 'validationType', value: params.validationType.join(',') });
+            }
+        }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'counts'], query);
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint
+        });
+    }
+
+    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>> {
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'filterOptions'])
+        });
+    }
+
+    getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>> {
+        const query: { key: string, value: string | number }[] = [];
+        if (params) {
+            if (params.size !== undefined)
+                query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined)
+                query.push({ key: 'offset', value: params.offset });
+            if (params.decision)
+                query.push({ key: 'decision', value: params.decision });
+            if (params.publisher)
+                query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace)
+                query.push({ key: 'namespace', value: params.namespace });
+            if (params.name)
+                query.push({ key: 'name', value: params.name });
+            if (params.dateDecidedFrom)
+                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo)
+                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
+            if (params.sortBy)
+                query.push({ key: 'sortBy', value: params.sortBy });
+            if (params.sortOrder)
+                query.push({ key: 'sortOrder', value: params.sortOrder });
+        }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files'], query);
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint
+        });
+    }
+
+    getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>> {
+        const query: { key: string, value: string | number }[] = [];
+        if (params) {
+            if (params.dateDecidedFrom)
+                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo)
+                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
+        }
+        const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'counts'], query);
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint
+        });
+    }
+
+    async makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'decisions']),
+            headers,
+            payload: request
+        });
+    }
+
+    async makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
+            headers,
+            payload: request
+        });
+    }
+
+    async deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
+            headers,
+            payload: request
+        });
+    }
+
+    async getTiers(abortController: AbortController): Promise<Readonly<TierList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),
+            credentials: true
+        }, false);
+    }
+
+    async createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', 'create']),
+            headers
+        }, false);
+    }
+
+    async updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: tier,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
+    }
+
+    async deleteTier(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
+            headers
+        }, false);
+    }
+
+    async getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>> {
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers']),
+            credentials: true
+        }, false);
+    }
+
+    async createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', 'create']),
+            headers
+        }, false);
+    }
+
+    async updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'PUT',
+            payload: customer,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
+    }
+
+    async deleteCustomer(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendRequest({
+            abortController,
+            method: 'DELETE',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
+            headers
+        }, false);
+    }
+
+    /**
+     * Get usage stats for a customer within an optional date range.
+     */
+    async getUsageStats(
+        abortController: AbortController,
+        customerName: string,
+        date: Date,
+    ): Promise<Readonly<UsageStatsList>> {
+        const query: { key: string, value: string | number }[] = [];
+        query.push({ key: 'date', value: date.toISOString() });
+
+        return sendRequest({
+            abortController,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'], query),
+            credentials: true
+        }, false);
+    }
+
+    async getLogs(
+        abortController: AbortController,
+        page: number = 0,
+        size: number = 20,
+        period?: string
+    ): Promise<Readonly<LogPageableList>> {
+        const query: { key: string, value: string | number }[] = [
+            { key: 'page', value: page },
+            { key: 'size', value: size }
+        ];
+        if (period) {
+            query.push({ key: 'period', value: period });
+        }
+        const endpoint = addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'logs']), query);
+        return sendRequest({
+            abortController,
+            endpoint,
+            credentials: true
+        }, false);
     }
 }
 

@@ -1,6 +1,6 @@
 logging:
-  pattern:
-    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+  level:
+    root: "info"
 
 server:
   port: 8080
@@ -33,9 +33,6 @@ spring:
     baseline-description: JobRunr tables
   jpa:
     open-in-view: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
   session:
@@ -107,48 +104,48 @@ org:
       allow-anonymous-data-usage: false
 
 bucket4j:
-  enabled: true
-  cache-to-use: jcache # use redis-jedis for redis standalone or redis-cluster-jedis for redis cluster
-  filters:
-    - cache-name: buckets
-      url: '/api/-/(namespace/create|publish)'
-      http-response-headers:
-        Access-Control-Allow-Origin: '*'
-        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
-      rate-limits:
-        - cache-key: getParameter("token")
-          bandwidths:
-            - capacity: 15
-              time: 1
-              unit: seconds
-    - cache-name: buckets
-      url: '/vscode/asset/.*/.*/.*/Microsoft.VisualStudio.Services.Icons.Default'
-      http-response-headers:
-        Access-Control-Allow-Origin: '*'
-        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          bandwidths:
-            - capacity: 75
-              time: 1
-              unit: seconds
-    - cache-name: buckets
-      url: '/vscode/(?!asset/.*/.*/.*/Microsoft.VisualStudio.Services.Icons.Default).*|/api/(?!(.*/.*/review(/delete)?)|(-/(namespace/create|publish))).*'
-      http-response-headers:
-        Access-Control-Allow-Origin: '*'
-        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          bandwidths:
-            - capacity: 15
-              time: 1
-              unit: seconds
+  enabled: false
+#  cache-to-use: jcache # use redis-jedis for redis standalone or redis-cluster-jedis for redis cluster
+#  filters:
+#    - cache-name: buckets
+#      url: '/api/-/(namespace/create|publish)'
+#      http-response-headers:
+#        Access-Control-Allow-Origin: '*'
+#        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
+#      rate-limits:
+#        - cache-key: getParameter("token")
+#          bandwidths:
+#            - capacity: 15
+#              time: 1
+#              unit: seconds
+#    - cache-name: buckets
+#      url: '/vscode/asset/.*/.*/.*/Microsoft.VisualStudio.Services.Icons.Default'
+#      http-response-headers:
+#        Access-Control-Allow-Origin: '*'
+#        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
+#      rate-limits:
+#        - cache-key: getRemoteAddr()
+#          bandwidths:
+#            - capacity: 75
+#              time: 1
+#              unit: seconds
+#    - cache-name: buckets
+#      url: '/vscode/(?!asset/.*/.*/.*/Microsoft.VisualStudio.Services.Icons.Default).*|/api/(?!(.*/.*/review(/delete)?)|(-/(namespace/create|publish))).*'
+#      http-response-headers:
+#        Access-Control-Allow-Origin: '*'
+#        Access-Control-Expose-Headers: X-Rate-Limit-Retry-After-Seconds, X-Rate-Limit-Remaining
+#      rate-limits:
+#        - cache-key: getRemoteAddr()
+#          bandwidths:
+#            - capacity: 15
+#              time: 1
+#              unit: seconds
 
 ovsx:
   databasesearch:
-    enabled: false
-  elasticsearch:
     enabled: true
+  elasticsearch:
+    enabled: false
     clear-on-start: true
   redis:
     enabled: false
@@ -157,11 +154,11 @@ ovsx:
     publisher-agreement:
       timezone: US/Eastern
   extension-control:
-    update-on-start: true
+    update-on-start: false
   integrity:
     key-pair: create
   registry:
-    version: 'v0.14.3'
+    version: 'v0.32.0-dev'
   storage:
     local:
       directory: /tmp
@@ -174,3 +171,63 @@ ovsx:
     url: "http://localhost:3000"
   server:
     url: "http://localhost:8080"
+  # dynamic tier-based rate limiting configuration
+  rate-limit:
+    enabled: false
+    ip-address-function: '(getHeader("X-Forwarded-For")?: getRemoteAddr()).split(",")[0].trim()'
+    usage-stats:
+      job-schedule: '*/30 * * * *'
+    filters:
+      - url: '/(api|vscode)/.*'
+        http-response-headers:
+          Access-Control-Allow-Origin: '*'
+          Access-Control-Expose-Headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After
+    default-http-content-type: application/json
+    default-http-response-body: >
+      {
+        "type": "https://open-vsx.org/probs/rate-limit-exceeded",
+        "title": "Too Many Requests",
+        "status": 429,
+        "detail": "A request rate limit has been exceeded for your current usage tier. Open VSX enforces tier-based limits to ensure reliable service. If this is unexpected for your use case, please contact us.",
+        "documentation": "https://github.com/EclipseFdn/open-vsx.org/wiki/Rate-Limiting",
+        "contact": "infrastructure@eclipse-foundation.org"
+      }
+  scanning:
+    enabled: true
+    # Shared archive limits for all scanning checks (secret detection, blocklist, etc.)
+    max-archive-size-bytes: 1073741824   # 1 GB total archive limit
+    max-single-file-bytes: 268435456     # 256 MB per-file limit
+    max-entry-count: 100000              # Max ZIP entries to process
+    blocklist-check:
+      enabled: true
+      enforced: false
+      required: false
+    similarity:
+      enabled: true
+      enforced: false
+      required: false
+      similarity-threshold: 0.2
+      skip-if-publisher-verified: false
+      only-protect-verified-names: false
+      allow-similarity-to-own-names: true
+      only-check-new-extensions: true
+    secret-detection:
+      enabled: true
+      enforced: false
+      required: false
+      rules-path: 'classpath:scanning/secret-detection-custom-rules.yaml'
+      suppression-markers: 'secret-detector:ignore,gitleaks:allow,nosecret,@suppress-secret'
+      gitleaks:
+        auto-fetch: true
+        force-refresh: true
+        output-path: '/tmp/secret-detection-rules-gitleaks.yaml'
+        scheduled-refresh: true
+        refresh-cron: '0 0 3 * * *'  # Daily at 3 AM
+        skip-rule-ids: 'generic-api-key'  # Rule IDs that produce too many false positives
+      max-findings: 200
+      minified-line-threshold: 10000
+      long-line-no-space-threshold: 1000
+      regex-context-chars: 100
+      debug-preview-chars: 10
+      timeout-seconds: 10
+      timeout-check-interval: 100

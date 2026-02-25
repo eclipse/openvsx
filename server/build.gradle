@@ -1,53 +1,24 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.hibernate.orm:hibernate-gradle-plugin:6.2.2.Final"
-        classpath "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin:4.0.0"
-    }
-}
 plugins {
     id 'java'
     id 'scala'
     id 'jacoco'
-    id 'org.jooq.jooq-codegen-gradle' version '3.19.26'
-    id 'de.undercouch.download' version '5.4.0'
-    id 'org.springframework.boot' version '3.5.6'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'io.gatling.gradle' version '3.14.9'
+    alias(libs.plugins.jooq.codegen)
+    alias(libs.plugins.download)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.hibernate.orm)
+    alias(libs.plugins.test.logger)
+    alias(libs.plugins.gatling)
+    alias(libs.plugins.rewrite)
     id 'maven-publish'
 }
-apply plugin: 'org.hibernate.orm'
-apply plugin: 'com.adarshr.test-logger'
 
 def jooqSrcDir = 'src/main/jooq-gen'
-def versions = [
-    java: '25',
-    flyway: '9.19.1',
-    springdoc: '2.8.13',
-    gcloud: '2.50.0',
-    azure: '12.23.0',
-    aws: '2.29.29',
-    junit: '5.9.2',
-    testcontainers: '1.19.3',
-    jackson: '2.15.2',
-    woodstox: '6.4.0',
-    jobrunr: '7.5.0',
-    bucket4j: '0.12.7',
-    bucket4j_redis: '8.10.1',
-    tika: '3.2.2',
-    bouncycastle: '1.80',
-    commons_lang3: '3.12.0',
-    jaxb_api: '2.3.1',
-    jaxb_impl: '2.3.8',
-    gatling: '3.14.9',
-    loki4j: '1.4.2',
-    jedis: '6.2.0'
-]
-ext['junit-jupiter.version'] = versions.junit
+
+ext['junit-jupiter.version'] = libs.versions.junit.get()
+
 java {
-    sourceCompatibility = versions.java
+    sourceCompatibility = libs.versions.java.get()
 }
 
 repositories {
@@ -70,6 +41,13 @@ configurations {
     devRuntimeOnly.extendsFrom runtimeOnly
 
     gatling.exclude group: "io.gatling.highcharts", module: "gatling-charts-highcharts"
+
+    // exclude commons-logging to avoid runtime warnings like these
+    // Standard Commons Logging discovery in action with spring-jcl:
+    //    please remove commons-logging.jar from classpath in order to avoid potential conflicts
+    configureEach {
+        exclude group: "commons-logging", module: "commons-logging"
+    }
 }
 
 dependencyManagement {
@@ -89,8 +67,8 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation('org.springframework.boot:spring-boot-starter-web')
-    implementation 'org.springframework.boot:spring-boot-starter-jetty'
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-jetty"
     modules {
         module("org.springframework.boot:spring-boot-starter-tomcat") {
             replacedBy("org.springframework.boot:spring-boot-starter-jetty")
@@ -111,34 +89,53 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
     implementation "org.springframework.retry:spring-retry"
-    implementation "org.bouncycastle:bcpkix-jdk18on:${versions.bouncycastle}"
+
+    implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "com.github.ben-manes.caffeine:caffeine"
     implementation 'com.github.ben-manes.caffeine:jcache'
-    implementation "redis.clients:jedis:${versions.jedis}"
-    implementation "com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:${versions.bucket4j}"
-    implementation "com.bucket4j:bucket4j-redis:${versions.bucket4j_redis}"
-    implementation "org.jobrunr:jobrunr-spring-boot-3-starter:${versions.jobrunr}"
-    implementation "org.flywaydb:flyway-core:${versions.flyway}"
-    implementation "com.google.cloud:google-cloud-storage:${versions.gcloud}"
-    implementation "com.azure:azure-storage-blob:${versions.azure}"
-    implementation "software.amazon.awssdk:s3:${versions.aws}"
-    implementation "software.amazon.awssdk:sts:${versions.aws}"
-    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.springdoc}"
-    implementation "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
-    implementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
-    implementation "com.fasterxml.jackson.module:jackson-module-jaxb-annotations:${versions.jackson}"
-    implementation "com.fasterxml.woodstox:woodstox-core:${versions.woodstox}"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}"
-    implementation "javax.xml.bind:jaxb-api:${versions.jaxb_api}"
-    implementation "com.sun.xml.bind:jaxb-impl:${versions.jaxb_impl}"
-    implementation "org.apache.commons:commons-lang3:${versions.commons_lang3}"
-    implementation "org.apache.httpcomponents.client5:httpclient5"
-    implementation "org.apache.tika:tika-core:${versions.tika}"
-    implementation "com.github.loki4j:loki-logback-appender:${versions.loki4j}"
+
     implementation "io.micrometer:micrometer-tracing"
     implementation "io.micrometer:micrometer-tracing-bridge-otel"
     implementation "io.opentelemetry:opentelemetry-exporter-zipkin"
+
+    implementation libs.commons.lang3
+    implementation libs.bouncycastle
+    implementation libs.jedis
+
+    implementation libs.bucket4j.spring
+    implementation libs.bucket4j.redis
+    implementation libs.ipaddress
+
+    implementation libs.jobrunr.spring
+
+    implementation libs.flyway.core
+    implementation libs.flyway.database.postgresql
+
+    implementation libs.google.cloud.storage
+    implementation libs.azure.storage.blob
+    implementation libs.awssdk.s3
+    implementation libs.awssdk.sts
+
+    implementation libs.springdoc
+
+    implementation libs.jackson.core
+    implementation libs.jackson.annotations
+    implementation libs.jackson.databind
+    implementation libs.jackson.jaxb.annotations
+    implementation libs.jackson.dataformat.xml
+    implementation libs.jackson.dataformat.yaml
+    implementation libs.jackson.dataformat.toml
+
+    implementation libs.woodstox.core
+
+    implementation libs.jaxb.api
+    implementation libs.jaxb.impl
+
+    implementation libs.tika.core
+    implementation libs.re2j
+    implementation libs.json.path
+    implementation libs.loki.logback.appender
+
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqCodegen "org.postgresql:postgresql"
@@ -149,15 +146,24 @@ dependencies {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
     testImplementation "org.springframework.security:spring-security-test"
-    testImplementation "org.testcontainers:elasticsearch:${versions.testcontainers}"
-    testImplementation "org.testcontainers:localstack:${versions.testcontainers}"
-    testImplementation "org.testcontainers:junit-jupiter:${versions.testcontainers}"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit}"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit}"
-    testRuntimeOnly "org.testcontainers:postgresql:${versions.testcontainers}"
-    
-    gatling "io.gatling:gatling-core:${versions.gatling}"
-    gatling "io.gatling:gatling-app:${versions.gatling}"
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.testcontainers.elasticsearch
+    testImplementation libs.testcontainers.localstack
+    testImplementation libs.testcontainers.junit.jupiter
+
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.testcontainers.postgresql
+
+    gatling libs.gatling.core
+    gatling libs.gatling.app
+
+    rewrite libs.rewrite.java
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        force 'org.apache.commons:commons-compress:1.26.0+'
+    }
 }
 
 jooq {
@@ -192,6 +198,11 @@ jooq {
     }
 }
 
+rewrite {
+    activeRecipe("org.openrewrite.java.migrate.jakarta.JavaxAnnotationMigrationToJakartaAnnotation")
+    setExportDatatables(true)
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
@@ -201,17 +212,22 @@ publishing {
     }
 }
 
-task runServer(type: JavaExec) {
-//    jvmArgs = ['-Xverify:none']
+tasks.register('runServer', JavaExec) {
+    jvmArgs = [
+        '-Dorg.jooq.no-logo=true',
+        '-Dorg.jooq.no-tips=true',
+        '--enable-native-access=ALL-UNNAMED' // due to https://github.com/netty/netty/issues/15161
+    ]
     classpath = sourceSets.dev.runtimeClasspath
     mainClass = 'org.eclipse.openvsx.RegistryApplication'
 }
 
 test {
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
 }
 
-task unitTests(type: Test) {
+tasks.register('unitTests', Test) {
     description = 'Runs unit tests (excluding integration tests).'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
@@ -223,7 +239,7 @@ task unitTests(type: Test) {
     exclude 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
 }
 
-task s3IntegrationTests(type: Test) {
+tasks.register('s3IntegrationTests', Test) {
     description = 'Runs S3 integration tests using LocalStack (requires Docker/Podman).'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs

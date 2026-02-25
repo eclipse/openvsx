@@ -28,7 +28,7 @@ export interface ErrorResponse {
     trace?: string;
 }
 
-export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
+export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = true): Promise<Res> {
     req.method ??= 'GET';
     req.headers ??= {};
     if (!req.headers['Accept']) {
@@ -50,7 +50,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         param.credentials = 'include';
     }
 
-    const options: any = {
+    const options: any = retry ? {
         retries: 10,
         retryDelay: (attempt: number, error: Error, response: Response) => {
             return Math.pow(2, attempt) * 1000;
@@ -58,7 +58,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         retryOn: (attempt: number, error: Error, response: Response) => {
             return error !== null || response.status >= 500;
         }
-    };
+    } : {};
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
@@ -73,7 +73,11 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
                 throw new Error(`Unsupported type ${req.headers['Accept']}`);
         }
     } else if (response.status === 429) {
-        const retrySeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds') ?? '0';
+        // if the server uses the bucket4j starter config
+        const retryAfterSeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds');
+        // if the server uses the dynamic rate limiting config
+        const retryAfter = response.headers.get('Retry-After');
+        const retrySeconds = retryAfterSeconds ?? retryAfter ?? '0';
         const jitter = Math.floor(Math.random() * 100);
         const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
         return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))

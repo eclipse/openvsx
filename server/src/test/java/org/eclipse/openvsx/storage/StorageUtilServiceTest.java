@@ -16,6 +16,7 @@ import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(SpringExtension.class)
 @MockitoBean(types = {
         EntityManager.class, SearchUtilService.class, GoogleCloudStorageService.class,
-        DownloadCountService.class, CacheService.class, UserService.class, FileCacheDurationConfig.class,
+        DownloadCountService.class, ExtensionDownloadMetrics.class, CacheService.class, UserService.class, FileCacheDurationConfig.class,
         FilesCacheKeyGenerator.class, RepositoryService.class, LocalStorageService.class
 })
 @ContextConfiguration(classes = StorageUtilServiceTest.TestConfig.class)
@@ -173,6 +174,7 @@ public class StorageUtilServiceTest {
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
                 DownloadCountService downloadCountService,
+                ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
                 EntityManager entityManager,
@@ -186,6 +188,7 @@ public class StorageUtilServiceTest {
                     localStorage,
                     awsStorage,
                     downloadCountService,
+                    downloadMetrics,
                     search,
                     cache,
                     entityManager,

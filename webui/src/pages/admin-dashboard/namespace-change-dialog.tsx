@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
- import React, { ChangeEvent, FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+ import { ChangeEvent, FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
  import {
      Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, TextField
  } from '@mui/material';

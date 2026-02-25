@@ -18,11 +18,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -31,14 +34,27 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
 
-@SpringBootApplication
+import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
+
+@SpringBootApplication(exclude = {
+        // currently no redis / elasticsearch repositories are being used
+        // exclude autoconfiguration for them to avoid unnecessary logging
+        // messages due to existing jpa repositories
+        // can be removed once such repositories are in use
+        ElasticsearchRepositoriesAutoConfiguration.class,
+        ReactiveElasticsearchRepositoriesAutoConfiguration.class,
+        RedisRepositoriesAutoConfiguration.class,
+})
 @EnableScheduling
 @EnableRetry
 @EnableAsync
 @EnableConfigurationProperties(OAuth2AttributesConfig.class)
+// Need to enable serialization support for spring data's Page, see:
+// https://stevenpg.com/posts/spring-data-page-impl-serialization-warning/
+@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
 public class RegistryApplication {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(RegistryApplication.class, args);
     }
 
