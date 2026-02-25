@@ -84,7 +84,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
             {
                 extensions && extensions.length > 0
                 ? <UserExtensionList extensions={extensions} loading={loading} canDelete />
-                : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
+                : <Typography  variant='body1'>You haven't published any extensions yet.</Typography>
             }
         </Box>
     </>;
