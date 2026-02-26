@@ -11,6 +11,8 @@ package org.eclipse.openvsx.mail;
 
 import org.eclipse.openvsx.entities.UserData;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,6 +22,7 @@ import java.util.Map;
 
 @Component
 public class MailService {
+    private final Logger logger = LoggerFactory.getLogger(MailService.class);
 
     private final boolean disabled;
     private final JobRequestScheduler scheduler;
@@ -36,11 +39,18 @@ public class MailService {
     }
 
     public void scheduleRevokedAccessTokensMail(UserData user) {
-        if(disabled) {
+        if (disabled) {
             return;
         }
 
-        var variables = Map.<String, Object>of("name", user.getFullName());
+        if (user.getEmail() == null) {
+            logger.info("Could not schedule mail to user '{}' due to revoked access tokens: email not known", user.getLoginName());
+            return;
+        }
+
+        // the fullName might be null
+        var name = user.getFullName() == null ? user.getLoginName() : user.getFullName();
+        var variables = Map.<String, Object>of("name", name);
         var jobRequest = new SendMailJobRequest(
                 user.getEmail(),
                 revokedAccessTokensSubject,
