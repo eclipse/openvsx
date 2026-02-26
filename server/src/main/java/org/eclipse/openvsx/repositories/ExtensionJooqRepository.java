@@ -33,9 +33,11 @@ import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
 public class ExtensionJooqRepository {
 
     private final DSLContext dsl;
+    private final ExtensionVersionJooqRepository extensionVersionRepo;
 
-    public ExtensionJooqRepository(DSLContext dsl) {
+    public ExtensionJooqRepository(DSLContext dsl, ExtensionVersionJooqRepository extensionVersionRepo) {
         this.dsl = dsl;
+        this.extensionVersionRepo = extensionVersionRepo;
     }
 
     public List<Extension> findAllActiveById(Collection<Long> ids) {
@@ -405,10 +407,16 @@ public class ExtensionJooqRepository {
                     maxDisplayNameDistance.cast(Integer.class)
             );
             
+            var latestQuery = extensionVersionRepo.findLatestQuery(null, false, true);
+            latestQuery.addSelect(EXTENSION_VERSION.ID);
+            latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
+            var latestVersionId = latestQuery.asField().coerce(Long.class);
+
             var displayNameSimilaritySubquery = DSL.selectOne()
                     .from(evLatest)
                     .where(evLatest.EXTENSION_ID.eq(EXTENSION.ID))
                     .and(evLatest.ACTIVE.eq(true))
+                    .and(evLatest.ID.eq(latestVersionId))
                     .and(evLatest.DISPLAY_NAME.isNotNull())
                     .and(evLatest.DISPLAY_NAME.ne(""))
                     .and(DSL.length(evLatest.DISPLAY_NAME).between(minLen, lenMax))

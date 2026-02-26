@@ -202,7 +202,7 @@ ovsx:
       enabled: true
       enforced: false
       required: false
-      similarity-threshold: 0.2
+      similarity-threshold: 0.15
       skip-if-publisher-verified: false
       only-protect-verified-names: false
       allow-similarity-to-own-names: true
