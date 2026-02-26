@@ -13,6 +13,5 @@
             "runServer"
         ]
     },
-    "java.saveActions.organizeImports": true,
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.saveActions.organizeImports": true
 }
