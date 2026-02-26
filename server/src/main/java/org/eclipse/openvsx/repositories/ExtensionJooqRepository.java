@@ -405,10 +405,18 @@ public class ExtensionJooqRepository {
                     maxDisplayNameDistance.cast(Integer.class)
             );
             
+            // Only compare against the latest (most recent) active version's display name,
+            // not historical versions that may have had different display names
+            var latestVersionId = DSL.select(DSL.max(EXTENSION_VERSION.ID))
+                    .from(EXTENSION_VERSION)
+                    .where(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID))
+                    .and(EXTENSION_VERSION.ACTIVE.eq(true));
+
             var displayNameSimilaritySubquery = DSL.selectOne()
                     .from(evLatest)
                     .where(evLatest.EXTENSION_ID.eq(EXTENSION.ID))
                     .and(evLatest.ACTIVE.eq(true))
+                    .and(evLatest.ID.eq(latestVersionId))
                     .and(evLatest.DISPLAY_NAME.isNotNull())
                     .and(evLatest.DISPLAY_NAME.ne(""))
                     .and(DSL.length(evLatest.DISPLAY_NAME).between(minLen, lenMax))
