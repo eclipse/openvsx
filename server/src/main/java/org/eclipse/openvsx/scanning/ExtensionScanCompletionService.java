@@ -462,14 +462,19 @@ public class ExtensionScanCompletionService {
             for (ScannerJob failedJob : failedJobs) {
                 // Record ERROR result for audit trail (if not already recorded)
                 if (!repositories.hasScanCheckResult(Long.parseLong(scanId), failedJob.getScannerType())) {
+                    // Include the actual error reason in the summary so it's visible in the UI
+                    String errorDetail = failedJob.getErrorMessage();
+                    String failSummary = errorDetail != null
+                        ? "Scanner failed: " + errorDetail
+                        : "Scanner failed (no details available)";
                     persistenceService.recordScannerJobResult(
                         scanId,
                         failedJob,
                         ScanCheckResult.CheckResult.ERROR,
                         0,
                         0,
-                        "Scanner failed",
-                        failedJob.getErrorMessage()
+                        failSummary,
+                        errorDetail
                     );
                 }
                 
