@@ -1224,7 +1224,7 @@ public class ExtensionVersionJooqRepository {
         });
     }
 
-    private SelectQuery<Record> findLatestQuery(
+    SelectQuery<Record> findLatestQuery(
             String targetPlatform,
             boolean onlyPreRelease,
             boolean onlyActive
