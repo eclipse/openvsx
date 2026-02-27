@@ -156,7 +156,7 @@ ovsx:
   extension-control:
     update-on-start: false
   integrity:
-    key-pair: create # create, renew, delete, 'undefined'
+    key-pair: create
   registry:
     version: 'v0.32.0-dev'
   storage:
@@ -167,6 +167,10 @@ ovsx:
     revoked-access-tokens:
       subject: 'Open VSX Access Tokens Revoked'
       template: 'revoked-access-tokens.html'
+  webui:
+    url: "http://localhost:3000"
+  server:
+    url: "http://localhost:8080"
   # dynamic tier-based rate limiting configuration
   rate-limit:
     enabled: false
