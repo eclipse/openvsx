@@ -98,7 +98,7 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
             </Box>
 
             {/* Columns 2-4: Display Name and Namespace */}
-            <Box sx={{ gridRow: '1', gridColumn: '2 / 5', minWidth: 0 }}>
+            <Box sx={{ gridRow: '1', gridColumn: '2 / 6', minWidth: 0 }}>
                 <ConditionalTooltip title={scan.displayName} arrow>
                     <Typography
                         variant='h6'
@@ -127,10 +127,10 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
                 </ConditionalTooltip>
             </Box>
 
-            {/* Column 5: Status Badge */}
+            {/* Column 6: Status Badge */}
             <Box sx={{
                 gridRow: '1',
-                gridColumn: '5',
+                gridColumn: '6',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-end',
