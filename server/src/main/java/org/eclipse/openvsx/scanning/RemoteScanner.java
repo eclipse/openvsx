@@ -77,7 +77,10 @@ public class RemoteScanner implements Scanner {
     public boolean isAsync() {
         return config.isAsync();
     }
-    
+
+    @Override
+    public int getMaxConcurrency() { return config.getMaxConcurrency(); }
+
     @Override
     public boolean enforcesThreats() {
         return config.isEnforced();

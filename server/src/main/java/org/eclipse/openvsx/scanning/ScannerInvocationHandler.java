@@ -34,7 +34,11 @@ import java.util.Map;
 public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvocationRequest> {
     
     protected final Logger logger = LoggerFactory.getLogger(ScannerInvocationHandler.class);
-    
+
+    // maximum waiting time for scan jobs to be invoked
+    private final static long MAX_WAITING_TIME_MS = 5 * 60 * 1000;
+    private final static long WAITING_POLL_INTERVAL_MS = 5 * 1000;
+
     private final ScannerJobRepository scanJobRepository;
     private final ScannerRegistry scannerRegistry;
     private final ExtensionScanPersistenceService persistenceService;
@@ -104,7 +108,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         String scannerType = jobRequest.getScannerType();
         long extensionVersionId = jobRequest.getExtensionVersionId();
         String scanId = jobRequest.getScanId();
-        
+
         logger.debug("Invoking scanner: {} for extension version {}", 
             scannerType, extensionVersionId);
         
@@ -114,11 +118,32 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         if (prepared == null) {
             return;  // Job already terminal, skip
         }
-        
+
+        var preparedJob = prepared.job();
         Scanner scanner = prepared.scanner();
-        Long jobId = prepared.jobId();
-        
+        Long jobId = preparedJob.getId();
+
+        var maxConcurrency = scanner.getMaxConcurrency();
+        if (maxConcurrency > 0) {
+            try {
+                var waitingStart = System.currentTimeMillis();
+                while (scanJobRepository.countByStatusAndScannerType(ScannerJob.JobStatus.PROCESSING, scannerType) >= maxConcurrency) {
+                    logger.debug("Maximum concurrency for scanner {} exceeded, waiting for completion", scanner.getScannerType());
+                    Thread.sleep(WAITING_POLL_INTERVAL_MS);
+                    if ((System.currentTimeMillis() - waitingStart) > MAX_WAITING_TIME_MS) {
+                        throw new RuntimeException("Maximum waiting time of " + MAX_WAITING_TIME_MS + " exceeded");
+                    }
+                }
+            } catch (Exception e) {
+                // Mark job as failed (single entity update, auto-commits)
+                markJobFailed(jobId, scannerType, extensionVersionId, e);
+                throw e;  // Re-throw to let JobRunr retry
+            }
+        }
+
         try {
+            prepared.startProcessing(scanJobRepository);
+
             // Phase 2: Invoke scanner (OUTSIDE transaction - may take minutes)
             // This is the slow part - HTTP calls to external services
             var command = new Scanner.Command(extensionVersionId, scanId);
@@ -180,14 +205,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
             return null;  // Don't retry - scanner will never exist
         }
         
-        // 3. Mark job as processing before starting scan
-        // Also clear the recoveryInProgress flag if this is a recovered job
-        job.setStatus(ScannerJob.JobStatus.PROCESSING);
-        job.setRecoveryInProgress(false);
-        job.setUpdatedAt(LocalDateTime.now());
-        scanJobRepository.save(job);
-        
-        return new PreparedJob(scanner, job.getId());
+        return new PreparedJob(scanner, job);
     }
     
     /**
@@ -243,7 +261,18 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     /**
      * Data holder for prepared job information.
      */
-    public record PreparedJob(Scanner scanner, Long jobId) {}
+    public record PreparedJob(Scanner scanner, ScannerJob job) {
+        /**
+         * Mark job as processing before starting scan
+         * Also clear the recoveryInProgress flag if this is a recovered job
+         */
+        public void startProcessing(ScannerJobRepository repository) {
+            job.setStatus(ScannerJob.JobStatus.PROCESSING);
+            job.setRecoveryInProgress(false);
+            job.setUpdatedAt(LocalDateTime.now());
+            repository.save(job);
+        }
+    }
     
     /**
      * Handle a completed (synchronous) scan result.

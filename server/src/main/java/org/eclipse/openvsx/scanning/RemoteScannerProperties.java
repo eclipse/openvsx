@@ -136,7 +136,9 @@ public class RemoteScannerProperties {
         
         private int timeoutMinutes = 60;
         private boolean async = true;
-        
+
+        private int maxConcurrency = 10;
+
         /**
          * HTTP client configuration for this scanner.
          * 
@@ -198,7 +200,10 @@ public class RemoteScannerProperties {
         
         public boolean isAsync() { return async; }
         public void setAsync(boolean async) { this.async = async; }
-        
+
+        public int getMaxConcurrency() { return maxConcurrency; }
+        public void setMaxConcurrency(int maxConcurrency) { this.maxConcurrency = maxConcurrency; }
+
         public HttpConfig getHttp() { return http; }
         public void setHttp(HttpConfig http) { this.http = http; }
         
