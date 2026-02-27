@@ -110,10 +110,10 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
                     '&:last-child': { pb: showExpandButton ? 0 : 5 },
                 }}
             >
-                {/* 3 Row x 5 Column Grid Layout */}
+                {/* 3 Row x 6 Column Grid Layout */}
                 <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: `${ICON_SIZE}px 1fr 1fr 1fr 180px`,
+                    gridTemplateColumns: `${ICON_SIZE}px 1fr 1fr 1fr 1fr 180px`,
                     gridTemplateRows: 'auto auto auto',
                     gap: 2,
                     alignItems: 'start',
