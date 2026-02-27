@@ -174,7 +174,13 @@ public interface Scanner {
      * Indicates if this scanner is asynchronous.
      */
     boolean isAsync();
-    
+
+    /**
+     * Returns the maximum concurrency this scanner can handle,
+     * <code>-1</code> indicates that there is no limit.
+     */
+    default int getMaxConcurrency() { return -1; }
+
     /**
      * Get the polling configuration for this async scanner.
      * Returns null to use defaults.

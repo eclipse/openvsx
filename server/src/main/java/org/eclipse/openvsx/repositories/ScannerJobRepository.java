@@ -77,7 +77,12 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
      * rather than creating a new one.
      */
     Optional<ScannerJob> findByScanIdAndScannerType(String scanId, String scannerType);
-    
+
+    /**
+     * Count scan jobs by status and scanner type.
+     */
+    long countByStatusAndScannerType(ScannerJob.JobStatus status, String scannerType);
+
     /**
      * Find scan jobs by status that were created before a certain time.
      * 
