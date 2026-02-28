@@ -138,6 +138,13 @@ public class RemoteScannerProperties {
         private boolean async = true;
         
         /**
+         * Maximum concurrent invocations for this scanner across all server pods.
+         * Positive values enable the concurrency dispatcher which promotes
+         * QUEUED jobs in FIFO order. Set to -1 (default) for unlimited.
+         */
+        private int maxConcurrency = -1;
+        
+        /**
          * HTTP client configuration for this scanner.
          * 
          * Allows tuning connection pooling and timeouts per-scanner.
@@ -198,6 +205,9 @@ public class RemoteScannerProperties {
         
         public boolean isAsync() { return async; }
         public void setAsync(boolean async) { this.async = async; }
+        
+        public int getMaxConcurrency() { return maxConcurrency; }
+        public void setMaxConcurrency(int maxConcurrency) { this.maxConcurrency = maxConcurrency; }
         
         public HttpConfig getHttp() { return http; }
         public void setHttp(HttpConfig http) { this.http = http; }

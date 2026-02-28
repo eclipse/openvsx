@@ -13,7 +13,12 @@
 package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.ScannerJob;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -77,7 +82,32 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
      * rather than creating a new one.
      */
     Optional<ScannerJob> findByScanIdAndScannerType(String scanId, String scannerType);
-    
+
+    /**
+     * Count jobs by status and scanner type.
+     * Used by concurrency dispatcher to check how many jobs are currently PROCESSING.
+     */
+    long countByStatusAndScannerType(ScannerJob.JobStatus status, String scannerType);
+
+    /**
+     * Atomically transition a job from QUEUED to PROCESSING.
+     * Returns 1 if claimed, 0 if the job was already claimed by another worker.
+     * The WHERE status='QUEUED' guard prevents double-processing across pods.
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE ScannerJob j SET j.status = 'PROCESSING', j.recoveryInProgress = false, "
+         + "j.updatedAt = :now WHERE j.id = :id AND j.status = 'QUEUED'")
+    int claimForProcessing(@Param("id") long id, @Param("now") LocalDateTime now);
+
+    /**
+     * Find QUEUED jobs for a scanner type, ordered oldest first.
+     * Used by the concurrency dispatcher to pick jobs in FIFO order.
+     * Pass Pageable to limit results to the number of available slots.
+     */
+    List<ScannerJob> findByScannerTypeAndStatusOrderByCreatedAtAsc(
+        String scannerType, ScannerJob.JobStatus status, Pageable pageable);
+
     /**
      * Find scan jobs by status that were created before a certain time.
      * 

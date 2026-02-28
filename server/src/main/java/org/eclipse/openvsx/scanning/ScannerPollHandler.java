@@ -197,6 +197,11 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         
         logger.debug("Scan job {} completed, saving results", job.getId());
         
+        // Capture the processing start time before overwriting updatedAt.
+        // For async scanners this is the submission time (set in handleSubmittedScan),
+        // preserved because handleProcessingStatus no longer bumps updatedAt.
+        LocalDateTime startedAt = job.getUpdatedAt();
+        
         // Mark job complete and clear lease
         job.setStatus(ScannerJob.JobStatus.COMPLETE);
         job.setPollLeaseUntil(null);
@@ -205,7 +210,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         
         // Process result: save threats, determine check result, record audit
         var processed = persistenceService.processCompletedScan(
-            job, result, scanner.enforcesThreats());
+            job, result, scanner.enforcesThreats(), startedAt);
         
         // Log based on result
         if (processed.threatCount() == 0) {
@@ -240,6 +245,8 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
      */
     private void handleFailedStatus(ScannerJob job) {
         logger.error("Scan job {} failed at external scanner", job.getId());
+        
+        LocalDateTime startedAt = job.getUpdatedAt();
         markJobFailed(job, "External scan failed");
         
         // Record scanner job result for audit trail
@@ -247,6 +254,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
             job.getScanId(),
             job,
             ScanCheckResult.CheckResult.ERROR,
+            startedAt,
             null,  // filesScanned
             0,     // threatCount
             "External scan failed",
@@ -284,10 +292,11 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
             return;
         }
         
-        // Update job status
+        // Update job status — do NOT bump updatedAt here so it preserves the
+        // submission time (set in handleSubmittedScan). This is important for
+        // accurate duration display and timeout calculation.
         job.setStatus(ScannerJob.JobStatus.PROCESSING);
         job.setPollLeaseUntil(null);  // No lease needed with self-scheduling
-        job.setUpdatedAt(LocalDateTime.now());
         scanJobRepository.save(job);
         
         // Calculate delay based on poll config

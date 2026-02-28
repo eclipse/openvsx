@@ -176,6 +176,13 @@ public interface Scanner {
     boolean isAsync();
     
     /**
+     * Maximum concurrent invocations across all server pods.
+     * -1 means no limit (default). Positive values enable the concurrency dispatcher
+     * which promotes QUEUED jobs in FIFO order.
+     */
+    default int getMaxConcurrency() { return -1; }
+    
+    /**
      * Get the polling configuration for this async scanner.
      * Returns null to use defaults.
      */

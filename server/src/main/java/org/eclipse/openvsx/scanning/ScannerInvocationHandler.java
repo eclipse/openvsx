@@ -69,7 +69,11 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
      * Flow:
      * 1. Find or create ScanJob record (unique by scanId + scannerType) - status: QUEUED
      * 2. Get scanner from registry
-     * 3. Mark job as PROCESSING (in transaction)
+     * 3. Concurrency gate:
+     *    - If scanner has maxConcurrency > 0 and job is QUEUED: return early
+     *      (the periodic ScannerConcurrencyDispatcher will claim and re-enqueue it)
+     *    - If scanner has no limit and job is QUEUED: claim immediately (QUEUED -> PROCESSING)
+     *    - If job is already PROCESSING: proceed (dispatcher already claimed it)
      * 4. Invoke scanner.startScan() (OUTSIDE transaction - may take minutes)
      * 5. Update job based on result (in transaction):
      *    - Sync scanner: COMPLETE (with results)
@@ -108,23 +112,43 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         logger.debug("Invoking scanner: {} for extension version {}", 
             scannerType, extensionVersionId);
         
-        // Phase 1: Prepare job (find-or-create + mark PROCESSING)
-        // Returns null if job already terminal, or the scanner + job to process
+        // Phase 1: Prepare job (find-or-create, get scanner)
+        // Returns null if job already terminal or scanner not found
         var prepared = prepareJob(scanId, scannerType, extensionVersionId);
         if (prepared == null) {
-            return;  // Job already terminal, skip
+            return;
         }
         
         Scanner scanner = prepared.scanner();
-        Long jobId = prepared.jobId();
+        ScannerJob job = prepared.job();
+        Long jobId = job.getId();
+        int maxConcurrency = scanner.getMaxConcurrency();
         
+        // Phase 2: Concurrency gate
+        // For concurrency-limited scanners, the periodic dispatcher handles promotion.
+        // If the job is still QUEUED, it hasn't been dispatched yet — return early.
+        if (maxConcurrency > 0 && job.getStatus() == ScannerJob.JobStatus.QUEUED) {
+            logger.debug("Job {} deferred to dispatcher for scanner {} (max-concurrency: {})",
+                jobId, scannerType, maxConcurrency);
+            return;
+        }
+        
+        // For unlimited scanners with QUEUED jobs, claim immediately (existing behavior)
+        if (job.getStatus() == ScannerJob.JobStatus.QUEUED) {
+            int claimed = scanJobRepository.claimForProcessing(jobId, LocalDateTime.now());
+            if (claimed == 0) {
+                logger.debug("Job {} already claimed by another worker, skipping", jobId);
+                return;
+            }
+        }
+        
+        // At this point the job is PROCESSING — invoke the scanner
         try {
-            // Phase 2: Invoke scanner (OUTSIDE transaction - may take minutes)
-            // This is the slow part - HTTP calls to external services
+            // Phase 3: Invoke scanner (OUTSIDE transaction - may take minutes)
             var command = new Scanner.Command(extensionVersionId, scanId);
             Scanner.Invocation invocation = scanner.startScan(command);
             
-            // Phase 3: Save results
+            // Phase 4: Save results
             // Note: processCompletedScan() has REQUIRES_NEW, so threats save in separate tx.
             // The job status update is just a single entity save (auto-commits).
             saveResults(jobId, invocation, scanner, scannerType, extensionVersionId);
@@ -138,8 +162,8 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     
     /**
      * Prepare the scanner job for invocation.
-     * Creates or finds the job, validates it's not terminal, marks as PROCESSING.
-     * Single entity operations - each save() auto-commits.
+     * Creates or finds the job, validates it's not terminal, looks up the scanner.
+     * Does NOT mark PROCESSING — that's handled by the caller or the concurrency dispatcher.
      */
     private PreparedJob prepareJob(String scanId, String scannerType, long extensionVersionId) {
         // 1. CREATE OR FIND EXISTING SCANJOB FIRST
@@ -180,14 +204,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
             return null;  // Don't retry - scanner will never exist
         }
         
-        // 3. Mark job as processing before starting scan
-        // Also clear the recoveryInProgress flag if this is a recovered job
-        job.setStatus(ScannerJob.JobStatus.PROCESSING);
-        job.setRecoveryInProgress(false);
-        job.setUpdatedAt(LocalDateTime.now());
-        scanJobRepository.save(job);
-        
-        return new PreparedJob(scanner, job.getId());
+        return new PreparedJob(scanner, job);
     }
     
     /**
@@ -242,8 +259,9 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     
     /**
      * Data holder for prepared job information.
+     * Holds the scanner and the full job entity (still in QUEUED or PROCESSING state).
      */
-    public record PreparedJob(Scanner scanner, Long jobId) {}
+    public record PreparedJob(Scanner scanner, ScannerJob job) {}
     
     /**
      * Handle a completed (synchronous) scan result.
@@ -256,6 +274,10 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
             String scannerType, 
             long extensionVersionId
     ) {
+        // Capture the processing start time before overwriting updatedAt.
+        // For sync scanners this is the claimForProcessing time.
+        LocalDateTime startedAt = job.getUpdatedAt();
+        
         // Mark job as complete
         job.setStatus(ScannerJob.JobStatus.COMPLETE);
         job.setExternalJobId(null);  // No external job for sync scanners
@@ -263,7 +285,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         
         // Process result: save threats, determine check result, record audit
         var processed = persistenceService.processCompletedScan(
-            job, completed.result(), scanner.enforcesThreats());
+            job, completed.result(), scanner.enforcesThreats(), startedAt);
         
         // Only log when threats were found
         if (processed.checkResult() == ScanCheckResult.CheckResult.QUARANTINE) {

@@ -466,6 +466,7 @@ public class ExtensionScanCompletionService {
                         scanId,
                         failedJob,
                         ScanCheckResult.CheckResult.ERROR,
+                        failedJob.getCreatedAt(),
                         0,
                         0,
                         "Scanner failed",

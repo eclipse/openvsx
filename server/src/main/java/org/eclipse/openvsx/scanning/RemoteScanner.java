@@ -79,6 +79,9 @@ public class RemoteScanner implements Scanner {
     }
     
     @Override
+    public int getMaxConcurrency() { return config.getMaxConcurrency(); }
+    
+    @Override
     public boolean enforcesThreats() {
         return config.isEnforced();
     }

@@ -228,23 +228,18 @@ public class ExtensionScanService {
             job.setPollAttempts(0);
             job.setRecoveryInProgress(false);
             scanJobRepository.save(job);
-
-            logger.debug("Created ScanJob record: {} for {} (scanId={})",
-                scannerType, NamingUtil.toLogFormat(extVersion), scanId);
-
-            try {
-                ScannerInvocationRequest jobRequest = new ScannerInvocationRequest(
-                    scannerType, extensionVersionId, scanId);
-
-                jobScheduler.enqueue(jobRequest);
-                enqueuedCount++;
-
-                logger.debug("Enqueued scanner job: {} for {} (scanId={})",
-                    scannerType, NamingUtil.toLogFormat(extVersion), scanId);
-
-            } catch (Exception e) {
-                logger.error("Failed to enqueue scanner {} for scanId={}: {}. ",
-                    scannerType, scanId, e.getMessage(), e);
+            
+            if (scanner.getMaxConcurrency() <= 0) {
+                try {
+                    jobScheduler.enqueue(new ScannerInvocationRequest(
+                        scannerType, extensionVersionId, scanId));
+                    enqueuedCount++;
+                } catch (Exception e) {
+                    // Job record exists in QUEUED state — the watchdog will
+                    // re-enqueue it after the stuck threshold
+                    logger.error("Failed to enqueue scanner {} for scanId={}: {}",
+                        scannerType, scanId, e.getMessage());
+                }
             }
         }
 
