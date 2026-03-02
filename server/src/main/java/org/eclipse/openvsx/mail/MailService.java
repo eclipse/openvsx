@@ -48,14 +48,25 @@ public class MailService {
     }
 
     public void scheduleAccessTokenExpiryNotification(PersonalAccessToken token) {
-        if(disabled) {
+        if (disabled) {
             return;
         }
 
         var user = token.getUser();
+
+        if (user.getEmail() == null) {
+            logger.warn("Could not send mail to user '{}' due to expired access token notification: email not known", user.getLoginName());
+            return;
+        }
+
+        // the fullName might be null
+        var name = user.getFullName() == null ? user.getLoginName() : user.getFullName();
+        // the token description might be null as well
+        var tokenName = token.getDescription() != null ? token.getDescription() : "";
+
         var variables = Map.<String, Object>of(
-                "name", user.getFullName(),
-                "tokenName", token.getDescription(),
+                "name", name,
+                "tokenName", tokenName,
                 "expiryDate", token.getCreatedTimestamp().plusDays(EXPIRY_DAYS)
         );
         var jobRequest = new SendMailJobRequest(
@@ -74,7 +85,7 @@ public class MailService {
         }
 
         if (user.getEmail() == null) {
-            logger.info("Could not schedule mail to user '{}' due to revoked access tokens: email not known", user.getLoginName());
+            logger.warn("Could not send mail to user '{}' due to revoked access token: email not known", user.getLoginName());
             return;
         }
 
