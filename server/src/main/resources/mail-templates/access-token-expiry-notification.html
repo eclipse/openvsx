@@ -5,7 +5,10 @@
 </head>
 <body>
 <p>Hi <span th:text="${name}">John Doe</span>,</p>
-<p>Your access token <code th:text="${tokenName}">Test token</code> will expire on <span th:text="${#temporals.format(expiryDate, 'dd-MM-YYYY')}">14-11-2025</span>.</p>
+<p>
+    Your access token <code th:text="${tokenName}">Test token</code> will expire on <span th:text="${#temporals.format(expiryDate, 'dd-MM-YYYY')}">14-11-2025</span>.
+    Please generate a new token to continue accessing the service.
+</p>
 <p>
     Regards, <br />
     <em>The Open VSX Team</em>
