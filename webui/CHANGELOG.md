@@ -7,6 +7,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Changed
 
 - Switch from webpack to vite for building the bundle ([#1399](https://github.com/eclipse/openvsx/pull/1399))
+- Add more target information and useful links to scan card ([#1650](https://github.com/eclipse/openvsx/pull/1650))
 
 ### Fixed
 
