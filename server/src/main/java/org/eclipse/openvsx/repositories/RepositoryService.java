@@ -390,6 +390,10 @@ public class RepositoryService {
         return tokenRepo.findById(id);
     }
 
+    public Streamable<PersonalAccessToken> findAccessTokensCreatedBefore(LocalDateTime timestamp) {
+        return tokenRepo.findByCreatedTimestampLessThanEqualAndActiveTrue(timestamp);
+    }
+
     public Streamable<PersistedLog> findAllPersistedLogs() {
         return persistedLogRepo.findByOrderByTimestampAsc();
     }
@@ -647,6 +651,10 @@ public class RepositoryService {
         return tokenRepo.updateActiveSetFalse(user);
     }
 
+    public void expireAccessTokens(LocalDateTime timestamp) {
+        tokenRepo.expireAccessTokens(timestamp);
+    }
+
     public List<String> findActiveExtensionNames(Namespace namespace) {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }
@@ -713,14 +721,6 @@ public class RepositoryService {
 
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
-    }
-
-    public Streamable<PersonalAccessToken> findAccessTokensCreatedBefore(LocalDateTime timestamp) {
-        return tokenRepo.findByCreatedTimestampLessThanEqualAndActiveTrue(timestamp);
-    }
-
-    public void expireAccessTokens(LocalDateTime timestamp) {
-        tokenRepo.expireAccessTokens(timestamp);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(
