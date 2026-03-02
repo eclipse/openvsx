@@ -34,7 +34,7 @@ import { Customers } from './customers/customers';
 import { UsageStatsView } from './usage-stats/usage-stats';
 import { Logs } from './logs/logs';
 import { LoginComponent } from "../../default/login";
-import AccountBoxIcon from "@mui/icons-material/AccountBox";
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
 export namespace AdminDashboardRoutes {
     export const ROOT = 'admin-dashboard';
