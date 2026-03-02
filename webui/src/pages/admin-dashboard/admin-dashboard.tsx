@@ -109,6 +109,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                     <Routes>
                         <Route path='/namespaces' element={<NamespaceAdmin/>} />
                         <Route path='/extensions' element={<ExtensionAdmin/>} />
+                        <Route path='/extensions/:namespace/:extension' element={<ExtensionAdmin/>} />
                         <Route path='/publisher' element={<PublisherAdmin/>} />
                         <Route path='/scans' element={<ScanAdmin/>} />
                         <Route path='/tiers' element={<Tiers/>} />

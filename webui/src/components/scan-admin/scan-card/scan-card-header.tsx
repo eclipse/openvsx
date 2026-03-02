@@ -12,8 +12,9 @@
  ********************************************************************************/
 
 import { FC, useState } from 'react';
-import { Box, Typography, Chip, CircularProgress } from '@mui/material';
+import { Box, Typography, Chip, CircularProgress, Link } from '@mui/material';
 import {
+    AdminPanelSettings as AdminPanelIcon,
     CheckCircle as CheckCircleIcon,
     GppMaybe as WarningIcon,
     Block as BlockIcon,
@@ -30,6 +31,9 @@ import {
     getHypotheticalStatus,
     getStatusColorSx,
 } from './utils';
+import { createRoute } from "../../../utils";
+import { AdminDashboardRoutes } from "../../../pages/admin-dashboard/admin-dashboard";
+import { ExtensionDetailRoutes } from "../../../../lib";
 
 interface ScanCardHeaderProps {
     scan: ScanResult;
@@ -61,6 +65,12 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
     const [imageError, setImageError] = useState(false);
 
     const hasValidIcon = scan.extensionIcon && !imageError;
+    const extensionRoute = createRoute([ExtensionDetailRoutes.ROOT, scan.namespace, scan.extensionName]);
+    const adminRoute = createRoute([AdminDashboardRoutes.ROOT, 'extensions'],
+        [
+            { key: "namespace", value: scan.namespace },
+            { key: "extension", value: scan.extensionName }
+        ]);
 
     return (
         <>
@@ -97,8 +107,8 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
                 )}
             </Box>
 
-            {/* Columns 2-4: Display Name and Namespace */}
-            <Box sx={{ gridRow: '1', gridColumn: '2 / 6', minWidth: 0 }}>
+            {/* Columns 2-5: Display Name and Namespace */}
+            <Box sx={{ gridRow: '1', gridColumn: 'span 4', minWidth: 0 }}>
                 <ConditionalTooltip title={scan.displayName} arrow>
                     <Typography
                         variant='h6'
@@ -122,7 +132,26 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
                             whiteSpace: 'nowrap',
                         }}
                     >
-                        {scan.namespace}.{scan.extensionName}
+                        <Link
+                            href={extensionRoute || undefined}
+                            rel='noopener noreferrer'
+                            variant='body2'
+                        >
+                            {scan.namespace}.{scan.extensionName}
+                        </Link>
+
+                        {adminRoute !== undefined &&
+                            <Link
+                                href={adminRoute}
+                                rel='noopener noreferrer'
+                                variant='body2'
+                            >
+                                <AdminPanelIcon sx={{
+                                    verticalAlign: 'bottom',
+                                    ml: '3px'
+                                }} />
+                            </Link>
+                        }
                     </Typography>
                 </ConditionalTooltip>
             </Box>
