@@ -85,7 +85,7 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
 
     /**
      * Count jobs by status and scanner type.
-     * Used by concurrency dispatcher to check how many jobs are currently PROCESSING.
+     * Used by concurrency dispatcher to count active jobs (PROCESSING + SUBMITTED).
      */
     long countByStatusAndScannerType(ScannerJob.JobStatus status, String scannerType);
 

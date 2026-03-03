@@ -47,6 +47,7 @@ public class ExtensionScanJobRecoveryService {
     // Max jobs to process per watchdog cycle
     private static final int MAX_PER_CYCLE = 20;
 
+
     private final ScannerJobRepository scanJobRepository;
     private final ScannerRegistry scannerRegistry;
     private final RepositoryService repositories;
@@ -518,6 +519,28 @@ public class ExtensionScanJobRecoveryService {
             }
         }
         
+        // Fail concurrency-limited QUEUED jobs that have been waiting too long.
+        // These are managed by the dispatcher, not the regular stuck-job recovery,
+        // so they need their own safety-net timeout.
+        List<ScannerJob> queuedJobs = scanJobRepository.findByStatusIn(
+            List.of(ScannerJob.JobStatus.QUEUED));
+        for (ScannerJob job : queuedJobs) {
+            Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
+            if (scanner == null || scanner.getMaxConcurrency() <= 0) continue;
+
+            int maxWait = scanner.getMaxQueueWaitMinutes();
+            long waitMinutes = Duration.between(job.getCreatedAt(), now).toMinutes();
+            if (waitMinutes >= maxWait) {
+                markFailed(job, String.format(
+                    "Queued too long: waited %d min (limit: %d min)",
+                    waitMinutes, maxWait));
+                completionService.checkCompletionSafely(job.getScanId());
+                timedOut++;
+                logger.warn("QUEUED job {} timed out: scanner={}, waited={}min",
+                    job.getId(), job.getScannerType(), waitMinutes);
+            }
+        }
+
         if (timedOut > 0) logger.info("Timed out {} jobs", timedOut);
     }
     

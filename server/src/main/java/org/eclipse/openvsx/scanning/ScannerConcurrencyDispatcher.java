@@ -33,8 +33,8 @@ import java.time.LocalDateTime;
  * eliminates race conditions in the concurrency gate.
  * <p>
  * For each scanner type with maxConcurrency > 0:
- * 1. Count how many jobs are currently PROCESSING
- * 2. Calculate available slots (maxConcurrency - processing)
+ * 1. Count how many jobs are currently PROCESSING or SUBMITTED (both count as active)
+ * 2. Calculate available slots (maxConcurrency - active)
  * 3. Find the oldest QUEUED jobs up to available slots (FIFO)
  * 4. Atomically claim each (QUEUED -> PROCESSING)
  * 5. Enqueue a ScannerInvocationRequest so a worker picks it up
@@ -79,9 +79,13 @@ public class ScannerConcurrencyDispatcher {
             }
 
             String scannerType = scanner.getScannerType();
-            long processing = scanJobRepository.countByStatusAndScannerType(
-                ScannerJob.JobStatus.PROCESSING, scannerType);
-            int available = (int) (maxConcurrency - processing);
+            // Count both PROCESSING and SUBMITTED as active — async scanners
+            // transition to SUBMITTED while still running at the external service.
+            long active = scanJobRepository.countByStatusAndScannerType(
+                    ScannerJob.JobStatus.PROCESSING, scannerType)
+                + scanJobRepository.countByStatusAndScannerType(
+                    ScannerJob.JobStatus.SUBMITTED, scannerType);
+            int available = (int) (maxConcurrency - active);
             if (available <= 0) {
                 continue;
             }
@@ -98,7 +102,7 @@ public class ScannerConcurrencyDispatcher {
                     jobScheduler.enqueue(new ScannerInvocationRequest(
                         scannerType, job.getExtensionVersionId(), job.getScanId()));
                     logger.debug("Dispatched queued scan job {} for scanner {} ({}/{} slots used)",
-                        job.getId(), scannerType, processing + dispatched, maxConcurrency);
+                        job.getId(), scannerType, active + dispatched, maxConcurrency);
                 }
             }
         }

@@ -143,6 +143,14 @@ public class RemoteScannerProperties {
          * QUEUED jobs in FIFO order. Set to -1 (default) for unlimited.
          */
         private int maxConcurrency = -1;
+
+        /**
+         * Maximum time (minutes) a job may wait in QUEUED status before being
+         * failed. Only relevant for concurrency-limited scanners (maxConcurrency > 0).
+         * Prevents unbounded queue growth if the external service is down.
+         * Default: 120 (2 hours).
+         */
+        private int maxQueueWaitMinutes = 120;
         
         /**
          * HTTP client configuration for this scanner.
@@ -208,6 +216,9 @@ public class RemoteScannerProperties {
         
         public int getMaxConcurrency() { return maxConcurrency; }
         public void setMaxConcurrency(int maxConcurrency) { this.maxConcurrency = maxConcurrency; }
+        
+        public int getMaxQueueWaitMinutes() { return maxQueueWaitMinutes; }
+        public void setMaxQueueWaitMinutes(int maxQueueWaitMinutes) { this.maxQueueWaitMinutes = maxQueueWaitMinutes; }
         
         public HttpConfig getHttp() { return http; }
         public void setHttp(HttpConfig http) { this.http = http; }

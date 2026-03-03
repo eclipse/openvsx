@@ -140,6 +140,8 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
                 logger.debug("Job {} already claimed by another worker, skipping", jobId);
                 return;
             }
+            // Refresh entity so in-memory state matches DB after the bulk UPDATE.
+            job = scanJobRepository.findById(jobId).orElseThrow();
         }
         
         // At this point the job is PROCESSING — invoke the scanner
