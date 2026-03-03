@@ -29,7 +29,8 @@ import java.util.Objects;
     indexes = {
         @Index(name = "scan_job_scan_id_idx", columnList = "scanId"),
         @Index(name = "scan_job_status_idx", columnList = "status"),
-        @Index(name = "scan_job_extension_version_idx", columnList = "extensionVersionId")
+        @Index(name = "scan_job_extension_version_idx", columnList = "extensionVersionId"),
+        @Index(name = "scan_job_type_status_created_idx", columnList = "scannerType, status, createdAt")
     },
     uniqueConstraints = {
         @UniqueConstraint(columnNames = {"scanId", "scannerType"})

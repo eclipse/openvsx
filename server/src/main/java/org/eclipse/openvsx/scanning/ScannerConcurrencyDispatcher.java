@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Periodic dispatcher for concurrency-limited scanners.
@@ -79,12 +80,12 @@ public class ScannerConcurrencyDispatcher {
             }
 
             String scannerType = scanner.getScannerType();
-            // Count both PROCESSING and SUBMITTED as active — async scanners
-            // transition to SUBMITTED while still running at the external service.
-            long active = scanJobRepository.countByStatusAndScannerType(
-                    ScannerJob.JobStatus.PROCESSING, scannerType)
-                + scanJobRepository.countByStatusAndScannerType(
-                    ScannerJob.JobStatus.SUBMITTED, scannerType);
+            // Single atomic count of both PROCESSING and SUBMITTED as active.
+            // Async scanners transition to SUBMITTED while still running at the
+            // external service, so both count toward the concurrency limit.
+            long active = scanJobRepository.countByStatusInAndScannerType(
+                List.of(ScannerJob.JobStatus.PROCESSING, ScannerJob.JobStatus.SUBMITTED),
+                scannerType);
             int available = (int) (maxConcurrency - active);
             if (available <= 0) {
                 continue;

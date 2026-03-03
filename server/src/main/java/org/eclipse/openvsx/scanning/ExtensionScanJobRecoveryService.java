@@ -522,22 +522,31 @@ public class ExtensionScanJobRecoveryService {
         // Fail concurrency-limited QUEUED jobs that have been waiting too long.
         // These are managed by the dispatcher, not the regular stuck-job recovery,
         // so they need their own safety-net timeout.
-        List<ScannerJob> queuedJobs = scanJobRepository.findByStatusIn(
-            List.of(ScannerJob.JobStatus.QUEUED));
-        for (ScannerJob job : queuedJobs) {
-            Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
-            if (scanner == null || scanner.getMaxConcurrency() <= 0) continue;
+        // Only fetch jobs old enough to possibly be expired
+        int minQueueWait = scannerRegistry.getAllScanners().stream()
+            .filter(s -> s.getMaxConcurrency() > 0)
+            .mapToInt(Scanner::getMaxQueueWaitMinutes)
+            .min()
+            .orElse(Integer.MAX_VALUE);
+        if (minQueueWait < Integer.MAX_VALUE) {
+            LocalDateTime queueCutoff = now.minusMinutes(minQueueWait);
+            List<ScannerJob> queuedJobs = scanJobRepository.findByStatusAndCreatedAtBefore(
+                ScannerJob.JobStatus.QUEUED, queueCutoff);
+            for (ScannerJob job : queuedJobs) {
+                Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
+                if (scanner == null || scanner.getMaxConcurrency() <= 0) continue;
 
-            int maxWait = scanner.getMaxQueueWaitMinutes();
-            long waitMinutes = Duration.between(job.getCreatedAt(), now).toMinutes();
-            if (waitMinutes >= maxWait) {
-                markFailed(job, String.format(
-                    "Queued too long: waited %d min (limit: %d min)",
-                    waitMinutes, maxWait));
-                completionService.checkCompletionSafely(job.getScanId());
-                timedOut++;
-                logger.warn("QUEUED job {} timed out: scanner={}, waited={}min",
-                    job.getId(), job.getScannerType(), waitMinutes);
+                int maxWait = scanner.getMaxQueueWaitMinutes();
+                long waitMinutes = Duration.between(job.getCreatedAt(), now).toMinutes();
+                if (waitMinutes >= maxWait) {
+                    markFailed(job, String.format(
+                        "Queued too long: waited %d min (limit: %d min)",
+                        waitMinutes, maxWait));
+                    completionService.checkCompletionSafely(job.getScanId());
+                    timedOut++;
+                    logger.warn("QUEUED job {} timed out: scanner={}, waited={}min",
+                        job.getId(), job.getScannerType(), waitMinutes);
+                }
             }
         }
 

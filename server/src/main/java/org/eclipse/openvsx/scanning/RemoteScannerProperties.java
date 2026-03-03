@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.scanning;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -134,6 +135,7 @@ public class RemoteScannerProperties {
          */
         private boolean enforced = true;
         
+        @Min(value = 1, message = "Timeout must be at least 1 minute")
         private int timeoutMinutes = 60;
         private boolean async = true;
         
@@ -141,7 +143,9 @@ public class RemoteScannerProperties {
          * Maximum concurrent invocations for this scanner across all server pods.
          * Positive values enable the concurrency dispatcher which promotes
          * QUEUED jobs in FIFO order. Set to -1 (default) for unlimited.
+         * Zero is not allowed — use -1 for unlimited.
          */
+        @Min(value = -1, message = "max-concurrency must be -1 (unlimited) or a positive integer")
         private int maxConcurrency = -1;
 
         /**
@@ -150,6 +154,7 @@ public class RemoteScannerProperties {
          * Prevents unbounded queue growth if the external service is down.
          * Default: 120 (2 hours).
          */
+        @Min(value = 1, message = "max-queue-wait-minutes must be at least 1")
         private int maxQueueWaitMinutes = 120;
         
         /**

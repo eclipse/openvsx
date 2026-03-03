@@ -79,10 +79,10 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
      *    - Sync scanner: COMPLETE (with results)
      *    - Async scanner: SUBMITTED (with external job ID for polling)
      * <p>
-     * On retry (if step 4 fails):
-     * - Same ScanJob is found and updated
-     * - No duplicate records created
-     * - Status transitions tracked via updatedAt
+     * On failure (if step 4 fails):
+     * - Job is marked FAILED immediately (frees concurrency slot)
+     * - Completion check is triggered for the parent scan
+     * - No re-throw (retries disabled to avoid mark-FAILED + retry conflict)
      * <p>
      * For sync scanners:
      * - startScan() returns immediate results
@@ -96,7 +96,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
      * <p>
      * JobRunr automatically:
      * - Runs this in a worker thread
-     * - Retries on failure (up to 2 times)
      * - Tracks job status in database
      */
     @Override
@@ -144,22 +143,23 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
             job = scanJobRepository.findById(jobId).orElseThrow();
         }
         
-        // At this point the job is PROCESSING — invoke the scanner
+        // Phase 3: Invoke scanner (OUTSIDE transaction - may take minutes).
+        Scanner.Invocation invocation;
         try {
-            // Phase 3: Invoke scanner (OUTSIDE transaction - may take minutes)
             var command = new Scanner.Command(extensionVersionId, scanId);
-            Scanner.Invocation invocation = scanner.startScan(command);
-            
-            // Phase 4: Save results
-            // Note: processCompletedScan() has REQUIRES_NEW, so threats save in separate tx.
-            // The job status update is just a single entity save (auto-commits).
-            saveResults(jobId, invocation, scanner, scannerType, extensionVersionId);
-            
+            invocation = scanner.startScan(command);
         } catch (Exception e) {
-            // Mark job as failed (single entity update, auto-commits)
-            markJobFailed(jobId, scannerType, extensionVersionId, e);
-            throw e;  // Re-throw to let JobRunr retry
+            // Mark FAILED immediately so the concurrency slot is freed.
+            logger.error("Scanner {} failed for extension version {}: {}",
+                scannerType, extensionVersionId, e.getMessage());
+            markJobFailed(jobId, e);
+            completionService.checkCompletionSafely(scanId);
+            return;
         }
+        
+        // Phase 4: Save results (outside the scanner catch block).
+        // DB failures here will propagate to JobRunr as an unhandled exception.
+        saveResults(jobId, invocation, scanner, scannerType, extensionVersionId);
     }
     
     /**
@@ -243,22 +243,17 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
     /**
      * Mark a job as failed after an exception.
      */
-    private void markJobFailed(Long jobId, String scannerType, long extensionVersionId, Exception e) {
+    private void markJobFailed(Long jobId, Exception e) {
         ScannerJob job = scanJobRepository.findById(jobId).orElse(null);
-        if (job == null) {
-            logger.error("Cannot mark job {} as failed - not found", jobId);
+        if (job == null || job.getStatus().isTerminal()) {
             return;
         }
-        
         job.setStatus(ScannerJob.JobStatus.FAILED);
         job.setErrorMessage("Scanner invocation failed: " + e.getMessage());
         job.setUpdatedAt(LocalDateTime.now());
         scanJobRepository.save(job);
-        
-        logger.error("Failed to invoke scanner {} for extension version {}: {}", 
-            scannerType, extensionVersionId, e.getMessage());
     }
-    
+
     /**
      * Data holder for prepared job information.
      * Holds the scanner and the full job entity (still in QUEUED or PROCESSING state).
@@ -298,7 +293,6 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
             logger.debug("Scanner {} found issues: {} (extension version: {})",
                 scannerType, processed.summary(), extensionVersionId);
         }
-        // Clean results (threatCount == 0) are not logged - too noisy
     }
     
     /**
