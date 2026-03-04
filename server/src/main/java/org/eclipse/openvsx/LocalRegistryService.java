@@ -13,6 +13,7 @@ import com.google.common.collect.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -59,6 +60,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionService extensions;
     private final VersionService versions;
     private final UserService users;
+    private final AccessTokenService tokens;
     private final SearchUtilService search;
     private final ExtensionValidator validator;
     private final StorageUtilService storageUtil;
@@ -73,6 +75,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionService extensions,
             VersionService versions,
             UserService users,
+            AccessTokenService tokens,
             SearchUtilService search,
             ExtensionValidator validator,
             StorageUtilService storageUtil,
@@ -86,6 +89,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.extensions = extensions;
         this.versions = versions;
         this.users = users;
+        this.tokens = tokens;
         this.search = search;
         this.validator = validator;
         this.storageUtil = storageUtil;
@@ -579,7 +583,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = users.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue);
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
@@ -631,7 +635,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = users.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue);
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
@@ -650,16 +654,16 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = users.createAccessToken(user, "One time use publish token");
+        var token = tokens.createAccessToken(user, "One time use publish token");
         try {
             return publish(content, token.getValue());
         } finally {
-            users.deleteAccessToken(user, token.getId());
+            tokens.deactivateAccessToken(user, token.getId());
         }
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = users.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue);
         if (token == null || token.getUser() == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }

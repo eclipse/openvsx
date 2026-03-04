@@ -13,12 +13,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.TokenService;
+import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -75,12 +78,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
         JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class,
-        ExtensionScanPersistenceService.class, LogService.class
+        ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class, MailService.class
 })
 class UserAPITest {
 
     @MockitoSpyBean
     UserService users;
+
+    @MockitoSpyBean
+    AccessTokenService tokens;
 
     @MockitoBean
     EntityManager entityManager;
@@ -143,7 +149,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(users).generateTokenValue();
+        Mockito.doReturn("foobar").when(tokens).generateTokenValue();
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -177,7 +183,7 @@ class UserAPITest {
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted access token for user test_user.")));
+                .andExpect(content().json(successJson("Deactivated access token for user test_user.")));
     }
 
     @Test
@@ -790,24 +796,33 @@ class UserAPITest {
         }
 
         @Bean
+        AccessTokenService accessTokenService(
+                AccessTokenConfig config,
+                EntityManager entityManager,
+                RepositoryService repositories,
+                MailService mailService
+        ) {
+            return new AccessTokenService(config, entityManager, repositories, mailService);
+        }
+
+        @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                TokenService tokens,
-                RepositoryService repositories,
+                EclipseTokenService eclipseTokenService,
                 EntityManager entityManager,
                 EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
+            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
-        TokenService tokenService(
+        EclipseTokenService eclipseTokenService(
                 TransactionTemplate transactions,
                 EntityManager entityManager,
                 ClientRegistrationRepository clientRegistrationRepository
         ) {
-            return new TokenService(transactions, entityManager, clientRegistrationRepository);
+            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
@@ -822,13 +837,14 @@ class UserAPITest {
                 ExtensionService extensions,
                 VersionService versions,
                 UserService users,
+                AccessTokenService accessTokenService,
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
-                SimilarityService similarityService
+                SimilarityCheckService similarityCheckService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -836,13 +852,14 @@ class UserAPITest {
                     extensions,
                     versions,
                     users,
+                    accessTokenService,
                     search,
                     validator,
                     storageUtil,
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
+                    similarityCheckService
             );
         }
 

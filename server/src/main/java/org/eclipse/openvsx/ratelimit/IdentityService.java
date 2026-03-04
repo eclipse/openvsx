@@ -14,7 +14,7 @@ package org.eclipse.openvsx.ratelimit;
 
 import com.giffing.bucket4j.spring.boot.starter.context.ExpressionParams;
 import jakarta.servlet.http.HttpServletRequest;
-import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class IdentityService {
 
     private final TierService tierService;
     private final CustomerService customerService;
-    private final UserService userService;
+    private final AccessTokenService tokenService;
     private final RateLimitProperties rateLimitProperties;
 
     public IdentityService(
@@ -47,14 +47,14 @@ public class IdentityService {
             ConfigurableBeanFactory beanFactory,
             TierService tierService,
             CustomerService customerService,
-            UserService userService,
+            AccessTokenService tokenService,
             RateLimitProperties rateLimitProperties
     ) {
         this.expressionParser = expressionParser;
         this.beanFactory = beanFactory;
         this.tierService = tierService;
         this.customerService = customerService;
-        this.userService = userService;
+        this.tokenService = tokenService;
         this.rateLimitProperties = rateLimitProperties;
     }
 
@@ -67,7 +67,7 @@ public class IdentityService {
             // This will update the database with the time the token is last accessed,
             // but we need to ensure that we only take valid tokens into account for rate limiting.
             // If this turns out to be a bottleneck, we need to cache the token hashcode.
-            var tokenEntity = userService.useAccessToken(token);
+            var tokenEntity = tokenService.useAccessToken(token);
             if (tokenEntity != null) {
                 // if a valid token is present we use it as a cache key
                 cacheKey = "token_" + token.hashCode();

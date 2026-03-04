@@ -31,7 +31,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URL;
+import java.net.URI;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,7 +124,7 @@ public class ExtensionControlService {
     }
 
     public JsonNode getExtensionControlJson() throws IOException {
-        var url = new URL("https://github.com/open-vsx/publish-extensions/raw/master/extension-control/extensions.json");
+        var url = URI.create("https://github.com/open-vsx/publish-extensions/raw/master/extension-control/extensions.json").toURL();
         return new ObjectMapper().readValue(url, JsonNode.class);
     }
 

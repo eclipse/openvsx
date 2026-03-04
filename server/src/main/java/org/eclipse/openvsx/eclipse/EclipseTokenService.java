@@ -26,9 +26,9 @@ import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -37,16 +37,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-@Component
-public class TokenService {
+@Service
+public class EclipseTokenService {
 
-    protected final Logger logger = LoggerFactory.getLogger(TokenService.class);
+    protected final Logger logger = LoggerFactory.getLogger(EclipseTokenService.class);
 
     private final TransactionTemplate transactions;
     private final EntityManager entityManager;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
-    public TokenService(
+    public EclipseTokenService(
             TransactionTemplate transactions,
             EntityManager entityManager,
             @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository
