@@ -10,6 +10,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - Bump ajv from 8.17.1 to 8.18.0
 - Bump tar from 7.5.7 to 7.5.9 ([#1624](https://github.com/eclipse/openvsx/pull/1624))
 - Bump minimatch to `3.1.5`, `9.0.9` and `10.2.4`
+- Bump underscore from 1.13.6 to 1.13.8 ([#1656](https://github.com/eclipse/openvsx/pull/1656))
 
 ### [v0.10.9] (Feb. 2026)
 
