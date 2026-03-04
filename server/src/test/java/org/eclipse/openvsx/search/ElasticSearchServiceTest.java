@@ -299,5 +299,4 @@ class ElasticSearchServiceTest {
             return new LatestExtensionVersionCacheKeyGenerator();
         }
     }
-    
 }

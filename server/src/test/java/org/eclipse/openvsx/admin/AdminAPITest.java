@@ -14,11 +14,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.*;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.TokenService;
+import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.mail.MailService;
@@ -651,7 +652,7 @@ class AdminAPITest {
                 .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions of user github/test.")));
 
         assertThat(token.isActive()).isFalse();
-        assertThat(versions.get(0).isActive()).isFalse();
+        assertThat(versions.getFirst().isActive()).isFalse();
     }
 
     @Test
@@ -1455,24 +1456,31 @@ class AdminAPITest {
         }
 
         @Bean
+        AccessTokenService tokenService(
+                EntityManager entityManager,
+                RepositoryService repositories
+        ) {
+            return new AccessTokenService(entityManager, repositories);
+        }
+
+        @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                TokenService tokens,
-                RepositoryService repositories,
+                EclipseTokenService eclipseTokenService,
                 EntityManager entityManager,
                 EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
+            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
-        TokenService tokenService(
+        EclipseTokenService eclipseTokenService(
                 TransactionTemplate transactions,
                 EntityManager entityManager,
                 ClientRegistrationRepository clientRegistrationRepository
         ) {
-            return new TokenService(transactions, entityManager, clientRegistrationRepository);
+            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
@@ -1481,6 +1489,7 @@ class AdminAPITest {
                 ExtensionService extensions,
                 EntityManager entityManager,
                 UserService users,
+                AccessTokenService tokenService,
                 ExtensionValidator validator,
                 SearchUtilService search,
                 EclipseService eclipse,
@@ -1496,6 +1505,7 @@ class AdminAPITest {
                     extensions,
                     entityManager,
                     users,
+                    tokenService,
                     validator,
                     search,
                     eclipse,
@@ -1513,30 +1523,31 @@ class AdminAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 ExtensionService extensions,
-                @Qualifier("adminTest") VersionService versions,
+                VersionService versionService,
                 UserService users,
+                AccessTokenService tokenService,
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
-                FileCacheDurationConfig fileCacheDurationConfig,
                 ExtensionVersionIntegrityService integrityService,
-                SimilarityService similarityService
+                SimilarityCheckService similarityCheckService
         ) {
             return new LocalRegistryService(
                     entityManager,
                     repositories,
                     extensions,
-                    versions,
+                    versionService,
                     users,
+                    tokenService,
                     search,
                     validator,
                     storageUtil,
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
+                    similarityCheckService
             );
         }
 
@@ -1626,7 +1637,6 @@ class AdminAPITest {
         }
 
         @Bean
-        @Qualifier("adminTest")
         VersionService versionService() {
             return new VersionService();
         }

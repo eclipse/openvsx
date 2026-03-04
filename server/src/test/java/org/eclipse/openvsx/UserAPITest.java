@@ -13,10 +13,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.TokenService;
+import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
@@ -82,6 +83,9 @@ class UserAPITest {
     @MockitoSpyBean
     UserService users;
 
+    @MockitoSpyBean
+    AccessTokenService tokens;
+
     @MockitoBean
     EntityManager entityManager;
     
@@ -143,7 +147,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(users).generateTokenValue();
+        Mockito.doReturn("foobar").when(tokens).generateTokenValue();
         mockMvc.perform(post("/user/token/create?description={description}", "This is my token")
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
@@ -790,24 +794,31 @@ class UserAPITest {
         }
 
         @Bean
+        AccessTokenService accessTokenService(
+                EntityManager entityManager,
+                RepositoryService repositories
+        ) {
+            return new AccessTokenService(entityManager, repositories);
+        }
+
+        @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                TokenService tokens,
-                RepositoryService repositories,
+                EclipseTokenService eclipseTokenService,
                 EntityManager entityManager,
                 EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
+            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
-        TokenService tokenService(
+        EclipseTokenService eclipseTokenService(
                 TransactionTemplate transactions,
                 EntityManager entityManager,
                 ClientRegistrationRepository clientRegistrationRepository
         ) {
-            return new TokenService(transactions, entityManager, clientRegistrationRepository);
+            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
@@ -822,13 +833,14 @@ class UserAPITest {
                 ExtensionService extensions,
                 VersionService versions,
                 UserService users,
+                AccessTokenService accessTokenService,
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
                 EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
-                SimilarityService similarityService
+                SimilarityCheckService similarityCheckService
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -836,13 +848,14 @@ class UserAPITest {
                     extensions,
                     versions,
                     users,
+                    accessTokenService,
                     search,
                     validator,
                     storageUtil,
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService(similarityConfig(), similarityService(repositories), repositories)
+                    similarityCheckService
             );
         }
 

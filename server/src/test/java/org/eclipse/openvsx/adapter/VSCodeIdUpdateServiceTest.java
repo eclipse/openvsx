@@ -38,7 +38,7 @@ class VSCodeIdUpdateServiceTest {
     VSCodeIdUpdateService updateService;
 
     @Test
-    void testUpdateAllNoChanges() throws InterruptedException {
+    void testUpdateAllNoChanges() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -99,7 +99,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateAllRandomNoChanges() throws InterruptedException {
+    void testUpdateAllRandomNoChanges() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -160,7 +160,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateAllChange() throws InterruptedException {
+    void testUpdateAllChange() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -230,7 +230,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateRandom() throws InterruptedException {
+    void testUpdateRandom() {
         var namespaceName = "foo";
         var namespacePublicId = UUID.randomUUID().toString();
         var extensionName = "bar";
@@ -259,7 +259,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateRandomExistsDb() throws InterruptedException {
+    void testUpdateRandomExistsDb() {
         var namespaceName = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var namespacePublicId2 = UUID.randomUUID().toString();
@@ -292,7 +292,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testMustUpdateRandom() throws InterruptedException {
+    void testMustUpdateRandom() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -345,7 +345,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testMustUpdateRandomExists() throws InterruptedException {
+    void testMustUpdateRandomExists() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -398,7 +398,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testMustUpdateRandomExistsDb() throws InterruptedException {
+    void testMustUpdateRandomExistsDb() {
         var namespaceName1 = "foo";
         var namespaceUuid1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";
@@ -456,7 +456,7 @@ class VSCodeIdUpdateServiceTest {
 
 
     @Test
-    void testUpdateNoChange() throws InterruptedException {
+    void testUpdateNoChange() {
         var namespaceName = "foo";
         var namespacePublicId = UUID.randomUUID().toString();
         var extensionName = "bar";
@@ -484,7 +484,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateUpstream() throws InterruptedException {
+    void testUpdateUpstream() {
         var namespaceName = "foo";
         var namespacePublicId = "123-456-789";
         var extensionName = "bar";
@@ -514,7 +514,7 @@ class VSCodeIdUpdateServiceTest {
     }
 
     @Test
-    void testUpdateDuplicateRecursive() throws InterruptedException {
+    void testUpdateDuplicateRecursive() {
         var namespaceName1 = "foo";
         var namespacePublicId1 = UUID.randomUUID().toString();
         var extensionName1 = "bar";

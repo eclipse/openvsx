@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
@@ -46,6 +47,7 @@ public class AdminService {
     private final ExtensionService extensions;
     private final EntityManager entityManager;
     private final UserService users;
+    private final AccessTokenService tokens;
     private final ExtensionValidator validator;
     private final SearchUtilService search;
     private final EclipseService eclipse;
@@ -61,6 +63,7 @@ public class AdminService {
             ExtensionService extensions,
             EntityManager entityManager,
             UserService users,
+            AccessTokenService tokens,
             ExtensionValidator validator,
             SearchUtilService search,
             EclipseService eclipse,
@@ -75,6 +78,7 @@ public class AdminService {
         this.extensions = extensions;
         this.entityManager = entityManager;
         this.users = users;
+        this.tokens = tokens;
         this.validator = validator;
         this.search = search;
         this.eclipse = eclipse;
@@ -476,7 +480,7 @@ public class AdminService {
 
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
-                .map(users::useAccessToken)
+                .map(tokens::useAccessToken)
                 .map(PersonalAccessToken::getUser)
                 .orElse(null);
 

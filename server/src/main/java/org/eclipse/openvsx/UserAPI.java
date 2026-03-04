@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -53,6 +54,7 @@ public class UserAPI {
 
     private final RepositoryService repositories;
     private final UserService users;
+    private final AccessTokenService tokens;
     private final EclipseService eclipse;
     private final StorageUtilService storageUtil;
     private final LocalRegistryService local;
@@ -62,6 +64,7 @@ public class UserAPI {
     public UserAPI(
             RepositoryService repositories,
             UserService users,
+            AccessTokenService tokens,
             EclipseService eclipse,
             StorageUtilService storageUtil,
             LocalRegistryService local,
@@ -70,6 +73,7 @@ public class UserAPI {
     ) {
         this.repositories = repositories;
         this.users = users;
+        this.tokens = tokens;
         this.eclipse = eclipse;
         this.storageUtil = storageUtil;
         this.local = local;
@@ -175,7 +179,7 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        return new ResponseEntity<>(users.createAccessToken(user, description), HttpStatus.CREATED);
+        return new ResponseEntity<>(tokens.createAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(
@@ -189,7 +193,7 @@ public class UserAPI {
         }
 
         try {
-            return ResponseEntity.ok(users.deleteAccessToken(user, id));
+            return ResponseEntity.ok(tokens.deleteAccessToken(user, id));
         } catch(NotFoundException e) {
             return new ResponseEntity<>(ResultJson.error("Token does not exist."), HttpStatus.NOT_FOUND);
         }

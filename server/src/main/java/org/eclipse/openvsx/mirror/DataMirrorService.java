@@ -17,6 +17,7 @@ import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.UpstreamRegistryService;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -47,6 +48,7 @@ public class DataMirrorService {
     private final RepositoryService repositories;
     private final EntityManager entityManager;
     private final UserService users;
+    private final AccessTokenService tokens;
     private final ExtensionService extensions;
     private final UpstreamRegistryService upstream;
     private final LocalRegistryService local;
@@ -68,6 +70,7 @@ public class DataMirrorService {
             RepositoryService repositories,
             EntityManager entityManager,
             UserService users,
+            AccessTokenService tokens,
             ExtensionService extensions,
             UpstreamRegistryService upstream,
             LocalRegistryService local,
@@ -81,6 +84,7 @@ public class DataMirrorService {
         this.repositories = repositories;
         this.entityManager = entityManager;
         this.users = users;
+        this.tokens = tokens;
         this.extensions = extensions;
         this.upstream = upstream;
         this.local = local;
@@ -169,7 +173,7 @@ public class DataMirrorService {
     public String getOrAddAccessTokenValue(UserData user, String description) {
         var token = repositories.findAccessToken(user, description);
         return token == null
-                ? users.createAccessToken(user, description).getValue()
+                ? tokens.createAccessToken(user, description).getValue()
                 : token.getValue();
     }
 

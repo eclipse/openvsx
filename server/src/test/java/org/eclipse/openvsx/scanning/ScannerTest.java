@@ -138,5 +138,4 @@ class ScannerTest {
         assertNull(threat.getDescription());
         assertEquals("LOW", threat.getSeverity());
     }
-
 }

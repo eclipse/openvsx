@@ -20,7 +20,7 @@ import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.TokenService;
+import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -1021,8 +1021,8 @@ class VSCodeAPITest {
     @Import(SecurityConfig.class)
     static class TestConfig {
         @Bean
-        IExtensionQueryRequestHandler extensionQueryRequestHandler(LocalVSCodeService local, UpstreamVSCodeService upstream) {
-            return new DefaultExtensionQueryRequestHandler(local, upstream);
+        IExtensionQueryRequestHandler extensionQueryRequestHandler(LocalVSCodeService localVSCodeService, UpstreamVSCodeService upstream) {
+            return new DefaultExtensionQueryRequestHandler(localVSCodeService, upstream);
         }
 
         @Bean
@@ -1033,22 +1033,21 @@ class VSCodeAPITest {
         @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                TokenService tokens,
-                RepositoryService repositories,
+                EclipseTokenService eclipseTokenService,
                 EntityManager entityManager,
                 EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, tokens, repositories, entityManager, eclipse, attributesConfig);
+            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
         }
 
         @Bean
-        TokenService tokenService(
+        EclipseTokenService eclipseTokenService(
                 TransactionTemplate transactions,
                 EntityManager entityManager,
                 ClientRegistrationRepository clientRegistrationRepository
         ) {
-            return new TokenService(transactions, entityManager, clientRegistrationRepository);
+            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
         }
 
         @Bean
@@ -1064,14 +1063,14 @@ class VSCodeAPITest {
         @Bean
         LocalVSCodeService localVSCodeService(
                 RepositoryService repositories,
-                VersionService versions,
+                VersionService versionService,
                 SearchUtilService search,
                 StorageUtilService storageUtil,
                 ExtensionVersionIntegrityService integrityService,
                 WebResourceService webResourceService,
                 CacheService cache
         ) {
-            return new LocalVSCodeService(repositories, versions, search, storageUtil, integrityService, webResourceService, cache);
+            return new LocalVSCodeService(repositories, versionService, search, storageUtil, integrityService, webResourceService, cache);
         }
 
         @Bean
@@ -1124,7 +1123,7 @@ class VSCodeAPITest {
         }
 
         @Bean
-        VersionService getVersionService() {
+        VersionService versionService() {
             return new VersionService();
         }
 

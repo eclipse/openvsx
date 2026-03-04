@@ -11,7 +11,7 @@ package org.eclipse.openvsx.mirror;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.UpstreamRegistryService;
-import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.UserJson;
@@ -32,7 +32,6 @@ import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
@@ -48,7 +47,7 @@ public class MirrorExtensionService {
     private final UpstreamRegistryService upstream;
     private final RestTemplate backgroundRestTemplate;
     private final RestTemplate backgroundNonRedirectingRestTemplate;
-    private final UserService users;
+    private final AccessTokenService tokens;
     private final ExtensionService extensions;
     private final ExtensionVersionIntegrityService integrityService;
 
@@ -58,7 +57,7 @@ public class MirrorExtensionService {
             UpstreamRegistryService upstream,
             RestTemplate backgroundRestTemplate,
             RestTemplate backgroundNonRedirectingRestTemplate,
-            UserService users,
+            AccessTokenService tokens,
             ExtensionService extensions,
             ExtensionVersionIntegrityService integrityService
     ) {
@@ -67,7 +66,7 @@ public class MirrorExtensionService {
         this.upstream = upstream;
         this.backgroundRestTemplate = backgroundRestTemplate;
         this.backgroundNonRedirectingRestTemplate = backgroundNonRedirectingRestTemplate;
-        this.users = users;
+        this.tokens = tokens;
         this.extensions = extensions;
         this.integrityService = integrityService;
     }
@@ -141,7 +140,7 @@ public class MirrorExtensionService {
                 versions.stream()
                     .filter(version -> targetVersions.stream().noneMatch(extVersion -> extVersion.getVersion().equals(version)))
                     .map(version -> upstream.getExtension(namespaceName, extensionName, targetPlatform, version))
-                    .collect(Collectors.toList())
+                    .toList()
             );
         }
         toAdd.sort(Comparator.comparing(extensionJson -> TimeUtil.fromUTCString(extensionJson.getTimestamp())));
@@ -175,8 +174,8 @@ public class MirrorExtensionService {
             throw new AssertionError("Expected location header from redirected vsix url");
         }
 
-        var tokens = vsixLocation.getPath().split("/");
-        var filename = tokens[tokens.length-1];
+        var segments = vsixLocation.getPath().split("/");
+        var filename = segments[segments.length-1];
         if (!filename.endsWith(".vsix")) {
             throw new AssertionError("Invalid vsix filename from redirected vsix url");
         }
@@ -206,7 +205,7 @@ public class MirrorExtensionService {
             var description = "MirrorExtensionVersion";
             var accessTokenValue = data.getOrAddAccessTokenValue(user, description);
 
-            var token = users.useAccessToken(accessTokenValue);
+            var token = tokens.useAccessToken(accessTokenValue);
             extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
             logger.atDebug()
                     .setMessage("completed mirroring of extension version: {}")

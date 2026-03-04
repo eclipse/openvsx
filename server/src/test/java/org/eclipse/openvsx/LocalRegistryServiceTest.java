@@ -13,6 +13,7 @@
 package org.eclipse.openvsx;
 
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Namespace;
@@ -63,6 +64,9 @@ class LocalRegistryServiceTest {
     UserService users;
 
     @Mock
+    AccessTokenService tokens;
+
+    @Mock
     SearchUtilService searchUtilService;
 
     @Mock
@@ -93,6 +97,7 @@ class LocalRegistryServiceTest {
                 extensions,
                 versions,
                 users,
+                tokens,
                 searchUtilService,
                 validator,
                 storageUtilService,

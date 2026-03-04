@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -43,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-@Component
+@Service
 public class EclipseService {
 
     private static final String VAR_PERSON_ID = "personId";
@@ -61,7 +62,7 @@ public class EclipseService {
 
     protected final Logger logger = LoggerFactory.getLogger(EclipseService.class);
 
-    private final TokenService tokens;
+    private final EclipseTokenService tokens;
     private final ExtensionService extensions;
     private final EntityManager entityManager;
     private final RestTemplate restTemplate;
@@ -77,7 +78,7 @@ public class EclipseService {
     List<String> publisherAgreementAllowedVersions;
 
     public EclipseService(
-            TokenService tokens,
+            EclipseTokenService tokens,
             ExtensionService extensions,
             EntityManager entityManager,
             RestTemplate restTemplate

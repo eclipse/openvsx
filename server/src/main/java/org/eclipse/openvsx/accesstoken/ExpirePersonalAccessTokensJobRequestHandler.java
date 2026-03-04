@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-package org.eclipse.openvsx.access_token;
+package org.eclipse.openvsx.accesstoken;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
