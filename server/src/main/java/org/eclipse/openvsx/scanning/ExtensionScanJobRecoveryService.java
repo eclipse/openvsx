@@ -47,6 +47,7 @@ public class ExtensionScanJobRecoveryService {
     // Max jobs to process per watchdog cycle
     private static final int MAX_PER_CYCLE = 20;
 
+
     private final ScannerJobRepository scanJobRepository;
     private final ScannerRegistry scannerRegistry;
     private final RepositoryService repositories;
@@ -119,6 +120,9 @@ public class ExtensionScanJobRecoveryService {
         int orphanedCount = 0;
         int validJobCount = 0;
         int asyncJobsScheduled = 0;
+        int syncJobsRequeued = 0;
+        int syncJobsReset = 0;
+        int syncJobsDeferred = 0;
 
         for (ScannerJob job : pendingJobs) {
             String scannerType = job.getScannerType();
@@ -132,21 +136,52 @@ public class ExtensionScanJobRecoveryService {
                 job.setUpdatedAt(LocalDateTime.now());
                 scanJobRepository.save(job);
                 orphanedCount++;
-            } else {
-                validJobCount++;
-                
-                // Schedule recovery poll for async jobs
-                if (scanner.isAsync() && 
-                    (job.getStatus() == ScannerJob.JobStatus.SUBMITTED || 
-                     job.getStatus() == ScannerJob.JobStatus.PROCESSING)) {
-                    try {
-                        Instant pollTime = Instant.now().plusSeconds(10);
-                        jobScheduler.schedule(pollTime, new ScannerPollRequest(job.getId()));
-                        asyncJobsScheduled++;
-                        logger.info("Scheduled recovery poll for job {} (scanner: {})", job.getId(), scannerType);
-                    } catch (Exception e) {
-                        logger.warn("Failed to schedule recovery poll for job {}: {}", job.getId(), e.getMessage());
-                    }
+                continue;
+            }
+            
+            validJobCount++;
+            
+            // --- Async jobs: schedule a recovery poll ---
+            if (scanner.isAsync() && 
+                (job.getStatus() == ScannerJob.JobStatus.SUBMITTED || 
+                 job.getStatus() == ScannerJob.JobStatus.PROCESSING)) {
+                try {
+                    Instant pollTime = Instant.now().plusSeconds(10);
+                    jobScheduler.schedule(pollTime, new ScannerPollRequest(job.getId()));
+                    asyncJobsScheduled++;
+                    logger.info("Scheduled recovery poll for job {} (scanner: {})", job.getId(), scannerType);
+                } catch (Exception e) {
+                    logger.warn("Failed to schedule recovery poll for job {}: {}", job.getId(), e.getMessage());
+                }
+                continue;
+            }
+            
+            // --- Sync jobs stuck in PROCESSING: reset to QUEUED ---
+            if (!scanner.isAsync() && job.getStatus() == ScannerJob.JobStatus.PROCESSING) {
+                job.setStatus(ScannerJob.JobStatus.QUEUED);
+                job.setUpdatedAt(LocalDateTime.now());
+                job.setRecoveryInProgress(false);
+                scanJobRepository.save(job);
+                syncJobsReset++;
+                logger.info("Reset stuck PROCESSING job {} to QUEUED (scanner: {})", job.getId(), scannerType);
+            }
+            
+            // Concurrency-limited QUEUED jobs are left for the dispatcher.
+            // Jobs beyond the batch limit stay QUEUED and will be picked up by
+            // the watchdog on its next cycle
+            if (!scanner.isAsync() && job.getStatus() == ScannerJob.JobStatus.QUEUED
+                    && scanner.getMaxConcurrency() <= 0) {
+                if (syncJobsRequeued >= MAX_PER_CYCLE) {
+                    syncJobsDeferred++;
+                    continue;
+                }
+                try {
+                    jobScheduler.enqueue(new ScannerInvocationRequest(
+                        scannerType, job.getExtensionVersionId(), job.getScanId()));
+                    syncJobsRequeued++;
+                    logger.info("Re-enqueued QUEUED sync job {} (scanner: {})", job.getId(), scannerType);
+                } catch (Exception e) {
+                    logger.warn("Failed to re-enqueue sync job {}: {}", job.getId(), e.getMessage());
                 }
             }
         }
@@ -156,6 +191,15 @@ public class ExtensionScanJobRecoveryService {
         }
         if (asyncJobsScheduled > 0) {
             logger.info("Scheduled {} recovery polls for async jobs", asyncJobsScheduled);
+        }
+        if (syncJobsReset > 0) {
+            logger.info("Reset {} stuck PROCESSING sync jobs to QUEUED", syncJobsReset);
+        }
+        if (syncJobsRequeued > 0) {
+            logger.info("Re-enqueued {} QUEUED sync jobs", syncJobsRequeued);
+        }
+        if (syncJobsDeferred > 0) {
+            logger.info("Deferred {} QUEUED sync jobs to watchdog (batch limit: {})", syncJobsDeferred, MAX_PER_CYCLE);
         }
     }
 
@@ -415,6 +459,14 @@ public class ExtensionScanJobRecoveryService {
         int processed = 0;
         for (ScannerJob job : stuckJobs) {
             if (processed >= MAX_PER_CYCLE) break;
+            
+            // Skip concurrency-limited scanners — their QUEUED state is intentional
+            // and managed by the ScannerConcurrencyDispatcher, not recovery.
+            Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
+            if (scanner != null && scanner.getMaxConcurrency() > 0) {
+                continue;
+            }
+            
             processed++;
             
             if (job.getCreatedAt().isBefore(oneHourAgo)) {
@@ -454,16 +506,50 @@ public class ExtensionScanJobRecoveryService {
             if (scanner == null) continue;
             
             int timeoutMinutes = scanner.getTimeoutMinutes();
-            long ageMinutes = Duration.between(job.getCreatedAt(), now).toMinutes();
+            LocalDateTime baseline = job.getStatus() == ScannerJob.JobStatus.PROCESSING
+                ? job.getUpdatedAt()
+                : job.getCreatedAt();
+            long activeMinutes = Duration.between(baseline, now).toMinutes();
             
-            if (ageMinutes >= timeoutMinutes) {
-                markFailed(job, String.format("Timeout: exceeded %d min limit (age: %d min)", timeoutMinutes, ageMinutes));
+            if (activeMinutes >= timeoutMinutes) {
+                markFailed(job, String.format("Timeout: exceeded %d min limit (active: %d min)", timeoutMinutes, activeMinutes));
                 completionService.checkCompletionSafely(job.getScanId());
                 timedOut++;
-                logger.error("Job {} timed out: scanner={}, age={}min", job.getId(), job.getScannerType(), ageMinutes);
+                logger.error("Job {} timed out: scanner={}, active={}min", job.getId(), job.getScannerType(), activeMinutes);
             }
         }
         
+        // Fail concurrency-limited QUEUED jobs that have been waiting too long.
+        // These are managed by the dispatcher, not the regular stuck-job recovery,
+        // so they need their own safety-net timeout.
+        // Only fetch jobs old enough to possibly be expired
+        int minQueueWait = scannerRegistry.getAllScanners().stream()
+            .filter(s -> s.getMaxConcurrency() > 0)
+            .mapToInt(Scanner::getMaxQueueWaitMinutes)
+            .min()
+            .orElse(Integer.MAX_VALUE);
+        if (minQueueWait < Integer.MAX_VALUE) {
+            LocalDateTime queueCutoff = now.minusMinutes(minQueueWait);
+            List<ScannerJob> queuedJobs = scanJobRepository.findByStatusAndCreatedAtBefore(
+                ScannerJob.JobStatus.QUEUED, queueCutoff);
+            for (ScannerJob job : queuedJobs) {
+                Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
+                if (scanner == null || scanner.getMaxConcurrency() <= 0) continue;
+
+                int maxWait = scanner.getMaxQueueWaitMinutes();
+                long waitMinutes = Duration.between(job.getCreatedAt(), now).toMinutes();
+                if (waitMinutes >= maxWait) {
+                    markFailed(job, String.format(
+                        "Queued too long: waited %d min (limit: %d min)",
+                        waitMinutes, maxWait));
+                    completionService.checkCompletionSafely(job.getScanId());
+                    timedOut++;
+                    logger.warn("QUEUED job {} timed out: scanner={}, waited={}min",
+                        job.getId(), job.getScannerType(), waitMinutes);
+                }
+            }
+        }
+
         if (timedOut > 0) logger.info("Timed out {} jobs", timedOut);
     }
     

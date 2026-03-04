@@ -245,6 +245,7 @@ public class ExtensionScanPersistenceService {
             @Nonnull String scanId,
             @Nonnull ScannerJob job,
             @Nonnull ScanCheckResult.CheckResult result,
+            @Nonnull LocalDateTime startedAt,
             @Nullable Integer filesScanned,
             int findingsCount,
             @Nullable String summary,
@@ -265,7 +266,7 @@ public class ExtensionScanPersistenceService {
             job.getScannerType(),
             ScanCheckResult.CheckCategory.SCANNER_JOB,
             result,
-            job.getCreatedAt(),
+            startedAt,
             LocalDateTime.now(),
             filesScanned,
             findingsCount,
@@ -388,7 +389,8 @@ public class ExtensionScanPersistenceService {
     public CompletedScanResult processCompletedScan(
             @Nonnull ScannerJob job,
             @Nonnull Scanner.Result result,
-            boolean scannerEnforced
+            boolean scannerEnforced,
+            @Nonnull LocalDateTime startedAt
     ) {
         int threatCount = 0;
         String summary;
@@ -420,6 +422,7 @@ public class ExtensionScanPersistenceService {
             job.getScanId(),
             job,
             checkResult,
+            startedAt,
             null,  // filesScanned - could be added if scanner tracks this
             threatCount,
             summary,
