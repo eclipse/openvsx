@@ -299,7 +299,7 @@ public class StorageUtilService implements IStorageService {
         var managedResource = entityManager.find(FileResource.class, resource.getId());
         var extension = managedResource.getExtension().getExtension();
 
-        if (downloadCountValidator.isPresent()) {
+        if (downloadCountValidator.isPresent() && downloadCountValidator.get().isValidationEnabled()) {
             var request = getCurrentHttpRequest();
             if (!downloadCountValidator.get().shouldCountDownload(extension, request)) {
                 return;

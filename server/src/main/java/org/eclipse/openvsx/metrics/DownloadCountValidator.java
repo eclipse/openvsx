@@ -14,6 +14,7 @@ package org.eclipse.openvsx.metrics;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.metrics.config.DownloadCountValidationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,8 +27,9 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
+import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Locale;
 
 /**
  * Validates whether a download should increment the download count.
@@ -45,6 +47,7 @@ public class DownloadCountValidator {
     private static final Logger logger = LoggerFactory.getLogger(DownloadCountValidator.class);
 
     private final StringRedisTemplate redisTemplate;
+    private final DownloadCountValidationProperties properties;
     private final ExpressionParser expressionParser = new SpelExpressionParser();
 
     /**
@@ -57,62 +60,109 @@ public class DownloadCountValidator {
      */
     private final String ipAddressFunction;
 
-    private static final Duration DEDUP_WINDOW = Duration.ofMinutes(30);
-
     public DownloadCountValidator(
             StringRedisTemplate redisTemplate,
-            @Value("${ovsx.rate-limit.ip-address-function:getRemoteAddr()}") String ipAddressFunction
+            @Value("${ovsx.rate-limit.ip-address-function:getRemoteAddr()}") String ipAddressFunction,
+            DownloadCountValidationProperties properties
     ) {
         this.redisTemplate = redisTemplate;
         this.ipAddressFunction = ipAddressFunction;
+        this.properties = properties;
     }
 
     /**
      * Determines if this download should increment the extension's download count.
-     *
-     * @param extension The extension being downloaded
-     * @param request   The HTTP request with client information
-     * @return true if the download should be counted, false otherwise
      */
     public boolean shouldCountDownload(Extension extension, HttpServletRequest request) {
-        if (request == null) {
+        if (!isValidationEnabled()) {
             return true;
         }
 
+        if (request == null) {
+            // Fail closed when validation is enabled but request context is missing.
+            return false;
+        }
+
         String userAgent = extractUserAgent(request);
+        String ipAddress = extractClientIp(request);
+        // API download flow does not carry a log event timestamp, so use request time
+        // as event-time for dedup bucketing.
+        return shouldCountDownload(extension.getId(), ipAddress, userAgent, Instant.now());
+    }
+
+    /**
+     * Determines if a download should be counted for non-request contexts
+     * using event-time bucketing.
+     * <p>
+     * The Redis key includes a time bucket computed from the event timestamp.
+     * This makes dedup independent of when the handler runs.
+     */
+    public boolean shouldCountDownload(Long extensionId, String clientIp, String userAgent, Instant eventTime) {
+        if (!isValidationEnabled()) {
+            return true;
+        }
+
         if (isAutomatedClient(userAgent)) {
             return false;
         }
 
-        String ipAddress = extractClientIp(request);
-        if (ipAddress == null) {
-            return true;
+        if (clientIp == null || clientIp.isBlank()) {
+            // Fail closed when validation is enabled but client IP cannot be resolved.
+            return false;
         }
 
-        return isFirstDownloadInWindow(ipAddress, extension);
+        if (eventTime == null) {
+            // Event-time bucketing is required; without an event timestamp the event
+            // cannot be placed in a deterministic dedup bucket.
+            return false;
+        }
+
+        return isFirstDownloadInWindow(clientIp, extensionId, eventTime);
+    }
+
+    public boolean isValidationEnabled() {
+        return properties.getEnabled();
     }
 
     /**
      * Atomically checks if this is the first download from this IP for this
      * extension in the dedup window. Sets the key if absent.
+     * <p>
+     * TTL is extended by {@code lateArrivalHours} beyond the dedup window
+     * so late-arriving log entries still dedup against the correct bucket.
      */
-    private boolean isFirstDownloadInWindow(String ipAddress, Extension extension) {
-        String key = buildDedupKey(ipAddress, extension);
+    private boolean isFirstDownloadInWindow(String ipAddress, Long extensionId, Instant eventTime) {
+        String key = buildDedupKey(ipAddress, extensionId, eventTime);
 
-        Boolean wasAbsent = redisTemplate.opsForValue()
-                .setIfAbsent(key, "1", DEDUP_WINDOW);
+        // Extend TTL by lateArrivalHours so keys don't
+        // expire before the last late-arriving log entry for that bucket can be checked.
+        long windowMinutes = properties.getDedupWindowMinutes();
+        java.time.Duration ttl = java.time.Duration.ofMinutes(windowMinutes).plusHours(properties.getLateArrivalHours());
 
+        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "1", ttl);
         return Boolean.TRUE.equals(wasAbsent);
     }
 
     /**
-     * Redis key for deduplication: download:dedup:{hashedIp}:{extensionId}
+     * Builds the Redis dedup key.
+     * <p>
+     * Format: {@code {prefix}:{hashedIp}:{extensionId}:{bucketEpochMinutes}}
+     * where bucket is the event timestamp truncated to the dedup window so all events
+     * from the same IP + extension within the same window share one key.
      */
-    private String buildDedupKey(String ipAddress, Extension extension) {
-        return String.format("download:dedup:%s:%d",
+    private String buildDedupKey(String ipAddress, Long extensionId, Instant eventTime) {
+        String base = String.format("%s:%s:%d",
+                properties.getKeyPrefix(),
                 hashIp(ipAddress),
-                extension.getId()
+                extensionId
         );
+
+        // Truncate to window granularity in epoch-minutes so all events in the
+        // same dedup window map to the same bucket.
+        long bucketMinutes = eventTime.getEpochSecond() / 60
+                / properties.getDedupWindowMinutes()
+                * properties.getDedupWindowMinutes();
+        return base + ":" + bucketMinutes;
     }
 
     private String hashIp(String ipAddress) {
@@ -129,8 +179,6 @@ public class DownloadCountValidator {
      * Extracts client IP by evaluating the same SpEL expression used by the rate limiter.
      * The expression runs against the HttpServletRequest as root object, so methods
      * like getHeader(), getRemoteAddr(), getParameter() are all available.
-     *
-     * @return the resolved IP, or null if it cannot be determined
      */
     private String extractClientIp(HttpServletRequest request) {
         try {
@@ -162,16 +210,11 @@ public class DownloadCountValidator {
             return false;
         }
 
-        String ua = userAgent.toLowerCase();
-
-        return ua.contains("python") ||
-                ua.contains("requests") ||
-                ua.contains("curl") ||
-                ua.contains("wget") ||
-                ua.contains("bot") ||
-                ua.contains("crawler") ||
-                ua.contains("script") ||
-                ua.contains("automated");
+        String ua = userAgent.toLowerCase(Locale.ROOT);
+        return properties.getAutomatedClientKeywords().stream()
+                .filter(keyword -> keyword != null && !keyword.isBlank())
+                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
+                .anyMatch(ua::contains);
     }
 
 }
