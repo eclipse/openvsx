@@ -252,6 +252,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
             : "External scan failed (no details from scanner)";
 
         logger.error("Scan job {} failed at external scanner: {}", job.getId(), errorMessage);
+        LocalDateTime startedAt = job.getUpdatedAt();
         markJobFailed(job, errorMessage);
         
         // Record scanner job result for audit trail
