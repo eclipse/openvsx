@@ -16,6 +16,7 @@ import { MainContext } from '../../context';
 import { isError, Extension, TargetPlatformVersion } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
 import { StyledInput } from './namespace-input';
+import useQueryParam from '../../hooks/scan-admin/use-query-params-state';
 
 export const ExtensionAdmin: FunctionComponent = props => {
     const abortController = useRef<AbortController>(new AbortController());
@@ -27,12 +28,12 @@ export const ExtensionAdmin: FunctionComponent = props => {
 
     const [loading, setLoading] = useState(false);
 
-    const [extensionValue, setExtensionValue] = useState('');
+    const [extensionValue, setExtensionValue] = useQueryParam('extension', '');
     const handleExtensionChange = (value: string) => {
         setExtensionValue(value);
     };
 
-    const [namespaceValue, setNamespaceValue] = useState('');
+    const [namespaceValue, setNamespaceValue] = useQueryParam('namespace', '');
     const handleNamespaceChange = (value: string) => {
         setNamespaceValue(value);
     };
@@ -93,6 +94,7 @@ export const ExtensionAdmin: FunctionComponent = props => {
                 error={namespaceFieldError}
                 key='nsi'
                 onChange={handleNamespaceChange}
+                value={namespaceValue}
                 hideIconButton={true}
                 autoFocus={true} />,
             <ExtensionListSearchfield

@@ -158,17 +158,26 @@ public class HttpClientExecutor {
             return response.getBody();
             
         } catch (HttpStatusCodeException e) {
-            // Some scanners return non-2xx status codes
-            // but include valid scan results in the response body.
-            // For example, returning 406 when malware is found,
-            // with the threat details in the body.
-            // We extract and return the body so the scanner can parse it.
+            // 5xx = server error — always treat as failure even if body is present
+            if (e.getStatusCode().is5xxServerError()) {
+                String bodySnippet = e.getResponseBodyAsString();
+                if (bodySnippet != null && bodySnippet.length() > 200) {
+                    bodySnippet = bodySnippet.substring(0, 200) + "...";
+                }
+                throw new ScannerException(
+                    "Scanner service error: " + e.getStatusCode() + " " +
+                    e.getStatusText() + " on " + operation.getMethod() + " " +
+                    operation.getUrl() +
+                    (bodySnippet != null && !bodySnippet.isEmpty() ? " — " + bodySnippet : ""), e
+                );
+            }
+            // 4xx — some scanners use non-2xx for valid results (e.g., 406 = malware found).
+            // Return the body so the scanner can parse it.
             String responseBody = e.getResponseBodyAsString();
             if (responseBody != null && !responseBody.isEmpty()) {
-                // Return the body so it can be parsed by the scanner
                 return responseBody;
             }
-            // If there's no body, this is a genuine error
+            // No body on a 4xx — genuine error
             throw new ScannerException(
                 "Failed to execute HTTP request: " + e.getStatusCode() + " " + 
                 e.getStatusText() + " on " + operation.getMethod() + " request for \"" + 

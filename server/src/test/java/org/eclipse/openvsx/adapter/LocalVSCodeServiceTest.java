@@ -40,7 +40,7 @@ import static org.mockito.ArgumentMatchers.*;
 @ExtendWith(SpringExtension.class)
 @MockitoBean( types = {
     VSCodeAPI.class, SimpleMeterRegistry.class, SearchUtilService.class,
-    VersionService.class, StorageUtilService.class, ExtensionVersionIntegrityService.class,
+    StorageUtilService.class, ExtensionVersionIntegrityService.class,
     WebResourceService.class, CacheService.class
 })
 public class LocalVSCodeServiceTest {
@@ -118,11 +118,6 @@ public class LocalVSCodeServiceTest {
 
     @TestConfiguration
     static class TestConfig {
-        @Bean
-        VersionService versionService() {
-            return new VersionService();
-        }
-
         @Bean
         LocalVSCodeService vsCodeService(
                 RepositoryService repositories,

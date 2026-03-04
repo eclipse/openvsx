@@ -21,7 +21,6 @@ import org.mockito.invocation.Invocation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Modifier;
@@ -282,6 +281,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
                 () -> repositories.deactivateAccessTokens(userData),
+                () -> repositories.expireAccessTokens(NOW),
+                () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),
+                () -> repositories.updateExpiresTimeForLegacyAccessTokens(NOW),
                 () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", Collections.emptyList(), 0.5, false, 10),
                 () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10),
                 () -> repositories.findExtensionScans(extVersion),

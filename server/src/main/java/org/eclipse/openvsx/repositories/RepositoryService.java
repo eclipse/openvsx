@@ -390,6 +390,10 @@ public class RepositoryService {
         return tokenRepo.findById(id);
     }
 
+    public List<PersonalAccessToken> findExpiringAccessTokensWithoutNotification(LocalDateTime expirationTime, Pageable pageable) {
+        return tokenRepo.findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(expirationTime, pageable);
+    }
+
     public Streamable<PersistedLog> findAllPersistedLogs() {
         return persistedLogRepo.findByOrderByTimestampAsc();
     }
@@ -645,6 +649,14 @@ public class RepositoryService {
 
     public int deactivateAccessTokens(UserData user) {
         return tokenRepo.updateActiveSetFalse(user);
+    }
+
+    public int expireAccessTokens(LocalDateTime timestamp) {
+        return tokenRepo.expireAccessTokens(timestamp);
+    }
+
+    public int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp) {
+        return tokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
     }
 
     public List<String> findActiveExtensionNames(Namespace namespace) {

@@ -179,7 +179,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         }
         
         switch (status) {
-            case FAILED -> handleFailedStatus(job);
+            case FAILED -> handleFailedStatus(job, scanner, submission);
             case PROCESSING, SUBMITTED -> handleProcessingStatus(job, scanner);
             case COMPLETED -> {} // Handled separately via saveCompletedResults
         }
@@ -242,12 +242,17 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
     
     /**
      * Handle FAILED status: mark job as failed, record result for audit, and trigger completion check.
+     * Attempts to fetch error details from the scanner if possible.
      */
-    private void handleFailedStatus(ScannerJob job) {
-        logger.error("Scan job {} failed at external scanner", job.getId());
-        
-        LocalDateTime startedAt = job.getUpdatedAt();
-        markJobFailed(job, "External scan failed");
+    private void handleFailedStatus(ScannerJob job, Scanner scanner, Scanner.Submission submission) {
+        // Try to get the actual error from the scanner's result endpoint
+        String errorDetail = fetchErrorDetail(scanner, submission);
+        String errorMessage = errorDetail != null
+            ? "External scan failed: " + errorDetail
+            : "External scan failed (no details from scanner)";
+
+        logger.error("Scan job {} failed at external scanner: {}", job.getId(), errorMessage);
+        markJobFailed(job, errorMessage);
         
         // Record scanner job result for audit trail
         persistenceService.recordScannerJobResult(
@@ -257,12 +262,31 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
             startedAt,
             null,  // filesScanned
             0,     // threatCount
-            "External scan failed",
-            "External scan failed"
+            errorMessage,
+            errorMessage
         );
         
         // Still check completion - might need to mark scan as errored
         completionService.checkCompletionSafely(job.getScanId());
+    }
+    
+    /**
+     * Try to fetch error details from the scanner's result endpoint.
+     * Returns null if unable to get details (best-effort).
+     */
+    private String fetchErrorDetail(Scanner scanner, Scanner.Submission submission) {
+        try {
+            Scanner.Result result = scanner.fetchResults(submission);
+            if (result != null && !result.isClean()) {
+                return result.getThreats().stream()
+                    .map(Scanner.Threat::getDescription)
+                    .findFirst()
+                    .orElse(null);
+            }
+        } catch (Exception e) {
+            logger.debug("Could not fetch error details from scanner: {}", e.getMessage());
+        }
+        return null;
     }
     
     /**

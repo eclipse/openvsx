@@ -75,7 +75,7 @@ class EclipseServiceTest {
     RepositoryService repositories;
 
     @MockitoBean
-    TokenService tokens;
+    EclipseTokenService tokens;
 
     @MockitoBean
     RestTemplate restTemplate;
@@ -399,7 +399,7 @@ class EclipseServiceTest {
 
         @Bean
         EclipseService eclipseService(
-                TokenService tokens,
+                EclipseTokenService tokens,
                 ExtensionService extensions,
                 EntityManager entityManager,
                 RestTemplate restTemplate
@@ -478,5 +478,4 @@ class EclipseServiceTest {
             return new LatestExtensionVersionCacheKeyGenerator();
         }
     }
-    
 }

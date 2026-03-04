@@ -62,7 +62,7 @@ export const UserAvatar: FunctionComponent = () => {
                         textDecoration: 'underline'
                     }
                 }} >
-                <Typography variant='body2' color='text.primary' sx={{mr: 1}}>
+                <Typography variant='body2' color='text.primary' sx={{ mr: 1 }}>
                     Logged in as
                 </Typography>
                 <Typography variant='overline' color='text.primary'>

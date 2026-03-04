@@ -7,6 +7,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Changed
 
 - Switch from webpack to vite for building the bundle ([#1399](https://github.com/eclipse/openvsx/pull/1399))
+- Add more target information and useful links to scan card ([#1650](https://github.com/eclipse/openvsx/pull/1650))
 
 ### Fixed
 
@@ -16,6 +17,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Dependencies
 
 - Bump @isaacs/brace-expansion from `5.0.0` to `5.0.1` ([#1638](https://github.com/eclipse/openvsx/pull/1638))
+- Bump minimatch from to `3.1.5`, `9.0.9` and `10.2.4` respectively
 
 ## [v0.18.0] (Feb. 2026)
 

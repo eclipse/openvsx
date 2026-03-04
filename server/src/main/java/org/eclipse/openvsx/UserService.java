@@ -22,9 +22,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -33,7 +31,6 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -47,7 +44,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSON;
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Component
 public class UserService {
@@ -59,9 +55,6 @@ public class UserService {
     private final ExtensionValidator validator;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AttributesConfig attributesConfig;
-
-    @Value("${ovsx.token-prefix:}")
-    String tokenPrefix;
 
     public UserService(
             EntityManager entityManager,
@@ -91,24 +84,6 @@ public class UserService {
             return entityManager.find(UserData.class, principal.getId());
         }
         return null;
-    }
-
-    @Transactional
-    public PersonalAccessToken useAccessToken(String tokenValue) {
-        var token = repositories.findAccessToken(tokenValue);
-        if (token == null || !token.isActive()) {
-            return null;
-        }
-        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
-        return token;
-    }
-
-    public String generateTokenValue() {
-        String value;
-        do {
-            value = tokenPrefix + UUID.randomUUID();
-        } while (repositories.hasAccessToken(value));
-        return value;
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
@@ -253,39 +228,6 @@ public class UserService {
         }
 
         return ResultJson.success("Updated logo for namespace " + namespace.getName());
-    }
-
-    @Transactional
-    public AccessTokenJson createAccessToken(UserData user, String description) {
-        var token = new PersonalAccessToken();
-        token.setUser(user);
-        token.setValue(generateTokenValue());
-        token.setActive(true);
-        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-        token.setDescription(description);
-        entityManager.persist(token);
-        var json = token.toAccessTokenJson();
-        // Include the token value after creation so the user can copy it
-        json.setValue(token.getValue());
-        json.setDeleteTokenUrl(createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
-
-        return json;
-    }
-
-    @Transactional
-    public ResultJson deleteAccessToken(UserData user, long id) {
-        var token = repositories.findAccessToken(id);
-        if (token == null || !token.isActive()) {
-            throw new NotFoundException();
-        }
-
-        user = entityManager.merge(user);
-        if(!token.getUser().equals(user)) {
-            throw new NotFoundException();
-        }
-
-        token.setActive(false);
-        return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
     }
 
     public boolean canLogin() {

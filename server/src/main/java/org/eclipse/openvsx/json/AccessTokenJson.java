@@ -33,6 +33,11 @@ public class AccessTokenJson extends ResultJson {
     @Nullable
     private String accessedTimestamp;
 
+    @Nullable
+    private String expiresTimestamp;
+
+    private boolean notified;
+
     private String description;
 
     private String deleteTokenUrl;
@@ -69,6 +74,23 @@ public class AccessTokenJson extends ResultJson {
 
     public void setAccessedTimestamp(@Nullable String accessedTimestamp) {
         this.accessedTimestamp = accessedTimestamp;
+    }
+
+    @Nullable
+    public String getExpiresTimestamp() {
+        return expiresTimestamp;
+    }
+
+    public void setExpiresTimestamp(@Nullable String expiresTimestamp) {
+        this.expiresTimestamp = expiresTimestamp;
+    }
+
+    public boolean isNotified() {
+        return notified;
+    }
+
+    public void setNotified(boolean notified) {
+        this.notified = notified;
     }
 
     public String getDescription() {

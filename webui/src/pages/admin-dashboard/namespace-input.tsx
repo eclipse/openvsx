@@ -16,6 +16,7 @@ import { MainContext } from '../../context';
 interface InputProps {
     onSubmit?: (inputValue: string) => void;
     onChange: (inputValue: string) => void;
+    value?: string;
     hideIconButton?: boolean;
     error?: boolean;
     autoFocus?: boolean;
@@ -23,7 +24,7 @@ interface InputProps {
 }
 
 export const StyledInput: FunctionComponent<InputProps> = props => {
-    const [inputValue, setInputValue] = useState('');
+    const [inputValue, setInputValue] = useState(props.value || '');
     const { pageSettings } = useContext(MainContext);
     const onChangeInputValue = (ev: ChangeEvent<HTMLInputElement>) => {
         const inputValue = ev.target.value;
@@ -53,6 +54,7 @@ export const StyledInput: FunctionComponent<InputProps> = props => {
                     sx={{ flex: 1, pl: 1 }}
                     placeholder={props.placeholder}
                     onChange={onChangeInputValue}
+                    value={inputValue}
                     onKeyDown={(e: KeyboardEvent) => {
                         if (e.key === 'Enter' && props.onSubmit) {
                             props.onSubmit(inputValue);

@@ -63,23 +63,46 @@ export function toRelativeTime(timestamp?: string): string | undefined {
     }
     const date = new Date(timestamp);
     const elapsed = Date.now() - date.getTime();
-    if (elapsed < msPerMinute) {
-        return 'now';
-    } else if (elapsed < msPerHour) {
-        const value = Math.round(elapsed / msPerMinute);
-        return `${value} minute${value !== 1 ? 's' : ''} ago`;
-    } else if (elapsed < msPerDay) {
-        const value = Math.round(elapsed / msPerHour);
-        return `${value} hour${value !== 1 ? 's' : ''} ago`;
-    } else if (elapsed < msPerMonth) {
-        const value = Math.round(elapsed / msPerDay);
-        return `${value} day${value !== 1 ? 's' : ''} ago`;
-    } else if (elapsed < msPerYear) {
-        const value = Math.round(elapsed / msPerMonth);
-        return `${value} month${value !== 1 ? 's' : ''} ago`;
+
+    if (elapsed < 0) {
+        const remaining = -elapsed
+        if (remaining < msPerMinute) {
+            return 'now';
+        } else if (remaining < msPerHour) {
+            const value = Math.round(remaining / msPerMinute);
+            return `in ${value} minute${value !== 1 ? 's' : ''}`;
+        } else if (remaining < msPerDay) {
+            const value = Math.round(remaining / msPerHour);
+            return `in ${value} hour${value !== 1 ? 's' : ''}`;
+        } else if (remaining < msPerMonth) {
+            const value = Math.round(remaining / msPerDay);
+            return `in ${value} day${value !== 1 ? 's' : ''}`;
+        } else if (remaining < msPerYear) {
+            const value = Math.round(remaining / msPerMonth);
+            return `in ${value} month${value !== 1 ? 's' : ''}`;
+        } else {
+            const value = Math.round(remaining / msPerYear);
+            return `in ${value} year${value !== 1 ? 's' : ''}`;
+        }
     } else {
-        const value = Math.round(elapsed / msPerYear);
-        return `${value} year${value !== 1 ? 's' : ''} ago`;
+        if (elapsed < msPerMinute) {
+            return 'now';
+        } else if (elapsed < msPerHour) {
+            const value = Math.round(elapsed / msPerMinute);
+            return `${value} minute${value !== 1 ? 's' : ''} ago`;
+        } else if (elapsed < msPerDay) {
+            const value = Math.round(elapsed / msPerHour);
+            return `${value} hour${value !== 1 ? 's' : ''} ago`;
+        } else if (elapsed < msPerMonth) {
+            const value = Math.round(elapsed / msPerDay);
+            return `${value} day${value !== 1 ? 's' : ''} ago`;
+        } else if (elapsed < msPerYear) {
+            const value = Math.round(elapsed / msPerMonth);
+            return `${value} month${value !== 1 ? 's' : ''} ago`;
+        } else {
+            const value = Math.round(elapsed / msPerYear);
+            return `${value} year${value !== 1 ? 's' : ''} ago`;
+        }
     }
 }
 

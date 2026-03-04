@@ -13,9 +13,8 @@ import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.TokenService;
+import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -45,8 +44,7 @@ import static org.springframework.security.core.authority.AuthorityUtils.createA
 public class OAuth2UserServices {
 
     private final UserService users;
-    private final TokenService tokens;
-    private final RepositoryService repositories;
+    private final EclipseTokenService tokens;
     private final EntityManager entityManager;
     private final EclipseService eclipse;
     private final OAuth2AttributesConfig attributesConfig;
@@ -55,15 +53,13 @@ public class OAuth2UserServices {
 
     public OAuth2UserServices(
             UserService users,
-            TokenService tokens,
-            RepositoryService repositories,
+            EclipseTokenService tokens,
             EntityManager entityManager,
             EclipseService eclipse,
             OAuth2AttributesConfig attributesConfig
     ) {
         this.users = users;
         this.tokens = tokens;
-        this.repositories = repositories;
         this.entityManager = entityManager;
         this.eclipse = eclipse;
         this.attributesConfig = attributesConfig;
