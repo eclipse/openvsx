@@ -18,28 +18,35 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
 public class AccessTokenService {
+    private final AccessTokenConfig config;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
+    private final MailService mail;
 
-    @Value("${ovsx.token-prefix:}")
-    String tokenPrefix;
-
-    public AccessTokenService(EntityManager entityManager, RepositoryService repositories) {
+    public AccessTokenService(
+            AccessTokenConfig config,
+            EntityManager entityManager,
+            RepositoryService repositories,
+            MailService mail
+    ) {
+        this.config = config;
         this.entityManager = entityManager;
         this.repositories = repositories;
+        this.mail = mail;
     }
 
     @Transactional
@@ -48,7 +55,14 @@ public class AccessTokenService {
         token.setUser(user);
         token.setValue(generateTokenValue());
         token.setActive(true);
-        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+
+        var createdAt = TimeUtil.getCurrentUTC();
+        token.setCreatedTimestamp(createdAt);
+
+        if (config.expiration != null && config.expiration.isPositive()) {
+            token.setExpiresTimestamp(createdAt.plus(config.expiration));
+        }
+
         token.setDescription(description);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
@@ -63,13 +77,13 @@ public class AccessTokenService {
     public String generateTokenValue() {
         String value;
         do {
-            value = tokenPrefix + UUID.randomUUID();
+            value = config.prefix + UUID.randomUUID();
         } while (repositories.hasAccessToken(value));
         return value;
     }
 
     @Transactional
-    public ResultJson deleteAccessToken(UserData user, long id) {
+    public ResultJson deactivateAccessToken(UserData user, long id) {
         var token = repositories.findAccessToken(id);
         if (token == null || !token.isActive()) {
             throw new NotFoundException();
@@ -81,7 +95,7 @@ public class AccessTokenService {
         }
 
         token.setActive(false);
-        return ResultJson.success("Deleted access token for user " + user.getLoginName() + ".");
+        return ResultJson.success("Deactivated access token for user " + user.getLoginName() + ".");
     }
 
     @Transactional
@@ -92,5 +106,25 @@ public class AccessTokenService {
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
         return token;
+    }
+
+    @Transactional
+    public int expireAccessTokens() {
+        return repositories.expireAccessTokens(TimeUtil.getCurrentUTC());
+    }
+
+    @Transactional
+    public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
+        token = entityManager.merge(token);
+        try {
+            mail.scheduleAccessTokenExpiryNotification(token);
+        } finally {
+            token.setNotified(true);
+        }
+    }
+
+    @Transactional
+    public int setExpirationTimeForLegacyAccessTokens(LocalDateTime expirationTime) {
+        return repositories.updateExpiresTimeForLegacyAccessTokens(expirationTime);
     }
 }

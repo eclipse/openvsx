@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.*;
+import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -81,7 +82,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
     SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
-    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class
+    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class
 })
 class AdminAPITest {
     
@@ -1457,10 +1458,12 @@ class AdminAPITest {
 
         @Bean
         AccessTokenService tokenService(
+                AccessTokenConfig config,
                 EntityManager entityManager,
-                RepositoryService repositories
+                RepositoryService repositories,
+                MailService mailService
         ) {
-            return new AccessTokenService(entityManager, repositories);
+            return new AccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean

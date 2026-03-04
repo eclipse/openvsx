@@ -9,25 +9,28 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.accesstoken;
 
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
-import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ExpirePersonalAccessTokensJobRequestHandler implements JobRequestHandler<HandlerJobRequest> {
+public class ExpirePersonalAccessTokensHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    private final RepositoryService repositories;
+    private final Logger logger = LoggerFactory.getLogger(ExpirePersonalAccessTokensHandler.class);
 
-    public ExpirePersonalAccessTokensJobRequestHandler(RepositoryService repositories) {
-        this.repositories = repositories;
+    private final AccessTokenService tokens;
+
+    public ExpirePersonalAccessTokensHandler(AccessTokenService tokens) {
+        this.tokens = tokens;
     }
 
     @Override
-    public void run(HandlerJobRequest handlerJobRequest) throws Exception {
-        var timestamp = TimeUtil.getCurrentUTC().minusDays(PersonalAccessToken.EXPIRY_DAYS);
-        repositories.expireAccessTokens(timestamp);
+    public void run(HandlerJobRequest<?> handlerJobRequest) throws Exception {
+        var count = tokens.expireAccessTokens();
+        if (count > 0) {
+            logger.info("Expired {} personal access token(s)", count);
+        }
     }
 }

@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-import static org.eclipse.openvsx.entities.PersonalAccessToken.EXPIRY_DAYS;
 
 @Component
 public class MailService {
@@ -53,8 +52,9 @@ public class MailService {
         }
 
         var user = token.getUser();
+        var email = user.getEmail();
 
-        if (user.getEmail() == null) {
+        if (email == null) {
             logger.warn("Could not send mail to user '{}' due to expired access token notification: email not known", user.getLoginName());
             return;
         }
@@ -67,16 +67,17 @@ public class MailService {
         var variables = Map.<String, Object>of(
                 "name", name,
                 "tokenName", tokenName,
-                "expiryDate", token.getCreatedTimestamp().plusDays(EXPIRY_DAYS)
+                "expiryDate", token.getExpiresTimestamp()
         );
         var jobRequest = new SendMailJobRequest(
-                user.getEmail(),
+                email,
                 accessTokenExpirySubject,
                 accessTokenExpiryTemplate,
                 variables
         );
 
         scheduler.enqueue(jobRequest);
+        logger.debug("Scheduled notification email for expiring token {} to {}", tokenName, email);
     }
 
     public void scheduleRevokedAccessTokensMail(UserData user) {

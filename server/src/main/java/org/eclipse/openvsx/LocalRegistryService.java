@@ -658,7 +658,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         try {
             return publish(content, token.getValue());
         } finally {
-            tokens.deleteAccessToken(user, token.getId());
+            tokens.deactivateAccessToken(user, token.getId());
         }
     }
 

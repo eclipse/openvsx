@@ -180,6 +180,8 @@ export interface PersonalAccessToken {
     value?: string;
     createdTimestamp: TimestampString;
     accessedTimestamp?: TimestampString;
+    expiresTimestamp?: TimestampString;
+    notified?: boolean;
     description: string;
     deleteTokenUrl: UrlString;
 }

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
@@ -20,6 +21,7 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -76,7 +78,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         EclipseService.class, ClientRegistrationRepository.class, StorageUtilService.class, CacheService.class,
         ExtensionValidator.class, SimpleMeterRegistry.class, SearchUtilService.class, PublishExtensionVersionHandler.class,
         JobRequestScheduler.class, VersionService.class, ExtensionVersionIntegrityService.class, ExtensionScanService.class,
-        ExtensionScanPersistenceService.class, LogService.class
+        ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class, MailService.class
 })
 class UserAPITest {
 
@@ -181,7 +183,7 @@ class UserAPITest {
                 .with(user("test_user"))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted access token for user test_user.")));
+                .andExpect(content().json(successJson("Deactivated access token for user test_user.")));
     }
 
     @Test
@@ -795,10 +797,12 @@ class UserAPITest {
 
         @Bean
         AccessTokenService accessTokenService(
+                AccessTokenConfig config,
                 EntityManager entityManager,
-                RepositoryService repositories
+                RepositoryService repositories,
+                MailService mailService
         ) {
-            return new AccessTokenService(entityManager, repositories);
+            return new AccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean

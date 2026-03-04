@@ -390,8 +390,8 @@ public class RepositoryService {
         return tokenRepo.findById(id);
     }
 
-    public Streamable<PersonalAccessToken> findAccessTokensCreatedBefore(LocalDateTime timestamp) {
-        return tokenRepo.findByCreatedTimestampLessThanEqualAndActiveTrue(timestamp);
+    public List<PersonalAccessToken> findExpiringAccessTokensWithoutNotification(LocalDateTime expirationTime, Pageable pageable) {
+        return tokenRepo.findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(expirationTime, pageable);
     }
 
     public Streamable<PersistedLog> findAllPersistedLogs() {
@@ -651,8 +651,12 @@ public class RepositoryService {
         return tokenRepo.updateActiveSetFalse(user);
     }
 
-    public void expireAccessTokens(LocalDateTime timestamp) {
-        tokenRepo.expireAccessTokens(timestamp);
+    public int expireAccessTokens(LocalDateTime timestamp) {
+        return tokenRepo.expireAccessTokens(timestamp);
+    }
+
+    public int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp) {
+        return tokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
     }
 
     public List<String> findActiveExtensionNames(Namespace namespace) {

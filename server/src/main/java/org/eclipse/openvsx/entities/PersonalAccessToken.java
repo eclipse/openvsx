@@ -45,6 +45,10 @@ public class PersonalAccessToken implements Serializable {
 
     private LocalDateTime accessedTimestamp;
 
+    private LocalDateTime expiresTimestamp;
+
+    private boolean notified;
+
     @Column(length = 2048)
     private String description;
 
@@ -55,10 +59,16 @@ public class PersonalAccessToken implements Serializable {
         var json = new AccessTokenJson();
         json.setId(this.getId());
         // The value is not included: it is displayed only when the token is created
-        if (this.getCreatedTimestamp() != null)
+        if (this.getCreatedTimestamp() != null) {
             json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
-        if (this.getAccessedTimestamp() != null)
+        }
+        if (this.getAccessedTimestamp() != null) {
             json.setAccessedTimestamp(TimeUtil.toUTCString(this.getAccessedTimestamp()));
+        }
+        if (this.getExpiresTimestamp() != null) {
+            json.setExpiresTimestamp(TimeUtil.toUTCString(this.getExpiresTimestamp()));
+        }
+        json.setNotified(this.isNotified());
         json.setDescription(this.getDescription());
         return json;
     }
@@ -111,6 +121,22 @@ public class PersonalAccessToken implements Serializable {
         this.accessedTimestamp = timestamp;
     }
 
+    public LocalDateTime getExpiresTimestamp() {
+        return expiresTimestamp;
+    }
+
+    public void setExpiresTimestamp(LocalDateTime expiresTimestamp) {
+        this.expiresTimestamp = expiresTimestamp;
+    }
+
+    public boolean isNotified() {
+        return notified;
+    }
+
+    public void setNotified(boolean notified) {
+        this.notified = notified;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -130,11 +156,13 @@ public class PersonalAccessToken implements Serializable {
                 && Objects.equals(value, that.value)
                 && Objects.equals(createdTimestamp, that.createdTimestamp)
                 && Objects.equals(accessedTimestamp, that.accessedTimestamp)
+                && Objects.equals(expiresTimestamp, that.expiresTimestamp)
+                && Objects.equals(notified, that.notified)
                 && Objects.equals(description, that.description);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, user, value, active, createdTimestamp, accessedTimestamp, description);
+        return Objects.hash(id, user, value, active, createdTimestamp, accessedTimestamp, expiresTimestamp, notified, description);
     }
 }

@@ -11,12 +11,14 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
 
@@ -38,9 +40,13 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
     @Query("update PersonalAccessToken t set t.active = false where t.user = ?1 and t.active = true")
     int updateActiveSetFalse(UserData user);
 
-    Streamable<PersonalAccessToken> findByCreatedTimestampLessThanEqualAndActiveTrue(LocalDateTime timestamp);
+    @Modifying
+    @Query("update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null")
+    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp);
+
+    List<PersonalAccessToken> findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(LocalDateTime timestamp, Pageable pageable);
 
     @Modifying
-    @Query("update PersonalAccessToken t set t.active = false where t.createdTimestamp <= ?1 and t.active = true")
-    void expireAccessTokens(LocalDateTime timestamp);
+    @Query("update PersonalAccessToken t set t.active = false where t.expiresTimestamp <= ?1 and t.active = true")
+    int expireAccessTokens(LocalDateTime timestamp);
 }

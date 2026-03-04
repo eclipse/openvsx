@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -24,6 +25,7 @@ import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
@@ -94,7 +96,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
     CacheService.class, EclipseService.class, PublishExtensionVersionService.class, SimpleMeterRegistry.class,
     JobRequestScheduler.class, ExtensionControlService.class, FileCacheDurationConfig.class, CdnServiceConfig.class,
-    ExtensionScanPersistenceService.class, LogService.class
+    ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class, MailService.class
 })
 class RegistryAPITest {
 
@@ -2555,10 +2557,12 @@ class RegistryAPITest {
 
         @Bean
         AccessTokenService tokenService(
+                AccessTokenConfig config,
                 EntityManager entityManager,
-                RepositoryService repositories
+                RepositoryService repositories,
+                MailService mailService
         ) {
-            return new AccessTokenService(entityManager, repositories);
+            return new AccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean

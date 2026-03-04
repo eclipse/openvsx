@@ -193,7 +193,7 @@ public class UserAPI {
         }
 
         try {
-            return ResponseEntity.ok(tokens.deleteAccessToken(user, id));
+            return ResponseEntity.ok(tokens.deactivateAccessToken(user, id));
         } catch(NotFoundException e) {
             return new ResponseEntity<>(ResultJson.error("Token does not exist."), HttpStatus.NOT_FOUND);
         }
