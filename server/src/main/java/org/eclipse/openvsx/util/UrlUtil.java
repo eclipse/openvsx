@@ -12,9 +12,14 @@ package org.eclipse.openvsx.util;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.config.ApplicationConfig;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -23,15 +28,27 @@ import org.springframework.web.util.UriUtils;
 
 import jakarta.annotation.Nullable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Component
 public final class UrlUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(UrlUtil.class);
+    
+    private static ApplicationConfig config;
+
+    @Autowired
+    public UrlUtil(ApplicationConfig applicationConfig) {
+        config = applicationConfig;
+    }
 
     private UrlUtil() {
     }
+
 
     public static String createApiFileUrl(String baseUrl, ExtensionVersion extVersion, String fileName) {
         var extension = extVersion.getExtension();
@@ -156,7 +173,7 @@ public final class UrlUtil {
                     result.append('?');
                 else
                     result.append('&');
-                result.append(key).append('=').append(UriUtils.encodeQueryParam(value, StandardCharsets.UTF_8));
+                result.append(key).append('=').append(value);
                 printedParams++;
             }
         }
@@ -164,15 +181,58 @@ public final class UrlUtil {
     }
 
     /**
-     * Get the base URL to use for API requests from the current servlet request.
+     * Get the base URL to use for API requests from configuration.
+     * Preference order:
+     * 1. ovsx.server.url (if configured and valid)
+     * 2. ovsx.webui.url (if configured and valid)
+     * 3. Request context (fallback, only works within a servlet request)
+     * 
+     * @return base URL, or empty string if no valid URL can be determined
      */
     public static String getBaseUrl() {
+        // Try server URL first
+        if (config != null) {
+            String serverUrl = config.getServer().getUrl();
+            if (isValidUrl(serverUrl)) {
+                logger.debug("Using server URL from config: {}", serverUrl);
+                return serverUrl;
+            }
+            
+            // Fallback to webui URL
+            String webuiUrl = config.getWebui().getUrl();
+            if (isValidUrl(webuiUrl)) {
+                logger.debug("Using webui URL from config: {}", webuiUrl);
+                return webuiUrl;
+            }
+        }
+        
+        // Fallback to request context if available and config not set
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            logger.debug("No base URL configured, falling back to request context");
+            return getBaseUrl(attrs.getRequest());
+        }
+        
+        logger.warn("No base URL configured and no request context available");
+        return "";
+    }
+
+    /**
+     * Validate if a URL string is properly formatted and not empty.
+     * 
+     * @param url the URL string to validate
+     * @return true if the URL is valid, false otherwise
+     */
+    private static boolean isValidUrl(String url) {
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
         try {
-            var requestAttrs = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-            return getBaseUrl(requestAttrs.getRequest());
-        } catch (IllegalStateException e) {
-            // method is called outside of web request context
-            return "";
+            new URI(url);
+            return true;
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URL format: {}", url, e);
+            return false;
         }
     }
 
@@ -204,53 +264,49 @@ public final class UrlUtil {
     }
 
     private static String getBaseUrlPrefix(HttpServletRequest request) {
-        // Use the prefix from the X-Forwarded-Prefix header if present
-        var forwardedPrefix = request.getHeader("X-Forwarded-Prefix");
-        if (forwardedPrefix == null) {
-            forwardedPrefix = "";
-        }
-
-        return forwardedPrefix;
+        var servletPath = request.getServletPath();
+        var pathInfo = request.getPathInfo();
+        var requestUri = request.getRequestURI();
+        var baseUrlPrefix = requestUri.substring(0, requestUri.length() - servletPath.length() - (pathInfo == null ? 0 : pathInfo.length()));
+        return baseUrlPrefix;
     }
 
     private static String getBaseUrlScheme(HttpServletRequest request) {
-        // Use the scheme from the X-Forwarded-Proto header if present
-        var forwardedScheme = request.getHeader("X-Forwarded-Proto");
-        return forwardedScheme != null ? forwardedScheme : request.getScheme();
+        if ("on".equals(request.getHeader("X-SSL"))) {
+            return "https";
+        } else if ("https".equalsIgnoreCase(request.getScheme())) {
+            return "https";
+        }
+        return "http";
     }
 
     public static Pair<String,Integer> getBaseUrlHostAndPort(HttpServletRequest request) {
-        // Use the host and port from the X-Forwarded-Host header if present
-        var forwardedHostHeadersEnumeration = request.getHeaders("X-Forwarded-Host");
-        if (forwardedHostHeadersEnumeration == null || !forwardedHostHeadersEnumeration.hasMoreElements()) {
-            return Pair.of(request.getServerName(), request.getServerPort());
-        } else {
-            // take the first one
-            var forwardedHost = forwardedHostHeadersEnumeration.nextElement();
-
-            // if it's comma separated, take the first one
-            var forwardedHosts = forwardedHost.split(",");
-            if (forwardedHosts.length > 1) {
-                forwardedHost = forwardedHosts[0];
-            }
-            int colonIndex = forwardedHost.lastIndexOf(':');
-            if (colonIndex > 0) {
-                int port;
-                try {
-                    port = Integer.parseInt(forwardedHost.substring(colonIndex + 1));
-                } catch (NumberFormatException exc) {
-                    port = -1;
-                }
-
-                return Pair.of(forwardedHost.substring(0, colonIndex), port);
-            } else {
-                return Pair.of(forwardedHost, -1);
+        var host = request.getHeader("X-Forwarded-Host");
+        if (host == null) {
+            host = request.getHeader("Host");
+        }
+        if (host == null) {
+            host = request.getServerName();
+            var port = request.getServerPort();
+            return Pair.of(host, port);
+        }
+        var colonIdx = host.lastIndexOf(':');
+        if (colonIdx > 0) {
+            try {
+                var portStr = host.substring(colonIdx + 1);
+                var port = Integer.parseInt(portStr);
+                host = host.substring(0, colonIdx);
+                return Pair.of(host, port);
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid port in host header: {}", host, e);
             }
         }
+        return Pair.of(host, -1);
     }
 
     public static String extractWildcardPath(HttpServletRequest request) {
-        return extractWildcardPath(request, (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE));
+        var pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        return extractWildcardPath(request, pattern);
     }
 
     /**
@@ -260,24 +316,19 @@ public final class UrlUtil {
      * @return rest of the path
      */
     public static String extractWildcardPath(HttpServletRequest request, String pattern) {
-        String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-
-        if (path != null) {
-            // need to decode the path as it is part of the URL and thus URI encoded.
-            path = UriUtils.decode(path, StandardCharsets.UTF_8);
-        }
-
-        return path != null && pattern != null
-                ? new AntPathMatcher().extractPathWithinPattern(pattern, path)
-                : "";
+        var path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+        var matcher = new AntPathMatcher();
+        return matcher.extractPathWithinPattern(pattern, path);
     }
 
     public static String getPublicKeyUrl(ExtensionVersion extVersion) {
-        return getPublicKeyUrl(extVersion.getSignatureKeyPair().getPublicId());
+        var extension = extVersion.getExtension();
+        var namespaceName = extension.getNamespace().getName();
+        return getPublicKeyUrl(namespaceName + "." + extension.getName());
     }
 
     public static String getPublicKeyUrl(String publicId) {
-        return createApiUrl(getBaseUrl(), "api", "-", "public-key", publicId);
+        return createApiUrl(getBaseUrl(), "api", "-", "public-keys", publicId);
     }
 
     public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform) {
@@ -285,12 +336,6 @@ public final class UrlUtil {
     }
 
     public static String createAllVersionsUrl(String namespaceName, String extensionName, String targetPlatform, String versionsSegment) {
-        var segments = new String[]{ "api", namespaceName, extensionName };
-        if(targetPlatform != null) {
-            segments = ArrayUtils.add(segments, targetPlatform);
-        }
-
-        segments = ArrayUtils.add(segments, versionsSegment);
-        return createApiUrl(getBaseUrl(), segments);
+        return createApiUrl(getBaseUrl(), createApiVersionSegments(namespaceName, extensionName, targetPlatform, false, versionsSegment));
     }
 }
