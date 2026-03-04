@@ -474,21 +474,23 @@ public class ExtensionProcessor implements AutoCloseable {
 
     protected TempFile getIcon(ExtensionVersion extVersion) throws IOException {
         var iconPath = tryGetAssetPath(ExtensionQueryResult.ExtensionFile.FILE_ICON);
-        if(StringUtils.isEmpty(iconPath)) {
+        if (StringUtils.isEmpty(iconPath)) {
             loadPackageJson();
             var iconPathNode = packageJson.get("icon");
             iconPath = iconPathNode != null && iconPathNode.isTextual()
-                    ? "extension/" + iconPathNode.asText().replace('\\', '/')
+                    ? iconPathNode.asText().replace('\\', '/')
                     : null;
-        }
 
-        if (iconPath == null) {
-            return null;
+            if (StringUtils.isEmpty(iconPath)) {
+                return null;
+            }
+
+            iconPath = "extension/" + iconPath;
         }
 
         var entryFile = ArchiveUtil.readEntry(zipFile, iconPath);
         if (entryFile == null) {
-            throw new ErrorResultException(entryNotFoundMessage(iconPath));
+            throw new ErrorResultException("Icon " + entryNotFoundMessage(iconPath));
         }
 
         var iconResource = new FileResource();

@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import org.assertj.core.api.Assertions;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,11 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatObject;
 
 class ExtensionProcessorTest {
 
@@ -77,6 +81,19 @@ class ExtensionProcessorTest {
             checkChangelog(processor, "changelog.md");
             checkReadme(processor, "readme.md");
             checkLicense(processor, "license.txt");
+        }
+    }
+
+    @Test
+    void testMissingIcon() throws Exception {
+        try (
+                var file = writeToTempFile("util/with-missing-icon.zip");
+                var processor = new ExtensionProcessor(file)
+        ) {
+            AtomicInteger count = new AtomicInteger(0);
+            Consumer<TempFile> consumer = _ -> count.incrementAndGet();
+            processor.getFileResources(processor.getMetadata(), consumer);
+            assertThat(count.get()).isEqualTo(5);
         }
     }
 
