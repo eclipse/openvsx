@@ -50,12 +50,33 @@ public class AccessTokenConfig {
     @Value("${ovsx.access-token.notification:P7D}")
     Duration notification;
 
+    /**
+     * The maximum number of expiring token notifications to handle
+     * within one job execution.
+     * <p>
+     * Property: {@code ovsx.access-token.max-token-notifications}
+     * Default: {@code 100}
+     */
     @Value("${ovsx.access-token.max-token-notifications:100}")
     int maxTokenNotifications;
 
-    @Value("${ovsx.access-token.expiration-schedule:*/20 * * * * *}")
+    /**
+     * The cron schedule for the job to disable expired
+     * access tokens.
+     * <p>
+     * Property: {@code ovsx.access-token.expiration-schedule}
+     * Default: every 15 min
+     */
+    @Value("${ovsx.access-token.expiration-schedule:0 */15 * * * *}")
     String expirationSchedule;
 
-    @Value("${ovsx.access-token.notification-schedule:*/20 * * * * *}")
+    /**
+     * The cron schedule for the job to send out notifications
+     * for soon to be expired access tokens.
+     * <p>
+     * Property: {@code ovsx.access-token.notification-schedule}
+     * Default: every 15 min
+     */
+    @Value("${ovsx.access-token.notification-schedule:30 */15 * * * *}")
     String notificationSchedule;
 }
