@@ -33,9 +33,6 @@ spring:
     baseline-description: JobRunr tables
   jpa:
     open-in-view: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
   session:
