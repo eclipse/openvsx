@@ -77,7 +77,7 @@ public class DownloadCountService {
                     azureDownloadCountHandler.getRecurringJobId(),
                     azureDownloadCountHandler.getCronSchedule(),
                     ZoneId.of("UTC"),
-                    new HandlerJobRequest<>(AwsDownloadCountHandler.class)
+                    new HandlerJobRequest<>(AzureDownloadCountHandler.class)
             );
         } else {
             scheduler.deleteRecurringJob(azureDownloadCountHandler.getRecurringJobId());
