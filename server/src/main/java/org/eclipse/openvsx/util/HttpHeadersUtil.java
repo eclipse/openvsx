@@ -22,9 +22,9 @@ public class HttpHeadersUtil {
                 var header = it.nextElement();
                 headers.add(header, request.getHeader(header));
             }
-
         } catch (IllegalStateException _) {}
         headers.remove(HttpHeaders.HOST);
+        headers.remove(HttpHeaders.CONTENT_LENGTH);
         return headers;
     }
 
