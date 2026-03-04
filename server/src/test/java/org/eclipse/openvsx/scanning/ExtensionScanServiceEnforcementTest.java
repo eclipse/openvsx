@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -370,5 +371,41 @@ class ExtensionScanServiceEnforcementTest {
 
         // Assert: all 3 findings recorded
         verify(persistenceService, times(3)).recordValidationFailure(eq(scan), eq("CHECK_1"), any(), any(), eq(false));
+    }
+
+    @Test
+    void submitScannerJobs_skipsWhenJobAlreadyExists_forSameScanAndScannerType() {
+        // Arrange
+        Namespace namespace = new Namespace();
+        namespace.setName("ns");
+        Extension extension = new Extension();
+        extension.setNamespace(namespace);
+        extension.setName("ext");
+
+        ExtensionVersion extVersion = new ExtensionVersion();
+        extVersion.setId(456L);
+        extVersion.setExtension(extension);
+        extVersion.setVersion("1.0.0");
+        extVersion.setTargetPlatform("universal");
+        when(config.isEnabled()).thenReturn(true);
+
+        Scanner scanner = mock(Scanner.class);
+        when(scanner.getScannerType()).thenReturn("CLAMAV_REST");
+        when(scannerRegistry.getAllScanners()).thenReturn(List.of(scanner));
+
+        ScannerJob existingJob = new ScannerJob();
+        existingJob.setId(999L);
+        existingJob.setScanId("123");
+        existingJob.setScannerType("CLAMAV_REST");
+        when(scanJobRepository.findByScanIdAndScannerType("123", "CLAMAV_REST"))
+            .thenReturn(Optional.of(existingJob));
+
+        // Act
+        boolean submitted = svc.submitScannerJobs(scan, extVersion);
+
+        // Assert
+        assertThat(submitted).isTrue();
+        verify(scanJobRepository, never()).save(any(ScannerJob.class));
+        verify(jobScheduler, never()).enqueue(any(ScannerInvocationRequest.class));
     }
 }

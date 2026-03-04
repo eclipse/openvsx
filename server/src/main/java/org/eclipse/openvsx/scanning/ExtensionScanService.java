@@ -21,6 +21,7 @@ import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nonnull;
@@ -216,6 +217,12 @@ public class ExtensionScanService {
 
         for (Scanner scanner : scanners) {
             String scannerType = scanner.getScannerType();
+            var existingJob = scanJobRepository.findByScanIdAndScannerType(scanId, scannerType);
+            if (existingJob.isPresent()) {
+                logger.debug("Skipping duplicate ScanJob creation: {} for {} (scanId={}), existingJobId={}",
+                    scannerType, NamingUtil.toLogFormat(extVersion), scanId, existingJob.get().getId());
+                continue;
+            }
 
             ScannerJob job = new ScannerJob();
             job.setScanId(scanId);
