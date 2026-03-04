@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -132,7 +134,7 @@ public class ExtensionValidationFailure implements Serializable {
         failure.setRuleName(ruleName);
         failure.setValidationFailureReason(reason);
         failure.setEnforced(true);
-        failure.setDetectedAt(LocalDateTime.now());
+        failure.setDetectedAt(TimeUtil.getCurrentUTC());
         return failure;
     }
 

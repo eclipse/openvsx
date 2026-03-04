@@ -26,6 +26,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.repositories.ExtensionThreatRepository;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
 import org.slf4j.Logger;
@@ -310,7 +311,7 @@ public class ExtensionScanCompletionService {
             // Some active scanners don't have jobs
             LocalDateTime scanStarted = scanResult.getStartedAt();
             if (scanStarted != null) {
-                long minutesElapsed = java.time.Duration.between(scanStarted, LocalDateTime.now()).toMinutes();
+                long minutesElapsed = java.time.Duration.between(scanStarted, TimeUtil.getCurrentUTC()).toMinutes();
                 
                 if (minutesElapsed > 1) {
                     // Been scanning for > 1 minutes

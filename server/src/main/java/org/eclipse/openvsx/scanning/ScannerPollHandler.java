@@ -15,6 +15,7 @@ package org.eclipse.openvsx.scanning;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -205,7 +206,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         // Mark job complete and clear lease
         job.setStatus(ScannerJob.JobStatus.COMPLETE);
         job.setPollLeaseUntil(null);
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         scanJobRepository.save(job);
         
         // Process result: save threats, determine check result, record audit
@@ -379,7 +380,7 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         job.setStatus(ScannerJob.JobStatus.FAILED);
         job.setErrorMessage(errorMessage);
         job.setPollLeaseUntil(null);  // Clear lease - no more polling needed
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         scanJobRepository.save(job);
     }
     

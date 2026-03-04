@@ -25,10 +25,7 @@ import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.ExtensionId;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,7 +253,7 @@ public class PublishExtensionVersionHandler {
                 
                 // Record as a publish check failure and reject the extension
                  if (scan != null) {
-                    var now = LocalDateTime.now();
+                    var now = TimeUtil.getCurrentUTC();
                     var checkType = "MALICIOUS_ZIP_CHECK";
                     var reason = "VSIX contains zip entries with potentially harmful extra fields";
                     

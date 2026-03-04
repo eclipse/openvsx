@@ -747,7 +747,7 @@ public class ScanAPI {
         if (existingDecision != null) {
             existingDecision.setDecision(fileDecisionValue);
             existingDecision.setDecidedBy(adminUser);
-            existingDecision.setDecidedAt(LocalDateTime.now());
+            existingDecision.setDecidedAt(TimeUtil.getCurrentUTC());
             repositories.saveFileDecision(existingDecision);
             return;
         }
@@ -759,7 +759,7 @@ public class ScanAPI {
         fileDecision.setFileType(threat.getFileExtension());
         fileDecision.setDecision(fileDecisionValue);
         fileDecision.setDecidedBy(adminUser);
-        fileDecision.setDecidedAt(LocalDateTime.now());
+        fileDecision.setDecidedAt(TimeUtil.getCurrentUTC());
         fileDecision.setNamespaceName(scan.getNamespaceName());
         fileDecision.setExtensionName(scan.getExtensionName());
         fileDecision.setDisplayName(scan.getExtensionDisplayName());

@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -261,7 +263,7 @@ public class ScanCheckResult implements Serializable {
         result.setCategory(category);
         result.setResult(CheckResult.PASSED);
         result.setStartedAt(startedAt);
-        result.setCompletedAt(LocalDateTime.now());
+        result.setCompletedAt(TimeUtil.getCurrentUTC());
         result.setDurationMs(java.time.Duration.between(startedAt, result.getCompletedAt()).toMillis());
         result.setFilesScanned(filesScanned);
         result.setFindingsCount(0);
@@ -286,7 +288,7 @@ public class ScanCheckResult implements Serializable {
         result.setCategory(category);
         result.setResult(CheckResult.QUARANTINE);
         result.setStartedAt(startedAt);
-        result.setCompletedAt(LocalDateTime.now());
+        result.setCompletedAt(TimeUtil.getCurrentUTC());
         result.setDurationMs(java.time.Duration.between(startedAt, result.getCompletedAt()).toMillis());
         result.setFilesScanned(filesScanned);
         result.setFindingsCount(findingsCount);
@@ -311,7 +313,7 @@ public class ScanCheckResult implements Serializable {
         result.setCategory(category);
         result.setResult(CheckResult.REJECT);
         result.setStartedAt(startedAt);
-        result.setCompletedAt(LocalDateTime.now());
+        result.setCompletedAt(TimeUtil.getCurrentUTC());
         result.setDurationMs(java.time.Duration.between(startedAt, result.getCompletedAt()).toMillis());
         result.setFilesScanned(filesScanned);
         result.setFindingsCount(findingsCount);
@@ -333,7 +335,7 @@ public class ScanCheckResult implements Serializable {
         result.setCategory(category);
         result.setResult(CheckResult.ERROR);
         result.setStartedAt(startedAt);
-        result.setCompletedAt(LocalDateTime.now());
+        result.setCompletedAt(TimeUtil.getCurrentUTC());
         result.setDurationMs(java.time.Duration.between(startedAt, result.getCompletedAt()).toMillis());
         result.setErrorMessage(errorMessage);
         result.setSummary("Error: " + (errorMessage != null && errorMessage.length() > 100 

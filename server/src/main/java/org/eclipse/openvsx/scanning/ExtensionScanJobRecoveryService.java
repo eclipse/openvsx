@@ -21,6 +21,7 @@ import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -133,7 +134,7 @@ public class ExtensionScanJobRecoveryService {
                 logger.warn("Found orphaned job for removed scanner: {} scanId={}", scannerType, job.getScanId());
                 job.setStatus(ScannerJob.JobStatus.REMOVED);
                 job.setErrorMessage("Scanner '" + scannerType + "' removed from configuration");
-                job.setUpdatedAt(LocalDateTime.now());
+                job.setUpdatedAt(TimeUtil.getCurrentUTC());
                 scanJobRepository.save(job);
                 orphanedCount++;
                 continue;
@@ -159,7 +160,7 @@ public class ExtensionScanJobRecoveryService {
             // --- Sync jobs stuck in PROCESSING: reset to QUEUED ---
             if (!scanner.isAsync() && job.getStatus() == ScannerJob.JobStatus.PROCESSING) {
                 job.setStatus(ScannerJob.JobStatus.QUEUED);
-                job.setUpdatedAt(LocalDateTime.now());
+                job.setUpdatedAt(TimeUtil.getCurrentUTC());
                 job.setRecoveryInProgress(false);
                 scanJobRepository.save(job);
                 syncJobsReset++;
@@ -284,7 +285,7 @@ public class ExtensionScanJobRecoveryService {
                 scan.getId(), scan.getNamespaceName(), scan.getExtensionName(),
                 scan.getExtensionVersion());
             scan.setStatus(ScanStatus.REJECTED);
-            scan.setCompletedAt(LocalDateTime.now());
+            scan.setCompletedAt(TimeUtil.getCurrentUTC());
             repositories.saveExtensionScan(scan);
             return RecoveryResult.REJECTED;
         }
@@ -446,8 +447,8 @@ public class ExtensionScanJobRecoveryService {
      * Re-enqueue if stuck 5-60 min, fail if stuck > 60 min.
      */
     private void recoverStuckQueuedJobs() {
-        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        LocalDateTime oneHourAgo = LocalDateTime.now().minusMinutes(60);
+        LocalDateTime fiveMinutesAgo = TimeUtil.getCurrentUTC().minusMinutes(5);
+        LocalDateTime oneHourAgo = TimeUtil.getCurrentUTC().minusMinutes(60);
         
         List<ScannerJob> stuckJobs = scanJobRepository.findByStatusAndCreatedAtBeforeAndRecoveryInProgressFalse(
             ScannerJob.JobStatus.QUEUED, fiveMinutesAgo);
@@ -475,7 +476,7 @@ public class ExtensionScanJobRecoveryService {
             } else {
                 try {
                     job.setRecoveryInProgress(true);
-                    job.setUpdatedAt(LocalDateTime.now());
+                    job.setUpdatedAt(TimeUtil.getCurrentUTC());
                     scanJobRepository.save(job);
                     
                     jobScheduler.enqueue(new ScannerInvocationRequest(
@@ -495,7 +496,7 @@ public class ExtensionScanJobRecoveryService {
      * Check for jobs exceeding scanner timeout.
      */
     private void checkTimeouts() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = TimeUtil.getCurrentUTC();
         
         List<ScannerJob> asyncJobs = scanJobRepository.findByStatusIn(
             List.of(ScannerJob.JobStatus.SUBMITTED, ScannerJob.JobStatus.PROCESSING));
@@ -557,7 +558,7 @@ public class ExtensionScanJobRecoveryService {
         job.setStatus(ScannerJob.JobStatus.FAILED);
         job.setErrorMessage(errorMessage);
         job.setPollLeaseUntil(null);
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         scanJobRepository.save(job);
     }
 }

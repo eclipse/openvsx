@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -126,7 +128,7 @@ public class AdminScanDecision implements Serializable {
         decision.setScan(scan);
         decision.setDecision(ALLOWED);
         decision.setDecidedBy(decidedBy);
-        decision.setDecidedAt(LocalDateTime.now());
+        decision.setDecidedAt(TimeUtil.getCurrentUTC());
         return decision;
     }
 
@@ -138,7 +140,7 @@ public class AdminScanDecision implements Serializable {
         decision.setScan(scan);
         decision.setDecision(BLOCKED);
         decision.setDecidedBy(decidedBy);
-        decision.setDecidedAt(LocalDateTime.now());
+        decision.setDecidedAt(TimeUtil.getCurrentUTC());
         return decision;
     }
 

@@ -14,6 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -97,7 +98,7 @@ public class ScannerConcurrencyDispatcher {
 
             int dispatched = 0;
             for (ScannerJob job : queued) {
-                int claimed = scanJobRepository.claimForProcessing(job.getId(), LocalDateTime.now());
+                int claimed = scanJobRepository.claimForProcessing(job.getId(), TimeUtil.getCurrentUTC());
                 if (claimed > 0) {
                     dispatched++;
                     jobScheduler.enqueue(new ScannerInvocationRequest(

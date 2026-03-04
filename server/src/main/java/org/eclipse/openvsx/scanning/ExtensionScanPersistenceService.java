@@ -20,6 +20,7 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.FileDecisionRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -127,7 +128,7 @@ public class ExtensionScanPersistenceService {
             scan.setPublisher(publisherLoginName);
             scan.setPublisherUrl(publisherUrl);
             
-            scan.setStartedAt(LocalDateTime.now());
+            scan.setStartedAt(TimeUtil.getCurrentUTC());
             scan.setStatus(ScanStatus.STARTED);
             
             return repositories.saveExtensionScan(scan);
@@ -152,7 +153,7 @@ public class ExtensionScanPersistenceService {
     @Transactional(TxType.REQUIRES_NEW)
     public void completeWithStatus(@Nonnull ExtensionScan scan, @Nonnull ScanStatus newStatus) {
         scan.setStatus(newStatus);
-        scan.setCompletedAt(LocalDateTime.now());
+        scan.setCompletedAt(TimeUtil.getCurrentUTC());
         repositories.saveExtensionScan(scan);
     }
 
@@ -163,7 +164,7 @@ public class ExtensionScanPersistenceService {
     public void markAsErrored(@Nonnull ExtensionScan scan, @Nullable String errorMessage) {
         scan.setStatus(ScanStatus.ERRORED);
         scan.setErrorMessage(errorMessage);
-        scan.setCompletedAt(LocalDateTime.now());
+        scan.setCompletedAt(TimeUtil.getCurrentUTC());
         repositories.saveExtensionScan(scan);
     }
 
@@ -259,7 +260,7 @@ public class ExtensionScanPersistenceService {
         
         // Look up the scanner to get its "required" configuration
         Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
-        Boolean required = scanner != null ? scanner.isRequired() : true;  // Default to required if scanner not found
+        Boolean required = scanner == null || scanner.isRequired();  // Default to required if scanner not found
         
         recordCheckResult(
             scan,
@@ -267,7 +268,7 @@ public class ExtensionScanPersistenceService {
             ScanCheckResult.CheckCategory.SCANNER_JOB,
             result,
             startedAt,
-            LocalDateTime.now(),
+            TimeUtil.getCurrentUTC(),
             filesScanned,
             findingsCount,
             summary,
@@ -321,7 +322,7 @@ public class ExtensionScanPersistenceService {
             return ThreatSaveResult.clean();
         }
         
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = TimeUtil.getCurrentUTC();
         long scanJobId = job.getId();
         String scanId = job.getScanId();
         String scannerType = job.getScannerType();
@@ -588,7 +589,7 @@ public class ExtensionScanPersistenceService {
                 if (scan != null && !scan.getStatus().isCompleted()) {
                     scan.setStatus(ScanStatus.ERRORED);
                     scan.setErrorMessage("Extension was deleted while scan was in progress");
-                    scan.setCompletedAt(java.time.LocalDateTime.now());
+                    scan.setCompletedAt(TimeUtil.getCurrentUTC());
                     repositories.saveExtensionScan(scan);
                     logger.debug("Marked scan {} as ERRORED due to extension deletion", scanId);
                 }

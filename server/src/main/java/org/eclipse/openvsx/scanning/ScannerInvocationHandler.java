@@ -15,6 +15,7 @@ package org.eclipse.openvsx.scanning;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -134,7 +135,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         
         // For unlimited scanners with QUEUED jobs, claim immediately (existing behavior)
         if (job.getStatus() == ScannerJob.JobStatus.QUEUED) {
-            int claimed = scanJobRepository.claimForProcessing(jobId, LocalDateTime.now());
+            int claimed = scanJobRepository.claimForProcessing(jobId, TimeUtil.getCurrentUTC());
             if (claimed == 0) {
                 logger.debug("Job {} already claimed by another worker, skipping", jobId);
                 return;
@@ -178,8 +179,8 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
                 newJob.setScannerType(scannerType);
                 newJob.setExtensionVersionId(extensionVersionId);
                 newJob.setStatus(ScannerJob.JobStatus.QUEUED);  // Queued, waiting to invoke scanner
-                newJob.setCreatedAt(LocalDateTime.now());
-                newJob.setUpdatedAt(LocalDateTime.now());
+                newJob.setCreatedAt(TimeUtil.getCurrentUTC());
+                newJob.setUpdatedAt(TimeUtil.getCurrentUTC());
                 newJob.setPollLeaseUntil(null);  // No lease yet
                 newJob.setPollAttempts(0);  // No poll attempts yet
                 newJob.setRecoveryInProgress(false);
@@ -200,7 +201,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         if (scanner == null) {
             job.setStatus(ScannerJob.JobStatus.FAILED);
             job.setErrorMessage("Scanner not found: " + scannerType);
-            job.setUpdatedAt(LocalDateTime.now());
+            job.setUpdatedAt(TimeUtil.getCurrentUTC());
             scanJobRepository.save(job);
             logger.error("Scanner not found: {}", scannerType);
             return null;  // Don't retry - scanner will never exist
@@ -250,7 +251,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         }
         job.setStatus(ScannerJob.JobStatus.FAILED);
         job.setErrorMessage("Scanner invocation failed: " + e.getMessage());
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         scanJobRepository.save(job);
     }
 
@@ -278,7 +279,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         // Mark job as complete
         job.setStatus(ScannerJob.JobStatus.COMPLETE);
         job.setExternalJobId(null);  // No external job for sync scanners
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         
         // Process result: save threats, determine check result, record audit
         var processed = persistenceService.processCompletedScan(
@@ -312,7 +313,7 @@ public class ScannerInvocationHandler implements JobRequestHandler<ScannerInvoca
         // Mark job as submitted to external service (requires polling)
         job.setStatus(ScannerJob.JobStatus.SUBMITTED);
         job.setExternalJobId(externalJobId);
-        job.setUpdatedAt(LocalDateTime.now());
+        job.setUpdatedAt(TimeUtil.getCurrentUTC());
         
         // Store file hashes for async scanners with file extraction
         // This allows looking up hashes when results come back later

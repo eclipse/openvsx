@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -196,7 +198,7 @@ public class ExtensionThreat implements Serializable {
         threat.setReason(reason);
         threat.setSeverity(severity);
         threat.setEnforced(true);
-        threat.setDetectedAt(LocalDateTime.now());
+        threat.setDetectedAt(TimeUtil.getCurrentUTC());
         return threat;
     }
 

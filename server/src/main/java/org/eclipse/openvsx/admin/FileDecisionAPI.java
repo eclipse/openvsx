@@ -224,7 +224,7 @@ public class FileDecisionAPI {
                     if (existingDecision != null) {
                         existingDecision.setDecision(decisionValue);
                         existingDecision.setDecidedBy(adminUser);
-                        existingDecision.setDecidedAt(LocalDateTime.now());
+                        existingDecision.setDecidedAt(TimeUtil.getCurrentUTC());
                         repositories.saveFileDecision(existingDecision);
                     } else {
                         FileDecision newDecision;

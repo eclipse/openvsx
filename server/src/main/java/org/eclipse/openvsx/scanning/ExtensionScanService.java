@@ -18,6 +18,7 @@ import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -229,8 +230,8 @@ public class ExtensionScanService {
             job.setScannerType(scannerType);
             job.setExtensionVersionId(extensionVersionId);
             job.setStatus(ScannerJob.JobStatus.QUEUED);
-            job.setCreatedAt(LocalDateTime.now());
-            job.setUpdatedAt(LocalDateTime.now());
+            job.setCreatedAt(TimeUtil.getCurrentUTC());
+            job.setUpdatedAt(TimeUtil.getCurrentUTC());
             job.setPollLeaseUntil(null);
             job.setPollAttempts(0);
             job.setRecoveryInProgress(false);

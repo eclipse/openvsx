@@ -348,7 +348,7 @@ public class RateLimitAPI {
                 return ResponseEntity.notFound().build();
             }
 
-            var localDateTime = date != null ? TimeUtil.fromUTCString(date) : LocalDateTime.now();
+            var localDateTime = date != null ? TimeUtil.fromUTCString(date) : TimeUtil.getCurrentUTC();
             var stats = repositories.findUsageStatsByCustomerAndDate(customer, localDateTime);
             var result = new UsageStatsListJson(stats.stream().map(UsageStats::toJson).toList());
             return ResponseEntity.ok(result);

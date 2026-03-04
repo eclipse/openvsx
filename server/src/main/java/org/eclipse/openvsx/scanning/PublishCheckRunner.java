@@ -16,6 +16,7 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -90,10 +91,10 @@ public class PublishCheckRunner{
 
             logger.debug("Scan {} ({}) - Running check: {}", scan.getId(), extId, check.getCheckType());
             
-            var startTime = LocalDateTime.now();
+            var startTime = TimeUtil.getCurrentUTC();
             try {
                 var result = check.check(context);
-                var endTime = LocalDateTime.now();
+                var endTime = TimeUtil.getCurrentUTC();
                 logger.debug("Scan {} ({}) - Check {} passed: {}", scan.getId(), extId, check.getCheckType(), result.passed());
                 
                 int findingsCount = 0;
@@ -148,7 +149,7 @@ public class PublishCheckRunner{
                 ));
                 
             } catch (Exception e) {
-                var endTime = LocalDateTime.now();
+                var endTime = TimeUtil.getCurrentUTC();
                 boolean isRequired = check.isRequired();
                 
                 // Record the check execution with ERROR result
