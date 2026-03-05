@@ -21,10 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Entity
-@Table(uniqueConstraints = {
-		@UniqueConstraint(columnNames = { "publicId" }),
-		@UniqueConstraint(columnNames = { "name" })
-})
+@Table(name = "namespace")
 public class Namespace implements Serializable {
 
 	@Serial

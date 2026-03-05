@@ -4,6 +4,7 @@
 package org.eclipse.openvsx.jooq;
 
 
+import org.eclipse.openvsx.jooq.tables.AdminScanDecision;
 import org.eclipse.openvsx.jooq.tables.AdminStatistics;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
@@ -11,10 +12,15 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
+import org.eclipse.openvsx.jooq.tables.Customer;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
+import org.eclipse.openvsx.jooq.tables.ExtensionScan;
+import org.eclipse.openvsx.jooq.tables.ExtensionThreat;
+import org.eclipse.openvsx.jooq.tables.ExtensionValidationFailure;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
@@ -29,9 +35,13 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
+import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
+import org.eclipse.openvsx.jooq.tables.ScanJob;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
+import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
 
 
@@ -40,6 +50,11 @@ import org.eclipse.openvsx.jooq.tables.UserData;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
+
+    /**
+     * The table <code>public.admin_scan_decision</code>.
+     */
+    public static final AdminScanDecision ADMIN_SCAN_DECISION = AdminScanDecision.ADMIN_SCAN_DECISION;
 
     /**
      * The table <code>public.admin_statistics</code>.
@@ -81,6 +96,11 @@ public class Tables {
     public static final AdminStatisticsTopNamespaceExtensions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS = AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS;
 
     /**
+     * The table <code>public.customer</code>.
+     */
+    public static final Customer CUSTOMER = Customer.CUSTOMER;
+
+    /**
      * The table <code>public.download_count_processed_item</code>.
      */
     public static final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
@@ -96,9 +116,29 @@ public class Tables {
     public static final ExtensionReview EXTENSION_REVIEW = ExtensionReview.EXTENSION_REVIEW;
 
     /**
+     * The table <code>public.extension_scan</code>.
+     */
+    public static final ExtensionScan EXTENSION_SCAN = ExtensionScan.EXTENSION_SCAN;
+
+    /**
+     * The table <code>public.extension_threat</code>.
+     */
+    public static final ExtensionThreat EXTENSION_THREAT = ExtensionThreat.EXTENSION_THREAT;
+
+    /**
+     * The table <code>public.extension_validation_failure</code>.
+     */
+    public static final ExtensionValidationFailure EXTENSION_VALIDATION_FAILURE = ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE;
+
+    /**
      * The table <code>public.extension_version</code>.
      */
     public static final ExtensionVersion EXTENSION_VERSION = ExtensionVersion.EXTENSION_VERSION;
+
+    /**
+     * The table <code>public.file_decision</code>.
+     */
+    public static final FileDecision FILE_DECISION = FileDecision.FILE_DECISION;
 
     /**
      * The table <code>public.file_resource</code>.
@@ -171,6 +211,16 @@ public class Tables {
     public static final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
 
     /**
+     * Records all check/scan executions for audit trail
+     */
+    public static final ScanCheckResult SCAN_CHECK_RESULT = ScanCheckResult.SCAN_CHECK_RESULT;
+
+    /**
+     * The table <code>public.scan_job</code>.
+     */
+    public static final ScanJob SCAN_JOB = ScanJob.SCAN_JOB;
+
+    /**
      * The table <code>public.signature_key_pair</code>.
      */
     public static final SignatureKeyPair SIGNATURE_KEY_PAIR = SignatureKeyPair.SIGNATURE_KEY_PAIR;
@@ -184,6 +234,16 @@ public class Tables {
      * The table <code>public.spring_session_attributes</code>.
      */
     public static final SpringSessionAttributes SPRING_SESSION_ATTRIBUTES = SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES;
+
+    /**
+     * The table <code>public.tier</code>.
+     */
+    public static final Tier TIER = Tier.TIER;
+
+    /**
+     * The table <code>public.usage_stats</code>.
+     */
+    public static final UsageStats USAGE_STATS = UsageStats.USAGE_STATS;
 
     /**
      * The table <code>public.user_data</code>.

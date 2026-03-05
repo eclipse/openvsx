@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.openvsx.jooq.tables.AdminScanDecision;
 import org.eclipse.openvsx.jooq.tables.AdminStatistics;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
@@ -14,10 +15,15 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
+import org.eclipse.openvsx.jooq.tables.Customer;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
+import org.eclipse.openvsx.jooq.tables.ExtensionScan;
+import org.eclipse.openvsx.jooq.tables.ExtensionThreat;
+import org.eclipse.openvsx.jooq.tables.ExtensionValidationFailure;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
@@ -32,9 +38,13 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
+import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
+import org.eclipse.openvsx.jooq.tables.ScanJob;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
+import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
 import org.jooq.Catalog;
 import org.jooq.Sequence;
@@ -54,6 +64,11 @@ public class Public extends SchemaImpl {
      * The reference instance of <code>public</code>
      */
     public static final Public PUBLIC = new Public();
+
+    /**
+     * The table <code>public.admin_scan_decision</code>.
+     */
+    public final AdminScanDecision ADMIN_SCAN_DECISION = AdminScanDecision.ADMIN_SCAN_DECISION;
 
     /**
      * The table <code>public.admin_statistics</code>.
@@ -95,6 +110,11 @@ public class Public extends SchemaImpl {
     public final AdminStatisticsTopNamespaceExtensions ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS = AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS;
 
     /**
+     * The table <code>public.customer</code>.
+     */
+    public final Customer CUSTOMER = Customer.CUSTOMER;
+
+    /**
      * The table <code>public.download_count_processed_item</code>.
      */
     public final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
@@ -110,9 +130,29 @@ public class Public extends SchemaImpl {
     public final ExtensionReview EXTENSION_REVIEW = ExtensionReview.EXTENSION_REVIEW;
 
     /**
+     * The table <code>public.extension_scan</code>.
+     */
+    public final ExtensionScan EXTENSION_SCAN = ExtensionScan.EXTENSION_SCAN;
+
+    /**
+     * The table <code>public.extension_threat</code>.
+     */
+    public final ExtensionThreat EXTENSION_THREAT = ExtensionThreat.EXTENSION_THREAT;
+
+    /**
+     * The table <code>public.extension_validation_failure</code>.
+     */
+    public final ExtensionValidationFailure EXTENSION_VALIDATION_FAILURE = ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE;
+
+    /**
      * The table <code>public.extension_version</code>.
      */
     public final ExtensionVersion EXTENSION_VERSION = ExtensionVersion.EXTENSION_VERSION;
+
+    /**
+     * The table <code>public.file_decision</code>.
+     */
+    public final FileDecision FILE_DECISION = FileDecision.FILE_DECISION;
 
     /**
      * The table <code>public.file_resource</code>.
@@ -185,6 +225,16 @@ public class Public extends SchemaImpl {
     public final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
 
     /**
+     * Records all check/scan executions for audit trail
+     */
+    public final ScanCheckResult SCAN_CHECK_RESULT = ScanCheckResult.SCAN_CHECK_RESULT;
+
+    /**
+     * The table <code>public.scan_job</code>.
+     */
+    public final ScanJob SCAN_JOB = ScanJob.SCAN_JOB;
+
+    /**
      * The table <code>public.signature_key_pair</code>.
      */
     public final SignatureKeyPair SIGNATURE_KEY_PAIR = SignatureKeyPair.SIGNATURE_KEY_PAIR;
@@ -198,6 +248,16 @@ public class Public extends SchemaImpl {
      * The table <code>public.spring_session_attributes</code>.
      */
     public final SpringSessionAttributes SPRING_SESSION_ATTRIBUTES = SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES;
+
+    /**
+     * The table <code>public.tier</code>.
+     */
+    public final Tier TIER = Tier.TIER;
+
+    /**
+     * The table <code>public.usage_stats</code>.
+     */
+    public final UsageStats USAGE_STATS = UsageStats.USAGE_STATS;
 
     /**
      * The table <code>public.user_data</code>.
@@ -220,11 +280,17 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Sequence<?>> getSequences() {
         return Arrays.asList(
+            Sequences.ADMIN_SCAN_DECISION_SEQ,
             Sequences.ADMIN_STATISTICS_SEQ,
+            Sequences.CUSTOMER_SEQ,
             Sequences.DOWNLOAD_COUNT_PROCESSED_ITEM_SEQ,
             Sequences.EXTENSION_REVIEW_SEQ,
+            Sequences.EXTENSION_SCAN_SEQ,
             Sequences.EXTENSION_SEQ,
+            Sequences.EXTENSION_THREAT_SEQ,
+            Sequences.EXTENSION_VALIDATION_FAILURE_SEQ,
             Sequences.EXTENSION_VERSION_SEQ,
+            Sequences.FILE_DECISION_SEQ,
             Sequences.FILE_RESOURCE_SEQ,
             Sequences.HIBERNATE_SEQUENCE,
             Sequences.MIGRATION_ITEM_SEQ,
@@ -232,7 +298,11 @@ public class Public extends SchemaImpl {
             Sequences.NAMESPACE_SEQ,
             Sequences.PERSISTED_LOG_SEQ,
             Sequences.PERSONAL_ACCESS_TOKEN_SEQ,
+            Sequences.SCAN_CHECK_RESULT_SEQ,
+            Sequences.SCAN_JOB_SEQ,
             Sequences.SIGNATURE_KEY_PAIR_SEQ,
+            Sequences.TIER_SEQ,
+            Sequences.USAGE_STATS_SEQ,
             Sequences.USER_DATA_SEQ
         );
     }
@@ -240,6 +310,7 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
+            AdminScanDecision.ADMIN_SCAN_DECISION,
             AdminStatistics.ADMIN_STATISTICS,
             AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING,
             AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED,
@@ -247,10 +318,15 @@ public class Public extends SchemaImpl {
             AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS,
             AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS,
             AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS,
+            Customer.CUSTOMER,
             DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM,
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
+            ExtensionScan.EXTENSION_SCAN,
+            ExtensionThreat.EXTENSION_THREAT,
+            ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE,
             ExtensionVersion.EXTENSION_VERSION,
+            FileDecision.FILE_DECISION,
             FileResource.FILE_RESOURCE,
             FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY,
             JobrunrBackgroundjobservers.JOBRUNR_BACKGROUNDJOBSERVERS,
@@ -265,9 +341,13 @@ public class Public extends SchemaImpl {
             NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS,
             PersistedLog.PERSISTED_LOG,
             PersonalAccessToken.PERSONAL_ACCESS_TOKEN,
+            ScanCheckResult.SCAN_CHECK_RESULT,
+            ScanJob.SCAN_JOB,
             SignatureKeyPair.SIGNATURE_KEY_PAIR,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,
+            Tier.TIER,
+            UsageStats.USAGE_STATS,
             UserData.USER_DATA
         );
     }

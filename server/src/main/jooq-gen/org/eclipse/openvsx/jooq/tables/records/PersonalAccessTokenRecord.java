@@ -117,6 +117,34 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         return (Long) get(6);
     }
 
+    /**
+     * Setter for <code>public.personal_access_token.expires_timestamp</code>.
+     */
+    public void setExpiresTimestamp(LocalDateTime value) {
+        set(7, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.expires_timestamp</code>.
+     */
+    public LocalDateTime getExpiresTimestamp() {
+        return (LocalDateTime) get(7);
+    }
+
+    /**
+     * Setter for <code>public.personal_access_token.notified</code>.
+     */
+    public void setNotified(Boolean value) {
+        set(8, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.notified</code>.
+     */
+    public Boolean getNotified() {
+        return (Boolean) get(8);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -140,7 +168,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
     /**
      * Create a detached, initialised PersonalAccessTokenRecord
      */
-    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData) {
+    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified) {
         super(PersonalAccessToken.PERSONAL_ACCESS_TOKEN);
 
         setId(id);
@@ -150,6 +178,8 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         setDescription(description);
         setValue(value);
         setUserData(userData);
+        setExpiresTimestamp(expiresTimestamp);
+        setNotified(notified);
         resetChangedOnNotNull();
     }
 }

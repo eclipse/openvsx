@@ -22,10 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "publicId" }),
-        @UniqueConstraint(columnNames = { "namespace_id", "name" })
-})
+@Table(name = "extension")
 public class Extension implements Serializable {
 
     @Serial

@@ -16,9 +16,19 @@ import org.jooq.impl.SQLDataType;
 public class Sequences {
 
     /**
+     * The sequence <code>public.admin_scan_decision_seq</code>
+     */
+    public static final Sequence<Long> ADMIN_SCAN_DECISION_SEQ = Internal.createSequence("admin_scan_decision_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.admin_statistics_seq</code>
      */
     public static final Sequence<Long> ADMIN_STATISTICS_SEQ = Internal.createSequence("admin_statistics_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.customer_seq</code>
+     */
+    public static final Sequence<Long> CUSTOMER_SEQ = Internal.createSequence("customer_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
      * The sequence <code>public.download_count_processed_item_seq</code>
@@ -31,14 +41,34 @@ public class Sequences {
     public static final Sequence<Long> EXTENSION_REVIEW_SEQ = Internal.createSequence("extension_review_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
+     * The sequence <code>public.extension_scan_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_SCAN_SEQ = Internal.createSequence("extension_scan_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.extension_seq</code>
      */
     public static final Sequence<Long> EXTENSION_SEQ = Internal.createSequence("extension_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
+     * The sequence <code>public.extension_threat_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_THREAT_SEQ = Internal.createSequence("extension_threat_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.extension_validation_failure_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_VALIDATION_FAILURE_SEQ = Internal.createSequence("extension_validation_failure_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.extension_version_seq</code>
      */
     public static final Sequence<Long> EXTENSION_VERSION_SEQ = Internal.createSequence("extension_version_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.file_decision_seq</code>
+     */
+    public static final Sequence<Long> FILE_DECISION_SEQ = Internal.createSequence("file_decision_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
 
     /**
      * The sequence <code>public.file_resource_seq</code>
@@ -76,9 +106,29 @@ public class Sequences {
     public static final Sequence<Long> PERSONAL_ACCESS_TOKEN_SEQ = Internal.createSequence("personal_access_token_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
+     * The sequence <code>public.scan_check_result_seq</code>
+     */
+    public static final Sequence<Long> SCAN_CHECK_RESULT_SEQ = Internal.createSequence("scan_check_result_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.scan_job_seq</code>
+     */
+    public static final Sequence<Long> SCAN_JOB_SEQ = Internal.createSequence("scan_job_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
      * The sequence <code>public.signature_key_pair_seq</code>
      */
     public static final Sequence<Long> SIGNATURE_KEY_PAIR_SEQ = Internal.createSequence("signature_key_pair_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.tier_seq</code>
+     */
+    public static final Sequence<Long> TIER_SEQ = Internal.createSequence("tier_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
+
+    /**
+     * The sequence <code>public.usage_stats_seq</code>
+     */
+    public static final Sequence<Long> USAGE_STATS_SEQ = Internal.createSequence("usage_stats_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
      * The sequence <code>public.user_data_seq</code>
