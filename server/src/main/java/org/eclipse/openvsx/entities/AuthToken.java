@@ -24,27 +24,4 @@ public record AuthToken(
         Set<String> scopes,
         String refreshToken,
         Instant refreshExpiresAt
-) implements Serializable {
-
-    @Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("accessToken: [");
-		sb.append(accessToken);
-		sb.append("], ");
-		sb.append("refreshToken: [");
-		sb.append(refreshToken);
-		sb.append("], ");
-		sb.append("expiresAt: [");
-		sb.append(expiresAt);
-		sb.append("], ");
-		sb.append("scopes: [");
-		sb.append(scopes);
-        sb.append("], ");
-        sb.append("refreshExpiresAt: [");
-        sb.append(refreshExpiresAt);
-        sb.append("]");
-		return sb.toString();
-    }
-
-}
+) implements Serializable {}
