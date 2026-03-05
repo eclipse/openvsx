@@ -4,7 +4,7 @@ metadata:
 components:
   - name: tool
     container:
-      image: quay.io/devfile/universal-developer-image:ubi9-latest
+      image: quay.io/devfile/universal-developer-image:ubi10-latest
       memoryRequest: 256Mi
       memoryLimit: 8Gi
       cpuRequest: 100m
@@ -83,7 +83,6 @@ commands:
       workingDir: ${PROJECTS_ROOT}/openvsx/webui
       commandLine: |
         yarn install &&
-        yarn build &&
         yarn build:default
 
   - id: build-server
@@ -92,6 +91,8 @@ commands:
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx
       commandLine: |
+        JAVA_25_DIR="$(basename "$JAVA_HOME_25")" &&
+        sdk use java "$JAVA_25_DIR" &&
         server/gradlew -p server assemble downloadTestExtensions
 
   - id: run-server
@@ -100,6 +101,8 @@ commands:
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/server
       commandLine: |
+        JAVA_25_DIR="$(basename "$JAVA_HOME_25")" &&
+        sdk use java "$JAVA_25_DIR" &&
         ./scripts/generate-properties.sh &&
         sed -i 's/localhost:5432\/postgres/localhost:5432\/openvsx/g' src/dev/resources/application.yml &&
         sed -i 's/username: gitpod/username: openvsx/g' src/dev/resources/application.yml &&
@@ -124,9 +127,9 @@ commands:
         export OVSX_REGISTRY_URL=http://localhost:8080
         export OVSX_PAT=super_token
         export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode vscodevim Wscats"
-        for pub in $PUBLISHERS; do cli/lib/ovsx create-namespace $pub; done
-        find server/build/test-extensions-builtin -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
-        find server/build/test-extensions -name '*.vsix' -exec cli/lib/ovsx publish '{}' \;
+        for pub in $PUBLISHERS; do cli/bin/ovsx create-namespace $pub; done
+        find server/build/test-extensions-builtin -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
+        find server/build/test-extensions -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
 
 # Commands to deploy OpenVSX to OpenShift
   - id: create-namespace
@@ -142,8 +145,8 @@ commands:
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
-          read -p "Please enter the value for OPENVSX_VERSION (default: v0.27.0): " OPENVSX_VERSION
-          OPENVSX_VERSION=${OPENVSX_VERSION:-v0.27.0}
+          read -p "Please enter the value for OPENVSX_VERSION (default: v0.32.3): " OPENVSX_VERSION
+          OPENVSX_VERSION=${OPENVSX_VERSION:-v0.32.3}
           export OPENVSX_VERSION
           echo "OPENVSX_VERSION is set to $OPENVSX_VERSION"
           podman build -t "openvsx:$OPENVSX_VERSION" --build-arg "OPENVSX_VERSION=$OPENVSX_VERSION" -f openvsx.Dockerfile .&&
@@ -158,8 +161,8 @@ commands:
       component: tool
       workingDir: ${PROJECTS_ROOT}/openvsx/deploy/openshift
       commandLine: |
-          read -p "Please enter the value for OVSX_VERSION (default: 0.10.5): " OVSX_VERSION
-          OVSX_VERSION=${OVSX_VERSION:-0.10.5}
+          read -p "Please enter the value for OVSX_VERSION (default: 0.10.9): " OVSX_VERSION
+          OVSX_VERSION=${OVSX_VERSION:-0.10.9}
           export OVSX_VERSION
           echo "OVSX_VERSION is set to $OVSX_VERSION"
           podman build -t "openvsx-cli:$OVSX_VERSION" --build-arg "OVSX_VERSION=$OVSX_VERSION" -f cli.Dockerfile .&&
