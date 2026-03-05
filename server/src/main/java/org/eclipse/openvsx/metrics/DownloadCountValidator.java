@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
@@ -34,7 +35,7 @@ import java.util.Locale;
 /**
  * Validates whether a download should increment the download count.
  * Prevents malicious actors from inflating download counts through:
- * - Deduplication per IP per extension per time window
+ * - Per-IP per-extension hourly rate limiting (hourly-limit-per-ip)
  * - Filtering out automated/bot downloads
  *
  * Only active when Redis is enabled (ovsx.redis.enabled=true).
@@ -117,7 +118,7 @@ public class DownloadCountValidator {
             return false;
         }
 
-        return isFirstDownloadInWindow(clientIp, extensionId, eventTime);
+        return isUnderHourlyLimit(clientIp, extensionId, eventTime);
     }
 
     public boolean isValidationEnabled() {
@@ -125,44 +126,43 @@ public class DownloadCountValidator {
     }
 
     /**
-     * Atomically checks if this is the first download from this IP for this
-     * extension in the dedup window. Sets the key if absent.
+     * Checks whether this download is within the per-IP per-extension hourly limit.
      * <p>
-     * TTL is extended by {@code lateArrivalHours} beyond the dedup window
-     * so late-arriving log entries still dedup against the correct bucket.
+     * Redis key: {@code {prefix}:{hashedIp}:{extensionId}:{hourBucket}}
+     * TTL: 1 hour + {@code lateArrivalHours} so late CDN log entries can still
+     * deduplicate against the correct bucket after the hour rolls over.
+     * <p>
+     * The key is created with the TTL atomically via SET NX before incrementing,
+     * so the TTL is always set at creation with no race window.
      */
-    private boolean isFirstDownloadInWindow(String ipAddress, Long extensionId, Instant eventTime) {
-        String key = buildDedupKey(ipAddress, extensionId, eventTime);
+    private boolean isUnderHourlyLimit(String ipAddress, Long extensionId, Instant eventTime) {
+        String key = buildRateLimitKey(ipAddress, extensionId, eventTime);
+        Duration ttl = Duration.ofHours(1).plusHours(properties.getLateArrivalHours());
 
-        // Extend TTL by lateArrivalHours so keys don't
-        // expire before the last late-arriving log entry for that bucket can be checked.
-        long windowMinutes = properties.getDedupWindowMinutes();
-        java.time.Duration ttl = java.time.Duration.ofMinutes(windowMinutes).plusHours(properties.getLateArrivalHours());
+        // Create the key with TTL atomically if it doesn't exist yet.
+        // This guarantees the TTL is always set before any increment happens.
+        redisTemplate.opsForValue().setIfAbsent(key, "0", ttl);
 
-        Boolean wasAbsent = redisTemplate.opsForValue().setIfAbsent(key, "1", ttl);
-        return Boolean.TRUE.equals(wasAbsent);
+        Long count = redisTemplate.opsForValue().increment(key);
+        return count != null && count <= properties.getHourlyLimitPerIp();
     }
 
     /**
-     * Builds the Redis dedup key.
+     * Builds the Redis key for per-IP per-extension hourly rate limiting.
      * <p>
-     * Format: {@code {prefix}:{hashedIp}:{extensionId}:{bucketEpochMinutes}}
-     * where bucket is the event timestamp truncated to the dedup window so all events
-     * from the same IP + extension within the same window share one key.
+     * Format: {@code {prefix}:{hashedIp}:{extensionId}:{hourBucket}}
+     * where {@code hourBucket} is the event timestamp divided by 3600 (epoch seconds),
+     * so all events from the same IP + extension within the same clock-hour share one counter.
      */
-    private String buildDedupKey(String ipAddress, Long extensionId, Instant eventTime) {
-        String base = String.format("%s:%s:%d",
+    private String buildRateLimitKey(String ipAddress, Long extensionId, Instant eventTime) {
+        // Truncate to the hour so all events in the same hour share one key.
+        long hourBucket = eventTime.getEpochSecond() / 3600;
+        return String.format("%s:%s:%d:%d",
                 properties.getKeyPrefix(),
                 hashIp(ipAddress),
-                extensionId
+                extensionId,
+                hourBucket
         );
-
-        // Truncate to window granularity in epoch-minutes so all events in the
-        // same dedup window map to the same bucket.
-        long bucketMinutes = eventTime.getEpochSecond() / 60
-                / properties.getDedupWindowMinutes()
-                * properties.getDedupWindowMinutes();
-        return base + ":" + bucketMinutes;
     }
 
     private String hashIp(String ipAddress) {

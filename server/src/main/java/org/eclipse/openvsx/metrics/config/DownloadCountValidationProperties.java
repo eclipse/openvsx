@@ -37,10 +37,13 @@ public class DownloadCountValidationProperties {
     private boolean enabled;
 
     /**
-     * Deduplication time window in minutes for Redis keys.
+     * Maximum number of downloads counted per IP per extension per hour.
+     * Downloads beyond this limit within the same hour window are ignored.
+     * Default: 3 — allows a few legitimate re-downloads per hour while
+     * preventing bulk inflation from a single IP.
      */
-    @Value("${ovsx.download-count.validation.dedup-window-minutes:60}")
-    private int dedupWindowMinutes;
+    @Value("${ovsx.download-count.validation.hourly-limit-per-ip:50}")
+    private int hourlyLimitPerIp;
 
     /**
      * Redis key prefix used for deduplication entries.
@@ -72,16 +75,10 @@ public class DownloadCountValidationProperties {
      */
     @PostConstruct
     public void validate() {
-        // dedup-window-minutes must be a positive number of minutes.
-        if (dedupWindowMinutes < 1) {
+        // hourly-limit-per-ip must be at least 1.
+        if (hourlyLimitPerIp < 1) {
             throw new IllegalStateException(
-                    "ovsx.download-count.validation.dedup-window-minutes must be >= 1, got: " + dedupWindowMinutes);
-        }
-
-        // Warn for unusually large windows (> 24h) — likely a misconfiguration.
-        if (dedupWindowMinutes > 1440) {
-            logger.warn("ovsx.download-count.validation.dedup-window-minutes is {} minutes (> 24h). "
-                    + "This is unusually large and may cause excessive Redis memory usage.", dedupWindowMinutes);
+                    "ovsx.download-count.validation.hourly-limit-per-ip must be >= 1, got: " + hourlyLimitPerIp);
         }
 
         // late-arrival-hours must be non-negative.
@@ -90,14 +87,12 @@ public class DownloadCountValidationProperties {
                     "ovsx.download-count.validation.late-arrival-hours must be >= 0, got: " + lateArrivalHours);
         }
 
-        // Event-time bucketing is used. The late-arrival buffer should be >= the dedup window.
-        // If it's shorter than one window period, late logs could arrive after the key
-        // has already expired and be counted as new downloads.
-        long windowHours = (long) Math.ceil(dedupWindowMinutes / 60.0);
-        if (lateArrivalHours < windowHours) {
-            logger.warn("ovsx.download-count.validation.late-arrival-hours ({}) is less than one "
-                    + "dedup window ({} minutes ≈ {} hours). Late log entries may not dedup correctly.",
-                    lateArrivalHours, dedupWindowMinutes, windowHours);
+        // The late-arrival buffer should be at least 1 hour so that log entries
+        // arriving after the top of the hour still dedup against the correct bucket.
+        if (lateArrivalHours < 1) {
+            logger.warn("ovsx.download-count.validation.late-arrival-hours ({}) is less than 1 hour. "
+                    + "Late CDN log entries may not deduplicate correctly against the hourly bucket.",
+                    lateArrivalHours);
         }
 
         // key-prefix must not be blank — an empty prefix would produce malformed Redis keys.
@@ -115,12 +110,12 @@ public class DownloadCountValidationProperties {
         this.enabled = enabled;
     }
 
-    public int getDedupWindowMinutes() {
-        return dedupWindowMinutes;
+    public int getHourlyLimitPerIp() {
+        return hourlyLimitPerIp;
     }
 
-    public void setDedupWindowMinutes(int dedupWindowMinutes) {
-        this.dedupWindowMinutes = dedupWindowMinutes;
+    public void setHourlyLimitPerIp(int hourlyLimitPerIp) {
+        this.hourlyLimitPerIp = hourlyLimitPerIp;
     }
 
     public String getKeyPrefix() {
