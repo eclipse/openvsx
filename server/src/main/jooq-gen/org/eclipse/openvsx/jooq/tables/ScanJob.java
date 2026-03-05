@@ -160,7 +160,7 @@ public class ScanJob extends TableImpl<ScanJobRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.SCAN_JOB_EXTENSION_VERSION_IDX, Indexes.SCAN_JOB_POLL_LEASE_IDX, Indexes.SCAN_JOB_SCAN_ID_IDX, Indexes.SCAN_JOB_STATUS_IDX, Indexes.SCAN_JOB_TYPE_STATUS_CREATED_IDX, Indexes.SCAN_JOB_TYPE_STATUS_CREATED_IDX2);
+        return Arrays.asList(Indexes.SCAN_JOB_EXTENSION_VERSION_IDX, Indexes.SCAN_JOB_POLL_LEASE_IDX, Indexes.SCAN_JOB_SCAN_ID_IDX, Indexes.SCAN_JOB_STATUS_IDX, Indexes.SCAN_JOB_TYPE_STATUS_CREATED_IDX);
     }
 
     @Override
@@ -170,7 +170,7 @@ public class ScanJob extends TableImpl<ScanJobRecord> {
 
     @Override
     public List<UniqueKey<ScanJobRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.SCAN_JOB_SCAN_ID_SCANNER_TYPE_KEY, Keys.UKRHMHOGHXO8YBTHWNMTJRE7KBS);
+        return Arrays.asList(Keys.SCAN_JOB_SCAN_ID_SCANNER_TYPE_KEY);
     }
 
     @Override

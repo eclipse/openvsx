@@ -68,7 +68,7 @@ public class DownloadCountProcessedItem extends TableImpl<DownloadCountProcessed
      * The column
      * <code>public.download_count_processed_item.storage_type</code>.
      */
-    public final TableField<DownloadCountProcessedItemRecord, String> STORAGE_TYPE = createField(DSL.name("storage_type"), SQLDataType.VARCHAR(255), this, "");
+    public final TableField<DownloadCountProcessedItemRecord, String> STORAGE_TYPE = createField(DSL.name("storage_type"), SQLDataType.VARCHAR(32), this, "");
 
     /**
      * The column

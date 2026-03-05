@@ -118,7 +118,7 @@ public class UsageStats extends TableImpl<UsageStatsRecord> {
 
     @Override
     public List<UniqueKey<UsageStatsRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.UKK6KURB0MJIY3WWJGBU9B5T7LY, Keys.USAGE_STATS_UNIQUE_CUSTOMER_WINDOW);
+        return Arrays.asList(Keys.USAGE_STATS_UNIQUE_CUSTOMER_WINDOW);
     }
 
     @Override

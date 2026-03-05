@@ -96,7 +96,6 @@ public class Indexes {
     public static final Index SCAN_JOB_SCAN_ID_IDX = Internal.createIndex(DSL.name("scan_job_scan_id_idx"), ScanJob.SCAN_JOB, new OrderField[] { ScanJob.SCAN_JOB.SCAN_ID }, false);
     public static final Index SCAN_JOB_STATUS_IDX = Internal.createIndex(DSL.name("scan_job_status_idx"), ScanJob.SCAN_JOB, new OrderField[] { ScanJob.SCAN_JOB.STATUS }, false);
     public static final Index SCAN_JOB_TYPE_STATUS_CREATED_IDX = Internal.createIndex(DSL.name("scan_job_type_status_created_idx"), ScanJob.SCAN_JOB, new OrderField[] { ScanJob.SCAN_JOB.SCANNER_TYPE, ScanJob.SCAN_JOB.STATUS, ScanJob.SCAN_JOB.CREATED_AT }, false);
-    public static final Index SCAN_JOB_TYPE_STATUS_CREATED_IDX2 = Internal.createIndex(DSL.name("scan_job_type_status_created_idx2"), ScanJob.SCAN_JOB, new OrderField[] { ScanJob.SCAN_JOB.SCANNER_TYPE, ScanJob.SCAN_JOB.STATUS, ScanJob.SCAN_JOB.CREATED_AT }, false);
     public static final Index SPRING_SESSION_IX1 = Internal.createIndex(DSL.name("spring_session_ix1"), SpringSession.SPRING_SESSION, new OrderField[] { SpringSession.SPRING_SESSION.SESSION_ID }, true);
     public static final Index SPRING_SESSION_IX2 = Internal.createIndex(DSL.name("spring_session_ix2"), SpringSession.SPRING_SESSION, new OrderField[] { SpringSession.SPRING_SESSION.EXPIRY_TIME }, false);
     public static final Index SPRING_SESSION_IX3 = Internal.createIndex(DSL.name("spring_session_ix3"), SpringSession.SPRING_SESSION, new OrderField[] { SpringSession.SPRING_SESSION.PRINCIPAL_NAME }, false);

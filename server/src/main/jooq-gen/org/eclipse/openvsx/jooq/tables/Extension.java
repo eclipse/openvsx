@@ -165,7 +165,7 @@ public class Extension extends TableImpl<ExtensionRecord> {
 
     @Override
     public List<UniqueKey<ExtensionRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.UK9WFSYIXKMQE8REO0G8RUCHW7G, Keys.UKFM6UWFL16WI0U878TTDKU4Y6X, Keys.UNIQUE_EXTENSION_PUBLIC_ID);
+        return Arrays.asList(Keys.UNIQUE_EXTENSION_PUBLIC_ID);
     }
 
     @Override
