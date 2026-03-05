@@ -24,9 +24,7 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Entity
-@Table(uniqueConstraints = {
-    @UniqueConstraint(columnNames = { "customer_id", "windowStart" }),
-})
+@Table(name = "usage_stats")
 public class UsageStats implements Serializable {
 
     @Serial

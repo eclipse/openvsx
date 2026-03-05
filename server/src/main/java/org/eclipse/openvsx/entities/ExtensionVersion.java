@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "targetPlatform", "version" })})
+@Table(name = "extension_version")
 public class ExtensionVersion implements Serializable {
 
     @Serial

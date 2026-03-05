@@ -19,34 +19,23 @@ import java.util.Objects;
 /**
  * Represents a scan job in the database.
  * Each scan job tracks the status of a specific scanner's work on an extension version.
- * 
+ * <p>
  * Multiple ScanJobs can be linked together via scanId to represent
  * all the scanning work for a single extension version upload.
  */
 @Entity
-@Table(
-    name = "scan_job",
-    indexes = {
-        @Index(name = "scan_job_scan_id_idx", columnList = "scanId"),
-        @Index(name = "scan_job_status_idx", columnList = "status"),
-        @Index(name = "scan_job_extension_version_idx", columnList = "extensionVersionId"),
-        @Index(name = "scan_job_type_status_created_idx", columnList = "scannerType, status, createdAt")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"scanId", "scannerType"})
-    }
-)
+@Table(name = "scan_job")
 public class ScannerJob {
     
     /**
      * Tracks the current state of the scan job.
-     * 
+     * <p>
      * Status flow for synchronous scanners:
      * QUEUED → PROCESSING → COMPLETE/FAILED
-     * 
+     * <p>
      * Status flow for asynchronous scanners:
      * QUEUED → PROCESSING → SUBMITTED → COMPLETE/FAILED
-     * 
+     * <p>
      * REMOVED is set by cleanup service when scanner was removed from configuration.
      */
     public enum JobStatus {
@@ -59,7 +48,7 @@ public class ScannerJob {
         
         /**
          * Check if this status is terminal (job has finished processing).
-         * 
+         * <p>
          * Terminal states: COMPLETE, FAILED, REMOVED
          * Non-terminal states: QUEUED, PROCESSING, SUBMITTED
          * 
@@ -71,7 +60,7 @@ public class ScannerJob {
         
         /**
          * Check if this status represents an active/pending job.
-         * 
+         * <p>
          * Active states: QUEUED, PROCESSING, SUBMITTED
          * 
          */
@@ -141,11 +130,11 @@ public class ScannerJob {
     
     /**
      * JSON map of file names to SHA256 hashes for async scanners with file extraction.
-     * 
+     * <p>
      * When an async scanner extracts files from the .vsix and sends them for scanning,
      * the temp files are cleaned up after submission. This field stores the filename→hash
      * mapping so we can properly set file hashes when results come back later.
-     * 
+     * <p>
      * Format: {"extension/main.js": "abc123...", "extension/util.js": "def456..."}
      * Null when: no file extraction was used, or sync scanner
      */

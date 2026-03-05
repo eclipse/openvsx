@@ -212,7 +212,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     /**
      * The column <code>public.extension_version.semver_pre_release</code>.
      */
-    public final TableField<ExtensionVersionRecord, String> SEMVER_PRE_RELEASE = createField(DSL.name("semver_pre_release"), SQLDataType.VARCHAR, this, "");
+    public final TableField<ExtensionVersionRecord, String> SEMVER_PRE_RELEASE = createField(DSL.name("semver_pre_release"), SQLDataType.VARCHAR(255), this, "");
 
     /**
      * The column <code>public.extension_version.semver_is_pre_release</code>.
@@ -222,7 +222,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
     /**
      * The column <code>public.extension_version.semver_build_metadata</code>.
      */
-    public final TableField<ExtensionVersionRecord, String> SEMVER_BUILD_METADATA = createField(DSL.name("semver_build_metadata"), SQLDataType.VARCHAR, this, "");
+    public final TableField<ExtensionVersionRecord, String> SEMVER_BUILD_METADATA = createField(DSL.name("semver_build_metadata"), SQLDataType.VARCHAR(255), this, "");
 
     /**
      * The column

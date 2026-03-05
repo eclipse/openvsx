@@ -87,6 +87,16 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
      */
     public final TableField<PersonalAccessTokenRecord, Long> USER_DATA = createField(DSL.name("user_data"), SQLDataType.BIGINT, this, "");
 
+    /**
+     * The column <code>public.personal_access_token.expires_timestamp</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, LocalDateTime> EXPIRES_TIMESTAMP = createField(DSL.name("expires_timestamp"), SQLDataType.LOCALDATETIME(6), this, "");
+
+    /**
+     * The column <code>public.personal_access_token.notified</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, Boolean> NOTIFIED = createField(DSL.name("notified"), SQLDataType.BOOLEAN, this, "");
+
     private PersonalAccessToken(Name alias, Table<PersonalAccessTokenRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

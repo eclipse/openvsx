@@ -143,6 +143,11 @@ public class AdminStatistics extends TableImpl<AdminStatisticsRecord> {
     }
 
     @Override
+    public List<UniqueKey<AdminStatisticsRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.UKHRKJNOUEG822HP42OS6XE0EK0);
+    }
+
+    @Override
     public AdminStatistics as(String alias) {
         return new AdminStatistics(DSL.name(alias), this);
     }

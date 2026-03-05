@@ -4,6 +4,7 @@
 package org.eclipse.openvsx.jooq;
 
 
+import org.eclipse.openvsx.jooq.tables.AdminScanDecision;
 import org.eclipse.openvsx.jooq.tables.AdminStatistics;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsExtensionsByRating;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsPublishersByExtensionsPublished;
@@ -11,10 +12,15 @@ import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostActivePublishingUse
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopMostDownloadedExtensions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensionVersions;
 import org.eclipse.openvsx.jooq.tables.AdminStatisticsTopNamespaceExtensions;
+import org.eclipse.openvsx.jooq.tables.Customer;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
+import org.eclipse.openvsx.jooq.tables.ExtensionScan;
+import org.eclipse.openvsx.jooq.tables.ExtensionThreat;
+import org.eclipse.openvsx.jooq.tables.ExtensionValidationFailure;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
 import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
@@ -28,10 +34,15 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
+import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
+import org.eclipse.openvsx.jooq.tables.ScanJob;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
+import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
+import org.eclipse.openvsx.jooq.tables.records.AdminScanDecisionRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsExtensionsByRatingRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsPublishersByExtensionsPublishedRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsRecord;
@@ -39,10 +50,15 @@ import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostActivePubli
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopMostDownloadedExtensionsRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopNamespaceExtensionVersionsRecord;
 import org.eclipse.openvsx.jooq.tables.records.AdminStatisticsTopNamespaceExtensionsRecord;
+import org.eclipse.openvsx.jooq.tables.records.CustomerRecord;
 import org.eclipse.openvsx.jooq.tables.records.DownloadCountProcessedItemRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionReviewRecord;
+import org.eclipse.openvsx.jooq.tables.records.ExtensionScanRecord;
+import org.eclipse.openvsx.jooq.tables.records.ExtensionThreatRecord;
+import org.eclipse.openvsx.jooq.tables.records.ExtensionValidationFailureRecord;
 import org.eclipse.openvsx.jooq.tables.records.ExtensionVersionRecord;
+import org.eclipse.openvsx.jooq.tables.records.FileDecisionRecord;
 import org.eclipse.openvsx.jooq.tables.records.FileResourceRecord;
 import org.eclipse.openvsx.jooq.tables.records.FlywaySchemaHistoryRecord;
 import org.eclipse.openvsx.jooq.tables.records.JobrunrBackgroundjobserversRecord;
@@ -56,9 +72,13 @@ import org.eclipse.openvsx.jooq.tables.records.NamespaceRecord;
 import org.eclipse.openvsx.jooq.tables.records.NamespaceSocialLinksRecord;
 import org.eclipse.openvsx.jooq.tables.records.PersistedLogRecord;
 import org.eclipse.openvsx.jooq.tables.records.PersonalAccessTokenRecord;
+import org.eclipse.openvsx.jooq.tables.records.ScanCheckResultRecord;
+import org.eclipse.openvsx.jooq.tables.records.ScanJobRecord;
 import org.eclipse.openvsx.jooq.tables.records.SignatureKeyPairRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionAttributesRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionRecord;
+import org.eclipse.openvsx.jooq.tables.records.TierRecord;
+import org.eclipse.openvsx.jooq.tables.records.UsageStatsRecord;
 import org.eclipse.openvsx.jooq.tables.records.UserDataRecord;
 import org.jooq.ForeignKey;
 import org.jooq.TableField;
@@ -78,13 +98,25 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final UniqueKey<AdminScanDecisionRecord> ADMIN_SCAN_DECISION_PKEY = Internal.createUniqueKey(AdminScanDecision.ADMIN_SCAN_DECISION, DSL.name("admin_scan_decision_pkey"), new TableField[] { AdminScanDecision.ADMIN_SCAN_DECISION.ID }, true);
+    public static final UniqueKey<AdminScanDecisionRecord> ADMIN_SCAN_DECISION_SCAN_ID_KEY = Internal.createUniqueKey(AdminScanDecision.ADMIN_SCAN_DECISION, DSL.name("admin_scan_decision_scan_id_key"), new TableField[] { AdminScanDecision.ADMIN_SCAN_DECISION.SCAN_ID }, true);
     public static final UniqueKey<AdminStatisticsRecord> ADMIN_STATISTICS_PKEY = Internal.createUniqueKey(AdminStatistics.ADMIN_STATISTICS, DSL.name("admin_statistics_pkey"), new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
+    public static final UniqueKey<AdminStatisticsRecord> UKHRKJNOUEG822HP42OS6XE0EK0 = Internal.createUniqueKey(AdminStatistics.ADMIN_STATISTICS, DSL.name("ukhrkjnoueg822hp42os6xe0ek0"), new TableField[] { AdminStatistics.ADMIN_STATISTICS.YEAR, AdminStatistics.ADMIN_STATISTICS.MONTH }, true);
+    public static final UniqueKey<CustomerRecord> CUSTOMER_PKEY = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("customer_pkey"), new TableField[] { Customer.CUSTOMER.ID }, true);
+    public static final UniqueKey<CustomerRecord> CUSTOMER_UNIQUE_NAME = Internal.createUniqueKey(Customer.CUSTOMER, DSL.name("customer_unique_name"), new TableField[] { Customer.CUSTOMER.NAME }, true);
     public static final UniqueKey<DownloadCountProcessedItemRecord> DOWNLOAD_COUNT_PROCESSED_ITEM_PKEY = Internal.createUniqueKey(DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, DSL.name("download_count_processed_item_pkey"), new TableField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.ID }, true);
     public static final UniqueKey<ExtensionRecord> EXTENSION_PKEY = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("extension_pkey"), new TableField[] { Extension.EXTENSION.ID }, true);
+    public static final UniqueKey<ExtensionRecord> UK9WFSYIXKMQE8REO0G8RUCHW7G = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("uk9wfsyixkmqe8reo0g8ruchw7g"), new TableField[] { Extension.EXTENSION.PUBLIC_ID }, true);
+    public static final UniqueKey<ExtensionRecord> UKFM6UWFL16WI0U878TTDKU4Y6X = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("ukfm6uwfl16wi0u878ttdku4y6x"), new TableField[] { Extension.EXTENSION.NAMESPACE_ID, Extension.EXTENSION.NAME }, true);
     public static final UniqueKey<ExtensionRecord> UNIQUE_EXTENSION_PUBLIC_ID = Internal.createUniqueKey(Extension.EXTENSION, DSL.name("unique_extension_public_id"), new TableField[] { Extension.EXTENSION.PUBLIC_ID }, true);
     public static final UniqueKey<ExtensionReviewRecord> EXTENSION_REVIEW_PKEY = Internal.createUniqueKey(ExtensionReview.EXTENSION_REVIEW, DSL.name("extension_review_pkey"), new TableField[] { ExtensionReview.EXTENSION_REVIEW.ID }, true);
+    public static final UniqueKey<ExtensionScanRecord> EXTENSION_SCAN_PKEY = Internal.createUniqueKey(ExtensionScan.EXTENSION_SCAN, DSL.name("extension_scan_pkey"), new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
+    public static final UniqueKey<ExtensionThreatRecord> EXTENSION_THREAT_PKEY = Internal.createUniqueKey(ExtensionThreat.EXTENSION_THREAT, DSL.name("extension_threat_pkey"), new TableField[] { ExtensionThreat.EXTENSION_THREAT.ID }, true);
+    public static final UniqueKey<ExtensionValidationFailureRecord> EXTENSION_VALIDATION_FAILURE_PKEY = Internal.createUniqueKey(ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE, DSL.name("extension_validation_failure_pkey"), new TableField[] { ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE.ID }, true);
     public static final UniqueKey<ExtensionVersionRecord> EXTENSION_VERSION_PKEY = Internal.createUniqueKey(ExtensionVersion.EXTENSION_VERSION, DSL.name("extension_version_pkey"), new TableField[] { ExtensionVersion.EXTENSION_VERSION.ID }, true);
     public static final UniqueKey<ExtensionVersionRecord> UNIQUE_EXTENSION_VERSION = Internal.createUniqueKey(ExtensionVersion.EXTENSION_VERSION, DSL.name("unique_extension_version"), new TableField[] { ExtensionVersion.EXTENSION_VERSION.EXTENSION_ID, ExtensionVersion.EXTENSION_VERSION.TARGET_PLATFORM, ExtensionVersion.EXTENSION_VERSION.VERSION }, true);
+    public static final UniqueKey<FileDecisionRecord> FILE_DECISION_FILE_HASH_KEY = Internal.createUniqueKey(FileDecision.FILE_DECISION, DSL.name("file_decision_file_hash_key"), new TableField[] { FileDecision.FILE_DECISION.FILE_HASH }, true);
+    public static final UniqueKey<FileDecisionRecord> FILE_DECISION_PKEY = Internal.createUniqueKey(FileDecision.FILE_DECISION, DSL.name("file_decision_pkey"), new TableField[] { FileDecision.FILE_DECISION.ID }, true);
     public static final UniqueKey<FileResourceRecord> FILE_RESOURCE_PKEY = Internal.createUniqueKey(FileResource.FILE_RESOURCE, DSL.name("file_resource_pkey"), new TableField[] { FileResource.FILE_RESOURCE.ID }, true);
     public static final UniqueKey<FlywaySchemaHistoryRecord> FLYWAY_SCHEMA_HISTORY_PK = Internal.createUniqueKey(FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY, DSL.name("flyway_schema_history_pk"), new TableField[] { FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY.INSTALLED_RANK }, true);
     public static final UniqueKey<JobrunrBackgroundjobserversRecord> JOBRUNR_BACKGROUNDJOBSERVERS_PKEY = Internal.createUniqueKey(JobrunrBackgroundjobservers.JOBRUNR_BACKGROUNDJOBSERVERS, DSL.name("jobrunr_backgroundjobservers_pkey"), new TableField[] { JobrunrBackgroundjobservers.JOBRUNR_BACKGROUNDJOBSERVERS.ID }, true);
@@ -94,16 +126,26 @@ public class Keys {
     public static final UniqueKey<JobrunrRecurringJobsRecord> JOBRUNR_RECURRING_JOBS_PKEY = Internal.createUniqueKey(JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS, DSL.name("jobrunr_recurring_jobs_pkey"), new TableField[] { JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS.ID }, true);
     public static final UniqueKey<MigrationItemRecord> MIGRATION_ITEM_PKEY = Internal.createUniqueKey(MigrationItem.MIGRATION_ITEM, DSL.name("migration_item_pkey"), new TableField[] { MigrationItem.MIGRATION_ITEM.ID }, true);
     public static final UniqueKey<NamespaceRecord> NAMESPACE_PKEY = Internal.createUniqueKey(Namespace.NAMESPACE, DSL.name("namespace_pkey"), new TableField[] { Namespace.NAMESPACE.ID }, true);
+    public static final UniqueKey<NamespaceRecord> UKRR7C9ACVJSUF3I7PFMDXACFAX = Internal.createUniqueKey(Namespace.NAMESPACE, DSL.name("ukrr7c9acvjsuf3i7pfmdxacfax"), new TableField[] { Namespace.NAMESPACE.PUBLIC_ID }, true);
     public static final UniqueKey<NamespaceRecord> UNIQUE_NAMESPACE_PUBLIC_ID = Internal.createUniqueKey(Namespace.NAMESPACE, DSL.name("unique_namespace_public_id"), new TableField[] { Namespace.NAMESPACE.PUBLIC_ID }, true);
     public static final UniqueKey<NamespaceMembershipRecord> NAMESPACE_MEMBERSHIP_PKEY = Internal.createUniqueKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("namespace_membership_pkey"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.ID }, true);
     public static final UniqueKey<NamespaceMembershipRecord> UNIQUE_NAMESPACE_MEMBERSHIP = Internal.createUniqueKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("unique_namespace_membership"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA, NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, true);
     public static final UniqueKey<PersistedLogRecord> PERSISTED_LOG_PKEY = Internal.createUniqueKey(PersistedLog.PERSISTED_LOG, DSL.name("persisted_log_pkey"), new TableField[] { PersistedLog.PERSISTED_LOG.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> PERSONAL_ACCESS_TOKEN_PKEY = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("personal_access_token_pkey"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.ID }, true);
     public static final UniqueKey<PersonalAccessTokenRecord> UKJEUD5MSSQBQKID58RD2K1INOF = Internal.createUniqueKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("ukjeud5mssqbqkid58rd2k1inof"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.VALUE }, true);
+    public static final UniqueKey<ScanCheckResultRecord> SCAN_CHECK_RESULT_PKEY = Internal.createUniqueKey(ScanCheckResult.SCAN_CHECK_RESULT, DSL.name("scan_check_result_pkey"), new TableField[] { ScanCheckResult.SCAN_CHECK_RESULT.ID }, true);
+    public static final UniqueKey<ScanJobRecord> SCAN_JOB_PKEY = Internal.createUniqueKey(ScanJob.SCAN_JOB, DSL.name("scan_job_pkey"), new TableField[] { ScanJob.SCAN_JOB.ID }, true);
+    public static final UniqueKey<ScanJobRecord> SCAN_JOB_SCAN_ID_SCANNER_TYPE_KEY = Internal.createUniqueKey(ScanJob.SCAN_JOB, DSL.name("scan_job_scan_id_scanner_type_key"), new TableField[] { ScanJob.SCAN_JOB.SCAN_ID, ScanJob.SCAN_JOB.SCANNER_TYPE }, true);
+    public static final UniqueKey<ScanJobRecord> UKRHMHOGHXO8YBTHWNMTJRE7KBS = Internal.createUniqueKey(ScanJob.SCAN_JOB, DSL.name("ukrhmhoghxo8ybthwnmtjre7kbs"), new TableField[] { ScanJob.SCAN_JOB.SCAN_ID, ScanJob.SCAN_JOB.SCANNER_TYPE }, true);
     public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_PKEY = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_pkey"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.ID }, true);
     public static final UniqueKey<SignatureKeyPairRecord> SIGNATURE_KEY_PAIR_UNIQUE_PUBLIC_ID = Internal.createUniqueKey(SignatureKeyPair.SIGNATURE_KEY_PAIR, DSL.name("signature_key_pair_unique_public_id"), new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.PUBLIC_ID }, true);
     public static final UniqueKey<SpringSessionRecord> SPRING_SESSION_PK = Internal.createUniqueKey(SpringSession.SPRING_SESSION, DSL.name("spring_session_pk"), new TableField[] { SpringSession.SPRING_SESSION.PRIMARY_ID }, true);
     public static final UniqueKey<SpringSessionAttributesRecord> SPRING_SESSION_ATTRIBUTES_PK = Internal.createUniqueKey(SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES, DSL.name("spring_session_attributes_pk"), new TableField[] { SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.SESSION_PRIMARY_ID, SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.ATTRIBUTE_NAME }, true);
+    public static final UniqueKey<TierRecord> TIER_PKEY = Internal.createUniqueKey(Tier.TIER, DSL.name("tier_pkey"), new TableField[] { Tier.TIER.ID }, true);
+    public static final UniqueKey<TierRecord> TIER_UNIQUE_NAME = Internal.createUniqueKey(Tier.TIER, DSL.name("tier_unique_name"), new TableField[] { Tier.TIER.NAME }, true);
+    public static final UniqueKey<UsageStatsRecord> UKK6KURB0MJIY3WWJGBU9B5T7LY = Internal.createUniqueKey(UsageStats.USAGE_STATS, DSL.name("ukk6kurb0mjiy3wwjgbu9b5t7ly"), new TableField[] { UsageStats.USAGE_STATS.CUSTOMER_ID, UsageStats.USAGE_STATS.WINDOW_START }, true);
+    public static final UniqueKey<UsageStatsRecord> USAGE_STATS_PKEY = Internal.createUniqueKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_pkey"), new TableField[] { UsageStats.USAGE_STATS.ID }, true);
+    public static final UniqueKey<UsageStatsRecord> USAGE_STATS_UNIQUE_CUSTOMER_WINDOW = Internal.createUniqueKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_unique_customer_window"), new TableField[] { UsageStats.USAGE_STATS.CUSTOMER_ID, UsageStats.USAGE_STATS.WINDOW_START }, true);
     public static final UniqueKey<UserDataRecord> UNIQUE_USER_DATA = Internal.createUniqueKey(UserData.USER_DATA, DSL.name("unique_user_data"), new TableField[] { UserData.USER_DATA.PROVIDER, UserData.USER_DATA.LOGIN_NAME }, true);
     public static final UniqueKey<UserDataRecord> USER_DATA_PKEY = Internal.createUniqueKey(UserData.USER_DATA, DSL.name("user_data_pkey"), new TableField[] { UserData.USER_DATA.ID }, true);
 
@@ -111,24 +153,33 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final ForeignKey<AdminScanDecisionRecord, UserDataRecord> ADMIN_SCAN_DECISION__FK_ADMIN_SCAN_DECISION_USER = Internal.createForeignKey(AdminScanDecision.ADMIN_SCAN_DECISION, DSL.name("fk_admin_scan_decision_user"), new TableField[] { AdminScanDecision.ADMIN_SCAN_DECISION.DECIDED_BY_ID }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
+    public static final ForeignKey<AdminScanDecisionRecord, ExtensionScanRecord> ADMIN_SCAN_DECISION__FK_DECISION_SCAN = Internal.createForeignKey(AdminScanDecision.ADMIN_SCAN_DECISION, DSL.name("fk_decision_scan"), new TableField[] { AdminScanDecision.ADMIN_SCAN_DECISION.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
     public static final ForeignKey<AdminStatisticsExtensionsByRatingRecord, AdminStatisticsRecord> ADMIN_STATISTICS_EXTENSIONS_BY_RATING__ADMIN_STATISTICS_EXTENSIONS_BY_RATING_FKEY = Internal.createForeignKey(AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING, DSL.name("admin_statistics_extensions_by_rating_fkey"), new TableField[] { AdminStatisticsExtensionsByRating.ADMIN_STATISTICS_EXTENSIONS_BY_RATING.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final ForeignKey<AdminStatisticsPublishersByExtensionsPublishedRecord, AdminStatisticsRecord> ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED__ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED_FKEY = Internal.createForeignKey(AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED, DSL.name("admin_statistics_publishers_by_extensions_published_fkey"), new TableField[] { AdminStatisticsPublishersByExtensionsPublished.ADMIN_STATISTICS_PUBLISHERS_BY_EXTENSIONS_PUBLISHED.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final ForeignKey<AdminStatisticsTopMostActivePublishingUsersRecord, AdminStatisticsRecord> ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS__ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS_FKEY = Internal.createForeignKey(AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS, DSL.name("admin_statistics_top_most_active_publishing_users_fkey"), new TableField[] { AdminStatisticsTopMostActivePublishingUsers.ADMIN_STATISTICS_TOP_MOST_ACTIVE_PUBLISHING_USERS.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final ForeignKey<AdminStatisticsTopMostDownloadedExtensionsRecord, AdminStatisticsRecord> ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS__ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS_FKEY = Internal.createForeignKey(AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS, DSL.name("admin_statistics_top_most_downloaded_extensions_fkey"), new TableField[] { AdminStatisticsTopMostDownloadedExtensions.ADMIN_STATISTICS_TOP_MOST_DOWNLOADED_EXTENSIONS.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final ForeignKey<AdminStatisticsTopNamespaceExtensionVersionsRecord, AdminStatisticsRecord> ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS__ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS_FKEY = Internal.createForeignKey(AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS, DSL.name("admin_statistics_top_namespace_extension_versions_fkey"), new TableField[] { AdminStatisticsTopNamespaceExtensionVersions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSION_VERSIONS.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
     public static final ForeignKey<AdminStatisticsTopNamespaceExtensionsRecord, AdminStatisticsRecord> ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS__ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS_FKEY = Internal.createForeignKey(AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS, DSL.name("admin_statistics_top_namespace_extensions_fkey"), new TableField[] { AdminStatisticsTopNamespaceExtensions.ADMIN_STATISTICS_TOP_NAMESPACE_EXTENSIONS.ADMIN_STATISTICS_ID }, Keys.ADMIN_STATISTICS_PKEY, new TableField[] { AdminStatistics.ADMIN_STATISTICS.ID }, true);
+    public static final ForeignKey<CustomerRecord, TierRecord> CUSTOMER__CUSTOMER_TIER_ID_FK = Internal.createForeignKey(Customer.CUSTOMER, DSL.name("customer_tier_id_fk"), new TableField[] { Customer.CUSTOMER.TIER_ID }, Keys.TIER_PKEY, new TableField[] { Tier.TIER.ID }, true);
     public static final ForeignKey<ExtensionRecord, ExtensionRecord> EXTENSION__EXTENSION_REPLACEMENT_ID_FKEY = Internal.createForeignKey(Extension.EXTENSION, DSL.name("extension_replacement_id_fkey"), new TableField[] { Extension.EXTENSION.REPLACEMENT_ID }, Keys.EXTENSION_PKEY, new TableField[] { Extension.EXTENSION.ID }, true);
     public static final ForeignKey<ExtensionRecord, NamespaceRecord> EXTENSION__FK64IMD3NRJ67D50TPKJS94NGMN = Internal.createForeignKey(Extension.EXTENSION, DSL.name("fk64imd3nrj67d50tpkjs94ngmn"), new TableField[] { Extension.EXTENSION.NAMESPACE_ID }, Keys.NAMESPACE_PKEY, new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final ForeignKey<ExtensionReviewRecord, ExtensionRecord> EXTENSION_REVIEW__FKGD2DQDC23OGBNOBX8AFJFPNKP = Internal.createForeignKey(ExtensionReview.EXTENSION_REVIEW, DSL.name("fkgd2dqdc23ogbnobx8afjfpnkp"), new TableField[] { ExtensionReview.EXTENSION_REVIEW.EXTENSION_ID }, Keys.EXTENSION_PKEY, new TableField[] { Extension.EXTENSION.ID }, true);
     public static final ForeignKey<ExtensionReviewRecord, UserDataRecord> EXTENSION_REVIEW__FKINJBN9GRK135Y6IK0UT4UJP0W = Internal.createForeignKey(ExtensionReview.EXTENSION_REVIEW, DSL.name("fkinjbn9grk135y6ik0ut4ujp0w"), new TableField[] { ExtensionReview.EXTENSION_REVIEW.USER_ID }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
+    public static final ForeignKey<ExtensionThreatRecord, ExtensionScanRecord> EXTENSION_THREAT__FK_THREAT_SCAN = Internal.createForeignKey(ExtensionThreat.EXTENSION_THREAT, DSL.name("fk_threat_scan"), new TableField[] { ExtensionThreat.EXTENSION_THREAT.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
+    public static final ForeignKey<ExtensionValidationFailureRecord, ExtensionScanRecord> EXTENSION_VALIDATION_FAILURE__FK_VALIDATION_FAILURE_SCAN = Internal.createForeignKey(ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE, DSL.name("fk_validation_failure_scan"), new TableField[] { ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
     public static final ForeignKey<ExtensionVersionRecord, SignatureKeyPairRecord> EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY = Internal.createForeignKey(ExtensionVersion.EXTENSION_VERSION, DSL.name("extension_version_signature_key_pair_fkey"), new TableField[] { ExtensionVersion.EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID }, Keys.SIGNATURE_KEY_PAIR_PKEY, new TableField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.ID }, true);
     public static final ForeignKey<ExtensionVersionRecord, PersonalAccessTokenRecord> EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80 = Internal.createForeignKey(ExtensionVersion.EXTENSION_VERSION, DSL.name("fk70khj8pm0vacasuiiaq0w0r80"), new TableField[] { ExtensionVersion.EXTENSION_VERSION.PUBLISHED_WITH_ID }, Keys.PERSONAL_ACCESS_TOKEN_PKEY, new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.ID }, true);
     public static final ForeignKey<ExtensionVersionRecord, ExtensionRecord> EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT = Internal.createForeignKey(ExtensionVersion.EXTENSION_VERSION, DSL.name("fkkhs1ec9s9j08fgicq9pmwu6bt"), new TableField[] { ExtensionVersion.EXTENSION_VERSION.EXTENSION_ID }, Keys.EXTENSION_PKEY, new TableField[] { Extension.EXTENSION.ID }, true);
+    public static final ForeignKey<FileDecisionRecord, ExtensionScanRecord> FILE_DECISION__FK_FILE_DECISION_SCAN = Internal.createForeignKey(FileDecision.FILE_DECISION, DSL.name("fk_file_decision_scan"), new TableField[] { FileDecision.FILE_DECISION.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
+    public static final ForeignKey<FileDecisionRecord, UserDataRecord> FILE_DECISION__FK_FILE_DECISION_USER = Internal.createForeignKey(FileDecision.FILE_DECISION, DSL.name("fk_file_decision_user"), new TableField[] { FileDecision.FILE_DECISION.DECIDED_BY_ID }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
     public static final ForeignKey<FileResourceRecord, ExtensionVersionRecord> FILE_RESOURCE__FILE_RESOURCE_EXTENSION_FKEY = Internal.createForeignKey(FileResource.FILE_RESOURCE, DSL.name("file_resource_extension_fkey"), new TableField[] { FileResource.FILE_RESOURCE.EXTENSION_ID }, Keys.EXTENSION_VERSION_PKEY, new TableField[] { ExtensionVersion.EXTENSION_VERSION.ID }, true);
     public static final ForeignKey<NamespaceMembershipRecord, NamespaceRecord> NAMESPACE_MEMBERSHIP__FKGFHWHKNULA6DO2N6WYVQETM3N = Internal.createForeignKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("fkgfhwhknula6do2n6wyvqetm3n"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.NAMESPACE }, Keys.NAMESPACE_PKEY, new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final ForeignKey<NamespaceMembershipRecord, UserDataRecord> NAMESPACE_MEMBERSHIP__FKNSAMEKUTXYWVSB3S1MJDCJKYP = Internal.createForeignKey(NamespaceMembership.NAMESPACE_MEMBERSHIP, DSL.name("fknsamekutxywvsb3s1mjdcjkyp"), new TableField[] { NamespaceMembership.NAMESPACE_MEMBERSHIP.USER_DATA }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
     public static final ForeignKey<NamespaceSocialLinksRecord, NamespaceRecord> NAMESPACE_SOCIAL_LINKS__NAMESPACE_SOCIAL_LINKS_FKEY = Internal.createForeignKey(NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS, DSL.name("namespace_social_links_fkey"), new TableField[] { NamespaceSocialLinks.NAMESPACE_SOCIAL_LINKS.NAMESPACE_ID }, Keys.NAMESPACE_PKEY, new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final ForeignKey<PersistedLogRecord, UserDataRecord> PERSISTED_LOG__PERSISTED_LOG_USER_DATA_FKEY = Internal.createForeignKey(PersistedLog.PERSISTED_LOG, DSL.name("persisted_log_user_data_fkey"), new TableField[] { PersistedLog.PERSISTED_LOG.USER_DATA }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
     public static final ForeignKey<PersonalAccessTokenRecord, UserDataRecord> PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L = Internal.createForeignKey(PersonalAccessToken.PERSONAL_ACCESS_TOKEN, DSL.name("fktqjvmhoig3wttj6dl1ibcaj3l"), new TableField[] { PersonalAccessToken.PERSONAL_ACCESS_TOKEN.USER_DATA }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
+    public static final ForeignKey<ScanCheckResultRecord, ExtensionScanRecord> SCAN_CHECK_RESULT__FK_SCAN_CHECK_RESULT_SCAN = Internal.createForeignKey(ScanCheckResult.SCAN_CHECK_RESULT, DSL.name("fk_scan_check_result_scan"), new TableField[] { ScanCheckResult.SCAN_CHECK_RESULT.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
     public static final ForeignKey<SpringSessionAttributesRecord, SpringSessionRecord> SPRING_SESSION_ATTRIBUTES__SPRING_SESSION_ATTRIBUTES_FK = Internal.createForeignKey(SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES, DSL.name("spring_session_attributes_fk"), new TableField[] { SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.SESSION_PRIMARY_ID }, Keys.SPRING_SESSION_PK, new TableField[] { SpringSession.SPRING_SESSION.PRIMARY_ID }, true);
+    public static final ForeignKey<UsageStatsRecord, CustomerRecord> USAGE_STATS__USAGE_STATS_CUSTOMER_ID_FK = Internal.createForeignKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_customer_id_fk"), new TableField[] { UsageStats.USAGE_STATS.CUSTOMER_ID }, Keys.CUSTOMER_PKEY, new TableField[] { Customer.CUSTOMER.ID }, true);
 }

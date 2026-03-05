@@ -141,7 +141,7 @@ public class Namespace extends TableImpl<NamespaceRecord> {
 
     @Override
     public List<UniqueKey<NamespaceRecord>> getUniqueKeys() {
-        return Arrays.asList(Keys.UNIQUE_NAMESPACE_PUBLIC_ID);
+        return Arrays.asList(Keys.UKRR7C9ACVJSUF3I7PFMDXACFAX, Keys.UNIQUE_NAMESPACE_PUBLIC_ID);
     }
 
     @Override
