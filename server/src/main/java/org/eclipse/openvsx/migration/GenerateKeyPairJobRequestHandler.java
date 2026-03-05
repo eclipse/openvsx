@@ -14,10 +14,14 @@ import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -28,6 +32,8 @@ import static org.eclipse.openvsx.entities.SignatureKeyPair.*;
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
+
+    private final Logger logger = LoggerFactory.getLogger(GenerateKeyPairJobRequestHandler.class);
 
     private final RepositoryService repositories;
     private final JobRequestScheduler scheduler;
@@ -47,21 +53,25 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
     }
 
     @Override
+    @Job(retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        logger.info("Starting signature key-pair generation in mode {}", keyPairMode);
+
         switch (keyPairMode) {
             case KEYPAIR_MODE_CREATE:
                 var activeKeyPair = repositories.findActiveKeyPair();
                 if(activeKeyPair == null) {
-                    renewKeyPair();
+                    renewKeyPair(true);
                 } else {
                     repositories.findVersionsWithout(activeKeyPair).forEach(this::enqueueCreateSignatureJob);
                 }
                 break;
             case KEYPAIR_MODE_RENEW:
-                renewKeyPair();
+                renewKeyPair(false);
                 break;
             case KEYPAIR_MODE_DELETE:
                 deleteKeyPairs();
+                logger.info("Existing signature key-pairs have been deleted");
                 break;
             default:
                 if(StringUtils.isNotEmpty(keyPairMode)) {
@@ -69,12 +79,24 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
                     throw new IllegalArgumentException("Unsupported value '" + keyPairMode + "' for 'ovsx.integrity.key-pair' defined. Supported values are: " + values);
                 }
         }
+
+        logger.info("Signature key-pair generation has been completed");
     }
 
-    private void renewKeyPair() throws IOException {
+    private void renewKeyPair(boolean create) throws IOException {
         var keyPair = service.generateKeyPair();
-        service.updateKeyPair(keyPair);
-        repositories.findVersions().forEach(this::enqueueCreateSignatureJob);
+        try {
+            service.updateKeyPair(keyPair);
+            repositories.findVersions().forEach(this::enqueueCreateSignatureJob);
+
+            if (create) {
+                logger.info("Signature key-pair with id {} has been created", keyPair.getPublicId());
+            } else {
+                logger.info("Signature key-pair has been renewed, new id {}", keyPair.getPublicId());
+            }
+        } catch (DataAccessException ex) {
+            logger.error("Failed to update signature key pair: {}", ex.getMessage());
+        }
     }
 
     private void deleteKeyPairs() {
