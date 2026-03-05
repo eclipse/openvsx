@@ -12,11 +12,12 @@ package org.eclipse.openvsx.util;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class TempFile implements AutoCloseable {
+public class TempFile implements Closeable {
 
     private final Path path;
     private FileResource resource;

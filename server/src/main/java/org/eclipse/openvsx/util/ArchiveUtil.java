@@ -9,6 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import jakarta.annotation.Nullable;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -25,7 +29,7 @@ public final class ArchiveUtil {
 
     private ArchiveUtil() {}
 
-    public static ZipEntry getEntryIgnoreCase(ZipFile archive, String entryName) {
+    public static @Nullable ZipEntry getEntryIgnoreCase(ZipFile archive, String entryName) {
         return archive.stream()
                 .filter(entry -> entry.getName().equalsIgnoreCase(entryName))
                 .findAny()
@@ -33,13 +37,19 @@ public final class ArchiveUtil {
     }
 
     public static TempFile readEntry(ZipFile archive, String entryName) throws IOException {
+        return readEntry(archive, entryName, MAX_ENTRY_SIZE);
+    }
+
+    static TempFile readEntry(ZipFile archive, String entryName, long maxEntrySize) throws IOException {
         var entry = archive.getEntry(entryName);
-        if (entry == null)
-            return null;
-        return readEntry(archive, entry);
+        return entry != null ? readEntry(archive, entry, maxEntrySize) : null;
     }
 
     public static TempFile readEntry(ZipFile archive, ZipEntry entry) throws IOException {
+        return readEntry(archive, entry, MAX_ENTRY_SIZE);
+    }
+
+    static TempFile readEntry(ZipFile archive, ZipEntry entry, long maxEntrySize) throws IOException {
         var fileNameIndex = entry.getName().lastIndexOf('/');
         var fileName = fileNameIndex == -1 ? entry.getName() : entry.getName().substring(fileNameIndex + 1);
         var suffixIndex = fileName.lastIndexOf('.');
@@ -47,9 +57,18 @@ public final class ArchiveUtil {
         var prefix = suffixIndex == -1 ? fileName : fileName.substring(0, suffixIndex);
         var file = new TempFile(prefix, suffix);
         try (var out = Files.newOutputStream(file.getPath())){
-            if (entry.getSize() > MAX_ENTRY_SIZE)
-                throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of 32 MB.");
-            archive.getInputStream(entry).transferTo(out);
+            if (entry.getSize() > maxEntrySize) {
+                IOUtils.closeQuietly(file);
+                var maxSize = FileUtils.byteCountToDisplaySize(maxEntrySize);
+                throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of " + maxSize + ".");
+            }
+
+            try (var is = new SizeLimitInputStream(archive.getInputStream(entry), maxEntrySize)) {
+                is.transferTo(out);
+            } catch (IOException e) {
+                IOUtils.closeQuietly(file);
+                throw new ErrorResultException("Failed to read " + entry.getName() + ": " + e.getMessage());
+            }
         }
         return file;
     }
@@ -92,5 +111,4 @@ public final class ArchiveUtil {
             return false;
         }
     }
-
 }

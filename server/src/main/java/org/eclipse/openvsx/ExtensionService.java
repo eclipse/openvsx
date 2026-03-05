@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
@@ -187,9 +188,7 @@ public class ExtensionService {
             }
 
             if (size > maxContentSize) {
-                try {
-                    extensionFile.close();
-                } catch (IOException _) {}
+                IOUtils.closeQuietly(extensionFile);
                 var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
                 throw new ErrorResultException("The extension package exceeds the size limit of " + maxSize + ".", HttpStatus.PAYLOAD_TOO_LARGE);
             }

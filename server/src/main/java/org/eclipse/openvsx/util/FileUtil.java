@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-
 package org.eclipse.openvsx.util;
 
 import java.nio.file.Files;
@@ -31,7 +30,7 @@ public class FileUtil {
         });
     }
 
-    private FileUtil(){}
+    private FileUtil() {}
 
     /***
      * Write to file synchronously, if it doesn't already exist.

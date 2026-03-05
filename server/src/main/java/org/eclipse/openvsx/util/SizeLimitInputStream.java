@@ -12,6 +12,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +53,8 @@ public class SizeLimitInputStream extends FilterInputStream {
     private void checkLimit(long n) throws IOException {
         bytesRead += n;
         if (bytesRead > maxBytes) {
-            throw new IOException("File size exceeds limit of " + maxBytes + " bytes");
+            var maxSize = FileUtils.byteCountToDisplaySize(maxBytes);
+            throw new IOException("File size exceeds limit of " + maxSize + " bytes");
         }
     }
 }

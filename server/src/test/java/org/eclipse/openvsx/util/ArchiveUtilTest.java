@@ -9,8 +9,10 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.InstanceOfAssertFactories.PATH;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.zip.ZipFile;
 
@@ -21,7 +23,10 @@ class ArchiveUtilTest {
     @Test
     void testTodoTree() throws Exception {
         var packageUrl = getClass().getResource("todo-tree.zip");
+
+        assertThat(packageUrl).isNotNull();
         assertThat(packageUrl.getProtocol()).isEqualTo("file");
+
         try (
             var archive = new ZipFile(packageUrl.getPath());
             var packageFile = ArchiveUtil.readEntry(archive, "extension/package.json");
@@ -34,4 +39,20 @@ class ArchiveUtilTest {
         }
     }
 
+    @Test
+    void testExceedMaxEntrySize() {
+        var packageUrl = getClass().getResource("todo-tree.zip");
+
+        assertThat(packageUrl).isNotNull();
+        assertThat(packageUrl.getProtocol()).isEqualTo("file");
+
+        assertThatThrownBy(() -> {
+            try (
+                    var archive = new ZipFile(packageUrl.getPath());
+                    var _ = ArchiveUtil.readEntry(archive, "extension/package.json", 8192);
+            ) {
+                fail();
+            }
+        }).isExactlyInstanceOf(ErrorResultException.class);
+    }
 }
