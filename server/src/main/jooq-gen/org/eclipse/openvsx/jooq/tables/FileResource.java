@@ -64,11 +64,6 @@ public class FileResource extends TableImpl<FileResourceRecord> {
     public final TableField<FileResourceRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.VARCHAR(32), this, "");
 
     /**
-     * The column <code>public.file_resource.content</code>.
-     */
-    public final TableField<FileResourceRecord, byte[]> CONTENT = createField(DSL.name("content"), SQLDataType.BLOB, this, "");
-
-    /**
      * The column <code>public.file_resource.extension_id</code>.
      */
     public final TableField<FileResourceRecord, Long> EXTENSION_ID = createField(DSL.name("extension_id"), SQLDataType.BIGINT, this, "");

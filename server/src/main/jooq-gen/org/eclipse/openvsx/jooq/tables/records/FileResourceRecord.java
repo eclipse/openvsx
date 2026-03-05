@@ -46,59 +46,45 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
     }
 
     /**
-     * Setter for <code>public.file_resource.content</code>.
-     */
-    public void setContent(byte[] value) {
-        set(2, value);
-    }
-
-    /**
-     * Getter for <code>public.file_resource.content</code>.
-     */
-    public byte[] getContent() {
-        return (byte[]) get(2);
-    }
-
-    /**
      * Setter for <code>public.file_resource.extension_id</code>.
      */
     public void setExtensionId(Long value) {
-        set(3, value);
+        set(2, value);
     }
 
     /**
      * Getter for <code>public.file_resource.extension_id</code>.
      */
     public Long getExtensionId() {
-        return (Long) get(3);
+        return (Long) get(2);
     }
 
     /**
      * Setter for <code>public.file_resource.name</code>.
      */
     public void setName(String value) {
-        set(4, value);
+        set(3, value);
     }
 
     /**
      * Getter for <code>public.file_resource.name</code>.
      */
     public String getName() {
-        return (String) get(4);
+        return (String) get(3);
     }
 
     /**
      * Setter for <code>public.file_resource.storage_type</code>.
      */
     public void setStorageType(String value) {
-        set(5, value);
+        set(4, value);
     }
 
     /**
      * Getter for <code>public.file_resource.storage_type</code>.
      */
     public String getStorageType() {
-        return (String) get(5);
+        return (String) get(4);
     }
 
     // -------------------------------------------------------------------------
@@ -124,12 +110,11 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
     /**
      * Create a detached, initialised FileResourceRecord
      */
-    public FileResourceRecord(Long id, String type, byte[] content, Long extensionId, String name, String storageType) {
+    public FileResourceRecord(Long id, String type, Long extensionId, String name, String storageType) {
         super(FileResource.FILE_RESOURCE);
 
         setId(id);
         setType(type);
-        setContent(content);
         setExtensionId(extensionId);
         setName(name);
         setStorageType(storageType);

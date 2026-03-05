@@ -45,9 +45,6 @@ public class FileResource {
     @Column(length = 32)
     private String type;
 
-    @Basic(fetch = FetchType.LAZY)
-    private byte[] content;
-
     @Column(length = 32)
     private String storageType;
 
@@ -81,18 +78,6 @@ public class FileResource {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    /**
-     * @deprecated
-     */
-    @Deprecated
-    public byte[] getContent() {
-        return content;
-    }
-
-    public void clearContent() {
-        this.content = null;
     }
 
     public String getStorageType() {
