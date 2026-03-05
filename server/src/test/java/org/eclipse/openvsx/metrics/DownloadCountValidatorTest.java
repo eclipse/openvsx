@@ -42,9 +42,9 @@ public class DownloadCountValidatorTest {
 
         properties = new DownloadCountValidationProperties();
         properties.setEnabled(true);
-        properties.setDedupWindowMinutes(30);
+        properties.setHourlyLimitPerIp(3);
         properties.setKeyPrefix("download:dedup");
-        properties.setLateArrivalHours(24);
+        properties.setLateArrivalHours(2);
         properties.setAutomatedClientKeywords(List.of("curl", "bot"));
 
         validator = new DownloadCountValidator(redisTemplate, "getRemoteAddr()", properties);
@@ -65,22 +65,38 @@ public class DownloadCountValidatorTest {
     }
 
     @Test
-    public void shouldUseConfiguredWindowAndKeyPrefix() {
-        properties.setDedupWindowMinutes(45);
+    public void shouldCountWhenUnderHourlyLimit() {
+        properties.setHourlyLimitPerIp(5);
         properties.setLateArrivalHours(2);
         properties.setKeyPrefix("custom:dedup");
-        Mockito.when(valueOps.setIfAbsent(Mockito.anyString(), Mockito.eq("1"), Mockito.any(Duration.class)))
-                .thenReturn(Boolean.TRUE);
+
+        // Simulate first download in this hour (count = 1, under limit of 5)
+        Mockito.when(valueOps.increment(Mockito.anyString())).thenReturn(1L);
 
         Instant eventTime = Instant.parse("2026-01-01T01:10:00Z");
         boolean result = validator.shouldCountDownload(99L, "10.10.10.10", "Mozilla/5.0", eventTime);
 
         assertTrue(result);
+
+        // Key must include the custom prefix and extension ID
+        Duration expectedTtl = Duration.ofHours(1).plusHours(2);
         Mockito.verify(valueOps).setIfAbsent(
                 Mockito.argThat(key -> key.startsWith("custom:dedup:") && key.contains(":99:")),
-                Mockito.eq("1"),
-                Mockito.eq(Duration.ofMinutes(45).plusHours(2))
+                Mockito.eq("0"),
+                Mockito.eq(expectedTtl)
         );
+    }
+
+    @Test
+    public void shouldNotCountWhenHourlyLimitExceeded() {
+        properties.setHourlyLimitPerIp(3);
+
+        // Simulate 4th download — over the limit of 3
+        Mockito.when(valueOps.increment(Mockito.anyString())).thenReturn(4L);
+
+        boolean result = validator.shouldCountDownload(42L, "1.1.1.1", "Mozilla/5.0", Instant.now());
+
+        assertFalse(result);
     }
 
     @Test
@@ -92,25 +108,27 @@ public class DownloadCountValidatorTest {
     @Test
     public void shouldUseEventTimeBucketInKey() {
         properties.setLateArrivalHours(24);
-        properties.setDedupWindowMinutes(30);
-        Mockito.when(valueOps.setIfAbsent(Mockito.anyString(), Mockito.eq("1"), Mockito.any(Duration.class)))
-                .thenReturn(Boolean.TRUE);
 
-        // 2026-01-01T00:00:00Z = 0 epoch-minutes in window-30 → bucket = 0
+        // Simulate first download in this hour (count = 1, under limit)
+        Mockito.when(valueOps.increment(Mockito.anyString())).thenReturn(1L);
+
+        // 2026-01-01T00:00:00Z → epochSecond = 1735689600 → hourBucket = 482136
         Instant eventTime = Instant.parse("2026-01-01T00:00:00Z");
         boolean result = validator.shouldCountDownload(99L, "10.0.0.1", "Mozilla/5.0", eventTime);
 
         assertTrue(result);
-        // Key must end with the bucket index (0 for midnight) and TTL must include late-arrival buffer
+
+        // TTL = 1 hour + 24 late-arrival hours = 25 hours
+        Duration expectedTtl = Duration.ofHours(1).plusHours(24);
         Mockito.verify(valueOps).setIfAbsent(
                 Mockito.argThat(key -> key.startsWith("download:dedup:") && key.contains(":99:")),
-                Mockito.eq("1"),
-                Mockito.eq(Duration.ofMinutes(30).plusHours(24))
+                Mockito.eq("0"),
+                Mockito.eq(expectedTtl)
         );
     }
 
     @Test
-    public void shouldNotCountWhenEventTimeIsMissingForEventTimeFlow() {
+    public void shouldNotCountWhenEventTimeIsMissing() {
         boolean result = validator.shouldCountDownload(99L, "10.0.0.1", "Mozilla/5.0", null);
         assertFalse(result);
         Mockito.verifyNoInteractions(valueOps);
