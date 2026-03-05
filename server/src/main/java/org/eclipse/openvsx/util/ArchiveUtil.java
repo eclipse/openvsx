@@ -57,13 +57,19 @@ public final class ArchiveUtil {
         var prefix = suffixIndex == -1 ? fileName : fileName.substring(0, suffixIndex);
         var file = new TempFile(prefix, suffix);
         try (var out = Files.newOutputStream(file.getPath())){
+            if (entry.getSize() < 0) {
+                IOUtils.closeQuietly(file);
+                throw new ErrorResultException("The file " + entry.getName() + " has a negative size.");
+            }
+
             if (entry.getSize() > maxEntrySize) {
                 IOUtils.closeQuietly(file);
                 var maxSize = FileUtils.byteCountToDisplaySize(maxEntrySize);
                 throw new ErrorResultException("The file " + entry.getName() + " exceeds the size limit of " + maxSize + ".");
             }
 
-            try (var is = new SizeLimitInputStream(archive.getInputStream(entry), maxEntrySize)) {
+            // Read at most the number of bytes as declared by the entry
+            try (var is = new SizeLimitInputStream(archive.getInputStream(entry), entry.getSize())) {
                 is.transferTo(out);
             } catch (IOException e) {
                 IOUtils.closeQuietly(file);
