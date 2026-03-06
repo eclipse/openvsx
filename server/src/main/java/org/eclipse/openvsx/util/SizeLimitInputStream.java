@@ -54,7 +54,7 @@ public class SizeLimitInputStream extends FilterInputStream {
         bytesRead += n;
         if (bytesRead > maxBytes) {
             var maxSize = FileUtils.byteCountToDisplaySize(maxBytes);
-            throw new IOException("File size exceeds limit of " + maxSize + " bytes");
+            throw new IOException("File size exceeds limit of " + maxSize + ".");
         }
     }
 }
