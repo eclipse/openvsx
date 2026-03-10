@@ -115,7 +115,7 @@
         "build": "yarn run clean && tsc -p ./configs/lib.tsconfig.json && yarn run lint",
         "test": "ts-mocha --project ./configs/test.tsconfig.json --config ./configs/mocharc.json",
         "smoke-tests": "playwright install && playwright test --config=./configs/playwright.config.ts",
-        "lint": "eslint -c ./configs/eslintrc.mjs src",
+        "lint": "eslint -c eslint.config.mjs src",
         "watch": "tsc -w -p ./tsconfig.json --preserveWatchOutput",
         "prepare": "yarn run clean && yarn run build",
         "build:server": "tsc -p ./configs/server.tsconfig.json",
