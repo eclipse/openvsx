@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerErrorException;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -61,9 +60,6 @@ public class ExtensionService {
     private final JobRequestScheduler scheduler;
     private final ExtensionScanService scanService;
     private final ExtensionScanPersistenceService scanPersistenceService;
-
-    @Value("${ovsx.publishing.require-license:false}")
-    boolean requireLicense;
 
     @Value("${ovsx.publishing.max-content-size:" + MAX_CONTENT_SIZE + "}")
     int maxContentSize;
@@ -108,11 +104,7 @@ public class ExtensionService {
                 // In case publication fails early on we need to
                 // delete the temporary extension file, otherwise
                 // it's deleted within the publishAsync method.
-                try {
-                    extensionFile.close();
-                } catch (IOException e) {
-                    logger.error("failed to delete temp file", e);
-                }
+                IOUtils.closeQuietly(extensionFile);
                 throw exc;
             }
             publishHandler.publishAsync(extensionFile, this);
@@ -147,12 +139,7 @@ public class ExtensionService {
             // In case publication fails early on we need to
             // delete the temporary extension file, otherwise
             // it's deleted within the publishAsync method.
-            try {
-                extensionFile.close();
-            } catch (IOException ioe) {
-                logger.error("failed to delete temp file", ioe);
-            }
-
+            IOUtils.closeQuietly(extensionFile);
             throw e;
         }  catch (Exception e) {
             if (scan != null && !scan.isCompleted()) {
@@ -165,14 +152,6 @@ public class ExtensionService {
     private void doPublish(TempFile extensionFile, String binaryName, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
             var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
-            if (requireLicense) {
-                // Check the extension's license
-                try(var licenseFile = processor.getLicense(extVersion)) {
-                    checkLicense(extVersion, licenseFile);
-                } catch (IOException e) {
-                    throw new ServerErrorException("Failed read license file", e);
-                }
-            }
 
             var download = processor.getBinary(extVersion, binaryName);
             extensionFile.setResource(download);
@@ -196,12 +175,6 @@ public class ExtensionService {
             return extensionFile;
         } catch (IOException e) {
             throw new ErrorResultException("Failed to read extension file", e);
-        }
-    }
-
-    private void checkLicense(ExtensionVersion extVersion, TempFile licenseFile) {
-        if (StringUtils.isEmpty(extVersion.getLicense()) && (licenseFile == null || !licenseFile.getResource().getType().equals(FileResource.LICENSE))) {
-            throw new ErrorResultException("This extension cannot be accepted because it has no license.");
         }
     }
 

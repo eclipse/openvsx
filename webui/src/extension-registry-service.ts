@@ -397,7 +397,7 @@ export class ExtensionRegistryService {
             payload: extensionPackage,
             headers: headers,
             endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
-        });
+        }, false); // do not retry publishing an extension but show the explicit error received
     }
 
     async createNamespace(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>> {

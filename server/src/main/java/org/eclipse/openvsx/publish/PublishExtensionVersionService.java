@@ -12,7 +12,6 @@ package org.eclipse.openvsx.publish;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -73,10 +72,5 @@ public class PublishExtensionVersionService {
         extVersion.setActive(true);
         extVersion = entityManager.merge(extVersion);
         extensions.updateExtension(extVersion.getExtension());
-    }
-
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void updateExtensionPublicId(Extension extension) {
-        entityManager.merge(extension);
     }
 }

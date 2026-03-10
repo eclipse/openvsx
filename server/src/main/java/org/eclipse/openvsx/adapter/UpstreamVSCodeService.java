@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
@@ -125,32 +126,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
                 headers.remove(HttpHeaders.VARY);
 
-                if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                if (proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
                     var mapper = new ObjectMapper();
                     var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
                             .headers(headers)
                             .body(outputStream -> mapper.writeValue(outputStream, json));
                 } else {
-                    var tempFile = new TempFile("browse", null);
-                    try {
-                        try (var out = Files.newOutputStream(tempFile.getPath())) {
-                            response.getBody().transferTo(out);
-                        }
-
-                        return ResponseEntity.status(response.getStatusCode())
-                                .headers(headers)
-                                .body(outputStream -> {
-                                    try (var in = Files.newInputStream(tempFile.getPath())) {
-                                        in.transferTo(outputStream);
-                                    }
-
-                                    tempFile.close();
-                                });
-                    } catch (IOException e) {
-                        tempFile.close();
-                        throw e;
-                    }
+                    return streamResponse(response, headers, "browse");
                 }
             }
         };
@@ -279,25 +262,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
                 headers.remove(HttpHeaders.VARY);
 
-                var tempFile = new TempFile("asset", null);
-                try {
-                    try (var out = Files.newOutputStream(tempFile.getPath())) {
-                        response.getBody().transferTo(out);
-                    }
-
-                    return ResponseEntity.status(response.getStatusCode())
-                            .headers(headers)
-                            .body(outputStream -> {
-                                try (var in = Files.newInputStream(tempFile.getPath())) {
-                                    in.transferTo(outputStream);
-                                }
-
-                                tempFile.close();
-                            });
-                } catch (IOException e) {
-                    tempFile.close();
-                    throw e;
-                }
+                return streamResponse(response, headers, "asset");
             }
         };
 
@@ -332,4 +297,29 @@ public class UpstreamVSCodeService implements IVSCodeService {
         return new NotFoundException();
     }
 
+    private ResponseEntity<StreamingResponseBody> streamResponse(
+            ClientHttpResponse response,
+            HttpHeaders headers,
+            String prefix
+    ) throws IOException {
+        var tempFile = new TempFile(prefix, null);
+        try {
+            try (var out = Files.newOutputStream(tempFile.getPath())) {
+                response.getBody().transferTo(out);
+            }
+
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(headers)
+                    .body(outputStream -> {
+                        try (var in = Files.newInputStream(tempFile.getPath())) {
+                            in.transferTo(outputStream);
+                        }
+
+                        IOUtils.closeQuietly(tempFile);
+                    });
+        } catch (IOException e) {
+            IOUtils.closeQuietly(tempFile);
+            throw e;
+        }
+    }
 }
