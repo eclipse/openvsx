@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.UpstreamProxyService;
 import org.eclipse.openvsx.UrlConfigService;
@@ -132,19 +133,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                             .headers(headers)
                             .body(outputStream -> mapper.writeValue(outputStream, json));
                 } else {
-                    try (var tempFile = new TempFile("browse", null)) {
-                        try (var out = Files.newOutputStream(tempFile.getPath())) {
-                            response.getBody().transferTo(out);
-                        }
-
-                        return ResponseEntity.status(response.getStatusCode())
-                                .headers(headers)
-                                .body(outputStream -> {
-                                    try (var in = Files.newInputStream(tempFile.getPath())) {
-                                        in.transferTo(outputStream);
-                                    }
-                                });
-                    }
+                    return streamResponse(response, headers, "browse");
                 }
             }
         };
@@ -273,19 +262,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
                 headers.remove(HttpHeaders.VARY);
 
-                try (var tempFile = new TempFile("asset", null)) {
-                    try (var out = Files.newOutputStream(tempFile.getPath())) {
-                        response.getBody().transferTo(out);
-                    }
-
-                    return ResponseEntity.status(response.getStatusCode())
-                            .headers(headers)
-                            .body(outputStream -> {
-                                try (var in = Files.newInputStream(tempFile.getPath())) {
-                                    in.transferTo(outputStream);
-                                }
-                            });
-                }
+                return streamResponse(response, headers, "asset");
             }
         };
 
@@ -318,5 +295,31 @@ public class UpstreamVSCodeService implements IVSCodeService {
         }
         logger.error("upstream: {}: {}", method, url, exc);
         return new NotFoundException();
+    }
+
+    private ResponseEntity<StreamingResponseBody> streamResponse(
+            ClientHttpResponse response,
+            HttpHeaders headers,
+            String prefix
+    ) throws IOException {
+        var tempFile = new TempFile(prefix, null);
+        try {
+            try (var out = Files.newOutputStream(tempFile.getPath())) {
+                response.getBody().transferTo(out);
+            }
+
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(headers)
+                    .body(outputStream -> {
+                        try (var in = Files.newInputStream(tempFile.getPath())) {
+                            in.transferTo(outputStream);
+                        }
+
+                        IOUtils.closeQuietly(tempFile);
+                    });
+        } catch (IOException e) {
+            IOUtils.closeQuietly(tempFile);
+            throw e;
+        }
     }
 }
