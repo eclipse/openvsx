@@ -125,15 +125,14 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
                 headers.remove(HttpHeaders.VARY);
 
-                if(proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                if (proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
                     var mapper = new ObjectMapper();
                     var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
                             .headers(headers)
                             .body(outputStream -> mapper.writeValue(outputStream, json));
                 } else {
-                    var tempFile = new TempFile("browse", null);
-                    try {
+                    try (var tempFile = new TempFile("browse", null)) {
                         try (var out = Files.newOutputStream(tempFile.getPath())) {
                             response.getBody().transferTo(out);
                         }
@@ -144,12 +143,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                                     try (var in = Files.newInputStream(tempFile.getPath())) {
                                         in.transferTo(outputStream);
                                     }
-
-                                    tempFile.close();
                                 });
-                    } catch (IOException e) {
-                        tempFile.close();
-                        throw e;
                     }
                 }
             }
@@ -279,8 +273,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
                 headers.remove(HttpHeaders.VARY);
 
-                var tempFile = new TempFile("asset", null);
-                try {
+                try (var tempFile = new TempFile("asset", null)) {
                     try (var out = Files.newOutputStream(tempFile.getPath())) {
                         response.getBody().transferTo(out);
                     }
@@ -291,12 +284,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                                 try (var in = Files.newInputStream(tempFile.getPath())) {
                                     in.transferTo(outputStream);
                                 }
-
-                                tempFile.close();
                             });
-                } catch (IOException e) {
-                    tempFile.close();
-                    throw e;
                 }
             }
         };
@@ -331,5 +319,4 @@ public class UpstreamVSCodeService implements IVSCodeService {
         logger.error("upstream: {}: {}", method, url, exc);
         return new NotFoundException();
     }
-
 }
