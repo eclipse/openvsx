@@ -84,6 +84,14 @@ public class PublishExtensionVersionHandler {
         this.scanPersistenceService = scanPersistenceService;
     }
 
+    public boolean isLicenseRequired() {
+        return requireLicense;
+    }
+
+    public void setLicenseRequired(boolean requireLicense) {
+        this.requireLicense = requireLicense;
+    }
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(ExtensionProcessor processor, PersonalAccessToken token, LocalDateTime timestamp, boolean checkDependencies) {
         // Extract extension metadata from its manifest

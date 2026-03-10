@@ -15,7 +15,6 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
@@ -28,8 +27,6 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -48,8 +45,6 @@ import java.util.stream.Collectors;
 @Component
 public class ExtensionService {
     private static final int MAX_CONTENT_SIZE = 512 * 1024 * 1024;
-
-    private final Logger logger = LoggerFactory.getLogger(ExtensionService.class);
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
@@ -84,6 +79,16 @@ public class ExtensionService {
         this.scheduler = scheduler;
         this.scanService = scanService;
         this.scanPersistenceService = scanPersistenceService;
+    }
+
+    // For testing only
+    boolean isLicenseRequired() {
+        return publishHandler.isLicenseRequired();
+    }
+
+    // For testing only
+    void setLicenseRequired(boolean requireLicense) {
+        publishHandler.setLicenseRequired(requireLicense);
     }
 
     @Transactional

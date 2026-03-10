@@ -101,8 +101,8 @@ class ExtensionVersionIntegrityServiceTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        ExtensionVersionIntegrityService extensionVersionIntegrityService(EntityManager entityManager, CacheService cacheService) {
-            return new ExtensionVersionIntegrityService(entityManager, cacheService);
+        ExtensionVersionIntegrityService extensionVersionIntegrityService(EntityManager entityManager) {
+            return new ExtensionVersionIntegrityService(entityManager);
         }
 
         @Bean

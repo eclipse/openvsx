@@ -50,7 +50,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.client.AutoConfigureWebClient;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -122,7 +121,7 @@ class RegistryAPITest {
     MockMvc mockMvc;
 
     @Autowired
-    ExtensionService extensions;
+    ExtensionService extensionService;
 
     @Test
     void testPublicNamespace() throws Exception {
@@ -1526,9 +1525,9 @@ class RegistryAPITest {
 
     @Test
     void testPublishRequireLicenseNone() throws Exception {
-        var previousRequireLicense = extensions.requireLicense;
+        var previousRequireLicense = extensionService.isLicenseRequired();
         try {
-            extensions.requireLicense = true;
+            extensionService.setLicenseRequired(true);
             mockForPublish("contributor");
             var bytes = createExtensionPackage("bar", "1.0.0", null);
             mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
@@ -1537,15 +1536,15 @@ class RegistryAPITest {
                     .andExpect(status().isBadRequest())
                     .andExpect(content().json(errorJson("This extension cannot be accepted because it has no license.")));
         } finally {
-            extensions.requireLicense = previousRequireLicense;
+            extensionService.setLicenseRequired(previousRequireLicense);
         }
     }
 
     @Test
     void testPublishRequireLicenseOk() throws Exception {
-        var previousRequireLicense = extensions.requireLicense;
+        var previousRequireLicense = extensionService.isLicenseRequired();
         try {
-            extensions.requireLicense = true;
+            extensionService.setLicenseRequired(true);
             mockForPublish("contributor");
             mockActiveVersion();
             var bytes = createExtensionPackage("bar", "1.0.0", "MIT");
@@ -1564,7 +1563,7 @@ class RegistryAPITest {
                         e.setDownloadable(true);
                     })));
         } finally {
-            extensions.requireLicense = previousRequireLicense;
+            extensionService.setLicenseRequired(previousRequireLicense);
         }
     }
 
@@ -2619,6 +2618,33 @@ class RegistryAPITest {
         }
 
         @Bean
+        PublishExtensionVersionHandler publishExtensionVersionHandler(
+                PublishExtensionVersionService service,
+                ExtensionVersionIntegrityService integrityService,
+                EntityManager entityManager,
+                RepositoryService repositories,
+                JobRequestScheduler scheduler,
+                UserService users,
+                ExtensionValidator validator,
+                ExtensionControlService extensionControl,
+                ExtensionScanService extensionScanService,
+                ExtensionScanPersistenceService scanPersistenceService
+        ) {
+            return new PublishExtensionVersionHandler(
+                    service,
+                    integrityService,
+                    entityManager,
+                    repositories,
+                    scheduler,
+                    users,
+                    validator,
+                    extensionControl,
+                    extensionScanService,
+                    scanPersistenceService
+            );
+        }
+
+        @Bean
         ExtensionService extensionService(
                 EntityManager entityManager,
                 RepositoryService repositories,
@@ -2714,33 +2740,6 @@ class RegistryAPITest {
                 RepositoryService repositories
         ) {
             return new SimilarityCheckService(config, similarityService, repositories);
-        }
-
-        @Bean
-        PublishExtensionVersionHandler publishExtensionVersionHandler(
-                PublishExtensionVersionService service,
-                ExtensionVersionIntegrityService integrityService,
-                EntityManager entityManager,
-                RepositoryService repositories,
-                JobRequestScheduler scheduler,
-                UserService users,
-                ExtensionValidator validator,
-                ExtensionControlService extensionControl,
-                ExtensionScanService extensionScanService,
-                ExtensionScanPersistenceService scanPersistenceService
-        ) {
-            return new PublishExtensionVersionHandler(
-                    service,
-                    integrityService,
-                    entityManager,
-                    repositories,
-                    scheduler,
-                    users,
-                    validator,
-                    extensionControl,
-                    extensionScanService,
-                    scanPersistenceService
-            );
         }
     }
 }
