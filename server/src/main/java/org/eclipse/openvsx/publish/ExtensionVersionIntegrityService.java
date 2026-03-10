@@ -21,7 +21,6 @@ import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.openssl.PEMParser;
-import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
@@ -51,14 +50,12 @@ public class ExtensionVersionIntegrityService {
     protected final Logger logger = LoggerFactory.getLogger(ExtensionVersionIntegrityService.class);
 
     private final EntityManager entityManager;
-    private final CacheService cache;
 
     @Value("${ovsx.integrity.key-pair:}")
     String keyPairMode;
 
-    public ExtensionVersionIntegrityService(EntityManager entityManager, CacheService cache) {
+    public ExtensionVersionIntegrityService(EntityManager entityManager) {
         this.entityManager = entityManager;
-        this.cache = cache;
     }
 
     public boolean isEnabled() {

@@ -287,7 +287,7 @@ public class ExtensionProcessor implements AutoCloseable {
                 .collect(Collectors.groupingBy(String::toLowerCase))
                 .entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(e -> e.getValue().get(0))
+                .map(e -> e.getValue().getFirst())
                 .collect(Collectors.toList());
     }
 

@@ -12,6 +12,7 @@ package org.eclipse.openvsx.publish;
 import com.google.common.base.Joiner;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
@@ -29,9 +30,11 @@ import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -42,6 +45,9 @@ import java.util.function.Consumer;
 public class PublishExtensionVersionHandler {
 
     protected final Logger logger = LoggerFactory.getLogger(PublishExtensionVersionHandler.class);
+
+    @Value("${ovsx.publishing.require-license:false}")
+    boolean requireLicense;
 
     private final PublishExtensionVersionService service;
     private final ExtensionVersionIntegrityService integrityService;
@@ -151,6 +157,7 @@ public class PublishExtensionVersionHandler {
         extension.getVersions().add(extVersion);
         extVersion.setExtension(extension);
 
+        validateLicense(processor, extVersion);
         validateMetadata(extVersion);
         entityManager.persist(extVersion);
         return extVersion;
@@ -175,11 +182,29 @@ public class PublishExtensionVersionHandler {
         }
     }
 
+    private void validateLicense(ExtensionProcessor processor, ExtensionVersion extVersion) {
+        if (requireLicense) {
+            // Check the extension's license
+            try (var licenseFile = processor.getLicense(extVersion)) {
+                checkLicense(extVersion, licenseFile);
+            } catch (IOException e) {
+                throw new ServerErrorException("Failed to read license file", e);
+            }
+        }
+    }
+
+    private void checkLicense(ExtensionVersion extVersion, TempFile licenseFile) {
+        if (StringUtils.isEmpty(extVersion.getLicense()) &&
+                (licenseFile == null || !licenseFile.getResource().getType().equals(FileResource.LICENSE))) {
+            throw new ErrorResultException("This extension cannot be accepted because it has no license.");
+        }
+    }
+
     private void validateMetadata(ExtensionVersion extVersion) {
         var metadataIssues = validator.validateMetadata(extVersion);
         if (!metadataIssues.isEmpty()) {
             if (metadataIssues.size() == 1) {
-                throw new ErrorResultException(metadataIssues.get(0).toString());
+                throw new ErrorResultException(metadataIssues.getFirst().toString());
             }
             throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
                     + Joiner.on("\n").join(metadataIssues));
@@ -319,24 +344,21 @@ public class PublishExtensionVersionHandler {
             // Scanning happens after file resources are stored but before activation
             // Extension remains INACTIVE until all scans complete via AsyncScanCompletionService
             if (scan != null && scanService.isEnabled() && scanService.hasRegisteredScanners()) {
-                logger.info("Submitting scanner jobs for extension version: {}", 
-                    NamingUtil.toLogFormat(extVersion));
+                logger.info("Submitting scanner jobs for extension version: {}", NamingUtil.toLogFormat(extVersion));
                 try {
                     // Submit to scanners - transitions scan to SCANNING status
                     boolean submitted = scanService.submitScannerJobs(scan, extVersion);
                     
                     if (!submitted) {
                         // No scanners available
-                        logger.warn("No scanners available, activating extension immediately: {}", 
-                            NamingUtil.toLogFormat(extVersion));
+                        logger.warn("No scanners available, activating extension immediately: {}", NamingUtil.toLogFormat(extVersion));
                         scanService.markScanPassed(scan);
                         service.activateExtension(extVersion, extensionService);
                     }
                     // If submission succeeded, extension remains inactive
                     // AsyncScanCompletionService will activate after scans complete
                 } catch (Exception e) {
-                    logger.error("Failed to submit scanner jobs for extension version: " + 
-                        NamingUtil.toLogFormat(extVersion), e);
+                    logger.error("Failed to submit scanner jobs for extension version: {}", NamingUtil.toLogFormat(extVersion), e);
                     scanService.markScanAsErrored(scan, "Failed to submit scanner jobs: " + e.getMessage());
                     // Extension remains inactive until scans complete or are manually approved
                 }
@@ -352,11 +374,7 @@ public class PublishExtensionVersionHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            try {
-                extensionFile.close();
-            } catch (IOException e) {
-                logger.error("failed to delete temp file", e);
-            }
+            IOUtils.closeQuietly(extensionFile);
         }
     }
 
