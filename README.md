@@ -14,7 +14,6 @@
   <a href="https://github.com/eclipse/openvsx/releases"><img alt="Release" src="https://img.shields.io/github/v/tag/eclipse/openvsx?sort=semver" /></a>
   <a href="https://www.npmjs.com/package/ovsx"><img alt="cli" src="https://img.shields.io/npm/v/ovsx?label=cli" /></a>
   <a href="https://github.com/eclipse/openvsx/actions/workflows/main.yml?query=branch%3Amaster"><img alt="Build Status" src="https://github.com/eclipse/openvsx/actions/workflows/main.yml/badge.svg?branch:master" /></a>
-  <a href="https://develocity-staging.eclipse.org/"><img alt="Revved up by Develocity" src="https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A" /></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/eclipse/openvsx"><img alt="OpenSSF Scorecard" src="https://api.securityscorecards.dev/projects/github.com/eclipse/openvsx/badge" /></a>
 </p>
 

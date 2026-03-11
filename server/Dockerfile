@@ -10,8 +10,7 @@ COPY --chown=gradle:gradle src ./src/
 ENV CI=true
 
 # Build the server application
-RUN --mount=type=secret,id=dv-key,env=DEVELOCITY_ACCESS_KEY \
-    ./gradlew --no-daemon assemble
+RUN ./gradlew --no-daemon assemble
 
 FROM eclipse-temurin:25-jdk
 
