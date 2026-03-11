@@ -65,7 +65,7 @@ export function toRelativeTime(timestamp?: string): string | undefined {
     const elapsed = Date.now() - date.getTime();
 
     if (elapsed < 0) {
-        const remaining = -elapsed
+        const remaining = -elapsed;
         if (remaining < msPerMinute) {
             return 'now';
         } else if (remaining < msPerHour) {
