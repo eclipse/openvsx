@@ -18,7 +18,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Bump @isaacs/brace-expansion from `5.0.0` to `5.0.1` ([#1638](https://github.com/eclipse/openvsx/pull/1638))
 - Bump minimatch from to `3.1.5`, `9.0.9` and `10.2.4` respectively
-- Bump tar from `7.5.9` to `7.5.10` ([#1665](https://github.com/eclipse/openvsx/pull/1665))
+- Bump tar from `7.5.9` to `7.5.11` ([#1678](https://github.com/eclipse/openvsx/pull/1678))
 - Bump dompurify from `3.2.4` to `3.3.2` ([#1671](https://github.com/eclipse/openvsx/pull/1671))
 
 ## [v0.18.0] (Feb. 2026)
