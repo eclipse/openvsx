@@ -61,8 +61,20 @@ spring:
 
 management:
   health:
-    probes:
+    livenessstate:
       enabled: true
+    readinessstate:
+      enabled: true
+    redis:
+      enabled: true
+    elasticsearch:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+      probes:
+        enabled: true
   endpoints:
     web:
       exposure:

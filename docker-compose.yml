@@ -16,7 +16,7 @@ services:
       - debug
 
   elasticsearch:
-    image: elasticsearch:8.7.1
+    image: elasticsearch:8.18.8
     environment:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - xpack.security.enabled=false
