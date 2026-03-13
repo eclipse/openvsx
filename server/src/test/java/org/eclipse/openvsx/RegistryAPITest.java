@@ -2701,7 +2701,8 @@ class RegistryAPITest {
                     cache,
                     entityManager,
                     fileCacheDurationConfig,
-                    cdnServiceConfig
+                    cdnServiceConfig,
+                    Optional.empty()
             );
         }
 
