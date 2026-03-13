@@ -132,7 +132,6 @@ jobs:
     - name: Run Server Tests
       if: steps.changed_server_files.outputs.any_changed == 'true'
       run: server/gradlew --no-daemon -p server check
-      env:
 
     - name: Log in to the Container registry
       if: steps.changed_server_files.outputs.any_changed == 'true'
@@ -158,7 +157,6 @@ jobs:
     - name: Build and push Server Image
       if: steps.changed_server_files.outputs.any_changed == 'true'
       uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-      env:
       with:
         context: server
         push: ${{ github.repository_owner == 'eclipse' &&
