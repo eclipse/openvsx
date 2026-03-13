@@ -87,7 +87,6 @@ jobs:
 
     - name: Run Server Tests
       run: server/gradlew --no-daemon -p server check
-      env:
 
     - name: Log in to the Container registry
       uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
@@ -109,7 +108,6 @@ jobs:
 
     - name: Build and push Server Image
       uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-      env:
       with:
         context: server
         push: true
