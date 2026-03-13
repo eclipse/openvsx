@@ -97,18 +97,18 @@ To run the Open VSX registry in a development environment, you can use `docker c
 
 - Install Elasticsearch with Docker
 
-  - sudo docker pull elasticsearch:8.7.1
+  - sudo docker pull elasticsearch:8.18.8
   - sudo docker run -d --name elasticsearch  -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "xpack.ml.enabled=false" -e "xpack.security.enabled=false" elasticsearch:8.7.1
 
 ### Setup locally on macOS
 
 - Set up postgreSQL using Homebrew
 
-  - brew install postgresql@12
+  - brew install postgresql@16
 
   - Use `postgres –V` to check if it is the correct version
 
-  - brew services start postgresql@12
+  - brew services start postgresql@16
 
   - From the terminal, run the command `createdb postgres` (NOT inside `psql`)
 

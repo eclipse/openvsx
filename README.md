@@ -52,13 +52,15 @@ The command line tool is available at `cli/lib/ovsx`.
 
 ### webui
 
-The default frontend is the one bundled in the Docker image, and is also used for testing in the development environment. It depends on the compiled library, so make sure to build or watch the library before you build or watch the default frontend.
+The default frontend is the one bundled in the Docker image, and is also used for testing in the development environment.
+It depends on the compiled library, so make sure to build or watch the library before you build or watch the default frontend.
 
  * `yarn build` &mdash; build the library
  * `yarn watch` &mdash; watch (build continuously)
- * `yarn build:default` &mdash; build the default frontend (run webpack)
- * `yarn watch:default` &mdash; run webpack in watch mode
+ * `yarn build:default` &mdash; build the default frontend (run vite)
+ * `yarn watch:default` &mdash; run vite in watch mode
  * `yarn start:default` &mdash; start Express to serve the frontend on port 3000
+ * `yarn dev` &mdash; use vite to serve the frontend in development mode on port 3000
 
  The Express server is started automatically in Gitpod. A restart is usually not necessary.
 
