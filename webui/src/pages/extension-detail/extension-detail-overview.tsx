@@ -46,7 +46,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 name: getEngineDisplayName(engine),
                 version: engines[engine]
             }))
-            .filter((d) => d.name != null);
+            .filter((d) => d.name); // only display engines with a known display name
 
         return (<>
             <Grid item xs='auto'>
