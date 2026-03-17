@@ -27,11 +27,7 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
-        document.addEventListener('keydown', handleEnter);
-        return () => {
-            abortController.current.abort();
-            document.removeEventListener('keydown', handleEnter);
-        };
+        return () => abortController.current.abort();
     }, []);
 
     const handleOpenButton = () => {
@@ -70,12 +66,6 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
         setCommentError(commentError);
     };
 
-    const handleEnter = (e: KeyboardEvent) => {
-        if (e.code ===  'Enter') {
-            handlePost();
-        }
-    };
-
     if (!context.user) {
         return null;
     }
@@ -109,7 +99,7 @@ export const ExtensionReviewDialog: FunctionComponent<ExtensionReviewDialogProps
                     helperText={commentError}
                     onChange={handleCommentChange} />
             </DialogContent>
-            <DialogActions sx={{ justifyContent: { xs: 'center', sm: 'normal', md: 'normal', lg: 'normal', xl: 'normal' } }}>
+            <DialogActions sx={{ justifyContent: { xs: 'center', sm: 'end', md: 'end', lg: 'end', xl: 'end' } }}>
                 <Button
                     onClick={handleCancel}
                     color='secondary' >
