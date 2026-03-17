@@ -192,7 +192,7 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     @Override
-    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager", sync = true)
     public Path getCachedFile(FileResource resource) {
         if (StringUtils.isEmpty(bucketId)) {
             throw new IllegalStateException(missingBucketIdMessage(resource.getName()));

@@ -216,7 +216,7 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
-    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager", sync = true)
     public Path getCachedFile(FileResource resource) {
         var blobName = getObjectKey(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
