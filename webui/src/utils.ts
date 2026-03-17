@@ -236,6 +236,7 @@ export function getEngineDisplayName(engine: string): string {
         ['opensumi', 'OpenSumi'],
         ['nadako.vshaxe', 'nadako.vshaxe'],
         ['hbenl.vscode-test-explorer', 'hbenl.vscode-test-explorer'],
+        ['positron', 'Positron']
     ]);
 
     return engineDisplayNames.get(engine) ?? '';
