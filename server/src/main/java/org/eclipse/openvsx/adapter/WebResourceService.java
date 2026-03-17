@@ -77,7 +77,7 @@ public class WebResourceService {
     }
 
     @Observed
-    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
+    @Cacheable(value = CACHE_WEB_RESOURCE_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager", sync = true)
     public Path getWebResource(String namespace, String extension, String targetPlatform, String version, String name, Path extensionDownloadPath) {
         try(var zip = new ZipFile(extensionDownloadPath.toFile())) {
             var fileEntry = zip.getEntry(name);
