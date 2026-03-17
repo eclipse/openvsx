@@ -4,6 +4,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [v0.19.0] (unreleased)
 
+### Added
+
+- Add support for `positron` engine in the extension detail view and filter out unknown engines ([#1689](https://github.com/eclipse/openvsx/pull/1689))
+
 ### Changed
 
 - Switch from webpack to vite for building the bundle ([#1399](https://github.com/eclipse/openvsx/pull/1399))
