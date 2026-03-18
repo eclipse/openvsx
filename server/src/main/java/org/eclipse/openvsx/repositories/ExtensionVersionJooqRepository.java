@@ -514,7 +514,8 @@ public class ExtensionVersionJooqRepository {
         extVersion.setDependencies(toList(row.get(extensionVersionMapper.map(EXTENSION_VERSION.DEPENDENCIES)), converter));
         extVersion.setBundledExtensions(toList(row.get(extensionVersionMapper.map(EXTENSION_VERSION.BUNDLED_EXTENSIONS)), converter));
         extVersion.setSponsorLink(row.get(extensionVersionMapper.map(EXTENSION_VERSION.SPONSOR_LINK)));
-        extVersion.setPotentiallyMalicious(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS)));
+        var potentiallyMalicious = row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS));
+        extVersion.setPotentiallyMalicious(potentiallyMalicious != null && potentiallyMalicious);
 
         if(extension == null) {
             var namespace = new Namespace();
