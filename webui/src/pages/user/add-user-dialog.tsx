@@ -11,10 +11,10 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FC, KeyboardEvent, useState, useContext, useEffect, useRef } from 'react';
+import { FC, useState, useContext, useEffect, useRef } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button,
-    Popper, Fade, Paper, Box, Avatar
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button,
+    TextField, Autocomplete, Box, Avatar
 } from '@mui/material';
 import type { UserData } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -39,9 +39,8 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
     filterUsers: externalFilter
 }) => {
     const { service, handleError } = useContext(MainContext);
-    const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
-    const [showUserPopper, setShowUserPopper] = useState(false);
-    const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
+    const [options, setOptions] = useState<UserData[]>([]);
+    const [loading, setLoading] = useState(false);
     const abortController = useRef<AbortController>(new AbortController());
     const debounceTimeout = useRef<ReturnType<typeof setTimeout>>();
 
@@ -52,71 +51,84 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
         };
     }, []);
 
-    const filterUsers = (user: UserData) =>
-        !existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider)
-        && (!externalFilter || externalFilter(user));
+    const isUserExcluded = (user: UserData) =>
+        existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider)
+        || (externalFilter && !externalFilter(user));
 
-    const addUser = (user: UserData) => {
-        if (!filterUsers(user)) {
-            setShowUserPopper(false);
+    const handleInputChange = (_: unknown, value: string) => {
+        clearTimeout(debounceTimeout.current);
+        if (!value) {
+            setOptions([]);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        debounceTimeout.current = setTimeout(async () => {
+            const users = await service.getUserByName(abortController.current, value);
+            if (users) {
+                setOptions(users);
+            }
+            setLoading(false);
+        }, 300);
+    };
+
+    const handleSelect = (_: unknown, user: UserData | null) => {
+        if (!user) return;
+        if (isUserExcluded(user)) {
             handleError({ message: `User ${user.loginName} is already added.` });
             return;
         }
-        setShowUserPopper(false);
         onAddUser(user);
         onClose();
     };
 
     const handleClose = () => {
-        setShowUserPopper(false);
-        setFoundUsers([]);
+        setOptions([]);
         onClose();
     };
 
-    // Debounced search: waits 300ms after the last keystroke before calling the API,
-    // preventing excessive requests while the user is still typing.
-    const handleUserSearch = (e: ChangeEvent<HTMLInputElement>) => {
-        const target = e.currentTarget;
-        setPopperTarget(target);
-        const val = target.value;
-        // Cancel any pending debounced call
-        clearTimeout(debounceTimeout.current);
-        if (val) {
-            debounceTimeout.current = setTimeout(async () => {
-                const users = await service.getUserByName(abortController.current, val);
-                if (users) {
-                    setShowUserPopper(true);
-                    setFoundUsers(users);
-                }
-            }, 300);
-        } else {
-            // Input cleared — hide results immediately
-            setShowUserPopper(false);
-            setFoundUsers([]);
-        }
-    };
-
-    return <>
+    return (
         <Dialog onClose={handleClose} open={open} maxWidth='sm' fullWidth>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
                 <DialogContentText>{description}</DialogContentText>
-                <TextField
-                    autoFocus
-                    margin='dense'
-                    autoComplete='off'
-                    label='Search User'
-                    fullWidth
-                    onChange={handleUserSearch}
-                    onKeyDown={(e: KeyboardEvent) => {
-                        if (e.key === 'Enter') {
-                            const match = foundUsers.find(filterUsers);
-                            if (match) {
-                                e.preventDefault();
-                                addUser(match);
-                            }
-                        }
-                    }}
+                <Autocomplete<UserData>
+                    options={options}
+                    loading={loading}
+                    filterOptions={(opts) => opts.filter(u => !isUserExcluded(u))}
+                    getOptionLabel={(option) => option.loginName}
+                    isOptionEqualToValue={(option, value) =>
+                        option.loginName === value.loginName && option.provider === value.provider
+                    }
+                    onInputChange={handleInputChange}
+                    onChange={handleSelect}
+                    renderOption={(props, user) => (
+                        <Box
+                            component='li'
+                            {...props}
+                            key={user.loginName + user.provider}
+                            sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
+                        >
+                            <Avatar
+                                variant='rounded'
+                                src={user.avatarUrl}
+                                sx={{ width: 36, height: 36 }}
+                            />
+                            <Box>
+                                <Box fontWeight='bold'>{user.loginName}</Box>
+                                <Box fontSize='0.75rem' color='text.secondary'>{user.fullName}</Box>
+                            </Box>
+                        </Box>
+                    )}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            autoFocus
+                            margin='dense'
+                            label='Search User'
+                            fullWidth
+                        />
+                    )}
                 />
             </DialogContent>
             <DialogActions>
@@ -125,45 +137,5 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
                 </Button>
             </DialogActions>
         </Dialog>
-        <Popper
-            sx={{ zIndex: 'tooltip' }}
-            open={showUserPopper}
-            anchorEl={popperTarget}
-            placement='bottom'
-            transition
-        >
-            {({ TransitionProps }) => (
-                <Fade {...TransitionProps} timeout={350}>
-                    <Paper sx={{ display: 'flex', flexDirection: 'column', width: 350 }}>
-                        {foundUsers.filter(filterUsers).map(user => (
-                            <Box
-                                onClick={() => addUser(user)}
-                                key={user.loginName + user.provider}
-                                sx={{
-                                    display: 'flex',
-                                    height: 60,
-                                    alignItems: 'center',
-                                    px: 1.5,
-                                    '&:hover': {
-                                        cursor: 'pointer',
-                                        bgcolor: 'action.hover'
-                                    }
-                                }}
-                            >
-                                <Avatar
-                                    variant='rounded'
-                                    src={user.avatarUrl}
-                                    sx={{ mr: 1.5, width: 36, height: 36 }}
-                                />
-                                <Box>
-                                    <Box fontWeight='bold'>{user.loginName}</Box>
-                                    <Box fontSize='0.75rem' color='text.secondary'>{user.fullName}</Box>
-                                </Box>
-                            </Box>
-                        ))}
-                    </Paper>
-                </Fade>
-            )}
-        </Popper>
-    </>;
+    );
 };
