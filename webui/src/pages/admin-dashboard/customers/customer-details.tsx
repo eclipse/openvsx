@@ -35,9 +35,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { MainContext } from "../../../context";
-import type { Customer, UserData } from "../../../extension-registry-types";
+import type { Customer } from "../../../extension-registry-types";
 import { handleError } from "../../../utils";
 import { AdminDashboardRoutes } from "../admin-dashboard";
 import { UsageStatsChart } from "../usage-stats/usage-stats-chart";
@@ -58,7 +58,6 @@ export const CustomerDetails: FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [formDialogOpen, setFormDialogOpen] = useState(false);
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
-    const [users, setUsers] = useState<UserData[]>([]);
 
     const { usageStats, error: statsError, startDate, setStartDate } = useUsageStats(customerName);
 
@@ -67,15 +66,14 @@ export const CustomerDetails: FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await service.admin.getCustomers(abortController.current);
-            const found = data.customers.find(c => c.name === customerName);
-            if (found) {
-                setCustomer(found);
-            } else {
-                setError(`Customer "${customerName}" not found.`);
-            }
+            const data = await service.admin.getCustomer(abortController.current, customerName);
+            setCustomer(data);
         } catch (err) {
-            setError(handleError(err as Error));
+            if ((err as { status?: number })?.status === 404) {
+                setError(`Customer "${customerName}" not found.`);
+            } else {
+                setError(handleError(err as Error));
+            }
         } finally {
             setLoading(false);
         }
@@ -93,13 +91,17 @@ export const CustomerDetails: FC = () => {
         }
     };
 
+    const users = customer?.users ?? [];
+
     // TODO: Replace with real API calls when backend is ready
-    const handleAddUser = (user: UserData) => {
-        setUsers(prev => [...prev, user]);
+    const handleAddUser = () => {
+        // Will call API to add user to customer, then reload
+        loadCustomer();
     };
 
-    const handleRemoveUser = (user: UserData) => {
-        setUsers(prev => prev.filter(u => u.loginName !== user.loginName || u.provider !== user.provider));
+    const handleRemoveUser = () => {
+        // Will call API to remove user from customer, then reload
+        loadCustomer();
     };
 
     if (loading) {
@@ -243,7 +245,7 @@ export const CustomerDetails: FC = () => {
                                         edge='end'
                                         size='small'
                                         color='error'
-                                        onClick={() => handleRemoveUser(user)}
+                                        onClick={() => handleRemoveUser()}
                                         title='Remove member'
                                     >
                                         <DeleteIcon fontSize='small' />
@@ -254,7 +256,11 @@ export const CustomerDetails: FC = () => {
                                     <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
                                 </ListItemAvatar>
                                 <ListItemText
-                                    primary={user.loginName}
+                                    primary={
+                                        <RouterLink style={{ color: 'inherit' }} to={`${AdminDashboardRoutes.PUBLISHER_ADMIN}/${user.loginName}`}>
+                                            {user.loginName}
+                                        </RouterLink>
+                                    }
                                     secondary={user.fullName}
                                 />
                             </ListItem>
@@ -291,7 +297,7 @@ export const CustomerDetails: FC = () => {
                 description='Search for a user by login name to add them to this customer.'
                 existingUsers={users}
                 onClose={() => setAddUserDialogOpen(false)}
-                onAddUser={handleAddUser}
+                onAddUser={() => handleAddUser()}
             />
         </Box>
     );
