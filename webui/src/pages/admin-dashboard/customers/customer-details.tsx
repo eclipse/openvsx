@@ -22,18 +22,28 @@ import {
     Alert,
     CircularProgress,
     Button,
-    Divider
+    Divider,
+    Avatar,
+    IconButton,
+    List,
+    ListItem,
+    ListItemAvatar,
+    ListItemText,
+    Grid
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainContext } from "../../../context";
-import type { Customer } from "../../../extension-registry-types";
+import type { Customer, UserData } from "../../../extension-registry-types";
 import { handleError } from "../../../utils";
 import { AdminDashboardRoutes } from "../admin-dashboard";
 import { UsageStatsChart } from "../usage-stats/usage-stats-chart";
 import { useUsageStats } from "../usage-stats/use-usage-stats";
 import { CustomerFormDialog } from "./customer-form-dialog";
+import { AddUserDialog } from "../../../components/add-user-dialog";
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
 
@@ -47,6 +57,8 @@ export const CustomerDetails: FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [formDialogOpen, setFormDialogOpen] = useState(false);
+    const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+    const [users, setUsers] = useState<UserData[]>([]);
 
     const { usageStats, error: statsError, startDate, setStartDate } = useUsageStats(customerName);
 
@@ -79,6 +91,15 @@ export const CustomerDetails: FC = () => {
             await service.admin.updateCustomer(abortController.current, customer.name, updatedCustomer);
             await loadCustomer();
         }
+    };
+
+    // TODO: Replace with real API calls when backend is ready
+    const handleAddUser = (user: UserData) => {
+        setUsers(prev => [...prev, user]);
+    };
+
+    const handleRemoveUser = (user: UserData) => {
+        setUsers(prev => prev.filter(u => u.loginName !== user.loginName || u.provider !== user.provider));
     };
 
     if (loading) {
@@ -115,88 +136,130 @@ export const CustomerDetails: FC = () => {
                 <Typography variant='h4' component='h1'>
                     {customer.name}
                 </Typography>
-                <Button
-                    variant='outlined'
-                    startIcon={<EditIcon />}
-                    onClick={() => setFormDialogOpen(true)}
-                    sx={{ ml: 'auto' }}
-                >
-                    Edit
-                </Button>
             </Box>
 
-            {/* General Information */}
+            {/* General Information (includes Tier) */}
             <Paper {...sectionPaperProps}>
-                <Typography variant='h6' gutterBottom>
-                    General Information
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant='h6'>General Information</Typography>
+                    <Button
+                        size='small'
+                        startIcon={<EditIcon />}
+                        onClick={() => setFormDialogOpen(true)}
+                        sx={{ ml: 'auto' }}
+                    >
+                        Edit
+                    </Button>
+                </Box>
                 <Divider sx={{ mb: 2 }} />
-                <Stack spacing={2}>
-                    <Box>
+                <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6} md={4}>
                         <Typography variant='subtitle2' color='text.secondary'>Name</Typography>
                         <Typography variant='body1'>{customer.name}</Typography>
-                    </Box>
-                    <Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={4}>
                         <Typography variant='subtitle2' color='text.secondary'>State</Typography>
-                        <Chip
-                            label={customer.state}
-                            size='small'
-                            color={customer.state === 'ENFORCEMENT' ? 'error' : 'warning'}
-                        />
-                    </Box>
-                </Stack>
-            </Paper>
-
-            {/* Tier */}
-            <Paper {...sectionPaperProps}>
-                <Typography variant='h6' gutterBottom>
-                    Tier
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                {tier ? (
-                    <Stack spacing={1.5}>
-                        <Box>
-                            <Typography variant='subtitle2' color='text.secondary'>Name</Typography>
-                            <Chip label={tier.name} size='small' />
+                        <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                                label={customer.state}
+                                size='small'
+                                color={customer.state === 'ENFORCEMENT' ? 'error' : 'warning'}
+                            />
                         </Box>
-                        <Box>
-                            <Typography variant='subtitle2' color='text.secondary'>Type</Typography>
-                            <Typography variant='body2'>{tier.tierType}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant='subtitle2' color='text.secondary'>Capacity</Typography>
-                            <Typography variant='body2'>{tier.capacity} requests / {tier.duration}s</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant='subtitle2' color='text.secondary'>Refill Strategy</Typography>
-                            <Typography variant='body2'>{tier.refillStrategy}</Typography>
-                        </Box>
-                        {tier.description && (
-                            <Box>
-                                <Typography variant='subtitle2' color='text.secondary'>Description</Typography>
-                                <Typography variant='body2'>{tier.description}</Typography>
-                            </Box>
+                    </Grid>
+                    {tier ? (
+                        <>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Typography variant='subtitle2' color='text.secondary'>Tier</Typography>
+                                <Box sx={{ mt: 0.5 }}>
+                                    <Chip label={tier.name} size='small' />
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Typography variant='subtitle2' color='text.secondary'>Tier Type</Typography>
+                                <Typography variant='body2'>{tier.tierType}</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Typography variant='subtitle2' color='text.secondary'>Capacity</Typography>
+                                <Typography variant='body2'>{tier.capacity} requests / {tier.duration}s</Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={4}>
+                                <Typography variant='subtitle2' color='text.secondary'>Refill Strategy</Typography>
+                                <Typography variant='body2'>{tier.refillStrategy}</Typography>
+                            </Grid>
+                            {tier.description && (
+                                <Grid item xs={12}>
+                                    <Typography variant='subtitle2' color='text.secondary'>Tier Description</Typography>
+                                    <Typography variant='body2'>{tier.description}</Typography>
+                                </Grid>
+                            )}
+                        </>
+                    ) : (
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Typography variant='subtitle2' color='text.secondary'>Tier</Typography>
+                            <Typography variant='body2' color='text.secondary'>No tier assigned</Typography>
+                        </Grid>
+                    )}
+                    <Grid item xs={12}>
+                        <Typography variant='subtitle2' color='text.secondary'>CIDR Blocks</Typography>
+                        {customer.cidrBlocks.length > 0 ? (
+                            <Stack direction='row' spacing={0.5} sx={{ mt: 0.5 }} flexWrap='wrap' useFlexGap>
+                                {customer.cidrBlocks.map((cidr) => (
+                                    <Chip key={cidr} label={cidr} size='small' variant='outlined' />
+                                ))}
+                            </Stack>
+                        ) : (
+                            <Typography variant='body2' color='text.secondary'>None configured</Typography>
                         )}
-                    </Stack>
-                ) : (
-                    <Typography variant='body2' color='text.secondary'>No tier assigned</Typography>
-                )}
+                    </Grid>
+                </Grid>
             </Paper>
 
-            {/* CIDR Blocks */}
+            {/* Members */}
             <Paper {...sectionPaperProps}>
-                <Typography variant='h6' gutterBottom>
-                    CIDR Blocks
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                {customer.cidrBlocks.length > 0 ? (
-                    <Stack direction='row' spacing={0.5} flexWrap='wrap' useFlexGap>
-                        {customer.cidrBlocks.map((cidr) => (
-                            <Chip key={cidr} label={cidr} size='small' variant='outlined' />
-                        ))}
-                    </Stack>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant='h6'>Members</Typography>
+                    <Button
+                        size='small'
+                        startIcon={<PersonAddIcon />}
+                        onClick={() => setAddUserDialogOpen(true)}
+                        sx={{ ml: 'auto' }}
+                    >
+                        Add Member
+                    </Button>
+                </Box>
+                <Divider sx={{ mb: 1 }} />
+                {users.length === 0 ? (
+                    <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
+                        No members assigned to this customer.
+                    </Typography>
                 ) : (
-                    <Typography variant='body2' color='text.secondary'>None configured</Typography>
+                    <List dense disablePadding>
+                        {users.map(user => (
+                            <ListItem
+                                key={`${user.loginName}-${user.provider}`}
+                                secondaryAction={
+                                    <IconButton
+                                        edge='end'
+                                        size='small'
+                                        color='error'
+                                        onClick={() => handleRemoveUser(user)}
+                                        title='Remove member'
+                                    >
+                                        <DeleteIcon fontSize='small' />
+                                    </IconButton>
+                                }
+                            >
+                                <ListItemAvatar>
+                                    <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
+                                </ListItemAvatar>
+                                <ListItemText
+                                    primary={user.loginName}
+                                    secondary={user.fullName}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
                 )}
             </Paper>
 
@@ -220,6 +283,15 @@ export const CustomerDetails: FC = () => {
                 customer={customer}
                 onClose={() => setFormDialogOpen(false)}
                 onSubmit={handleFormSubmit}
+            />
+
+            <AddUserDialog
+                open={addUserDialogOpen}
+                title='Add User to Customer'
+                description='Search for a user by login name to add them to this customer.'
+                existingUsers={users}
+                onClose={() => setAddUserDialogOpen(false)}
+                onAddUser={handleAddUser}
             />
         </Box>
     );
