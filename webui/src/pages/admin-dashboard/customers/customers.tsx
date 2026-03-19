@@ -182,7 +182,7 @@ export const Customers: FC = () => {
         const users = params.row.users ?? [];
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <AvatarGroup max={4} sx={{ justifyContent: 'flex-start', '& .MuiAvatar-root': { width: 28, height: 28, fontSize: 12 } }}>
+            <AvatarGroup max={3} sx={{ justifyContent: 'flex-start', '& .MuiAvatar-root': { width: 28, height: 28, fontSize: 12 } }}>
               {users.map((user) => (
                 <Avatar key={user.loginName} alt={user.fullName || user.loginName} src={user.avatarUrl} />
               ))}

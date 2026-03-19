@@ -17,12 +17,15 @@ import {
     Paper,
     Typography,
     Alert,
-    Stack
+    Stack,
+    IconButton
 } from "@mui/material";
 import { BarPlot } from "@mui/x-charts/BarChart";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import type { Customer, UsageStats } from "../../../extension-registry-types";
 import {
     ChartsReferenceLine,
@@ -109,6 +112,12 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
                         timezone='UTC'
                         slotProps={{ textField: { size: 'small' }, actionBar: { actions: ['today'] } }}
                     />
+                    <IconButton size='small' onClick={() => onStartDateChange(startDate.minus({ days: 1 }))}>
+                        <ChevronLeftIcon />
+                    </IconButton>
+                    <IconButton size='small' onClick={() => onStartDateChange(startDate.plus({ days: 1 }))}>
+                        <ChevronRightIcon />
+                    </IconButton>
                 </Stack>
             </Wrapper>
 

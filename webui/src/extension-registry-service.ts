@@ -913,6 +913,15 @@ export class AdminServiceImpl implements AdminService {
             provider: 'github',
             tokensUrl: '',
             createTokenUrl: ''
+        },
+        {
+            loginName: 'jakubmisek',
+            fullName: 'Jakub Míšek',
+            avatarUrl: 'https://avatars.githubusercontent.com/u/842150?v=4',
+            homepage: 'https://github.com/jakubmisek',
+            provider: 'github',
+            tokensUrl: '',
+            createTokenUrl: ''
         }
     ];
 
