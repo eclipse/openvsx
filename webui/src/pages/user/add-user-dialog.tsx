@@ -43,10 +43,12 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
     const [showUserPopper, setShowUserPopper] = useState(false);
     const [popperTarget, setPopperTarget] = useState<HTMLInputElement | undefined>(undefined);
     const abortController = useRef<AbortController>(new AbortController());
+    const debounceTimeout = useRef<ReturnType<typeof setTimeout>>();
 
     useEffect(() => {
         return () => {
             abortController.current.abort();
+            clearTimeout(debounceTimeout.current);
         };
     }, []);
 
@@ -71,17 +73,24 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
         onClose();
     };
 
-    const handleUserSearch = async (e: ChangeEvent<HTMLInputElement>) => {
+    // Debounced search: waits 300ms after the last keystroke before calling the API,
+    // preventing excessive requests while the user is still typing.
+    const handleUserSearch = (e: ChangeEvent<HTMLInputElement>) => {
         const target = e.currentTarget;
         setPopperTarget(target);
         const val = target.value;
+        // Cancel any pending debounced call
+        clearTimeout(debounceTimeout.current);
         if (val) {
-            const users = await service.getUserByName(abortController.current, val);
-            if (users) {
-                setShowUserPopper(true);
-                setFoundUsers(users);
-            }
+            debounceTimeout.current = setTimeout(async () => {
+                const users = await service.getUserByName(abortController.current, val);
+                if (users) {
+                    setShowUserPopper(true);
+                    setFoundUsers(users);
+                }
+            }, 300);
         } else {
+            // Input cleared — hide results immediately
             setShowUserPopper(false);
             setFoundUsers([]);
         }
