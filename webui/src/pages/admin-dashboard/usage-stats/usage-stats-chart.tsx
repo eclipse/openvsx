@@ -38,13 +38,15 @@ interface UsageStatsChartProps {
     customer: Customer | null;
     startDate: DateTime;
     onStartDateChange: (date: DateTime) => void;
+    embedded?: boolean;
 }
 
 export const UsageStatsChart: FC<UsageStatsChartProps> = ({
     usageStats,
     customer,
     startDate,
-    onStartDateChange
+    onStartDateChange,
+    embedded = false
 }) => {
     const dayStart = startDate.startOf('day').toMillis() / 1000;
     const dayEnd = startDate.endOf('day').toMillis() / 1000;
@@ -91,9 +93,11 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
         [usageStats]
     );
 
+    const Wrapper = embedded ? Box : Paper;
+
     return (
         <LocalizationProvider dateAdapter={AdapterLuxon}>
-            <Paper sx={{ p: 2, mb: 3 }}>
+            <Wrapper sx={{ p: 2, mb: embedded ? 2 : 3 }}>
                 <Typography variant='subtitle2' gutterBottom color='text.secondary'>
                     Filters
                 </Typography>
@@ -106,13 +110,13 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
                         slotProps={{ textField: { size: 'small' }, actionBar: { actions: ['today'] } }}
                     />
                 </Stack>
-            </Paper>
+            </Wrapper>
 
             {usageStats.length === 0 ?
                 <Alert severity='info'>No usage data available for this customer.</Alert>
              :
                 <>
-                <Paper sx={{ p: 2 }}>
+                <Wrapper sx={{ p: 2 }}>
                     <ResponsiveChartContainer
                         series={[{
                             type: 'bar',
@@ -177,7 +181,7 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
                         />
                         <ChartsTooltip />
                     </ResponsiveChartContainer>
-                </Paper>
+                </Wrapper>
 
                 <Box mt={2}>
                     <Typography variant='body2' color='text.secondary'>

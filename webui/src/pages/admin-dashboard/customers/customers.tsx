@@ -27,7 +27,7 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import BarChartIcon from "@mui/icons-material/BarChart";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { MainContext } from "../../../context";
 import type { Customer } from "../../../extension-registry-types";
 import { CustomerFormDialog } from "./customer-form-dialog";
@@ -181,10 +181,10 @@ export const Customers: FC = () => {
           <IconButton
             size='small'
             component={Link}
-            to={`${AdminDashboardRoutes.USAGE_STATS}/${params.row.name}`}
-            title='View Usage Stats'
+            to={`${AdminDashboardRoutes.CUSTOMER_DETAILS}/${params.row.name}`}
+            title='View Details'
           >
-            <BarChartIcon />
+            <VisibilityIcon />
           </IconButton>
           <IconButton
             size='small'

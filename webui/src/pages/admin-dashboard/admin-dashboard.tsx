@@ -31,6 +31,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import HistoryIcon from '@mui/icons-material/History';
 import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
+import { CustomerDetails } from './customers/customer-details';
 import { UsageStatsView } from './usage-stats/usage-stats';
 import { Logs } from './logs/logs';
 import { LoginComponent } from "../../default/login";
@@ -45,6 +46,7 @@ export namespace AdminDashboardRoutes {
     export const SCANS_ADMIN = createRoute([ROOT, 'scans']);
     export const TIERS = createRoute([ROOT, 'tiers']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
+    export const CUSTOMER_DETAILS = createRoute([ROOT, 'customers']); // + /:customer
     export const USAGE_STATS = createRoute([ROOT, 'usage']);
     export const LOGS = createRoute([ROOT, 'logs']);
 }
@@ -114,6 +116,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                         <Route path='/scans' element={<ScanAdmin/>} />
                         <Route path='/tiers' element={<Tiers/>} />
                         <Route path='/customers' element={<Customers/>} />
+                        <Route path='/customers/:customer' element={<CustomerDetails/>} />
                         <Route path='/usage' element={<UsageStatsView/>} />
                         <Route path='/usage/:customer' element={<UsageStatsView/>} />
                         <Route path='/logs' element={<Logs/>} />
