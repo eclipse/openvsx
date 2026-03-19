@@ -50,7 +50,7 @@ components:
           value: 'false'
   - name: postgresql
     container:
-      image: 'image-registry.openshift-image-registry.svc:5000/openshift/postgresql:16-el8'
+      image: 'quay.io/sclorg/postgresql-16-c9s:20260319'
       memoryRequest: 256Mi
       memoryLimit: 2Gi
       cpuRequest: 100m
