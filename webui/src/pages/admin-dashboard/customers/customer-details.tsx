@@ -43,7 +43,7 @@ import { AdminDashboardRoutes } from "../admin-dashboard";
 import { UsageStatsChart } from "../usage-stats/usage-stats-chart";
 import { useUsageStats } from "../usage-stats/use-usage-stats";
 import { CustomerFormDialog } from "./customer-form-dialog";
-import { AddUserDialog } from "../../../components/add-user-dialog";
+import { AddUserDialog } from "../../user/add-user-dialog";
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
 
@@ -293,7 +293,7 @@ export const CustomerDetails: FC = () => {
 
             <AddUserDialog
                 open={addUserDialogOpen}
-                title='Add User to Customer'
+                title='Add Member'
                 description='Search for a user by login name to add them to this customer.'
                 existingUsers={users}
                 onClose={() => setAddUserDialogOpen(false)}

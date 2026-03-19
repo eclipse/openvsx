@@ -21,7 +21,9 @@ import {
     Alert,
     IconButton,
     Stack,
-    Chip
+    Chip,
+    Avatar,
+    AvatarGroup
 } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
@@ -167,6 +169,25 @@ export const Customers: FC = () => {
               />
             )}
           </Stack>
+        );
+      }
+    },
+    {
+      field: 'users',
+      headerName: 'Members',
+      minWidth: 140,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams<Customer>) => {
+        const users = params.row.users ?? [];
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <AvatarGroup max={4} sx={{ justifyContent: 'flex-start', '& .MuiAvatar-root': { width: 28, height: 28, fontSize: 12 } }}>
+              {users.map((user) => (
+                <Avatar key={user.loginName} alt={user.fullName || user.loginName} src={user.avatarUrl} />
+              ))}
+            </AvatarGroup>
+          </Box>
         );
       }
     },

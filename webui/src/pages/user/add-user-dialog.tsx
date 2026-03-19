@@ -16,8 +16,8 @@ import {
     Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button,
     Popper, Fade, Paper, Box, Avatar
 } from '@mui/material';
-import type { UserData } from '../extension-registry-types';
-import { MainContext } from '../context';
+import type { UserData } from '../../extension-registry-types';
+import { MainContext } from '../../context';
 
 export interface AddUserDialogProps {
     open: boolean;
@@ -26,6 +26,7 @@ export interface AddUserDialogProps {
     existingUsers: UserData[];
     onClose: () => void;
     onAddUser: (user: UserData) => void;
+    filterUsers?: (user: UserData) => boolean;
 }
 
 export const AddUserDialog: FC<AddUserDialogProps> = ({
@@ -34,7 +35,8 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
     description,
     existingUsers,
     onClose,
-    onAddUser
+    onAddUser,
+    filterUsers: externalFilter
 }) => {
     const { service, handleError } = useContext(MainContext);
     const [foundUsers, setFoundUsers] = useState<UserData[]>([]);
@@ -49,7 +51,8 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
     }, []);
 
     const filterUsers = (user: UserData) =>
-        !existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider);
+        !existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider)
+        && (!externalFilter || externalFilter(user));
 
     const addUser = (user: UserData) => {
         if (!filterUsers(user)) {

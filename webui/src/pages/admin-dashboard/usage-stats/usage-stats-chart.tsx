@@ -93,7 +93,7 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
         [usageStats]
     );
 
-    const Wrapper = embedded ? Box : Paper;
+    const Wrapper: typeof Box = embedded ? Box : Paper;
 
     return (
         <LocalizationProvider dateAdapter={AdapterLuxon}>
