@@ -37,11 +37,14 @@ public class ScheduleTokenExpirationJobs {
 
     @EventListener
     public void scheduleJobs(ApplicationStartedEvent event) {
-        if (config.expiration != null && config.expiration.isPositive()) {
+        var expirationEnabled = config.expiration != null && config.expiration.isPositive();
+        var notificationEnabled = config.notification != null && config.notification.isPositive();
+
+        if (expirationEnabled) {
             scheduler.enqueue(new HandlerJobRequest<>(LegacyPersonalAccessTokenExpirationHandler.class));
         }
 
-        if (StringUtils.hasText(config.expirationSchedule)) {
+        if (expirationEnabled && StringUtils.hasText(config.expirationSchedule)) {
             logger.info("Scheduling access token expiration job with schedule '{}'", config.expirationSchedule);
             scheduler.scheduleRecurrently(
                     "access-token-expiration",
@@ -52,7 +55,7 @@ public class ScheduleTokenExpirationJobs {
             scheduler.deleteRecurringJob("access-token-expiration");
         }
 
-        if (StringUtils.hasText(config.notificationSchedule) && config.notification.isPositive()) {
+        if (expirationEnabled && notificationEnabled && StringUtils.hasText(config.notificationSchedule)) {
             logger.info("Scheduling access token notification job with schedule '{}'", config.notificationSchedule);
             scheduler.scheduleRecurrently(
                     "access-token-notification",

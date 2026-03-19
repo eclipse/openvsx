@@ -51,6 +51,15 @@ public class AccessTokenConfig {
     Duration notification;
 
     /**
+     * Whether an email shall be sent when a token has expired.
+     * <p>
+     * Property: {@code ovsx.access-token.send-expired-mail}
+     * Default: {@code true}
+     */
+    @Value("${ovsx.access-token.send-expired-mail:true}")
+    boolean sendExpiredMail;
+
+    /**
      * The maximum number of expiring token notifications to handle
      * within one job execution.
      * <p>

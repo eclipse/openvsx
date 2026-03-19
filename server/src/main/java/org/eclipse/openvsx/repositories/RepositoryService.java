@@ -651,7 +651,7 @@ public class RepositoryService {
         return tokenRepo.updateActiveSetFalse(user);
     }
 
-    public int expireAccessTokens(LocalDateTime timestamp) {
+    public List<PersonalAccessToken> expireAccessTokens(LocalDateTime timestamp) {
         return tokenRepo.expireAccessTokens(timestamp);
     }
 
