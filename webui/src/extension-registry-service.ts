@@ -888,15 +888,6 @@ export class AdminServiceImpl implements AdminService {
     // TODO: Remove mock users when backend returns real user data
     private static readonly MOCK_USERS: UserData[] = [
         {
-            loginName: 'gnugomez',
-            fullName: 'Jordi Gómez Hidalgo',
-            provider: 'github',
-            avatarUrl: 'https://avatars.githubusercontent.com/u/31970428?v=4',
-            homepage: 'https://github.com/gnugomez',
-            tokensUrl: '',
-            createTokenUrl: ''
-        },
-        {
             loginName: 'rhdevelopers-ci',
             fullName: 'Red Hat Developers CI',
             avatarUrl: 'https://avatars.githubusercontent.com/u/18214726?v=4',
@@ -919,6 +910,15 @@ export class AdminServiceImpl implements AdminService {
             fullName: 'Jakub Míšek',
             avatarUrl: 'https://avatars.githubusercontent.com/u/842150?v=4',
             homepage: 'https://github.com/jakubmisek',
+            provider: 'github',
+            tokensUrl: '',
+            createTokenUrl: ''
+        },
+        {
+            loginName: 'test',
+            fullName: 'Miguel Ángel Durán',
+            avatarUrl: 'https://avatars.githubusercontent.com/u/1561955?v=4',
+            homepage: 'https://github.com/midudev',
             provider: 'github',
             tokensUrl: '',
             createTokenUrl: ''

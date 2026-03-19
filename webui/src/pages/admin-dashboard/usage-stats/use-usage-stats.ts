@@ -25,9 +25,12 @@ export const useUsageStats = (customerName: string | undefined) => {
     const [usageStats, setUsageStats] = useState<readonly UsageStats[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState<DateTime>(getDefaultStartDate);
+    const [internalStartDate, setInternalStartDate] = useState<DateTime>(getDefaultStartDate);
 
-    const loadUsageStats = useCallback(async () => {
+    const startDateRef = useRef(internalStartDate);
+    startDateRef.current = internalStartDate;
+
+    const fetchUsageStats = useCallback(async (date: DateTime) => {
         if (!customerName) {
             setUsageStats([]);
             setLoading(false);
@@ -40,7 +43,7 @@ export const useUsageStats = (customerName: string | undefined) => {
             const data = await service.admin.getUsageStats(
                 abortController.current,
                 customerName,
-                startDate.toJSDate()
+                date.toJSDate()
             );
             setUsageStats(data.stats);
         } catch (err) {
@@ -48,17 +51,19 @@ export const useUsageStats = (customerName: string | undefined) => {
         } finally {
             setLoading(false);
         }
-    }, [service, customerName, startDate]);
+    }, [service, customerName]);
+
+    const setStartDate = useCallback((date: DateTime) => {
+        setInternalStartDate(date);
+        fetchUsageStats(date);
+    }, [fetchUsageStats]);
 
     useEffect(() => {
-        if (customerName) {
-            loadUsageStats();
-        }
-    }, [loadUsageStats, customerName]);
+        fetchUsageStats(startDateRef.current);
+        return () => {
+            abortController.current.abort();
+        };
+    }, [fetchUsageStats]);
 
-    useEffect(() => {
-        return () => abortController.current.abort();
-    }, []);
-
-    return { usageStats, loading, error, startDate, setStartDate };
+    return { usageStats, loading, error, startDate: internalStartDate, setStartDate };
 };
