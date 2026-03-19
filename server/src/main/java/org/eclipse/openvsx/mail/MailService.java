@@ -41,6 +41,12 @@ public class MailService {
     @Value("${ovsx.mail.access-token-expiry.template:}")
     String accessTokenExpiryTemplate;
 
+    @Value("${ovsx.mail.access-token-expired.subject:}")
+    String accessTokenExpiredSubject;
+
+    @Value("${ovsx.mail.access-token-expired.template:}")
+    String accessTokenExpiredTemplate;
+
     public MailService(@Autowired(required = false) JavaMailSender sender, JobRequestScheduler scheduler) {
         this.disabled = sender == null;
         this.scheduler = scheduler;
@@ -55,7 +61,7 @@ public class MailService {
         var email = user.getEmail();
 
         if (email == null) {
-            logger.warn("Could not send mail to user '{}' due to expired access token notification: email not known", user.getLoginName());
+            logger.warn("Could not send mail to user '{}' due to expiring access token notification: email not known", user.getLoginName());
             return;
         }
 
@@ -78,6 +84,40 @@ public class MailService {
 
         scheduler.enqueue(jobRequest);
         logger.debug("Scheduled notification email for expiring token {} to {}", tokenName, email);
+    }
+
+    public void scheduleAccessTokenExpiredMail(PersonalAccessToken token) {
+        if (disabled) {
+            return;
+        }
+
+        var user = token.getUser();
+        var email = user.getEmail();
+
+        if (email == null) {
+            logger.warn("Could not send mail to user '{}' due to expired access token: email not known", user.getLoginName());
+            return;
+        }
+
+        // the fullName might be null
+        var name = user.getFullName() == null ? user.getLoginName() : user.getFullName();
+        // the token description might be null as well
+        var tokenName = token.getDescription() != null ? token.getDescription() : "";
+
+        var variables = Map.<String, Object>of(
+                "name", name,
+                "tokenName", tokenName,
+                "expiryDate", token.getExpiresTimestamp()
+        );
+        var jobRequest = new SendMailJobRequest(
+                email,
+                accessTokenExpiredSubject,
+                accessTokenExpiredTemplate,
+                variables
+        );
+
+        scheduler.enqueue(jobRequest);
+        logger.debug("Scheduled notification email for expired token {} to {}", tokenName, email);
     }
 
     public void scheduleRevokedAccessTokensMail(UserData user) {
