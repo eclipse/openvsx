@@ -62,6 +62,7 @@ export const useUsageStats = (customerName: string | undefined) => {
         fetchUsageStats(startDateRef.current);
         return () => {
             abortController.current.abort();
+            abortController.current = new AbortController();
         };
     }, [fetchUsageStats]);
 
