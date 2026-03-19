@@ -34,7 +34,7 @@ import { MainContext } from "../../../context";
 import type { Customer } from "../../../extension-registry-types";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import { DeleteCustomerDialog } from "./delete-customer-dialog";
-import { handleError } from "../../../utils";
+import { createRoute, handleError } from "../../../utils";
 import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from "../components";
 import { AdminDashboardRoutes } from "../admin-dashboard";
 import { Link } from "react-router-dom";
@@ -202,7 +202,7 @@ export const Customers: FC = () => {
           <IconButton
             size='small'
             component={Link}
-            to={`${AdminDashboardRoutes.CUSTOMER_DETAILS}/${params.row.name}`}
+            to={createRoute([AdminDashboardRoutes.CUSTOMERS, params.row.name])}
             title='View Details'
           >
             <VisibilityIcon />

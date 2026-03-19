@@ -46,7 +46,6 @@ export namespace AdminDashboardRoutes {
     export const SCANS_ADMIN = createRoute([ROOT, 'scans']);
     export const TIERS = createRoute([ROOT, 'tiers']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
-    export const CUSTOMER_DETAILS = createRoute([ROOT, 'customers']); // + /:customer
     export const USAGE_STATS = createRoute([ROOT, 'usage']);
     export const LOGS = createRoute([ROOT, 'logs']);
 }
