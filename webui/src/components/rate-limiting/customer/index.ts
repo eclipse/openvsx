@@ -11,8 +11,11 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-export { MultiSelectFilterInput } from './data-grid-filter';
-export {
-  createMultiSelectFilterOperators,
-  createArrayContainsFilterOperators
-} from './data-grid-filter-operators';
+export { GeneralDetails } from './general-details';
+export type { GeneralDetailsProps } from './general-details';
+
+export { Members } from './members';
+export type { MembersProps } from './members';
+
+export { UsageStats } from './usage-stats';
+export type { UsageStatsProps } from './usage-stats';

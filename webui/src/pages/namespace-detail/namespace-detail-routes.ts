@@ -11,6 +11,13 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-export const getDefaultStartDate = () => {
-    return new Date();
-};
+import { createRoute } from '../../utils';
+
+export namespace NamespaceDetailRoutes {
+    export namespace Parameters {
+        export const NAME = ':name';
+    }
+
+    export const ROOT = 'namespace';
+    export const MAIN = createRoute([ROOT, Parameters.NAME]);
+}
