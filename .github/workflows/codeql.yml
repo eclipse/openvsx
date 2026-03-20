@@ -12,6 +12,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: 'ubuntu-latest'
+    if: github.repository == 'eclipse-openvsx/openvsx'
     permissions:
       # required for all workflows
       security-events: write
