@@ -12,8 +12,10 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit;
 
-import com.giffing.bucket4j.spring.boot.starter.context.ExpressionParams;
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
@@ -26,7 +28,9 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import com.giffing.bucket4j.spring.boot.starter.context.ExpressionParams;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
@@ -41,6 +45,7 @@ public class IdentityService {
     private final CustomerService customerService;
     private final AccessTokenService tokenService;
     private final RateLimitProperties rateLimitProperties;
+    private final UserService userService;
 
     public IdentityService(
             ExpressionParser expressionParser,
@@ -48,7 +53,8 @@ public class IdentityService {
             TierService tierService,
             CustomerService customerService,
             AccessTokenService tokenService,
-            RateLimitProperties rateLimitProperties
+            RateLimitProperties rateLimitProperties,
+            UserService userService
     ) {
         this.expressionParser = expressionParser;
         this.beanFactory = beanFactory;
@@ -56,6 +62,7 @@ public class IdentityService {
         this.customerService = customerService;
         this.tokenService = tokenService;
         this.rateLimitProperties = rateLimitProperties;
+        this.userService = userService;
     }
 
     public ResolvedIdentity resolveIdentity(HttpServletRequest request) {
@@ -71,6 +78,15 @@ public class IdentityService {
             if (tokenEntity != null) {
                 // if a valid token is present we use it as a cache key
                 cacheKey = "token_" + token.hashCode();
+            }
+        }
+
+        // if we don't have a valid token, we check if the user is logged in to generate a cache key
+        // we want to only do this if we don't have a valid token to avoid unnecessary database calls
+        if (cacheKey == null) {
+            var user = userService.findLoggedInUser();
+            if (user != null && StringUtils.isNotBlank(user.getAuthId())) {
+                cacheKey = "user_" + user.getAuthId();
             }
         }
 
