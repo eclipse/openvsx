@@ -25,6 +25,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump minimatch from to `3.1.5`, `9.0.9` and `10.2.4` respectively
 - Bump tar from `7.5.9` to `7.5.11` ([#1678](https://github.com/eclipse/openvsx/pull/1678))
 - Bump dompurify from `3.2.4` to `3.3.2` ([#1671](https://github.com/eclipse/openvsx/pull/1671))
+- Bump flatten from `3.3.1` to `3.4.2` ([#1702](https://github.com/eclipse/openvsx/pull/1702))
 
 ## [v0.18.0] (Feb. 2026)
 
