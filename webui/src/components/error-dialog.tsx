@@ -15,7 +15,7 @@ import { styled, Theme } from '@mui/material/styles';
 
 const ErrorLink = styled(Link)(({ theme }: { theme: Theme }) => ({
     textDecoration: 'underline',
-    color: theme.palette.primary.contrastText
+    color: theme.palette.primary.main
 }));
 
 export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
