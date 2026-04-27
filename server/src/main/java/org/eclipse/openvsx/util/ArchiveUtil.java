@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public final class ArchiveUtil {
 
@@ -29,27 +28,24 @@ public final class ArchiveUtil {
 
     private ArchiveUtil() {}
 
-    public static @Nullable ZipEntry getEntryIgnoreCase(ZipFile archive, String entryName) {
-        return archive.stream()
-                .filter(entry -> entry.getName().equalsIgnoreCase(entryName))
-                .findAny()
-                .orElse(null);
+    public static @Nullable ZipEntry getEntryIgnoreCase(NormalizedZipFile archive, String entryName) {
+        return archive.getEntryIgnoreCase(entryName);
     }
 
-    public static TempFile readEntry(ZipFile archive, String entryName) throws IOException {
+    public static TempFile readEntry(NormalizedZipFile archive, String entryName) throws IOException {
         return readEntry(archive, entryName, MAX_ENTRY_SIZE);
     }
 
-    static TempFile readEntry(ZipFile archive, String entryName, long maxEntrySize) throws IOException {
+    static TempFile readEntry(NormalizedZipFile archive, String entryName, long maxEntrySize) throws IOException {
         var entry = archive.getEntry(entryName);
         return entry != null ? readEntry(archive, entry, maxEntrySize) : null;
     }
 
-    public static TempFile readEntry(ZipFile archive, ZipEntry entry) throws IOException {
+    public static TempFile readEntry(NormalizedZipFile archive, ZipEntry entry) throws IOException {
         return readEntry(archive, entry, MAX_ENTRY_SIZE);
     }
 
-    static TempFile readEntry(ZipFile archive, ZipEntry entry, long maxEntrySize) throws IOException {
+    static TempFile readEntry(NormalizedZipFile archive, ZipEntry entry, long maxEntrySize) throws IOException {
         var fileNameIndex = entry.getName().lastIndexOf('/');
         var fileName = fileNameIndex == -1 ? entry.getName() : entry.getName().substring(fileNameIndex + 1);
         var suffixIndex = fileName.lastIndexOf('.');

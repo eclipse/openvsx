@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 /**
  * Processes uploaded extension files and extracts their metadata.
@@ -55,7 +54,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
     private final TempFile extensionFile;
 
-    private ZipFile zipFile;
+    private NormalizedZipFile zipFile;
     private JsonNode packageJson;
     private JsonNode vsixManifest;
 
@@ -79,7 +78,7 @@ public class ExtensionProcessor implements AutoCloseable {
             return;
         }
         try {
-            zipFile = new ZipFile(extensionFile.getPath().toFile());
+            zipFile = new NormalizedZipFile(extensionFile.getPath().toFile());
         } catch (ZipException exc) {
             throw new ErrorResultException("Could not read zip file: " + exc.getMessage());
         } catch (IOException exc) {
@@ -535,9 +534,13 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public boolean isPotentiallyMalicious() {
         readInputStream();
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
+        // yauzl (used by VS Code) normalizes backslashes to forward slashes. 
+        // Duplicate detection is performed by NormalizedZipFile during construction.
+        if (zipFile.hasDuplicateNormalizedEntries()) {
+            logger.warn("Duplicate zip entries after backslash normalization detected");
+            return true;
+        }
+        for (ZipEntry entry : zipFile.entries()) {
             if (entry.getExtra() != null) {
                 logger.warn("Potentially harmful zip entry with extra fields detected: {}", entry.getName());
                 return true;

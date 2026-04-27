@@ -29,7 +29,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.zip.ZipFile;
+import org.eclipse.openvsx.util.NormalizedZipFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,8 +71,8 @@ class ExtensionVersionIntegrityServiceTest {
             extensionFile.setResource(download);
             try(
                     var signatureFile = integrityService.generateSignature(extensionFile, keyPair);
-                    var sigzip = new ZipFile(signatureFile.getPath().toFile());
-                    var expectedSigZip = new ZipFile(getClass().getResource("ms-python.python-2024.7.11511013.sigzip").getPath())
+                    var sigzip = new NormalizedZipFile(signatureFile.getPath().toFile());
+                    var expectedSigZip = new NormalizedZipFile(getClass().getResource("ms-python.python-2024.7.11511013.sigzip").getPath())
             ) {
                 var iterator = expectedSigZip.stream().iterator();
                 while(iterator.hasNext()) {
