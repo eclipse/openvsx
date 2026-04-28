@@ -41,6 +41,6 @@ public class LatestExtensionVersionsByPlatformCacheKeyGenerator implements KeyGe
     public String generate(Extension extension, boolean preReleases) {
         var extensionName = extension.getName();
         var namespaceName = extension.getNamespace().getName();
-        return NamingUtil.toFileFormat(namespaceName, extensionName, null, VersionAlias.LATEST) + ",pre-releases=" + preReleases;
+        return NamingUtil.toFileFormat(namespaceName, extensionName, VersionAlias.LATEST) + ",pre-releases=" + preReleases;
     }
 }

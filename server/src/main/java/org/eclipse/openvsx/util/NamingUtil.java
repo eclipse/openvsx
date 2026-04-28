@@ -32,13 +32,17 @@ public class NamingUtil {
         return toFileFormat(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
     }
 
+    public static String toFileFormat(String namespace, String extension, String version) {
+        return toExtensionId(namespace, extension) + "-" + version;
+    }
+
     public static String toFileFormat(String namespace, String extension, String targetPlatform, String version, String suffix) {
         return toFileFormat(namespace, extension, targetPlatform, version) + suffix;
     }
 
     public static String toFileFormat(String namespace, String extension, String targetPlatform, String version) {
         var name = toExtensionId(namespace, extension) + "-" + version;
-        if (targetPlatform != null && !TargetPlatform.isUniversal(targetPlatform)) {
+        if (!TargetPlatform.isUniversal(targetPlatform)) {
             name += "@" + targetPlatform;
         }
 
