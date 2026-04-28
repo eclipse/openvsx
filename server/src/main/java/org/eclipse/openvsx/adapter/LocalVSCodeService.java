@@ -284,7 +284,7 @@ public class LocalVSCodeService implements IVSCodeService {
     @Cacheable(value = CacheService.CACHE_LATEST_EXTENSION_VERSION_VSCODE)
     public ExtensionQueryResult.Extension latest(String namespaceName, String extensionName) {
         if (BuiltInExtensionUtil.isBuiltIn(namespaceName)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, builtinExtensionMessage());
+            throw new NotFoundException();
         }
 
         var extension = repositories.findActiveExtension(extensionName, namespaceName);
