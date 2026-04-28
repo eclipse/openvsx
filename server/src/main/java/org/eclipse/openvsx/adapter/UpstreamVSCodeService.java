@@ -96,8 +96,13 @@ public class UpstreamVSCodeService implements IVSCodeService {
     public ExtensionQueryResult.Extension latest(String namespaceName, String extensionName) {
         // Check that the user-provided namespace and extension parameters are actually valid before
         // making a request to the upstream server.
-        if (extensionValidator.validateNamespace(namespaceName).isPresent() ||
-            extensionValidator.validateExtensionName(extensionName).isPresent()) {
+        if (extensionValidator.validateNamespace(namespaceName).isPresent()) {
+            logger.debug("Received request to get latest extension data for invalid namespace {}", namespaceName);
+            throw new NotFoundException();
+        }
+
+        if (extensionValidator.validateExtensionName(extensionName).isPresent()) {
+            logger.debug("Received request to get latest extension data for invalid extension {}", extensionName);
             throw new NotFoundException();
         }
 
