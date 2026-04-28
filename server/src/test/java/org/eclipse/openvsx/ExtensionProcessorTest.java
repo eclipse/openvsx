@@ -13,14 +13,11 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.util.TempFile;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -95,41 +92,6 @@ class ExtensionProcessorTest {
             Consumer<TempFile> consumer = _ -> count.incrementAndGet();
             processor.getFileResources(processor.getMetadata(), consumer);
             assertThat(count.get()).isEqualTo(5);
-        }
-    }
-
-    @Test
-    void isPotentiallyMaliciousReturnsFalseForCleanZip() throws Exception {
-        var file = new TempFile("test", ".zip");
-        try (var zos = new ZipOutputStream(new FileOutputStream(file.getPath().toFile()))) {
-            zos.putNextEntry(new ZipEntry("extension/package.json"));
-            zos.write(new byte[0]);
-            zos.closeEntry();
-            zos.putNextEntry(new ZipEntry("extension/README.md"));
-            zos.write(new byte[0]);
-            zos.closeEntry();
-        }
-        try (file; var processor = new ExtensionProcessor(file)) {
-            assertThat(processor.isPotentiallyMalicious()).isFalse();
-        }
-    }
-
-    @Test
-    void isPotentiallyMaliciousReturnsTrueForDuplicateNormalizedEntries() throws Exception {
-        var file = new TempFile("test", ".zip");
-        try (var zos = new ZipOutputStream(new FileOutputStream(file.getPath().toFile()))) {
-            zos.putNextEntry(new ZipEntry("extension/package.json"));
-            zos.write(new byte[0]);
-            zos.closeEntry();
-            zos.putNextEntry(new ZipEntry("extension\\package.json"));
-            zos.write(new byte[0]);
-            zos.closeEntry();
-        }
-        try (
-                file;
-                var processor = new ExtensionProcessor(file)
-        ) {
-            assertThat(processor.isPotentiallyMalicious()).isTrue();
         }
     }
 

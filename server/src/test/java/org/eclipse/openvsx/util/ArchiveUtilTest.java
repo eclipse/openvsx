@@ -10,9 +10,11 @@
 package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.InstanceOfAssertFactories.PATH;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +28,7 @@ class ArchiveUtilTest {
         assertThat(packageUrl.getProtocol()).isEqualTo("file");
 
         try (
-            var archive = new NormalizedZipFile(packageUrl.getPath());
+            var archive = new ZipFile(packageUrl.getPath());
             var packageFile = ArchiveUtil.readEntry(archive, "extension/package.json");
             var iconFile = ArchiveUtil.readEntry(archive, "extension/resources/todo-tree.png")
         ) {
@@ -45,7 +47,7 @@ class ArchiveUtilTest {
         assertThat(packageUrl).isNotNull();
         assertThat(packageUrl.getProtocol()).isEqualTo("file");
 
-        try (var archive = new NormalizedZipFile(packageUrl.getPath())) {
+        try (var archive = new ZipFile(packageUrl.getPath())) {
             assertThatThrownBy(() -> ArchiveUtil.readEntry(archive, "extension/README.md", 8192))
                     .isExactlyInstanceOf(ErrorResultException.class)
                     .hasMessage("The file extension/README.md exceeds the size limit of 8 KB.");

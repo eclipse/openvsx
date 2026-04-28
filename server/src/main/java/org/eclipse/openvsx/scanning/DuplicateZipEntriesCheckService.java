@@ -16,23 +16,27 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipFile;
 
 /**
- * Service for checking extension files for potentially malicious zip extra fields.
- * <p>
- * Implements PublishCheck to be auto-discovered by PublishCheckRunner.
- * Always enabled and enforced.
+ * Service for checking extension files for duplicate zip entries after backslash normalization.
+ *
+ * yauzl (used by VS Code) normalizes backslashes to forward slashes when reading zip entries.
+ * Two entries that differ only by their slash direction (e.g. {@code extension/foo} and
+ * {@code extension\foo}) collide once normalized, which can be used to smuggle a different
+ * payload past tools that read the archive without normalization.
+ *
  */
 @Service
-@Order(0)
-public class MaliciousZipCheckService implements PublishCheck {
+@Order(1)
+public class DuplicateZipEntriesCheckService implements PublishCheck {
 
-    public static final String CHECK_TYPE = "MALICIOUS_ZIP_CHECK";
-    private static final String RULE_NAME = "EXTRA_FIELDS_DETECTED";
-    private static final String MESSAGE = "extension file contains zip entries with potentially harmful extra fields";
-    private static final String USER_MESSAGE = "Extension contains zip entries with unsupported extra fields";
+    public static final String CHECK_TYPE = "DUPLICATE_ZIP_ENTRIES_CHECK";
+    private static final String RULE_NAME = "DUPLICATE_NORMALIZED_ENTRIES";
+    private static final String MESSAGE = "extension file contains duplicate zip entries after backslash normalization";
+    private static final String USER_MESSAGE = "Extension contains duplicate zip entries after backslash normalization";
 
     @Override
     public String getCheckType() {
@@ -57,14 +61,16 @@ public class MaliciousZipCheckService implements PublishCheck {
     @Override
     public PublishCheck.Result check(Context context) {
         try (var zipFile = new ZipFile(context.extensionFile().getPath().toFile())) {
+            var seen = new HashSet<String>();
             var entries = zipFile.entries();
             while (entries.hasMoreElements()) {
-                if (entries.nextElement().getExtra() != null) {
+                var name = entries.nextElement().getName().replace('\\', '/');
+                if (!seen.add(name)) {
                     return PublishCheck.Result.fail(RULE_NAME, MESSAGE);
                 }
             }
         } catch (IOException e) {
-            throw new MaliciousZipCheckException("Failed to read extension zip file", e);
+            throw new DuplicateZipEntriesCheckException("Failed to read extension zip file", e);
         }
 
         return PublishCheck.Result.pass();
@@ -72,10 +78,10 @@ public class MaliciousZipCheckService implements PublishCheck {
 }
 
 /**
- * Signals that the malicious-zip check could not be executed (e.g. the archive could not be read).
+ * Signals that the duplicate-zip-entries check could not be executed (e.g. the archive could not be read).
  */
-class MaliciousZipCheckException extends RuntimeException {
-    MaliciousZipCheckException(String message, Throwable cause) {
+class DuplicateZipEntriesCheckException extends RuntimeException {
+    DuplicateZipEntriesCheckException(String message, Throwable cause) {
         super(message, cause);
     }
 }
