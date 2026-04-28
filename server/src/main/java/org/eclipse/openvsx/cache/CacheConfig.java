@@ -264,7 +264,13 @@ public class CacheConfig {
                 )
                 .withCacheConfiguration(
                         CACHE_LATEST_EXTENSION_VERSIONS_BY_PLATFORM,
-                        redisCacheConfig(new Jackson2JsonRedisSerializer<>(extensionVersionMapper, List.class), latestExtensionVersionsByPlatformTtl)
+                        redisCacheConfig(
+                                new Jackson2JsonRedisSerializer<>(
+                                        extensionVersionMapper,
+                                        extensionVersionMapper.getTypeFactory().constructParametricType(List.class, ExtensionVersion.class)
+                                ),
+                                latestExtensionVersionsByPlatformTtl
+                        )
                 )
                 .withCacheConfiguration(
                         CACHE_SITEMAP,
