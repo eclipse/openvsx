@@ -12,19 +12,21 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import org.eclipse.openvsx.entities.ExtensionScan;
-import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.util.TempFile;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.eclipse.openvsx.entities.ExtensionScan;
+import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.util.TempFile;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Tests for DuplicateZipEntriesCheckService.
@@ -67,6 +69,34 @@ class DuplicateZipEntriesCheckServiceTest {
         assertEquals(1, result.failures().size());
         assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
         assertTrue(result.failures().getFirst().reason().contains("duplicate zip entries"));
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterDotSegmentNormalization() throws Exception {
+        // extension/./package.json normalizes to extension/package.json
+        TempFile extensionFile = createTestZip("dot-segment.vsix",
+                "extension/package.json", "extension/./package.json");
+
+        var context = createContext(extensionFile);
+        var result = service.check(context);
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterDotDotSegmentNormalization() throws Exception {
+        // extension/sub/../package.json normalizes to extension/package.json
+        TempFile extensionFile = createTestZip("dotdot-segment.vsix",
+                "extension/package.json", "extension/sub/../package.json");
+
+        var context = createContext(extensionFile);
+        var result = service.check(context);
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
     }
 
     // --- Helper methods ---

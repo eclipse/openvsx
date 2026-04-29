@@ -12,21 +12,19 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Service;
-
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipFile;
 
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Service;
+
 /**
- * Service for checking extension files for duplicate zip entries after backslash normalization.
+ * Service for checking extension files for duplicate zip entries after path normalization.
  *
  * yauzl (used by VS Code) normalizes backslashes to forward slashes when reading zip entries.
- * Two entries that differ only by their slash direction (e.g. {@code extension/foo} and
- * {@code extension\foo}) collide once normalized, which can be used to smuggle a different
- * payload past tools that read the archive without normalization.
  *
  */
 @Service
@@ -35,8 +33,8 @@ public class DuplicateZipEntriesCheckService implements PublishCheck {
 
     public static final String CHECK_TYPE = "DUPLICATE_ZIP_ENTRIES_CHECK";
     private static final String RULE_NAME = "DUPLICATE_NORMALIZED_ENTRIES";
-    private static final String MESSAGE = "extension file contains duplicate zip entries after backslash normalization";
-    private static final String USER_MESSAGE = "Extension contains duplicate zip entries after backslash normalization";
+    private static final String MESSAGE = "extension file contains duplicate zip entries after path normalization";
+    private static final String USER_MESSAGE = "Extension contains duplicate zip entries after path normalization";
 
     @Override
     public String getCheckType() {
@@ -64,7 +62,8 @@ public class DuplicateZipEntriesCheckService implements PublishCheck {
             var seen = new HashSet<String>();
             var entries = zipFile.entries();
             while (entries.hasMoreElements()) {
-                var name = entries.nextElement().getName().replace('\\', '/');
+                var raw = entries.nextElement().getName().replace('\\', '/');
+                var name = Path.of(raw).normalize().toString().replace('\\', '/');
                 if (!seen.add(name)) {
                     return PublishCheck.Result.fail(RULE_NAME, MESSAGE);
                 }
