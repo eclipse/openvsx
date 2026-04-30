@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 @Service
@@ -46,18 +44,6 @@ public class MaliciousZipCheckService implements PublishCheck {
     @Override
     public boolean isEnforced() {
         return true;
-    }
-
-    @Override
-    public String getUserFacingMessage(List<Failure> failures) {
-        return failures
-                .stream()
-                .map(f -> switch (f.ruleName()) {
-                    case EXTRA_FIELDS_RULE -> "Extension contains zip entries with unsupported extra fields";
-                    case DUPLICATE_ENTRIES_RULE -> "Extension contains duplicate zip entries after path normalization";
-                    default -> f.reason();
-                })
-                .collect(Collectors.joining("; "));
     }
 
     @Override
