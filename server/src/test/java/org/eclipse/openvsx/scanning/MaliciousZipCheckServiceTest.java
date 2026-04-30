@@ -30,9 +30,6 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for MaliciousZipCheckService.
- */
 class MaliciousZipCheckServiceTest {
 
     @TempDir
@@ -45,13 +42,13 @@ class MaliciousZipCheckServiceTest {
         service = new MaliciousZipCheckService();
     }
 
+    // --- Extra fields checks ---
+
     @Test
     void check_passesWhenNoExtraFields() throws Exception {
-        // Create a test zip with clean files
-        TempFile extensionFile = createTestZip("clean.txt", "This is clean content");
+        TempFile extensionFile = createZipWithContent("clean.vsix", "clean.txt", "This is clean content");
 
-        var context = createContext(extensionFile);
-        var result = service.check(context);
+        var result = service.check(createContext(extensionFile));
 
         assertTrue(result.passed());
         assertTrue(result.failures().isEmpty());
@@ -59,11 +56,9 @@ class MaliciousZipCheckServiceTest {
 
     @Test
     void check_failsWhenExtraFieldsAreFound() throws Exception {
-        // Create a test zip with a file that contains extra fields
-        TempFile extensionFile = createTestZipWithExtraField("extra.txt", "The content is clean");
+        TempFile extensionFile = createZipWithExtraField("extra.vsix", "extra.txt", "The content is clean");
 
-        var context = createContext(extensionFile);
-        var result = service.check(context);
+        var result = service.check(createContext(extensionFile));
 
         assertFalse(result.passed());
         assertEquals(1, result.failures().size());
@@ -71,23 +66,72 @@ class MaliciousZipCheckServiceTest {
         assertTrue(result.failures().getFirst().reason().contains("extension file contains zip entries"));
     }
 
+    // --- Duplicate entries checks ---
+
+    @Test
+    void check_passesForCleanZip() throws Exception {
+        TempFile extensionFile = createZipWithEntries("clean-entries.vsix",
+                "extension/package.json", "extension/README.md");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertTrue(result.passed());
+        assertTrue(result.failures().isEmpty());
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterBackslashNormalization() throws Exception {
+        TempFile extensionFile = createZipWithEntries("duplicate-backslash.vsix",
+                "extension/package.json", "extension\\package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+        assertTrue(result.failures().getFirst().reason().contains("duplicate zip entries"));
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterDotSegmentNormalization() throws Exception {
+        TempFile extensionFile = createZipWithEntries("dot-segment.vsix",
+                "extension/package.json", "extension/./package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterDotDotSegmentNormalization() throws Exception {
+        TempFile extensionFile = createZipWithEntries("dotdot-segment.vsix",
+                "extension/package.json", "extension/sub/../package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+    }
+
     // --- Helper methods ---
 
-    private TempFile createTestZip(String fileName, String content) throws Exception {
-        Path zipPath = tempDir.resolve("test-extension.vsix");
+    private TempFile createZipWithContent(String zipFileName, String entryName, String content) throws Exception {
+        Path zipPath = tempDir.resolve(zipFileName);
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
-            ZipEntry entry = new ZipEntry(fileName);
-            zos.putNextEntry(entry);
+            zos.putNextEntry(new ZipEntry(entryName));
             zos.write(content.getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
         return new TempFile(zipPath);
     }
 
-    private TempFile createTestZipWithExtraField(String fileName, String content) throws Exception {
-        Path zipPath = tempDir.resolve("test-extension-extra.vsix");
+    private TempFile createZipWithExtraField(String zipFileName, String entryName, String content) throws Exception {
+        Path zipPath = tempDir.resolve(zipFileName);
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
-            ZipEntry entry = new ZipEntry(fileName);
+            ZipEntry entry = new ZipEntry(entryName);
             var field = new UnicodeCommentExtraField("sample data", "sample data".getBytes());
             var data = ExtraFieldUtils.mergeLocalFileDataData(new ZipExtraField[] { field });
             entry.setExtra(data);
@@ -98,15 +142,27 @@ class MaliciousZipCheckServiceTest {
         return new TempFile(zipPath);
     }
 
+    private TempFile createZipWithEntries(String zipFileName, String... entryNames) throws Exception {
+        Path zipPath = tempDir.resolve(zipFileName);
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipPath.toFile()))) {
+            for (var name : entryNames) {
+                zos.putNextEntry(new ZipEntry(name));
+                zos.write(new byte[0]);
+                zos.closeEntry();
+            }
+        }
+        return new TempFile(zipPath);
+    }
+
     private PublishCheck.Context createContext(TempFile extensionFile) {
         ExtensionScan scan = new ExtensionScan();
         scan.setNamespaceName("test-namespace");
         scan.setExtensionName("test-extension");
         scan.setExtensionVersion("1.0.0");
-        
+
         UserData user = new UserData();
         user.setLoginName("testuser");
-        
+
         return new PublishCheck.Context(scan, extensionFile, user);
     }
 }

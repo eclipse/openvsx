@@ -19,6 +19,7 @@ import org.eclipse.openvsx.util.TempFile;
 import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Interface for checks that run during extension publishing.
@@ -118,6 +119,11 @@ public interface PublishCheck {
 
         public static Result fail(String ruleName, String reason) {
             return new Result(false, List.of(new Failure(ruleName, reason)));
+        }
+
+        public Result and(Result other) {
+            if (this.passed && other.passed) return pass();
+            return fail(Stream.concat(this.failures().stream(), other.failures().stream()).toList());
         }
     }
 

@@ -16,23 +16,22 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
-/**
- * Service for checking extension files for potentially malicious zip extra fields.
- * <p>
- * Implements PublishCheck to be auto-discovered by PublishCheckRunner.
- * Always enabled and enforced.
- */
 @Service
 @Order(0)
 public class MaliciousZipCheckService implements PublishCheck {
 
     public static final String CHECK_TYPE = "MALICIOUS_ZIP_CHECK";
-    private static final String RULE_NAME = "EXTRA_FIELDS_DETECTED";
-    private static final String MESSAGE = "extension file contains zip entries with potentially harmful extra fields";
-    private static final String USER_MESSAGE = "Extension contains zip entries with unsupported extra fields";
+    private static final String EXTRA_FIELDS_RULE = "EXTRA_FIELDS_DETECTED";
+    private static final String EXTRA_FIELDS_MESSAGE = "extension file contains zip entries with potentially harmful extra fields";
+    private static final String DUPLICATE_ENTRIES_RULE = "DUPLICATE_NORMALIZED_ENTRIES";
+    private static final String DUPLICATE_ENTRIES_MESSAGE = "extension file contains duplicate zip entries after path normalization";
 
     @Override
     public String getCheckType() {
@@ -51,31 +50,46 @@ public class MaliciousZipCheckService implements PublishCheck {
 
     @Override
     public String getUserFacingMessage(List<Failure> failures) {
-        return USER_MESSAGE;
+        return failures
+                .stream()
+                .map(f -> switch (f.ruleName()) {
+                    case EXTRA_FIELDS_RULE -> "Extension contains zip entries with unsupported extra fields";
+                    case DUPLICATE_ENTRIES_RULE -> "Extension contains duplicate zip entries after path normalization";
+                    default -> f.reason();
+                })
+                .collect(Collectors.joining("; "));
     }
 
     @Override
     public PublishCheck.Result check(Context context) {
         try (var zipFile = new ZipFile(context.extensionFile().getPath().toFile())) {
-            var entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                if (entries.nextElement().getExtra() != null) {
-                    return PublishCheck.Result.fail(RULE_NAME, MESSAGE);
-                }
-            }
+            return checkForExtraFields(zipFile)
+                    .and(checkForDuplicateEntries(zipFile));
         } catch (IOException e) {
-            throw new MaliciousZipCheckException("Failed to read extension zip file", e);
+            throw new UncheckedIOException("Failed to read extension zip file", e);
         }
+    }
 
+    private PublishCheck.Result checkForExtraFields(ZipFile zipFile) {
+        var entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            if (entries.nextElement().getExtra() != null) {
+                return PublishCheck.Result.fail(EXTRA_FIELDS_RULE, EXTRA_FIELDS_MESSAGE);
+            }
+        }
         return PublishCheck.Result.pass();
     }
-}
 
-/**
- * Signals that the malicious-zip check could not be executed (e.g. the archive could not be read).
- */
-class MaliciousZipCheckException extends RuntimeException {
-    MaliciousZipCheckException(String message, Throwable cause) {
-        super(message, cause);
+    private PublishCheck.Result checkForDuplicateEntries(ZipFile zipFile) {
+        var seen = new HashSet<String>();
+        var entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            var raw = entries.nextElement().getName();
+            var name = Path.of(raw).normalize().toString();
+            if (!seen.add(name.replace('\\', '/'))) {
+                return PublishCheck.Result.fail(DUPLICATE_ENTRIES_RULE, DUPLICATE_ENTRIES_MESSAGE);
+            }
+        }
+        return PublishCheck.Result.pass();
     }
 }
