@@ -32,6 +32,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
@@ -240,6 +241,13 @@ public class UserService {
             entityManager.persist(newUser);
             userData = newUser;
         } else {
+            // check that the existing auth ID matches the newly passed one to prevent account takeover attacks
+            if (!userData.getAuthId().equals(newUser.getAuthId())) {
+                throw new AuthenticationServiceException("The GitHub ID setting in your profile ("
+                        + newUser.getAuthId()
+                        + ") does not match your original authentication ("
+                        + userData.getAuthId() + ").");
+            }
             var updated = false;
             if (!Strings.CS.equals(userData.getLoginName(), newUser.getLoginName())) {
                 userData.setLoginName(newUser.getLoginName());

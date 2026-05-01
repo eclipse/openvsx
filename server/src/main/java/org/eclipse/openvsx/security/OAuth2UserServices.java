@@ -129,6 +129,14 @@ public class OAuth2UserServices {
         try {
             var accessToken = userRequest.getAccessToken().getTokenValue();
             var profile = eclipse.getUserProfile(accessToken);
+            var githubIdOpt = profile.getGithubId();
+            if (githubIdOpt.isPresent() && StringUtils.isNotBlank(githubIdOpt.get())
+                    && !githubIdOpt.get().equalsIgnoreCase(userData.getAuthId()))
+                throw new CodedAuthException("The GitHub ID setting in your Eclipse profile ("
+                        + githubIdOpt.get()
+                        + ") does not match your GitHub authentication ("
+                        + userData.getAuthId() + ").",
+                        ECLIPSE_MISMATCH_GITHUB_ID);
             if (StringUtils.isEmpty(profile.getGithubHandle()))
                 throw new CodedAuthException("Your Eclipse profile is missing a GitHub username.",
                         ECLIPSE_MISSING_GITHUB_ID);

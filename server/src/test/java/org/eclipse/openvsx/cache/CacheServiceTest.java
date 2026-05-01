@@ -112,6 +112,7 @@ class CacheServiceTest {
             updatedUser.setProvider("github");
             updatedUser.setLoginName("user");
             updatedUser.setFullName("User2");
+            updatedUser.setAuthId("123-456");
             updatedUser.setProviderUrl("https://user2.github.io");
             updatedUser.setAvatarUrl("https://github.com/user2/avatar");
 
@@ -389,6 +390,7 @@ class CacheServiceTest {
 
         var user = new UserData();
         user.setLoginName("user");
+        user.setAuthId("123-456");
         user.setFullName("User");
         user.setAvatarUrl("https://github.com/user/avatar");
         user.setProviderUrl("https://github.com");
