@@ -40,9 +40,6 @@ public class EclipseProfile {
     @JsonProperty("full_name")
     private String fullName;
 
-    @JsonProperty("github_id")
-    private Optional<String> githubId;
-
     @JsonProperty("github_handle")
     private String githubHandle;
 
@@ -115,14 +112,6 @@ public class EclipseProfile {
 
     public void setGithubHandle(String githubHandle) {
         this.githubHandle = githubHandle;
-    }
-
-    public Optional<String> getGithubId() {
-      return githubId;
-    }
-
-    public void setGithubId(Optional<String> githubId) {
-      this.githubId = githubId;
     }
 
     public String getTwitterHandle() {
