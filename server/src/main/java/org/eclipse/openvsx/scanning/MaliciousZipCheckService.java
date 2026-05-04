@@ -49,8 +49,7 @@ public class MaliciousZipCheckService implements PublishCheck {
     @Override
     public PublishCheck.Result check(Context context) {
         try (var zipFile = new ZipFile(context.extensionFile().getPath().toFile())) {
-            return checkForExtraFields(zipFile)
-                    .and(checkForDuplicateEntries(zipFile));
+            return checkForExtraFields(zipFile).and(checkForDuplicateEntries(zipFile));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to read extension zip file", e);
         }
@@ -70,9 +69,13 @@ public class MaliciousZipCheckService implements PublishCheck {
         var seen = new HashSet<String>();
         var entries = zipFile.entries();
         while (entries.hasMoreElements()) {
-            var raw = entries.nextElement().getName();
-            var name = Path.of(raw).normalize().toString();
-            if (!seen.add(name.replace('\\', '/'))) {
+            var name = entries.nextElement().getName();
+            // We normalize the filename to account for potential parsing differentials.
+            // yauzl which is used by VS Code to extract vsix archives, silently normalizes
+            // backslash characters to forward slashes, so we reject any extension that contains
+            // duplicate filenames after normalization to avoid any potential issue.
+            var normalizedName = Path.of(name).normalize().toString().replaceAll("\\\\+", "/");
+            if (!seen.add(normalizedName)) {
                 return PublishCheck.Result.fail(DUPLICATE_ENTRIES_RULE, DUPLICATE_ENTRIES_MESSAGE);
             }
         }

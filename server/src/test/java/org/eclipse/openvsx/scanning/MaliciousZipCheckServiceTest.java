@@ -93,6 +93,19 @@ class MaliciousZipCheckServiceTest {
     }
 
     @Test
+    void check_failsWhenEntriesCollideAfterDoubleBackslashNormalization() throws Exception {
+        TempFile extensionFile = createZipWithEntries("duplicate-backslash.vsix",
+                "extension/package.json", "extension\\\\package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+        assertTrue(result.failures().getFirst().reason().contains("duplicate zip entries"));
+    }
+
+    @Test
     void check_failsWhenEntriesCollideAfterDotSegmentNormalization() throws Exception {
         TempFile extensionFile = createZipWithEntries("dot-segment.vsix",
                 "extension/package.json", "extension/./package.json");
