@@ -32,7 +32,7 @@ const BreadcrumbsNav: FunctionComponent<{ routeNames: Record<string, string> }> 
             </Link>
             {segments.map((value, index) => {
                 const to = `/${segments.slice(0, index + 1).join('/')}`;
-                const label = routeNames[to] ?? value;
+                const label = routeNames[to] ?? decodeURIComponent(value);
                 const isLast = index === segments.length - 1;
 
                 return isLast ? (
