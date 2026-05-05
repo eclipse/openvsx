@@ -6,7 +6,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Changed
 
-- Disabled max-width setting for admin dashboard pages to let content grow as needed
+- Disabled max-width setting for admin dashboard pages to let content grow as needed ([#1809](https://github.com/eclipse-openvsx/openvsx/pull/1809))
 
 ### Fixed
 
