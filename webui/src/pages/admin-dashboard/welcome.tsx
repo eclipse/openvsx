@@ -60,34 +60,36 @@ export const Welcome: FunctionComponent<WelcomeProps> = ({ items }) => {
     const sections = buildSections(items);
 
     return (
-        <Box sx={{ py: 4, px: 2 }}>
-            <Typography variant='h5' gutterBottom>
-                Welcome to the Admin Dashboard
-            </Typography>
-            <Typography variant='body1' color='text.secondary' sx={{ mb: 4 }}>
-                Select a section below to get started
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {sections.map((section, i) => (
-                    <Box key={section.groupName ?? '__root__'}>
-                        {section.groupName && (
-                            <>
-                                <Typography variant='overline' color='text.secondary' sx={{ mb: 1, display: 'block' }}>
-                                    {section.groupName}
-                                </Typography>
-                                <Divider sx={{ mb: 2 }} />
-                            </>
-                        )}
-                        {!section.groupName && i > 0 && <Divider sx={{ mb: 2 }} />}
-                        <Grid container spacing={3}>
-                            {section.entries.map(entry => (
-                                <Grid item key={entry.path} xs={12} sm={6} md={4} lg={3}>
-                                    <NavCard entry={entry} />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Box>
-                ))}
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ py: 4, px: 2 }} maxWidth='xl'>
+                <Typography variant='h5' gutterBottom>
+                    Welcome to the Admin Dashboard
+                </Typography>
+                <Typography variant='body1' color='text.secondary' sx={{ mb: 4 }}>
+                    Select a section below to get started
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {sections.map((section, i) => (
+                        <Box key={section.groupName ?? '__root__'}>
+                            {section.groupName && (
+                                <>
+                                    <Typography variant='overline' color='text.secondary' sx={{ mb: 1, display: 'block' }}>
+                                        {section.groupName}
+                                    </Typography>
+                                    <Divider sx={{ mb: 2 }} />
+                                </>
+                            )}
+                            {!section.groupName && i > 0 && <Divider sx={{ mb: 2 }} />}
+                            <Grid container spacing={3}>
+                                {section.entries.map(entry => (
+                                    <Grid item key={entry.path} xs={12} sm={6} md={4} lg={3}>
+                                        <NavCard entry={entry} />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    ))}
+                </Box>
             </Box>
         </Box>
     );
