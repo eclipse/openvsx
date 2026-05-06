@@ -390,8 +390,8 @@ class CacheServiceTest {
 
         var user = new UserData();
         user.setLoginName("user");
-        user.setAuthId("123-456");
         user.setFullName("User");
+        user.setAuthId("123-456");
         user.setAvatarUrl("https://github.com/user/avatar");
         user.setProviderUrl("https://github.com");
         user.setProvider("github");

@@ -99,7 +99,7 @@ public class OAuth2UserServices {
         var registrationId = userRequest.getClientRegistration().getRegistrationId();
         var mapping = attributesConfig.getAttributeMapping(registrationId);
         if(mapping == null) {
-            throw new CodedAuthException("Unsupported registration: " + registrationId ,UNSUPPORTED_REGISTRATION);
+            throw new CodedAuthException("Unsupported registration: " + registrationId, UNSUPPORTED_REGISTRATION);
         }
 
         var oauth2User = userRequest instanceof OidcUserRequest oidcRequest

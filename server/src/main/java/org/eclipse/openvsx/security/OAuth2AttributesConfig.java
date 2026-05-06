@@ -39,7 +39,7 @@ public record OAuth2AttributesConfig(Map<String, OAuth2AttributesMapping> attrib
 
     public List<String> getProviders() {
         var providers = new ArrayList<>(DEFAULT_MAPPINGS.keySet());
-        if(attributeNames != null) {
+        if (attributeNames != null) {
             providers.addAll(attributeNames.keySet());
         }
 

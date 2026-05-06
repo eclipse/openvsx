@@ -30,6 +30,8 @@ import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -48,6 +50,8 @@ import static org.eclipse.openvsx.cache.CacheService.CACHE_NAMESPACE_DETAILS_JSO
 
 @Component
 public class UserService {
+
+    private final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
@@ -76,7 +80,7 @@ public class UserService {
     }
 
     public UserData findLoggedInUser() {
-        if(!canLogin()) {
+        if (!canLogin()) {
             return null;
         }
 
@@ -168,22 +172,22 @@ public class UserService {
             throw new ErrorResultException(message);
         }
 
-        if(!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
+        if (!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
             namespace.setDisplayName(details.getDisplayName());
         }
-        if(!Objects.equals(details.getDescription(), namespace.getDescription())) {
+        if (!Objects.equals(details.getDescription(), namespace.getDescription())) {
             namespace.setDescription(details.getDescription());
         }
-        if(!Objects.equals(details.getWebsite(), namespace.getWebsite())) {
+        if (!Objects.equals(details.getWebsite(), namespace.getWebsite())) {
             namespace.setWebsite(details.getWebsite());
         }
-        if(!Objects.equals(details.getSupportLink(), namespace.getSupportLink())) {
+        if (!Objects.equals(details.getSupportLink(), namespace.getSupportLink())) {
             namespace.setSupportLink(details.getSupportLink());
         }
-        if(!Objects.equals(details.getSocialLinks(), namespace.getSocialLinks())) {
+        if (!Objects.equals(details.getSocialLinks(), namespace.getSocialLinks())) {
             namespace.setSocialLinks(details.getSocialLinks());
         }
-        if(StringUtils.isEmpty(details.getLogo()) && StringUtils.isNotEmpty(namespace.getLogoName())) {
+        if (StringUtils.isEmpty(details.getLogo()) && StringUtils.isNotEmpty(namespace.getLogoName())) {
             storageUtil.removeNamespaceLogo(namespace);
             namespace.setLogoName(null);
             namespace.setLogoStorageType(null);
@@ -212,7 +216,7 @@ public class UserService {
             var detectedType = tika.detect(file.getInputStream(), file.getOriginalFilename());
             var logoType = MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(detectedType);
             var expectedLogoTypes = List.of(MediaType.image("png"), MediaType.image("jpg"));
-            if(logoType == null || !expectedLogoTypes.contains(logoType.getType())) {
+            if (logoType == null || !expectedLogoTypes.contains(logoType.getType())) {
                 throw new ErrorResultException("Namespace logo should be a png or jpg file");
             }
 
@@ -220,7 +224,7 @@ public class UserService {
             file.getInputStream().transferTo(out);
             logoFile.setNamespace(namespace);
             storageUtil.uploadNamespaceLogo(logoFile);
-            if(StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+            if (StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
                 storageUtil.removeNamespaceLogo(oldNamespace);
             }
         } catch (IOException | MimeTypeException e) {
@@ -234,6 +238,15 @@ public class UserService {
         return !getLoginProviders().isEmpty();
     }
 
+    /**
+     * Creates or updates a user after a successful OAuth2 dance.
+     * <p>
+     * The provided user must have an {code authId} being set.
+     *
+     * @param newUser the user data as mapped from the provided oauth2 attributes
+     * @return a new persisted user object if no user with the same login is present, otherwise
+     * an updated user object with information from the oauth2 attributes
+     */
     @Transactional
     public UserData upsertUser(UserData newUser) {
         var userData = repositories.findUserByLoginName(newUser.getProvider(), newUser.getLoginName());
@@ -241,12 +254,19 @@ public class UserService {
             entityManager.persist(newUser);
             userData = newUser;
         } else {
-            // check that the existing auth ID matches the newly passed one to prevent account takeover attacks
+            // check that the existing auth ID matches the newly passed one to prevent account takeover attempts
             if (!userData.getAuthId().equals(newUser.getAuthId())) {
-                throw new AuthenticationServiceException("The GitHub ID setting in your profile ("
-                        + newUser.getAuthId()
-                        + ") does not match your original authentication ("
-                        + userData.getAuthId() + ").");
+                logger.error(
+                        "Login attempt by user '{}' with authId '{}' which does not match existing authId '{}'," +
+                        "potential account takeover attempt, disallowing login",
+                        newUser.getLoginName(),
+                        newUser.getAuthId(),
+                        userData.getAuthId()
+                );
+                throw new AuthenticationServiceException(
+                        "Could not login due to an existing user account with the same name. " +
+                        "Please contact support for details."
+                );
             }
             var updated = false;
             if (!Strings.CS.equals(userData.getLoginName(), newUser.getLoginName())) {
@@ -278,7 +298,7 @@ public class UserService {
     }
 
     public Map<String, String> getLoginProviders() {
-        if(clientRegistrationRepository == null) {
+        if (clientRegistrationRepository == null) {
             return Collections.emptyMap();
         }
 

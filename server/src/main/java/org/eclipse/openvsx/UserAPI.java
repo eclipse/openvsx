@@ -81,7 +81,7 @@ public class UserAPI {
     public ResponseEntity<LoginProvidersJson> login() {
         var json = new LoginProvidersJson();
         var providers = users.getLoginProviders();
-        if(!providers.isEmpty()) {
+        if (!providers.isEmpty()) {
             json.setLoginProviders(providers);
         } else {
             json.setSuccess("No login providers available.");
