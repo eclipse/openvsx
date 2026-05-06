@@ -22,7 +22,7 @@ ext['junit-jupiter.version'] = libs.versions.junit.get()
 // example:
 // ext['netty.version'] = '4.1.132.Final'
 
-ext['thymeleaf.version'] = '3.1.4.RELEASE'
+ext['thymeleaf.version'] = '3.1.5.RELEASE'
 ext['spring-security.version'] = '6.5.10'
 
 java {
