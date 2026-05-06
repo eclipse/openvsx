@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump follow-redirects from `1.15.6` to `1.16.0` ([#1759](https://github.com/eclipse/openvsx/pull/1759))
+- Bump ip-address from `10.1.0` to `10.2.0`
 
 ### [v0.10.11] (13/04/2026)
 

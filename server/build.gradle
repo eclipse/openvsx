@@ -22,6 +22,8 @@ ext['junit-jupiter.version'] = libs.versions.junit.get()
 // example:
 // ext['netty.version'] = '4.1.132.Final'
 
+ext['postgresql.version'] = '42.7.11'
+
 java {
     sourceCompatibility = libs.versions.java.get()
 }
@@ -58,7 +60,7 @@ configurations {
 dependencyManagement {
     gatling {
         dependencies {
-            dependencySet(group: 'io.netty', version: '4.2.12.Final') {
+            dependencySet(group: 'io.netty', version: '4.2.13.Final') {
                 entry 'netty-codec-http'
                 entry 'netty-codec'
                 entry 'netty-handler'
