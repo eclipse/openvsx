@@ -56,7 +56,7 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().matches(filterProperties.getUrl());
+        return !request.getServletPath().matches(filterProperties.getUrl());
     }
 
     @Override
