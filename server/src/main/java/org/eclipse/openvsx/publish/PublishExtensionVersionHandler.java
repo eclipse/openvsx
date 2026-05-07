@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
@@ -147,6 +148,11 @@ public class PublishExtensionVersionHandler {
         var displayName = extVersion.getDisplayName();
         validateExtensionName(namespaceName, extensionName, displayName, user);
 
+        // Check that the metadata contained in package.json matches the one extracted from extension.vsixmanifest
+        // Open VSX uses the metadata from extension.vsixmanifest as the source of truth, but VS Code
+        // actually uses package.json so we need to make sure they are both aligned to avoid differentials.
+        validatePackageMetadata(processor, namespaceName, extensionName, extVersion);
+
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
@@ -198,8 +204,40 @@ public class PublishExtensionVersionHandler {
             throw new ErrorResultException(nameIssue.get().toString());
         }
 
-        if(isMalicious(namespaceName, extensionName)) {
+        if (isMalicious(namespaceName, extensionName)) {
             throw new ErrorResultException(NamingUtil.toExtensionId(namespaceName, extensionName) + " is a known malicious extension");
+        }
+    }
+
+    /**
+     * This method checks whether the metadata as contained in {@code extension.vsixmanifest} matches
+     * the data in {@code package.json}.
+     */
+    private void validatePackageMetadata(
+            ExtensionProcessor processor,
+            String namespaceName,
+            String extensionName,
+            ExtensionVersion extVersion
+    ) {
+        var packageMetadata = processor.getPackageMetadata();
+
+        // Do strict CS equality checks on these items, normally they should match,
+        // e.g. when the vsix extension package has been created by tools like vsce
+
+        if (!Strings.CS.equals(namespaceName, packageMetadata.publisher())) {
+            throw new ErrorResultException("Publisher in extension.vsixmanifest and package.json does not match.");
+        }
+
+        if (!Strings.CS.equals(extensionName, packageMetadata.name())) {
+            throw new ErrorResultException("Extension name in extension.vsixmanifest and package.json does not match.");
+        }
+
+        if (!Strings.CS.equals(extVersion.getVersion(), packageMetadata.version())) {
+            throw new ErrorResultException("Extension version in extension.vsixmanifest and package.json does not match.");
+        }
+
+        if (!Strings.CS.equals(extVersion.getDisplayName(), packageMetadata.displayName())) {
+            throw new ErrorResultException("Display name in extension.vsixmanifest and package.json does not match.");
         }
     }
 

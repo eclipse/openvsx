@@ -259,6 +259,16 @@ public class ExtensionProcessor implements AutoCloseable {
         return extVersion;
     }
 
+    public PackageMetadata getPackageMetadata() {
+        loadPackageJson();
+        return new PackageMetadata(
+                packageJson.path("publisher").asText(),
+                packageJson.path("name").asText(),
+                packageJson.path("version").asText(),
+                packageJson.path("displayName").asText()
+        );
+    }
+
     public String getVersion() {
         return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Version").asText();
     }
@@ -546,4 +556,6 @@ public class ExtensionProcessor implements AutoCloseable {
 
         return false;
     }
+
+    public record PackageMetadata(String publisher, String name, String version, String displayName) {}
 }

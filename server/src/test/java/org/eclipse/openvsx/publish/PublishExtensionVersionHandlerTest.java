@@ -26,10 +26,7 @@ import java.util.Optional;
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
-import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
@@ -39,7 +36,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -112,7 +108,7 @@ class PublishExtensionVersionHandlerTest {
             when(processor.getBundledExtensions()).thenReturn(List.of());
 
             var namespace = buildNamespace("publisher");
-            var user = new org.eclipse.openvsx.entities.UserData();
+            var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
 
@@ -142,7 +138,7 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             when(processor.getNamespace()).thenReturn("unknown");
 
-            var user = new org.eclipse.openvsx.entities.UserData();
+            var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
 
@@ -160,7 +156,7 @@ class PublishExtensionVersionHandlerTest {
             mockExtensionVersion("publisher", "demo", "2.0.0", "test.svg", processor);
 
             var namespace = buildNamespace("publisher");
-            var user = new org.eclipse.openvsx.entities.UserData();
+            var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
 
@@ -184,7 +180,7 @@ class PublishExtensionVersionHandlerTest {
             var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", "test.svg", processor);
 
             var namespace = buildNamespace("publisher");
-            var user = new org.eclipse.openvsx.entities.UserData();
+            var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
 
@@ -197,6 +193,62 @@ class PublishExtensionVersionHandlerTest {
             assertThat(ev).isNotNull();
         } finally {
             config.setUnsupportedIconFormats(previousUnsupportedIconFormats);
+        }
+    }
+
+    @Test
+    void shouldFailWhenPackageJsonDoesNotMatchManifest() throws IOException {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion(metadata.getVersion())).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher1",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"
+                    )
+            );
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Publisher in extension.vsixmanifest");
+
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "DemO",
+                            "2.0.0",
+                            "Demo OK"
+                    )
+            );
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Extension name in extension.vsixmanifest");
+
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "9.9.9",
+                            "Demo OK"
+                    )
+            );
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Extension version in extension.vsixmanifest");
         }
     }
 
