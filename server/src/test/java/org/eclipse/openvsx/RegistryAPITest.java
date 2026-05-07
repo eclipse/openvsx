@@ -2528,7 +2528,8 @@ class RegistryAPITest {
         var packageJson = "{" +
                 "\"publisher\": \"foo\"," +
                 "\"name\": \"" + name + "\"," +
-                "\"version\": \"" + version + "\"" +
+                "\"version\": \"" + version + "\"," +
+                "\"displayName\": \"foo\"" +
                 (license == null ? "" : ",\"license\": \"" + license + "\"" ) +
             "}";
         archive.write(packageJson.getBytes());

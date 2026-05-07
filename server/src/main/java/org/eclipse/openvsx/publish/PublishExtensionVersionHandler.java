@@ -221,22 +221,22 @@ public class PublishExtensionVersionHandler {
     ) {
         var packageMetadata = processor.getPackageMetadata();
 
-        // Do strict CS equality checks on these items, normally they should match,
+        // Check for equality on these items, normally they should match,
         // e.g. when the vsix extension package has been created by tools like vsce
 
-        if (!Strings.CS.equals(namespaceName, packageMetadata.publisher())) {
+        if (!Strings.CI.equals(namespaceName, packageMetadata.publisher())) {
             throw new ErrorResultException("Publisher in extension.vsixmanifest and package.json does not match.");
         }
 
-        if (!Strings.CS.equals(extensionName, packageMetadata.name())) {
+        if (!Strings.CI.equals(extensionName, packageMetadata.name())) {
             throw new ErrorResultException("Extension name in extension.vsixmanifest and package.json does not match.");
         }
 
-        if (!Strings.CS.equals(extVersion.getVersion(), packageMetadata.version())) {
+        if (!Strings.CI.equals(extVersion.getVersion(), packageMetadata.version())) {
             throw new ErrorResultException("Extension version in extension.vsixmanifest and package.json does not match.");
         }
 
-        if (!Strings.CS.equals(extVersion.getDisplayName(), packageMetadata.displayName())) {
+        if (!Strings.CI.equals(extVersion.getDisplayName(), packageMetadata.displayName())) {
             throw new ErrorResultException("Display name in extension.vsixmanifest and package.json does not match.");
         }
     }

@@ -106,6 +106,14 @@ class PublishExtensionVersionHandlerTest {
 
             when(processor.getExtensionDependencies()).thenReturn(List.of());
             when(processor.getBundledExtensions()).thenReturn(List.of());
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"
+                    )
+            );
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
@@ -155,6 +163,15 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             mockExtensionVersion("publisher", "demo", "2.0.0", "test.svg", processor);
 
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"
+                    )
+            );
+
             var namespace = buildNamespace("publisher");
             var user = new UserData();
             var token = new PersonalAccessToken();
@@ -178,6 +195,15 @@ class PublishExtensionVersionHandlerTest {
             config.setUnsupportedIconFormats(List.of());
 
             var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", "test.svg", processor);
+
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"
+                    )
+            );
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
@@ -227,7 +253,7 @@ class PublishExtensionVersionHandlerTest {
             when(processor.getPackageMetadata()).thenReturn(
                     new ExtensionProcessor.PackageMetadata(
                             "publisher",
-                            "DemO",
+                            "DemO1",
                             "2.0.0",
                             "Demo OK"
                     )
