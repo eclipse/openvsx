@@ -23,6 +23,7 @@ ext['junit-jupiter.version'] = libs.versions.junit.get()
 // ext['netty.version'] = '4.1.132.Final'
 
 ext['postgresql.version'] = '42.7.11'
+ext['netty.version'] = '4.1.133.Final'
 
 java {
     sourceCompatibility = libs.versions.java.get()
