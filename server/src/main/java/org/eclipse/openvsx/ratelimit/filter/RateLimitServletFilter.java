@@ -75,18 +75,31 @@ public class RateLimitServletFilter extends OncePerRequestFilter implements Orde
         }
 
         var bucketPair = rateLimitService.getBucket(identity);
-        var bucket = bucketPair.bucket();
-        if (bucket == null) {
+        if (bucketPair.bucket() == null) {
             chain.doFilter(request, response);
             return;
         }
 
-        response.setHeader(HEADER_RATE_LIMIT_LIMIT, Long.toString(bucketPair.availableTokens()));
+        var bucket = bucketPair.bucket().asVerbose();
+        var minimumBandwidth = bucketPair.minimumBandwidth();
 
-        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-        logger.debug("Remaining tokens for {}: {}", identity.cacheKey(), probe.getRemainingTokens());
+        response.setHeader(HEADER_RATE_LIMIT_LIMIT, Long.toString(minimumBandwidth.availableTokens()));
+
+        var consumationResult = bucket.tryConsumeAndReturnRemaining(1);
+        var probe = consumationResult.getValue();
+
+        var availableTokens = consumationResult.getDiagnostics().getAvailableTokensPerEachBandwidth();
+        logger.debug("Remaining tokens for {}: {}", identity.cacheKey(), availableTokens);
+
         if (probe.isConsumed()) {
-            response.setHeader(HEADER_RATE_LIMIT_REMAINING, Long.toString(probe.getRemainingTokens()));
+            var remainingTokens = probe.getRemainingTokens();
+            var bandwidthIndex = minimumBandwidth.index();
+
+            if (bandwidthIndex >= 0 && bandwidthIndex < availableTokens.length) {
+                remainingTokens = availableTokens[bandwidthIndex];
+            }
+
+            response.setHeader(HEADER_RATE_LIMIT_REMAINING, Long.toString(remainingTokens));
             chain.doFilter(request, response);
         } else {
             handleHttpResponseOnRateLimiting(response, probe);

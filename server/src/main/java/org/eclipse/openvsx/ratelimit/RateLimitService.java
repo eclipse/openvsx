@@ -32,7 +32,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -57,19 +56,24 @@ public class RateLimitService {
         this.anonymousCustomer = customer;
     }
 
+    public record MinimumBandwidth(long availableTokens, int index) {}
+
     /**
      * A wrapper for {@link BucketConfiguration} objects as {@link ConcurrentHashMap}
      * does not support {@code null} values.
      */
-    public record BucketConfigurationWrapper(@Nullable BucketConfiguration configuration) {}
+    public record BucketConfigurationWrapper(
+            @Nullable BucketConfiguration configuration,
+            @Nullable MinimumBandwidth minimumBandwidth
+    ) {}
 
-    public record BucketPair(@Nullable Bucket bucket, long availableTokens) {
+    public record BucketPair(@Nullable Bucket bucket, MinimumBandwidth minimumBandwidth) {
         public static BucketPair empty() {
-            return new BucketPair(null, 0);
+            return new BucketPair(null, null);
         }
 
-        public static BucketPair of(@Nonnull Bucket bucket, long availableTokens) {
-            return new BucketPair(bucket, availableTokens);
+        public static BucketPair of(@Nonnull Bucket bucket, MinimumBandwidth minimumBandwidth) {
+            return new BucketPair(bucket, minimumBandwidth);
         }
     }
 
@@ -80,28 +84,54 @@ public class RateLimitService {
     }
 
     public BucketPair getBucket(ResolvedIdentity identity) {
-        var newConfiguration = getBucketConfiguration(identity);
-        if (newConfiguration == null) {
+        var wrapper = getBucketConfiguration(identity);
+        var newConfig = wrapper.configuration;
+        if (newConfig == null) {
             return BucketPair.empty();
         }
 
         var cacheKey = identity.cacheKey().getBytes(StandardCharsets.UTF_8);
         var currentConfiguration = proxyManager.getProxyConfiguration(cacheKey);
-        var bucket = proxyManager.builder().build(cacheKey, () -> newConfiguration);
-        if (currentConfiguration.isPresent() && !currentConfiguration.get().equals(newConfiguration)) {
+        var bucket = proxyManager.builder().build(cacheKey, () -> newConfig);
+        if (currentConfiguration.isPresent() && !currentConfiguration.get().equals(newConfig)) {
             logger.debug("Replace configuration for bucket {}", identity.cacheKey());
-            bucket.replaceConfiguration(newConfiguration, TokensInheritanceStrategy.AS_IS);
+            bucket.replaceConfiguration(newConfig, TokensInheritanceStrategy.AS_IS);
         }
-        var availableTokens = Arrays.stream(newConfiguration.getBandwidths()).mapToLong(Bandwidth::getCapacity).min();
-        return BucketPair.of(bucket, availableTokens.orElse(0));
+
+        return BucketPair.of(bucket, wrapper.minimumBandwidth);
     }
 
-    private @Nullable BucketConfiguration getBucketConfiguration(ResolvedIdentity identity) {
+    private BucketConfigurationWrapper getBucketConfiguration(ResolvedIdentity identity) {
         var customer = identity.customer() != null ? identity.customer() : anonymousCustomer;
         return configurationByCustomer.computeIfAbsent(
                 customer,
-                (_) -> new BucketConfigurationWrapper(createBucketConfiguration(identity))
-        ).configuration;
+                (_) -> {
+                    var config = createBucketConfiguration(identity);
+                    var minimumBandwidth = config != null ? calculateMinimumBandwidth(config) : null;
+                    return new BucketConfigurationWrapper(config, minimumBandwidth);
+                }
+        );
+    }
+
+    /**
+     * Calculate the minimum bandwidth from a {@code BucketConfiguration}
+     */
+    private MinimumBandwidth calculateMinimumBandwidth(BucketConfiguration configuration) {
+        // get the bandwidth with the minimum normalized capacity
+        var bandwidths = configuration.getBandwidths();
+        var minCapacity = Long.MAX_VALUE;
+        var minIndex = -1;
+        for (int i = 0; i < bandwidths.length; i++) {
+            var bandwidth = bandwidths[i];
+            var capacityPerNanos = bandwidth.getCapacity() / bandwidth.getRefillPeriodNanos();
+            if (capacityPerNanos < minCapacity) {
+                minCapacity = capacityPerNanos;
+                minIndex = i;
+            }
+        }
+
+        var availableTokens = minIndex != -1 ? bandwidths[minIndex].getCapacity() : 0;
+        return new MinimumBandwidth(availableTokens, minIndex);
     }
 
     private @Nullable BucketConfiguration createBucketConfiguration(ResolvedIdentity identity) {
