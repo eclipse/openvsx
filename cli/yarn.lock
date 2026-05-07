@@ -2148,7 +2148,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.14.6":
+"follow-redirects@npm:^1.16.0":
   version: 1.16.0
   resolution: "follow-redirects@npm:1.16.0"
   peerDependenciesMeta:
@@ -3419,7 +3419,7 @@ __metadata:
     "@vscode/vsce": "npm:^3.7.1"
     commander: "npm:^6.2.1"
     eslint: "npm:^9.15.0"
-    follow-redirects: "npm:^1.14.6"
+    follow-redirects: "npm:^1.16.0"
     is-ci: "npm:^2.0.0"
     leven: "npm:^3.1.0"
     limiter: "npm:^2.1.0"
