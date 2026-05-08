@@ -63,7 +63,8 @@ class RateLimitIntegrationTest {
         var bucket = Bucket.builder()
                 .addLimit(Bandwidth.builder().capacity(100).refillGreedy(100, Duration.ofHours(1)).build())
                 .build();
-        Mockito.when(rateLimitService.getBucket(any())).thenReturn(RateLimitService.BucketPair.of(bucket, 100));
+        Mockito.when(rateLimitService.getBucket(any()))
+                .thenReturn(RateLimitService.BucketPair.of(bucket, new RateLimitService.MinimumBandwidth(100, 0)));
 
         var identity = new ResolvedIdentity("1.2.3.4", "ip_1.2.3.4", null, null, null);
         Mockito.when(identityService.resolveIdentity(any())).thenReturn(identity);
