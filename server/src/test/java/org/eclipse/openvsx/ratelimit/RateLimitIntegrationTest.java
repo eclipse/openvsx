@@ -23,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import redis.clients.jedis.JedisCluster;
 
@@ -35,9 +34,9 @@ import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
         "ovsx.rate-limit.enabled=true",
-        "ovsx.rate-limit.filters[0].url=/(api|vscode)/.*"
+        "ovsx.rate-limit.filters[0].url=/(api|vscode)/.*",
+        "ovsx.elasticsearch.enabled=false"
 })
-@ActiveProfiles("test")
 class RateLimitIntegrationTest {
 
     @LocalServerPort
