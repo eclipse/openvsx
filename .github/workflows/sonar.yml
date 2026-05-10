@@ -36,6 +36,6 @@ jobs:
     - name: Copy server libraries
       run: find ~/.gradle/caches -type f -name '*.jar' -exec cp {} server/libraries \;
     - name: SonarCloud Scan
-      uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4  # v7.1.0
+      uses: SonarSource/sonarqube-scan-action@59db25f34e16620e48ab4bb9e4a5dce155cb5432  # v8.0.0
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
