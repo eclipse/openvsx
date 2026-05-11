@@ -45,6 +45,8 @@ class ExtensionScanServiceTest {
     @Mock
     ScannerRegistry scannerRegistry;
     @Mock
+    RemoteScanner remoteScanner;
+    @Mock
     JobRequestScheduler jobScheduler;
     @Mock
     ScannerJobRepository scanJobRepository;
@@ -89,6 +91,8 @@ class ExtensionScanServiceTest {
         failedJob.setScannerType("CLAMAV_REST");
         failedJob.setExtensionVersionId(987L);
         when(scanJobRepository.findByScanId("77")).thenReturn(List.of(failedJob));
+        when(scannerRegistry.getScanner("CLAMAV_REST")).thenReturn(remoteScanner);
+        when(remoteScanner.getMaxConcurrency()).thenReturn(0);
 
         svc.retryFailedJobs(scan);
 
@@ -137,6 +141,9 @@ class ExtensionScanServiceTest {
             return null;
         }).when(persistenceService).resetJobForRetry(eq(scan), any());
 
+        when(scannerRegistry.getScanner("CLAMAV_REST")).thenReturn(remoteScanner);
+        when(remoteScanner.getMaxConcurrency()).thenReturn(0);
+
         var result = svc.retryFailedJobs(scan);
 
         // The returned scan reflects the "now running" state the UI will display
@@ -165,6 +172,9 @@ class ExtensionScanServiceTest {
         var scan = scanWithStatus(8L, ScanStatus.ERRORED);
         var failedJob = job("8", ScannerJob.JobStatus.FAILED);
         doThrow(new RuntimeException("JobRunr unavailable")).when(jobScheduler).enqueue(any(ScannerInvocationRequest.class));
+
+        when(scannerRegistry.getScanner("CLAMAV_REST")).thenReturn(remoteScanner);
+        when(remoteScanner.getMaxConcurrency()).thenReturn(0);
 
         assertThatCode(() -> svc.retryFailedJob(scan, failedJob)).doesNotThrowAnyException();
 

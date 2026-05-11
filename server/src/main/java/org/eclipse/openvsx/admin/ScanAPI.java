@@ -613,7 +613,7 @@ public class ScanAPI {
 
             var updatedScan = scanService.retryFailedJobs(scan);
 
-            logs.logAction(adminUser, ResultJson.success("Retried failed scanner jobs for scan #" + scanId));
+            logs.logAction(adminUser, ResultJson.success("Retrying failed scanner jobs for scan #" + scanId));
             return ResponseEntity.ok(toScanResultJson(updatedScan));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ScanResultJson.class);

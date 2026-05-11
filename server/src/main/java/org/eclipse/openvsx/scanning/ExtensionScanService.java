@@ -269,20 +269,35 @@ public class ExtensionScanService {
     public void retryFailedJob(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
         if (job.getStatus().isActive()) {
             throw new ErrorResultException(
-                "Cannot retry: this job is currently in an active state (current: " + job.getStatus() + ")");
+                    "Cannot retry: this job is currently in an active state (current: " + job.getStatus() + ")"
+            );
         }
 
+        // reset the scan job for retry
         persistenceService.resetJobForRetry(scan, job);
 
-        try {
-            jobScheduler.enqueue(new ScannerInvocationRequest(
-                job.getScannerType(), job.getExtensionVersionId(), job.getScanId()));
-            
-            logger.info("Retried scanner job {} ({}) for scanId={}",
-                job.getId(), job.getScannerType(), job.getScanId());
-        } catch (Exception e) {
-            logger.error("Failed to enqueue retry for scanner {} (jobId={}, scanId={}): {}",
-                job.getScannerType(), job.getId(), job.getScanId(), e.getMessage());
+        var scanner = scannerRegistry.getScanner(job.getScannerType());
+        if (scanner == null) {
+            throw new ErrorResultException(
+                    String.format("Encountered unknown scanner type %s when retrying scan job with id %s",
+                            job.getScannerType(), job.getScanId()
+                    )
+            );
+        }
+
+        // Check if the scanner has a maxConcurrency set, in which case the invocation
+        // will be coordinated by the ScannerConcurrencyDispatcher, otherwise dispatch immediately
+        if (scanner.getMaxConcurrency() <= 0) {
+            try {
+                logger.info("Retrying scanner job {} ({}) for scanId={}, extension={}.{}",
+                        job.getId(), job.getScannerType(), job.getScanId(), scan.getNamespaceName(), scan.getExtensionName()
+                );
+                jobScheduler.enqueue(new ScannerInvocationRequest(job.getScannerType(), job.getExtensionVersionId(), job.getScanId()));
+            } catch (Exception e) {
+                logger.error("Failed to enqueue retry scanner job for scanner {} (jobId={}, scanId={}): {}",
+                        job.getScannerType(), job.getId(), job.getScanId(), e.getMessage()
+                );
+            }
         }
     }
 
@@ -319,10 +334,7 @@ public class ExtensionScanService {
             throw new ErrorResultException("No failed scanner jobs found for scan #" + scanId, HttpStatus.BAD_REQUEST);
         }
 
-        for (var failedJob : failedJobs) {
-            retryFailedJob(scan, failedJob);
-        }
-
+        failedJobs.forEach(failedJob -> retryFailedJob(scan, failedJob));
         return scan;
     }
 

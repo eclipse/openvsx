@@ -65,7 +65,6 @@ public interface ScanCheckResultRepository extends JpaRepository<ScanCheckResult
 
     /**
      * Delete the check result recorded for a specific scanner job.
-     * Used when a job is reset for retry so stale results don't persist.
      */
     void deleteByScannerJobId(Long scannerJobId);
 }

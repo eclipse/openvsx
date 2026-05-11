@@ -192,19 +192,10 @@ public class ExtensionScanPersistenceService {
         // Drop the stale check result so the retry's outcome is the only record the UI shows
         scanCheckResultRepository.deleteByScannerJobId(job.getId());
 
-        var now = TimeUtil.getCurrentUTC();
-        job.setStatus(ScannerJob.JobStatus.QUEUED);
-        job.setErrorMessage(null);
-        job.setExternalJobId(null);
-        job.setPollAttempts(0);
-        job.setPollLeaseUntil(null);
-        job.setRecoveryInProgress(false);
-        job.setUpdatedAt(now);
+        job.resetToQueued();
         scannerJobRepository.save(job);
 
-        scan.setStatus(ScanStatus.SCANNING);
-        scan.setCompletedAt(null);
-        scan.setErrorMessage(null);
+        scan.resetToScanning();
         repositories.saveExtensionScan(scan);
     }
 
@@ -604,10 +595,10 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Delete all scan-related data for a specific extension version.
-     * 
+     * <p>
      * This should be called when an extension version is deleted to prevent
      * orphaned scan jobs from trying to access deleted files.
-     * 
+     * <p>
      * Also marks any in-progress scans as ERRORED so they don't remain stuck.
      */
     @Transactional

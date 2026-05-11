@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
+import org.eclipse.openvsx.util.TimeUtil;
+
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -248,7 +250,24 @@ public class ScannerJob {
     public void setFileHashesJson(String fileHashesJson) {
         this.fileHashesJson = fileHashesJson;
     }
-    
+
+    /**
+     * Resets this {@code ScannerJob} instance back to status {@code QUEUED}
+     * to retry a specific scanner job.
+     */
+    public void resetToQueued() {
+        setStatus(ScannerJob.JobStatus.QUEUED);
+        setErrorMessage(null);
+        setExternalJobId(null);
+        setPollAttempts(0);
+        setPollLeaseUntil(null);
+        setRecoveryInProgress(false);
+
+        var now = TimeUtil.getCurrentUTC();
+        setCreatedAt(now);
+        setUpdatedAt(now);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
