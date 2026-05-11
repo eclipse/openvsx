@@ -18,6 +18,7 @@ import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.repositories.FileDecisionRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.repositories.ScanCheckResultRepository;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,13 +38,14 @@ class ExtensionScanPersistenceServiceTest {
     @Mock ObjectMapper objectMapper;
     @Mock FileDecisionRepository fileDecisionRepository;
     @Mock ScannerJobRepository scannerJobRepository;
+    @Mock ScanCheckResultRepository scanCheckResultRepository;
     @Mock ScannerRegistry scannerRegistry;
 
     private ExtensionScanPersistenceService svc;
 
     @BeforeEach
     void setUp() {
-        svc = new ExtensionScanPersistenceService(repositories, objectMapper, fileDecisionRepository, scannerJobRepository, scannerRegistry);
+        svc = new ExtensionScanPersistenceService(repositories, objectMapper, fileDecisionRepository, scannerJobRepository, scanCheckResultRepository, scannerRegistry);
     }
 
     @Test
@@ -82,6 +84,7 @@ class ExtensionScanPersistenceServiceTest {
         assertThat(scan.getCompletedAt()).isNull();
         assertThat(scan.getErrorMessage()).isNull();
 
+        verify(scanCheckResultRepository).deleteByScannerJobId(job.getId());
         verify(scannerJobRepository).save(job);
         verify(repositories).saveExtensionScan(scan);
     }

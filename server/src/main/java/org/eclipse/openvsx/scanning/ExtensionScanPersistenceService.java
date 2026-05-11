@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.FileDecisionRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.repositories.ScanCheckResultRepository;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
@@ -56,6 +57,7 @@ public class ExtensionScanPersistenceService {
     private final ObjectMapper objectMapper;
     private final FileDecisionRepository fileDecisionRepository;
     private final ScannerJobRepository scannerJobRepository;
+    private final ScanCheckResultRepository scanCheckResultRepository;
     private final ScannerRegistry scannerRegistry;
 
     public ExtensionScanPersistenceService(
@@ -63,12 +65,14 @@ public class ExtensionScanPersistenceService {
             ObjectMapper objectMapper,
             FileDecisionRepository fileDecisionRepository,
             ScannerJobRepository scannerJobRepository,
+            ScanCheckResultRepository scanCheckResultRepository,
             ScannerRegistry scannerRegistry
     ) {
         this.repositories = repositories;
         this.objectMapper = objectMapper;
         this.fileDecisionRepository = fileDecisionRepository;
         this.scannerJobRepository = scannerJobRepository;
+        this.scanCheckResultRepository = scanCheckResultRepository;
         this.scannerRegistry = scannerRegistry;
     }
 
@@ -185,6 +189,9 @@ public class ExtensionScanPersistenceService {
      */
     @Transactional(TxType.REQUIRES_NEW)
     public void resetJobForRetry(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
+        // Drop the stale check result so the retry's outcome is the only record the UI shows
+        scanCheckResultRepository.deleteByScannerJobId(job.getId());
+
         var now = TimeUtil.getCurrentUTC();
         job.setStatus(ScannerJob.JobStatus.QUEUED);
         job.setErrorMessage(null);
