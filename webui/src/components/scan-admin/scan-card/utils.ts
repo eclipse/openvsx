@@ -37,6 +37,12 @@ export const isRunning = (status: ScanResult['status']): boolean => {
     return status === 'STARTED' || status === 'VALIDATING' || status === 'SCANNING';
 };
 
+export const hasFailedScannerJobs = (scan: ScanResult): boolean => {
+    return scan.checkResults?.some(
+        checkResult => checkResult.category === 'SCANNER_JOB' && checkResult.result === 'ERROR'
+    ) ?? false;
+};
+
 /**
  * Determines whether the scan card badge/strip should show the striped effect.
  * Only shows striping when the hypothetical status would be DIFFERENT from the current status.

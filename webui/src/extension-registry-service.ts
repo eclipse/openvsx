@@ -511,6 +511,7 @@ export interface AdminService {
     revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all' }): Promise<Readonly<ScanResultsResponse>>
     getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
+    retryFailedScannerJobs(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
     getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>>
     getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>
     // Files API
@@ -721,6 +722,23 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId])
+        });
+    }
+
+    async retryFailedScannerJobs(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>> {
+        const csrfResponse = await this.registry.getCsrfToken(abortController);
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendRequest({
+            abortController,
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId, 'jobs', 'retry']),
+            headers,
         });
     }
 

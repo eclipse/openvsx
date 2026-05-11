@@ -12,8 +12,9 @@
  ********************************************************************************/
 
 import { FC } from 'react';
-import { Box, Typography, Collapse, Chip, Link } from '@mui/material';
+import { Box, Typography, Collapse, Chip, Link, Button, CircularProgress } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ReplayIcon from '@mui/icons-material/Replay';
 import { useTheme, Theme } from '@mui/material/styles';
 import { ScanResult, Threat, ValidationFailure, CheckResult } from '../../../context/scan-admin';
 import { ScanDetailCard } from './scan-detail-card';
@@ -22,6 +23,9 @@ import { formatDateTime } from '../common';
 interface ScanCardExpandedContentProps {
     scan: ScanResult;
     expanded: boolean;
+    canRetryFailedScannerJobs?: boolean;
+    isRetryingFailedScannerJobs?: boolean;
+    onRetryFailedScannerJobs?: () => void;
     onCollapseComplete?: () => void;
 }
 
@@ -227,7 +231,14 @@ const CheckResultItem: FC<CheckResultItemProps> = ({ checkResult }) => {
  * The expanded content section showing threats, validation failures, and check results.
  * Each item's enforcedFlag controls its individual striping effect.
  */
-export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({ scan, expanded, onCollapseComplete }) => {
+export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({
+    scan,
+    expanded,
+    canRetryFailedScannerJobs,
+    isRetryingFailedScannerJobs,
+    onRetryFailedScannerJobs,
+    onCollapseComplete,
+}) => {
     const theme = useTheme();
     const hasThreats = scan.threats.length > 0;
     const hasValidationFailures = scan.validationFailures.length > 0;
@@ -263,9 +274,31 @@ export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({ scan
                 {/* Check Results - What scans/checks were run */}
                 {hasCheckResults && (
                     <Box sx={{ mb: (hasThreats || hasValidationFailures) ? 2 : 0 }}>
-                        <Typography variant='subtitle2' sx={{ mb: 1.5, color: 'text.secondary' }}>
-                            Checks Executed
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 1.5 }}>
+                            <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>
+                                Checks Executed
+                            </Typography>
+                            {canRetryFailedScannerJobs && (
+                                <Button
+                                    variant='text'
+                                    color='secondary'
+                                    size='small'
+                                    onClick={onRetryFailedScannerJobs}
+                                    disabled={isRetryingFailedScannerJobs}
+                                    startIcon={isRetryingFailedScannerJobs
+                                        ? <CircularProgress size={14} color='inherit' />
+                                        : <ReplayIcon fontSize='small' />}
+                                    sx={{
+                                        textTransform: 'none',
+                                        minWidth: 'auto',
+                                        px: 1,
+                                        bgcolor: 'transparent',
+                                    }}
+                                >
+                                    {isRetryingFailedScannerJobs ? 'Retrying...' : 'Retry all failed scanner jobs'}
+                                </Button>
+                            )}
+                        </Box>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             {scan.checkResults.map((result, index) => (
                                 <CheckResultItem key={index} checkResult={result} />

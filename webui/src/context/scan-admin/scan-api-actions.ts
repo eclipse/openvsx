@@ -73,6 +73,33 @@ export const useConfirmAction = (
 };
 
 // ============================================================================
+// Retry Scanner Jobs Action Hook
+// ============================================================================
+
+/**
+ * Hook that returns the async action handler for retrying all failed scanner jobs
+ * of a single terminal scan.
+ */
+export const useRetryFailedScannerJobsAction = (
+    service: any,
+    dispatch: Dispatch<ScanAction>,
+    handleErrorRef: MutableRefObject<(error: any) => void>
+) => {
+    return useCallback(async (scanId: string): Promise<void> => {
+        const abortController = new AbortController();
+
+        try {
+            await service.admin.retryFailedScannerJobs(abortController, scanId);
+            dispatch({ type: 'TRIGGER_REFRESH' });
+        } catch (err: any) {
+            if (!abortController.signal.aborted) {
+                handleErrorRef.current(err);
+            }
+        }
+    }, [service, dispatch, handleErrorRef]);
+};
+
+// ============================================================================
 // File Action Hook
 // ============================================================================
 
