@@ -177,6 +177,31 @@ public class ExtensionScanPersistenceService {
     }
 
     /**
+     * Reset a FAILED scanner job back to QUEUED and flip the parent scan to
+     * SCANNING so the completion service will process it once the job finishes.
+     * <p>
+     * Caller is expected to have already validated that {@code job} belongs to
+     * {@code scan}, that the job is FAILED, and that the scan is terminal.
+     */
+    @Transactional(TxType.REQUIRES_NEW)
+    public void resetJobForRetry(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
+        var now = TimeUtil.getCurrentUTC();
+        job.setStatus(ScannerJob.JobStatus.QUEUED);
+        job.setErrorMessage(null);
+        job.setExternalJobId(null);
+        job.setPollAttempts(0);
+        job.setPollLeaseUntil(null);
+        job.setRecoveryInProgress(false);
+        job.setUpdatedAt(now);
+        scannerJobRepository.save(job);
+
+        scan.setStatus(ScanStatus.SCANNING);
+        scan.setCompletedAt(null);
+        scan.setErrorMessage(null);
+        repositories.saveExtensionScan(scan);
+    }
+
+    /**
      * Records a validation failure with the given check type.
      */
     @Transactional(TxType.REQUIRES_NEW)

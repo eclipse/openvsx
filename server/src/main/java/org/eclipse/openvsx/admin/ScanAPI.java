@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,6 +66,7 @@ public class ScanAPI {
     private final org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService;
     private final org.eclipse.openvsx.scanning.ScannerRegistry scannerRegistry;
     private final org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository;
+    private final org.eclipse.openvsx.scanning.ExtensionScanService scanService;
 
     public ScanAPI(
             RepositoryService repositories,
@@ -73,7 +75,8 @@ public class ScanAPI {
             StorageUtilService storageUtil,
             org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService,
             org.eclipse.openvsx.scanning.ScannerRegistry scannerRegistry,
-            org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository
+            org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository,
+            org.eclipse.openvsx.scanning.ExtensionScanService scanService
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -82,6 +85,7 @@ public class ScanAPI {
         this.completionService = completionService;
         this.scannerRegistry = scannerRegistry;
         this.scanJobRepository = scanJobRepository;
+        this.scanService = scanService;
     }
 
     /**
@@ -568,6 +572,51 @@ public class ScanAPI {
                 exc.getStatus() != null ? (HttpStatus) exc.getStatus() : HttpStatus.BAD_REQUEST,
                 exc.getMessage()
             );
+        }
+    }
+
+    /**
+     * Retry all failed scanner jobs for a terminal scan.
+     */
+    @PostMapping(
+        path = "/{scanId}/jobs/retry",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Retry all failed scanner jobs for a scan")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Failed jobs re-queued; returns the updated scan in SCANNING state",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ScanResultJson.class)
+        )
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "Scan is not terminal or has no failed jobs to retry",
+        content = @Content()
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Scan or scanner jobs were not found",
+        content = @Content()
+    )
+    public ResponseEntity<ScanResultJson> retryFailedScannerJobs(
+        @PathVariable @Parameter(description = "Scan ID", example = "123") long scanId
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+
+            var scan = Optional.ofNullable(repositories.findExtensionScan(scanId))
+                .orElseThrow(() -> new ErrorResultException("Scan not found: " + scanId, HttpStatus.NOT_FOUND));
+
+            var updatedScan = scanService.retryFailedJobs(scan);
+
+            logs.logAction(adminUser, ResultJson.success("Retried failed scanner jobs for scan #" + scanId));
+            return ResponseEntity.ok(toScanResultJson(updatedScan));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ScanResultJson.class);
         }
     }
 

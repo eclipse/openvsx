@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,6 +73,9 @@ class ScanAPITest {
 
     @MockitoBean
     org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository;
+
+    @MockitoBean
+    org.eclipse.openvsx.scanning.ExtensionScanService scanService;
 
     @Test
     void getScans_filters_sorting_and_pagination_are_applied() throws Exception {
@@ -383,6 +387,52 @@ class ScanAPITest {
         Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
 
         mockMvc.perform(get("/admin/scans").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns200_andDelegatesToService() throws Exception {
+        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        var scan = TestData.scan(5, "ns", "ext", "1.0.0", "pub", ScanStatus.ERRORED, LocalDateTime.of(2024, 12, 1, 10, 0));
+        Mockito.when(repositories.findExtensionScan(5L)).thenReturn(scan);
+        Mockito.when(scanService.retryFailedJobs(scan)).thenReturn(scan);
+        Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
+        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(org.springframework.data.util.Streamable.empty());
+        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(org.springframework.data.util.Streamable.empty());
+        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+
+        mockMvc.perform(post("/admin/scans/5/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+        Mockito.verify(scanService).retryFailedJobs(scan);
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns404_whenScanNotFound() throws Exception {
+        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        Mockito.when(repositories.findExtensionScan(99L)).thenReturn(null);
+
+        mockMvc.perform(post("/admin/scans/99/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns400_whenServiceRejectsRequest() throws Exception {
+        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        var scan = TestData.scan(3, "ns", "ext", "1.0.0", "pub", ScanStatus.SCANNING, LocalDateTime.of(2024, 12, 1, 10, 0));
+        Mockito.when(repositories.findExtensionScan(3L)).thenReturn(scan);
+        Mockito.when(scanService.retryFailedJobs(scan))
+            .thenThrow(new ErrorResultException("Cannot retry: scan is not terminal", HttpStatus.BAD_REQUEST));
+
+        mockMvc.perform(post("/admin/scans/3/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void retryFailedScannerJobs_requires_admin() throws Exception {
+        Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
+
+        mockMvc.perform(post("/admin/scans/1/jobs/retry").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isForbidden());
     }
 

@@ -22,6 +22,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nonnull;
@@ -253,6 +254,76 @@ public class ExtensionScanService {
             enqueuedCount, scanners.size(), NamingUtil.toLogFormat(extVersion), scanId);
 
         return true;
+    }
+
+    /**
+     * Retry a single FAILED scanner job for a terminal scan.
+     * <p>
+     * The job is moved back to QUEUED (preserving the row), the parent scan is
+     * flipped back to SCANNING so the completion service will pick up the
+     * result, and a fresh JobRunr request is enqueued.
+     *
+     * @throws ErrorResultException if the scan is not in a terminal state, the
+     *     job does not belong to the scan, or the job is not in FAILED status.
+     */
+    public void retryFailedJob(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
+        if (job.getStatus().isActive()) {
+            throw new ErrorResultException(
+                "Cannot retry: this job is currently in an active state (current: " + job.getStatus() + ")");
+        }
+
+        persistenceService.resetJobForRetry(scan, job);
+
+        try {
+            jobScheduler.enqueue(new ScannerInvocationRequest(
+                job.getScannerType(), job.getExtensionVersionId(), job.getScanId()));
+            
+            logger.info("Retried scanner job {} ({}) for scanId={}",
+                job.getId(), job.getScannerType(), job.getScanId());
+        } catch (Exception e) {
+            logger.error("Failed to enqueue retry for scanner {} (jobId={}, scanId={}): {}",
+                job.getScannerType(), job.getId(), job.getScanId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Retry all FAILED scanner jobs for a terminal scan.
+     *
+     * @return the scan after it has been flipped back to SCANNING
+     * @throws ErrorResultException if the scan is not terminal, has no jobs,
+     *     or has no failed jobs to retry.
+     */
+    public ExtensionScan retryFailedJobs(@Nonnull ExtensionScan scan) {
+        if (!scan.getStatus().isCompleted()) {
+            throw new ErrorResultException(
+                String.format(
+                    "Cannot retry failed jobs: scan #%d is not in a terminal state (current: %s)",
+                    scan.getId(),
+                    scan.getStatus()
+                ),
+                HttpStatus.BAD_REQUEST
+            );
+        }
+
+        String scanId = String.valueOf(scan.getId());
+        var jobs = scanJobRepository.findByScanId(scanId);
+        if (jobs.isEmpty()) {
+            throw new ErrorResultException("No scanner jobs found for scan #" + scanId, HttpStatus.NOT_FOUND);
+        }
+
+        var failedJobs = jobs.stream()
+            .filter(job -> job.getStatus() == ScannerJob.JobStatus.FAILED)
+            .toList();
+
+        if (failedJobs.isEmpty()) {
+            throw new ErrorResultException("No failed scanner jobs found for scan #" + scanId, HttpStatus.BAD_REQUEST);
+        }
+
+        for (var failedJob : failedJobs) {
+            retryFailedJob(scan, failedJob);
+        }
+
+        return scan;
     }
 
     /**
