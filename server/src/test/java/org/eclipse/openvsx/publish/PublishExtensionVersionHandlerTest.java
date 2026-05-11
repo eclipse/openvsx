@@ -275,19 +275,6 @@ class PublishExtensionVersionHandlerTest {
             assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Extension version in extension.vsixmanifest");
-
-            when(processor.getPackageMetadata()).thenReturn(
-                    new ExtensionProcessor.PackageMetadata(
-                            "publisher",
-                            "demo",
-                            "2.0.0",
-                            "Demo Not OK"
-                    )
-            );
-
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
-                    .isInstanceOf(ErrorResultException.class)
-                    .hasMessageContaining("Display name in extension.vsixmanifest");
         }
     }
 

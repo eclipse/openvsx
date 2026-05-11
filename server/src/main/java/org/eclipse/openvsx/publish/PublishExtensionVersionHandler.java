@@ -236,9 +236,11 @@ public class PublishExtensionVersionHandler {
             throw new ErrorResultException("Extension version in extension.vsixmanifest and package.json does not match.");
         }
 
-        if (!Strings.CI.equals(extVersion.getDisplayName(), packageMetadata.displayName())) {
-            throw new ErrorResultException("Display name in extension.vsixmanifest and package.json does not match.");
-        }
+        // Do not check if the displayName property is equal as it is not fully understood yet how VS Code / vsce processes
+        // that property. There are some projects, where the value is `%displayName%` and publication will fail.
+        // if (!Strings.CI.equals(extVersion.getDisplayName(), packageMetadata.displayName())) {
+        //    throw new ErrorResultException("Display name in extension.vsixmanifest and package.json does not match.");
+        // }
     }
 
     private void validateLicense(ExtensionProcessor processor, ExtensionVersion extVersion) {
