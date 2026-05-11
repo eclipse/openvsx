@@ -2,6 +2,12 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [next] (unreleased)
+
+#### Dependencies
+
+- Bump fast-uri from `3.1.0` to `3.1.2` ([#1829](https://github.com/eclipse/openvsx/pull/1829))
+
 ### [v0.10.12] (08/05/2026)
 
 #### Dependencies
