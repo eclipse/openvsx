@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.featureflag;
+package org.eclipse.openvsx.settings;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -23,21 +23,17 @@ import org.springframework.http.ResponseEntity;
 @Component
 public class ReadOnlyEndpointAspect {
 
-    private final FeatureFlagService featureFlagService;
+    private final SettingsService settingsService;
 
-    public ReadOnlyEndpointAspect(FeatureFlagService featureFlagService) {
-        this.featureFlagService = featureFlagService;
+    public ReadOnlyEndpointAspect(SettingsService settingsService) {
+        this.settingsService = settingsService;
     }
 
     @Around("(execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.RegistryAPI.*(..)) ||" +
-            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.AdminAPI.*(..)) ||" +
-            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.FileDecisionAPI.*(..)) ||" +
-            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.RateLimitAPI.*(..)) ||" +
-            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.ScanAPI.*(..)) ||" +
-            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.UserAPI.*(..))) &&" +
-            "@annotation(MutatingOperation)")
+            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.UserAPI.*(..))  ||" +
+            " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.*API.*(..))) && @annotation(MutatingOperation)")
     public Object handleMutatingEndpoint(ProceedingJoinPoint joinPoint) throws Throwable {
-        if (featureFlagService.isRegistryReadOnly()) {
+        if (settingsService.isRegistryReadOnly()) {
             return ResponseEntity.status(409).body(ResultJson.error("Registry is in read-only mode."));
         } else {
             return joinPoint.proceed();
