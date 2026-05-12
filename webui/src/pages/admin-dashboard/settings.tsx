@@ -15,15 +15,14 @@ import { ChangeEvent, FC, useCallback, useContext, useEffect, useRef, useState }
 import {
     Alert,
     Box,
-    Divider,
     Paper,
     Stack,
     Typography,
 } from '@mui/material';
 import { MainContext } from '../../context';
-import type { RuntimeFeatureFlags } from '../../extension-registry-types';
+import type { Settings } from '../../extension-registry-types';
 import { handleError } from '../../utils';
-import { RuntimeFeatureFlagItem } from './runtime-feature-flag-item';
+import { SettingsItem } from './settings-item';
 
 interface NotificationState {
     id: string;
@@ -34,8 +33,8 @@ interface NotificationState {
 
 const NOTIFICATION_TIMEOUT = 5000;
 
-const FEATURE_FLAGS: Record<keyof RuntimeFeatureFlags, { title: string; description: string }> = {
-    readOnlyMode: {
+const SETTINGS: Record<keyof Settings, { title: string; description: string }> = {
+    readOnly: {
         title: 'Read-only mode',
         description: 'Blocks write operations while keeping browsing, search, and downloads available.',
     },
@@ -45,7 +44,7 @@ export const RuntimeFeatureFlagsPage: FC = () => {
     const abortController = useRef<AbortController>(new AbortController());
     const { service } = useContext(MainContext);
 
-    const [featureFlags, setFeatureFlags] = useState<RuntimeFeatureFlags | null>(null);
+    const [settings, setSettings] = useState<Settings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -59,8 +58,8 @@ export const RuntimeFeatureFlagsPage: FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await service.admin.getRuntimeFeatureFlags(abortController.current);
-            setFeatureFlags(data);
+            const data = await service.admin.getSettings(abortController.current);
+            setSettings(data);
         } catch (err) {
             setError(handleError(err as Error));
         } finally {
@@ -92,30 +91,30 @@ export const RuntimeFeatureFlagsPage: FC = () => {
         });
     };
 
-    const handleFlagChange = useCallback((key: keyof RuntimeFeatureFlags) => async (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
-        if (!featureFlags || saving) return;
+    const handleFlagChange = useCallback((key: keyof Settings) => async (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        if (!settings || saving) return;
 
-        const previousFeatureFlags = featureFlags;
-        const nextFeatureFlags: RuntimeFeatureFlags = { ...featureFlags, [key]: checked };
+        const previousSettings = settings;
+        const nextSettings: Settings = { ...settings, [key]: checked };
 
-        setFeatureFlags(nextFeatureFlags);
+        setSettings(nextSettings);
         setSaving(true);
         setError(null);
 
         try {
-            const updatedFeatureFlags = await service.admin.updateRuntimeFeatureFlags(abortController.current, nextFeatureFlags);
-            setFeatureFlags(updatedFeatureFlags);
+            const updatedSettings = await service.admin.updateSettings(abortController.current, nextSettings);
+            setSettings(updatedSettings);
             addNotification({ severity: 'success', message: 'Runtime feature flags saved.' });
         } catch (err) {
-            setFeatureFlags(previousFeatureFlags);
+            setSettings(previousSettings);
             addNotification({
                 severity: 'error',
-                message: `Failed to save runtime feature flags. ${handleError(err as Error)}`,
+                message: `Failed to save runtime settings. ${handleError(err as Error)}`,
             });
         } finally {
             setSaving(false);
         }
-    }, [featureFlags, saving, service, addNotification]);
+    }, [settings, saving, service, addNotification]);
 
     return (
         <>
@@ -136,14 +135,14 @@ export const RuntimeFeatureFlagsPage: FC = () => {
                 )}
 
                 <Paper variant='outlined' elevation={0} sx={{ overflow: 'hidden' }}>
-                    {(Object.entries(FEATURE_FLAGS) as [keyof RuntimeFeatureFlags, { title: string; description: string }][]).map(([key, flag]) => (
-                        <RuntimeFeatureFlagItem
+                    {(Object.entries(SETTINGS) as [keyof Settings, { title: string; description: string }][]).map(([key, flag]) => (
+                        <SettingsItem
                             key={key}
                             title={flag.title}
                             description={flag.description}
-                            checked={featureFlags?.[key] ?? false}
-                            loading={loading || !featureFlags}
-                            disabled={loading || saving || !featureFlags}
+                            checked={settings?.[key] ?? false}
+                            loading={loading || !settings}
+                            disabled={loading || saving || !settings}
                             onChange={handleFlagChange(key)}
                         />
                     ))}

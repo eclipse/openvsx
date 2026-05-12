@@ -43,7 +43,7 @@ import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
 import { CustomerDetails } from './customers/customer-details';
 import { Logs } from './logs/logs';
-import { RuntimeFeatureFlagsPage } from './runtime-feature-flags';
+import { RuntimeFeatureFlagsPage } from './settings';
 import { Welcome } from './welcome';
 
 const ExtensionAdmin = lazy(() => import('./extension-admin').then(m => ({ default: m.ExtensionAdmin })));
@@ -63,7 +63,7 @@ const navConfig: NavEntry[] = [
             { path: AdminDashboardRoutes.USAGE_STATS, name: 'Usage Stats', icon: <BarChartIcon />, description: 'Show usage stats for customers' },
         ],
     },
-    { path: AdminDashboardRoutes.RUNTIME_FEATURE_FLAGS, name: 'Settings', icon: <SettingsIcon />, description: 'Manage runtime feature flags for the registry' },
+    { path: AdminDashboardRoutes.SETTINGS, name: 'Settings', icon: <SettingsIcon />, description: 'Manage runtime feature flags for the registry' },
     { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' },
 ];
 
