@@ -13,7 +13,7 @@
 package org.eclipse.openvsx.admin;
 
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.featureflag.MutatingOperation;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.cache.RateLimitCacheService;

@@ -10,17 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.featureflag;
+package org.eclipse.openvsx.settings;
 
-import org.springframework.stereotype.Service;
+import java.lang.annotation.*;
 
-@Service
-public class FeatureFlagService {
-
-    public FeatureFlagService() {}
-
-    public boolean isRegistryReadOnly() {
-        // TODO: implement this
-        return true;
-    }
-}
+/**
+ * A marker annotation to indicate an operation that mutates the DB.
+ */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface MutatingOperation {}

@@ -10,11 +10,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.featureflag;
+package org.eclipse.openvsx.settings;
 
-import java.lang.annotation.*;
+import org.springframework.stereotype.Service;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface MutatingOperation {}
+@Service
+public class SettingsService {
+
+    public SettingsService() {}
+
+    public boolean isRegistryReadOnly() {
+        // TODO: implement this
+        return true;
+    }
+}

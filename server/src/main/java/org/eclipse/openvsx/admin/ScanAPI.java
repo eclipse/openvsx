@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.featureflag.MutatingOperation;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
