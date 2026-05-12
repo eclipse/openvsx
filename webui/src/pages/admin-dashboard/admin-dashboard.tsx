@@ -26,6 +26,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import SecurityIcon from '@mui/icons-material/Security';
+import SettingsIcon from '@mui/icons-material/Settings';
 import SpeedIcon from '@mui/icons-material/Speed';
 import StarIcon from '@mui/icons-material/Star';
 import { LoginComponent } from "../../default/login";
@@ -42,6 +43,7 @@ import { Tiers } from './tiers/tiers';
 import { Customers } from './customers/customers';
 import { CustomerDetails } from './customers/customer-details';
 import { Logs } from './logs/logs';
+import { RuntimeFeatureFlagsPage } from './runtime-feature-flags';
 import { Welcome } from './welcome';
 
 const ExtensionAdmin = lazy(() => import('./extension-admin').then(m => ({ default: m.ExtensionAdmin })));
@@ -61,6 +63,7 @@ const navConfig: NavEntry[] = [
             { path: AdminDashboardRoutes.USAGE_STATS, name: 'Usage Stats', icon: <BarChartIcon />, description: 'Show usage stats for customers' },
         ],
     },
+    { path: AdminDashboardRoutes.RUNTIME_FEATURE_FLAGS, name: 'Settings', icon: <SettingsIcon />, description: 'Manage runtime feature flags for the registry' },
     { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' },
 ];
 
@@ -136,6 +139,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                                     <Route path='/customers/:customer' element={<CustomerDetails/>} />
                                     <Route path='/usage' element={<UsageStatsView/>} />
                                     <Route path='/usage/:customer' element={<UsageStatsView/>} />
+                                    <Route path='/settings' element={<RuntimeFeatureFlagsPage/>} />
                                     <Route path='/logs' element={<Logs/>} />
                                     <Route path='*' element={<Welcome items={navConfig} />} />
                                 </Routes>
