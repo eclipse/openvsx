@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
+import org.eclipse.openvsx.featureflag.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
@@ -1095,6 +1096,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(summary = "Create a namespace")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully created the namespace",
@@ -1155,6 +1157,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully created the namespace",
@@ -1222,6 +1225,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully published the extension",
@@ -1269,6 +1273,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully published the extension",
@@ -1315,6 +1320,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
+    @MutatingOperation
     public ResponseEntity<ResultJson> postReview(
             @RequestBody(required = false) ReviewJson review,
             @PathVariable String namespace,
@@ -1349,6 +1355,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace, @PathVariable String extension) {
         var json = local.deleteReview(namespace, extension);
         if (json.getError() == null) {
