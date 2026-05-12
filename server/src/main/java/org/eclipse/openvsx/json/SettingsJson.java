@@ -10,29 +10,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.json;
 
-import org.eclipse.openvsx.json.SettingsJson;
-import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-@Service
-public class SettingsService {
 
-    private boolean readOnlyMode = false;
+@JsonInclude(Include.NON_NULL)
+public class SettingsJson extends ResultJson {
 
-    public SettingsService() {}
+    private boolean readOnly;
 
     public boolean isReadOnly() {
-        return readOnlyMode;
+        return readOnly;
     }
 
-    public SettingsJson getCurrent() {
-        var json = new SettingsJson();
-        json.setReadOnly(isReadOnly());
-        return json;
-    }
-
-    public void updateFromJson(SettingsJson newSettings) {
-        readOnlyMode = newSettings.isReadOnly();
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
     }
 }

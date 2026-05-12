@@ -501,6 +501,6 @@ export interface LogPageableList {
     };
 }
 
-export interface RuntimeFeatureFlags {
-    readOnlyMode: boolean;
+export interface Settings {
+    readOnly: boolean;
 }

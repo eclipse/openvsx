@@ -16,7 +16,7 @@ import {
     FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
     FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse,
     Tier, TierList, Customer, CustomerList, UsageStatsList, LogPageableList, CustomerMembershipList, RateLimitToken,
-    RuntimeFeatureFlags,
+    Settings,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse } from './server-request';
@@ -539,8 +539,8 @@ export interface AdminService {
     getCustomerRateLimitTokens(abortController: AbortController, customerName: string): Promise<Readonly<RateLimitToken[]>>;
     createCustomerRateLimitToken(abortController: AbortController, customerName: string, description: string): Promise<Readonly<RateLimitToken>>;
     deleteCustomerRateLimitToken(abortController: AbortController, customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
-    getRuntimeFeatureFlags(abortController: AbortController): Promise<Readonly<RuntimeFeatureFlags>>;
-    updateRuntimeFeatureFlags(abortController: AbortController, featureFlags: RuntimeFeatureFlags): Promise<Readonly<RuntimeFeatureFlags>>;
+    getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
+    updateSettings(abortController: AbortController, settings: Settings): Promise<Readonly<Settings>>;
 }
 
 export interface AdminServiceConstructor {
@@ -1153,15 +1153,15 @@ export class AdminServiceImpl implements AdminService {
         }, false);
     }
 
-    async getRuntimeFeatureFlags(abortController: AbortController): Promise<Readonly<RuntimeFeatureFlags>> {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => resolve({
-                readOnlyMode: false
-              }), 1000);
-        });
+    async getSettings(abortController: AbortController): Promise<Readonly<Settings>> {
+        return sendRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
+        }, false);
     }
 
-    async updateRuntimeFeatureFlags(abortController: AbortController, featureFlags: RuntimeFeatureFlags): Promise<Readonly<RuntimeFeatureFlags>> {
+    async updateSettings(abortController: AbortController, settings: Settings): Promise<Readonly<Settings>> {
         const csrfResponse = await this.registry.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -1174,9 +1174,9 @@ export class AdminServiceImpl implements AdminService {
         return sendRequest({
             abortController,
             method: 'PUT',
-            payload: featureFlags,
+            payload: settings,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'feature-flags']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
             headers
         }, false);
     }
