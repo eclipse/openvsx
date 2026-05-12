@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.featureflag.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -584,6 +585,7 @@ public class ScanAPI {
     )
     @CrossOrigin
     @Operation(summary = "Retry all failed scanner jobs for a scan")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Failed jobs re-queued; returns the updated scan in SCANNING state",
@@ -641,6 +643,7 @@ public class ScanAPI {
     )
     @CrossOrigin
     @Operation(summary = "Make security decisions for quarantined scans")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Decisions processed successfully",

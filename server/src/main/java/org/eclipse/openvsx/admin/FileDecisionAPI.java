@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.featureflag.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -180,6 +181,7 @@ public class FileDecisionAPI {
     )
     @CrossOrigin
     @Operation(summary = "Create or update file decisions")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Decisions processed successfully",
@@ -263,6 +265,7 @@ public class FileDecisionAPI {
     )
     @CrossOrigin
     @Operation(summary = "Remove file decisions")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Deletions processed successfully",

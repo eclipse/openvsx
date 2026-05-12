@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.featureflag.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -163,6 +164,7 @@ public class UserAPI {
         path = "/user/token/create",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<AccessTokenJson> createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
             var json = AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
@@ -180,6 +182,7 @@ public class UserAPI {
         path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteAccessToken(@PathVariable long id) {
         var user = users.findLoggedInUser();
         if (user == null) {
@@ -345,6 +348,7 @@ public class UserAPI {
             path = "/user/extension/{namespaceName}/{extensionName}/delete",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteExtension(
             @PathVariable String namespaceName,
             @PathVariable String extensionName,
@@ -400,6 +404,7 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/details",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> updateNamespaceDetails(@RequestBody NamespaceDetailsJson details) {
         var user = users.findLoggedInUser();
         if (user == null) {
@@ -423,6 +428,7 @@ public class UserAPI {
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> updateNamespaceDetailsLogo(
             @PathVariable String namespace,
             @RequestParam MultipartFile file
@@ -464,6 +470,7 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
             @RequestParam String role, @RequestParam(required = false) String provider) {
         var requestingUser = users.findLoggedInUser();

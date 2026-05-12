@@ -21,6 +21,7 @@ import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
+import org.eclipse.openvsx.featureflag.MutatingOperation;
 import org.eclipse.openvsx.json.AdminStatisticsJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -290,6 +291,7 @@ public class AdminAPI {
     )
     @CrossOrigin
     @Operation(summary = "Delete an extension or one or multiple extension versions")
+    @MutatingOperation
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format",
@@ -324,6 +326,7 @@ public class AdminAPI {
             path = "/admin/extension/{namespaceName}/{extensionName}/delete",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteExtension(
             @PathVariable String namespaceName,
             @PathVariable String extensionName,
@@ -344,6 +347,7 @@ public class AdminAPI {
     )
     @CrossOrigin
     @Operation(summary = "Delete a review for an extension by a user")
+    @MutatingOperation
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format",
@@ -405,6 +409,7 @@ public class AdminAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> createNamespace(@RequestBody NamespaceJson namespace) {
         try {
             admins.checkAdminUser();
@@ -422,6 +427,7 @@ public class AdminAPI {
             path = "/admin/namespace/{namespaceName}"
     )
     @Operation(summary = "Delete a namespace")
+    @MutatingOperation
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format"
@@ -453,6 +459,7 @@ public class AdminAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> changeNamespace(@RequestBody ChangeNamespaceJson json) {
         try {
             admins.checkAdminUser();
@@ -510,6 +517,7 @@ public class AdminAPI {
     )
     @CrossOrigin
     @Operation(summary = "Edit a member of a namespace")
+    @MutatingOperation
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format",
@@ -545,6 +553,7 @@ public class AdminAPI {
         path = "/admin/namespace/{namespaceName}/change-member",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> editNamespaceMember(
             @PathVariable String namespaceName,
             @RequestParam("user") String userName,
@@ -578,6 +587,7 @@ public class AdminAPI {
         path = "/admin/publisher/{provider}/{loginName}/revoke",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> revokePublisherContributions(@PathVariable String loginName, @PathVariable String provider) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -592,6 +602,7 @@ public class AdminAPI {
             path = "/admin/publisher/{provider}/{loginName}/tokens/revoke",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> revokePublisherTokens(@PathVariable String loginName, @PathVariable String provider) {
         try {
             var adminUser = admins.checkAdminUser();
