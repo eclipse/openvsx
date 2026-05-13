@@ -56,6 +56,8 @@ public abstract class JedisClusterChannelListener extends JedisPubSub {
         }
     }
 
+    public abstract void onMessage(String channel, String message);
+
     private void subscribeLoop() {
         AtomicInteger backoffMs = new AtomicInteger(1000);
         try (var executor = Executors.newSingleThreadScheduledExecutor(
