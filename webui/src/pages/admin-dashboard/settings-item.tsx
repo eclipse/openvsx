@@ -12,7 +12,7 @@
  *****************************************************************************/
 
 import { ChangeEvent, FC } from 'react';
-import { Box, Skeleton, Switch, Typography } from '@mui/material';
+import { Box, Skeleton, Switch, Typography, FormGroup, FormControlLabel } from '@mui/material';
 
 export interface SettingsItemProps {
     title: string;
@@ -54,11 +54,13 @@ export const SettingsItem: FC<SettingsItemProps> = ({
             {(loading) ? (
                 <Skeleton variant='rounded' width={60} height={24}/>
             ) : (
-                <Switch
-                    checked={checked}
-                    onChange={onChange}
-                    disabled={disabled}
-                    inputProps={{ 'aria-label': `Toggle ${title}` }}/>
+                <FormGroup>
+                    <FormControlLabel control={<Switch checked={checked}
+                                                       onChange={onChange}
+                                                       disabled={disabled}
+                                                       inputProps={{ 'aria-label': `Toggle ${title}` }} />}
+                                      label={checked ? "Enabled" : "Disabled"} />
+                </FormGroup>
             )}
 
             <Typography variant='body2' color='text.secondary'
