@@ -38,6 +38,7 @@ public class CacheService {
     public static final String CACHE_AVERAGE_REVIEW_RATING = "average.review.rating";
     public static final String CACHE_SITEMAP = "sitemap";
     public static final String CACHE_MALICIOUS_EXTENSIONS = "malicious.extensions";
+    public static final String CACHE_SETTING = "settings";
 
     public static final String GENERATOR_EXTENSION_JSON = "extensionJsonCacheKeyGenerator";
     public static final String GENERATOR_LATEST_EXTENSION_VERSION = "latestExtensionVersionCacheKeyGenerator";
@@ -88,7 +89,7 @@ public class CacheService {
 
     private void evictNamespaceDetails(String namespaceName) {
         var cache = cacheManager.getCache(CACHE_NAMESPACE_DETAILS_JSON);
-        if(cache == null) {
+        if (cache == null) {
             return; // cache is not created
         }
 
@@ -220,7 +221,7 @@ public class CacheService {
 
     private void invalidateCache(String cacheName) {
         var cache = cacheManager.getCache(cacheName);
-        if(cache == null) {
+        if (cache == null) {
             return;
         }
 
@@ -229,7 +230,7 @@ public class CacheService {
 
     public void evictExtensionFile(FileResource download) {
         var cache = fileCacheManager.getCache(CACHE_EXTENSION_FILES);
-        if(cache == null) {
+        if (cache == null) {
             return;
         }
 
@@ -239,7 +240,7 @@ public class CacheService {
     @Observed
     public void evictWebResourceFile(String namespaceName, String extensionName, String targetPlatform, String version, String path) {
         var cache = fileCacheManager.getCache(CACHE_WEB_RESOURCE_FILES);
-        if(cache == null) {
+        if (cache == null) {
             return;
         }
 

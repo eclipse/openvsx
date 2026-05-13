@@ -609,7 +609,7 @@ public class AdminAPI {
     public ResponseEntity<SettingsJson> getSettings() {
         try {
             admins.checkAdminUser();
-            return ResponseEntity.ok(settings.getCurrent());
+            return ResponseEntity.ok(settings.getCurrentSettings());
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(SettingsJson.class);
         }
@@ -624,11 +624,9 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkAdminUser();
 
-            settings.updateFromJson(newSettings);
-
-            var json = settings.getCurrent();
-            // TODO: indicate in the logs which setting was changed
-            json.setSuccess("Updated runtime settings");
+            var changes = settings.updateFromJson(newSettings);
+            var json = settings.getCurrentSettings();
+            json.setSuccess("Updated settings: " + changes);
             logs.logAction(adminUser, json);
 
             return ResponseEntity.ok(json);
