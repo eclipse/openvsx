@@ -43,12 +43,12 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
     @Override
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         var items = repositories.findNotMigratedItems(PageRequest.ofSize(25000));
-        for(var item : items) {
+        for (var item : items) {
             migrations.enqueueMigration(item);
         }
 
         logger.info("Scheduled migration items: {}", items.getNumberOfElements());
-        if(!items.hasNext()) {
+        if (!items.hasNext()) {
             logger.info("Migration completed, deleting recurring job");
             scheduler.deleteScheduleMigrationItemsJob();
         }

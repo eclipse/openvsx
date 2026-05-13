@@ -77,6 +77,7 @@ import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.CdnServiceConfig;
@@ -117,10 +118,11 @@ import jakarta.persistence.EntityManager;
 @AutoConfigureWebClient
 @MockitoBean(types = {
     ClientRegistrationRepository.class, UpstreamRegistryService.class, GoogleCloudStorageService.class,
-    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class, ExtensionDownloadMetrics.class,
-    CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class, EclipseService.class,
-    SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
-    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class
+    AzureBlobStorageService.class, AwsStorageService.class, VSCodeIdService.class, DownloadCountService.class,
+    ExtensionDownloadMetrics.class, CacheService.class, PublishExtensionVersionHandler.class, SearchUtilService.class,
+    EclipseService.class, SimpleMeterRegistry.class, FileCacheDurationConfig.class, MailService.class, CdnServiceConfig.class,
+    ExtensionScanService.class, ExtensionScanPersistenceService.class, LogService.class, AccessTokenConfig.class,
+    SettingsService.class
 })
 class AdminAPITest {
     
