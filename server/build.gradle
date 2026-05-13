@@ -48,27 +48,20 @@ configurations {
     devImplementation.extendsFrom implementation
     devRuntimeOnly.extendsFrom runtimeOnly
 
-    gatling.exclude group: "io.gatling.highcharts", module: "gatling-charts-highcharts"
-
     // exclude commons-logging to avoid runtime warnings like these
     // Standard Commons Logging discovery in action with spring-jcl:
     //    please remove commons-logging.jar from classpath in order to avoid potential conflicts
     configureEach {
         exclude group: "commons-logging", module: "commons-logging"
     }
-}
 
-dependencyManagement {
-    gatling {
-        dependencies {
-            dependencySet(group: 'io.netty', version: '4.2.13.Final') {
-                entry 'netty-codec-http'
-                entry 'netty-codec'
-                entry 'netty-handler'
-                entry 'netty-buffer'
-                entry 'netty-transport'
-                entry 'netty-common'
-                entry 'netty-transport-native-epoll'
+    // Gatling 3.15 requires Netty 4.2.x but Spring Boot's dependency management forces 4.1.x.
+    // Override all io.netty modules (except tcnative which has its own versioning) on the
+    // gatling configuration to keep its classpath internally consistent.
+    matching { it.name.startsWith('gatling') }.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'io.netty' && !details.requested.name.startsWith('netty-tcnative')) {
+                details.useVersion '4.2.10.Final'
             }
         }
     }
@@ -271,6 +264,80 @@ tasks.withType(ScalaCompile).configureEach {
     scalaCompileOptions.forkOptions.with {
         jvmArgs = ['-Xss100m'] // Scala compiler may require a larger stack size when compiling Gatling simulations
     }
+}
+
+import io.gatling.gradle.GatlingRunTask
+
+// Per-simulation GatlingRunTask instances. Aggregator tasks below pull them
+// in via dependsOn. The plugin's includes/excludes filter isn't exposed
+// per-task, so we register one task per simulation explicitly.
+def gatlingSimulationGroups = [
+    fillDatabase: [
+        'org.eclipse.openvsx.RegistryAPICreateNamespaceSimulation',
+        'org.eclipse.openvsx.RegistryAPIPublishExtensionSimulation',
+    ],
+    registryApi: [
+        'org.eclipse.openvsx.RegistryAPIGetNamespaceSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetNamespaceDetailsSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetExtensionSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetExtensionTargetPlatformSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetExtensionVersionSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetExtensionVersionTargetPlatformSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetVersionReferencesSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetVersionReferencesTargetPlatformSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetFileSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetFileTargetPlatformSimulation',
+        'org.eclipse.openvsx.RegistryAPIGetQuerySimulation',
+        'org.eclipse.openvsx.RegistryAPIGetQueryV2Simulation',
+        'org.eclipse.openvsx.RegistryAPISearchSimulation',
+        'org.eclipse.openvsx.RegistryAPIVerifyTokenSimulation',
+    ],
+    vscodeAdapter: [
+        'org.eclipse.openvsx.adapter.VSCodeAdapterExtensionQuerySimulation',
+        'org.eclipse.openvsx.adapter.VSCodeAdapterGetAssetSimulation',
+        'org.eclipse.openvsx.adapter.VSCodeAdapterGetWebResourceSimulation',
+        'org.eclipse.openvsx.adapter.VSCodeAdapterItemSimulation',
+        'org.eclipse.openvsx.adapter.VSCodeAdapterUnpkgSimulation',
+        'org.eclipse.openvsx.adapter.VSCodeAdapterVspackageSimulation',
+    ],
+]
+
+def simTaskName = { String fqcn -> "gatling${fqcn.tokenize('.').last()}" as String }
+
+gatlingSimulationGroups.values().flatten().each { String fqcn ->
+    tasks.register(simTaskName(fqcn), GatlingRunTask) {
+        simulationClassName = fqcn
+        nonInteractive = true
+    }
+}
+
+// Within fillDatabase, namespaces must be created before extensions can be published.
+tasks.named(simTaskName('org.eclipse.openvsx.RegistryAPIPublishExtensionSimulation')).configure {
+    mustRunAfter simTaskName('org.eclipse.openvsx.RegistryAPICreateNamespaceSimulation')
+}
+
+tasks.register('perfFillDatabase') {
+    description = 'Populates the DB: creates namespaces then publishes extensions'
+    group = 'Performance testing'
+    dependsOn gatlingSimulationGroups.fillDatabase.collect(simTaskName)
+}
+
+tasks.register('perfTestRegistryApi') {
+    description = 'Runs read-only Gatling simulations against the registry API'
+    group = 'Performance testing'
+    dependsOn gatlingSimulationGroups.registryApi.collect(simTaskName)
+}
+
+tasks.register('perfTestVscodeAdapter') {
+    description = 'Runs read-only Gatling simulations against the VS Code adapter'
+    group = 'Performance testing'
+    dependsOn gatlingSimulationGroups.vscodeAdapter.collect(simTaskName)
+}
+
+tasks.register('perfTestAll') {
+    description = 'Runs all read-only Gatling simulations (registry API + VS Code adapter)'
+    group = 'Performance testing'
+    dependsOn 'perfTestRegistryApi', 'perfTestVscodeAdapter'
 }
 
 apply from: 'dependencies.gradle'
