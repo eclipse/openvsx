@@ -31,7 +31,7 @@ interface NotificationState {
     timeout: ReturnType<typeof setTimeout>;
 }
 
-const NOTIFICATION_TIMEOUT = 5000;
+const NOTIFICATION_TIMEOUT = 2000;
 
 const SETTINGS: Record<keyof Settings, { title: string; description: string }> = {
     readOnly: {
@@ -40,7 +40,7 @@ const SETTINGS: Record<keyof Settings, { title: string; description: string }> =
     },
 };
 
-export const RuntimeFeatureFlagsPage: FC = () => {
+export const RuntimeSettingsPage: FC = () => {
     const abortController = useRef<AbortController>(new AbortController());
     const { service } = useContext(MainContext);
 
@@ -54,7 +54,7 @@ export const RuntimeFeatureFlagsPage: FC = () => {
         return () => abortController.current.abort();
     }, []);
 
-    const loadRuntimeFeatureFlags = useCallback(async () => {
+    const loadRuntimeSettings = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -68,8 +68,8 @@ export const RuntimeFeatureFlagsPage: FC = () => {
     }, [service]);
 
     useEffect(() => {
-        loadRuntimeFeatureFlags();
-    }, [loadRuntimeFeatureFlags]);
+        loadRuntimeSettings();
+    }, [loadRuntimeSettings]);
 
     useEffect(() => () => {
         notifications.forEach(n => clearTimeout(n.timeout));
@@ -104,7 +104,7 @@ export const RuntimeFeatureFlagsPage: FC = () => {
         try {
             const updatedSettings = await service.admin.updateSettings(abortController.current, nextSettings);
             setSettings(updatedSettings);
-            addNotification({ severity: 'success', message: 'Runtime feature flags saved.' });
+            addNotification({ severity: 'success', message: 'Runtime settings saved.' });
         } catch (err) {
             setSettings(previousSettings);
             addNotification({
@@ -124,7 +124,7 @@ export const RuntimeFeatureFlagsPage: FC = () => {
                         Settings
                     </Typography>
                     <Typography variant='body1' color='text.secondary'>
-                        Manage runtime feature flags that apply across the registry.
+                        Manage runtime settings that apply across the registry.
                     </Typography>
                 </Box>
 
