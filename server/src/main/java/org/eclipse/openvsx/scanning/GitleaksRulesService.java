@@ -15,7 +15,7 @@ package org.eclipse.openvsx.scanning;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
-import io.micrometer.core.instrument.util.NamedThreadFactory;
+import org.eclipse.openvsx.cache.jedis.JedisClusterChannelListener;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.annotations.Recurring;
 import org.slf4j.Logger;
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPubSub;
 
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -40,11 +39,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +53,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @ConditionalOnProperty(name = "ovsx.scanning.secret-detection.gitleaks.auto-fetch", havingValue = "true")
-public class GitleaksRulesService extends JedisPubSub {
+public class GitleaksRulesService {
 
     private static final Logger logger = LoggerFactory.getLogger(GitleaksRulesService.class);
     
@@ -74,14 +68,11 @@ public class GitleaksRulesService extends JedisPubSub {
     private final SecretDetectorConfig config;
     private final ObjectProvider<SecretDetectorFactory> detectorFactoryProvider;
     private final JedisCluster jedisCluster;
+    private final RulesUpdateChannelListener rulesUpdateChannelListener;
 
     // Path to generated rules file
     private String generatedRulesPath;
     
-    // Redis subscriber state
-    private volatile Thread subscriberThread;
-    private volatile boolean running = true;
-
     public GitleaksRulesService(
             SecretDetectorConfig config,
             ObjectProvider<SecretDetectorFactory> detectorFactoryProvider,
@@ -90,10 +81,12 @@ public class GitleaksRulesService extends JedisPubSub {
         this.config = config;
         this.detectorFactoryProvider = detectorFactoryProvider;
         this.jedisCluster = jedisCluster;
-        
+
         if (jedisCluster != null) {
+            this.rulesUpdateChannelListener = new RulesUpdateChannelListener(jedisCluster);
             logger.debug("GitleaksRulesService initialized with Redis sync");
         } else {
+            this.rulesUpdateChannelListener = null;
             logger.debug("GitleaksRulesService initialized (local only, no Redis)");
         }
     }
@@ -108,20 +101,16 @@ public class GitleaksRulesService extends JedisPubSub {
         generateRulesIfNeeded();
         
         // Start Redis subscriber if available
-        if (jedisCluster != null) {
-            startRedisSubscriber();
+        if (rulesUpdateChannelListener != null) {
+            rulesUpdateChannelListener.startSubscriber();
             loadRulesFromRedisIfNewer();
         }
     }
 
     @PreDestroy
     public void shutdown() {
-        running = false;
-        if (isSubscribed()) {
-            unsubscribe();
-        }
-        if (subscriberThread != null) {
-            subscriberThread.interrupt();
+        if (rulesUpdateChannelListener != null) {
+            rulesUpdateChannelListener.shutdown();
         }
     }
 
@@ -235,44 +224,17 @@ public class GitleaksRulesService extends JedisPubSub {
         }
     }
 
-    private void startRedisSubscriber() {
-        subscriberThread = new Thread(this::subscribeLoop, "GitleaksRulesSubscriber");
-        subscriberThread.setDaemon(true);
-        subscriberThread.start();
-    }
-
-    private void subscribeLoop() {
-        AtomicInteger backoffMs = new AtomicInteger(1000);
-
-        try (var executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("gitleaks-rules-reconnect"))) {
-            while (running && !Thread.currentThread().isInterrupted()) {
-                ScheduledFuture<?> resetTask = null;
-                try {
-                    resetTask = executor.schedule(() -> backoffMs.set(1000), 10, TimeUnit.SECONDS);
-                    logger.debug("Subscribing to gitleaks rules update channel");
-                    jedisCluster.subscribe(this, RULES_UPDATE_CHANNEL);
-                } catch (Exception e) {
-                    if (!running) break;
-                    logger.warn("Gitleaks rules subscriber disconnected, reconnecting in {}s: {}",
-                            backoffMs.get() / 1000, e.getMessage());
-                    if (resetTask != null) resetTask.cancel(true);
-                    try {
-                        Thread.sleep(backoffMs.get());
-                        backoffMs.set(Math.min(backoffMs.get() * 2, 30000));
-                    } catch (InterruptedException ignored) {
-                        break;
-                    }
-                }
-            }
-            executor.shutdownNow();
+    private class RulesUpdateChannelListener extends JedisClusterChannelListener {
+        RulesUpdateChannelListener(JedisCluster jedisCluster) {
+            super(jedisCluster, RULES_UPDATE_CHANNEL, "GitleaksRules");
         }
-    }
 
-    @Override
-    public void onMessage(String channel, String message) {
-        if (RULES_UPDATE_CHANNEL.equals(channel)) {
-            logger.debug("Received gitleaks rules update notification from another pod");
-            loadRulesFromRedis();
+        @Override
+        public void onMessage(String channel, String message) {
+            if (RULES_UPDATE_CHANNEL.equals(channel)) {
+                logger.debug("Received gitleaks rules update notification from another pod");
+                loadRulesFromRedis();
+            }
         }
     }
 

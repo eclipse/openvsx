@@ -12,9 +12,9 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit.cache;
 
-import io.micrometer.core.instrument.util.NamedThreadFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.eclipse.openvsx.cache.jedis.JedisClusterChannelListener;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +25,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
@@ -124,59 +119,9 @@ public class RateLimitCacheService extends JedisPubSub {
         }
     }
 
-    private class ConfigCacheUpdateListener extends JedisPubSub {
-        private final JedisCluster jedisCluster;
-
-        // Redis subscriber state
-        private volatile Thread subscriberThread;
-        private volatile boolean running = true;
-
+    private class ConfigCacheUpdateListener extends JedisClusterChannelListener {
         public ConfigCacheUpdateListener(JedisCluster jedisCluster) {
-            this.jedisCluster = jedisCluster;
-        }
-
-        void startSubscriber() {
-            subscriberThread = new Thread(this::subscribeLoop, "RateLimitConfigSubscriber");
-            subscriberThread.setDaemon(true);
-            subscriberThread.start();
-        }
-
-        void shutdown() {
-            running = false;
-            if (isSubscribed()) {
-                unsubscribe();
-            }
-            if (subscriberThread != null) {
-                subscriberThread.interrupt();
-            }
-        }
-
-        private void subscribeLoop() {
-            AtomicInteger backoffMs = new AtomicInteger(1000);
-            try (var executor = Executors.newSingleThreadScheduledExecutor(
-                    new NamedThreadFactory("rate-limit-config-subscriber-reconnect")
-            )) {
-                while (running && !Thread.currentThread().isInterrupted()) {
-                    ScheduledFuture<?> resetTask = null;
-                    try {
-                        resetTask = executor.schedule(() -> backoffMs.set(1000), 10, TimeUnit.SECONDS);
-                        logger.debug("Subscribing to rate-limit config update channel");
-                        jedisCluster.subscribe(this, CONFIG_UPDATE_CHANNEL);
-                    } catch (Exception e) {
-                        if (!running) break;
-                        logger.warn("Rate-limit config subscriber disconnected, reconnecting in {}s: {}",
-                                backoffMs.get() / 1000, e.getMessage());
-                        if (resetTask != null) resetTask.cancel(true);
-                        try {
-                            Thread.sleep(backoffMs.get());
-                            backoffMs.set(Math.min(backoffMs.get() * 2, 30000));
-                        } catch (InterruptedException ignored) {
-                            break;
-                        }
-                    }
-                }
-                executor.shutdownNow();
-            }
+            super(jedisCluster, CONFIG_UPDATE_CHANNEL, "RateLimitConfig");
         }
 
         @Override
