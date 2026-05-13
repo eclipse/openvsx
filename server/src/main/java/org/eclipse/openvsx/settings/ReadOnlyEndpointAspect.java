@@ -23,17 +23,17 @@ import org.springframework.http.ResponseEntity;
 @Component
 public class ReadOnlyEndpointAspect {
 
-    private final SettingsService settingsService;
+    private final SettingsService settings;
 
-    public ReadOnlyEndpointAspect(SettingsService settingsService) {
-        this.settingsService = settingsService;
+    public ReadOnlyEndpointAspect(SettingsService settings) {
+        this.settings = settings;
     }
 
     @Around("(execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.RegistryAPI.*(..)) ||" +
             " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.UserAPI.*(..))  ||" +
             " execution(org.springframework.http.ResponseEntity org.eclipse.openvsx.admin.*API.*(..))) && @annotation(MutatingOperation)")
     public Object handleMutatingEndpoint(ProceedingJoinPoint joinPoint) throws Throwable {
-        if (settingsService.isReadOnly()) {
+        if (settings.isReadOnly()) {
             return ResponseEntity.status(409).body(ResultJson.error("Registry is in read-only mode."));
         } else {
             return joinPoint.proceed();

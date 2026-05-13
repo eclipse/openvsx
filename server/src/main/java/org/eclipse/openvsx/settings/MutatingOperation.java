@@ -15,7 +15,7 @@ package org.eclipse.openvsx.settings;
 import java.lang.annotation.*;
 
 /**
- * A marker annotation to indicate an operation that mutates the DB.
+ * A marker annotation to indicate that the annotated operation does database mutations.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
