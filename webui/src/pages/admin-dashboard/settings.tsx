@@ -78,7 +78,7 @@ export const RuntimeSettingsPage: FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [service]);
+    }, [service, error]);
 
     useEffect(() => {
         loadRuntimeSettings();
@@ -110,6 +110,7 @@ export const RuntimeSettingsPage: FC = () => {
 
     const handleFlagChange = useCallback((key: keyof Settings) => (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
         setDraftSettings(current => current ? { ...current, [key]: checked } : current);
+        setSaveSuccess(false);
     }, []);
 
     const hasChanges = draftSettings !== null && settings !== null &&
@@ -159,7 +160,7 @@ export const RuntimeSettingsPage: FC = () => {
                     </Alert>
                 )}
 
-                <Paper variant='outlined' elevation={0} sx={{ overflow: 'hidden' }}>
+                <Paper variant='outlined' elevation={0} sx={{ overflow: 'hidden', borderColor: hasChanges ? 'red' : 'grey' }}>
                     {(Object.entries(SETTINGS) as [keyof Settings, { title: string; description: string }][]).map(([key, flag]) => (
                         <SettingsItem
                             key={key}
@@ -177,7 +178,7 @@ export const RuntimeSettingsPage: FC = () => {
                     <Button
                         variant='contained'
                         size='large'
-                        disabled={(!hasChanges && !saveSuccess) || saving}
+                        disabled={!hasChanges || saving || saveSuccess}
                         onClick={handleSaveClick}
                         startIcon={saveSuccess ? <CheckIcon /> : <SaveIcon />}
                         sx={{

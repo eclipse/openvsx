@@ -112,7 +112,12 @@ export function toRelativeTime(timestamp?: string, isFutureTime: boolean = false
 
 export function handleError(err?: Error | Partial<ErrorResponse>): string {
     if (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+            return '';
+        }
+
         console.error(err);
+
         if (err instanceof Error) {
             if (err.message === 'Failed to fetch'
                 || err.message === 'Unexpected token < in JSON at position 0') {
