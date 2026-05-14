@@ -121,8 +121,11 @@ public class CacheConfig {
     }
 
     @Bean
-    public Cache<Object, Object> settingCache() {
+    public Cache<Object, Object> settingCache(
+            @Value("${ovsx.caching.setting.ttl:PT1M}") Duration timeToIdle
+    ) {
         return Caffeine.newBuilder()
+                .expireAfterWrite(timeToIdle)
                 .scheduler(Scheduler.systemScheduler())
                 .recordStats()
                 .build();
