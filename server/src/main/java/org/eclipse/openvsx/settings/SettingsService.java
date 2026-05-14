@@ -28,7 +28,7 @@ import java.util.ArrayList;
 @Service
 public class SettingsService {
 
-    public static final String SETTING_REGISTRY_READ_ONLY = "registry.read-only";
+    public static final String SETTING_REGISTRY_READ_ONLY = "read-only";
     private static final String SETTINGS_UPDATE_CHANNEL = "settings.update";
 
     private final Logger logger = LoggerFactory.getLogger(SettingsService.class);
