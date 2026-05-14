@@ -62,6 +62,19 @@ export interface CheckResult {
     externalUrl: string | null;
 }
 
+export type ScannerJobStatus = 'QUEUED' | 'PROCESSING' | 'SUBMITTED' | 'COMPLETE' | 'FAILED' | 'REMOVED';
+
+export interface ScannerJob {
+    id: string;
+    scannerType: string;
+    status: ScannerJobStatus;
+    createdAt: string;
+    updatedAt: string;
+    errorMessage: string | null;
+    /** Deep link to the external scanner's dashboard for this job. Null if not applicable. */
+    externalUrl: string | null;
+}
+
 export interface ScanResult {
     id: string;
     displayName: string;
@@ -81,6 +94,7 @@ export interface ScanResult {
     threats: Threat[];
     validationFailures: ValidationFailure[];
     checkResults: CheckResult[];
+    scannerJobs: ScannerJob[];
     extensionIcon?: string;
     downloadUrl: string | null;
     errorMessage: string | null;

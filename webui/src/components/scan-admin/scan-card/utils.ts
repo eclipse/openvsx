@@ -38,9 +38,7 @@ export const isRunning = (status: ScanResult['status']): boolean => {
 };
 
 export const hasFailedScannerJobs = (scan: ScanResult): boolean => {
-    return scan.checkResults?.some(
-        checkResult => checkResult.category === 'SCANNER_JOB' && checkResult.result === 'ERROR'
-    ) ?? false;
+    return scan.scannerJobs?.some(job => job.status === 'FAILED') ?? false;
 };
 
 /**
@@ -191,7 +189,8 @@ export const getStatusBarColor = (status: ScanResult['status'], theme: any) => {
 export const shouldShowExpandButton = (scan: ScanResult): boolean => {
     const hasErrorMessage = scan.status === 'ERROR' && !!scan.errorMessage;
     const hasCheckResults = scan.checkResults && scan.checkResults.length > 0;
-    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasErrorMessage;
+    const hasScannerJobs = scan.scannerJobs && scan.scannerJobs.length > 0;
+    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasScannerJobs || hasErrorMessage;
 };
 
 export const hasDownload = (scan: ScanResult): boolean => {

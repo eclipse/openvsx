@@ -12,11 +12,11 @@
  ********************************************************************************/
 
 import { FC } from 'react';
-import { Box, Typography, Collapse, Chip, Link, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Collapse, Chip, Link, Button, CircularProgress, Tooltip } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { useTheme, Theme } from '@mui/material/styles';
-import { ScanResult, Threat, ValidationFailure, CheckResult } from '../../../context/scan-admin';
+import { ScanResult, Threat, ValidationFailure, CheckResult, ScannerJob } from '../../../context/scan-admin';
 import { ScanDetailCard } from './scan-detail-card';
 import { formatDateTime } from '../common';
 
@@ -39,6 +39,10 @@ interface ValidationFailureItemProps {
 
 interface CheckResultItemProps {
     checkResult: CheckResult;
+}
+
+interface ScannerJobItemProps {
+    job: ScannerJob;
 }
 
 /**
@@ -228,6 +232,83 @@ const CheckResultItem: FC<CheckResultItemProps> = ({ checkResult }) => {
 };
 
 /**
+ * Get color for scanner job lifecycle status.
+ */
+const getScannerJobColor = (status: ScannerJob['status'], theme: Theme) => {
+    switch (status) {
+        case 'COMPLETE':
+            return { bg: theme.palette.success.dark, text: theme.palette.success.light };
+        case 'FAILED':
+            return { bg: theme.palette.errorStatus.dark as string, text: theme.palette.errorStatus.light as string };
+        case 'REMOVED':
+            return { bg: theme.palette.grey[700], text: theme.palette.grey[100] };
+        case 'QUEUED':
+        case 'PROCESSING':
+        case 'SUBMITTED':
+        default:
+            return { bg: theme.palette.info.dark, text: theme.palette.info.light };
+    }
+};
+
+const isActiveScannerJob = (status: ScannerJob['status']): boolean =>
+    status === 'QUEUED' || status === 'PROCESSING' || status === 'SUBMITTED';
+
+/**
+ * A single stackable scanner job pill: scanner type + current lifecycle state.
+ * Active jobs (QUEUED/PROCESSING/SUBMITTED) pulse so it's obvious they're still
+ * in flight. Clickable when the scanner exposes an external dashboard URL.
+ * Error message (if any) is surfaced via tooltip to keep the pill compact.
+ */
+const ScannerJobItem: FC<ScannerJobItemProps> = ({ job }) => {
+    const theme = useTheme();
+    const colors = getScannerJobColor(job.status, theme);
+    const isActive = isActiveScannerJob(job.status);
+
+    const chip = (
+        <Chip
+            label={
+                <Box component='span' sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                    <Box component='span' sx={{ fontWeight: 600 }}>{job.scannerType}</Box>
+                    <Box component='span' sx={{ opacity: 0.75 }}>·</Box>
+                    <Box component='span' sx={{ fontWeight: 500, letterSpacing: 0.3 }}>{job.status}</Box>
+                    {job.externalUrl && (
+                        <OpenInNewIcon sx={{ fontSize: '0.85rem', ml: 0.25 }} />
+                    )}
+                </Box>
+            }
+            size='small'
+            clickable={!!job.externalUrl}
+            component={job.externalUrl ? 'a' : 'div'}
+            {...(job.externalUrl && {
+                href: job.externalUrl,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                onClick: (e: React.MouseEvent) => e.stopPropagation(),
+            })}
+            sx={{
+                bgcolor: colors.bg,
+                color: colors.text,
+                fontSize: '0.75rem',
+                height: 26,
+                px: 0.5,
+                ...(isActive && {
+                    animation: 'scanner-job-pulse 1.6s ease-in-out infinite',
+                    '@keyframes scanner-job-pulse': {
+                        '0%, 100%': { opacity: 1 },
+                        '50%': { opacity: 0.45 },
+                    },
+                }),
+                '&:hover': job.externalUrl ? { bgcolor: colors.bg, filter: 'brightness(1.1)' } : undefined,
+            }}
+        />
+    );
+
+    return job.errorMessage
+        ? <Tooltip title={job.errorMessage} arrow>{chip}</Tooltip>
+        : chip;
+};
+
+/**
  * The expanded content section showing threats, validation failures, and check results.
  * Each item's enforcedFlag controls its individual striping effect.
  */
@@ -243,8 +324,9 @@ export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({
     const hasThreats = scan.threats.length > 0;
     const hasValidationFailures = scan.validationFailures.length > 0;
     const hasCheckResults = scan.checkResults && scan.checkResults.length > 0;
+    const hasScannerJobs = scan.scannerJobs && scan.scannerJobs.length > 0;
     const hasErrorMessage = scan.status === 'ERROR' && scan.errorMessage;
-    const hasAnyContent = hasThreats || hasValidationFailures || hasCheckResults || hasErrorMessage;
+    const hasAnyContent = hasThreats || hasValidationFailures || hasCheckResults || hasScannerJobs || hasErrorMessage;
 
     return (
         <Collapse in={expanded} timeout='auto' unmountOnExit onExited={onCollapseComplete}>
@@ -271,12 +353,12 @@ export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({
                     </Box>
                 )}
 
-                {/* Check Results - What scans/checks were run */}
-                {hasCheckResults && (
-                    <Box sx={{ mb: (hasThreats || hasValidationFailures) ? 2 : 0 }}>
+                {/* Scanner Jobs - Lifecycle state of each scanner running for this extension */}
+                {hasScannerJobs && (
+                    <Box sx={{ mb: (hasCheckResults || hasThreats || hasValidationFailures) ? 2 : 0 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 1.5 }}>
                             <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>
-                                Checks Executed
+                                Scanner Jobs
                             </Typography>
                             {canRetryFailedScannerJobs && (
                                 <Button
@@ -299,6 +381,20 @@ export const ScanCardExpandedContent: FC<ScanCardExpandedContentProps> = ({
                                 </Button>
                             )}
                         </Box>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {scan.scannerJobs.map((job) => (
+                                <ScannerJobItem key={job.id} job={job} />
+                            ))}
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Check Results - What scans/checks were run */}
+                {hasCheckResults && (
+                    <Box sx={{ mb: (hasThreats || hasValidationFailures) ? 2 : 0 }}>
+                        <Typography variant='subtitle2' sx={{ mb: 1.5, color: 'text.secondary' }}>
+                            Checks Executed
+                        </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             {scan.checkResults.map((result, index) => (
                                 <CheckResultItem key={index} checkResult={result} />

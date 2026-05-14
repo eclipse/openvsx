@@ -85,6 +85,11 @@ public class ScanResultJson extends ResultJson {
     @Schema(description = "All checks/scans that were executed (pass, fail, or skip)")
     private List<CheckResultJson> checkResults;
 
+    @Schema(description = "Scanner jobs for this scan with their current lifecycle state " +
+        "(QUEUED, PROCESSING, SUBMITTED, COMPLETE, FAILED, REMOVED). Lets the UI surface " +
+        "ongoing or queued scanners without inferring their state from checkResults.")
+    private List<ScannerJobJson> scannerJobs;
+
     @Schema(description = "Error message if the scan failed with an error")
     private String errorMessage;
 
@@ -246,6 +251,14 @@ public class ScanResultJson extends ResultJson {
 
     public void setCheckResults(List<CheckResultJson> checkResults) {
         this.checkResults = checkResults;
+    }
+
+    public List<ScannerJobJson> getScannerJobs() {
+        return scannerJobs;
+    }
+
+    public void setScannerJobs(List<ScannerJobJson> scannerJobs) {
+        this.scannerJobs = scannerJobs;
     }
 
     public String getErrorMessage() {
