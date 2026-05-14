@@ -12,9 +12,17 @@
  *****************************************************************************/
 
 import { ChangeEvent, FC, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import CheckIcon from '@mui/icons-material/Check';
+import SaveIcon from '@mui/icons-material/Save';
 import {
     Alert,
     Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     Paper,
     Stack,
     Typography,
@@ -27,7 +35,7 @@ import { SettingsItem } from './settings-item';
 interface NotificationState {
     id: string;
     message: string;
-    severity: 'success' | 'error';
+    severity: 'error';
     timeout: ReturnType<typeof setTimeout>;
 }
 
@@ -45,10 +53,14 @@ export const RuntimeSettingsPage: FC = () => {
     const { service } = useContext(MainContext);
 
     const [settings, setSettings] = useState<Settings | null>(null);
+    const [draftSettings, setDraftSettings] = useState<Settings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notifications, setNotifications] = useState<NotificationState[]>([]);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+    const saveSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         return () => abortController.current.abort();
@@ -60,6 +72,7 @@ export const RuntimeSettingsPage: FC = () => {
             setError(null);
             const data = await service.admin.getSettings(abortController.current);
             setSettings(data);
+            setDraftSettings(data);
         } catch (err) {
             setError(handleError(err as Error));
         } finally {
@@ -75,12 +88,16 @@ export const RuntimeSettingsPage: FC = () => {
         notifications.forEach(n => clearTimeout(n.timeout));
     }, []);
 
-    const addNotification = useCallback((notification: Pick<NotificationState, 'message' | 'severity'>) => {
+    useEffect(() => () => {
+        if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
+    }, []);
+
+    const addNotification = useCallback((notification: Pick<NotificationState, 'message'>) => {
         const id = crypto.randomUUID();
         const timeout = setTimeout(() => {
             setNotifications(current => current.filter(n => n.id !== id));
         }, NOTIFICATION_TIMEOUT);
-        setNotifications(current => [...current, { ...notification, id, timeout }]);
+        setNotifications(current => [...current, { ...notification, severity: 'error', id, timeout }]);
     }, []);
 
     const handleNotificationClose = (id: string) => {
@@ -91,30 +108,38 @@ export const RuntimeSettingsPage: FC = () => {
         });
     };
 
-    const handleFlagChange = useCallback((key: keyof Settings) => async (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
-        if (!settings || saving) return;
+    const handleFlagChange = useCallback((key: keyof Settings) => (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        setDraftSettings(current => current ? { ...current, [key]: checked } : current);
+    }, []);
 
-        const previousSettings = settings;
-        const nextSettings: Settings = { ...settings, [key]: checked };
+    const hasChanges = draftSettings !== null && settings !== null &&
+        (Object.keys(SETTINGS) as (keyof Settings)[]).some(k => draftSettings[k] !== settings[k]);
 
-        setSettings(nextSettings);
+    const handleSaveClick = () => setConfirmOpen(true);
+
+    const handleConfirmClose = () => setConfirmOpen(false);
+
+    const handleConfirmSave = useCallback(async () => {
+        if (!draftSettings) return;
+        setConfirmOpen(false);
         setSaving(true);
         setError(null);
 
         try {
-            const updatedSettings = await service.admin.updateSettings(abortController.current, nextSettings);
+            const updatedSettings = await service.admin.updateSettings(abortController.current, draftSettings);
             setSettings(updatedSettings);
-            addNotification({ severity: 'success', message: 'Runtime settings saved.' });
+            setDraftSettings(updatedSettings);
+            setSaveSuccess(true);
+            if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
+            saveSuccessTimer.current = setTimeout(() => setSaveSuccess(false), 2000);
         } catch (err) {
-            setSettings(previousSettings);
             addNotification({
-                severity: 'error',
                 message: `Failed to save runtime settings. ${handleError(err as Error)}`,
             });
         } finally {
             setSaving(false);
         }
-    }, [settings, saving, service, addNotification]);
+    }, [draftSettings, service, addNotification]);
 
     return (
         <>
@@ -140,14 +165,51 @@ export const RuntimeSettingsPage: FC = () => {
                             key={key}
                             title={flag.title}
                             description={flag.description}
-                            checked={settings?.[key] ?? false}
-                            loading={loading || !settings}
-                            disabled={loading || saving || !settings}
+                            checked={draftSettings?.[key] ?? false}
+                            loading={loading || !draftSettings}
+                            disabled={loading || saving || !draftSettings}
                             onChange={handleFlagChange(key)}
                         />
                     ))}
                 </Paper>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                        variant='contained'
+                        size='large'
+                        disabled={(!hasChanges && !saveSuccess) || saving}
+                        onClick={handleSaveClick}
+                        startIcon={saveSuccess ? <CheckIcon /> : <SaveIcon />}
+                        sx={{
+                            transition: 'background-color 0.5s ease',
+                            ...(saveSuccess && {
+                                backgroundColor: 'success.main',
+                                '&:hover': { backgroundColor: 'success.dark' },
+                                '&.Mui-disabled': { backgroundColor: 'success.main', color: 'white', opacity: 0.9 },
+                            }),
+                        }}
+                    >
+                        {saveSuccess ? 'Saved' : 'Save'}
+                    </Button>
+                </Box>
+
             </Box>
+
+            <Dialog open={confirmOpen} onClose={handleConfirmClose} maxWidth='xs' fullWidth>
+                <DialogTitle>Apply settings?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        These changes will be applied <strong>immediately</strong> and will affect all users of the registry.
+                        Make sure you understand the impact before proceeding.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleConfirmClose}>Cancel</Button>
+                    <Button variant='contained' onClick={handleConfirmSave} autoFocus>
+                        Apply
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {notifications.length > 0 && (
                 <Stack
