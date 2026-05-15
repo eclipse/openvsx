@@ -43,13 +43,11 @@ object Scenarios {
   }
 
   def createNamespaceScenario(): ScenarioBuilder = {
-    // Generate unique names per request so the sim works against any DB state.
     val totalRequests = 780
     val repeatTimes = totalRequests / users
     scenario("RegistryAPI: Create Namespace")
       .repeat(repeatTimes) {
-        exec(session =>
-          session.set("namespace", "perfns-" + UUID.randomUUID().toString.replace("-", "").take(20)))
+        feed(csv(NamespaceFeed))
           .feed(csv(AccessTokenFeed).circular)
           .exec(http("RegistryAPI.createNamespace")
             .post(s"/api/-/namespace/create")
@@ -58,6 +56,13 @@ object Scenarios {
             .body(StringBody("""{"name":"#{namespace}"}""")).asJson
             .requestTimeout(3.minutes)
             .check(status.is(201)))
+        //      useful for debugging responses
+        //        .check(bodyString.saveAs("BODY")))
+        //        .exec(session => {
+        //          val response = session("BODY").as[String]
+        //          println(s"Response body: \n$response")
+        //          session
+        //        })
       }
   }
 
@@ -292,7 +297,7 @@ object Scenarios {
       .repeat(1000) {
         feed(csv(ExtensionVersionFeed).circular)
           .feed(Array(
-            Map("file" -> ""),
+            Map("file" -> """#{namespace}.#{name}-#{version}.vsix"""),
             Map("file" -> "package.json"),
             Map("file" -> "extension.vsixmanifest"),
             Map("file" -> "CHANGELOG.md"),
