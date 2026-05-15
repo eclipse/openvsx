@@ -25,12 +25,6 @@ import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
 import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
-import org.eclipse.openvsx.jooq.tables.JobrunrBackgroundjobservers;
-import org.eclipse.openvsx.jooq.tables.JobrunrJobs;
-import org.eclipse.openvsx.jooq.tables.JobrunrJobsStats;
-import org.eclipse.openvsx.jooq.tables.JobrunrMetadata;
-import org.eclipse.openvsx.jooq.tables.JobrunrMigrations;
-import org.eclipse.openvsx.jooq.tables.JobrunrRecurringJobs;
 import org.eclipse.openvsx.jooq.tables.MigrationItem;
 import org.eclipse.openvsx.jooq.tables.Namespace;
 import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
@@ -162,36 +156,6 @@ public class Tables {
      * The table <code>public.flyway_schema_history</code>.
      */
     public static final FlywaySchemaHistory FLYWAY_SCHEMA_HISTORY = FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY;
-
-    /**
-     * The table <code>public.jobrunr_backgroundjobservers</code>.
-     */
-    public static final JobrunrBackgroundjobservers JOBRUNR_BACKGROUNDJOBSERVERS = JobrunrBackgroundjobservers.JOBRUNR_BACKGROUNDJOBSERVERS;
-
-    /**
-     * The table <code>public.jobrunr_jobs</code>.
-     */
-    public static final JobrunrJobs JOBRUNR_JOBS = JobrunrJobs.JOBRUNR_JOBS;
-
-    /**
-     * The table <code>public.jobrunr_jobs_stats</code>.
-     */
-    public static final JobrunrJobsStats JOBRUNR_JOBS_STATS = JobrunrJobsStats.JOBRUNR_JOBS_STATS;
-
-    /**
-     * The table <code>public.jobrunr_metadata</code>.
-     */
-    public static final JobrunrMetadata JOBRUNR_METADATA = JobrunrMetadata.JOBRUNR_METADATA;
-
-    /**
-     * The table <code>public.jobrunr_migrations</code>.
-     */
-    public static final JobrunrMigrations JOBRUNR_MIGRATIONS = JobrunrMigrations.JOBRUNR_MIGRATIONS;
-
-    /**
-     * The table <code>public.jobrunr_recurring_jobs</code>.
-     */
-    public static final JobrunrRecurringJobs JOBRUNR_RECURRING_JOBS = JobrunrRecurringJobs.JOBRUNR_RECURRING_JOBS;
 
     /**
      * The table <code>public.migration_item</code>.
