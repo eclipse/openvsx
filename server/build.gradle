@@ -61,7 +61,7 @@ configurations {
     matching { it.name.startsWith('gatling') }.configureEach {
         resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'io.netty' && !details.requested.name.startsWith('netty-tcnative')) {
-                details.useVersion '4.2.10.Final'
+                details.useVersion '4.2.13.Final'
             }
         }
     }

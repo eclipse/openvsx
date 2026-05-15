@@ -1,7 +1,6 @@
 # Setup
 ## build.gradle
 ### Running on dev environment:
-- comment out `devRuntimeOnly "org.springframework.boot:spring-boot-devtools"` to prevent spring boot restart when you compile a gatling simulation.
 - add `jvmArgs = ['-Xverify:none']` to runServer task if you want to attach VisualVM to the server.
 
 ### Running against remote server:
@@ -42,7 +41,7 @@ Typical run against a freshly started server:
 To run a single simulation:
 
 ```sh
-./gradlew --rerun-tasks gatlingRun --simulation=org.eclipse.openvsx.RegistryAPISearchSimulation
+./gradlew gatlingRun --simulation=org.eclipse.openvsx.RegistryAPISearchSimulation
 ```
 
 ## Empty the database
