@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
@@ -898,21 +898,25 @@ public class ScanAPI {
             json.setAdminDecision(toAdminDecisionJson(adminDecision));
         }
 
+        var scannerJobs = scanJobRepository.findByScanId(String.valueOf(scan.getId()));
+        if (!scannerJobs.isEmpty()) {
+            // include all non-terminal scanner jobs
+            var scannerJobJsons = scannerJobs.stream()
+                    .filter(job -> !job.getStatus().isTerminal())
+                    .map(this::toScannerJobJson)
+                    .collect(Collectors.toList());
+            json.setScannerJobs(scannerJobJsons);
+        }
+
         // Include all check results for audit trail
         var checkResults = repositories.findScanCheckResultsByScanId(scan.getId());
         if (!checkResults.isEmpty()) {
+            var scannerJobsById = scannerJobs.stream().collect(Collectors.toMap(ScannerJob::getId, Function.identity()));
+
             var checkResultJsons = checkResults.stream()
-                .map(this::toCheckResultJson)
+                .map(r -> toCheckResultJson(r, scannerJobsById.get(r.getScannerJobId())))
                 .collect(Collectors.toList());
             json.setCheckResults(checkResultJsons);
-        }
-
-        var scannerJobs = scanJobRepository.findByScanId(String.valueOf(scan.getId()));
-        if (!scannerJobs.isEmpty()) {
-            var scannerJobJsons = scannerJobs.stream()
-                .map(this::toScannerJobJson)
-                .collect(Collectors.toList());
-            json.setScannerJobs(scannerJobJsons);
         }
 
         return json;
@@ -938,7 +942,10 @@ public class ScanAPI {
      * an external-url-template and the job has an external id.
      */
     @Nullable
-    private String buildExternalScannerUrl(@Nonnull ScannerJob job) {
+    private String buildExternalScannerUrl(@Nullable ScannerJob job) {
+        if (job == null) {
+            return null;
+        }
         if (job.getExternalJobId() == null) {
             return null;
         }
@@ -952,7 +959,7 @@ public class ScanAPI {
     /**
      * Converts a ScanCheckResult entity to a CheckResultJson DTO.
      */
-    private CheckResultJson toCheckResultJson(ScanCheckResult checkResult) {
+    private CheckResultJson toCheckResultJson(ScanCheckResult checkResult, ScannerJob scannerJob) {
         var json = new CheckResultJson();
         json.setCheckType(checkResult.getCheckType());
         json.setCategory(checkResult.getCategory().name());
@@ -967,34 +974,9 @@ public class ScanAPI {
         json.setSummary(checkResult.getSummary());
         json.setErrorMessage(checkResult.getErrorMessage());
         json.setRequired(checkResult.getRequired());
-        json.setExternalUrl(buildExternalScannerUrl(checkResult));
+        json.setExternalUrl(buildExternalScannerUrl(scannerJob));
 
         return json;
-    }
-
-    /**
-     * Look up the ScannerJob for a SCANNER_JOB check result and ask its scanner
-     * to build a dashboard URL. Returns null for publish checks, jobs without an
-     * external id, or scanners that don't configure a url template.
-     */
-    @Nullable
-    private String buildExternalScannerUrl(@Nonnull ScanCheckResult checkResult) {
-        if (checkResult.getCategory() != ScanCheckResult.CheckCategory.SCANNER_JOB) {
-            return null;
-        }
-        Long jobId = checkResult.getScannerJobId();
-        if (jobId == null) {
-            return null;
-        }
-        var job = scanJobRepository.findById(jobId).orElse(null);
-        if (job == null || job.getExternalJobId() == null) {
-            return null;
-        }
-        var scanner = scannerRegistry.getScanner(job.getScannerType());
-        if (scanner == null) {
-            return null;
-        }
-        return scanner.buildExternalUrl(job.getExternalJobId());
     }
 
     /**

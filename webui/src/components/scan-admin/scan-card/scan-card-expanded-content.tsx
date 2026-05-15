@@ -243,15 +243,17 @@ const getScannerJobColor = (status: ScannerJob['status'], theme: Theme) => {
         case 'REMOVED':
             return { bg: theme.palette.grey[700], text: theme.palette.grey[100] };
         case 'QUEUED':
+            return { bg: theme.palette.info.dark, text: theme.palette.info.light };
         case 'PROCESSING':
         case 'SUBMITTED':
+            return { bg: theme.palette.warning.dark, text: theme.palette.warning.light };
         default:
             return { bg: theme.palette.info.dark, text: theme.palette.info.light };
     }
 };
 
-const isActiveScannerJob = (status: ScannerJob['status']): boolean =>
-    status === 'QUEUED' || status === 'PROCESSING' || status === 'SUBMITTED';
+const isRunningScannerJob = (status: ScannerJob['status']): boolean =>
+    status === 'PROCESSING' || status === 'SUBMITTED';
 
 /**
  * A single stackable scanner job pill: scanner type + current lifecycle state.
@@ -262,7 +264,7 @@ const isActiveScannerJob = (status: ScannerJob['status']): boolean =>
 const ScannerJobItem: FC<ScannerJobItemProps> = ({ job }) => {
     const theme = useTheme();
     const colors = getScannerJobColor(job.status, theme);
-    const isActive = isActiveScannerJob(job.status);
+    const isRunning = isRunningScannerJob(job.status);
 
     const chip = (
         <Chip
@@ -291,7 +293,7 @@ const ScannerJobItem: FC<ScannerJobItemProps> = ({ job }) => {
                 fontSize: '0.75rem',
                 height: 26,
                 px: 0.5,
-                ...(isActive && {
+                ...(isRunning && {
                     animation: 'scanner-job-pulse 1.6s ease-in-out infinite',
                     '@keyframes scanner-job-pulse': {
                         '0%, 100%': { opacity: 1 },
