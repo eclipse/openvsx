@@ -13,18 +13,17 @@
 package org.eclipse.openvsx.scanning;
 
 import org.eclipse.openvsx.entities.ScannerJob;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -42,7 +41,7 @@ import java.util.List;
  * 5. Enqueue a ScannerInvocationRequest so a worker picks it up
  */
 @Service
-public class ScannerConcurrencyDispatcher {
+public class ScannerConcurrencyDispatcher implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ScannerConcurrencyDispatcher.class);
 
@@ -65,8 +64,7 @@ public class ScannerConcurrencyDispatcher {
      * Only one instance of this recurring job runs across all pods at a time.
      */
     @Job(name = "Scanner concurrency dispatcher", retries = 0)
-    @Recurring(id = "scanner-concurrency-dispatcher", interval = "PT15S")
-    public void dispatch() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         boolean anyLimited = scannerRegistry.getAllScanners().stream()
             .anyMatch(s -> s.getMaxConcurrency() > 0);
         if (!anyLimited) {

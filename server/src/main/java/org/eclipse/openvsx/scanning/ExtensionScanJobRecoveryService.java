@@ -18,12 +18,13 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.entities.ScanStatus;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +42,12 @@ import java.util.List;
  * Handles scan job recovery: startup recovery and runtime watchdog.
  */
 @Service
-public class ExtensionScanJobRecoveryService {
+public class ExtensionScanJobRecoveryService implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionScanJobRecoveryService.class);
 
     // Max jobs to process per watchdog cycle
     private static final int MAX_PER_CYCLE = 20;
-
 
     private final ScannerJobRepository scanJobRepository;
     private final ScannerRegistry scannerRegistry;
@@ -90,6 +90,10 @@ public class ExtensionScanJobRecoveryService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void recoverOnStartup() {
+        if (!scanService.isEnabled()) {
+            return;
+        }
+
         logger.info("Starting scan recovery on server startup");
         
         recoverPendingJobs();
@@ -435,9 +439,8 @@ public class ExtensionScanJobRecoveryService {
      * Monitor stuck jobs and timeouts.
      */
     @Job(name = "Scan job watchdog", retries = 0)
-    @Recurring(id = "scan-job-watchdog", interval = "PT10M")
     @Transactional
-    public void runWatchdog() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         recoverStuckQueuedJobs();
         checkTimeouts();
     }
