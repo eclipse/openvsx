@@ -183,6 +183,7 @@ jooq {
                 inputSchema = 'public'
                 includes = '.*'
                 excludes = 'jobrunr.*'
+                includeRoutines = false
             }
             target {
                 packageName = 'org.eclipse.openvsx.jooq'
