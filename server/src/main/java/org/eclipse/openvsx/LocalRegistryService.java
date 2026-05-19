@@ -1110,7 +1110,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var user = extVersion.getPublishedWith().getUser();
-        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }
 
@@ -1124,7 +1124,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var user = extVersion.getPublishedWith().getUser();
-        if(UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+        if(UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }
 

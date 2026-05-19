@@ -90,7 +90,7 @@ class FileDecisionAPITest {
     private static class TestData {
         static org.eclipse.openvsx.entities.UserData adminUser() {
             var user = new org.eclipse.openvsx.entities.UserData();
-            user.setRole(org.eclipse.openvsx.entities.UserData.ROLE_ADMIN);
+            user.setRole(org.eclipse.openvsx.entities.UserData.Role.ADMIN);
             return user;
         }
     }

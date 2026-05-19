@@ -45,6 +45,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
+import org.eclipse.openvsx.json.UserAdminJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
@@ -62,6 +63,8 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -493,6 +496,42 @@ public class AdminService {
         return userPublishInfo;
     }
 
+    public Page<UserAdminJson> searchUsers(String search, String role, Pageable pageable) {
+        return repositories.searchUsers(search, role, pageable)
+                .map(user -> {
+                    var json = new UserAdminJson();
+                    json.setUser(user.toUserJson());
+                    json.setNamespaces(repositories.findMemberships(user).stream()
+                            .map(membership -> membership.getNamespace().getName())
+                            .toList());
+                    json.setCustomers(repositories.findCustomerMemberships(user).stream()
+                            .map(membership -> membership.getCustomer().getName())
+                            .toList());
+                    return json;
+                });
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson updateUserRole(String provider, String loginName, String role, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var updatedRole = StringUtils.isBlank(role) ? null : parseRole(role);
+        if (Objects.equals(user.getRole(), updatedRole)) {
+            return ResultJson.success("User " + provider + "/" + loginName + " already has the role " + user.getRole() + ".");
+        }
+
+        user.setRole(updatedRole);
+        var message = updatedRole == null
+                ? "Removed role from user " + provider + "/" + loginName + "."
+                : "Updated role for user " + provider + "/" + loginName + " to " + updatedRole + ".";
+        var result = ResultJson.success(message);
+        logs.logAction(admin, result);
+        return result;
+    }
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
         var user = repositories.findUserByLoginName(provider, loginName);
@@ -565,10 +604,18 @@ public class AdminService {
     }
 
     private UserData checkAdminUser(UserData user) {
-        if (user == null || !UserData.ROLE_ADMIN.equals(user.getRole())) {
+        if (user == null || !UserData.Role.ADMIN.equals(user.getRole())) {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }
         return user;
+    }
+
+    private UserData.Role parseRole(String role) {
+        try {
+            return UserData.Role.valueOfIgnoreCase(role);
+        } catch (IllegalArgumentException ignored) {
+            throw new ErrorResultException("Invalid role: " + role, HttpStatus.BAD_REQUEST);
+        }
     }
 
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {

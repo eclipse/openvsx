@@ -81,6 +81,7 @@ public class RepositoryService {
     private final UsageStatsRepository usageStatsRepository;
     private final RateLimitTokenRepository rateLimitTokenRepository;
     private final DailyUsageStatsRepository dailyUsageStatsRepository;
+    private final UserDataJooqRepository userDataJooqRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -117,7 +118,8 @@ public class RepositoryService {
             CustomerMembershipRepository customerMembershipRepo,
             UsageStatsRepository usageStatsRepository,
             RateLimitTokenRepository rateLimitTokenRepository,
-            DailyUsageStatsRepository dailyUsageStatsRepository
+            DailyUsageStatsRepository dailyUsageStatsRepository,
+            UserDataJooqRepository userDataJooqRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -154,6 +156,7 @@ public class RepositoryService {
         this.usageStatsRepository = usageStatsRepository;
         this.rateLimitTokenRepository = rateLimitTokenRepository;
         this.dailyUsageStatsRepository = dailyUsageStatsRepository;
+        this.userDataJooqRepo = userDataJooqRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -342,6 +345,10 @@ public class RepositoryService {
 
     public long countUsers() {
         return userDataRepo.count();
+    }
+
+    public Page<UserData> searchUsers(String search, String role, Pageable pageable) {
+        return userDataJooqRepo.findUsers(search, role, pageable);
     }
 
     public NamespaceMembership findMembership(UserData user, Namespace namespace) {

@@ -2536,7 +2536,7 @@ class RegistryAPITest {
             Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(true);
             if (mode.equals("privileged")) {
-                token.getUser().setRole(UserData.ROLE_PRIVILEGED);
+                token.getUser().setRole(UserData.Role.PRIVILEGED);
                 // Mock findMemberships(user) for similarity check - privileged user might have memberships
                 Mockito.when(repositories.findMemberships(token.getUser()))
                         .thenReturn(Streamable.empty());

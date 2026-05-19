@@ -155,6 +155,24 @@ public class AdminAPI {
     }
 
     @GetMapping(
+        path = "/users",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Page<UserAdminJson>> getUsers(
+            Pageable pageable,
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "role", required = false) String role
+    ) {
+        try {
+            admins.checkAdminUser();
+            return ResponseEntity.ok(admins.searchUsers(search, role, pageable));
+        } catch (ErrorResultException exc) {
+            var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status);
+        }
+    }
+
+    @GetMapping(
         path = "/log",
         produces = MediaType.TEXT_PLAIN_VALUE
     )
@@ -368,6 +386,23 @@ public class AdminAPI {
             var result = admins.deleteReview(namespace, extension, loginName, provider);
             logs.logAction(adminUser, result);
             return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/user/{provider}/{loginName}/role",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResultJson> updateUserRole(
+            @PathVariable String provider,
+            @PathVariable String loginName,
+            @RequestParam(required = false) String role
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            return ResponseEntity.ok(admins.updateUserRole(provider, loginName, role, adminUser));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

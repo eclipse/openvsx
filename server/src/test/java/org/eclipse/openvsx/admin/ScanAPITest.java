@@ -508,7 +508,7 @@ class ScanAPITest {
 
         static UserData adminUser() {
             var user = new UserData();
-            user.setRole(UserData.ROLE_ADMIN);
+            user.setRole(UserData.Role.ADMIN);
             return user;
         }
     }
