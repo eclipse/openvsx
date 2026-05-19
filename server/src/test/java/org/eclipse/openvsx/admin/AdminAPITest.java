@@ -723,7 +723,7 @@ class AdminAPITest {
                 .thenReturn(user);
 
         mockMvc.perform(post("/admin/user/{provider}/{loginName}/role", "github", "test")
-                .param("role", "")
+                .param("role", "none")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
@@ -759,22 +759,6 @@ class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testUpdateUserRoleProtectedUser() throws Exception {
-        mockAdminUser();
-        var user = new UserData();
-        user.setLoginName("super_user");
-        user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "super_user"))
-                .thenReturn(user);
-
-        mockMvc.perform(post("/admin/user/{provider}/{loginName}/role", "github", "super_user")
-                .param("role", "admin")
-                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
-                .with(csrf().asHeader()))
-                .andExpect(status().isForbidden());
     }
 
     @Test

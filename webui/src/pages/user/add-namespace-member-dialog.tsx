@@ -51,7 +51,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
             props.onClose();
         } catch (err) {
             props.setLoadingState(false);
-            handleError(err);
+            handleError(err as Error);
         }
     };
 

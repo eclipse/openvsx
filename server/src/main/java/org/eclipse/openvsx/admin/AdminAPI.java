@@ -398,7 +398,12 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> updateUserRole(
             @PathVariable String provider,
             @PathVariable String loginName,
-            @RequestParam(required = false) String role
+            @RequestParam
+            @Parameter(
+                    description = "The role to assign to the user, or 'none' to remove their role",
+                    schema = @Schema(allowableValues = {"admin", "privileged", "none"})
+            )
+            String role
     ) {
         try {
             var adminUser = admins.checkAdminUser();

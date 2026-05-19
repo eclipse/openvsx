@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.UserJson;
 
 import jakarta.persistence.Column;
@@ -37,6 +36,7 @@ public class UserData implements Serializable {
         PRIVILEGED;
 
         public static Role valueOfIgnoreCase(String value) {
+            if (value == null) return null;
             return Role.valueOf(value.trim().toUpperCase());
         }
 

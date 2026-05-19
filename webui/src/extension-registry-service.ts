@@ -51,7 +51,8 @@ import {
     LogPageableList,
     CustomerMembershipList,
     RateLimitToken,
-    Settings
+    Settings,
+    AdminUsersResult
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest } from './server-request';
@@ -639,6 +640,15 @@ export interface AdminService {
         provider: string,
         login: string
     ): Promise<Readonly<PublisherInfo>>;
+    getUsers(
+        abortController: AbortController,
+        params?: { search?: string; role?: string; page?: number; size?: number }
+    ): Promise<Readonly<AdminUsersResult>>;
+    updateUserRole(
+        provider: string,
+        login: string,
+        role: 'admin' | 'privileged' | 'none'
+    ): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getAllScans(
@@ -850,6 +860,52 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login]),
             credentials: true
+        });
+    }
+
+    async getUsers(
+        abortController: AbortController,
+        params?: { search?: string; role?: string; page?: number; size?: number }
+    ): Promise<Readonly<AdminUsersResult>> {
+        const query: { key: string; value: string | number }[] = [];
+        if (params) {
+            if (params.search) {
+                query.push({ key: 'search', value: params.search });
+            }
+            if (params.role) {
+                query.push({ key: 'role', value: params.role });
+            }
+            if (params.page !== undefined) {
+                query.push({ key: 'page', value: params.page });
+            }
+            if (params.size !== undefined) {
+                query.push({ key: 'size', value: params.size });
+            }
+        }
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'users'], query)
+        });
+    }
+
+    async updateUserRole(
+        provider: string,
+        login: string,
+        role: 'admin' | 'privileged' | 'none'
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        const query = [{ key: 'role', value: role }];
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'user', provider, login, 'role'], query),
+            headers
         });
     }
 

@@ -134,8 +134,8 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     src={icon ?? pageSettings?.urls.extensionDefaultIcon ?? ''}
                     alt={extension.displayName ?? extension.name}
                     sx={{
-                        flex: '0 0 15%',
                         display: 'block',
+                        mx: 1,
                         mr: 2,
                         width: '3rem',
                         maxHeight: '4rem'

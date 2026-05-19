@@ -518,7 +518,7 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(provider + "/" + loginName), HttpStatus.NOT_FOUND);
         }
 
-        var updatedRole = StringUtils.isBlank(role) ? null : parseRole(role);
+        var updatedRole = "none".equalsIgnoreCase(role) ? null : parseRole(role);
         if (Objects.equals(user.getRole(), updatedRole)) {
             return ResultJson.success("User " + provider + "/" + loginName + " already has the role " + user.getRole() + ".");
         }

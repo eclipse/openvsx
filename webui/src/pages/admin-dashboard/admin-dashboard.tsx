@@ -60,7 +60,7 @@ const navConfig: NavEntry[] = [
         path: AdminDashboardRoutes.PUBLISHER_ADMIN,
         name: 'Publisher',
         icon: <PersonIcon />,
-        description: 'Search for publishers and revoke their contributions'
+        description: 'Search for publishers, update roles, and revoke their contributions'
     },
     {
         path: AdminDashboardRoutes.SCANS_ADMIN,
@@ -166,6 +166,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                             <Suspense fallback={null}>
                                 <Routes>
                                     <Route path='/namespaces' element={<NamespaceAdmin />} />
+                                    <Route path='/namespaces/:namespace' element={<NamespaceAdmin />} />
                                     <Route path='/extensions' element={<ExtensionAdmin />} />
                                     <Route path='/extensions/:namespace/:extension' element={<ExtensionAdmin />} />
                                     <Route path='/publisher' element={<PublisherAdmin />} />

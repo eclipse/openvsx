@@ -10,18 +10,22 @@
 
 import { FunctionComponent, useState, useContext, useEffect, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
+import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { useAdminNamespace, useClearAdminNamespace, useCreateNamespace } from './use-namespace-admin';
 
 export const NamespaceAdmin: FunctionComponent = () => {
     const { pageSettings, user, handleError } = useContext(MainContext);
+    const { namespace: nsParam } = useParams<{ namespace?: string }>();
+    const navigate = useNavigate();
 
-    const [searchName, setSearchName] = useState('');
-    const [inputValue, setInputValue] = useState('');
+    const [searchName, setSearchName] = useState(nsParam ?? '');
+    const [inputValue, setInputValue] = useState(nsParam ?? '');
     // The namespace detail view can drive the loading indicator while it performs its own work.
     const [detailLoading, setDetailLoading] = useState(false);
 
@@ -38,6 +42,14 @@ export const NamespaceAdmin: FunctionComponent = () => {
             handleError(error);
         }
     }, [error, is404, handleError]);
+
+    // Keep the URL in sync with the searched namespace so the view is deep-linkable.
+    useEffect(() => {
+        const target = searchName
+            ? `${AdminDashboardRoutes.NAMESPACE_ADMIN}/${encodeURIComponent(searchName)}`
+            : AdminDashboardRoutes.NAMESPACE_ADMIN;
+        navigate(target, { replace: true });
+    }, [searchName, navigate]);
 
     const fetchNamespace = (namespaceName: string) => {
         if (namespaceName && namespaceName === searchName) {
@@ -97,7 +109,13 @@ export const NamespaceAdmin: FunctionComponent = () => {
     return (
         <SearchListContainer
             searchContainer={[
-                <StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />
+                <StyledInput
+                    key='nsi'
+                    placeholder='Namespace'
+                    value={inputValue}
+                    onSubmit={fetchNamespace}
+                    onChange={onChangeInput}
+                />
             ]}
             listContainer={listContainer}
             loading={loading}
