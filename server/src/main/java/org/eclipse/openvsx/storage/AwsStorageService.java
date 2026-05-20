@@ -77,6 +77,7 @@ public class AwsStorageService implements IStorageService {
     boolean pathStyleAccess;
 
     private S3Client s3Client;
+    private S3Presigner s3Presigner;
 
     public AwsStorageService(FileCacheDurationConfig fileCacheDurationConfig, FilesCacheKeyGenerator filesCacheKeyGenerator) {
         this.fileCacheDurationConfig = fileCacheDurationConfig;
@@ -110,24 +111,27 @@ public class AwsStorageService implements IStorageService {
     }
 
     private S3Presigner getS3Presigner() {
-        var builder = S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(getCredentialsProvider());
-
-        if(StringUtils.isNotEmpty(serviceEndpoint)) {
-            var endpointParams = S3EndpointParams.builder()
-                    .endpoint(serviceEndpoint)
+        if (s3Presigner == null) {
+            var builder = S3Presigner.builder()
                     .region(Region.of(region))
-                    .build();
+                    .credentialsProvider(getCredentialsProvider());
 
-            var endpoint = S3EndpointProvider
-                    .defaultProvider()
-                    .resolveEndpoint(endpointParams).join();
+            if(StringUtils.isNotEmpty(serviceEndpoint)) {
+                var endpointParams = S3EndpointParams.builder()
+                        .endpoint(serviceEndpoint)
+                        .region(Region.of(region))
+                        .build();
 
-            builder = builder.endpointOverride(endpoint.url());
+                var endpoint = S3EndpointProvider
+                        .defaultProvider()
+                        .resolveEndpoint(endpointParams).join();
+
+                builder = builder.endpointOverride(endpoint.url());
+            }
+
+            s3Presigner = builder.build();
         }
-
-        return builder.build();
+        return s3Presigner;
     }
 
     private AwsCredentialsProvider getCredentialsProvider() {
@@ -240,10 +244,8 @@ public class AwsStorageService implements IStorageService {
                 .getObjectRequest(objectRequest)
                 .build();
 
-        try (var presigner = getS3Presigner()) {
-            var presignedRequest = presigner.presignGetObject(presignRequest);
-            return presignedRequest.httpRequest().getUri();
-        }
+        var presignedRequest = getS3Presigner().presignGetObject(presignRequest);
+        return presignedRequest.httpRequest().getUri();
     }
 
     @Override
