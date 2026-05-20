@@ -41,7 +41,7 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import BusinessIcon from '@mui/icons-material/Business';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { AdminUser, Customer, isError, PublisherInfo } from '../../extension-registry-types';
+import { AdminUser as UserRelationships, isError, PublisherInfo } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { ExtensionRegistryService } from '../../extension-registry-service';
 import { MainContext } from '../../context';
@@ -74,7 +74,7 @@ const ROLE_EDITOR_OPTIONS: { value: Role; label: string }[] = [
 
 type ReportError = (err: Error | Partial<ErrorResponse>) => void;
 
-const getUserKey = (entry: AdminUser) => `${entry.user.provider}/${entry.user.loginName}`;
+const getUserKey = (entry: UserRelationships) => `${entry.user.provider}/${entry.user.loginName}`;
 
 const providerIcon = (provider: string | undefined) =>
     provider === 'github' ? <GitHubIcon fontSize='small' /> : <PersonIcon fontSize='small' />;
@@ -92,7 +92,7 @@ function findScrollableAncestor(el: HTMLElement | null): HTMLElement | null {
 }
 
 function usePublisherDetail(
-    entry: AdminUser | undefined,
+    entry: UserRelationships | undefined,
     service: ExtensionRegistryService,
     reportError: ReportError,
     onRoleMutate: (provider: string, loginName: string, newRole: Role) => string | undefined,
@@ -103,7 +103,6 @@ function usePublisherDetail(
     const [publisherError, setPublisherError] = useState<string | null>(null);
     const [roleDraft, setRoleDraft] = useState<Role>('none');
     const [savingRole, setSavingRole] = useState(false);
-    const [customerDetails, setCustomerDetails] = useState<Map<string, Customer>>(new Map());
 
     const entryProvider = entry?.user.provider;
     const entryLoginName = entry?.user.loginName ?? '';
@@ -114,7 +113,6 @@ function usePublisherDetail(
             setPublisherInfo(undefined);
             setPublisherError(null);
             setRoleDraft('none');
-            setCustomerDetails(new Map());
             return;
         }
 
@@ -127,17 +125,6 @@ function usePublisherDetail(
                 setPublisherError(null);
                 const info = await service.admin.getPublisherInfo(abortController, entryProvider!, entryLoginName);
                 setPublisherInfo(info);
-
-                if (entry.customers.length > 0) {
-                    const results = await Promise.allSettled(
-                        entry.customers.map(name => service.admin.getCustomer(abortController, name)),
-                    );
-                    const map = new Map<string, Customer>();
-                    for (const r of results) {
-                        if (r.status === 'fulfilled') map.set(r.value.name, r.value);
-                    }
-                    setCustomerDetails(map);
-                }
             } catch (err) {
                 if (!abortController.signal.aborted) {
                     reportError(err as Error | Partial<ErrorResponse>);
@@ -186,7 +173,6 @@ function usePublisherDetail(
 }, [handleRoleSave]),
         savingRole,
         clearError: useCallback(() => setPublisherError(null), []),
-        customerDetails,
     };
 }
 
@@ -242,7 +228,7 @@ const RoleEditor: FunctionComponent<{
 );
 
 interface UserListItemProps {
-    entry: AdminUser;
+    entry: UserRelationships;
     index: number;
     expanded: boolean;
     onToggle: (userKey: string, loginName: string, isExpanded: boolean) => void;
@@ -264,7 +250,7 @@ const UserListItem: FunctionComponent<UserListItemProps> = ({
     const {
         publisherInfo, publisherLoading, publisherError,
         roleDraft, setRoleDraft, saveRole, savingRole,
-        clearError, customerDetails,
+        clearError,
     } = usePublisherDetail(
         expanded || pendingExpand ? entry : undefined,
         service, reportError, onRoleMutate, onRoleRollback,
@@ -339,9 +325,9 @@ const UserListItem: FunctionComponent<UserListItemProps> = ({
                                     </Stack>
                                     <Stack direction='row' spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                                         {entry.namespaces.map(ns => (
-                                            <Chip key={ns} label={ns} size='small'
+                                            <Chip key={ns.name} label={ns.name} size='small'
                                                 component={RouterLink}
-                                                to={`${AdminDashboardRoutes.NAMESPACE_ADMIN}/${encodeURIComponent(ns)}`}
+                                                to={`${AdminDashboardRoutes.NAMESPACE_ADMIN}/${encodeURIComponent(ns.name)}`}
                                                 clickable />
                                         ))}
                                     </Stack>
@@ -355,13 +341,12 @@ const UserListItem: FunctionComponent<UserListItemProps> = ({
                                     </Stack>
                                     <Stack spacing={0.5}>
                                         {entry.customers.map(cust => {
-                                            const customer = customerDetails.get(cust);
-                                            const tier = customer?.tier;
+                                            const tier = cust?.tier;
                                             return (
-                                                <Stack key={cust} direction='row' spacing={0.5} alignItems='center'>
-                                                    <Chip label={cust} size='small'
+                                                <Stack key={cust.name} direction='row' spacing={0.5} alignItems='center'>
+                                                    <Chip label={cust.name} size='small'
                                                         component={RouterLink}
-                                                        to={`${AdminDashboardRoutes.CUSTOMERS}/${encodeURIComponent(cust)}`}
+                                                        to={`${AdminDashboardRoutes.CUSTOMERS}/${encodeURIComponent(cust.name)}`}
                                                         clickable />
                                                     {tier && (
                                                         <Tooltip title={`${tier.capacity} req / ${tier.duration}s (${tier.refillStrategy.toLowerCase()})`}>
@@ -369,7 +354,7 @@ const UserListItem: FunctionComponent<UserListItemProps> = ({
                                                                 color={tier.tierType === 'FREE' ? 'default' : 'primary'} />
                                                         </Tooltip>
                                                     )}
-                                                    {customer && !tier && (
+                                                    {cust && !tier && (
                                                         <Typography variant='caption' color='text.secondary'>no tier</Typography>
                                                     )}
                                                 </Stack>
@@ -394,7 +379,7 @@ export const PublisherAdmin: FunctionComponent = () => {
     const navigate = useNavigate();
 
     const initialSearch = publisherParam ?? '';
-    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [users, setUsers] = useState<UserRelationships[]>([]);
     const [totalSize, setTotalSize] = useState(0);
     const [usersLoading, setUsersLoading] = useState(true);
     const [usersError, setUsersError] = useState<string | null>(null);

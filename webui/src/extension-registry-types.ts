@@ -173,8 +173,8 @@ export interface UserData {
 
 export interface AdminUser {
     user: UserData;
-    namespaces: string[];
-    customers: string[];
+    namespaces: NamespaceDetails[];
+    customers: Customer[];
 }
 
 export interface AdminUsersResult {

@@ -45,7 +45,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
-import org.eclipse.openvsx.json.UserAdminJson;
+import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
@@ -496,16 +496,16 @@ public class AdminService {
         return userPublishInfo;
     }
 
-    public Page<UserAdminJson> searchUsers(String search, String role, Pageable pageable) {
+    public Page<UserRelationshipsJson> searchUsers(String search, String role, Pageable pageable) {
         return repositories.searchUsers(search, role, pageable)
                 .map(user -> {
-                    var json = new UserAdminJson();
+                    var json = new UserRelationshipsJson();
                     json.setUser(user.toUserJson());
                     json.setNamespaces(repositories.findMemberships(user).stream()
-                            .map(membership -> membership.getNamespace().getName())
+                            .map(membership -> membership.getNamespace().toNamespaceDetailsJson())
                             .toList());
                     json.setCustomers(repositories.findCustomerMemberships(user).stream()
-                            .map(membership -> membership.getCustomer().getName())
+                            .map(membership -> membership.getCustomer().toJson())
                             .toList());
                     return json;
                 });

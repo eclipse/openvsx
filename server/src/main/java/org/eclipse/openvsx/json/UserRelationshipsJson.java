@@ -15,33 +15,33 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
 
 @JsonInclude(Include.NON_NULL)
-public class UserAdminJson {
+public class UserRelationshipsJson {
 
     private UserJson user;
-    private List<String> namespaces;
-    private List<String> customers;
+    private List<NamespaceDetailsJson> namespaces;
+    private List<CustomerJson> customers;
 
     public UserJson getUser() {
         return user;
     }
 
+    public List<NamespaceDetailsJson> getNamespaces() {
+        return namespaces;
+    }
+
+    public List<CustomerJson> getCustomers() {
+        return customers;
+    }
+    
     public void setUser(UserJson user) {
         this.user = user;
     }
 
-    public List<String> getNamespaces() {
-        return namespaces;
-    }
-
-    public void setNamespaces(List<String> namespaces) {
+    public void setNamespaces(List<NamespaceDetailsJson> namespaces) {
         this.namespaces = namespaces;
     }
 
-    public List<String> getCustomers() {
-        return customers;
-    }
-
-    public void setCustomers(List<String> customers) {
+    public void setCustomers(List<CustomerJson> customers) {
         this.customers = customers;
     }
 

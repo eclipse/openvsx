@@ -158,7 +158,7 @@ public class AdminAPI {
         path = "/users",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<Page<UserAdminJson>> getUsers(
+    public ResponseEntity<Page<UserRelationshipsJson>> getUsers(
             Pageable pageable,
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "role", required = false) String role
