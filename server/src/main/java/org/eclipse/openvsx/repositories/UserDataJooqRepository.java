@@ -88,35 +88,12 @@ public class UserDataJooqRepository {
         if (StringUtils.isNotBlank(search)) {
             var like = "%" + search.toLowerCase(Locale.ROOT) + "%";
             var searchCondition = DSL.lower(USER_DATA.LOGIN_NAME).like(like)
-                    .or(DSL.lower(USER_DATA.FULL_NAME).like(like))
-                    .or(DSL.lower(USER_DATA.PROVIDER).like(like))
-                    .or(DSL.lower(USER_DATA.ROLE).like(like))
-                    .or(existsNamespaceLike(like))
-                    .or(existsCustomerLike(like));
+                    .or(DSL.lower(USER_DATA.FULL_NAME).like(like));
+                    
             conditions.add(searchCondition);
         }
 
         return conditions;
-    }
-
-    private Condition existsNamespaceLike(String like) {
-        return DSL.exists(
-                dsl.selectOne()
-                        .from(NAMESPACE_MEMBERSHIP)
-                        .join(NAMESPACE).on(NAMESPACE.ID.eq(NAMESPACE_MEMBERSHIP.NAMESPACE))
-                        .where(NAMESPACE_MEMBERSHIP.USER_DATA.eq(USER_DATA.ID))
-                        .and(DSL.lower(NAMESPACE.NAME).like(like))
-        );
-    }
-
-    private Condition existsCustomerLike(String like) {
-        return DSL.exists(
-                dsl.selectOne()
-                        .from(CUSTOMER_MEMBERSHIP)
-                        .join(CUSTOMER).on(CUSTOMER.ID.eq(CUSTOMER_MEMBERSHIP.CUSTOMER))
-                        .where(CUSTOMER_MEMBERSHIP.USER_DATA.eq(USER_DATA.ID))
-                        .and(DSL.lower(CUSTOMER.NAME).like(like))
-        );
     }
 
     private UserData toUserData(Record row) {

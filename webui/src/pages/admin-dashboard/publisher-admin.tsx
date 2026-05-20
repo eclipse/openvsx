@@ -125,7 +125,7 @@ function usePublisherDetail(
             try {
                 setPublisherLoading(true);
                 setPublisherError(null);
-                const info = await service.admin.getPublisherInfo(abortController, entryProvider, entryLoginName);
+                const info = await service.admin.getPublisherInfo(abortController, entryProvider!, entryLoginName);
                 setPublisherInfo(info);
 
                 if (entry.customers.length > 0) {
@@ -558,7 +558,7 @@ export const PublisherAdmin: FunctionComponent = () => {
                     searchContainer={[
                         <StyledInput
                             key='publisher-admin-search'
-                            placeholder='Search by login, display name, namespace, customer...'
+                            placeholder='Search by login or display name...'
                             value={searchText}
                             onSubmit={onSearchSubmit}
                             onChange={onSearchChange}
