@@ -496,6 +496,7 @@ public class AdminService {
         return userPublishInfo;
     }
 
+    @Transactional
     public Page<UserRelationshipsJson> searchUsers(String search, String role, Pageable pageable) {
         return repositories.searchUsers(search, role, pageable)
                 .map(user -> {
