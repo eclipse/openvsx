@@ -399,6 +399,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
                 () -> repositories.deleteTier(tier),
+                () -> repositories.deleteMemberships(userData),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails
                 () -> repositories.deleteExtensionScan(scan)
