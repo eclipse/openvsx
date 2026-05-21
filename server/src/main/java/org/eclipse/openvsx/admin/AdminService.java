@@ -492,6 +492,9 @@ public class AdminService {
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
+        if (UserData.ROLE_ADMIN.equals(user.getRole())) {
+        	throw new ErrorResultException("Cannot revoke contributions for admins through publisher flow", HttpStatus.BAD_REQUEST);
+        }
 
         // Send a DELETE request to the Eclipse publisher agreement API
         if (eclipse.isActive() && user.getEclipsePersonId() != null) {

@@ -1433,7 +1433,6 @@ class AdminAPITest {
         versions.forEach(version -> assertThat(version.isActive()).isFalse());
     }
 
-
     @Test
     void testRevokeBulkPublishersSupportsOptionalReason() throws Exception {
         var versions = mockExtension(1, 0, 0);
@@ -1476,6 +1475,48 @@ class AdminAPITest {
 
         assertThat(userToken.isActive()).isFalse();
         versions.forEach(version -> assertThat(version.isActive()).isFalse());
+    }
+
+    @Test
+    void testRevokeBulkPublishersBlocksAdminRemoval() throws Exception {
+        var versions = mockExtension(1, 0, 0);
+        var user = mockAdminUser();
+        Mockito.when(repositories.findUserByLoginName("github", user.getLoginName()))
+                .thenReturn(user);
+        var userToken = new PersonalAccessToken();
+        userToken.setUser(user);
+        userToken.setActive(true);
+        Mockito.when(repositories.findAccessTokens(user))
+                .thenReturn(Streamable.of(userToken));
+        versions.getFirst().setPublishedWith(userToken);
+        Mockito.when(repositories.findVersionsByUser(user, true))
+                .thenReturn(Streamable.of(versions.getFirst()));
+
+        Mockito.when(repositories.findActiveReviews(user))
+                .thenReturn(Streamable.empty());
+
+        var baseRequest = """
+                {
+                    "publishers": [{
+                            "loginName": "%s",
+                            "provider": "github"
+                        }
+                    ],
+                    "reason": "Some passed reason."
+                }
+                """.formatted(user.getLoginName());
+        var token = mockAdminToken();
+        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
+                        .with(csrf().asHeader())
+                        .content(baseRequest)
+                        .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(content().json(bulkPublishResponseJson(Map.of(
+                    		user.getLoginName(),
+                    		ResultJson.error("Cannot revoke contributions for admins through publisher flow")))));
+
+        assertThat(userToken.isActive()).isTrue();
+        versions.forEach(version -> assertThat(version.isActive()).isTrue());
     }
 
     @Test
