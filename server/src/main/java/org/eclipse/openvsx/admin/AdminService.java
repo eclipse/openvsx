@@ -482,8 +482,12 @@ public class AdminService {
         return userPublishInfo;
     }
 
-    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
+        return revokePublisherContributions(provider, loginName, admin, null);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin, String reason) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
@@ -519,9 +523,13 @@ public class AdminService {
             extensions.updateExtension(extension);
         }
 
-        var result = ResultJson.success("Deactivated " + deactivatedTokenCount
+        var message = "Deactivated " + deactivatedTokenCount
                 + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
-                + provider + "/" + loginName + ".");
+                + provider + "/" + loginName + ".";
+        if (reason != null) {
+            message += " Reason: " + reason;
+        }
+        var result = ResultJson.success(message);
         logs.logAction(admin, result);
         return result;
     }

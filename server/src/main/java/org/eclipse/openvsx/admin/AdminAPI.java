@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,8 @@ import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.json.AdminStatisticsJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeRequestJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -585,6 +588,38 @@ public class AdminAPI {
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/admin/api/publisher/revoke",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Bulk revoke publisher contributions")
+    @ApiResponse(
+            responseCode = "200",
+            description = "A success message is returned in JSON format",
+            content = @Content(schema = @Schema(implementation = BulkPublisherRevokeResponseJson.class))
+    )
+    public ResponseEntity<BulkPublisherRevokeResponseJson> revokeBulkPublishers(
+            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
+            @RequestBody BulkPublisherRevokeRequestJson request
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var resultMap = new HashMap<String, ResultJson>();
+            for (var publisher : request.publishers()) {
+                try {
+                    var result = admins.revokePublisherContributions(publisher.provider(), publisher.loginName(), adminUser, request.reason());
+                    resultMap.put(publisher.loginName(), result);
+                } catch (ErrorResultException exc) {
+                    resultMap.put(publisher.loginName(), exc.toResponseEntity().getBody());
+                }
+            }
+            return ResponseEntity.ok(new BulkPublisherRevokeResponseJson(resultMap));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(BulkPublisherRevokeResponseJson.class);
         }
     }
 
