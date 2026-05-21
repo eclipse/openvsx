@@ -522,9 +522,18 @@ public class AdminService {
         for (var extension : affectedExtensions) {
             extensions.updateExtension(extension);
         }
+        
+        // revoke namespace memberships
+        var namespaceMemberships = repositories.findMemberships(user);
+        var numberOfNamespaceMemberships = 0;
+        if (namespaceMemberships != null) {
+        	numberOfNamespaceMemberships = namespaceMemberships.toSet().size();
+        }
+        repositories.deleteMemberships(user);
 
         var message = "Deactivated " + deactivatedTokenCount
-                + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
+                + " tokens, deactivated " + deactivatedExtensionCount + " extensions, "
+        		+ numberOfNamespaceMemberships + " namespace memberships of user "
                 + provider + "/" + loginName + ".";
         if (reason != null) {
             message += " Reason: " + reason;

@@ -751,7 +751,7 @@ class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions of user github/test.")));
+                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test.")));
 
         assertThat(token.isActive()).isFalse();
         assertThat(versions.getFirst().isActive()).isFalse();
@@ -1388,6 +1388,20 @@ class AdminAPITest {
 
         Mockito.when(repositories.findActiveReviews(user2))
                 .thenReturn(Streamable.empty());
+        
+        var namespace = mockNamespace();
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setRole(NamespaceMembership.ROLE_OWNER);
+        membership.setUser(user);
+        Mockito.when(repositories.findMemberships(user))
+    			.thenReturn(Streamable.of(membership));
+        var membership2 = new NamespaceMembership();
+        membership2.setNamespace(namespace);
+        membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        membership2.setUser(user2);
+        Mockito.when(repositories.findMemberships(user2))
+    			.thenReturn(Streamable.of(membership2));
 
         var baseRequest = """
                 {
@@ -1410,9 +1424,9 @@ class AdminAPITest {
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
                         "test",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions of user github/test."),
+                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test."),
                         "test2",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions of user github/test2.")))));
+                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test2.")))));
 
         assertThat(userToken.isActive()).isFalse();
         assertThat(user2Token.isActive()).isFalse();
@@ -1458,7 +1472,7 @@ class AdminAPITest {
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
                         "test",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions of user github/test. Reason: Some passed reason.")))));
+                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test. Reason: Some passed reason.")))));
 
         assertThat(userToken.isActive()).isFalse();
         versions.forEach(version -> assertThat(version.isActive()).isFalse());
@@ -1505,7 +1519,7 @@ class AdminAPITest {
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
                         "test",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions of user github/test."),
+                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test."),
                         "test2",
                         ResultJson.error("User not found: test2")))));
     }
