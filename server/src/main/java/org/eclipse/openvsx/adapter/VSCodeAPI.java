@@ -9,6 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.annotation.Observed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,6 +51,7 @@ public class VSCodeAPI {
     private final UpstreamVSCodeService upstream;
     private final List<IVSCodeService> registries;
     private final IExtensionQueryRequestHandler extensionQueryRequestHandler;
+    private final ObjectMapper objectMapper;
 
     public VSCodeAPI(
             LocalVSCodeService local,
@@ -58,6 +62,7 @@ public class VSCodeAPI {
         this.upstream = upstream;
         this.registries = setupRegistries();
         this.extensionQueryRequestHandler = extensionQueryRequestHandler;
+        this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     private List<IVSCodeService> setupRegistries() {
@@ -85,14 +90,48 @@ public class VSCodeAPI {
     )
     public ExtensionQueryResult extensionQuery(@RequestBody @Parameter(description = "Parameters of the extension query") ExtensionQueryParam param) {
         var size = 0;
-        if(param.filters() != null && !param.filters().isEmpty()) {
+        if (param.filters() != null && !param.filters().isEmpty()) {
             size = param.filters().getFirst().pageSize();
         }
-        if(size <= 0) {
+        if (size <= 0) {
             size = DEFAULT_PAGE_SIZE;
         }
 
         return extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
+    }
+
+    @GetMapping(
+            path = "/vscode/gallery/extensionquery",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides metadata of extensions matching the given parameters")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Returns the query results"
+    )
+    public ResponseEntity<ExtensionQueryResult> extensionQueryAsGet(@RequestParam(value = "q") String query) {
+        ExtensionQueryParam param;
+
+        try {
+            param = objectMapper.readValue(query, ExtensionQueryParam.class);
+        } catch (JsonProcessingException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query");
+        }
+
+        var size = 0;
+        if (param.filters() != null && !param.filters().isEmpty()) {
+            size = param.filters().getFirst().pageSize();
+        }
+        if (size <= 0) {
+            size = DEFAULT_PAGE_SIZE;
+        }
+
+        var result = extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(result);
     }
 
     @Observed
