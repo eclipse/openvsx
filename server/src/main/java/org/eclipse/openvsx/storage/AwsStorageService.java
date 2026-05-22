@@ -7,9 +7,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
 package org.eclipse.openvsx.storage;
 
+import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
@@ -76,62 +77,88 @@ public class AwsStorageService implements IStorageService {
     @Value("${ovsx.storage.aws.path-style-access:false}")
     boolean pathStyleAccess;
 
-    private S3Client s3Client;
-    private S3Presigner s3Presigner;
+    private volatile S3Client s3Client;
+    private volatile S3Presigner s3Presigner;
 
     public AwsStorageService(FileCacheDurationConfig fileCacheDurationConfig, FilesCacheKeyGenerator filesCacheKeyGenerator) {
         this.fileCacheDurationConfig = fileCacheDurationConfig;
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
+    @PreDestroy
+    public void close() {
+        if (s3Presigner != null) {
+            try {
+                s3Presigner.close();
+            } catch (RuntimeException _) {}
+        }
+
+        if (s3Client != null) {
+            try {
+                s3Client.close();
+            } catch (RuntimeException _) {}
+        }
+    }
+
     public S3Client getS3Client() {
+        // lazily generates the s3 client using double-checked locking
         if (s3Client == null) {
-            var s3ClientBuilder = S3Client.builder()
-                    .defaultsMode(DefaultsMode.STANDARD)
-                    .forcePathStyle(pathStyleAccess)
-                    .region(Region.of(region))
-                    .credentialsProvider(getCredentialsProvider());
+            synchronized (this) {
+                if (s3Client == null) {
+                    var s3ClientBuilder = S3Client.builder()
+                            .defaultsMode(DefaultsMode.STANDARD)
+                            .forcePathStyle(pathStyleAccess)
+                            .region(Region.of(region))
+                            .credentialsProvider(getCredentialsProvider());
 
-            if(StringUtils.isNotEmpty(serviceEndpoint)) {
-                var endpointParams = S3EndpointParams.builder()
-                        .endpoint(serviceEndpoint)
-                        .region(Region.of(region))
-                        .build();
+                    var serviceEndpoint = getServiceEndpoint();
+                    if (serviceEndpoint != null) {
+                        s3ClientBuilder = s3ClientBuilder.endpointOverride(serviceEndpoint);
+                    }
 
-                var endpoint = S3EndpointProvider
-                        .defaultProvider()
-                        .resolveEndpoint(endpointParams).join();
-
-                s3ClientBuilder = s3ClientBuilder.endpointOverride(endpoint.url());
+                    s3Client = s3ClientBuilder.build();
+                }
             }
-
-            s3Client = s3ClientBuilder.build();
         }
         return s3Client;
     }
 
     private S3Presigner getS3Presigner() {
+        // lazily generates the s3 presigner using double-checked locking
         if (s3Presigner == null) {
-            var builder = S3Presigner.builder()
-                    .region(Region.of(region))
-                    .credentialsProvider(getCredentialsProvider());
+            synchronized (this) {
+                if (s3Presigner == null) {
+                    var builder = S3Presigner.builder()
+                            .region(Region.of(region))
+                            .credentialsProvider(getCredentialsProvider());
 
-            if(StringUtils.isNotEmpty(serviceEndpoint)) {
-                var endpointParams = S3EndpointParams.builder()
-                        .endpoint(serviceEndpoint)
-                        .region(Region.of(region))
-                        .build();
+                    var serviceEndpoint = getServiceEndpoint();
+                    if (serviceEndpoint != null) {
+                        builder = builder.endpointOverride(serviceEndpoint);
+                    }
 
-                var endpoint = S3EndpointProvider
-                        .defaultProvider()
-                        .resolveEndpoint(endpointParams).join();
-
-                builder = builder.endpointOverride(endpoint.url());
+                    s3Presigner = builder.build();
+                }
             }
-
-            s3Presigner = builder.build();
         }
         return s3Presigner;
+    }
+
+    private @Nullable URI getServiceEndpoint() {
+        if (StringUtils.isNotEmpty(serviceEndpoint)) {
+            var endpointParams = S3EndpointParams.builder()
+                    .endpoint(serviceEndpoint)
+                    .region(Region.of(region))
+                    .build();
+
+            var endpoint = S3EndpointProvider
+                    .defaultProvider()
+                    .resolveEndpoint(endpointParams).join();
+
+            return endpoint.url();
+        }
+
+        return null;
     }
 
     private AwsCredentialsProvider getCredentialsProvider() {
@@ -145,7 +172,6 @@ public class AwsStorageService implements IStorageService {
         return DefaultCredentialsProvider.create();
     }
 
-
     private boolean hasStaticCredentials() {
         return !StringUtils.isEmpty(accessKeyId) && !StringUtils.isEmpty(secretAccessKey);
     }
@@ -153,6 +179,7 @@ public class AwsStorageService implements IStorageService {
     private boolean hasSessionToken() {
         return !StringUtils.isEmpty(sessionToken);
     }
+
     @Override
     public boolean isEnabled() {
         // Require region and bucket to be configured
