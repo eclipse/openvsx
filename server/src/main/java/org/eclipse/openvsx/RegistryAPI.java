@@ -101,8 +101,12 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
+
         var json = NamespaceJson.error("Namespace not found: " + namespace);
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -135,7 +139,10 @@ public class RegistryAPI {
             return ResponseEntity.ok(local.verifyToken(namespace, token));
         } catch (NotFoundException exc) {
             var json = ResultJson.error("Namespace not found: " + namespace);
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                    .body(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
         }
@@ -163,14 +170,17 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.noCache().cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getNamespaceDetails(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = NamespaceDetailsJson.error(namespaceNotFoundMessage(namespace));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     private String extensionNotFoundMessage(String extension) {
@@ -221,7 +231,10 @@ public class RegistryAPI {
             }
         }
 
-        throw new NotFoundException();
+        return ResponseEntity
+                .notFound()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .build();
     }
 
     @GetMapping(
@@ -248,14 +261,17 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.noCache().cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getExtension(namespace, extension, null));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -302,7 +318,10 @@ public class RegistryAPI {
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -331,14 +350,17 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.noCache().cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getExtension(namespace, extension, null, version));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, version)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -387,7 +409,10 @@ public class RegistryAPI {
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform, version)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -482,7 +507,10 @@ public class RegistryAPI {
             }
         }
         var json = VersionsJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -577,7 +605,10 @@ public class RegistryAPI {
             }
         }
         var json = VersionReferencesJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping("/api/{namespace}/{extension}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
@@ -619,7 +650,11 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+
+        return ResponseEntity
+                .notFound()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .build();
     }
 
     @GetMapping("/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
@@ -674,7 +709,11 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+
+        return ResponseEntity
+                .notFound()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .build();
     }
 
     @GetMapping(
@@ -701,14 +740,17 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.noCache().cachePublic())
+                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                         .body(registry.getReviews(namespace, extension));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ReviewListJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(json);
     }
 
     @GetMapping(
@@ -805,7 +847,7 @@ public class RegistryAPI {
         result.setTotalSize(resultSize);
         result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.noCache().cachePublic())
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
                 .body(result);
     }
 
@@ -1388,7 +1430,10 @@ public class RegistryAPI {
             }
         }
 
-        return ResponseEntity.notFound().build();
+        return ResponseEntity
+                .notFound()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .build();
     }
 
     @GetMapping(path = "/api/version", produces = MediaType.APPLICATION_JSON_VALUE)
