@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.net.URI;
@@ -202,7 +203,7 @@ public class VSCodeAPI {
     ) {
         var dotIndex = itemName.indexOf('.');
         if (dotIndex < 0) {
-            return ResponseEntity.badRequest().body("Expecting an item of the form `{publisher}.{name}`");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expecting an item of the form `{publisher}.{name}`");
         }
 
         var namespace = itemName.substring(0, dotIndex);
