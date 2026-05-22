@@ -210,7 +210,7 @@ public class VSCodeAPI {
         for (var service : getVSCodeServices()) {
             try {
                 var itemUrl = service.getItemUrl(namespace, extension);
-                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                return ResponseEntity.status(HttpStatus.FOUND)
                         .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
                         .location(URI.create(itemUrl))
                         .build();
@@ -269,7 +269,7 @@ public class VSCodeAPI {
         for (var service : getVSCodeServices()) {
             try {
                 var downloadUrl = service.download(namespaceName, extensionName, version, targetPlatform);
-                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                return ResponseEntity.status(HttpStatus.FOUND)
                         .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
                         .location(URI.create(downloadUrl))
                         .build();
