@@ -80,6 +80,9 @@ export interface ScanActions {
     openFileDialog: (action: FileActionType) => void;
     closeFileDialog: () => void;
     executeFileAction: () => void;
+
+    // Scan actions
+    retryFailedScannerJobs: (scanId: string) => Promise<void>;
 }
 
 export interface DerivedData {

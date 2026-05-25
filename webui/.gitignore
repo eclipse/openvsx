@@ -17,3 +17,6 @@ yarn-error.log
 /playwright/.cache/
 stats.html
 package.tgz
+
+# incremental build cache
+*/**/*.tsbuildinfo

@@ -253,6 +253,16 @@ public class ExtensionScan implements Serializable {
         result.setScan(this);
     }
 
+    /**
+     * Resets this {@code ExtensionScan} instance back to status {@code SCANNING}
+     * to retry a failed scanner jobs.
+     */
+    public void resetToScanning() {
+        setStatus(ScanStatus.SCANNING);
+        setCompletedAt(null);
+        setErrorMessage(null);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

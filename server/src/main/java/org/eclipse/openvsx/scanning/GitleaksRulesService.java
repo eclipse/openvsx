@@ -16,8 +16,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @ConditionalOnProperty(name = "ovsx.scanning.secret-detection.gitleaks.auto-fetch", havingValue = "true")
-public class GitleaksRulesService extends JedisPubSub {
+public class GitleaksRulesService extends JedisPubSub implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(GitleaksRulesService.class);
     
@@ -195,12 +195,7 @@ public class GitleaksRulesService extends JedisPubSub {
      * Scheduled refresh job - only runs if scheduled-refresh is enabled.
      */
     @Job(name = "Refresh gitleaks rules", retries = 0)
-    @Recurring(
-        id = "refresh-gitleaks-rules", 
-        cron = "0 0 3 * * *", 
-        zoneId = "UTC"
-    )
-    public void scheduledRefresh() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         // Check if scheduled refresh is enabled at runtime
         if (!config.isGitleaksScheduledRefresh()) {
             return;

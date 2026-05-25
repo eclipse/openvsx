@@ -20,6 +20,7 @@ import org.eclipse.openvsx.entities.ScannerJob;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ExtensionThreat;
+import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -28,7 +29,7 @@ import org.eclipse.openvsx.repositories.ExtensionThreatRepository;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
+import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ import java.util.stream.Collectors;
  * Fallback: polls every 60s to catch missed completions.
  */
 @Service
-public class ExtensionScanCompletionService {
+public class ExtensionScanCompletionService implements JobRequestHandler<HandlerJobRequest<?>> {
     
     protected final Logger logger = LoggerFactory.getLogger(ExtensionScanCompletionService.class);
     
@@ -170,8 +171,7 @@ public class ExtensionScanCompletionService {
      * 3. If complete, aggregate results and activate or quarantine
      */
     @Job(name = "Process completed scans", retries = 0)
-    @Recurring(id = "process-completed-scans", interval = "PT5M")
-    public void processCompletedScans() {
+    public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         try {
             logger.debug("Starting scan completion check cycle (fallback)");
             

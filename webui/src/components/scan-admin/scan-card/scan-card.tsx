@@ -14,7 +14,7 @@
 import { FunctionComponent, useState, useEffect } from 'react';
 import { Card, CardContent, Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { ScanResult } from '../../../context/scan-admin';
+import { ScanResult, useScanContext } from '../../../context/scan-admin';
 
 import { ScanCardHeader } from './scan-card-header';
 import { ScanCardContent } from './scan-card-content';
@@ -25,6 +25,8 @@ import {
     ICON_SIZE,
     shouldShowStriped,
     getStatusBarColor,
+    hasFailedScannerJobs,
+    isRunning,
 } from './utils';
 
 interface ScanCardProps {
@@ -52,7 +54,9 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
     checked,
 }) => {
     const theme = useTheme();
+    const { actions } = useScanContext();
     const [collapseComplete, setCollapseComplete] = useState(true);
+    const [isRetryingFailedScannerJobs, setIsRetryingFailedScannerJobs] = useState(false);
     const {
         expanded,
         handleExpandClick,
@@ -61,6 +65,16 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
         liveDuration,
         cardRef,
     } = useScanCardState(scan);
+    const canRetryFailedScannerJobs = !isRunning(scan.status) && hasFailedScannerJobs(scan);
+
+    const handleRetryFailedScannerJobs = async () => {
+        setIsRetryingFailedScannerJobs(true);
+        try {
+            await actions.retryFailedScannerJobs(scan.id);
+        } finally {
+            setIsRetryingFailedScannerJobs(false);
+        }
+    };
 
     // Reset collapseComplete when expanding
     useEffect(() => {
@@ -144,6 +158,9 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
                 <ScanCardExpandedContent
                     scan={scan}
                     expanded={expanded}
+                    canRetryFailedScannerJobs={canRetryFailedScannerJobs}
+                    onRetryFailedScannerJobs={handleRetryFailedScannerJobs}
+                    isRetryingFailedScannerJobs={isRetryingFailedScannerJobs}
                     onCollapseComplete={() => setCollapseComplete(true)}
                 />
             )}

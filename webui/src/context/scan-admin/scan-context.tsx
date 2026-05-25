@@ -23,7 +23,7 @@ import {
     useFileCountsEffect,
     useAutoRefreshEffect,
 } from './scan-api-effects';
-import { useConfirmAction, useFileAction } from './scan-api-actions';
+import { useConfirmAction, useFileAction, useRetryFailedScannerJobsAction } from './scan-api-actions';
 import { useScanActions } from './scan-actions';
 
 // ============================================================================
@@ -61,12 +61,13 @@ export const ScanProvider: FC<ScanProviderProps> = ({ children, service, handleE
 
     const executeConfirmAction = useConfirmAction(service, state, dispatch, handleErrorRef);
     const executeFileAction = useFileAction(service, state, dispatch, handleErrorRef);
+    const retryFailedScannerJobs = useRetryFailedScannerJobsAction(service, dispatch, handleErrorRef);
 
     // ========================================================================
     // Actions
     // ========================================================================
 
-    const actions = useScanActions(dispatch, executeConfirmAction, executeFileAction);
+    const actions = useScanActions(dispatch, executeConfirmAction, executeFileAction, retryFailedScannerJobs);
 
     // ========================================================================
     // Derived Data (memoized)

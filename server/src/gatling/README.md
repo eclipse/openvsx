@@ -1,7 +1,6 @@
 # Setup
 ## build.gradle
 ### Running on dev environment:
-- comment out `devRuntimeOnly "org.springframework.boot:spring-boot-devtools"` to prevent spring boot restart when you compile a gatling simulation.
 - add `jvmArgs = ['-Xverify:none']` to runServer task if you want to attach VisualVM to the server.
 
 ### Running against remote server:
@@ -14,23 +13,36 @@
   Simulations use the `auth` value to set the Authorization request header.
 
 ### resources/access-tokens.csv:
-- contains API access tokens. Create a couple of tokens using the web UI and add them to this file. 
+- contains API access tokens. `super_token` is pre-seeded for the dev profile; create more via the web UI for testing against a remote server.
 - make sure to keep the `access_token` header at the top of the file.
 
 ### scala/org/eclipse/openvsx/RegistryAPIPublishExtensionSimulation.scala:
-- Change `extensionDir` property in `resources/application.properties` to a directory that **only** contains extensions (*.vsix files). The simulation uses those files to upload them to the server.
+- Defaults to `build/test-extensions/`. Either populate it with `.vsix` files (e.g. `./gradlew downloadTestExtensions`) or change `extensionDir` in `resources/application.properties` to a directory that **only** contains extensions.
 
 # Running Gatling
-**The Gatling 'post' simulations need to be run to fill the database:**
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPICreateNamespaceSimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIPublishExtensionSimulation`
 
-**After running those simulations all other simulations can be run in no particular order:**
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetNamespaceSimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionSimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetExtensionVersionSimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.RegistryAPIGetQuerySimulation`
-- `./gradlew --rerun-tasks gatlingRun-org.eclipse.openvsx.adapter.VSCodeAdapterExtensionQuerySimulation`
+Gradle tasks (group: `Performance testing`):
+
+| Task                    | What it does                                                                                  |
+|-------------------------|-----------------------------------------------------------------------------------------------|
+| `perfFillDatabase`      | Seeds the DB: creates namespaces, then publishes extensions from `extensionDir`               |
+| `perfTestRegistryApi`   | Runs all read-only registry API simulations                                                   |
+| `perfTestVscodeAdapter` | Runs all read-only VS Code adapter simulations                                                |
+| `perfTestAll`           | Runs `perfTestRegistryApi` + `perfTestVscodeAdapter`                                          |
+| `gatlingRun`            | Built-in plugin task; pass `--simulation=<FQCN>` to run a single simulation                   |
+
+Typical run against a freshly started server:
+
+```sh
+./gradlew perfFillDatabase
+./gradlew perfTestAll
+```
+
+To run a single simulation:
+
+```sh
+./gradlew gatlingRun --simulation=org.eclipse.openvsx.RegistryAPISearchSimulation
+```
 
 ## Empty the database
 If you wish to empty the database after running the Gatling simulations, you can run:

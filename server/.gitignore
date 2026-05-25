@@ -6,6 +6,8 @@
 .settings/
 .classpath
 .project
+.metals
+.bloop
 
 DEPENDENCIES
 /src/dev/resources/application-ovsx.properties

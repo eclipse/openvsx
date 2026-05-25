@@ -22,7 +22,6 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -37,7 +36,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,10 +74,13 @@ class ScanAPITest {
     @MockitoBean
     org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository;
 
+    @MockitoBean
+    org.eclipse.openvsx.scanning.ExtensionScanService scanService;
+
     @Test
     void getScans_filters_sorting_and_pagination_are_applied() throws Exception {
         // Always allow the request to pass the admin gate in this test setup.
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         // Build scan with display name for the sorted/filtered result.
         var scanC = TestData.scan(3, "gamma", "third", "2.0.0", "alpha-team", ScanStatus.VALIDATING, LocalDateTime.of(2024, 12, 3, 10, 0));
@@ -84,18 +88,18 @@ class ScanAPITest {
 
         // Mock the DB-level filtered/paginated query to return just the expected result.
         // The DB does filtering and pagination, so tests now verify correct parameters are passed.
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanC), org.springframework.data.domain.PageRequest.of(0, 1), 2));
         
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         // Provide display name from linked version
-        Mockito.when(repositories.findVersion("2.0.0", "universal", "third", "gamma")).thenReturn(TestData.version(12, "Alpha Utility"));
+        when(repositories.findVersion("2.0.0", "universal", "third", "gamma")).thenReturn(TestData.version(12, "Alpha Utility"));
 
         mockMvc.perform(get("/admin/scans")
                 .param("status", "VALIDATING")
@@ -120,21 +124,21 @@ class ScanAPITest {
 
     @Test
     void getScans_namespace_partial_match_is_applied() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         var scanA = TestData.scan(1, "alpha-ns", "ext-a", "1.0.0", "pub", ScanStatus.PASSED, LocalDateTime.of(2024, 12, 1, 10, 0));
 
         // DB-level filtering returns only the matching scan
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
         
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         mockMvc.perform(get("/admin/scans")
                 .param("namespace", "alp")
@@ -147,25 +151,25 @@ class ScanAPITest {
 
     @Test
     void getScans_name_matches_extensionName_and_displayName_partial() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         var scanA = TestData.scan(1, "alpha-ns", "alpha-one", "1.0.0", "pub", ScanStatus.PASSED, LocalDateTime.of(2024, 12, 1, 10, 0));
         scanA.setExtensionDisplayName("Zebra Toolkit");
         var scanB = TestData.scan(2, "beta-ns", "beta-two", "1.0.0", "pub", ScanStatus.PASSED, LocalDateTime.of(2024, 12, 1, 10, 0));
         scanB.setExtensionDisplayName("Something Else");
 
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
-        Mockito.when(repositories.findVersion("1.0.0", "universal", "alpha-one", "alpha-ns")).thenReturn(TestData.version(10, "Zebra Toolkit"));
-        Mockito.when(repositories.findVersion("1.0.0", "universal", "beta-two", "beta-ns")).thenReturn(TestData.version(11, "Something Else"));
+        when(repositories.findVersion("1.0.0", "universal", "alpha-one", "alpha-ns")).thenReturn(TestData.version(10, "Zebra Toolkit"));
+        when(repositories.findVersion("1.0.0", "universal", "beta-two", "beta-ns")).thenReturn(TestData.version(11, "Something Else"));
 
         // First request: DB returns scanA which matches displayName "Toolkit"
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
 
         // Match by displayName partial (case-insensitive)
@@ -177,10 +181,10 @@ class ScanAPITest {
             .andExpect(jsonPath("$.scans[0].extensionName").value("alpha-one"));
 
         // Second request: DB returns scanB which matches extensionName "beta"
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanB)));
 
         // Match by extensionName partial
@@ -194,22 +198,22 @@ class ScanAPITest {
 
     @Test
     void getScans_status_supports_comma_separated_values() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         var scanPassed = TestData.scan(2, "ns", "ext-passed", "1.0.0", "pub", ScanStatus.PASSED, LocalDateTime.of(2024, 12, 1, 10, 0));
         var scanErrored = TestData.scan(3, "ns", "ext-error", "1.0.0", "pub", ScanStatus.ERRORED, LocalDateTime.of(2024, 12, 1, 10, 0));
 
         // DB returns only PASSED and ERRORED scans (filtered by status)
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanPassed, scanErrored)));
         
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         // explode=false behavior: status=PASSED,ERROR should be parsed into a list of two values.
         mockMvc.perform(get("/admin/scans")
@@ -222,23 +226,23 @@ class ScanAPITest {
 
     @Test
     void getScans_checkType_supports_comma_separated_values() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         var scanA = TestData.scan(1, "ns", "ext-a", "1.0.0", "pub", ScanStatus.REJECTED, LocalDateTime.of(2024, 12, 1, 10, 0));
 
         // DB returns only scanA (filtered by checkType)
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
 
-        Mockito.when(repositories.findVersion(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(null);
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         // scanA has a validation failure with checkType NAME_SQUATTING
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenAnswer(invocation -> {
+        when(repositories.findValidationFailures(any())).thenAnswer(invocation -> {
             var scan = (ExtensionScan) invocation.getArgument(0);
             if (scan.getId() == 1) {
                 var failure = ExtensionValidationFailure.create("NAME_SQUATTING", "any-name", "reason");
@@ -261,8 +265,8 @@ class ScanAPITest {
 
     @Test
     void getScanFilterOptions_returns_validationTypes() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
-        Mockito.when(repositories.findDistinctValidationFailureCheckTypes()).thenReturn(java.util.List.of("NAME_SQUATTING", "BLOCKLIST"));
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(repositories.findDistinctValidationFailureCheckTypes()).thenReturn(java.util.List.of("NAME_SQUATTING", "BLOCKLIST"));
 
         mockMvc.perform(get("/admin/scans/filterOptions").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -273,8 +277,8 @@ class ScanAPITest {
 
     @Test
     void getScans_rejects_unknown_sort_field() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
-        Mockito.when(repositories.findAllExtensionScans()).thenReturn(Streamable.empty());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(repositories.findAllExtensionScans()).thenReturn(Streamable.empty());
 
         mockMvc.perform(get("/admin/scans")
                 .param("sortBy", "unknownField")
@@ -286,14 +290,14 @@ class ScanAPITest {
 
     @Test
     void getScanCounts_returns_status_counts_and_zero_decisions() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.STARTED)).thenReturn(1L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.VALIDATING)).thenReturn(2L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.SCANNING)).thenReturn(3L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.PASSED)).thenReturn(4L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.QUARANTINED)).thenReturn(5L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.REJECTED)).thenReturn(6L);
-        Mockito.when(repositories.countExtensionScansByStatus(ScanStatus.ERRORED)).thenReturn(7L);
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(repositories.countExtensionScansByStatus(ScanStatus.STARTED)).thenReturn(1L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.VALIDATING)).thenReturn(2L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.SCANNING)).thenReturn(3L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.PASSED)).thenReturn(4L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.QUARANTINED)).thenReturn(5L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.REJECTED)).thenReturn(6L);
+        when(repositories.countExtensionScansByStatus(ScanStatus.ERRORED)).thenReturn(7L);
 
         // Default behavior (no filters): uses the fast count-by-status repository calls.
         mockMvc.perform(get("/admin/scans/counts").accept(MediaType.APPLICATION_JSON))
@@ -314,21 +318,21 @@ class ScanAPITest {
 
     @Test
     void getScanCounts_supports_enforcement_filtering() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         // DB-level enforcement filtering: mock counts for each status with enforcement
         // When enforcement filter is applied, the code uses countScansForStatistics
         // First request: enforced=true -> returns 1 for REJECTED
-        Mockito.when(repositories.countScansForStatistics(
-            Mockito.eq(ScanStatus.REJECTED), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(true)
+        when(repositories.countScansForStatistics(
+            eq(ScanStatus.REJECTED), any(), any(), any(), any(), eq(true)
         )).thenReturn(1L);
-        Mockito.when(repositories.countScansForStatistics(
-            Mockito.eq(ScanStatus.REJECTED), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(false)
+        when(repositories.countScansForStatistics(
+            eq(ScanStatus.REJECTED), any(), any(), any(), any(), eq(false)
         )).thenReturn(1L);
         
         // Other statuses return 0 when enforcement filter is applied
-        Mockito.when(repositories.countScansForStatistics(
-            Mockito.argThat(s -> s != ScanStatus.REJECTED), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean()
+        when(repositories.countScansForStatistics(
+            argThat(s -> s != ScanStatus.REJECTED), any(), any(), any(), any(), anyBoolean()
         )).thenReturn(0L);
 
         mockMvc.perform(get("/admin/scans/counts")
@@ -346,21 +350,21 @@ class ScanAPITest {
 
     @Test
     void getScans_returns_displayName_from_scan_when_version_missing() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
 
         var scan = TestData.scan(99, "ns", "ext", "0.0.1", "pub", ScanStatus.REJECTED, LocalDateTime.of(2024, 12, 4, 10, 0));
         scan.setExtensionDisplayName("Manifest Display");
 
-        Mockito.when(repositories.findScansFullyFiltered(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()
+        when(repositories.findScansFullyFiltered(
+            any(), any(), any(), any(),
+            any(), any(), any(), any(),
+            any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scan)));
         
-        Mockito.when(repositories.findVersion("0.0.1", "universal", "ext", "ns")).thenReturn(null);
-        Mockito.when(repositories.findValidationFailures(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findExtensionThreats(Mockito.any())).thenReturn(Streamable.empty());
-        Mockito.when(storageUtil.getFileUrls(Mockito.anyList(), Mockito.anyString(), Mockito.any(), Mockito.any())).thenReturn(Map.of());
+        when(repositories.findVersion("0.0.1", "universal", "ext", "ns")).thenReturn(null);
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         mockMvc.perform(get("/admin/scans").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
@@ -372,7 +376,7 @@ class ScanAPITest {
 
     @Test
     void getScanCounts_requires_admin() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
+        when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
 
         mockMvc.perform(get("/admin/scans/counts").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isForbidden());
@@ -380,9 +384,55 @@ class ScanAPITest {
 
     @Test
     void getScans_requires_admin() throws Exception {
-        Mockito.when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
+        when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
 
         mockMvc.perform(get("/admin/scans").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns200_andDelegatesToService() throws Exception {
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        var scan = TestData.scan(5, "ns", "ext", "1.0.0", "pub", ScanStatus.ERRORED, LocalDateTime.of(2024, 12, 1, 10, 0));
+        when(repositories.findExtensionScan(5L)).thenReturn(scan);
+        when(scanService.retryFailedJobs(scan)).thenReturn(scan);
+        when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+        when(repositories.findValidationFailures(any())).thenReturn(org.springframework.data.util.Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(org.springframework.data.util.Streamable.empty());
+        when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
+
+        mockMvc.perform(post("/admin/scans/5/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
+
+        verify(scanService).retryFailedJobs(scan);
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns404_whenScanNotFound() throws Exception {
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(repositories.findExtensionScan(99L)).thenReturn(null);
+
+        mockMvc.perform(post("/admin/scans/99/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void retryFailedScannerJobs_returns400_whenServiceRejectsRequest() throws Exception {
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        var scan = TestData.scan(3, "ns", "ext", "1.0.0", "pub", ScanStatus.SCANNING, LocalDateTime.of(2024, 12, 1, 10, 0));
+        when(repositories.findExtensionScan(3L)).thenReturn(scan);
+        when(scanService.retryFailedJobs(scan))
+            .thenThrow(new ErrorResultException("Cannot retry: scan is not terminal", HttpStatus.BAD_REQUEST));
+
+        mockMvc.perform(post("/admin/scans/3/jobs/retry").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void retryFailedScannerJobs_requires_admin() throws Exception {
+        when(admins.checkAdminUser()).thenThrow(new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN));
+
+        mockMvc.perform(post("/admin/scans/1/jobs/retry").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isForbidden());
     }
 

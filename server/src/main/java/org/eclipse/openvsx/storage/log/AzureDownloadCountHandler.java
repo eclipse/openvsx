@@ -24,7 +24,6 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
-import org.jobrunr.jobs.annotations.Recurring;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

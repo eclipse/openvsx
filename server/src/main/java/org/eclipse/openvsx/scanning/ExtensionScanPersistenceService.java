@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.FileDecisionRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.repositories.ScanCheckResultRepository;
 import org.eclipse.openvsx.repositories.ScannerJobRepository;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
@@ -56,6 +57,7 @@ public class ExtensionScanPersistenceService {
     private final ObjectMapper objectMapper;
     private final FileDecisionRepository fileDecisionRepository;
     private final ScannerJobRepository scannerJobRepository;
+    private final ScanCheckResultRepository scanCheckResultRepository;
     private final ScannerRegistry scannerRegistry;
 
     public ExtensionScanPersistenceService(
@@ -63,12 +65,14 @@ public class ExtensionScanPersistenceService {
             ObjectMapper objectMapper,
             FileDecisionRepository fileDecisionRepository,
             ScannerJobRepository scannerJobRepository,
+            ScanCheckResultRepository scanCheckResultRepository,
             ScannerRegistry scannerRegistry
     ) {
         this.repositories = repositories;
         this.objectMapper = objectMapper;
         this.fileDecisionRepository = fileDecisionRepository;
         this.scannerJobRepository = scannerJobRepository;
+        this.scanCheckResultRepository = scanCheckResultRepository;
         this.scannerRegistry = scannerRegistry;
     }
 
@@ -174,6 +178,25 @@ public class ExtensionScanPersistenceService {
     @Transactional(TxType.REQUIRES_NEW)
     public void removeScan(@Nonnull ExtensionScan scan) {
         repositories.deleteExtensionScan(scan);
+    }
+
+    /**
+     * Reset a FAILED scanner job back to QUEUED and flip the parent scan to
+     * SCANNING so the completion service will process it once the job finishes.
+     * <p>
+     * Caller is expected to have already validated that {@code job} belongs to
+     * {@code scan}, that the job is FAILED, and that the scan is terminal.
+     */
+    @Transactional(TxType.REQUIRES_NEW)
+    public void resetJobForRetry(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
+        // Drop the stale check result so the retry's outcome is the only record the UI shows
+        scanCheckResultRepository.deleteByScannerJobId(job.getId());
+
+        job.resetToQueued();
+        scannerJobRepository.save(job);
+
+        scan.resetToScanning();
+        repositories.saveExtensionScan(scan);
     }
 
     /**
@@ -572,10 +595,10 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Delete all scan-related data for a specific extension version.
-     * 
+     * <p>
      * This should be called when an extension version is deleted to prevent
      * orphaned scan jobs from trying to access deleted files.
-     * 
+     * <p>
      * Also marks any in-progress scans as ERRORED so they don't remain stuck.
      */
     @Transactional

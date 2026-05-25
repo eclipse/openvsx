@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
@@ -38,7 +37,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
@@ -65,6 +66,7 @@ public class ScanAPI {
     private final org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService;
     private final org.eclipse.openvsx.scanning.ScannerRegistry scannerRegistry;
     private final org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository;
+    private final org.eclipse.openvsx.scanning.ExtensionScanService scanService;
 
     public ScanAPI(
             RepositoryService repositories,
@@ -73,7 +75,8 @@ public class ScanAPI {
             StorageUtilService storageUtil,
             org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService,
             org.eclipse.openvsx.scanning.ScannerRegistry scannerRegistry,
-            org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository
+            org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository,
+            org.eclipse.openvsx.scanning.ExtensionScanService scanService
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -82,6 +85,7 @@ public class ScanAPI {
         this.completionService = completionService;
         this.scannerRegistry = scannerRegistry;
         this.scanJobRepository = scanJobRepository;
+        this.scanService = scanService;
     }
 
     /**
@@ -352,10 +356,10 @@ public class ScanAPI {
             var sort = createSort(sortBy, ascending);
             var pageNumber = offset / Math.max(size, 1);
             var pageable = PageRequest.of(pageNumber, size, sort);
-            
+
             // Automatically include scans with errored check results when filtering by ERRORED status
             var includeCheckErrors = statusFilter.contains(ScanStatus.ERRORED);
-            
+
             var page = repositories.findScansFullyFiltered(
                 statusFilter.isEmpty() ? null : statusFilter,
                 normalizedNamespace.isEmpty() ? null : normalizedNamespace,
@@ -430,7 +434,7 @@ public class ScanAPI {
     /**
      * Parse admin decision filter into structured values for DB query.
      * Returns null if no filter is specified (show all).
-     * 
+     *
      * API values: allowed, blocked, needs-review
      * DB values: ALLOWED, BLOCKED, (no record = needs-review)
      */
@@ -438,17 +442,17 @@ public class ScanAPI {
         if (adminDecision == null || adminDecision.isEmpty()) {
             return null;
         }
-        
+
         var values = adminDecision.stream()
             .filter(v -> v != null && !v.isBlank())
             .map(String::trim)
             .map(String::toLowerCase)
             .collect(Collectors.toSet());
-        
+
         if (values.isEmpty()) {
             return null;
         }
-        
+
         return new AdminDecisionFilterValues(
             values.contains("allowed"),
             values.contains("blocked"),
@@ -481,14 +485,14 @@ public class ScanAPI {
     private Sort createSort(String sortBy, boolean ascending) {
         var direction = ascending ? Sort.Direction.ASC : Sort.Direction.DESC;
         var normalizedSortBy = sortBy == null ? "scanendtime" : sortBy.toLowerCase(Locale.ROOT);
-        
+
         if ("scanendtime".equals(normalizedSortBy)) {
             var completedAtOrder = new Sort.Order(direction, "completed_at")
                 .with(Sort.NullHandling.NULLS_FIRST);
             var startedAtOrder = new Sort.Order(direction, "started_at");
             return Sort.by(completedAtOrder, startedAtOrder);
         }
-        
+
         var dbSortField = toDbSortField(sortBy);
         return Sort.by(direction, dbSortField);
     }
@@ -572,15 +576,60 @@ public class ScanAPI {
     }
 
     /**
+     * Retry all failed scanner jobs for a terminal scan.
+     */
+    @PostMapping(
+        path = "/{scanId}/jobs/retry",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Retry all failed scanner jobs for a scan")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Failed jobs re-queued; returns the updated scan in SCANNING state",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ScanResultJson.class)
+        )
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "Scan is not terminal or has no failed jobs to retry",
+        content = @Content()
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Scan or scanner jobs were not found",
+        content = @Content()
+    )
+    public ResponseEntity<ScanResultJson> retryFailedScannerJobs(
+        @PathVariable @Parameter(description = "Scan ID", example = "123") long scanId
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+
+            var scan = Optional.ofNullable(repositories.findExtensionScan(scanId))
+                .orElseThrow(() -> new ErrorResultException("Scan not found: " + scanId, HttpStatus.NOT_FOUND));
+
+            var updatedScan = scanService.retryFailedJobs(scan);
+
+            logs.logAction(adminUser, ResultJson.success("Retrying failed scanner jobs for scan #" + scanId));
+            return ResponseEntity.ok(toScanResultJson(updatedScan));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(ScanResultJson.class);
+        }
+    }
+
+    /**
      * Make security decisions for one or more quarantined scans.
      * Only valid for scans with QUARANTINED status.
      * Pass a single scanId for individual decisions, or multiple scanIds for bulk operations.
-     * 
+     *
      * When a scan is allowed:
      * - The extension is automatically activated
      * - The scan status is updated to PASSED
      * - File decisions are created to add enforced threat files to allow list
-     * 
+     *
      * When a scan is blocked:
      * - The extension remains inactive
      * - File decisions are created to add enforced threat files to block list
@@ -617,39 +666,39 @@ public class ScanAPI {
             if (request.getDecision() == null || request.getDecision().isBlank()) {
                 throw new ErrorResultException("Decision is required", HttpStatus.BAD_REQUEST);
             }
-            
+
             var decisionValue = parseDecision(request.getDecision());
-            
+
             var results = new java.util.ArrayList<ScanDecisionResultJson>();
             int successful = 0;
             int failed = 0;
-            
+
             for (var scanIdStr : request.getScanIds()) {
                 try {
                     var scanId = Long.parseLong(scanIdStr);
                     var scan = repositories.findExtensionScan(scanId);
-                    
+
                     if (scan == null) {
                         results.add(ScanDecisionResultJson.failure(scanIdStr, "Scan not found"));
                         failed++;
                         continue;
                     }
-                    
+
                     if (scan.getStatus() != ScanStatus.QUARANTINED) {
-                        results.add(ScanDecisionResultJson.failure(scanIdStr, 
+                        results.add(ScanDecisionResultJson.failure(scanIdStr,
                             "Scan not in quarantined status: " + formatScanStatus(scan.getStatus())));
                         failed++;
                         continue;
                     }
-                    
+
                     var existingDecision = repositories.findAdminScanDecisionByScanId(scanId);
                     if (existingDecision != null) {
-                        results.add(ScanDecisionResultJson.failure(scanIdStr, 
+                        results.add(ScanDecisionResultJson.failure(scanIdStr,
                             "Decision already exists: " + existingDecision.getDecision()));
                         failed++;
                         continue;
                     }
-                    
+
                     AdminScanDecision decision;
                     if (AdminScanDecision.ALLOWED.equals(decisionValue)) {
                         decision = AdminScanDecision.allowed(scan, adminUser);
@@ -657,24 +706,24 @@ public class ScanAPI {
                         decision = AdminScanDecision.blocked(scan, adminUser);
                     }
                     repositories.saveAdminScanDecision(decision);
-                    
+
                     var threats = repositories.findExtensionThreats(scan).toList();
                     for (var threat : threats) {
                         if (threat.isEnforced() && threat.getFileHash() != null) {
                             createOrUpdateFileDecision(threat, scan, decisionValue, adminUser);
                         }
                     }
-                    
+
                     // If allowed, activate the extension
                     boolean activated = false;
                     if (AdminScanDecision.ALLOWED.equals(decisionValue)) {
                         activated = completionService.adminAllowScan(scan);
                     }
-                    
+
                     // Log the admin decision to /admin/log
                     var logMessage = formatDecisionLogMessage(scan, decisionValue, threats.size(), activated);
                     logs.logAction(adminUser, ResultJson.success(logMessage));
-                    
+
                     results.add(ScanDecisionResultJson.success(scanIdStr));
                     successful++;
                 } catch (NumberFormatException e) {
@@ -685,13 +734,13 @@ public class ScanAPI {
                     failed++;
                 }
             }
-            
+
             var response = new ScanDecisionResponseJson();
             response.setProcessed(request.getScanIds().size());
             response.setSuccessful(successful);
             response.setFailed(failed);
             response.setResults(results);
-            
+
             return ResponseEntity.ok(response);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ScanDecisionResponseJson.class);
@@ -715,11 +764,11 @@ public class ScanAPI {
      */
     private String formatDecisionLogMessage(ExtensionScan scan, String decisionValue, int threatCount, boolean activated) {
         var action = AdminScanDecision.ALLOWED.equals(decisionValue) ? "Allowed" : "Blocked";
-        var extensionId = String.format("%s.%s v%s", 
-            scan.getNamespaceName(), 
-            scan.getExtensionName(), 
+        var extensionId = String.format("%s.%s v%s",
+            scan.getNamespaceName(),
+            scan.getExtensionName(),
             scan.getExtensionVersion());
-        
+
         var details = new java.util.ArrayList<String>();
         if (threatCount > 0) {
             details.add(String.format("%d threat%s reviewed", threatCount, threatCount == 1 ? "" : "s"));
@@ -727,10 +776,10 @@ public class ScanAPI {
         if (AdminScanDecision.ALLOWED.equals(decisionValue)) {
             details.add(activated ? "extension activated" : "activation failed");
         }
-        
+
         var detailsStr = details.isEmpty() ? "" : " (" + String.join(", ", details) + ")";
-        
-        return String.format("%s scan #%d for extension %s%s", 
+
+        return String.format("%s scan #%d for extension %s%s",
             action, scan.getId(), extensionId, detailsStr);
     }
 
@@ -745,12 +794,12 @@ public class ScanAPI {
             UserData adminUser
     ) {
         var fileHash = threat.getFileHash();
-        
+
         // Map scan decision to file decision
         var fileDecisionValue = AdminScanDecision.ALLOWED.equals(decisionValue)
                 ? FileDecision.ALLOWED
                 : FileDecision.BLOCKED;
-        
+
         var existingDecision = repositories.findFileDecisionByHash(fileHash);
         if (existingDecision != null) {
             existingDecision.setDecision(fileDecisionValue);
@@ -759,7 +808,7 @@ public class ScanAPI {
             repositories.saveFileDecision(existingDecision);
             return;
         }
-        
+
         // Create new file decision with context from threat and scan
         var fileDecision = new FileDecision();
         fileDecision.setFileHash(fileHash);
@@ -849,11 +898,23 @@ public class ScanAPI {
             json.setAdminDecision(toAdminDecisionJson(adminDecision));
         }
 
+        var scannerJobs = scanJobRepository.findByScanId(String.valueOf(scan.getId()));
+        if (!scannerJobs.isEmpty()) {
+            // include all non-terminal scanner jobs
+            var scannerJobJsons = scannerJobs.stream()
+                    .filter(job -> !job.getStatus().isTerminal())
+                    .map(this::toScannerJobJson)
+                    .collect(Collectors.toList());
+            json.setScannerJobs(scannerJobJsons);
+        }
+
         // Include all check results for audit trail
         var checkResults = repositories.findScanCheckResultsByScanId(scan.getId());
         if (!checkResults.isEmpty()) {
+            var scannerJobsById = scannerJobs.stream().collect(Collectors.toMap(ScannerJob::getId, Function.identity()));
+
             var checkResultJsons = checkResults.stream()
-                .map(this::toCheckResultJson)
+                .map(r -> toCheckResultJson(r, scannerJobsById.get(r.getScannerJobId())))
                 .collect(Collectors.toList());
             json.setCheckResults(checkResultJsons);
         }
@@ -862,9 +923,43 @@ public class ScanAPI {
     }
 
     /**
+     * Converts a ScannerJob entity to a ScannerJobJson DTO.
+     */
+    private ScannerJobJson toScannerJobJson(ScannerJob job) {
+        var json = new ScannerJobJson();
+        json.setId(String.valueOf(job.getId()));
+        json.setScannerType(job.getScannerType());
+        json.setStatus(job.getStatus().name());
+        json.setCreatedAt(TimeUtil.toUTCString(job.getCreatedAt()));
+        json.setUpdatedAt(TimeUtil.toUTCString(job.getUpdatedAt()));
+        json.setErrorMessage(job.getErrorMessage());
+        json.setExternalUrl(buildExternalScannerUrl(job));
+        return json;
+    }
+
+    /**
+     * Build the external dashboard URL for a scanner job, if its scanner configures
+     * an external-url-template and the job has an external id.
+     */
+    @Nullable
+    private String buildExternalScannerUrl(@Nullable ScannerJob job) {
+        if (job == null) {
+            return null;
+        }
+        if (job.getExternalJobId() == null) {
+            return null;
+        }
+        var scanner = scannerRegistry.getScanner(job.getScannerType());
+        if (scanner == null) {
+            return null;
+        }
+        return scanner.buildExternalUrl(job.getExternalJobId());
+    }
+
+    /**
      * Converts a ScanCheckResult entity to a CheckResultJson DTO.
      */
-    private CheckResultJson toCheckResultJson(ScanCheckResult checkResult) {
+    private CheckResultJson toCheckResultJson(ScanCheckResult checkResult, ScannerJob scannerJob) {
         var json = new CheckResultJson();
         json.setCheckType(checkResult.getCheckType());
         json.setCategory(checkResult.getCategory().name());
@@ -879,34 +974,9 @@ public class ScanAPI {
         json.setSummary(checkResult.getSummary());
         json.setErrorMessage(checkResult.getErrorMessage());
         json.setRequired(checkResult.getRequired());
-        json.setExternalUrl(buildExternalScannerUrl(checkResult));
+        json.setExternalUrl(buildExternalScannerUrl(scannerJob));
 
         return json;
-    }
-
-    /**
-     * Look up the ScannerJob for a SCANNER_JOB check result and ask its scanner
-     * to build a dashboard URL. Returns null for publish checks, jobs without an
-     * external id, or scanners that don't configure a url template.
-     */
-    @Nullable
-    private String buildExternalScannerUrl(@Nonnull ScanCheckResult checkResult) {
-        if (checkResult.getCategory() != ScanCheckResult.CheckCategory.SCANNER_JOB) {
-            return null;
-        }
-        Long jobId = checkResult.getScannerJobId();
-        if (jobId == null) {
-            return null;
-        }
-        var job = scanJobRepository.findById(jobId).orElse(null);
-        if (job == null || job.getExternalJobId() == null) {
-            return null;
-        }
-        var scanner = scannerRegistry.getScanner(job.getScannerType());
-        if (scanner == null) {
-            return null;
-        }
-        return scanner.buildExternalUrl(job.getExternalJobId());
     }
 
     /**
@@ -1090,4 +1160,3 @@ public class ScanAPI {
     }
 
 }
-

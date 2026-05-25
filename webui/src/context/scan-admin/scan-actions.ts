@@ -26,7 +26,8 @@ import { ScanActions } from './scan-context-types';
 export const useScanActions = (
     dispatch: Dispatch<ScanAction>,
     executeConfirmAction: () => void,
-    executeFileAction: () => void
+    executeFileAction: () => void,
+    retryFailedScannerJobs: (scanId: string) => Promise<void>
 ): ScanActions => {
     return useMemo(() => ({
         // Tab
@@ -84,5 +85,8 @@ export const useScanActions = (
         openFileDialog: (action: FileActionType) => dispatch({ type: 'OPEN_FILE_DIALOG', payload: action }),
         closeFileDialog: () => dispatch({ type: 'CLOSE_FILE_DIALOG' }),
         executeFileAction,
-    }), [dispatch, executeConfirmAction, executeFileAction]);
+
+        // Scan actions
+        retryFailedScannerJobs,
+    }), [dispatch, executeConfirmAction, executeFileAction, retryFailedScannerJobs]);
 };

@@ -139,7 +139,7 @@ ovsx:
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:
-    version: 'v0.34.0-dev'
+    version: 'v1.0.0-dev'
   storage:
     local:
       directory: /tmp

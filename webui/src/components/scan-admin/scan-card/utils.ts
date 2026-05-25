@@ -37,6 +37,10 @@ export const isRunning = (status: ScanResult['status']): boolean => {
     return status === 'STARTED' || status === 'VALIDATING' || status === 'SCANNING';
 };
 
+export const hasFailedScannerJobs = (scan: ScanResult): boolean => {
+    return scan.scannerJobs?.some(job => job.status === 'FAILED') ?? false;
+};
+
 /**
  * Determines whether the scan card badge/strip should show the striped effect.
  * Only shows striping when the hypothetical status would be DIFFERENT from the current status.
@@ -185,7 +189,8 @@ export const getStatusBarColor = (status: ScanResult['status'], theme: any) => {
 export const shouldShowExpandButton = (scan: ScanResult): boolean => {
     const hasErrorMessage = scan.status === 'ERROR' && !!scan.errorMessage;
     const hasCheckResults = scan.checkResults && scan.checkResults.length > 0;
-    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasErrorMessage;
+    const hasScannerJobs = scan.scannerJobs && scan.scannerJobs.length > 0;
+    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasScannerJobs || hasErrorMessage;
 };
 
 export const hasDownload = (scan: ScanResult): boolean => {

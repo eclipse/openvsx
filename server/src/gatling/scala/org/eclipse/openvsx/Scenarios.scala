@@ -15,7 +15,8 @@ import io.gatling.core.session.Expression
 import io.gatling.core.structure.ScenarioBuilder
 import io.gatling.http.Predef._
 
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
+import java.util.UUID
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.DurationInt
 import scala.reflect.io.File
@@ -42,8 +43,8 @@ object Scenarios {
   }
 
   def createNamespaceScenario(): ScenarioBuilder = {
-    val namespacesCount = 780
-    val repeatTimes = namespacesCount / users
+    val totalRequests = 780
+    val repeatTimes = totalRequests / users
     scenario("RegistryAPI: Create Namespace")
       .repeat(repeatTimes) {
         feed(csv(NamespaceFeed))
@@ -66,9 +67,13 @@ object Scenarios {
   }
 
   private def extensionFilesFeeder(extensionDir: String): Array[Map[String,String]] = {
-    val extensionFiles = new java.io.File(extensionDir).list()
-    val feeder = new Array[Map[String, String]](extensionFiles.length)
+    // File.list() returns null when the directory does not exist.
+    val extensionFiles = Option(new java.io.File(extensionDir).list())
+        .getOrElse(Array.empty[String])
+        .filter(_.endsWith(".vsix"))
+    if (extensionFiles.isEmpty) return Array.empty[Map[String, String]]
 
+    val feeder = new Array[Map[String, String]](extensionFiles.length)
     var mapIndex = 0
     var feederIndex = 0
     // make sure that versions of same extension are not right after one another
@@ -91,8 +96,11 @@ object Scenarios {
   def publishScenario(users: Int): ScenarioBuilder = {
     val extensionDir = conf.getString("extensionDir")
     val feeder = this.extensionFilesFeeder(extensionDir)
+    if (feeder.isEmpty) {
+      return scenario("RegistryAPI: Publish Extension (no extensions found at " + extensionDir + ")")
+    }
 
-    val repeatTimes = feeder.length / users
+    val repeatTimes = Math.max(1, feeder.length / users)
     scenario("RegistryAPI: Publish Extension")
       .repeat(repeatTimes) {
         feed(feeder)
@@ -102,11 +110,12 @@ object Scenarios {
             .headers(headers())
             .queryParam("token", """#{access_token}""")
             .body(ByteArrayBody(session => {
-              val path = extensionDir + "\\" + session("extension_file").as[String]
+              val path = Paths.get(extensionDir, session("extension_file").as[String]).toString
               File(path).toByteArray()
             }))
             .requestTimeout(3.minutes)
-            .check(status.is(201)))
+            // 201 = new publish, 400 = already published (idempotent on re-runs).
+            .check(status.in(201, 400)))
       }
   }
 

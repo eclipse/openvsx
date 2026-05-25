@@ -37,7 +37,7 @@ export {
 } from './scan-api-effects';
 
 // API Actions (for testing or advanced use cases)
-export { useConfirmAction, useFileAction } from './scan-api-actions';
+export { useConfirmAction, useFileAction, useRetryFailedScannerJobsAction } from './scan-api-actions';
 
 // Actions Factory (for testing or advanced use cases)
 export { useScanActions } from './scan-actions';

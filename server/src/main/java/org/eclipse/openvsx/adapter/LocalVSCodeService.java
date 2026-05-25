@@ -316,7 +316,7 @@ public class LocalVSCodeService implements IVSCodeService {
                 .max(Comparator.comparing(ExtensionVersion::isPreRelease).reversed().thenComparing(ExtensionVersion::getTimestamp));
 
         var queryVersions = versions.stream()
-                .sorted(ExtensionVersion.SORT_COMPARATOR.reversed())
+                .sorted(ExtensionVersion.SORT_COMPARATOR)
                 .map(ev -> toQueryVersion(ev, fileResources, FLAG_INCLUDE_ASSET_URI | FLAG_INCLUDE_VERSION_PROPERTIES))
                 .toList();
 
