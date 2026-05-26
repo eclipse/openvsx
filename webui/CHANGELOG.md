@@ -4,6 +4,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Added
+
+- Support searching users and managing their roles in the admin dashboard ([#1847](https://github.com/eclipse-openvsx/openvsx/pull/1847))
+
 ### Changed
 
 - Migrate unit test framework from mocha to vitest
@@ -37,7 +41,6 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Add support to retry failed scanner jobs in the admin dashboard ([#1832](https://github.com/eclipse-openvsx/openvsx/pull/1832))
 - Display non-terminal scanner jobs in the scan card ([#1836](https://github.com/eclipse-openvsx/openvsx/pull/1836))
-- Support searching users and managing their roles in the admin dashboard ([#1847](https://github.com/eclipse-openvsx/openvsx/pull/1847))
 
 ## [v0.20.3] (08/05/2026)
 
