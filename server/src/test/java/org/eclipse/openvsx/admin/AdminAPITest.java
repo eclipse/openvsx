@@ -1423,9 +1423,9 @@ class AdminAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test",
+                        "test:github",
                         ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test."),
-                        "test2",
+                        "test2:github",
                         ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test2.")))));
 
         assertThat(userToken.isActive()).isFalse();
@@ -1470,7 +1470,7 @@ class AdminAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test",
+                        "test:github",
                         ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test. Reason: Some passed reason.")))));
 
         assertThat(userToken.isActive()).isFalse();
@@ -1512,7 +1512,7 @@ class AdminAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                    		user.getLoginName(),
+                    		user.getLoginName() + ":github",
                     		ResultJson.error("Cannot revoke contributions for admins through publisher flow")))));
 
         assertThat(userToken.isActive()).isTrue();
@@ -1559,9 +1559,9 @@ class AdminAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test",
+                        "test:github",
                         ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test."),
-                        "test2",
+                        "test2:github",
                         ResultJson.error("User not found: test2")))));
     }
 

@@ -488,11 +488,12 @@ public class AdminService {
     public BulkPublisherRevokeResponseJson revokeBulkPublishersContributions(BulkPublisherRevokeRequestJson request, UserData admin) {
         var resultMap = new HashMap<String, ResultJson>();
         for (var publisher : request.publishers()) {
+            var key = "%s:%s".formatted(publisher.loginName(), publisher.provider());
             try {
                 var result = this.revokePublisherContributions(publisher.provider(), publisher.loginName(), admin, request.reason());
-                resultMap.put(publisher.loginName(), result);
+                resultMap.put(key, result);
             } catch (ErrorResultException exc) {
-                resultMap.put(publisher.loginName(), exc.toResponseEntity().getBody());
+                resultMap.put(key, exc.toResponseEntity().getBody());
             }
         }
         return new BulkPublisherRevokeResponseJson(resultMap);
