@@ -74,10 +74,6 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     // Path to generated rules file
     private String generatedRulesPath;
     
-    // Redis subscriber state
-    private volatile Thread subscriberThread;
-    private volatile boolean running = true;
-
     public GitleaksRulesService(
             SecretDetectorConfig config,
             ObjectProvider<SecretDetectorFactory> detectorFactoryProvider,

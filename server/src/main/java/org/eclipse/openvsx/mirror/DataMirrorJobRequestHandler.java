@@ -19,7 +19,6 @@ import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
@@ -57,9 +56,6 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     private final AdminService admin;
     private final MirrorExtensionService mirrorExtensionService;
     private final DateTimeFormatter dateFormatter;
-
-    @Value("${ovsx.data.mirror.schedule:}")
-    String schedule;
 
     public DataMirrorJobRequestHandler(
             Optional<DataMirrorService> dataMirrorService,

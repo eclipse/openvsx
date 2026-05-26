@@ -13,7 +13,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,18 +26,30 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
 
     protected final Logger logger = LoggerFactory.getLogger(ExtensionControlJobRequestHandler.class);
 
+    private final SettingsService settings;
     private final AdminService admin;
     private final ExtensionControlService service;
     private final RepositoryService repositories;
 
-    public ExtensionControlJobRequestHandler(AdminService admin, ExtensionControlService service, RepositoryService repositories) {
+    public ExtensionControlJobRequestHandler(
+            SettingsService settings,
+            AdminService admin,
+            ExtensionControlService service,
+            RepositoryService repositories
+    ) {
+        this.settings = settings;
         this.admin = admin;
         this.service = service;
         this.repositories = repositories;
     }
 
     @Override
+    @Job(name = "Extension control update", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         logger.info("Run extension control job");
         var json = service.getExtensionControlJson();
         logger.info("Got extension control JSON");
