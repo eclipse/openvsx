@@ -25,6 +25,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BulkPublisherRevokeResponseJson extends ResultJson {
 
+    public static BulkPublisherRevokeResponseJson error(String message) {
+        var result = new BulkPublisherRevokeResponseJson();
+        result.setError(message);
+        return result;
+    }
+
     @Schema(description = "Results for each of the attempted revoke operations matched on the login name of the user")
     private Map<String, ResultJson> responses;
 

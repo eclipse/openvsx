@@ -20,6 +20,7 @@ import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,8 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.BulkPublisherRevokeRequestJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -480,6 +483,19 @@ public class AdminService {
                 .toList());
 
         return userPublishInfo;
+    }
+
+    public BulkPublisherRevokeResponseJson revokeBulkPublishersContributions(BulkPublisherRevokeRequestJson request, UserData admin) {
+        var resultMap = new HashMap<String, ResultJson>();
+        for (var publisher : request.publishers()) {
+            try {
+                var result = this.revokePublisherContributions(publisher.provider(), publisher.loginName(), admin, request.reason());
+                resultMap.put(publisher.loginName(), result);
+            } catch (ErrorResultException exc) {
+                resultMap.put(publisher.loginName(), exc.toResponseEntity().getBody());
+            }
+        }
+        return new BulkPublisherRevokeResponseJson(resultMap);
     }
 
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {

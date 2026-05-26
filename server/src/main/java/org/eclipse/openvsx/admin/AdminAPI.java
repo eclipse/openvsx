@@ -1,4 +1,4 @@
-/********************************************************************************
+/** ******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
@@ -6,14 +6,13 @@
  * http://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ ******************************************************************************* */
 package org.eclipse.openvsx.admin;
 
 import java.net.URI;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -102,8 +101,8 @@ public class AdminAPI {
             responseCode = "200",
             description = "The report is returned",
             content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AdminStatisticsJson.class)),
-                    @Content(mediaType = "text/csv", schema = @Schema(type = "string"))
+                @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AdminStatisticsJson.class)),
+                @Content(mediaType = "text/csv", schema = @Schema(type = "string"))
             }
     )
     @ApiResponse(
@@ -149,8 +148,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/stats",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/stats",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<StatsJson> getStats() {
         try {
@@ -167,8 +166,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/log",
-        produces = MediaType.TEXT_PLAIN_VALUE
+            path = "/admin/log",
+            produces = MediaType.TEXT_PLAIN_VALUE
     )
     public String getLog(@RequestParam(name = "period", required = false) String periodString) {
         try {
@@ -196,8 +195,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/logs",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/logs",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<Page<PersistedLogJson>> getLog(
             Pageable pageable,
@@ -235,8 +234,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/update-search-index",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/update-search-index",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> updateSearchIndex() {
         try {
@@ -253,11 +252,11 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/extension/{namespaceName}/{extensionName}",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/extension/{namespaceName}/{extensionName}",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ExtensionJson> getExtension(@PathVariable String namespaceName,
-                                                      @PathVariable String extensionName) {
+            @PathVariable String extensionName) {
         try {
             admins.checkAdminUser();
             ExtensionJson json;
@@ -288,8 +287,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/api/extension/{namespaceName}/{extensionName}/delete",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/api/extension/{namespaceName}/{extensionName}/delete",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
     @Operation(summary = "Delete an extension or one or multiple extension versions")
@@ -334,7 +333,7 @@ public class AdminAPI {
     ) {
         try {
             var adminUser = admins.checkAdminUser();
-            var result =  admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -379,8 +378,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/namespace/{namespaceName}",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/namespace/{namespaceName}",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
         try {
@@ -404,9 +403,9 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/create-namespace",
-        consumes = MediaType.APPLICATION_JSON_VALUE,
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/create-namespace",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> createNamespace(@RequestBody NamespaceJson namespace) {
         try {
@@ -467,8 +466,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/api/namespace/{namespaceName}/members",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/api/namespace/{namespaceName}/members",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
     @Operation(summary = "Get members for a namespace")
@@ -480,7 +479,7 @@ public class AdminAPI {
             @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName,
             @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
-        try{
+        try {
             admins.checkAdminUser(tokenValue);
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
@@ -492,11 +491,11 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/namespace/{namespaceName}/members",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/namespace/{namespaceName}/members",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
-        try{
+        try {
             admins.checkAdminUser();
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
@@ -508,8 +507,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/api/namespace/{namespaceName}/change-member",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/api/namespace/{namespaceName}/change-member",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
     @Operation(summary = "Edit a member of a namespace")
@@ -531,8 +530,7 @@ public class AdminAPI {
             @Parameter(
                     description = "The role to assign to the user or remove the user from the namespace",
                     schema = @Schema(allowableValues = {NamespaceMembership.ROLE_CONTRIBUTOR, NamespaceMembership.ROLE_OWNER, "remove"})
-            )
-            String role,
+            ) String role,
             @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
         try {
@@ -545,8 +543,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/namespace/{namespaceName}/change-member",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/namespace/{namespaceName}/change-member",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> editNamespaceMember(
             @PathVariable String namespaceName,
@@ -564,8 +562,8 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/admin/publisher/{provider}/{loginName}",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/publisher/{provider}/{loginName}",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<UserPublishInfoJson> getUserPublishInfo(@PathVariable String provider, @PathVariable String loginName) {
         try {
@@ -578,8 +576,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/publisher/{provider}/{loginName}/revoke",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/publisher/{provider}/{loginName}/revoke",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResultJson> revokePublisherContributions(@PathVariable String loginName, @PathVariable String provider) {
         try {
@@ -592,32 +590,31 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/admin/api/publisher/revoke",
-        produces = MediaType.APPLICATION_JSON_VALUE
+            path = "/admin/api/publisher/revoke",
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @CrossOrigin
     @Operation(summary = "Bulk revoke publisher contributions")
     @ApiResponse(
             responseCode = "200",
             description = "A success message is returned in JSON format",
             content = @Content(schema = @Schema(implementation = BulkPublisherRevokeResponseJson.class))
     )
+    @ApiResponse(
+            responseCode = "400",
+            description = "An error message is returned in JSON format",
+            content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<BulkPublisherRevokeResponseJson> revokeBulkPublishers(
             @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
             @RequestBody BulkPublisherRevokeRequestJson request
     ) {
+        if (request.publishers().size() > 100) {
+            var json = BulkPublisherRevokeResponseJson.error("Max number of revocations requested exceeded (100).");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
-            var resultMap = new HashMap<String, ResultJson>();
-            for (var publisher : request.publishers()) {
-                try {
-                    var result = admins.revokePublisherContributions(publisher.provider(), publisher.loginName(), adminUser, request.reason());
-                    resultMap.put(publisher.loginName(), result);
-                } catch (ErrorResultException exc) {
-                    resultMap.put(publisher.loginName(), exc.toResponseEntity().getBody());
-                }
-            }
-            return ResponseEntity.ok(new BulkPublisherRevokeResponseJson(resultMap));
+            return ResponseEntity.ok(admins.revokeBulkPublishersContributions(request, adminUser));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(BulkPublisherRevokeResponseJson.class);
         }
