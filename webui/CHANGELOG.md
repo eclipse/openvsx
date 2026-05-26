@@ -2,6 +2,12 @@
 
 This change log covers only the frontend library (webui) of Open VSX.
 
+## [v1.0.0] (unreleased)
+
+### Added
+
+- Add a settings page in the admin dashboard and support putting the registry in read-only mode ([#1835](https://github.com/eclipse-openvsx/openvsx/pull/1835))
+
 ## [v0.20.4] (22/05/2026)
 
 ### Added
