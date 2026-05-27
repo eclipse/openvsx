@@ -24,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.RedisClusterClient;
 
 import java.net.URI;
 import java.time.Duration;
@@ -46,7 +46,7 @@ class RateLimitIntegrationTest {
     TestRestTemplate restTemplate;
 
     @MockitoBean
-    JedisCluster jedisCluster;
+    RedisClusterClient redisClusterClient;
 
     @MockitoBean
     ProxyManager<byte[]> proxyManager;
