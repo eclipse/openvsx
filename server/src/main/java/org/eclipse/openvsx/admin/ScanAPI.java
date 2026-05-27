@@ -903,9 +903,7 @@ public class ScanAPI {
 
         var scannerJobs = scanJobRepository.findByScanId(String.valueOf(scan.getId()));
         if (!scannerJobs.isEmpty()) {
-            // include all non-terminal scanner jobs
             var scannerJobJsons = scannerJobs.stream()
-                    .filter(job -> !job.getStatus().isTerminal())
                     .map(this::toScannerJobJson)
                     .collect(Collectors.toList());
             json.setScannerJobs(scannerJobJsons);
