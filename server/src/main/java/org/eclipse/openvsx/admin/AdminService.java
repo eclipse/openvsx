@@ -246,6 +246,8 @@ public class AdminService {
         }
 
         cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
