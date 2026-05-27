@@ -9,6 +9,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - Bump fast-uri from `3.1.0` to `3.1.2` ([#1829](https://github.com/eclipse/openvsx/pull/1829))
 - Bump brace-expansion from `5.0.5` to `5.0.6` ([#1846](https://github.com/eclipse/openvsx/pull/1846))
 - Bump qs from `6.15.0` to `6.15.2` ([#1869](https://github.com/eclipse/openvsx/pull/1869))
+- Bump tmp from `0.2.4` to `0.2.6` ([#1877](https://github.com/eclipse/openvsx/pull/1877))
 
 ### [v0.10.12] (08/05/2026)
 
