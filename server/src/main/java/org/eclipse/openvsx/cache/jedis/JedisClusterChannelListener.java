@@ -15,8 +15,8 @@ package org.eclipse.openvsx.cache.jedis;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.RedisClusterClient;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class JedisClusterChannelListener extends JedisPubSub {
     private final Logger logger = LoggerFactory.getLogger(JedisClusterChannelListener.class);
 
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
     private final String channelName;
     private final String listenerName;
 
@@ -34,8 +34,8 @@ public abstract class JedisClusterChannelListener extends JedisPubSub {
     private volatile Thread subscriberThread;
     private volatile boolean running = true;
 
-    public JedisClusterChannelListener(JedisCluster jedisCluster, String channelName, String listenerName) {
-        this.jedisCluster = jedisCluster;
+    public JedisClusterChannelListener(RedisClusterClient redisClusterClient, String channelName, String listenerName) {
+        this.redisClusterClient = redisClusterClient;
         this.channelName = channelName;
         this.listenerName = listenerName;
     }
@@ -68,7 +68,7 @@ public abstract class JedisClusterChannelListener extends JedisPubSub {
                 try {
                     resetTask = executor.schedule(() -> backoffMs.set(1000), 10, TimeUnit.SECONDS);
                     logger.debug("Subscribing to redis channel {}", channelName);
-                    jedisCluster.subscribe(this, channelName);
+                    redisClusterClient.subscribe(this, channelName);
                 } catch (Exception e) {
                     if (!running) break;
                     logger.warn(

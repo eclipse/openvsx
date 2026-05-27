@@ -24,11 +24,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisCluster;
 
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import redis.clients.jedis.RedisClusterClient;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -68,7 +69,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     private final SecretDetectorConfig config;
     private final ObjectProvider<SecretDetectorFactory> detectorFactoryProvider;
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
     private final RulesUpdateChannelListener rulesUpdateChannelListener;
 
     // Path to generated rules file
@@ -77,14 +78,14 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     public GitleaksRulesService(
             SecretDetectorConfig config,
             ObjectProvider<SecretDetectorFactory> detectorFactoryProvider,
-            @Nullable JedisCluster jedisCluster
+            @Nullable RedisClusterClient redisClusterClient
     ) {
         this.config = config;
         this.detectorFactoryProvider = detectorFactoryProvider;
-        this.jedisCluster = jedisCluster;
+        this.redisClusterClient = redisClusterClient;
 
-        if (jedisCluster != null) {
-            this.rulesUpdateChannelListener = new RulesUpdateChannelListener(jedisCluster);
+        if (redisClusterClient != null) {
+            this.rulesUpdateChannelListener = new RulesUpdateChannelListener(redisClusterClient);
             logger.debug("GitleaksRulesService initialized with Redis sync");
         } else {
             this.rulesUpdateChannelListener = null;
@@ -201,7 +202,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             }
 
             // Sync to Redis and notify other pods
-            if (jedisCluster != null) {
+            if (redisClusterClient != null) {
                 String rulesContent = readRulesFile();
                 if (rulesContent != null) {
                     boolean synced = storeAndPublishRules(rulesContent);
@@ -221,8 +222,8 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     }
 
     private class RulesUpdateChannelListener extends JedisClusterChannelListener {
-        RulesUpdateChannelListener(JedisCluster jedisCluster) {
-            super(jedisCluster, RULES_UPDATE_CHANNEL, "GitleaksRules");
+        RulesUpdateChannelListener(RedisClusterClient redisClusterClient) {
+            super(redisClusterClient, RULES_UPDATE_CHANNEL, "GitleaksRules");
         }
 
         @Override
@@ -238,13 +239,13 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
      * Store rules in Redis and notify other pods.
      */
     public boolean storeAndPublishRules(String rulesContent) {
-        if (jedisCluster == null) return false;
+        if (redisClusterClient == null) return false;
         
         try {
             String version = String.valueOf(System.currentTimeMillis());
-            jedisCluster.set(RULES_KEY, rulesContent);
-            jedisCluster.set(RULES_VERSION_KEY, version);
-            jedisCluster.publish(RULES_UPDATE_CHANNEL, version);
+            redisClusterClient.set(RULES_KEY, rulesContent);
+            redisClusterClient.set(RULES_VERSION_KEY, version);
+            redisClusterClient.publish(RULES_UPDATE_CHANNEL, version);
             logger.debug("Stored gitleaks rules in Redis (version: {}, size: {} bytes)",
                 version, rulesContent.length());
             return true;
@@ -255,10 +256,10 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     }
 
     private void loadRulesFromRedisIfNewer() {
-        if (jedisCluster == null) return;
+        if (redisClusterClient == null) return;
         
         try {
-            String redisVersion = jedisCluster.get(RULES_VERSION_KEY);
+            String redisVersion = redisClusterClient.get(RULES_VERSION_KEY);
             if (redisVersion == null) {
                 logger.debug("No gitleaks rules in Redis yet");
                 return;
@@ -283,10 +284,10 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     }
 
     private void loadRulesFromRedis() {
-        if (jedisCluster == null) return;
+        if (redisClusterClient == null) return;
         
         try {
-            String rulesContent = jedisCluster.get(RULES_KEY);
+            String rulesContent = redisClusterClient.get(RULES_KEY);
             if (rulesContent == null || rulesContent.isEmpty()) {
                 logger.warn("No rules content found in Redis");
                 return;

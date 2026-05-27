@@ -27,40 +27,46 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.RedisClusterClient;
 
 @Configuration
 @ConditionalOnBucket4jEnabled
 @ConditionalOnSynchronousPropertyCondition
 @ConditionalOnClass(JedisBasedProxyManager.JedisBasedProxyManagerBuilder.class)
-@ConditionalOnBean(JedisCluster.class)
+@ConditionalOnBean(RedisClusterClient.class)
 @ConditionalOnCache("redis-cluster-jedis")
 public class JedisClusterBucket4jConfiguration {
 
-    public final JedisCluster jedisCluster;
+    public final RedisClusterClient redisClusterClient;
     private final String configCacheName;
 
-    public JedisClusterBucket4jConfiguration(JedisCluster jedisCluster, Bucket4JBootProperties properties) {
-        this.jedisCluster = jedisCluster;
+    public JedisClusterBucket4jConfiguration(RedisClusterClient redisClusterClient, Bucket4JBootProperties properties) {
+        this.redisClusterClient = redisClusterClient;
         this.configCacheName = properties.getFilterConfigCacheName();
     }
 
     @Bean
     @ConditionalOnMissingBean(SyncCacheResolver.class)
     public SyncCacheResolver bucket4RedisResolver() {
-        return new JedisClusterCacheResolver(jedisCluster);
+        return new JedisClusterCacheResolver(redisClusterClient);
     }
 
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     @ConditionalOnFilterConfigCacheEnabled
     public CacheManager<String, Bucket4JConfiguration> configCacheManager() {
-        return new JedisClusterCacheManager<>(jedisCluster, configCacheName, Bucket4JConfiguration.class);
+        return new JedisClusterCacheManager<>(redisClusterClient, configCacheName, Bucket4JConfiguration.class);
     }
 
     @Bean
     @ConditionalOnFilterConfigCacheEnabled
     public JedisClusterCacheListener<String, Bucket4JConfiguration> configCacheListener(ApplicationEventPublisher eventPublisher) {
-        return new JedisClusterCacheListener<>(jedisCluster, configCacheName, String.class, Bucket4JConfiguration.class, eventPublisher);
+        return new JedisClusterCacheListener<>(
+                redisClusterClient,
+                configCacheName,
+                String.class,
+                Bucket4JConfiguration.class,
+                eventPublisher
+        );
     }
 }

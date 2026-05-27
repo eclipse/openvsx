@@ -23,8 +23,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.RedisClusterClient;
 
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
@@ -40,19 +40,19 @@ public class RateLimitCacheService extends JedisPubSub {
 
     private final Logger logger = LoggerFactory.getLogger(RateLimitCacheService.class);
 
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
     private final CacheManager cacheManager;
     private final ConfigCacheUpdateListener configCacheListener;
     private final ApplicationEventPublisher eventPublisher;
 
     public RateLimitCacheService(
-            JedisCluster jedisCluster,
+            RedisClusterClient redisClusterClient,
             @Qualifier(CACHE_MANAGER) CacheManager cacheManager,
             ApplicationEventPublisher eventPublisher
     ) {
-        this.jedisCluster = jedisCluster;
+        this.redisClusterClient = redisClusterClient;
         this.cacheManager = cacheManager;
-        this.configCacheListener = new ConfigCacheUpdateListener(jedisCluster);
+        this.configCacheListener = new ConfigCacheUpdateListener(redisClusterClient);
         this.eventPublisher = eventPublisher;
     }
 
@@ -68,7 +68,7 @@ public class RateLimitCacheService extends JedisPubSub {
 
     public void publishConfigUpdate(String cacheName, String key) {
         logger.debug("Publish update rate-limit config {}: {}", cacheName, key);
-        jedisCluster.publish(CONFIG_UPDATE_CHANNEL, cacheName + ":" + key);
+        redisClusterClient.publish(CONFIG_UPDATE_CHANNEL, cacheName + ":" + key);
     }
 
     public void evictCustomerCache() {
@@ -120,8 +120,8 @@ public class RateLimitCacheService extends JedisPubSub {
     }
 
     private class ConfigCacheUpdateListener extends JedisClusterChannelListener {
-        public ConfigCacheUpdateListener(JedisCluster jedisCluster) {
-            super(jedisCluster, CONFIG_UPDATE_CHANNEL, "RateLimitConfig");
+        public ConfigCacheUpdateListener(RedisClusterClient redisClusterClient) {
+            super(redisClusterClient, CONFIG_UPDATE_CHANNEL, "RateLimitConfig");
         }
 
         @Override

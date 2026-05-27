@@ -21,7 +21,7 @@ import org.eclipse.openvsx.json.SettingsJson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.RedisClusterClient;
 
 import java.util.ArrayList;
 
@@ -33,16 +33,16 @@ public class SettingsService {
 
     private final Logger logger = LoggerFactory.getLogger(SettingsService.class);
 
-    private final @Nullable JedisCluster jedisCluster;
+    private final @Nullable RedisClusterClient redisClusterClient;
     private final SettingsUpdateListener settingsUpdateListener;
     private final SettingsCache cache;
 
-    public SettingsService(@Nullable JedisCluster jedisCluster, SettingsCache cache) {
-        this.jedisCluster = jedisCluster;
+    public SettingsService(@Nullable RedisClusterClient redisClusterClient, SettingsCache cache) {
+        this.redisClusterClient = redisClusterClient;
         this.cache = cache;
 
-        if (jedisCluster != null) {
-            settingsUpdateListener = new SettingsUpdateListener(jedisCluster);
+        if (redisClusterClient != null) {
+            settingsUpdateListener = new SettingsUpdateListener(redisClusterClient);
             logger.info("SettingsService initialized with Redis update listener");
         } else {
             settingsUpdateListener = null;
@@ -84,16 +84,16 @@ public class SettingsService {
     }
 
     private void publishSettingsUpdate() {
-        if (jedisCluster != null) {
+        if (redisClusterClient != null) {
             logger.debug("Publish settings update");
             String version = String.valueOf(System.currentTimeMillis());
-            jedisCluster.publish(SETTINGS_UPDATE_CHANNEL, version);
+            redisClusterClient.publish(SETTINGS_UPDATE_CHANNEL, version);
         }
     }
 
     private class SettingsUpdateListener extends JedisClusterChannelListener {
-        SettingsUpdateListener(JedisCluster jedisCluster) {
-            super(jedisCluster, SETTINGS_UPDATE_CHANNEL, "SettingsUpdate");
+        SettingsUpdateListener(RedisClusterClient redisClusterClient) {
+            super(redisClusterClient, SETTINGS_UPDATE_CHANNEL, "SettingsUpdate");
         }
 
         @Override
