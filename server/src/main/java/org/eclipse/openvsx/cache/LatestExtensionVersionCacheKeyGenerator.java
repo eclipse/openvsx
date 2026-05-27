@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.cache;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -51,15 +52,15 @@ public class LatestExtensionVersionCacheKeyGenerator implements KeyGenerator {
     }
 
     public String generate(Extension extension, String targetPlatform, boolean preRelease, boolean onlyActive, ExtensionVersion.Type type) {
-        var extensionName = extension.getName();
-        var namespaceName = extension.getNamespace().getName();
+        var extensionName = StringUtils.lowerCase(extension.getName());
+        var namespaceName = StringUtils.lowerCase(extension.getNamespace().getName());
         return NamingUtil.toFileFormat(namespaceName, extensionName, targetPlatform, VersionAlias.LATEST) +
                 ",pre-release=" + preRelease + ",only-active=" + onlyActive + ",type=" + type;
     }
 
     public String generateWildcard(Extension extension) {
-        var extensionName = extension.getName();
-        var namespaceName = extension.getNamespace().getName();
+        var extensionName = StringUtils.lowerCase(extension.getName());
+        var namespaceName = StringUtils.lowerCase(extension.getNamespace().getName());
         return NamingUtil.toExtensionId(namespaceName, extensionName) + "*";
     }
 }
