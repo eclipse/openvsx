@@ -395,6 +395,7 @@ public class AdminAPI {
         path = "/user/{provider}/{loginName}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> updateUserRole(
             @PathVariable String provider,
             @PathVariable String loginName,
