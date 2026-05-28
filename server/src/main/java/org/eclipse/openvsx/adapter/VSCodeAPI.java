@@ -130,7 +130,7 @@ public class VSCodeAPI {
         var result = extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
 
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                 .body(result);
     }
 
@@ -202,10 +202,7 @@ public class VSCodeAPI {
                 }
             }
 
-            return ResponseEntity
-                    .notFound()
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                    .build();
+            return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -259,10 +256,7 @@ public class VSCodeAPI {
             }
         }
 
-        return ResponseEntity
-                .notFound()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                .build();
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/vscode/gallery/publishers/{namespaceName}/vsextensions/{extensionName}/{version}/vspackage")
@@ -318,10 +312,7 @@ public class VSCodeAPI {
             }
         }
 
-        return ResponseEntity
-                .notFound()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                .build();
+        return ResponseEntity.notFound().build();
     }
 
     @Observed
@@ -372,10 +363,7 @@ public class VSCodeAPI {
                 }
             }
 
-            return ResponseEntity
-                    .notFound()
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                    .build();
+            return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -406,17 +394,14 @@ public class VSCodeAPI {
                 try {
                     var result = service.latest(namespaceName, extensionName);
                     return ResponseEntity.ok()
-                            .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                            .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                             .body(result);
                 } catch (NotFoundException exc) {
                     // Try the next registry
                 }
             }
 
-            return ResponseEntity
-                    .notFound()
-                    .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                    .build();
+            return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());
             return ResponseEntity.internalServerError().build();
