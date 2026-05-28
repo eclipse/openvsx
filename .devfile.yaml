@@ -234,9 +234,9 @@ commands:
           # Execute SQL inserts
           echo "⚙️ Inserting user and PAT into OpenVSX database..."
           kubectl exec -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -- bash -c \
-            "psql -d openvsx -c \"INSERT INTO user_data (id, login_name, role) VALUES (1001, '$OPENVSX_USER_NAME', 'privileged');\""
+            "psql -d openvsx -c \"INSERT INTO user_data (id, login_name, role) VALUES (1001, '$OPENVSX_USER_NAME', 'privileged');\"" &&
           kubectl exec -n "$OPENVSX_NAMESPACE" "$POSTGRESQL_POD_NAME" -- bash -c \
-            "psql -d openvsx -c \"INSERT INTO personal_access_token (id, user_data, value, active, created_timestamp, accessed_timestamp, description, notified) VALUES (1001, 1001, '$OPENVSX_USER_PAT', true, current_timestamp, current_timestamp, 'extensions publisher', false);\""
+            "psql -d openvsx -c \"INSERT INTO personal_access_token (id, user_data, value, active, created_timestamp, accessed_timestamp, description, notified) VALUES (1001, 1001, '$OPENVSX_USER_PAT', true, current_timestamp, current_timestamp, 'extensions publisher', false);\"" &&
           echo "✅ OpenVSX user and token inserted successfully."
 
   - id: enable-internal-openvsx
