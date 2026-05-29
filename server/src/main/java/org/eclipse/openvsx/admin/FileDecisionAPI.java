@@ -21,6 +21,7 @@ import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.PaginationUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -103,11 +104,9 @@ public class FileDecisionAPI {
         try {
             admins.checkAdminUser();
 
-            if (size < 0) {
-                throw new ErrorResultException("Parameter 'size' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
-            if (offset < 0) {
-                throw new ErrorResultException("Parameter 'offset' must be >= 0", HttpStatus.BAD_REQUEST);
+        	var error = PaginationUtil.validatePaginationParameters(size, offset, FileDecisionListJson::error);
+            if (error != null) {
+            	return error;
             }
 
             var decidedFrom = parseUtcDateTime(dateDecidedFrom, "dateDecidedFrom");

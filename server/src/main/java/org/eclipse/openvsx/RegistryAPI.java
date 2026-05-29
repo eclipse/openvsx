@@ -191,18 +191,6 @@ public class RegistryAPI {
         return "Namespace not found: " + namespace;
     }
 
-    private String negativeSizeMessage() {
-      return negativeParameterMessage("size");
-    }
-
-    private String negativeOffsetMessage() {
-        return negativeParameterMessage("offset");
-    }
-
-    private String negativeParameterMessage(String field) {
-        return "The parameter '" + field + "' must not be negative.";
-    }
-
     @GetMapping(
             path = "/api/{namespace}/logo/{fileName}",
             produces = { MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE }
@@ -489,14 +477,11 @@ public class RegistryAPI {
     }
 
     private ResponseEntity<VersionsJson> handleGetVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
-        if (size < 0) {
-            var json = VersionsJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+    	var error = PaginationUtil.validatePaginationParameters(size, offset, VersionsJson::error);
+        if (error != null) {
+        	return error;
         }
-        if (offset < 0) {
-            var json = VersionsJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
+
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
@@ -587,13 +572,9 @@ public class RegistryAPI {
     }
 
     private ResponseEntity<VersionReferencesJson> handleGetVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
-        if (size < 0) {
-            var json = VersionReferencesJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = VersionReferencesJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+    	var error = PaginationUtil.validatePaginationParameters(size, offset, VersionReferencesJson::error);
+        if (error != null) {
+        	return error;
         }
         for (var registry : getRegistries()) {
             try {
@@ -807,13 +788,9 @@ public class RegistryAPI {
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
     ) {
-        if (size < 0) {
-            var json = SearchResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = SearchResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+    	var error = PaginationUtil.validatePaginationParameters(size, offset, SearchResultJson::error);
+        if (error != null) {
+        	return error;
         }
 
         var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions, null);
@@ -924,13 +901,9 @@ public class RegistryAPI {
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
-        if (size < 0) {
-            var json = QueryResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+    	var error = PaginationUtil.validatePaginationParameters(size, offset, QueryResultJson::error);
+        if (error != null) {
+        	return error;
         }
         if(!List.of("true", "false", "links").contains(includeAllVersions)) {
             var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
@@ -1041,13 +1014,9 @@ public class RegistryAPI {
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
-        if (size < 0) {
-            var json = QueryResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+    	var error = PaginationUtil.validatePaginationParameters(size, offset, QueryResultJson::error);
+        if (error != null) {
+        	return error;
         }
         
         var request = new QueryRequest(

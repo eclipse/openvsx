@@ -27,6 +27,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
+import org.eclipse.openvsx.util.PaginationUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.http.HttpStatus;
@@ -324,11 +325,9 @@ public class ScanAPI {
         try {
             admins.checkAdminUser();
 
-            if (size < 0) {
-                throw new ErrorResultException("Parameter 'size' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
-            if (offset < 0) {
-                throw new ErrorResultException("Parameter 'offset' must be >= 0", HttpStatus.BAD_REQUEST);
+        	var error = PaginationUtil.validatePaginationParameters(size, offset, ScanResultListJson::error);
+            if (error != null) {
+            	return error;
             }
 
             var statusFilter = parseStatusFilter(status);
