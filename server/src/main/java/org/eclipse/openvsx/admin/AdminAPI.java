@@ -42,6 +42,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -202,6 +203,10 @@ public class AdminAPI {
     ) {
         try {
             admins.checkAdminUser();
+
+            if (pageable.getPageSize() > 1000) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page size must not exceed 1000");
+            }
 
             Page<PersistedLog> logsPage;
             if (StringUtils.isEmpty(periodString)) {
