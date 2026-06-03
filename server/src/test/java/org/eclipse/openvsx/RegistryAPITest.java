@@ -580,6 +580,21 @@ class RegistryAPITest {
     }
 
     @Test
+    void testInvalidSearch() throws Exception {
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "-1", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "1001", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
+
+        mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "1", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+    }
+
+    @Test
     void testSearch() throws Exception {
         var extVersions = mockSearch();
         extVersions.forEach(extVersion -> Mockito.when(repositories.findLatestVersion(extVersion.getExtension(), null, false, true)).thenReturn(extVersion));
@@ -718,6 +733,21 @@ class RegistryAPITest {
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("{\"offset\":0,\"totalSize\":1,\"extensions\":[]}"));
+    }
+
+    @Test
+    void testInvalidQuery() throws Exception {
+        mockMvc.perform(get("/api/-/query?size={size}&offset={offset}", "-1", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/api/-/query?size={size}&offset={offset}", "1001", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
+
+        mockMvc.perform(get("/api/-/query?size={size}&offset={offset}", "100", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
     }
 
     @Test
@@ -876,6 +906,21 @@ class RegistryAPITest {
                     e.setDisplayName("Foo Bar");
                     e.setTargetPlatform("alpine-arm64");
                 })));
+    }
+
+    @Test
+    void testInvalidQueryV2() throws Exception {
+        mockMvc.perform(get("/api/v2/-/query?size={size}&offset={offset}", "-1", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/api/v2/-/query?size={size}&offset={offset}", "1001", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
+
+        mockMvc.perform(get("/api/v2/-/query?size={size}&offset={offset}", "100", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
     }
 
     @Test
@@ -1903,6 +1948,35 @@ class RegistryAPITest {
                 .andExpect(content().json(errorJson("You have not submitted any review yet.")));
     }
 
+    @Test
+    void testInvalidGetVersions() throws Exception {
+        mockMvc.perform(get("/api/{namespace}/{extension}/versions?size={size}&offset={offset}", "foo", "bar", "-1", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/versions?size={size}&offset={offset}", "foo", "bar", "101", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 100"));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/versions?size={size}&offset={offset}", "foo", "bar", "100", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+    }
+
+    @Test
+    void testInvalidGetVersionReferences() throws Exception {
+        mockMvc.perform(get("/api/{namespace}/{extension}/version-references?size={size}&offset={offset}", "foo", "bar", "-1", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/version-references?size={size}&offset={offset}", "foo", "bar", "101", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 100"));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}/version-references?size={size}&offset={offset}", "foo", "bar", "100", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+    }
 
     //---------- UTILITY ----------//
 

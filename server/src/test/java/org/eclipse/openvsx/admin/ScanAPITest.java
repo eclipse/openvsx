@@ -12,12 +12,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
-import org.eclipse.openvsx.entities.ExtensionScan;
-import org.eclipse.openvsx.entities.ExtensionValidationFailure;
-import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.ScanStatus;
+import org.eclipse.openvsx.entities.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.repositories.ScannerJobRepository;
+import org.eclipse.openvsx.scanning.ExtensionScanCompletionService;
+import org.eclipse.openvsx.scanning.ExtensionScanService;
+import org.eclipse.openvsx.scanning.ScannerRegistry;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -66,16 +68,61 @@ class ScanAPITest {
     MeterRegistry meterRegistry;
 
     @MockitoBean
-    org.eclipse.openvsx.scanning.ExtensionScanCompletionService completionService;
+    ExtensionScanCompletionService completionService;
 
     @MockitoBean
-    org.eclipse.openvsx.scanning.ScannerRegistry scannerRegistry;
+    ScannerRegistry scannerRegistry;
 
     @MockitoBean
-    org.eclipse.openvsx.repositories.ScannerJobRepository scanJobRepository;
+    ScannerJobRepository scanJobRepository;
 
     @MockitoBean
-    org.eclipse.openvsx.scanning.ExtensionScanService scanService;
+    ExtensionScanService scanService;
+
+    @Test
+    void getScans_pagination_validation_failures() throws Exception {
+        // Always allow the request to pass the admin gate in this test setup.
+        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+
+        mockMvc.perform(get("/admin/scans")
+                        .param("status", "VALIDATING")
+                        .param("publisher", "alpha")
+                        .param("namespace", "a")
+                        .param("name", "a")
+                        .param("size", "-1")
+                        .param("offset", "0")
+                        .param("sortBy", "displayName")
+                        .param("sortOrder", "asc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be negative"));
+
+        mockMvc.perform(get("/admin/scans")
+                        .param("status", "VALIDATING")
+                        .param("publisher", "alpha")
+                        .param("namespace", "a")
+                        .param("name", "a")
+                        .param("size", "9999")
+                        .param("offset", "0")
+                        .param("sortBy", "displayName")
+                        .param("sortOrder", "asc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not be larger than 100"));
+
+        mockMvc.perform(get("/admin/scans")
+                        .param("status", "VALIDATING")
+                        .param("publisher", "alpha")
+                        .param("namespace", "a")
+                        .param("name", "a")
+                        .param("size", "100")
+                        .param("offset", "-1")
+                        .param("sortBy", "displayName")
+                        .param("sortOrder", "asc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+    }
 
     @Test
     void getScans_filters_sorting_and_pagination_are_applied() throws Exception {
@@ -92,7 +139,7 @@ class ScanAPITest {
             any(), any(), any(), any(),
             any(), any(), any(), any(),
             any(), any(), anyBoolean(), any()
-        )).thenReturn(new PageImpl<>(List.of(scanC), org.springframework.data.domain.PageRequest.of(0, 1), 2));
+        )).thenReturn(new PageImpl<>(List.of(scanC), PageRequest.of(0, 1), 2));
         
         when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
         when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
@@ -397,8 +444,8 @@ class ScanAPITest {
         when(repositories.findExtensionScan(5L)).thenReturn(scan);
         when(scanService.retryFailedJobs(scan)).thenReturn(scan);
         when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
-        when(repositories.findValidationFailures(any())).thenReturn(org.springframework.data.util.Streamable.empty());
-        when(repositories.findExtensionThreats(any())).thenReturn(org.springframework.data.util.Streamable.empty());
+        when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
+        when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
         when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
 
         mockMvc.perform(post("/admin/scans/5/jobs/retry").accept(MediaType.APPLICATION_JSON))
@@ -459,9 +506,9 @@ class ScanAPITest {
             return version;
         }
 
-        static org.eclipse.openvsx.entities.UserData adminUser() {
-            var user = new org.eclipse.openvsx.entities.UserData();
-            user.setRole(org.eclipse.openvsx.entities.UserData.ROLE_ADMIN);
+        static UserData adminUser() {
+            var user = new UserData();
+            user.setRole(UserData.ROLE_ADMIN);
             return user;
         }
     }
