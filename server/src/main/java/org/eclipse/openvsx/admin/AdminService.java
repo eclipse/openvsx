@@ -245,23 +245,27 @@ public class AdminService {
                         .collect(Collectors.joining(", ")));
         }
 
-        cache.evictExtensionJsons(extension);
-        cache.evictNamespaceDetails(extension);
-        cache.evictLatestExtensionVersion(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
+
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for(var deprecatedExtension : deprecatedExtensions) {
+        for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
             cache.evictExtensionJsons(deprecatedExtension);
         }
 
         entityManager.remove(extension);
+
+        // evict the cache entries only after the changes have been commited
+        cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
+
         search.removeSearchEntry(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
