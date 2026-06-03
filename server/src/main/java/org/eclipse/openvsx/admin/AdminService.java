@@ -136,21 +136,20 @@ public class AdminService {
     }
 
     public void deleteExtensionAndDependencies(Extension extension, UserData admin, int depth) throws ErrorResultException {
-        if(depth > 5) {
+        if (depth > 5) {
             throw new ErrorResultException("Failed to delete extension and its dependencies. Exceeded maximum recursion depth.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        for(var bundledRef : bundledRefs) {
+        for (var bundledRef : bundledRefs) {
             deleteExtensionAndDependencies(bundledRef, admin, depth);
         }
 
         var dependRefs = repositories.findDependenciesReference(extension);
-        for(var dependRef : dependRefs) {
+        for (var dependRef : dependRefs) {
             deleteExtensionAndDependencies(dependRef, admin, depth);
         }
 
-        cache.evictExtensionJsons(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
@@ -159,12 +158,18 @@ public class AdminService {
         }
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for(var deprecatedExtension : deprecatedExtensions) {
+        for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
             cache.evictExtensionJsons(deprecatedExtension);
         }
 
         entityManager.remove(extension);
+
+        // evict the cache entries only after the changes have been commited
+        cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
+
         search.removeSearchEntry(extension);
         logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
     }
@@ -189,12 +194,12 @@ public class AdminService {
             String extensionName,
             List<TargetPlatformVersionJson> targetVersions
     ) {
-        if(targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
+        if (targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
             return deleteExtension(namespaceName, extensionName, adminUser);
         }
 
         var results = new ArrayList<ResultJson>();
-        for(var targetVersion : targetVersions) {
+        for (var targetVersion : targetVersions) {
             results.add(deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
         }
 
@@ -437,7 +442,7 @@ public class AdminService {
             var duplicateExtensions = oldExtensions.keySet().stream()
                     .filter(newExtensions::containsKey)
                     .collect(Collectors.joining("','"));
-            if(!duplicateExtensions.isEmpty()) {
+            if (!duplicateExtensions.isEmpty()) {
                 var message = "Can't merge namespaces, because new namespace '" +
                         json.newNamespace() +
                         "' and old namespace '" +
@@ -569,7 +574,7 @@ public class AdminService {
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
         validateYearAndMonth(year, month);
         var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
-        if(statistics == null) {
+        if (statistics == null) {
             throw new NotFoundException();
         }
 
@@ -577,15 +582,15 @@ public class AdminService {
     }
 
     private void validateYearAndMonth(int year, int month) {
-        if(year < 0) {
+        if (year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
         }
-        if(month < 1 || month > 12) {
+        if (month < 1 || month > 12) {
             throw new ErrorResultException("Month must be a value between 1 and 12", HttpStatus.BAD_REQUEST);
         }
 
         var now = TimeUtil.getCurrentUTC();
-        if(year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
+        if (year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
             throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
     }
