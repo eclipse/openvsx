@@ -65,8 +65,8 @@
         "react-dropzone": "^14.2.3",
         "react-helmet-async": "^2.0.5",
         "react-infinite-scroller": "^1.2.6",
-        "react-router": "^6.30.3",
-        "react-router-dom": "^6.30.3"
+        "react-router": "^6.30.4",
+        "react-router-dom": "^6.30.4"
     },
     "resolutions": {
         "@types/react": "^18.2.14",
