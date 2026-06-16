@@ -15,6 +15,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Dependencies
 
+- Bump markdown-it from `14.1.1` to `14.2.0` ([#1904](https://github.com/eclipse-openvsx/openvsx/pull/1904))
 - Bump qs from `6.15.1` to `6.15.2` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
 - Bump react-router and react-router-dom from `6.30.3` to `6.30.4` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
 
