@@ -9,6 +9,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump tar from `7.5.11` to `7.5.16` ([#1907](https://github.com/eclipse-openvsx/openvsx/pull/1907))
 - Bump js-yaml from `4.1.1` to `4.2.0` ([#1908](https://github.com/eclipse-openvsx/openvsx/pull/1908))
 - Bump vite from `7.3.2` to `7.3.5` ([#1905](https://github.com/eclipse-openvsx/openvsx/pull/1905))
+- Bump dompurify from `3.4.0` to `3.4.9` ([#1906](https://github.com/eclipse-openvsx/openvsx/pull/1906))
 
 ## [v1.0.1] (11/06/2026)
 
@@ -16,7 +17,6 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Bump qs from `6.15.1` to `6.15.2` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
 - Bump react-router and react-router-dom from `6.30.3` to `6.30.4` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
-- Bump dompurify from `3.4.0` to `3.4.9` ([#1906](https://github.com/eclipse-openvsx/openvsx/pull/1906))
 
 ## [v1.0.0] (28/05/2026)
 
