@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
+import org.eclipse.openvsx.util.ArchiveUtil;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,8 @@ public class MaliciousZipCheckService implements PublishCheck {
     private static final String EXTRA_FIELDS_MESSAGE = "extension file contains zip entries with potentially harmful extra fields";
     private static final String DUPLICATE_ENTRIES_RULE = "DUPLICATE_NORMALIZED_ENTRIES";
     private static final String DUPLICATE_ENTRIES_MESSAGE = "extension file contains duplicate zip entries after path normalization";
+    private static final String UNSAFE_PATH_RULE = "UNSAFE_PATH_DETECTED";
+    private static final String UNSAFE_PATH_MESSAGE = "extension file contains zip entries with a suspicious path";
 
     @Override
     public String getCheckType() {
@@ -49,7 +52,7 @@ public class MaliciousZipCheckService implements PublishCheck {
     @Override
     public PublishCheck.Result check(Context context) {
         try (var zipFile = new ZipFile(context.extensionFile().getPath().toFile())) {
-            return checkForExtraFields(zipFile).and(checkForDuplicateEntries(zipFile));
+            return checkForExtraFields(zipFile).and(checkForDuplicateEntries(zipFile)).and(checkForUnsafePaths(zipFile));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to read extension zip file", e);
         }
@@ -77,6 +80,17 @@ public class MaliciousZipCheckService implements PublishCheck {
             var normalizedName = Path.of(name).normalize().toString().replaceAll("\\\\+", "/");
             if (!seen.add(normalizedName)) {
                 return PublishCheck.Result.fail(DUPLICATE_ENTRIES_RULE, DUPLICATE_ENTRIES_MESSAGE);
+            }
+        }
+        return PublishCheck.Result.pass();
+    }
+
+    private PublishCheck.Result checkForUnsafePaths(ZipFile zipFile) {
+        var entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            var name = entries.nextElement().getName();
+            if (!ArchiveUtil.isSafePath(name)) {
+                return PublishCheck.Result.fail(UNSAFE_PATH_RULE, UNSAFE_PATH_MESSAGE);
             }
         }
         return PublishCheck.Result.pass();

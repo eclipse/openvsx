@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.InstanceOfAssertFactories.PATH;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class ArchiveUtilTest {
 
     @Test
-    void testTodoTree() throws Exception {
+    public void testTodoTree() throws Exception {
         var packageUrl = getClass().getResource("todo-tree.zip");
 
         assertThat(packageUrl).isNotNull();
@@ -40,7 +39,7 @@ class ArchiveUtilTest {
     }
 
     @Test
-    void testExceedMaxEntrySize() throws IOException {
+    public void testExceedMaxEntrySize() throws IOException {
         // an artificially crafted zip file with a file whose size is set lower as its actual content
         var packageUrl = getClass().getResource("wrong-size.zip");
 
@@ -56,5 +55,22 @@ class ArchiveUtilTest {
                     .isExactlyInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Failed to read extension/package.json: File size exceeds limit of 0 bytes.");
         }
+    }
+
+    @Test
+    public void testSafePath() {
+        // restricted path patterns
+        assertThat(ArchiveUtil.isSafePath("\0")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc\0")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("/test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("c:\\test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("..")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("../test.xt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc/../test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc/def/./../test.txt")).isEqualTo(false);
+
+        // allowed path patterns
+        assertThat(ArchiveUtil.isSafePath(".test.txt")).isEqualTo(true);
+        assertThat(ArchiveUtil.isSafePath("..test.txt")).isEqualTo(true);
     }
 }

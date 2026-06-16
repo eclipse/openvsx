@@ -115,10 +115,6 @@ class SecretDetector {
             return false;
         }
 
-        if (!ArchiveUtil.isSafePath(filePath)) {
-            return false;
-        }
-
         if (entry.getSize() < 0 && entry.getCompressedSize() < 0) {
             return false;
         }
