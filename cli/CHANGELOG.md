@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump tmp from `0.2.6` to `0.2.7` ([#1903](https://github.com/eclipse/openvsx/pull/1903))
+- Bump markdown-it from `14.1.1` to `14.2.0` ([#1913](https://github.com/eclipse/openvsx/pull/1913))
 
 ### [v1.0.1] (11/06/2026)
 
