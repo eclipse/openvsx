@@ -11,6 +11,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump vite from `7.3.2` to `7.3.5` ([#1905](https://github.com/eclipse-openvsx/openvsx/pull/1905))
 - Bump dompurify from `3.4.0` to `3.4.9` ([#1906](https://github.com/eclipse-openvsx/openvsx/pull/1906))
 - Bump markdown-it from `14.1.1` to `14.2.0` ([#1904](https://github.com/eclipse-openvsx/openvsx/pull/1904))
+- Bump @babel/core from `7.29.0` to `7.29.7` ([#1909](https://github.com/eclipse-openvsx/openvsx/pull/1909))
 
 ## [v1.0.1] (11/06/2026)
 
