@@ -4,6 +4,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Changed
+
+- Migrate unit test framework from mocha to vitest
+
 ### Dependencies
 
 - Bump tar from `7.5.11` to `7.5.16` ([#1907](https://github.com/eclipse-openvsx/openvsx/pull/1907))

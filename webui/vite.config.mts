@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, PluginOption } from 'vite';
@@ -20,6 +21,10 @@ export default defineConfig(() => ({
         }
     },
     publicDir: 'static',
+    test: {
+        include: ['test/unit/**/*.spec.{ts,tsx}'],
+        environment: 'node',
+    },
     build: {
         target: 'es2020',
         minify: true,
