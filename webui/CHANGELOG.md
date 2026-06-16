@@ -7,6 +7,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Dependencies
 
 - Bump tar from `7.5.11` to `7.5.16` ([#1907](https://github.com/eclipse-openvsx/openvsx/pull/1907))
+- Bump js-yaml from `4.1.1` to `4.2.0` ([#1908](https://github.com/eclipse-openvsx/openvsx/pull/1908))
 
 ## [v1.0.1] (11/06/2026)
 
