@@ -3822,6 +3822,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-parser-plain@npm:^0.1.1":
+  version: 0.1.1
+  resolution: "eslint-parser-plain@npm:0.1.1"
+  checksum: 10/f9ba1ab680ea834398ddc878065ff88cbab9b652f3e389df4a4387cafe1ca92161c43183eb267933a6b62c77cc98d26313daa32d03bdf564a213b4bfb6cf017d
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-prettier@npm:^5.5.6":
   version: 5.5.6
   resolution: "eslint-plugin-prettier@npm:5.5.6"
@@ -5837,6 +5844,7 @@ __metadata:
     dompurify: "npm:^3.0.4"
     eslint: "npm:^9.39.0"
     eslint-config-prettier: "npm:^10.1.8"
+    eslint-parser-plain: "npm:^0.1.1"
     eslint-plugin-prettier: "npm:^5.5.6"
     eslint-plugin-react: "npm:^7.37.0"
     eslint-plugin-react-refresh: "npm:^0.5.2"
