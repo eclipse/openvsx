@@ -1598,22 +1598,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stylistic/eslint-plugin@npm:^5.9.0":
-  version: 5.9.0
-  resolution: "@stylistic/eslint-plugin@npm:5.9.0"
-  dependencies:
-    "@eslint-community/eslint-utils": "npm:^4.9.1"
-    "@typescript-eslint/types": "npm:^8.56.0"
-    eslint-visitor-keys: "npm:^4.2.1"
-    espree: "npm:^10.4.0"
-    estraverse: "npm:^5.3.0"
-    picomatch: "npm:^4.0.3"
-  peerDependencies:
-    eslint: ^9.0.0 || ^10.0.0
-  checksum: 10/198740bfe55bf6d71a9e973df7ec20f02c9316376e1e5d5d7703a65061d3e0bdeae531a247843e1cb70091cc00db39ffec78361357754a99831d5b509d78642c
-  languageName: node
-  linkType: hard
-
 "@tanstack/query-core@npm:5.101.0":
   version: 5.101.0
   resolution: "@tanstack/query-core@npm:5.101.0"
@@ -5828,7 +5812,6 @@ __metadata:
     "@mui/x-data-grid": "npm:^8.28.2"
     "@mui/x-date-pickers": "npm:^8.27.2"
     "@playwright/test": "npm:^1.58.0"
-    "@stylistic/eslint-plugin": "npm:^5.9.0"
     "@tanstack/react-query": "npm:^5.101.0"
     "@tanstack/react-query-devtools": "npm:^5.101.0"
     "@types/d3-scale": "npm:^4.0"

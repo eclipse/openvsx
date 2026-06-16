@@ -1,7 +1,6 @@
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import react from "eslint-plugin-react";
 import tsParser from "@typescript-eslint/parser";
-import stylistic from '@stylistic/eslint-plugin'
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
@@ -28,7 +27,6 @@ export default [...compat.extends(
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
         "@typescript-eslint": typescriptEslint,
-        "@stylistic": stylistic,
         react,
     },
 
@@ -44,20 +42,6 @@ export default [...compat.extends(
 
     rules: {
         "@typescript-eslint/ban-types": "off",
-        "@/brace-style": ["warn", "1tbs"],
-
-        "@/comma-spacing": ["warn", {
-            before: false,
-            after: true,
-        }],
-
-        "@/func-call-spacing": ["warn", "never"],
-
-        "@/keyword-spacing": ["warn", {
-            before: true,
-            after: true,
-        }],
-
         "@typescript-eslint/no-empty-function": "off",
         "@typescript-eslint/no-empty-interface": "off",
         "@typescript-eslint/no-explicit-any": "off",
@@ -66,45 +50,8 @@ export default [...compat.extends(
         "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/no-unused-vars": "off",
         "@typescript-eslint/no-var-requires": "off",
-        "@/semi": ["error", "always"],
-        "@stylistic/type-annotation-spacing": "warn",
         "react/prop-types": "off",
         "react/react-in-jsx-scope": ["off"],
-        "array-bracket-spacing": ["warn", "never"],
-
-        "arrow-spacing": ["warn", {
-            before: true,
-            after: true,
-        }],
-
-        "computed-property-spacing": ["warn", "never"],
-        "jsx-quotes": ["error", "prefer-single"],
-
-        "key-spacing": ["warn", {
-            beforeColon: false,
-            afterColon: true,
-        }],
-
-        "linebreak-style": ["warn", "unix"],
-        "new-parens": "error",
-        "no-trailing-spaces": "warn",
-        "no-whitespace-before-property": "warn",
-        "object-curly-spacing": ["warn", "always"],
-
-        "semi-spacing": ["warn", {
-            before: false,
-            after: true,
-        }],
-
-        "space-before-blocks": ["warn", "always"],
-        "space-in-parens": ["warn", "never"],
-        "space-infix-ops": "warn",
-        "space-unary-ops": "warn",
-
-        "switch-colon-spacing": ["warn", {
-            before: false,
-            after: true,
-        }],
     },
 },
     prettierRecommended];
