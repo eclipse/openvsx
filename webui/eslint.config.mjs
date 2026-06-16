@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
 import { reactRefresh } from "eslint-plugin-react-refresh";
+import prettierRecommended from "eslint-plugin-prettier/recommended";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,4 +106,5 @@ export default [...compat.extends(
             after: true,
         }],
     },
-}];
+},
+    prettierRecommended];
