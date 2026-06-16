@@ -2,6 +2,12 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [next] (unreleased)
+
+#### Dependencies
+
+- Bump tmp from `0.2.6` to `0.2.7` ([#1903](https://github.com/eclipse/openvsx/pull/1903))
+
 ### [v1.0.1] (11/06/2026)
 
 ### Fixes
