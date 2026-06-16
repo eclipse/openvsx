@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump tmp from `0.2.6` to `0.2.7` ([#1903](https://github.com/eclipse/openvsx/pull/1903))
+- Bump form-data from `4.0.4` to `4.0.6` ([#1910](https://github.com/eclipse/openvsx/pull/1910))
 
 ### [v1.0.1] (11/06/2026)
 
