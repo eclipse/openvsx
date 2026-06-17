@@ -369,7 +369,7 @@ public class ExtensionVersionJooqRepository {
         return fetch(query);
     }
 
-    private SelectQuery<Record> findAllActive() {
+    private SelectQuery<Record> baseExtensionVersionQuery() {
         var query = dsl.selectQuery();
         query.addSelect(
                 NAMESPACE.ID,
@@ -394,6 +394,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -415,14 +416,21 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID
         );
         query.addFrom(EXTENSION_VERSION);
         query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
         query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, JoinType.LEFT_OUTER_JOIN, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
         query.addJoin(SIGNATURE_KEY_PAIR, JoinType.LEFT_OUTER_JOIN, SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID));
+        return query;
+    }
+
+    private SelectQuery<Record> findAllActive() {
+        var query = baseExtensionVersionQuery();
         query.addConditions(EXTENSION_VERSION.ACTIVE.eq(true));
         return query;
     }
@@ -450,6 +458,9 @@ public class ExtensionVersionJooqRepository {
         extVersion.setBugs(row.get(extensionVersionMapper.map(EXTENSION_VERSION.BUGS)));
         extVersion.setMarkdown(row.get(extensionVersionMapper.map(EXTENSION_VERSION.MARKDOWN)));
         extVersion.setQna(row.get(extensionVersionMapper.map(EXTENSION_VERSION.QNA)));
+        extVersion.setActive(row.get(extensionVersionMapper.map(EXTENSION_VERSION.ACTIVE)));
+        extVersion.setState(ExtensionVersion.State.valueOf(row.get(extensionVersionMapper.map(EXTENSION_VERSION.STATE))));
+        extVersion.setLastUpdated(row.get(extensionVersionMapper.map(EXTENSION_VERSION.LAST_UPDATED)));
 
         if(extension == null) {
             var newExtension = extVersion.getExtension();
@@ -700,6 +711,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -721,6 +733,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID
         );
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
@@ -764,6 +778,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -785,6 +800,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID
         );
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
@@ -835,6 +852,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -856,6 +874,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_WITH_ID
         );
@@ -880,6 +900,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                latest.field(EXTENSION_VERSION.ACTIVE),
                 latest.field(EXTENSION_VERSION.PREVIEW),
                 latest.field(EXTENSION_VERSION.PRE_RELEASE),
                 latest.field(EXTENSION_VERSION.TIMESTAMP),
@@ -901,6 +922,8 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.STATE),
+                latest.field(EXTENSION_VERSION.LAST_UPDATED),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -996,6 +1019,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -1017,6 +1041,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_WITH_ID
         );
@@ -1044,6 +1070,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                latest.field(EXTENSION_VERSION.ACTIVE),
                 latest.field(EXTENSION_VERSION.PREVIEW),
                 latest.field(EXTENSION_VERSION.PRE_RELEASE),
                 latest.field(EXTENSION_VERSION.TIMESTAMP),
@@ -1065,6 +1092,8 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.STATE),
+                latest.field(EXTENSION_VERSION.LAST_UPDATED),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1098,6 +1127,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -1119,6 +1149,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_WITH_ID
         );
@@ -1146,6 +1178,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
+                latest.field(EXTENSION_VERSION.ACTIVE),
                 latest.field(EXTENSION_VERSION.PREVIEW),
                 latest.field(EXTENSION_VERSION.PRE_RELEASE),
                 latest.field(EXTENSION_VERSION.TIMESTAMP),
@@ -1167,6 +1200,8 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.STATE),
+                latest.field(EXTENSION_VERSION.LAST_UPDATED),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1359,6 +1394,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
                 EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.ACTIVE,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
                 EXTENSION_VERSION.TIMESTAMP,
@@ -1380,6 +1416,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.STATE,
+                EXTENSION_VERSION.LAST_UPDATED,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID
         );
         query.addJoin(PERSONAL_ACCESS_TOKEN, JoinType.LEFT_OUTER_JOIN, PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
