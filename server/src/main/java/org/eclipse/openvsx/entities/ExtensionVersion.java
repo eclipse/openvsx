@@ -335,6 +335,9 @@ public class ExtensionVersion implements Serializable {
     }
 
     public void setState(State state) {
+        if (this.state == State.DELETED && state != State.DELETED) {
+            throw new IllegalStateException("Cannot transition away from DELETED state");
+        }
         this.active = state == State.ACTIVE;
         this.state = state;
         this.lastUpdated = TimeUtil.getCurrentUTC();
