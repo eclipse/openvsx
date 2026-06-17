@@ -79,6 +79,13 @@ public class ExtensionVersion implements Serializable {
     @ManyToOne
     private PersonalAccessToken publishedWith;
 
+    /**
+     * Legacy persisted mirror of {@link #state} kept for compatibility with active-based queries.
+     *
+     * @deprecated Use {@link #getState()} / {@link #setState(State)}. This field is planned for
+     *             removal once repositories and SQL queries fully migrate to state-based filtering.
+     */
+    @Deprecated(forRemoval = true)
     private boolean active;
 
     @Enumerated(EnumType.STRING)
@@ -322,10 +329,18 @@ public class ExtensionVersion implements Serializable {
         this.publishedWith = publishedWith;
     }
 
+    /**
+     * @deprecated Use {@code getState() == State.ACTIVE}.
+     */
+    @Deprecated(forRemoval = true)
     public boolean isActive() {
         return state == State.ACTIVE;
     }
 
+    /**
+     * @deprecated Use {@link #setState(State)} with {@link State#ACTIVE} or {@link State#INACTIVE}.
+     */
+    @Deprecated(forRemoval = true)
     public void setActive(boolean active) {
         setState(active ? State.ACTIVE : State.INACTIVE);
     }
