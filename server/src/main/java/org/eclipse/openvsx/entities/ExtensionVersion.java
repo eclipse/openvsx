@@ -323,11 +323,10 @@ public class ExtensionVersion implements Serializable {
     }
 
     public boolean isActive() {
-        return active;
+        return state == State.ACTIVE;
     }
 
     public void setActive(boolean active) {
-        this.active = active;
         setState(active ? State.ACTIVE : State.INACTIVE);
     }
 
@@ -336,6 +335,7 @@ public class ExtensionVersion implements Serializable {
     }
 
     public void setState(State state) {
+        this.active = state == State.ACTIVE;
         this.state = state;
         this.lastUpdated = TimeUtil.getCurrentUTC();
     }
