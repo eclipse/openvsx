@@ -730,6 +730,8 @@ class UserAPITest {
         extension.getVersions().addAll(versions);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
+        Mockito.when(repositories.countVersions(namespace.getName(), extension.getName()))
+                .thenReturn(numberOfVersions);
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.get(versions.size() - 1)));
         Mockito.when(repositories.isDeleteAllVersions(eq("foobar"), eq("baz"), any(List.class), eq(user))).then(new Answer<Boolean>() {
             @Override

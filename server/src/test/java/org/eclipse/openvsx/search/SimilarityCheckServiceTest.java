@@ -148,13 +148,13 @@ class SimilarityCheckServiceTest {
     void shouldSkipCheckForExistingExtensionWhenConfiguredForNewOnly() {
         // When configured for new extensions only, skip if extension already has versions (>1 means existing).
         when(config.isOnlyCheckNewExtensions()).thenReturn(true);
-        when(repositories.countVersions("ns", "ext")).thenReturn(2);
+        when(repositories.countAllVersions("ns", "ext")).thenReturn(2);
 
         var context = createContext("ns", "ext", "Display");
         var result = similarityCheckService.check(context);
 
         assertThat(result.passed()).isTrue();
-        verify(repositories).countVersions("ns", "ext");
+        verify(repositories).countAllVersions("ns", "ext");
         verifyNoInteractions(similarityService);
     }
 
@@ -165,7 +165,7 @@ class SimilarityCheckServiceTest {
         when(config.isAllowSimilarityToOwnNames()).thenReturn(false);
         when(config.getSimilarityThreshold()).thenReturn(0.15);
         when(config.isOnlyProtectVerifiedNames()).thenReturn(false);
-        when(repositories.countVersions("ns", "ext")).thenReturn(0);
+        when(repositories.countAllVersions("ns", "ext")).thenReturn(0);
         when(similarityService.findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10))
                 .thenReturn(List.of());
 
@@ -173,7 +173,7 @@ class SimilarityCheckServiceTest {
         var result = similarityCheckService.check(context);
 
         assertThat(result.passed()).isTrue();
-        verify(repositories).countVersions("ns", "ext");
+        verify(repositories).countAllVersions("ns", "ext");
         verify(similarityService).findSimilarExtensions("ext", "ns", "Display", List.of(), 0.15, false, 10);
     }
 

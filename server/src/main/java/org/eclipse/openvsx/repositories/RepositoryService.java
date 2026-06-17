@@ -246,14 +246,44 @@ public class RepositoryService {
     }
 
     public ExtensionVersion findVersion(String version, String targetPlatform, Extension extension) {
+        return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionAndStateNot(
+                version,
+                targetPlatform,
+                extension,
+                ExtensionVersion.State.DELETED
+        );
+    }
+
+    public ExtensionVersion findVersionIncludingDeleted(String version, String targetPlatform, Extension extension) {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtension(version, targetPlatform, extension);
     }
 
     public ExtensionVersion findVersion(String version, String targetPlatform, String extensionName, String namespace) {
+        return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndStateNot(
+                version,
+                targetPlatform,
+                extensionName,
+                namespace,
+                ExtensionVersion.State.DELETED
+        );
+    }
+
+    public ExtensionVersion findVersionIncludingDeleted(String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
     public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+        return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndStateNot(
+                user,
+                version,
+                targetPlatform,
+                extensionName,
+                namespace,
+                ExtensionVersion.State.DELETED
+        );
+    }
+
+    public ExtensionVersion findVersionIncludingDeleted(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
     }
 
@@ -266,11 +296,20 @@ public class RepositoryService {
     }
 
     public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, PageRequest page) {
-        return extensionVersionRepo.findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(extension, namespace, page.withSort(VERSIONS_SORT));
+        return extensionVersionRepo.findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndActiveTrue(
+                extension,
+                namespace,
+                page.withSort(VERSIONS_SORT)
+        );
     }
 
     public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, String targetPlatform, PageRequest page) {
-        return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(targetPlatform, extension, namespace, page.withSort(VERSIONS_SORT));
+        return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndActiveTrue(
+                targetPlatform,
+                extension,
+                namespace,
+                page.withSort(VERSIONS_SORT)
+        );
     }
 
     public Page<String> findActiveVersionStringsSorted(String namespace, String extension, String targetPlatform, PageRequest page) {
@@ -290,11 +329,17 @@ public class RepositoryService {
     }
 
     public Streamable<ExtensionVersion> findBundledExtensionsReference(Extension extension) {
-        return extensionVersionRepo.findByBundledExtensions(NamingUtil.toExtensionId(extension));
+        return extensionVersionRepo.findByBundledExtensionsAndStateNot(
+                NamingUtil.toExtensionId(extension),
+                ExtensionVersion.State.DELETED
+        );
     }
 
     public Streamable<ExtensionVersion> findDependenciesReference(Extension extension) {
-        return extensionVersionRepo.findByDependencies(NamingUtil.toExtensionId(extension));
+        return extensionVersionRepo.findByDependenciesAndStateNot(
+                NamingUtil.toExtensionId(extension),
+                ExtensionVersion.State.DELETED
+        );
     }
 
     public Streamable<Extension> findExtensions(UserData user) {
@@ -550,6 +595,10 @@ public class RepositoryService {
     }
 
     public int countVersions(String namespaceName, String extensionName) {
+        return extensionVersionJooqRepo.countNonDeleted(namespaceName, extensionName);
+    }
+
+    public int countAllVersions(String namespaceName, String extensionName) {
         return extensionVersionJooqRepo.count(namespaceName, extensionName);
     }
 

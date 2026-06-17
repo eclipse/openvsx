@@ -171,7 +171,7 @@ public class PublishExtensionVersionHandler {
 
             entityManager.persist(extension);
         } else {
-            var existingVersion = repositories.findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
+            var existingVersion = repositories.findVersionIncludingDeleted(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
             if (existingVersion != null) {
                 var extVersionId = NamingUtil.toLogFormat(namespaceName, extensionName, extVersion.getTargetPlatform(), extVersion.getVersion());
                 var message = "Extension " + extVersionId + " is already published";

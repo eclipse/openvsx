@@ -475,19 +475,22 @@ public class ExtensionVersionJooqRepository {
             newNamespace.setPublicId(row.get(NAMESPACE.PUBLIC_ID));
         }
 
-        var user = new UserData();
-        user.setId(row.get(USER_DATA.ID));
-        user.setRole(UserData.Role.valueOfIgnoreCase(row.get(USER_DATA.ROLE)));
-        user.setLoginName(row.get(USER_DATA.LOGIN_NAME));
-        user.setFullName(row.get(USER_DATA.FULL_NAME));
-        user.setAvatarUrl(row.get(USER_DATA.AVATAR_URL));
-        user.setProviderUrl(row.get(USER_DATA.PROVIDER_URL));
-        user.setProvider(row.get(USER_DATA.PROVIDER));
+        var userId = row.get(USER_DATA.ID);
+        if (userId != null) {
+            var user = new UserData();
+            user.setId(userId);
+            user.setRole(UserData.Role.valueOfIgnoreCase(row.get(USER_DATA.ROLE)));
+            user.setLoginName(row.get(USER_DATA.LOGIN_NAME));
+            user.setFullName(row.get(USER_DATA.FULL_NAME));
+            user.setAvatarUrl(row.get(USER_DATA.AVATAR_URL));
+            user.setProviderUrl(row.get(USER_DATA.PROVIDER_URL));
+            user.setProvider(row.get(USER_DATA.PROVIDER));
 
-        var token = new PersonalAccessToken();
-        token.setUser(user);
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+            extVersion.setPublishedWith(token);
+        }
 
-        extVersion.setPublishedWith(token);
         extVersion.setType(ExtensionVersion.Type.REGULAR);
         return extVersion;
     }
@@ -567,6 +570,7 @@ public class ExtensionVersionJooqRepository {
                 )
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
+                .and(EXTENSION_VERSION.STATE.ne(ExtensionVersion.State.DELETED.name()))
                 .groupBy(
                         EXTENSION_VERSION.SEMVER_MAJOR,
                         EXTENSION_VERSION.SEMVER_MINOR,
@@ -607,6 +611,7 @@ public class ExtensionVersionJooqRepository {
                 .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
                 .and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
+                .and(EXTENSION_VERSION.STATE.ne(ExtensionVersion.State.DELETED.name()))
                 .groupBy(
                         EXTENSION_VERSION.SEMVER_MAJOR,
                         EXTENSION_VERSION.SEMVER_MINOR,
@@ -1479,6 +1484,19 @@ public class ExtensionVersionJooqRepository {
                 .fetchOne("count", Integer.class);
     }
 
+    public Integer countNonDeleted(String namespaceName, String extensionName) {
+        return dsl.select(DSL.count().as("count"))
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION)
+                .on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE)
+                .on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.STATE.ne(ExtensionVersion.State.DELETED.name()))
+                .fetchOne("count", Integer.class);
+    }
+
     public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
         if(targetVersions.isEmpty()) {
             return false;
@@ -1490,6 +1508,7 @@ public class ExtensionVersionJooqRepository {
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
                 .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.STATE.ne(ExtensionVersion.State.DELETED.name()))
                 .fetchOne("all", Integer.class);
 
         var rows = targetVersions.stream().map((tv) -> DSL.row(tv.version(), tv.targetPlatform())).toArray(Row2[]::new);
@@ -1505,6 +1524,7 @@ public class ExtensionVersionJooqRepository {
                 .where(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
                 .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.STATE.ne(ExtensionVersion.State.DELETED.name()))
                 .fetchOne("actual", Integer.class);
 
         return Objects.equals(actual, all);

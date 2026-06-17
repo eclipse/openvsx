@@ -82,7 +82,7 @@ public class SimilarityCheckService implements PublishCheck {
         var extensionName = scan.getExtensionName();
         var displayName = scan.getExtensionDisplayName();
 
-        if (config.isOnlyCheckNewExtensions() && repositories.countVersions(namespaceName, extensionName) > 0) {
+        if (config.isOnlyCheckNewExtensions() && repositories.countAllVersions(namespaceName, extensionName) > 0) {
             return PublishCheck.Result.pass();
         }
 

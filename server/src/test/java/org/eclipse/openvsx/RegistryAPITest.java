@@ -1767,6 +1767,17 @@ class RegistryAPITest {
     }
 
     @Test
+    void testPublishDeletedExtensionVersion() throws Exception {
+        mockForPublish("existing-inactive");
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
+        mockMvc.perform(post("/api/-/publish?token={token}", "my_token")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .content(bytes))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Extension foo.bar 1.0.0 is already published, but currently isn't active and therefore not visible.")));
+    }
+
+    @Test
     void testPublishSameVersionDifferentTargetPlatformPreRelease() throws Exception {
         var extVersion = mockExtension(TargetPlatform.NAME_WIN32_X64);
         extVersion.setVersion("1.0.0");
@@ -2452,16 +2463,20 @@ class RegistryAPITest {
         namespace.setName("foo");
         Mockito.when(repositories.findNamespace("foo"))
                 .thenReturn(namespace);
-        if (mode.equals("existing")) {
+        if (mode.equals("existing") || mode.equals("existing-inactive")) {
             var extension = new Extension();
             extension.setName("bar");
             var extVersion = new ExtensionVersion();
             extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             extVersion.setVersion("1.0.0");
-            extVersion.setActive(true);
-            Mockito.when(repositories.findExtensionForUpdate("bar", "foo"))
+            if (mode.equals("existing-inactive")) {
+                extVersion.setState(ExtensionVersion.State.DELETED);
+            } else {
+                extVersion.setActive(true);
+            }
+            Mockito.when(repositories.findExtension("bar", namespace))
                     .thenReturn(extension);
-            Mockito.when(repositories.findVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, extension))
+            Mockito.when(repositories.findVersionIncludingDeleted("1.0.0", TargetPlatform.NAME_UNIVERSAL, extension))
                     .thenReturn(extVersion);
         }
         Mockito.when(repositories.countActiveReviews(any(Extension.class)))
@@ -2486,7 +2501,7 @@ class RegistryAPITest {
             // Mock findMemberships(user) for similarity check
             Mockito.when(repositories.findMemberships(token.getUser()))
                     .thenReturn(Streamable.of(ownerMem));
-        } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
+        } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing") || mode.equals("existing-inactive")) {
             Mockito.when(repositories.canPublishInNamespace(token.getUser(), namespace))
                     .thenReturn(true);
             Mockito.when(repositories.isVerified(namespace, token.getUser()))

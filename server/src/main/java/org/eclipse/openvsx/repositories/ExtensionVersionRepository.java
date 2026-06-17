@@ -27,9 +27,33 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     ExtensionVersion findByVersionAndTargetPlatformAndExtension(String version, String targetPlatform, Extension extension);
 
+    ExtensionVersion findByVersionAndTargetPlatformAndExtensionAndStateNot(
+        String version,
+        String targetPlatform,
+        Extension extension,
+        ExtensionVersion.State state
+    );
+
     ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String targetPlatform, String extensionName, String namespace);
 
+    ExtensionVersion findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndStateNot(
+        String version,
+        String targetPlatform,
+        String extensionName,
+        String namespace,
+        ExtensionVersion.State state
+    );
+
     ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(UserData user, String version, String targetPlatform, String extensionName, String namespace);
+
+    ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndStateNot(
+        UserData user,
+        String version,
+        String targetPlatform,
+        String extensionName,
+        String namespace,
+        ExtensionVersion.State state
+    );
 
     Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String version, String extensionName, String namespace);
 
@@ -41,11 +65,21 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findBySignatureKeyPairNotOrSignatureKeyPairIsNull(SignatureKeyPair keyPair);
 
-    @Query("select ev from ExtensionVersion ev where concat(',', ev.bundledExtensions, ',') like concat('%,', ?1, ',%')")
-    Streamable<ExtensionVersion> findByBundledExtensions(String extensionId);
+    @Query("""
+        select ev
+        from ExtensionVersion ev
+        where concat(',', ev.bundledExtensions, ',') like concat('%,', ?1, ',%')
+        and ev.state <> ?2
+        """)
+    Streamable<ExtensionVersion> findByBundledExtensionsAndStateNot(String extensionId, ExtensionVersion.State state);
 
-    @Query("select ev from ExtensionVersion ev where concat(',', ev.dependencies, ',') like concat('%,', ?1, ',%')")
-    Streamable<ExtensionVersion> findByDependencies(String extensionId);
+    @Query("""
+        select ev
+        from ExtensionVersion ev
+        where concat(',', ev.dependencies, ',') like concat('%,', ?1, ',%')
+        and ev.state <> ?2
+        """)
+    Streamable<ExtensionVersion> findByDependenciesAndStateNot(String extensionId, ExtensionVersion.State state);
 
     @Query("select min(ev.timestamp) from ExtensionVersion ev")
     LocalDateTime getOldestTimestamp();
@@ -56,5 +90,18 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Page<ExtensionVersion> findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String extension, String namespace, Pageable page);
 
+        Page<ExtensionVersion> findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndActiveTrue(
+            String extension,
+            String namespace,
+            Pageable page
+        );
+
     Page<ExtensionVersion> findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(String targetPlatform, String extension, String namespace, Pageable page);
+
+        Page<ExtensionVersion> findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCaseAndActiveTrue(
+            String targetPlatform,
+            String extension,
+            String namespace,
+            Pageable page
+        );
 }
