@@ -525,6 +525,34 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (Boolean) get(35);
     }
 
+    /**
+     * Setter for <code>public.extension_version.state</code>.
+     */
+    public void setState(String value) {
+        set(36, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.state</code>.
+     */
+    public String getState() {
+        return (String) get(36);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.last_updated</code>.
+     */
+    public void setLastUpdated(LocalDateTime value) {
+        set(37, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.last_updated</code>.
+     */
+    public LocalDateTime getLastUpdated() {
+        return (LocalDateTime) get(37);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -548,7 +576,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious, String state, LocalDateTime lastUpdated) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -587,6 +615,8 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setSemverBuildMetadata(semverBuildMetadata);
         setUniversalTargetPlatform(universalTargetPlatform);
         setPotentiallyMalicious(potentiallyMalicious);
+        setState(state);
+        setLastUpdated(lastUpdated);
         resetChangedOnNotNull();
     }
 }

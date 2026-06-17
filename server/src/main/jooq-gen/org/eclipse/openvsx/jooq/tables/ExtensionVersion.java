@@ -235,6 +235,16 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, Boolean> POTENTIALLY_MALICIOUS = createField(DSL.name("potentially_malicious"), SQLDataType.BOOLEAN, this, "");
 
+    /**
+     * The column <code>public.extension_version.state</code>.
+     */
+    public final TableField<ExtensionVersionRecord, String> STATE = createField(DSL.name("state"), SQLDataType.VARCHAR(32).nullable(false), this, "");
+
+    /**
+     * The column <code>public.extension_version.last_updated</code>.
+     */
+    public final TableField<ExtensionVersionRecord, LocalDateTime> LAST_UPDATED = createField(DSL.name("last_updated"), SQLDataType.LOCALDATETIME(6).nullable(false), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -43,6 +43,10 @@ public class ExtensionVersion implements Serializable {
         EXTENDED
     }
 
+    public enum State {
+        ACTIVE, INACTIVE, DELETED
+    }
+
     @Id
     @GeneratedValue(generator = "extensionVersionSeq")
     @SequenceGenerator(name = "extensionVersionSeq", sequenceName = "extension_version_seq")
@@ -76,6 +80,11 @@ public class ExtensionVersion implements Serializable {
     private PersonalAccessToken publishedWith;
 
     private boolean active;
+
+    @Enumerated(EnumType.STRING)
+    private State state = State.ACTIVE;
+
+    private LocalDateTime lastUpdated = TimeUtil.getCurrentUTC();
 
     private boolean potentiallyMalicious;
 
@@ -319,6 +328,24 @@ public class ExtensionVersion implements Serializable {
 
     public void setActive(boolean active) {
         this.active = active;
+        setState(active ? State.ACTIVE : State.INACTIVE);
+    }
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+        this.lastUpdated = TimeUtil.getCurrentUTC();
+    }
+
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 
     public boolean isPotentiallyMalicious() {
