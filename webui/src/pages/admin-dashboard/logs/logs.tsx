@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useMemo } from "react";
+import { FC, useState, useEffect, useMemo } from "react";
 import {
     Box,
     Paper,
@@ -24,10 +24,10 @@ import {
     SelectChangeEvent,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams } from "@mui/x-data-grid";
-import { MainContext } from "../../../context";
 import type { Log } from "../../../extension-registry-types";
 import { handleError } from "../../../utils";
 import { createMultiSelectFilterOperators } from "../components";
+import { useLogs } from "./use-logs";
 
 type PeriodFilter = '' | 'P1D' | 'P7D' | 'P30D' | 'P90D' | 'P1Y';
 
@@ -41,50 +41,32 @@ const periodOptions: { value: PeriodFilter; label: string }[] = [
 ];
 
 export const Logs: FC = () => {
-    const { service } = useContext(MainContext);
-    const [logs, setLogs] = useState<Log[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0,
         pageSize: 20,
     });
-    const [totalElements, setTotalElements] = useState(0);
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('');
+    const [errorDismissed, setErrorDismissed] = useState(false);
+
+    const { data, isFetching: loading, error: loadError } = useLogs(
+        paginationModel.page,
+        paginationModel.pageSize,
+        periodFilter || undefined
+    );
+
+    const logs: Log[] = useMemo(() => data?.content ? [...data.content] : [], [data]);
+    const totalElements = data?.page.totalElements ?? 0;
     const logsWithId = useMemo(() =>
         logs.map((log, index) => ({ ...log, id: index })),
         [logs]
     );
 
+    // A fresh load error should be shown again even if a previous one was dismissed.
     useEffect(() => {
-        const abortController = new AbortController();
+        setErrorDismissed(false);
+    }, [loadError]);
 
-        const loadLogs = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await service.admin.getLogs(
-                    abortController,
-                    paginationModel.page,
-                    paginationModel.pageSize,
-                    periodFilter || undefined
-                );
-                setLogs(data.content);
-                setTotalElements(data.page.totalElements);
-            } catch (err: any) {
-                if (!abortController.signal.aborted) {
-                    setError(handleError(err));
-                }
-            } finally {
-                if (!abortController.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        loadLogs();
-        return () => abortController.abort();
-    }, [service, paginationModel.page, paginationModel.pageSize, periodFilter]);
+    const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
     const handlePaginationModelChange = (newModel: GridPaginationModel) => {
         setPaginationModel(newModel);
@@ -168,7 +150,7 @@ export const Logs: FC = () => {
             </Box>
 
             {error && (
-                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
+                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setErrorDismissed(true)}>
                     {error}
                 </Alert>
             )}
