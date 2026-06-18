@@ -40,8 +40,8 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
 
     const { data, error } = useCustomerMembers(props.customer.name);
-    const addMember = useAddCustomerMember(props.customer.name);
-    const removeMember = useRemoveCustomerMember(props.customer.name);
+    const { mutateAsync: addMember } = useAddCustomerMember(props.customer.name);
+    const { mutateAsync: removeMember } = useRemoveCustomerMember(props.customer.name);
 
     const members = data?.customerMemberships ?? [];
     const users = members.map(member => member.user);
@@ -63,7 +63,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleAddUser = async (user: UserData) => {
         try {
-            await addMember.mutateAsync(user);
+            await addMember(user);
         } catch (err) {
             handleError(err);
         }
@@ -71,7 +71,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleRemoveUser = async (user: UserData) => {
         try {
-            await removeMember.mutateAsync(user);
+            await removeMember(user);
         } catch (err) {
             handleError(err);
         }

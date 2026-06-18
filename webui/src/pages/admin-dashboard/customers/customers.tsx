@@ -44,9 +44,9 @@ export const Customers: FC = () => {
     const [errorDismissed, setErrorDismissed] = useState(false);
 
     const { data, isFetching: loading, error: loadError } = useCustomers();
-    const createCustomer = useCreateCustomer();
-    const updateCustomer = useUpdateCustomer();
-    const deleteCustomer = useDeleteCustomer();
+    const { mutateAsync: createCustomer } = useCreateCustomer();
+    const { mutateAsync: updateCustomer } = useUpdateCustomer();
+    const { mutateAsync: deleteCustomer } = useDeleteCustomer();
 
     const customers: readonly Customer[] = data?.customers ?? [];
 
@@ -75,16 +75,16 @@ export const Customers: FC = () => {
     const handleFormSubmit = async (customer: Customer) => {
         if (selectedCustomer) {
             // update existing customer
-            await updateCustomer.mutateAsync({ name: selectedCustomer.name, customer });
+            await updateCustomer({ name: selectedCustomer.name, customer });
         } else {
             // create new customer
-            await createCustomer.mutateAsync(customer);
+            await createCustomer(customer);
         }
     };
 
     const handleDeleteConfirm = async () => {
         if (selectedCustomer) {
-            await deleteCustomer.mutateAsync(selectedCustomer.name);
+            await deleteCustomer(selectedCustomer.name);
         }
     };
 

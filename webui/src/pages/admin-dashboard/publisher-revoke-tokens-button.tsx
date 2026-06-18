@@ -19,13 +19,12 @@ import { useRevokeAccessTokens } from './use-publisher-admin';
 export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeTokensButtonProps> = props => {
     const { handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
-    const revokeTokens = useRevokeAccessTokens();
-    const working = revokeTokens.isPending;
+    const { mutateAsync: revokeTokens, isPending: working } = useRevokeAccessTokens();
 
     const doRevoke = async () => {
         try {
             const user = props.publisherInfo.user;
-            await revokeTokens.mutateAsync({ provider: user.provider as string, login: user.loginName });
+            await revokeTokens({ provider: user.provider as string, login: user.loginName });
             updateContext.handleUpdate();
         } catch (err) {
             handleError(err);

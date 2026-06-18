@@ -40,7 +40,7 @@ export const ExtensionAdmin: FunctionComponent = () => {
     const [target, setTarget] = useState<{ namespace: string; extension: string } | null>(null);
 
     const { data, isFetching: loading, error: queryError, refetch } = useAdminExtension(target);
-    const deleteExtension = useDeleteExtension();
+    const { mutateAsync: deleteExtension } = useDeleteExtension();
 
     const is404 = !!queryError && (queryError as { status?: number }).status === 404;
     // Hide a previously loaded extension once a lookup fails.
@@ -82,7 +82,7 @@ export const ExtensionAdmin: FunctionComponent = () => {
             return;
         }
 
-        await deleteExtension.mutateAsync({
+        await deleteExtension({
             namespace: extension.namespace,
             extension: extension.name,
             targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform }))

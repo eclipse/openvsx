@@ -31,8 +31,7 @@ export interface NamespaceDeleteDialogProps {
 export const NamespaceDeleteDialog: FunctionComponent<NamespaceDeleteDialogProps> = props => {
     const { open, onClose, onDelete, namespace } = props;
     const { handleError } = useContext(MainContext);
-    const deleteNamespace = useDeleteNamespace();
-    const working = deleteNamespace.isPending;
+    const { mutateAsync: deleteNamespace, isPending: working } = useDeleteNamespace();
 
     const handleDeleteNamespace = async () => {
         if (!props.namespace) {
@@ -40,7 +39,7 @@ export const NamespaceDeleteDialog: FunctionComponent<NamespaceDeleteDialogProps
         }
         props.setLoadingState(true);
         try {
-            await deleteNamespace.mutateAsync(props.namespace.name);
+            await deleteNamespace(props.namespace.name);
             props.setLoadingState(false);
             onDelete();
         } catch (err) {

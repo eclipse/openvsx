@@ -39,9 +39,9 @@ export const Tiers: FC = () => {
   const [errorDismissed, setErrorDismissed] = useState(false);
 
   const { data, isFetching: loading, error: loadError } = useTiers();
-  const createTier = useCreateTier();
-  const updateTier = useUpdateTier();
-  const deleteTier = useDeleteTier();
+  const { mutateAsync: createTier } = useCreateTier();
+  const { mutateAsync: updateTier } = useUpdateTier();
+  const { mutateAsync: deleteTier } = useDeleteTier();
 
   const tiers: readonly Tier[] = data?.tiers ?? [];
 
@@ -70,16 +70,16 @@ export const Tiers: FC = () => {
   const handleFormSubmit = async (formData: Tier) => {
     if (selectedTier) {
       // update existing tier
-      await updateTier.mutateAsync({ name: selectedTier.name, tier: formData });
+      await updateTier({ name: selectedTier.name, tier: formData });
     } else {
       // create new tier
-      await createTier.mutateAsync(formData);
+      await createTier(formData);
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (selectedTier) {
-      await deleteTier.mutateAsync(selectedTier.name);
+      await deleteTier(selectedTier.name);
     }
   };
 

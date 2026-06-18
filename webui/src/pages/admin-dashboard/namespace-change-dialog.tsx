@@ -28,8 +28,7 @@ export interface NamespaceChangeDialogProps {
 export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps> = props => {
     const { open } = props;
     const { handleError } = useContext(MainContext);
-    const changeNamespace = useChangeNamespace();
-    const working = changeNamespace.isPending;
+    const { mutateAsync: changeNamespace, isPending: working } = useChangeNamespace();
     const [newNamespace, setNewNamespace] = useState('');
     const [removeOldNamespace, setRemoveOldNamespace] = useState(false);
     const [mergeIfNewNamespaceAlreadyExists, setMergeIfNewNamespaceAlreadyExists] = useState(false);
@@ -64,7 +63,7 @@ export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps
         props.setLoadingState(true);
         try {
             const oldNamespace = props.namespace.name;
-            const result = await changeNamespace.mutateAsync({
+            const result = await changeNamespace({
                 oldNamespace,
                 newNamespace,
                 removeOldNamespace,

@@ -22,8 +22,7 @@ import { useRevokePublisherContributions } from './use-publisher-admin';
 export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
-    const revoke = useRevokePublisherContributions();
-    const working = revoke.isPending;
+    const { mutateAsync: revokeContributions, isPending: working } = useRevokePublisherContributions();
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -40,7 +39,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     const doRevoke = async () => {
         try {
             const user = props.publisherInfo.user;
-            await revoke.mutateAsync({ provider: user.provider as string, login: user.loginName });
+            await revokeContributions({ provider: user.provider as string, login: user.loginName });
             updateContext.handleUpdate();
             setDialogOpen(false);
         } catch (err) {

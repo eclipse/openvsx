@@ -47,7 +47,7 @@ export const CustomerDetails: FC = () => {
     const [formDialogOpen, setFormDialogOpen] = useState(false);
 
     const { data: customer, isLoading: loading, error: customerError } = useCustomer(customerName);
-    const updateCustomer = useUpdateCustomer();
+    const { mutateAsync: updateCustomer } = useUpdateCustomer();
 
     const { usageStats, dailyP95, error: statsError, startDate, setStartDate } = useAdminUsageStats(customerName);
 
@@ -59,7 +59,7 @@ export const CustomerDetails: FC = () => {
 
     const handleFormSubmit = async (updatedCustomer: Customer) => {
         if (customer) {
-            await updateCustomer.mutateAsync({ name: customer.name, customer: updatedCustomer });
+            await updateCustomer({ name: customer.name, customer: updatedCustomer });
         }
     };
 

@@ -39,8 +39,8 @@ export const CustomerTokenList: FunctionComponent<CustomerTokenListProps> = prop
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const { data: tokens = [], error } = useCustomerTokens(props.customer.name);
-    const createToken = useCreateCustomerToken(props.customer.name);
-    const deleteToken = useDeleteCustomerToken(props.customer.name);
+    const { mutateAsync: createToken } = useCreateCustomerToken(props.customer.name);
+    const { mutate: deleteToken } = useDeleteCustomerToken(props.customer.name);
 
     // Preserve the previous behaviour of surfacing fetch failures via the global error dialog.
     useEffect(() => {
@@ -50,12 +50,12 @@ export const CustomerTokenList: FunctionComponent<CustomerTokenListProps> = prop
     }, [error, handleError]);
 
     const handleGenerate = async (description: string): Promise<string> => {
-        const token = await createToken.mutateAsync(description);
+        const token = await createToken(description);
         return token.value ?? '';
     };
 
     const handleDelete = (tokenId: number) => {
-        deleteToken.mutate(tokenId, {
+        deleteToken(tokenId, {
             onError: (err) => handleError(err),
         });
     };

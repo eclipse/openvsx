@@ -26,7 +26,7 @@ export const NamespaceAdmin: FunctionComponent = () => {
     const [detailLoading, setDetailLoading] = useState(false);
 
     const { data: currentNamespace, isFetching, error, refetch } = useAdminNamespace(searchName);
-    const createNamespace = useCreateNamespace();
+    const { mutateAsync: createNamespace, isPending: isCreatingNamespace } = useCreateNamespace();
     const clearNamespace = useClearAdminNamespace();
 
     const is404 = !!error && (error as { status?: number }).status === 404;
@@ -59,7 +59,7 @@ export const NamespaceAdmin: FunctionComponent = () => {
 
     const onCreate = async () => {
         try {
-            await createNamespace.mutateAsync(inputValue);
+            await createNamespace(inputValue);
             setSearchName(inputValue);
         } catch (err) {
             handleError(err);
@@ -86,7 +86,7 @@ export const NamespaceAdmin: FunctionComponent = () => {
             </Typography>
             <Box mt={3}>
                 <ButtonWithProgress
-                    working={createNamespace.isPending}
+                    working={isCreatingNamespace}
                     onClick={onCreate}>
                     Create Namespace {notFound}
                 </ButtonWithProgress>
