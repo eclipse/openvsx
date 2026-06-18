@@ -48,7 +48,7 @@ export const useConfirmAction = (
             const decision = state.confirmAction === 'allow' ? 'allowed' : 'blocked';
 
             // Backend handles adding enforced threat files to allow/block list automatically
-            const scanResponse = await service.admin.makeScanDecision(new AbortController(), {
+            const scanResponse = await service.admin.makeScanDecision({
                 scanIds: selectedScanIds,
                 decision,
             });
@@ -92,7 +92,7 @@ export const useRetryFailedScannerJobsAction = (
     handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
     const { mutateAsync } = useMutation({
-        mutationFn: (scanId: string) => service.admin.retryFailedScannerJobs(new AbortController(), scanId),
+        mutationFn: (scanId: string) => service.admin.retryFailedScannerJobs(scanId),
         onSuccess: () => {
             dispatch({ type: 'TRIGGER_REFRESH' });
         },
@@ -133,7 +133,7 @@ export const useFileAction = (
             const selectedFileIds = Array.from(state.filesChecked).map(id => parseInt(id, 10));
 
             if (state.fileActionType === 'delete') {
-                const response = await service.admin.deleteFileDecisions(new AbortController(), {
+                const response = await service.admin.deleteFileDecisions({
                     fileIds: selectedFileIds,
                 });
 
@@ -146,7 +146,7 @@ export const useFileAction = (
                 const selectedFiles = state.files.filter(file => state.filesChecked.has(file.id));
                 const fileHashes = selectedFiles.map(file => file.fileHash);
 
-                const response = await service.admin.makeFileDecision(new AbortController(), {
+                const response = await service.admin.makeFileDecision({
                     fileHashes,
                     decision,
                 });

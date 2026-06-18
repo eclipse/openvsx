@@ -37,7 +37,7 @@ export const useCreateTier = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (tier: Tier) => service.admin.createTier(new AbortController(), tier),
+        mutationFn: (tier: Tier) => service.admin.createTier(tier),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
         },
@@ -51,7 +51,7 @@ export const useUpdateTier = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ name, tier }: { name: string; tier: Tier }) => service.admin.updateTier(new AbortController(), name, tier),
+        mutationFn: ({ name, tier }: { name: string; tier: Tier }) => service.admin.updateTier(name, tier),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
         },
@@ -65,7 +65,7 @@ export const useDeleteTier = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (name: string) => service.admin.deleteTier(new AbortController(), name),
+        mutationFn: (name: string) => service.admin.deleteTier(name),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
         },

@@ -57,7 +57,7 @@ export const useCreateNamespace = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (name: string) => service.admin.createNamespace(new AbortController(), { name }),
+        mutationFn: (name: string) => service.admin.createNamespace({ name }),
         onSuccess: (_result, name) => {
             queryClient.invalidateQueries({ queryKey: namespaceAdminKeys.detail(name) });
         },
@@ -72,7 +72,7 @@ export const useChangeNamespace = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationFn: async (req: ChangeNamespaceRequest) => {
-            const result = await service.admin.changeNamespace(new AbortController(), req);
+            const result = await service.admin.changeNamespace(req);
             if (isError(result)) {
                 throw result;
             }
@@ -89,7 +89,7 @@ export const useDeleteNamespace = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationFn: async (name: string) => {
-            const result = await service.admin.deleteNamespace(new AbortController(), { name });
+            const result = await service.admin.deleteNamespace({ name });
             if (isError(result)) {
                 throw result;
             }

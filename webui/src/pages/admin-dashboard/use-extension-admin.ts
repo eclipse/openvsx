@@ -58,7 +58,7 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
 export const useDeleteExtension = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(new AbortController(), req),
+        mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req),
     });
 };
 

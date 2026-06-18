@@ -19,7 +19,7 @@ import {
     Settings,
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
-import { sendRequest, ErrorResponse } from './server-request';
+import { sendRequest, ErrorResponse, sendNonRetriableRequest } from './server-request';
 
 export class ExtensionRegistryService {
 
@@ -311,7 +311,7 @@ export class ExtensionRegistryService {
         })));
     }
 
-    async getCsrfToken(abortController: AbortController): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
+    async getCsrfToken(abortController?: AbortController): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
         return sendRequest({
             abortController,
             credentials: true,
@@ -502,45 +502,45 @@ export class ExtensionRegistryService {
 
 export interface AdminService {
     getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>>
-    deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>>
+    deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>>
     getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>
-    createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
-    deleteNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
-    changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
+    createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
+    deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
+    changeNamespace(req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
     getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
-    revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+    revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
+    revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
     getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all' }): Promise<Readonly<ScanResultsResponse>>
     getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
-    retryFailedScannerJobs(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
+    retryFailedScannerJobs(scanId: string): Promise<Readonly<ScanResultJson>>
     getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>>
     getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>
     // Files API
     getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>>;
     getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>>
     // Decision APIs
-    makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
-    makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
-    deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
+    makeScanDecision(request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
+    makeFileDecision(request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
+    deleteFileDecisions(request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
     getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
-    createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>>;
-    updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>>;
-    deleteTier(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    createTier(tier: Tier): Promise<Readonly<Tier>>;
+    updateTier(name: string, tier: Tier): Promise<Readonly<Tier>>;
+    deleteTier(name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
     getCustomer(abortController: AbortController, name: string): Promise<Readonly<Customer>>;
-    createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>>;
-    updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>>;
-    deleteCustomer(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    createCustomer(customer: Customer): Promise<Readonly<Customer>>;
+    updateCustomer(name: string, customer: Customer): Promise<Readonly<Customer>>;
+    deleteCustomer(name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getCustomerMembers(abortController: AbortController, name: string): Promise<Readonly<CustomerMembershipList>>;
-    addCustomerMember(abortController: AbortController, name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
-    removeCustomerMember(abortController: AbortController, name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
+    addCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
+    removeCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
     getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>>;
     getLogs(abortController: AbortController, page?: number, size?: number, period?: string): Promise<Readonly<LogPageableList>>;
     getCustomerRateLimitTokens(abortController: AbortController, customerName: string): Promise<Readonly<RateLimitToken[]>>;
-    createCustomerRateLimitToken(abortController: AbortController, customerName: string, description: string): Promise<Readonly<RateLimitToken>>;
-    deleteCustomerRateLimitToken(abortController: AbortController, customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
+    createCustomerRateLimitToken(customerName: string, description: string): Promise<Readonly<RateLimitToken>>;
+    deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
-    updateSettings(abortController: AbortController, settings: Settings): Promise<Readonly<Settings>>;
+    updateSettings(settings: Settings): Promise<Readonly<Settings>>;
 }
 
 export interface AdminServiceConstructor {
@@ -552,15 +552,15 @@ export class AdminServiceImpl implements AdminService {
     constructor(readonly registry: ExtensionRegistryService) {}
 
     async getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', namespace, extension])
         });
     }
 
-    async deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -569,8 +569,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete']),
@@ -580,15 +579,15 @@ export class AdminServiceImpl implements AdminService {
     }
 
     async getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'namespace', name])
         });
     }
 
-    async createNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -596,8 +595,7 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'create-namespace']),
             method: 'POST',
@@ -606,8 +604,8 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteNamespace(abortController: AbortController, namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -615,16 +613,15 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'namespace', namespace.name]),
             method: 'DELETE',
             headers
         });
     }
-    async changeNamespace(abortController: AbortController, req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async changeNamespace(req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -632,8 +629,7 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'change-namespace']),
             method: 'POST',
@@ -643,22 +639,21 @@ export class AdminServiceImpl implements AdminService {
     }
 
     async getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login]),
             credentials: true
         });
     }
 
-    async revokePublisherContributions(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'revoke']),
@@ -666,15 +661,14 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async revokeAccessTokens(abortController: AbortController, provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
@@ -713,7 +707,7 @@ export class AdminServiceImpl implements AdminService {
                 query.push({ key: 'adminDecision', value: params.adminDecision.join(',') });
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans'], query);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint
@@ -721,23 +715,22 @@ export class AdminServiceImpl implements AdminService {
     }
 
     async getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId])
         });
     }
 
-    async retryFailedScannerJobs(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async retryFailedScannerJobs(scanId: string): Promise<Readonly<ScanResultJson>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId, 'jobs', 'retry']),
@@ -762,7 +755,7 @@ export class AdminServiceImpl implements AdminService {
             }
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'counts'], query);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint
@@ -770,7 +763,7 @@ export class AdminServiceImpl implements AdminService {
     }
 
     async getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'filterOptions'])
@@ -802,7 +795,7 @@ export class AdminServiceImpl implements AdminService {
                 query.push({ key: 'sortOrder', value: params.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files'], query);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint
@@ -818,15 +811,15 @@ export class AdminServiceImpl implements AdminService {
                 query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'counts'], query);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint
         });
     }
 
-    async makeScanDecision(abortController: AbortController, request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async makeScanDecision(request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -835,8 +828,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'decisions']),
@@ -845,8 +837,8 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async makeFileDecision(abortController: AbortController, request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async makeFileDecision(request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -855,8 +847,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
@@ -865,8 +856,8 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteFileDecisions(abortController: AbortController, request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteFileDecisions(request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -875,8 +866,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'decisions']),
@@ -886,15 +876,15 @@ export class AdminServiceImpl implements AdminService {
     }
 
     async getTiers(abortController: AbortController): Promise<Readonly<TierList>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers']),
             credentials: true
-        }, false);
+        });
     }
 
-    async createTier(abortController: AbortController, tier: Tier): Promise<Readonly<Tier>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async createTier(tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -902,18 +892,17 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             payload: tier,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', 'create']),
             headers
-        }, false);
+        });
     }
 
-    async updateTier(abortController: AbortController, name: string, tier: Tier): Promise<Readonly<Tier>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async updateTier(name: string, tier: Tier): Promise<Readonly<Tier>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -921,18 +910,17 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'PUT',
             payload: tier,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
             headers
-        }, false);
+        });
     }
 
-    async deleteTier(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteTier(name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -940,33 +928,32 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
             headers
-        }, false);
+        });
     }
 
     async getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>> {
-        return await sendRequest({
+        return await sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers']),
             credentials: true
-        }, false);
+        });
     }
 
     async getCustomer(abortController: AbortController, name: string): Promise<Readonly<Customer>> {
-        return await sendRequest({
+        return await sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
             credentials: true
-        }, false);
+        });
     }
 
-    async createCustomer(abortController: AbortController, customer: Customer): Promise<Readonly<Customer>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async createCustomer(customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -974,18 +961,17 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             payload: customer,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', 'create']),
             headers
-        }, false);
+        });
     }
 
-    async updateCustomer(abortController: AbortController, name: string, customer: Customer): Promise<Readonly<Customer>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async updateCustomer(name: string, customer: Customer): Promise<Readonly<Customer>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -993,18 +979,17 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'PUT',
             payload: customer,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
             headers
-        }, false);
+        });
     }
 
-    async deleteCustomer(abortController: AbortController, name: string): Promise<SuccessResult | ErrorResult> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteCustomer(name: string): Promise<SuccessResult | ErrorResult> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -1012,25 +997,24 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
             headers
-        }, false);
+        });
     }
 
     async getCustomerMembers(abortController: AbortController, name: string): Promise<Readonly<CustomerMembershipList>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "members"]),
-        }, false);
+        });
     }
 
-    async addCustomerMember(abortController: AbortController, name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async addCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
@@ -1040,17 +1024,16 @@ export class AdminServiceImpl implements AdminService {
             { key: 'user', value: user.loginName },
             { key: 'provider', value: user.provider },
         ];
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             headers,
             method: 'POST',
             credentials: true,
             endpoint: addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "add-member"]), query),
-        }, false);
+        });
     }
 
-    async removeCustomerMember(abortController: AbortController, name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async removeCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
@@ -1060,13 +1043,12 @@ export class AdminServiceImpl implements AdminService {
             { key: 'user', value: user.loginName },
             { key: 'provider', value: user.provider },
         ];
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             headers,
             method: 'POST',
             credentials: true,
             endpoint: addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "remove-member"]), query),
-        }, false);
+        });
     }
 
     /**
@@ -1080,11 +1062,11 @@ export class AdminServiceImpl implements AdminService {
         const query: { key: string, value: string | number }[] = [];
         query.push({ key: 'date', value: date.toISOString() });
 
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'], query),
             credentials: true
-        }, false);
+        });
     }
 
     async getLogs(
@@ -1101,23 +1083,23 @@ export class AdminServiceImpl implements AdminService {
             query.push({ key: 'period', value: period });
         }
         const endpoint = addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'logs']), query);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             endpoint,
             credentials: true
-        }, false);
+        });
     }
 
     async getCustomerRateLimitTokens(abortController: AbortController, customerName: string): Promise<Readonly<RateLimitToken[]>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens']),
-        }, false);
+        });
     }
 
-    async createCustomerRateLimitToken(abortController: AbortController, customerName: string, description?: string): Promise<Readonly<RateLimitToken>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async createCustomerRateLimitToken(customerName: string, description?: string): Promise<Readonly<RateLimitToken>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
@@ -1126,17 +1108,16 @@ export class AdminServiceImpl implements AdminService {
 
         const url = createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens']);
         const endpoint = description !== undefined ? addQuery(url, [{ key: 'description', value: description }]) : url;
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint,
             headers
-        }, false);
+        });
     }
 
-    async deleteCustomerRateLimitToken(abortController: AbortController, customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -1144,25 +1125,24 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens', `${tokenId}`]),
             headers
-        }, false);
+        });
     }
 
     async getSettings(abortController: AbortController): Promise<Readonly<Settings>> {
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
-        }, false);
+        });
     }
 
-    async updateSettings(abortController: AbortController, settings: Settings): Promise<Readonly<Settings>> {
-        const csrfResponse = await this.registry.getCsrfToken(abortController);
+    async updateSettings(settings: Settings): Promise<Readonly<Settings>> {
+        const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -1171,14 +1151,13 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'PUT',
             payload: settings,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
             headers
-        }, false);
+        });
     }
 }
 

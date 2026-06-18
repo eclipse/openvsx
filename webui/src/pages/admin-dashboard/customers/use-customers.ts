@@ -54,7 +54,7 @@ export const useCreateCustomer = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (customer: Customer) => service.admin.createCustomer(new AbortController(), customer),
+        mutationFn: (customer: Customer) => service.admin.createCustomer(customer),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
         },
@@ -69,7 +69,7 @@ export const useUpdateCustomer = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ name, customer }: { name: string; customer: Customer }) =>
-            service.admin.updateCustomer(new AbortController(), name, customer),
+            service.admin.updateCustomer(name, customer),
         onSuccess: (_data, { name }) => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
             queryClient.invalidateQueries({ queryKey: customerKeys.detail(name) });
@@ -84,7 +84,7 @@ export const useDeleteCustomer = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (name: string) => service.admin.deleteCustomer(new AbortController(), name),
+        mutationFn: (name: string) => service.admin.deleteCustomer(name),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
         },
@@ -109,7 +109,7 @@ export const useCreateCustomerToken = (name: string) => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (description: string) => service.admin.createCustomerRateLimitToken(new AbortController(), name, description),
+        mutationFn: (description: string) => service.admin.createCustomerRateLimitToken(name, description),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.tokens(name) });
         },
@@ -124,7 +124,7 @@ export const useDeleteCustomerToken = (name: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (tokenId: number) => {
-            const result = await service.admin.deleteCustomerRateLimitToken(new AbortController(), name, tokenId);
+            const result = await service.admin.deleteCustomerRateLimitToken(name, tokenId);
             if (isError(result)) {
                 throw result;
             }
@@ -155,7 +155,7 @@ export const useAddCustomerMember = (name: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (user: UserData) => {
-            const result = await service.admin.addCustomerMember(new AbortController(), name, user);
+            const result = await service.admin.addCustomerMember(name, user);
             if (isError(result)) {
                 throw result;
             }
@@ -175,7 +175,7 @@ export const useRemoveCustomerMember = (name: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (user: UserData) => {
-            const result = await service.admin.removeCustomerMember(new AbortController(), name, user);
+            const result = await service.admin.removeCustomerMember(name, user);
             if (isError(result)) {
                 throw result;
             }

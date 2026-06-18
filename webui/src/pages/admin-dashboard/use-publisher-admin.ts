@@ -44,7 +44,7 @@ export const useRevokePublisherContributions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
-            const result = await service.admin.revokePublisherContributions(new AbortController(), provider, login);
+            const result = await service.admin.revokePublisherContributions(provider, login);
             if (isError(result)) {
                 throw result;
             }
@@ -61,7 +61,7 @@ export const useRevokeAccessTokens = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
-            const result = await service.admin.revokeAccessTokens(new AbortController(), provider, login);
+            const result = await service.admin.revokeAccessTokens(provider, login);
             if (isError(result)) {
                 throw result;
             }

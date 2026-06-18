@@ -39,7 +39,7 @@ export const useUpdateSettings = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (settings: Settings) => service.admin.updateSettings(new AbortController(), settings),
+        mutationFn: (settings: Settings) => service.admin.updateSettings(settings),
         onSuccess: (updated) => {
             queryClient.setQueryData(settingsQueryKey, updated);
         },
