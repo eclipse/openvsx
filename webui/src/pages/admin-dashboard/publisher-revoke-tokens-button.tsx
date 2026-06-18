@@ -8,38 +8,27 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useContext } from 'react';
 import { Box } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { PublisherInfo, isError } from '../../extension-registry-types';
+import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
+import { useRevokeAccessTokens } from './use-publisher-admin';
 
 export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeTokensButtonProps> = props => {
-    const { service, handleError } = useContext(MainContext);
+    const { handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
-
-    const [working, setWorking] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const revokeTokens = useRevokeAccessTokens();
+    const working = revokeTokens.isPending;
 
     const doRevoke = async () => {
         try {
-            setWorking(true);
             const user = props.publisherInfo.user;
-            const result = await service.admin.revokeAccessTokens(abortController.current, user.provider as string, user.loginName);
-            if (isError(result)) {
-                throw result;
-            }
+            await revokeTokens.mutateAsync({ provider: user.provider as string, login: user.loginName });
             updateContext.handleUpdate();
         } catch (err) {
             handleError(err);
-        } finally {
-            setWorking(false);
         }
     };
 

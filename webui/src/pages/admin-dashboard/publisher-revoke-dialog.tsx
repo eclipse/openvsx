@@ -8,28 +8,24 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useState, useContext } from 'react';
 import {
     Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
 } from '@mui/material';
 import { createAbsoluteURL } from '../../utils';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { PublisherInfo, isError } from '../../extension-registry-types';
+import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
+import { useRevokePublisherContributions } from './use-publisher-admin';
 
 export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
+    const revoke = useRevokePublisherContributions();
+    const working = revoke.isPending;
 
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [working, setWorking] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
 
     if (props.publisherInfo.user.publisherAgreement
             && !(user?.additionalLogins?.find(login => login.provider === 'eclipse'))) {
@@ -43,18 +39,12 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     const doRevoke = async () => {
         try {
-            setWorking(true);
             const user = props.publisherInfo.user;
-            const result = await service.admin.revokePublisherContributions(abortController.current, user.provider as string, user.loginName);
-            if (isError(result)) {
-                throw result;
-            }
+            await revoke.mutateAsync({ provider: user.provider as string, login: user.loginName });
             updateContext.handleUpdate();
             setDialogOpen(false);
         } catch (err) {
             handleError(err);
-        } finally {
-            setWorking(false);
         }
     };
 

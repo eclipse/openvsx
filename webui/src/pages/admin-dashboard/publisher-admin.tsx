@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, createContext, useEffect, useRef, useCallback, ReactNode } from 'react';
+import { FunctionComponent, useContext, createContext, useEffect, useCallback, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
+import { usePublisherInfo } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const UpdateContext = createContext({ handleUpdate: () => { } });
@@ -24,48 +24,19 @@ export const UpdateContext = createContext({ handleUpdate: () => { } });
 export const PublisherAdmin: FunctionComponent = () => {
     const { publisher: publisherParam } = useParams<{ publisher: string }>();
     const navigate = useNavigate();
-    const { pageSettings, service, user, handleError } = useContext(MainContext);
+    const { pageSettings, user, handleError } = useContext(MainContext);
 
-    const abortController = useRef<AbortController>(new AbortController());
+    const { data: publisher, isFetching: loading, error, refetch } = usePublisherInfo(publisherParam ?? '');
+
+    const is404 = !!error && (error as { status?: number }).status === 404;
+    const notFound = is404 ? (publisherParam ?? '') : '';
+
+    // Non-404 lookup failures keep flowing through the global error dialog.
     useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const [loading, setLoading] = useState(false);
-
-    const [publisher, setPublisher] = useState<PublisherInfo | undefined>();
-    const [notFound, setNotFound] = useState('');
-
-    const fetchPublisher = useCallback(async (publisherName: string) => {
-        try {
-            setLoading(true);
-            if (publisherName === '') {
-                setNotFound('');
-                setPublisher(undefined);
-            } else {
-                const pub = await service.admin.getPublisherInfo(abortController.current, 'github', publisherName);
-                setNotFound('');
-                setPublisher(pub);
-            }
-            setLoading(false);
-        } catch (err) {
-            if (err?.status === 404) {
-                setNotFound(publisherName);
-                setPublisher(undefined);
-            } else {
-                handleError(err);
-            }
-            setLoading(false);
+        if (error && !is404) {
+            handleError(error);
         }
-    }, [service, handleError]);
-
-    useEffect(() => {
-        if (publisherParam) {
-            fetchPublisher(publisherParam);
-        }
-    }, [publisherParam, fetchPublisher]);
+    }, [error, is404, handleError]);
 
     const handleSubmit = (inputValue: string) => {
         if (inputValue) {
@@ -75,11 +46,9 @@ export const PublisherAdmin: FunctionComponent = () => {
         }
     };
 
-    const handleUpdate = () => {
-        if (publisherParam) {
-            fetchPublisher(publisherParam);
-        }
-    };
+    const handleUpdate = useCallback(() => {
+        refetch();
+    }, [refetch]);
 
     let listContainer: ReactNode = '';
     if (publisher && pageSettings && user) {
