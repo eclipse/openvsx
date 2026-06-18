@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class ArchiveUtilTest {
 
     @Test
-    public void testTodoTree() throws Exception {
+    void testTodoTree() throws Exception {
         var packageUrl = getClass().getResource("todo-tree.zip");
 
         assertThat(packageUrl).isNotNull();
@@ -39,7 +39,7 @@ class ArchiveUtilTest {
     }
 
     @Test
-    public void testExceedMaxEntrySize() throws IOException {
+    void testExceedMaxEntrySize() throws IOException {
         // an artificially crafted zip file with a file whose size is set lower as its actual content
         var packageUrl = getClass().getResource("wrong-size.zip");
 
@@ -58,7 +58,7 @@ class ArchiveUtilTest {
     }
 
     @Test
-    public void testSafePath() {
+    void testSafePath() {
         // restricted path patterns
         assertThat(ArchiveUtil.isSafePath("\0")).isEqualTo(false);
         assertThat(ArchiveUtil.isSafePath("abc\0")).isEqualTo(false);
@@ -68,6 +68,7 @@ class ArchiveUtilTest {
         assertThat(ArchiveUtil.isSafePath("../test.xt")).isEqualTo(false);
         assertThat(ArchiveUtil.isSafePath("abc/../test.txt")).isEqualTo(false);
         assertThat(ArchiveUtil.isSafePath("abc/def/./../test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("..\\test.xt")).isEqualTo(false);
 
         // allowed path patterns
         assertThat(ArchiveUtil.isSafePath(".test.txt")).isEqualTo(true);

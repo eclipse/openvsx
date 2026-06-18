@@ -140,7 +140,7 @@ public final class ArchiveUtil {
             // 5. Suspicious segments (defense-in-depth, catches obfuscated variants)
             for (Path segment : entryPath) {
                 String seg = segment.toString();
-                if (seg.equals("..")) {
+                if (seg.equals("..") || seg.startsWith("..\\") || seg.startsWith("../")) {
                     return false;
                 }
             }
