@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FC, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import SaveIcon from '@mui/icons-material/Save';
 import {
@@ -27,10 +27,10 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import { MainContext } from '../../context';
 import type { Settings } from '../../extension-registry-types';
 import { handleError } from '../../utils';
 import { SettingsItem } from './settings-item';
+import { useSettings, useUpdateSettings } from './use-settings';
 
 interface NotificationState {
     id: string;
@@ -49,40 +49,27 @@ const SETTINGS: Record<keyof Settings, { title: string; description: string }> =
 };
 
 export const RuntimeSettingsPage: FC = () => {
-    const abortController = useRef<AbortController>(new AbortController());
-    const { service } = useContext(MainContext);
+    const { data: settings, isLoading: loading, error: loadError } = useSettings();
+    const { mutate: saveSettings, isPending: saving } = useUpdateSettings();
 
-    const [settings, setSettings] = useState<Settings | null>(null);
     const [draftSettings, setDraftSettings] = useState<Settings | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errorDismissed, setErrorDismissed] = useState(false);
     const [notifications, setNotifications] = useState<NotificationState[]>([]);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const saveSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Keep the editable draft in sync with the loaded (and freshly saved) settings.
     useEffect(() => {
-        return () => abortController.current.abort();
-    }, []);
-
-    const loadRuntimeSettings = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await service.admin.getSettings(abortController.current);
-            setSettings(data);
-            setDraftSettings(data);
-        } catch (err) {
-            setError(handleError(err as Error));
-        } finally {
-            setLoading(false);
+        if (settings) {
+            setDraftSettings(settings);
         }
-    }, [service, error]);
+    }, [settings]);
 
+    // A fresh load error should be shown again even if a previous one was dismissed.
     useEffect(() => {
-        loadRuntimeSettings();
-    }, [loadRuntimeSettings]);
+        setErrorDismissed(false);
+    }, [loadError]);
 
     useEffect(() => () => {
         notifications.forEach(n => clearTimeout(n.timeout));
@@ -91,6 +78,8 @@ export const RuntimeSettingsPage: FC = () => {
     useEffect(() => () => {
         if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
     }, []);
+
+    const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
     const addNotification = useCallback((notification: Pick<NotificationState, 'message'>) => {
         const id = crypto.randomUUID();
@@ -113,34 +102,29 @@ export const RuntimeSettingsPage: FC = () => {
         setSaveSuccess(false);
     }, []);
 
-    const hasChanges = draftSettings !== null && settings !== null &&
+    const hasChanges = draftSettings !== null && settings != null &&
         (Object.keys(SETTINGS) as (keyof Settings)[]).some(k => draftSettings[k] !== settings[k]);
 
     const handleSaveClick = () => setConfirmOpen(true);
 
     const handleConfirmClose = () => setConfirmOpen(false);
 
-    const handleConfirmSave = useCallback(async () => {
+    const handleConfirmSave = useCallback(() => {
         if (!draftSettings) return;
         setConfirmOpen(false);
-        setSaving(true);
-        setError(null);
-
-        try {
-            const updatedSettings = await service.admin.updateSettings(abortController.current, draftSettings);
-            setSettings(updatedSettings);
-            setDraftSettings(updatedSettings);
-            setSaveSuccess(true);
-            if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
-            saveSuccessTimer.current = setTimeout(() => setSaveSuccess(false), 2000);
-        } catch (err) {
-            addNotification({
-                message: `Failed to save runtime settings. ${handleError(err as Error)}`,
-            });
-        } finally {
-            setSaving(false);
-        }
-    }, [draftSettings, service, addNotification]);
+        saveSettings(draftSettings, {
+            onSuccess: () => {
+                setSaveSuccess(true);
+                if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
+                saveSuccessTimer.current = setTimeout(() => setSaveSuccess(false), 2000);
+            },
+            onError: (err) => {
+                addNotification({
+                    message: `Failed to save runtime settings. ${handleError(err as Error)}`,
+                });
+            },
+        });
+    }, [draftSettings, saveSettings, addNotification]);
 
     return (
         <>
@@ -155,7 +139,7 @@ export const RuntimeSettingsPage: FC = () => {
                 </Box>
 
                 {error && (
-                    <Alert severity='error' onClose={() => setError(null)}>
+                    <Alert severity='error' onClose={() => setErrorDismissed(true)}>
                         {error}
                     </Alert>
                 )}

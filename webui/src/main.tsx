@@ -11,6 +11,9 @@
 import { FunctionComponent, ReactNode, useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { CssBaseline } from '@mui/material';
 import { Route, Routes } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './query-client';
 import { AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard-routes';
 import { ErrorDialog } from './components/error-dialog';
 import { handleError } from './utils';
@@ -128,9 +131,12 @@ export const Main: FunctionComponent<MainProps> = props => {
     };
     return <>
         <CssBaseline />
-        <MainContext.Provider value={mainContext}>
-            {renderPageContent()}
-        </MainContext.Provider>
+        <QueryClientProvider client={queryClient}>
+            <MainContext.Provider value={mainContext}>
+                {renderPageContent()}
+            </MainContext.Provider>
+            {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+        </QueryClientProvider>
     </>;
 };
 
