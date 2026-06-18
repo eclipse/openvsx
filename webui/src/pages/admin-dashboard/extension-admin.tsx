@@ -8,25 +8,19 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { SearchListContainer } from './search-list-container';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { Button, Typography } from '@mui/material';
 import { MainContext } from '../../context';
-import { isError, Extension, TargetPlatformVersion } from '../../extension-registry-types';
+import { TargetPlatformVersion } from '../../extension-registry-types';
 import { ExtensionVersionContainer } from './extension-version-container';
 import { StyledInput } from './namespace-input';
 import useQueryParam from '../../hooks/scan-admin/use-query-params-state';
+import { useAdminExtension, useDeleteExtension } from './use-extension-admin';
 
-export const ExtensionAdmin: FunctionComponent = props => {
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const [loading, setLoading] = useState(false);
+export const ExtensionAdmin: FunctionComponent = () => {
+    const { handleError } = useContext(MainContext);
 
     const [extensionValue, setExtensionValue] = useQueryParam('extension', '');
     const handleExtensionChange = (value: string) => {
@@ -38,43 +32,48 @@ export const ExtensionAdmin: FunctionComponent = props => {
         setNamespaceValue(value);
     };
 
-    const [error, setError] = useState('');
-
+    const [validationError, setValidationError] = useState('');
     const [extensionFieldError, setExtensionFieldError] = useState(false);
     const [namespaceFieldError, setNamespaceFieldError] = useState(false);
 
-    const { service, handleError } = useContext(MainContext);
-    const [extension, setExtension] = useState<Extension | undefined>(undefined);
-    const findExtension = async () => {
+    // The lookup runs only after a validated search; null keeps the query idle.
+    const [target, setTarget] = useState<{ namespace: string; extension: string } | null>(null);
+
+    const { data, isFetching: loading, error: queryError, refetch } = useAdminExtension(target);
+    const deleteExtension = useDeleteExtension();
+
+    const is404 = !!queryError && (queryError as { status?: number }).status === 404;
+    // Hide a previously loaded extension once a lookup fails.
+    const extension = queryError ? undefined : data;
+    const fetchError = is404 ? `Extension not found: ${target?.namespace}.${target?.extension}` : '';
+    const error = validationError || fetchError;
+
+    // Non-404 lookup failures keep flowing through the global error dialog.
+    useEffect(() => {
+        if (queryError && !is404) {
+            handleError(queryError);
+        }
+    }, [queryError, is404, handleError]);
+
+    const findExtension = () => {
         if (!namespaceValue) {
             setNamespaceFieldError(true);
-            setError('Name of Namespace is mandatory');
+            setValidationError('Name of Namespace is mandatory');
             return;
         }
         setNamespaceFieldError(false);
         if (!extensionValue) {
             setExtensionFieldError(true);
-            setError('Name of Extension is mandatory');
+            setValidationError('Name of Extension is mandatory');
             return;
         }
         setExtensionFieldError(false);
-        try {
-            setLoading(true);
-            const extensionDetail = await service.admin.getExtension(abortController.current, namespaceValue, extensionValue);
-            if (isError(extensionDetail)) {
-                throw extensionDetail;
-            }
-            setExtension(extensionDetail);
-            setError('');
-            setLoading(false);
-        } catch (err) {
-            if (err && err.status === 404) {
-                setError(`Extension not found: ${namespaceValue}.${extensionValue}`);
-                setExtension(undefined);
-            } else {
-                handleError(err);
-            }
-            setLoading(false);
+        setValidationError('');
+        if (target && target.namespace === namespaceValue && target.extension === extensionValue) {
+            // Re-submitting the same coordinates should force a fresh lookup.
+            refetch();
+        } else {
+            setTarget({ namespace: namespaceValue, extension: extensionValue });
         }
     };
 
@@ -83,8 +82,12 @@ export const ExtensionAdmin: FunctionComponent = props => {
             return;
         }
 
-        await service.admin.deleteExtensions(abortController.current, { namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
-        await findExtension();
+        await deleteExtension.mutateAsync({
+            namespace: extension.namespace,
+            extension: extension.name,
+            targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform }))
+        });
+        await refetch();
     };
 
     return <SearchListContainer

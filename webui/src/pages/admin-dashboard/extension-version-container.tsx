@@ -8,19 +8,17 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ChangeEvent, FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, useState, useEffect } from 'react';
 import { Extension, TargetPlatformVersion, VERSION_ALIASES } from '../../extension-registry-types';
 import { Box, Grid, Typography, FormControl, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import { ExtensionRemoveDialog } from './extension-remove-dialog';
 import { getTargetPlatformDisplayName } from '../../utils';
-import { MainContext } from '../../context';
+import { useExtensionIcon } from './use-extension-admin';
 
 export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContainerProps> = props => {
     const WILDCARD = '*';
     const { extension } = props;
-    const { service } = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
 
     const getTargetPlatformVersions = () => {
         const versionMap: TargetPlatformVersion[] = [];
@@ -38,22 +36,21 @@ export const ExtensionVersionContainer: FunctionComponent<ExtensionVersionContai
         return versionMap;
     };
 
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
     const [targetPlatformVersions, setTargetPlatformVersions] = useState(getTargetPlatformVersions());
-    const [icon, setIcon] = useState<string | undefined>(undefined);
-    useEffect(() => {
-        if (icon) {
-            URL.revokeObjectURL(icon);
-        }
+    const { data: icon } = useExtensionIcon(props.extension);
 
-        service.getExtensionIcon(abortController.current, props.extension).then(setIcon);
+    useEffect(() => {
         setTargetPlatformVersions(getTargetPlatformVersions());
     }, [props.extension]);
+
+    // Revoke the previous object URL when the icon changes or on unmount.
+    useEffect(() => {
+        return () => {
+            if (icon) {
+                URL.revokeObjectURL(icon);
+            }
+        };
+    }, [icon]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const newTargetPlatformVersions: TargetPlatformVersion[] = [];

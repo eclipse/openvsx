@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { FunctionComponent, useState, useContext } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension, TargetPlatformVersion } from '../../extension-registry-types';
@@ -17,13 +17,6 @@ import { getTargetPlatformDisplayName } from '../../utils';
 
 export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps> = props => {
     const { handleError } = useContext(MainContext);
-
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
