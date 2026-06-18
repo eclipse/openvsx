@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useRef, useMemo } from "react";
+import { FC, useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -25,41 +25,32 @@ import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import { MainContext } from "../../../context";
 import type { Tier } from "../../../extension-registry-types";
 import { TierFormDialog } from "./tier-form-dialog";
 import { DeleteTierDialog } from "./delete-tier-dialog";
 import { handleError } from "../../../utils";
 import { createMultiSelectFilterOperators } from "../components";
+import { useCreateTier, useDeleteTier, useTiers, useUpdateTier } from "./use-tiers";
 
 export const Tiers: FC = () => {
-  const abortController = useRef<AbortController>(new AbortController());
-  const { service } = useContext(MainContext);
-  const [tiers, setTiers] = useState<readonly Tier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Tier | undefined>();
+  const [errorDismissed, setErrorDismissed] = useState(false);
 
-  // load all tiers
-  const loadTiers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await service.admin.getTiers(abortController.current);
-      setTiers(data.tiers);
-    } catch (err: any) {
-      setError(handleError(err));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isFetching: loading, error: loadError } = useTiers();
+  const createTier = useCreateTier();
+  const updateTier = useUpdateTier();
+  const deleteTier = useDeleteTier();
 
+  const tiers: readonly Tier[] = data?.tiers ?? [];
+
+  // A fresh load error should be shown again even if a previous one was dismissed.
   useEffect(() => {
-    loadTiers();
-    return () => abortController.current.abort();
-  }, []);
+    setErrorDismissed(false);
+  }, [loadError]);
+
+  const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
   const handleCreateClick = () => {
     setSelectedTier(undefined);
@@ -79,18 +70,16 @@ export const Tiers: FC = () => {
   const handleFormSubmit = async (formData: Tier) => {
     if (selectedTier) {
       // update existing tier
-      await service.admin.updateTier(abortController.current, selectedTier.name, formData);
+      await updateTier.mutateAsync({ name: selectedTier.name, tier: formData });
     } else {
       // create new tier
-      await service.admin.createTier(abortController.current, formData);
+      await createTier.mutateAsync(formData);
     }
-    await loadTiers();
   };
 
   const handleDeleteConfirm = async () => {
     if (selectedTier) {
-      await service.admin.deleteTier(abortController.current, selectedTier.name);
-      await loadTiers();
+      await deleteTier.mutateAsync(selectedTier.name);
     }
   };
 
@@ -201,7 +190,7 @@ export const Tiers: FC = () => {
       </Box>
 
       { error &&
-        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity='error' sx={{ mb: 2 }} onClose={() => setErrorDismissed(true)}>
           {error}
         </Alert>
       }
