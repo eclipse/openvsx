@@ -11,63 +11,34 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useContext, useState, useEffect, useRef, useCallback } from "react";
+import { useContext, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MainContext } from "../../../context";
 import type { UsageStats } from "../../../extension-registry-types";
 import { handleError } from "../../../utils";
 import { getDefaultStartDate } from "../../../components/rate-limiting/usage-stats/usage-stats-utils";
+import { controllerFromSignal } from "../../../query-client";
 import { DateTime } from "luxon";
 
+// Stable empty reference so consumers don't see a new array identity on every render.
+const NO_STATS: readonly UsageStats[] = [];
+
 export const useAdminUsageStats = (customerName: string | undefined) => {
-    const abortController = useRef(new AbortController());
     const { service } = useContext(MainContext);
+    const [startDate, setStartDate] = useState<DateTime>(getDefaultStartDate);
 
-    const [usageStats, setUsageStats] = useState<readonly UsageStats[]>([]);
-    const [dailyP95, setDailyP95] = useState<number | undefined>(undefined);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [internalStartDate, setInternalStartDate] = useState<DateTime>(getDefaultStartDate);
+    const { data, isFetching, error } = useQuery({
+        queryKey: ['admin', 'usage-stats', customerName ?? null, startDate.toMillis()],
+        queryFn: ({ signal }) => service.admin.getUsageStats(controllerFromSignal(signal), customerName!, startDate.toJSDate()),
+        enabled: !!customerName,
+    });
 
-    const startDateRef = useRef(internalStartDate);
-    startDateRef.current = internalStartDate;
-
-    const fetchUsageStats = useCallback(async (date: DateTime) => {
-        if (!customerName) {
-            setUsageStats([]);
-            setDailyP95(undefined);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await service.admin.getUsageStats(
-                abortController.current,
-                customerName,
-                date.toJSDate()
-            );
-            setUsageStats(data.stats);
-            setDailyP95(data.dailyP95);
-        } catch (err) {
-            setError(handleError(err as Error));
-        } finally {
-            setLoading(false);
-        }
-    }, [service, customerName]);
-
-    const setStartDate = useCallback((date: DateTime) => {
-        setInternalStartDate(date);
-        fetchUsageStats(date);
-    }, [fetchUsageStats]);
-
-    useEffect(() => {
-        fetchUsageStats(startDateRef.current);
-        return () => {
-            abortController.current.abort();
-            abortController.current = new AbortController();
-        };
-    }, [fetchUsageStats]);
-
-    return { usageStats, dailyP95, loading, error, startDate: internalStartDate, setStartDate };
+    return {
+        usageStats: data?.stats ?? NO_STATS,
+        dailyP95: data?.dailyP95,
+        loading: isFetching,
+        error: error ? handleError(error as Error) : null,
+        startDate,
+        setStartDate,
+    };
 };
