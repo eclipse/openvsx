@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { FC, useState } from "react";
 import {
     Box,
     Typography,
@@ -21,7 +21,6 @@ import {
 } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
 import { useParams } from 'react-router-dom';
-import { MainContext } from '../../../context';
 import type { Customer } from '../../../extension-registry-types';
 import { handleError } from '../../../utils';
 import { useAdminUsageStats } from '../usage-stats/use-usage-stats';
@@ -29,6 +28,7 @@ import { GeneralDetails, UsageStats } from '../../../components/rate-limiting/cu
 import { CustomerFormDialog } from './customer-form-dialog';
 import { CustomerMemberList } from './customer-member-list';
 import { CustomerTokenList } from './customer-token-list';
+import { useCustomer, useUpdateCustomer } from './use-customers';
 
 const CustomerDetailsLoading: FC = () => (
     <Box sx={{ p: 3 }}>
@@ -44,43 +44,22 @@ const CustomerDetailsError: FC<{ message: string }> = ({ message }) => (
 
 export const CustomerDetails: FC = () => {
     const { customer: customerName } = useParams<{ customer: string }>();
-    const abortController = useRef(new AbortController());
-    const { service } = useContext(MainContext);
-
-    const [customer, setCustomer] = useState<Customer | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [formDialogOpen, setFormDialogOpen] = useState(false);
+
+    const { data: customer, isLoading: loading, error: customerError } = useCustomer(customerName);
+    const updateCustomer = useUpdateCustomer();
 
     const { usageStats, dailyP95, error: statsError, startDate, setStartDate } = useAdminUsageStats(customerName);
 
-    const loadCustomer = useCallback(async () => {
-        if (!customerName) return;
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await service.admin.getCustomer(abortController.current, customerName);
-            setCustomer(data);
-        } catch (err) {
-            if ((err as { status?: number })?.status === 404) {
-                setError(`Customer "${customerName}" not found.`);
-            } else {
-                setError(handleError(err as Error));
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, [service, customerName]);
-
-    useEffect(() => {
-        loadCustomer();
-        return () => abortController.current.abort();
-    }, [loadCustomer]);
+    const error = customerError
+        ? ((customerError as { status?: number }).status === 404
+            ? `Customer "${customerName}" not found.`
+            : handleError(customerError as Error))
+        : null;
 
     const handleFormSubmit = async (updatedCustomer: Customer) => {
         if (customer) {
-            await service.admin.updateCustomer(abortController.current, customer.name, updatedCustomer);
-            await loadCustomer();
+            await updateCustomer.mutateAsync({ name: customer.name, customer: updatedCustomer });
         }
     };
 

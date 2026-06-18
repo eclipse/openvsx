@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import {
     Box,
     Typography,
@@ -27,53 +27,37 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { MainContext } from '../../../context';
-import { Customer, isError, RateLimitToken } from '../../../extension-registry-types';
+import { Customer } from '../../../extension-registry-types';
 import { GenerateTokenDialog } from '../../../components/generate-token-dialog';
 import { Timestamp } from "../../../components/timestamp";
+import { useCreateCustomerToken, useCustomerTokens, useDeleteCustomerToken } from './use-customers';
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
 
 export const CustomerTokenList: FunctionComponent<CustomerTokenListProps> = props => {
-    const { service, handleError } = useContext(MainContext);
-    const [tokens, setTokens] = useState<RateLimitToken[]>([]);
+    const { handleError } = useContext(MainContext);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
 
+    const { data: tokens = [], error } = useCustomerTokens(props.customer.name);
+    const createToken = useCreateCustomerToken(props.customer.name);
+    const deleteToken = useDeleteCustomerToken(props.customer.name);
+
+    // Preserve the previous behaviour of surfacing fetch failures via the global error dialog.
     useEffect(() => {
-        fetchTokens();
-    }, [props.customer]);
-
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const fetchTokens = async () => {
-        try {
-            const result = await service.admin.getCustomerRateLimitTokens(abortController.current, props.customer.name);
-            setTokens([...result]);
-        } catch (err) {
-            handleError(err);
+        if (error) {
+            handleError(error);
         }
-    };
+    }, [error, handleError]);
 
     const handleGenerate = async (description: string): Promise<string> => {
-        const token = await service.admin.createCustomerRateLimitToken(abortController.current, props.customer.name, description);
-        await fetchTokens();
+        const token = await createToken.mutateAsync(description);
         return token.value ?? '';
     };
 
-    const handleDelete = async (tokenId: number) => {
-        try {
-            const result = await service.admin.deleteCustomerRateLimitToken(abortController.current, props.customer.name, tokenId);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchTokens();
-        } catch (err) {
-            handleError(err);
-        }
+    const handleDelete = (tokenId: number) => {
+        deleteToken.mutate(tokenId, {
+            onError: (err) => handleError(err),
+        });
     };
 
     return <Paper {...sectionPaperProps}>

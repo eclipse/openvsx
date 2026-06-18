@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import React, { FC, useState, useEffect, useRef } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -32,8 +32,8 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import { type Customer, EnforcementState, type Tier } from '../../../extension-registry-types';
-import { MainContext } from '../../../context';
 import { handleError } from '../../../utils';
+import { useTiers } from '../tiers/use-tiers';
 
 interface CustomerFormDialogProps {
     open: boolean;
@@ -41,6 +41,9 @@ interface CustomerFormDialogProps {
     onClose: () => void;
     onSubmit: (formData: Customer) => Promise<void>;
 }
+
+// Stable empty reference so effects depending on the tier list don't re-run while it loads.
+const NO_TIERS: Tier[] = [];
 
 const Code = styled('code')(({ theme }) => ({
   fontFamily: 'source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
@@ -52,32 +55,17 @@ const Code = styled('code')(({ theme }) => ({
 }));
 
 export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer, onClose, onSubmit }) => {
-    const abortController = useRef<AbortController>(new AbortController());
-    const { service } = React.useContext(MainContext);
+    const { data: tiersData } = useTiers();
+    const tiers = tiersData?.tiers ?? NO_TIERS;
     const [formData, setFormData] = useState<Customer>({
         name: '',
         tier: undefined,
         state: EnforcementState.ENFORCEMENT,
         cidrBlocks: []
     });
-    const [tiers, setTiers] = useState<Tier[]>([]);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
-
-    const loadTiers = async () => {
-        try {
-            const data = await service.admin.getTiers(abortController.current);
-            setTiers(data.tiers);
-        } catch (err: any) {
-            console.error('Failed to load tiers:', err);
-        }
-    };
-
-    useEffect(() => {
-        loadTiers();
-        return () => abortController.current.abort();
-    }, []);
 
     useEffect(() => {
         if (customer) {

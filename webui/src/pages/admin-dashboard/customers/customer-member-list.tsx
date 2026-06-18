@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
+import { FunctionComponent, useEffect, useState, useContext } from 'react';
 import {
     Box,
     Typography,
@@ -26,35 +26,35 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
 import { MainContext } from '../../../context';
-import { CustomerMembership, Customer, UserData, isError } from '../../../extension-registry-types';
+import { Customer, UserData } from '../../../extension-registry-types';
 import { AddUserDialog } from '../../user/add-user-dialog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { createRoute } from '../../../utils';
+import { useAddCustomerMember, useCustomerMembers, useRemoveCustomerMember } from './use-customers';
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
 
 export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = props => {
-    const { service, handleError } = useContext(MainContext);
-    const [members, setMembers] = useState<CustomerMembership[]>([]);
+    const { handleError } = useContext(MainContext);
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
 
+    const { data, error } = useCustomerMembers(props.customer.name);
+    const addMember = useAddCustomerMember(props.customer.name);
+    const removeMember = useRemoveCustomerMember(props.customer.name);
+
+    const members = data?.customerMemberships ?? [];
     const users = members.map(member => member.user);
 
+    // Preserve the previous behaviour of surfacing fetch failures via the global error dialog.
     useEffect(() => {
-        fetchMembers();
-    }, [props.customer]);
+        if (error) {
+            handleError(error);
+        }
+    }, [error, handleError]);
 
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const handleCloseAddDialog = async () => {
+    const handleCloseAddDialog = () => {
         setAddDialogIsOpen(false);
-        fetchMembers();
     };
 
     const handleOpenAddDialog = async () => {
@@ -63,11 +63,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleAddUser = async (user: UserData) => {
         try {
-            const result = await service.admin.addCustomerMember(abortController.current, props.customer.name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchMembers();
+            await addMember.mutateAsync(user);
         } catch (err) {
             handleError(err);
         }
@@ -75,21 +71,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleRemoveUser = async (user: UserData) => {
         try {
-            const result = await service.admin.removeCustomerMember(abortController.current, props.customer.name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchMembers();
-        } catch (err) {
-            handleError(err);
-        }
-    };
-
-    const fetchMembers = async () => {
-        try {
-            const membershipList = await service.admin.getCustomerMembers(abortController.current, props.customer.name);
-            const members = membershipList.customerMemberships;
-            setMembers(members);
+            await removeMember.mutateAsync(user);
         } catch (err) {
             handleError(err);
         }

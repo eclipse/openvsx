@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { FC, useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Button,
@@ -28,7 +28,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { MainContext } from "../../../context";
 import type { Customer } from "../../../extension-registry-types";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import { DeleteCustomerDialog } from "./delete-customer-dialog";
@@ -36,35 +35,27 @@ import { createRoute, handleError } from "../../../utils";
 import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from "../components";
 import { AdminDashboardRoutes } from "../admin-dashboard-routes";
 import { Link } from "react-router-dom";
+import { useCreateCustomer, useCustomers, useDeleteCustomer, useUpdateCustomer } from "./use-customers";
 
 export const Customers: FC = () => {
-    const abortController = useRef<AbortController>(new AbortController());
-    const { service } = useContext(MainContext);
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [formDialogOpen, setFormDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | undefined>();
+    const [errorDismissed, setErrorDismissed] = useState(false);
 
-    // Load all customers
-    const loadCustomers = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await service.admin.getCustomers(abortController.current);
-            setCustomers(data.customers);
-        } catch (err: any) {
-            setError(handleError(err));
-        } finally {
-            setLoading(false);
-        }
-    }, [service]);
+    const { data, isFetching: loading, error: loadError } = useCustomers();
+    const createCustomer = useCreateCustomer();
+    const updateCustomer = useUpdateCustomer();
+    const deleteCustomer = useDeleteCustomer();
 
+    const customers: readonly Customer[] = data?.customers ?? [];
+
+    // A fresh load error should be shown again even if a previous one was dismissed.
     useEffect(() => {
-        loadCustomers();
-        return () => abortController.current.abort();
-    }, []);
+        setErrorDismissed(false);
+    }, [loadError]);
+
+    const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
     const handleCreateClick = () => {
         setSelectedCustomer(undefined);
@@ -84,18 +75,16 @@ export const Customers: FC = () => {
     const handleFormSubmit = async (customer: Customer) => {
         if (selectedCustomer) {
             // update existing customer
-            await service.admin.updateCustomer(abortController.current, selectedCustomer.name, customer);
+            await updateCustomer.mutateAsync({ name: selectedCustomer.name, customer });
         } else {
             // create new customer
-            await service.admin.createCustomer(abortController.current, customer);
+            await createCustomer.mutateAsync(customer);
         }
-        await loadCustomers();
     };
 
     const handleDeleteConfirm = async () => {
         if (selectedCustomer) {
-            await service.admin.deleteCustomer(abortController.current, selectedCustomer.name);
-            await loadCustomers();
+            await deleteCustomer.mutateAsync(selectedCustomer.name);
         }
     };
 
@@ -223,7 +212,7 @@ export const Customers: FC = () => {
       </Box>
 
             {error && (
-                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
+                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setErrorDismissed(true)}>
                     {error}
                 </Alert>
             )}
