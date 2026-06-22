@@ -157,7 +157,9 @@ public class PublishExtensionVersionHandler {
         extVersion.setPublishedWith(token);
         extVersion.setActive(false);
 
-        var extension = repositories.findExtension(extensionName, namespace);
+        // Lock the extension row while adding a version so a concurrent delete-all serializes
+        // against this publish (and fails fast with a retry instead of removing it under us).
+        var extension = repositories.findExtensionForUpdate(extensionName, namespace.getName());
         if (extension == null) {
             extension = new Extension();
             extension.setActive(false);

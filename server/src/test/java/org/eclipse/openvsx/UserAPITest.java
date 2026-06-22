@@ -712,6 +712,8 @@ class UserAPITest {
         extension.setActive(true);
         Mockito.when(repositories.findExtension("baz", "foobar"))
                 .thenReturn(extension);
+        Mockito.when(repositories.findExtensionForUpdateNoWait("baz", "foobar"))
+                .thenReturn(extension);
 
         var versions = new ArrayList<ExtensionVersion>(numberOfVersions);
         for (var i = 0; i < numberOfVersions; i++) {

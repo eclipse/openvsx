@@ -209,6 +209,15 @@ public class RepositoryService {
         return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCase(name, namespace);
     }
 
+    public Extension findExtensionForUpdate(String name, String namespace) {
+        return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCaseForUpdate(name, namespace);
+    }
+
+    // Like findExtensionForUpdate but fails fast (NOWAIT) if the row is already locked by a publish.
+    public Extension findExtensionForUpdateNoWait(String name, String namespace) {
+        return extensionRepo.findByNameIgnoreCaseAndNamespaceNameIgnoreCaseForUpdateNoWait(name, namespace);
+    }
+
     public Streamable<Extension> findActiveExtensions(Namespace namespace) {
         return extensionRepo.findByNamespaceAndActiveTrueOrderByNameAsc(namespace);
     }

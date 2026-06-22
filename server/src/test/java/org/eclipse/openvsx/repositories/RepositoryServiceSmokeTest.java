@@ -195,6 +195,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDownloadsByStorageTypeAndName("storageType", STRING_LIST),
                 () -> repositories.findExtension("name", namespace),
                 () -> repositories.findExtension("name", "namespace"),
+                () -> repositories.findExtensionForUpdate("name", "namespace"),
+                () -> repositories.findExtensionForUpdateNoWait("name", "namespace"),
                 () -> repositories.findExtensions(namespace),
                 () -> repositories.findFileByType(extVersion, "type"),
                 () -> repositories.findFiles(extVersion),

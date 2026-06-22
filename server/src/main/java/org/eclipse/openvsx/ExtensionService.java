@@ -28,6 +28,7 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -222,9 +223,25 @@ public class ExtensionService {
             List<TargetPlatformVersionJson> targetVersions,
             UserData user
     ) throws ErrorResultException {
+        // Lock the extension row (NOWAIT) so a delete-all and a concurrent publish can't interleave.
+        // Publishing takes the same lock (waiting); if it holds it, this fails fast and we ask the
+        // user to retry rather than removing the extension out from under the in-flight publish.
+        Extension extension;
+        try {
+            extension = repositories.findExtensionForUpdateNoWait(extensionName, namespaceName);
+        } catch (PessimisticLockingFailureException e) {
+            throw new ErrorResultException(
+                    "Extension " + NamingUtil.toExtensionId(namespaceName, extensionName)
+                            + " is currently being published to. Please try again.",
+                    HttpStatus.CONFLICT);
+        }
+        if (extension == null) {
+            var message = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
         var results = new ArrayList<ResultJson>();
         if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
-            var extension = repositories.findExtension(extensionName, namespaceName);
             results.add(deleteExtension(user, extension));
         } else {
             for (var targetVersion : targetVersions) {

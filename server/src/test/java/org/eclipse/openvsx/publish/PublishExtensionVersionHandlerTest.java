@@ -125,7 +125,7 @@ class PublishExtensionVersionHandlerTest {
             when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
             when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
             when(validator.validateMetadata(metadata)).thenReturn(List.of());
-            when(repositories.findExtension("demo", namespace)).thenReturn(null);
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
 
             var capturedExtension = ArgumentCaptor.forClass(Extension.class);
 

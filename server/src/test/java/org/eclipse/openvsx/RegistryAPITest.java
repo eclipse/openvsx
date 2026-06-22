@@ -2461,7 +2461,7 @@ class RegistryAPITest {
             extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             extVersion.setVersion("1.0.0");
             extVersion.setActive(true);
-            Mockito.when(repositories.findExtension("bar", namespace))
+            Mockito.when(repositories.findExtensionForUpdate("bar", "foo"))
                     .thenReturn(extension);
             Mockito.when(repositories.findVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, extension))
                     .thenReturn(extVersion);

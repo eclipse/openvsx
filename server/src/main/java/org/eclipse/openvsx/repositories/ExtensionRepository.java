@@ -14,6 +14,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.util.Streamable;
 
 import java.util.Collection;
@@ -28,6 +29,20 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Extension findByNameIgnoreCaseAndNamespace(String name, Namespace namespace);
 
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
+
+    // Publish takes this lock (waiting) before adding a version. Explicit FOR UPDATE so it also
+    // conflicts with the FOR KEY SHARE a version insert takes.
+    @Query(value = "select e.* from extension e join namespace n on n.id = e.namespace_id"
+            + " where lower(e.name) = lower(:name) and lower(n.name) = lower(:namespace) for update of e",
+            nativeQuery = true)
+    Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCaseForUpdate(@Param("name") String name, @Param("namespace") String namespace);
+
+    // Delete takes this NOWAIT variant so it fails fast (instead of blocking) when a publish holds
+    // the lock, letting us surface a "retry" error rather than removing the extension under a publish.
+    @Query(value = "select e.* from extension e join namespace n on n.id = e.namespace_id"
+            + " where lower(e.name) = lower(:name) and lower(n.name) = lower(:namespace) for update of e nowait",
+            nativeQuery = true)
+    Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCaseForUpdateNoWait(@Param("name") String name, @Param("namespace") String namespace);
 
     Streamable<Extension> findByActiveTrue();
 
