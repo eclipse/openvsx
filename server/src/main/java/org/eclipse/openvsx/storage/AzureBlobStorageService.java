@@ -116,7 +116,9 @@ public class AzureBlobStorageService implements IStorageService {
             blobHeaders.setContentType(headers.getContentType().toString());
         }
 
-        blobHeaders.setContentDisposition(headers.getContentDisposition().toString());
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            blobHeaders.setContentDisposition(headers.getContentDisposition().toString());
+        }
 
         if (headers.getCacheControl() != null) {
             blobHeaders.setCacheControl(headers.getCacheControl());

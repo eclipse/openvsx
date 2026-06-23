@@ -102,7 +102,9 @@ public class GoogleCloudStorageService implements IStorageService {
             blobInfoBuilder.setContentType(headers.getContentType().toString());
         }
 
-        blobInfoBuilder.setContentDisposition(headers.getContentDisposition().toString());
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            blobInfoBuilder.setContentDisposition(headers.getContentDisposition().toString());
+        }
 
         if (headers.getCacheControl() != null) {
             blobInfoBuilder.setCacheControl(headers.getCacheControl());
