@@ -45,6 +45,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
@@ -216,21 +217,27 @@ public class AwsStorageService implements IStorageService {
     protected void uploadFile(TempFile file, String fileName, String objectKey) {
         var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
 
-        var requestBuilder = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(objectKey);
-
+        // see https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html
+        var metadata = new HashMap<String, String>();
         if (headers.getContentType() != null) {
-            requestBuilder.contentType(headers.getContentType().toString());
+            metadata.put("Content-Type", headers.getContentType().toString());
         }
 
-        requestBuilder.contentDisposition(headers.getContentDisposition().toString());
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            metadata.put("Content-Disposition", headers.getContentDisposition().toString());
+        }
 
         if (headers.getCacheControl() != null) {
-            requestBuilder.cacheControl(headers.getCacheControl());
+            metadata.put("Cache-Control", headers.getCacheControl());
         }
 
-        getS3Client().putObject(requestBuilder.build(), file.getPath());
+        var request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .metadata(metadata)
+                .build();
+
+        getS3Client().putObject(request, file.getPath());
     }
 
     @Override
