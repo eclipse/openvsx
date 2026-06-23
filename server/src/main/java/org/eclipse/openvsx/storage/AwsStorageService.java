@@ -214,7 +214,7 @@ public class AwsStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectKey) {
-        var headers = HttpHeadersUtil.getFileResponseHeaders(file.getPath(), fileName);
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
 
         var requestBuilder = PutObjectRequest.builder()
                 .bucket(bucket)

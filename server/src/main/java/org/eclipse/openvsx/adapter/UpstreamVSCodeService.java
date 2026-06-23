@@ -171,7 +171,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                     var mapper = new ObjectMapper();
                     var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
-                            .headers(HttpHeadersUtil.getJsonFileResponseHeaders())
+                            .headers(HttpHeadersUtil.createJsonFileResponseHeaders())
                             .body(outputStream -> mapper.writeValue(outputStream, json));
                 } else {
                     return streamResponse(response, org.springframework.util.StringUtils.getFilename(path), "browse");
@@ -349,7 +349,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 response.getBody().transferTo(out);
             }
 
-            var headers = HttpHeadersUtil.getFileResponseHeaders(tempFile.getPath(), fileName);
+            var headers = HttpHeadersUtil.createFileResponseHeaders(tempFile.getPath(), fileName);
 
             return ResponseEntity.status(response.getStatusCode())
                     .headers(headers)

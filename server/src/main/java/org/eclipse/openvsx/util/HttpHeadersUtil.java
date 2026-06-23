@@ -82,24 +82,24 @@ public class HttpHeadersUtil {
         return headers;
     }
 
-    public static HttpHeaders getFileResponseHeaders(@Nonnull Path file) {
+    public static HttpHeaders createFileResponseHeaders(@Nonnull Path file) {
         var fileName = file.getFileName().toString();
-        return getFileResponseHeaders(file, fileName);
+        return createFileResponseHeaders(file, fileName);
     }
 
-    public static HttpHeaders getFileResponseHeaders(@Nonnull Path file, @Nullable String fileName) {
+    public static HttpHeaders createFileResponseHeaders(@Nonnull Path file, @Nullable String fileName) {
         try (var inputStream = Files.newInputStream(file)) {
-            return getFileResponseHeaders(inputStream, fileName);
+            return createFileResponseHeaders(inputStream, fileName);
         } catch (IOException ex) {
-            return getFileResponseHeaders((InputStream) null, fileName);
+            return createFileResponseHeaders((InputStream) null, fileName);
         }
     }
 
-    public static HttpHeaders getJsonFileResponseHeaders() {
-        return getFileResponseHeaders((InputStream) null, "data.json");
+    public static HttpHeaders createJsonFileResponseHeaders() {
+        return createFileResponseHeaders((InputStream) null, "data.json");
     }
 
-    public static HttpHeaders getFileResponseHeaders(@Nullable InputStream inputStream, @Nullable String fileName) {
+    public static HttpHeaders createFileResponseHeaders(@Nullable InputStream inputStream, @Nullable String fileName) {
         HttpHeaders headers = new HttpHeaders();
 
         // by default, we treat all files as octet stream

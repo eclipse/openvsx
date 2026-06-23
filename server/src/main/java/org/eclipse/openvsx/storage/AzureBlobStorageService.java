@@ -107,7 +107,7 @@ public class AzureBlobStorageService implements IStorageService {
             throw new IllegalStateException(missingEndpointMessage("Cannot upload file", blobName));
         }
 
-        var headers = HttpHeadersUtil.getFileResponseHeaders(file.getPath(), fileName);
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
 
         var blobClient = getContainerClient().getBlobClient(blobName);
         var blobHeaders = new BlobHttpHeaders();

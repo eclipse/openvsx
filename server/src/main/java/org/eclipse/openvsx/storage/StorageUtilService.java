@@ -313,7 +313,7 @@ public class StorageUtilService implements IStorageService {
     }
 
     public ResponseEntity<StreamingResponseBody> getFileResponse(Path path) {
-        var headers = HttpHeadersUtil.getFileResponseHeaders(path);
+        var headers = HttpHeadersUtil.createFileResponseHeaders(path);
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> {
@@ -325,7 +325,7 @@ public class StorageUtilService implements IStorageService {
 
     public ResponseEntity<StreamingResponseBody> getFileResponse(ArrayNode node) {
         var baseUrl = UrlUtil.getBaseUrl();
-        var headers = HttpHeadersUtil.getJsonFileResponseHeaders();
+        var headers = HttpHeadersUtil.createJsonFileResponseHeaders();
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> {

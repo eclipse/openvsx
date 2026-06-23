@@ -89,7 +89,7 @@ public class LocalStorageService implements IStorageService {
     public ResponseEntity<StreamingResponseBody> getFile(FileResource resource) {
         var path = getPath(resource);
         return ResponseEntity.ok()
-                .headers(HttpHeadersUtil.getFileResponseHeaders(path))
+                .headers(HttpHeadersUtil.createFileResponseHeaders(path))
                 .body(outputStream -> {
                     try (var in = Files.newInputStream(path)) {
                         in.transferTo(outputStream);
@@ -110,7 +110,7 @@ public class LocalStorageService implements IStorageService {
         var path = getLogoPath(namespace);
 
         return ResponseEntity.ok()
-                .headers(HttpHeadersUtil.getFileResponseHeaders(path))
+                .headers(HttpHeadersUtil.createFileResponseHeaders(path))
                 .body(outputStream -> {
                     try (var in = Files.newInputStream(path)) {
                         in.transferTo(outputStream);

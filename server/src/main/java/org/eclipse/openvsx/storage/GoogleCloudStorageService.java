@@ -95,7 +95,7 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectId) {
-        var headers = HttpHeadersUtil.getFileResponseHeaders(file.getPath(), fileName);
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
         var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId));
 
         if (headers.getContentType() != null) {
