@@ -145,7 +145,7 @@ public class HttpHeadersUtil {
             // files not viewable as text need to be downloaded and not displayed inline
             String sanitizedFileName = sanitize(fileName);
             ContentDisposition disposition = ContentDisposition.attachment()
-                    .filename(sanitizedFileName, StandardCharsets.UTF_8)
+                    .filename(sanitizedFileName)
                     .build();
             headers.setContentDisposition(disposition);
         }
