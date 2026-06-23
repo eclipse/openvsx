@@ -81,6 +81,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -483,7 +484,29 @@ class RegistryAPITest {
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"))
-                .andDo(result -> Files.delete(filePath));
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Content-Type", containsString("text/plain;charset=UTF-8")))
+                .andExpect(header().string("Content-Security-Policy",
+                        containsString("default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox")))
+                .andDo(_ -> Files.delete(filePath));
+    }
+
+    @Test
+    void testHtmlResourceIsServedAsPlainText() throws Exception {
+        // A resource whose filename resolves to a renderable type (e.g. text/html)
+        // must come back with the hardened response headers.
+        var filePath = mockReadme(TargetPlatform.NAME_UNIVERSAL, "readme.html", "<script>alert(1)</script>");
+        mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "readme.html"))
+                .andExpect(request().asyncStarted())
+                .andDo(MvcResult::getAsyncResult)
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Content-Type", containsString("text/plain;charset=UTF-8")))
+                .andExpect(header().string("Content-Security-Policy",
+                        containsString("default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; sandbox")))
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -494,7 +517,7 @@ class RegistryAPITest {
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"))
-                .andDo(result -> Files.delete(filePath));
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -502,7 +525,7 @@ class RegistryAPITest {
         var filePath = mockReadme();
         mockMvc.perform(get("/api/{namespace}/{extension}/{target}/{version}/file/{fileName}", "foo", "bar", "darwin-x64", "1.0.0", "README"))
                 .andExpect(status().isNotFound())
-                .andDo(result -> Files.delete(filePath));
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -513,7 +536,7 @@ class RegistryAPITest {
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notable changes is documented here"))
-                .andDo(result -> Files.delete(filePath));
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -524,7 +547,7 @@ class RegistryAPITest {
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("I never broke the Law! I am the law!"))
-                .andDo(result -> Files.delete(filePath));
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -551,7 +574,7 @@ class RegistryAPITest {
                 .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("latest download"))
-                .andDo(result -> Files.delete(filePath));
+                .andDo(_ -> Files.delete(filePath));
     }
 
     @Test
@@ -2265,14 +2288,20 @@ class RegistryAPITest {
     }
 
     private Path mockReadme(String targetPlatform) throws IOException {
+        return mockReadme(targetPlatform, "README", "Please read me");
+    }
+
+    private Path mockReadme(String targetPlatform, String fileName, String content) throws IOException {
         var extVersion = mockExtension(targetPlatform);
         var resource = new FileResource();
         resource.setExtension(extVersion);
-        resource.setName("README");
+        resource.setName(fileName);
         resource.setType(FileResource.README);
         resource.setStorageType(STORAGE_LOCAL);
         Mockito.when(entityManager.find(FileResource.class, resource.getId())).thenReturn(resource);
         Mockito.when(repositories.findFileByType("foo", "bar", targetPlatform, "1.0.0", README)).thenReturn(resource);
+        // Filenames that aren't well-known type aliases are looked up by name.
+        Mockito.when(repositories.findFileByName("foo", "bar", targetPlatform, "1.0.0", fileName)).thenReturn(resource);
 
         var segments = new String[]{ "foo", "bar" };
         if(!targetPlatform.equals(TargetPlatform.NAME_UNIVERSAL)) {
@@ -2280,10 +2309,10 @@ class RegistryAPITest {
         }
 
         segments = ArrayUtils.add(segments, "1.0.0");
-        segments = ArrayUtils.add(segments, "README");
+        segments = ArrayUtils.add(segments, fileName);
         var path = Path.of("/tmp", segments);
         Files.createDirectories(path.getParent());
-        Files.writeString(path, "Please read me");
+        Files.writeString(path, content);
         return path;
     }
 

@@ -809,7 +809,7 @@ public class RegistryAPI {
         result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
                 // do not cache to avoid stale data, elasticsearch in general is fast
-                .cacheControl(CacheControl.noCache().cachePublic().mustRevalidate())
+                .cacheControl(CacheControl.noCache().cachePublic())
                 .body(result);
     }
 

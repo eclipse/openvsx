@@ -16,6 +16,7 @@ import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -44,7 +45,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_FILES;
@@ -214,21 +214,23 @@ public class AwsStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectKey) {
-        var metadata = new HashMap<String, String>();
-        metadata.put("Content-Type", StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
-            metadata.put("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        } else {
-            metadata.put("Cache-Control", StorageUtil.getCacheControl(fileName).getHeaderValue());
+        var headers = HttpHeadersUtil.getFileResponseHeaders(file.getPath(), fileName);
+
+        var requestBuilder = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey);
+
+        if (headers.getContentType() != null) {
+            requestBuilder.contentType(headers.getContentType().toString());
         }
 
-        var request = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(objectKey)
-                .metadata(metadata)
-                .build();
+        requestBuilder.contentDisposition(headers.getContentDisposition().toString());
 
-        getS3Client().putObject(request, file.getPath());
+        if (headers.getCacheControl() != null) {
+            requestBuilder.cacheControl(headers.getCacheControl());
+        }
+
+        getS3Client().putObject(requestBuilder.build(), file.getPath());
     }
 
     @Override

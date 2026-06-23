@@ -25,7 +25,7 @@ rewrite-java    = "3.26.0"
 spring-boot     = "3.5.14"
 springdoc       = "2.8.13"
 testcontainers  = "1.21.4"
-tika            = "3.2.2"
+tika            = "3.3.1"
 woodstox        = "6.4.0"
 
 [plugins]

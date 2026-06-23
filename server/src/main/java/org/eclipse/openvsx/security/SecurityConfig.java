@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .csrf(configurer -> configurer.ignoringRequestMatchers(pathMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**", "/admin/api/**")))
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));
 
-        if(userServices.canLogin()) {
+        if (userServices.canLogin()) {
             var redirectUrl = StringUtils.isEmpty(webuiUrl) ? "/" : webuiUrl;
             filterChain.oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);

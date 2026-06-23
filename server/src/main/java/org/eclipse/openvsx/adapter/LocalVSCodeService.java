@@ -61,6 +61,7 @@ public class LocalVSCodeService implements IVSCodeService {
     private final ExtensionVersionIntegrityService integrityService;
     private final WebResourceService webResources;
     private final CacheService cache;
+    private final Map<String, String> assets;
 
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
@@ -81,6 +82,17 @@ public class LocalVSCodeService implements IVSCodeService {
         this.integrityService = integrityService;
         this.webResources = webResources;
         this.cache = cache;
+
+        this.assets = Map.of(
+                FILE_VSIX, DOWNLOAD,
+                FILE_MANIFEST, MANIFEST,
+                FILE_DETAILS, README,
+                FILE_CHANGELOG, CHANGELOG,
+                FILE_LICENSE, LICENSE,
+                FILE_ICON, ICON,
+                FILE_VSIXMANIFEST, VSIXMANIFEST,
+                FILE_SIGNATURE, DOWNLOAD_SIG
+        );
     }
 
     @Override
@@ -349,17 +361,6 @@ public class LocalVSCodeService implements IVSCodeService {
                         .build();
             }
         }
-
-        var assets = Map.of(
-                FILE_VSIX, DOWNLOAD,
-                FILE_MANIFEST, MANIFEST,
-                FILE_DETAILS, README,
-                FILE_CHANGELOG, CHANGELOG,
-                FILE_LICENSE, LICENSE,
-                FILE_ICON, ICON,
-                FILE_VSIXMANIFEST, VSIXMANIFEST,
-                FILE_SIGNATURE, DOWNLOAD_SIG
-        );
 
         var type = assets.get(assetType);
         if (type != null) {

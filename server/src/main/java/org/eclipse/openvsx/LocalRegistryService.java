@@ -233,7 +233,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return storageUtil.getFileResponse(resource);
     }
 
-    public boolean isType (String fileName){
+    public boolean isType(String fileName) {
         var expectedTypes = new ArrayList<>(List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, DOWNLOAD_SHA256, CHANGELOG, VSIXMANIFEST));
         if(integrityService.isEnabled()) {
             expectedTypes.add(DOWNLOAD_SIG);
