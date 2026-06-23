@@ -30,8 +30,12 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Extension findByNameIgnoreCaseAndNamespaceNameIgnoreCase(String name, String namespace);
 
-    // Publish takes this lock (waiting) before adding a version. Explicit FOR UPDATE so it also
-    // conflicts with the FOR KEY SHARE a version insert takes.
+    // Publish takes this lock (waiting) before adding a version. We use a native FOR UPDATE rather
+    // than @Lock(PESSIMISTIC_WRITE) on purpose: on Hibernate 6 + PostgreSQL that maps to the weaker
+    // FOR NO KEY UPDATE, which does NOT conflict with the FOR KEY SHARE a version insert takes, so a
+    // concurrent publish could still insert a row. FOR UPDATE conflicts with it and blocks the insert.
+    // "OF e" scopes the lock to the extension row only (not the joined namespace) — also not
+    // expressible via @Lock.
     @Query(value = "select e.* from extension e join namespace n on n.id = e.namespace_id"
             + " where lower(e.name) = lower(:name) and lower(n.name) = lower(:namespace) for update of e",
             nativeQuery = true)
@@ -39,6 +43,8 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     // Delete takes this NOWAIT variant so it fails fast (instead of blocking) when a publish holds
     // the lock, letting us surface a "retry" error rather than removing the extension under a publish.
+    // Native for the same reason as above (FOR UPDATE strength + OF e); NOWAIT could also be done via
+    // a @QueryHint lock-timeout of 0, but we keep both clauses in one explicit native query.
     @Query(value = "select e.* from extension e join namespace n on n.id = e.namespace_id"
             + " where lower(e.name) = lower(:name) and lower(n.name) = lower(:namespace) for update of e nowait",
             nativeQuery = true)
