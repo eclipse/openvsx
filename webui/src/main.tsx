@@ -135,7 +135,7 @@ export const Main: FunctionComponent<MainProps> = props => {
             <MainContext.Provider value={mainContext}>
                 {renderPageContent()}
             </MainContext.Provider>
-            {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+            <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     </>;
 };
