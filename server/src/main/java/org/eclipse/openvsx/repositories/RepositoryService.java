@@ -361,6 +361,10 @@ public class RepositoryService {
         return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
     }
 
+    public long countVersionsByAccessToken(PersonalAccessToken publishedWith) {
+        return extensionVersionRepo.countByPublishedWith(publishedWith);
+    }
+
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
         return extensionVersionRepo.findByPublishedWithUserAndActive(user, active);
     }
@@ -439,6 +443,10 @@ public class RepositoryService {
 
     public UserData findUserByLoginName(String provider, String loginName) {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
+    }
+
+    public UserData findUserByProviderAndAuthId(String provider, String authId) {
+        return userDataRepo.findByProviderAndAuthId(provider, authId);
     }
 
     public long countUsers() {

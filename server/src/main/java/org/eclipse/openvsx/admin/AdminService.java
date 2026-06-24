@@ -570,6 +570,109 @@ public class AdminService {
         return result;
     }
 
+    /**
+     * Forget a user in line with a data-protection (GDPR) erasure request.
+     *
+     * <p>The user record is anonymised in place rather than deleted, so that retained content
+     * (extension reviews, security scan and file decisions, and audit logs) keeps referring to a
+     * row that no longer holds any personal data. Extensions in namespaces where the user was the
+     * sole member are unpublished but kept in the database and storage, so people who have already
+     * installed them are unaffected.
+     *
+     * @param provider the authentication provider the user belongs to
+     * @param authId the provider-specific identifier of the user to forget
+     * @param admin the administrator performing the erasure
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson forgetUser(String provider, String authId, UserData admin) {
+        var user = repositories.findUserByProviderAndAuthId(provider, authId);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + authId), HttpStatus.NOT_FOUND);
+        }
+
+        // Send a DELETE request to the Eclipse publisher agreement API. Guarded so that
+        // instances without Eclipse integration are unaffected.
+        if (eclipse.isActive() && user.getEclipsePersonId() != null) {
+            eclipse.revokePublisherAgreement(user, admin);
+        }
+
+        // Handle namespace memberships. Where the user is the sole member, unpublish the
+        // namespace's extensions (deactivate every version, which deactivates the extension and
+        // drops it from search) but keep them in the database for existing installs. Where other
+        // members remain, only the membership is removed and the extensions stay active.
+        var unpublishedExtensionCount = 0;
+        var removedMembershipCount = 0;
+        for (var membership : repositories.findMemberships(user).toList()) {
+            var namespace = membership.getNamespace();
+            var soleMember = repositories.findMemberships(namespace).toList().size() <= 1;
+            if (soleMember) {
+                for (var extension : repositories.findActiveExtensions(namespace).toList()) {
+                    var deactivated = false;
+                    for (var version : repositories.findVersions(extension)) {
+                        if (version.isActive()) {
+                            version.setActive(false);
+                            deactivated = true;
+                        }
+                    }
+                    if (deactivated) {
+                        extensions.updateExtension(extension);
+                        unpublishedExtensionCount++;
+                    }
+                }
+            }
+
+            users.removeNamespaceMember(namespace, user);
+            removedMembershipCount++;
+            search.updateSearchEntries(repositories.findActiveExtensions(namespace).toList());
+        }
+
+        // Remove customer memberships. The customer and its rate-limit tokens are organisation-level
+        // and shared, so they are retained.
+        var removedCustomerMembershipCount = 0;
+        for (var customerMembership : repositories.findCustomerMemberships(user).toList()) {
+            entityManager.remove(customerMembership);
+            removedCustomerMembershipCount++;
+        }
+
+        // Personal access tokens. Delete tokens that no retained extension version references;
+        // scrub and deactivate the rest so retained versions still resolve a publisher.
+        var deletedTokenCount = 0;
+        var scrubbedTokenCount = 0;
+        for (var token : repositories.findAccessTokens(user).toList()) {
+            if (repositories.countVersionsByAccessToken(token) == 0) {
+                entityManager.remove(token);
+                deletedTokenCount++;
+            } else {
+                token.setActive(false);
+                token.setValue(null);
+                token.setDescription(null);
+                scrubbedTokenCount++;
+            }
+        }
+
+        // Anonymise the user record in place. Reviews, scan and file decisions, and audit logs
+        // keep referencing this row, which no longer holds any personal data.
+        var tombstoneLogin = "deleted-user-" + user.getId();
+        user.setLoginName(tombstoneLogin);
+        user.setFullName(null);
+        user.setEmail(null);
+        user.setAvatarUrl(null);
+        user.setAuthId(null);
+        user.setProviderUrl(null);
+        user.setEclipsePersonId(null);
+        user.setEclipseToken(null);
+        user.setRole(null);
+
+        // The success message deliberately contains no personal data, only the tombstone id and counts.
+        var result = ResultJson.success("Forgot user " + tombstoneLogin
+                + ": unpublished " + unpublishedExtensionCount + " extensions, removed "
+                + removedMembershipCount + " namespace memberships, removed "
+                + removedCustomerMembershipCount + " customer memberships, deleted "
+                + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
+        logs.logAction(admin, result);
+        return result;
+    }
+
     public UserData checkAdminUser() {
         return checkAdminUser(users.findLoggedInUser());
     }

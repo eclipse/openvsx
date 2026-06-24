@@ -57,6 +57,7 @@ import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.AdminStatistics;
+import org.eclipse.openvsx.entities.CustomerMembership;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -1024,6 +1025,188 @@ class AdminAPITest {
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deactivated 2 tokens of user github/test.")));
+    }
+
+    @Test
+    void testForgetUserNotLoggedIn() throws Exception {
+        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testForgetUserNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+                .with(user("test_user"))
+                .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testForgetUserWithInvalidToken() throws Exception {
+        var token = mockNonAdminToken();
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testForgetUserNotFound() throws Exception {
+        var token = mockAdminToken();
+        Mockito.when(repositories.findUserByProviderAndAuthId("github", "12345")).thenReturn(null);
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testForgetUserWithToken() throws Exception {
+        var token = mockAdminToken();
+        var user = mockForgettableUser();
+
+        // The user is the sole member of a namespace, so its extension must be unpublished but retained.
+        var namespace = new Namespace();
+        namespace.setName("janedoe-ns");
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(user);
+        membership.setRole(NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMemberships(user)).thenReturn(Streamable.of(membership));
+        Mockito.when(repositories.findMemberships(namespace)).thenReturn(Streamable.of(membership));
+        Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
+
+        var extension = new Extension();
+        extension.setName("ext");
+        extension.setNamespace(namespace);
+        extension.setActive(true);
+        var version = new ExtensionVersion();
+        version.setExtension(extension);
+        version.setActive(true);
+        extension.getVersions().add(version);
+        Mockito.when(repositories.findActiveExtensions(namespace)).thenReturn(Streamable.of(extension));
+        Mockito.when(repositories.findVersions(extension)).thenReturn(Streamable.of(version));
+
+        var customerMembership = new CustomerMembership();
+        customerMembership.setUser(user);
+        Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.of(customerMembership));
+
+        // A token not referenced by any retained version must be deleted outright.
+        var unreferenced = new PersonalAccessToken();
+        unreferenced.setUser(user);
+        unreferenced.setActive(true);
+        Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
+        Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
+
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
+
+        // The extension and its version are deactivated but kept in the database.
+        assertThat(version.isActive()).isFalse();
+        assertThat(extension.isActive()).isFalse();
+        Mockito.verify(entityManager, Mockito.never()).remove(extension);
+        Mockito.verify(entityManager, Mockito.never()).remove(version);
+
+        // Memberships, the customer membership, and the unreferenced token are removed.
+        Mockito.verify(entityManager).remove(membership);
+        Mockito.verify(entityManager).remove(customerMembership);
+        Mockito.verify(entityManager).remove(unreferenced);
+
+        // The user record is anonymised in place rather than deleted.
+        Mockito.verify(entityManager, Mockito.never()).remove(user);
+        assertThat(user.getLoginName()).isEqualTo("deleted-user-7");
+        assertThat(user.getFullName()).isNull();
+        assertThat(user.getEmail()).isNull();
+        assertThat(user.getAvatarUrl()).isNull();
+        assertThat(user.getAuthId()).isNull();
+        assertThat(user.getProviderUrl()).isNull();
+        assertThat(user.getRole()).isNull();
+    }
+
+    @Test
+    void testForgetUserSharedNamespaceKeepsExtensions() throws Exception {
+        mockAdminUser();
+        var user = mockForgettableUser();
+
+        // A namespace with another member must keep its extensions active.
+        var namespace = new Namespace();
+        namespace.setName("shared-ns");
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(user);
+        membership.setRole(NamespaceMembership.ROLE_OWNER);
+        var otherMembership = new NamespaceMembership();
+        otherMembership.setNamespace(namespace);
+        otherMembership.setUser(new UserData());
+        otherMembership.setRole(NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMemberships(user)).thenReturn(Streamable.of(membership));
+        Mockito.when(repositories.findMemberships(namespace)).thenReturn(Streamable.of(membership, otherMembership));
+        Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
+
+        var extension = new Extension();
+        extension.setName("ext");
+        extension.setNamespace(namespace);
+        extension.setActive(true);
+        var version = new ExtensionVersion();
+        version.setExtension(extension);
+        version.setActive(true);
+        extension.getVersions().add(version);
+        Mockito.when(repositories.findActiveExtensions(namespace)).thenReturn(Streamable.of(extension));
+
+        Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+
+        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+                .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 0 extensions, removed 1 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 0 tokens.")));
+
+        // The shared extension and version stay active; only the membership is removed.
+        assertThat(version.isActive()).isTrue();
+        assertThat(extension.isActive()).isTrue();
+        Mockito.verify(entityManager).remove(membership);
+        Mockito.verify(entityManager, Mockito.never()).remove(extension);
+    }
+
+    @Test
+    void testForgetUserScrubsReferencedToken() throws Exception {
+        var token = mockAdminToken();
+        var user = mockForgettableUser();
+        Mockito.when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.empty());
+
+        // A token still referenced by a retained version must be scrubbed and kept, not deleted.
+        var referenced = new PersonalAccessToken();
+        referenced.setUser(user);
+        referenced.setActive(true);
+        referenced.setValue("secret-value");
+        referenced.setDescription("my token");
+        Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(referenced));
+        Mockito.when(repositories.countVersionsByAccessToken(referenced)).thenReturn(2L);
+
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 1 tokens.")));
+
+        Mockito.verify(entityManager, Mockito.never()).remove(referenced);
+        assertThat(referenced.isActive()).isFalse();
+        assertThat(referenced.getValue()).isNull();
+        assertThat(referenced.getDescription()).isNull();
+    }
+
+    private UserData mockForgettableUser() {
+        var user = new UserData();
+        user.setId(7);
+        user.setProvider("github");
+        user.setAuthId("12345");
+        user.setLoginName("janedoe");
+        user.setFullName("Jane Doe");
+        user.setEmail("jane@example.com");
+        user.setAvatarUrl("https://example.com/avatar.png");
+        user.setProviderUrl("https://github.com/janedoe");
+        user.setRole(UserData.Role.PRIVILEGED);
+        Mockito.when(repositories.findUserByProviderAndAuthId("github", "12345")).thenReturn(user);
+        return user;
     }
 
     @Test

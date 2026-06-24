@@ -19,6 +19,8 @@ public interface UserDataRepository extends Repository<UserData, Long> {
 
     UserData findByProviderAndLoginName(String provider, String loginName);
 
+    UserData findByProviderAndAuthId(String provider, String authId);
+
     Page<UserData> findByLoginNameStartingWith(String loginNameStart, Pageable page);
 
     long count();
