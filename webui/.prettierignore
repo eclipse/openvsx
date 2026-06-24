@@ -10,3 +10,5 @@ test-results
 # Vendored / generated
 node_modules
 .yarn
+
+stats.html
