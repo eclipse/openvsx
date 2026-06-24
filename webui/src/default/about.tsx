@@ -13,7 +13,7 @@ import { Link, Typography, Container } from '@mui/material';
 import { styled, Theme } from '@mui/material/styles';
 
 const Heading = styled(Typography)(({ theme }: { theme: Theme }) => ({ marginTop: theme.spacing(4) }));
-const Paragraph = styled(Typography)(({ theme }: { theme: Theme }) => ({ margingTop: theme.spacing(2) }));
+const Paragraph = styled(Typography)(({ theme }: { theme: Theme }) => ({ marginTop: theme.spacing(2) }));
 
 const About: FunctionComponent = () => {
     return (
