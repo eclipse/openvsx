@@ -224,24 +224,25 @@ public class ExtensionService {
             UserData user
     ) throws ErrorResultException {
         // Lock the extension row (NOWAIT) so a delete-all and a concurrent publish can't interleave.
-        // Publishing takes the same lock (waiting); if it holds it, this fails fast and we ask the
-        // user to retry rather than removing the extension out from under the in-flight publish.
+        // Publishing takes the same lock (waiting); if the lock can not be acquired, this fails fast,
+        // and we ask the user to retry.
         Extension extension;
         try {
             extension = repositories.findExtensionForUpdateNoWait(extensionName, namespaceName);
         } catch (PessimisticLockingFailureException e) {
             throw new ErrorResultException(
                     "Extension " + NamingUtil.toExtensionId(namespaceName, extensionName)
-                            + " is currently being published to. Please try again.",
+                            + " can not be locked due to concurrent modification. Please try again.",
                     HttpStatus.CONFLICT);
         }
+
         if (extension == null) {
             var message = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
             throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
 
         var results = new ArrayList<ResultJson>();
-        if(repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
+        if (repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
             results.add(deleteExtension(user, extension));
         } else {
             for (var targetVersion : targetVersions) {
@@ -287,7 +288,7 @@ public class ExtensionService {
         }
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for(var deprecatedExtension : deprecatedExtensions) {
+        for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
             cache.evictExtensionJsons(deprecatedExtension);
         }
