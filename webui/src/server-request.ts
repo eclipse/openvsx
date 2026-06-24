@@ -7,11 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+
 import fetchBuilder from "fetch-retry";
 
 export interface ServerAPIRequest {
-  abortController?: AbortController;
-  abortSignal?: AbortSignal;
+    abortController?: AbortController;
+    abortSignal?: AbortSignal;
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
     headers?: Record<string, string>;
