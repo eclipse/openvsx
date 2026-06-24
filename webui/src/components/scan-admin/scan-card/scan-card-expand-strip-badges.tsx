@@ -29,7 +29,7 @@ interface ScanCardExpandStripBadgesProps {
 export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
     badges,
     containerWidth,
-    maxWidthPercent = 0.45,
+    maxWidthPercent = 0.45
 }) => {
     const theme = useTheme();
     const measureRef = useRef<HTMLDivElement>(null);
@@ -95,21 +95,31 @@ export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
         height: '20px',
         fontSize: '0.7rem',
         flexShrink: 0,
-        ...(badge.type === 'error' ? {
-            // Error badges: solid grey for required, striped for optional
-            // Must set backgroundColor to 'transparent' when using striped background to override Chip defaults
-            backgroundColor: badge.isEnforced ? theme.palette.errorStatus.dark : 'transparent',
-            color: theme.palette.errorStatus.light,
-            background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.errorStatus.dark}` : undefined,
-        } : badge.type === 'threat' ? {
-            backgroundColor: badge.isEnforced ? theme.palette.quarantined.dark : 'transparent',
-            color: theme.palette.quarantined.light,
-            background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.quarantined.dark}` : undefined,
-        } : {
-            backgroundColor: badge.isEnforced ? theme.palette.rejected.dark : 'transparent',
-            color: theme.palette.rejected.light,
-            background: !badge.isEnforced ? `${theme.palette.unenforced.stripe}, ${theme.palette.rejected.dark}` : undefined,
-        }),
+        ...(badge.type === 'error'
+            ? {
+                  // Error badges: solid grey for required, striped for optional
+                  // Must set backgroundColor to 'transparent' when using striped background to override Chip defaults
+                  backgroundColor: badge.isEnforced ? theme.palette.errorStatus.dark : 'transparent',
+                  color: theme.palette.errorStatus.light,
+                  background: !badge.isEnforced
+                      ? `${theme.palette.unenforced.stripe}, ${theme.palette.errorStatus.dark}`
+                      : undefined
+              }
+            : badge.type === 'threat'
+              ? {
+                    backgroundColor: badge.isEnforced ? theme.palette.quarantined.dark : 'transparent',
+                    color: theme.palette.quarantined.light,
+                    background: !badge.isEnforced
+                        ? `${theme.palette.unenforced.stripe}, ${theme.palette.quarantined.dark}`
+                        : undefined
+                }
+              : {
+                    backgroundColor: badge.isEnforced ? theme.palette.rejected.dark : 'transparent',
+                    color: theme.palette.rejected.light,
+                    background: !badge.isEnforced
+                        ? `${theme.palette.unenforced.stripe}, ${theme.palette.rejected.dark}`
+                        : undefined
+                })
     });
 
     if (badges.length === 0) {
@@ -130,10 +140,9 @@ export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
                     gap: 0.5,
                     flexWrap: 'nowrap',
                     left: 0,
-                    top: 0,
+                    top: 0
                 }}
-                aria-hidden='true'
-            >
+                aria-hidden='true'>
                 {badges.map((badge, index) => (
                     <Chip
                         key={`measure-${badge.label}-${index}`}
@@ -154,16 +163,10 @@ export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
                     flexWrap: 'nowrap',
                     overflow: 'hidden',
                     maxWidth: `${maxWidthPercent * 100}%`,
-                    minWidth: 0,
-                }}
-            >
+                    minWidth: 0
+                }}>
                 {visibleBadges.map((badge, index) => (
-                    <Chip
-                        key={`${badge.label}-${index}`}
-                        label={badge.label}
-                        size='small'
-                        sx={chipStyles(badge)}
-                    />
+                    <Chip key={`${badge.label}-${index}`} label={badge.label} size='small' sx={chipStyles(badge)} />
                 ))}
                 {hiddenCount > 0 && (
                     <Typography
@@ -174,9 +177,8 @@ export const ScanCardExpandStripBadges: FC<ScanCardExpandStripBadgesProps> = ({
                             fontSize: '0.7rem',
                             fontWeight: 500,
                             whiteSpace: 'nowrap',
-                            ml: 0.5,
-                        }}
-                    >
+                            ml: 0.5
+                        }}>
                         + {hiddenCount} more
                     </Typography>
                 )}

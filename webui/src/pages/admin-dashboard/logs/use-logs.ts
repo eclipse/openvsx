@@ -26,6 +26,6 @@ export const useLogs = (page: number, size: number, period?: string) => {
     return useQuery({
         queryKey: ['admin', 'logs', page, size, period ?? null] as const,
         queryFn: ({ signal }) => service.admin.getLogs(controllerFromSignal(signal), page, size, period),
-        placeholderData: keepPreviousData,
+        placeholderData: keepPreviousData
     });
 };

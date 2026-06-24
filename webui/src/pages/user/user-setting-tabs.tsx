@@ -15,7 +15,6 @@ import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings-routes';
 
 export const UserSettingTabs = (): ReactElement => {
-
     const theme = useTheme();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));
     const isAMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -37,8 +36,7 @@ export const UserSettingTabs = (): ReactElement => {
             onChange={handleChange}
             orientation={isATablet ? 'horizontal' : 'vertical'}
             centered={isAMobile}
-            indicatorColor='secondary'
-        >
+            indicatorColor='secondary'>
             <Tab value='profile' label='Profile' />
             <Tab value='tokens' label='Access Tokens' />
             <Tab value='namespaces' label='Namespaces' />

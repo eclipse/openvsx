@@ -18,7 +18,7 @@ import { isError } from '../../extension-registry-types';
 import { controllerFromSignal } from '../../query-client';
 
 export const publisherAdminKeys = {
-    detail: (provider: string, login: string) => ['admin', 'publisher', provider, login] as const,
+    detail: (provider: string, login: string) => ['admin', 'publisher', provider, login] as const
 };
 
 /**
@@ -32,7 +32,7 @@ export const usePublisherInfo = (login: string, provider = 'github') => {
         queryFn: ({ signal }) => service.admin.getPublisherInfo(controllerFromSignal(signal), provider, login),
         enabled: !!login,
         retry: false,
-        staleTime: 0,
+        staleTime: 0
     });
 };
 
@@ -49,7 +49,7 @@ export const useRevokePublisherContributions = () => {
                 throw result;
             }
             return result;
-        },
+        }
     });
 };
 
@@ -66,6 +66,6 @@ export const useRevokeAccessTokens = () => {
                 throw result;
             }
             return result;
-        },
+        }
     });
 };

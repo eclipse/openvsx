@@ -12,9 +12,7 @@
  *****************************************************************************/
 
 import { FunctionComponent, useContext } from 'react';
-import {
-    Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
-} from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Namespace } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -48,28 +46,24 @@ export const NamespaceDeleteDialog: FunctionComponent<NamespaceDeleteDialogProps
         }
     };
 
-    return <>
-        <Dialog onClose={onClose} open={open} aria-labelledby='form-dialog-title'>
-            <DialogTitle id='form-dialog-title'>Delete Namespace</DialogTitle>
-            <DialogContent>
-                <DialogContentText>
-                    Are you sure you want to delete the namespace <strong>{namespace.name}</strong>?
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={onClose}>
-                    Cancel
-                </Button>
-                <ButtonWithProgress
-                    sx={{ ml: 1 }}
-                    working={working}
-                    onClick={handleDeleteNamespace}>
-                    Delete Namespace
-                </ButtonWithProgress>
-            </DialogActions>
-        </Dialog>
-    </>;
+    return (
+        <>
+            <Dialog onClose={onClose} open={open} aria-labelledby='form-dialog-title'>
+                <DialogTitle id='form-dialog-title'>Delete Namespace</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete the namespace <strong>{namespace.name}</strong>?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress sx={{ ml: 1 }} working={working} onClick={handleDeleteNamespace}>
+                        Delete Namespace
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };

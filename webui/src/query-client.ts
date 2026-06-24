@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
@@ -37,14 +36,13 @@ export const queryClient = new QueryClient({
                 }
                 return failureCount < 3;
             },
-            retryDelay: (attempt) => {
+            retryDelay: attempt => {
                 const backoff = Math.min(1000 * 2 ** attempt, 30000);
                 return Math.round(backoff / 2 + Math.random() * (backoff / 2));
-            },
-        },
-    },
+            }
+        }
+    }
 });
-
 
 /**
  * Bridge between TanStack Query's `AbortSignal` and the `AbortController` that

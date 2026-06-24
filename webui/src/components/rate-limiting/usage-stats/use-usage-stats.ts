@@ -11,14 +11,14 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useContext, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { MainContext } from "../../../context";
-import type { UsageStats } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
-import { getDefaultStartDate } from "./usage-stats-utils";
-import { controllerFromSignal } from "../../../query-client";
-import { DateTime } from "luxon";
+import { useContext, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { MainContext } from '../../../context';
+import type { UsageStats } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
+import { getDefaultStartDate } from './usage-stats-utils';
+import { controllerFromSignal } from '../../../query-client';
+import { DateTime } from 'luxon';
 
 // Stable empty reference so consumers don't see a new array identity on every render.
 const NO_STATS: readonly UsageStats[] = [];
@@ -29,8 +29,9 @@ export const useUsageStats = (customerName: string | undefined) => {
 
     const { data, isFetching, error } = useQuery({
         queryKey: ['usage-stats', customerName ?? null, startDate.toMillis()],
-        queryFn: ({ signal }) => service.getUsageStats(controllerFromSignal(signal), customerName!, startDate.toJSDate()),
-        enabled: !!customerName,
+        queryFn: ({ signal }) =>
+            service.getUsageStats(controllerFromSignal(signal), customerName!, startDate.toJSDate()),
+        enabled: !!customerName
     });
 
     return {
@@ -39,6 +40,6 @@ export const useUsageStats = (customerName: string | undefined) => {
         loading: isFetching,
         error: error ? handleError(error as Error) : null,
         startDate,
-        setStartDate,
+        setStartDate
     };
 };

@@ -33,7 +33,7 @@ export const ScanCardExpandStrip: FC<ScanCardExpandStripProps> = ({
     expanded,
     onExpandClick,
     badges,
-    collapseComplete,
+    collapseComplete
 }) => {
     const theme = useTheme();
     const [isHovering, setIsHovering] = useState(false);
@@ -78,26 +78,30 @@ export const ScanCardExpandStrip: FC<ScanCardExpandStripProps> = ({
                 minHeight: 40,
                 backgroundColor: isHovering ? theme.palette.selected.hover : 'transparent',
                 transition: 'background-color 0.2s',
-                position: 'relative',
-            }}
-        >
+                position: 'relative'
+            }}>
             <Box sx={{ flex: 1 }} />
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    left: '50%',
+                    transform: 'translateX(-50%)'
+                }}>
                 <ExpandMoreIcon
                     sx={{
                         fontSize: 36,
                         color: 'secondary.main',
                         transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.3s',
+                        transition: 'transform 0.3s'
                     }}
                 />
             </Box>
 
             {!expanded && collapseComplete && (
-                <ScanCardExpandStripBadges
-                    badges={badges}
-                    containerWidth={containerWidth}
-                />
+                <ScanCardExpandStripBadges badges={badges} containerWidth={containerWidth} />
             )}
         </Box>
     );

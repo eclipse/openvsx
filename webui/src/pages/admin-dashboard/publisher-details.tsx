@@ -21,26 +21,30 @@ interface PublisherDetailsProps {
 }
 
 export const PublisherDetails: FunctionComponent<PublisherDetailsProps> = props => {
-    return <Box mt={2}>
-        <UserSettingsProfile user={props.publisherInfo.user} isAdmin={true} />
+    return (
         <Box mt={2}>
-            <Typography variant='h5'>Access Tokens</Typography>
-            <Typography variant='body1'>
-                {props.publisherInfo.activeAccessTokenNum} active access token{props.publisherInfo.activeAccessTokenNum !== 1 ? 's' : ''}.
-            </Typography>
-            {props.publisherInfo.activeAccessTokenNum > 0 && <PublisherRevokeTokensButton publisherInfo={props.publisherInfo}/>}
+            <UserSettingsProfile user={props.publisherInfo.user} isAdmin={true} />
+            <Box mt={2}>
+                <Typography variant='h5'>Access Tokens</Typography>
+                <Typography variant='body1'>
+                    {props.publisherInfo.activeAccessTokenNum} active access token
+                    {props.publisherInfo.activeAccessTokenNum !== 1 ? 's' : ''}.
+                </Typography>
+                {props.publisherInfo.activeAccessTokenNum > 0 && (
+                    <PublisherRevokeTokensButton publisherInfo={props.publisherInfo} />
+                )}
+            </Box>
+            <Box mt={2}>
+                <Typography variant='h5'>Extensions</Typography>
+                {props.publisherInfo.extensions.length > 0 ? (
+                    <UserExtensionList extensions={props.publisherInfo.extensions} loading={false} />
+                ) : (
+                    <Typography variant='body1'>This user has not published any extensions.</Typography>
+                )}
+            </Box>
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <PublisherRevokeDialog publisherInfo={props.publisherInfo} />
+            </Box>
         </Box>
-        <Box mt={2}>
-            <Typography variant='h5'>Extensions</Typography>
-            {
-                props.publisherInfo.extensions.length > 0 ?
-                <UserExtensionList extensions={props.publisherInfo.extensions} loading={false} />
-                :
-                <Typography  variant='body1'>This user has not published any extensions.</Typography>
-            }
-        </Box>
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <PublisherRevokeDialog publisherInfo={props.publisherInfo} />
-        </Box>
-    </Box>;
+    );
 };

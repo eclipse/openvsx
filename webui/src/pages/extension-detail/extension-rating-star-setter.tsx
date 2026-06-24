@@ -23,9 +23,11 @@ export const ExtensionRatingStarSetter: FunctionComponent<ExtensionRatingStarSet
     };
 
     const renderStarButton = (number: StarRating): ReactNode => {
-        return <IconButton key={'starbtn' + number} onClick={() => handleStarClick(number)}>
-            {number <= rating ? <StarIcon /> : <StarBorderIcon />}
-        </IconButton>;
+        return (
+            <IconButton key={'starbtn' + number} onClick={() => handleStarClick(number)}>
+                {number <= rating ? <StarIcon /> : <StarBorderIcon />}
+            </IconButton>
+        );
     };
 
     const renderStars = (): ReactNode[] => {
@@ -40,5 +42,5 @@ export const ExtensionRatingStarSetter: FunctionComponent<ExtensionRatingStarSet
 };
 
 export interface ExtensionRatingStarSetterProps {
-    handleRatingChange: (rating: number) => void
+    handleRatingChange: (rating: number) => void;
 }

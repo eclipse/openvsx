@@ -85,38 +85,43 @@ export const ExtensionAdmin: FunctionComponent = () => {
         await deleteExtension({
             namespace: extension.namespace,
             extension: extension.name,
-            targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform }))
+            targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({
+                version,
+                targetPlatform
+            }))
         });
         await refetch();
     };
 
-    return <SearchListContainer
-        searchContainer={[
-            <StyledInput
-                placeholder='Namespace'
-                error={namespaceFieldError}
-                key='nsi'
-                onChange={handleNamespaceChange}
-                value={namespaceValue}
-                hideIconButton={true}
-                autoFocus={true} />,
-            <ExtensionListSearchfield
-                error={extensionFieldError}
-                key='ei'
-                onSearchChanged={handleExtensionChange}
-                searchQuery={extensionValue}
-                onSearchSubmit={findExtension}
-                placeholder='Extension'
-                hideIconButton={true}
-                autoFocus={false} />,
-            <Button key='btn' variant='contained' onClick={findExtension}>Search Extension</Button>,
-            error ? <Typography color='error'>{error}</Typography> : ''
-        ]}
-        listContainer={
-            extension ?
-                <ExtensionVersionContainer onRemove={onRemove} extension={extension} />
-                : ''
-        }
-        loading={loading}
-    />;
+    return (
+        <SearchListContainer
+            searchContainer={[
+                <StyledInput
+                    placeholder='Namespace'
+                    error={namespaceFieldError}
+                    key='nsi'
+                    onChange={handleNamespaceChange}
+                    value={namespaceValue}
+                    hideIconButton={true}
+                    autoFocus={true}
+                />,
+                <ExtensionListSearchfield
+                    error={extensionFieldError}
+                    key='ei'
+                    onSearchChanged={handleExtensionChange}
+                    searchQuery={extensionValue}
+                    onSearchSubmit={findExtension}
+                    placeholder='Extension'
+                    hideIconButton={true}
+                    autoFocus={false}
+                />,
+                <Button key='btn' variant='contained' onClick={findExtension}>
+                    Search Extension
+                </Button>,
+                error ? <Typography color='error'>{error}</Typography> : ''
+            ]}
+            listContainer={extension ? <ExtensionVersionContainer onRemove={onRemove} extension={extension} /> : ''}
+            loading={loading}
+        />
+    );
 };

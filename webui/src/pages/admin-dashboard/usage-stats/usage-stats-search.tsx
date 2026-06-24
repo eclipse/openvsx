@@ -11,10 +11,10 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC } from "react";
-import { Paper, Autocomplete, InputBase, IconButton } from "@mui/material";
+import { FC } from 'react';
+import { Paper, Autocomplete, InputBase, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import type { Customer } from "../../../extension-registry-types";
+import type { Customer } from '../../../extension-registry-types';
 
 interface CustomerSearchProps {
     customers: Customer[];
@@ -37,11 +37,11 @@ export const CustomerSearch: FC<CustomerSearchProps> = ({
         <Autocomplete
             key='customer-search'
             options={customers}
-            getOptionLabel={(option) => option.name}
+            getOptionLabel={option => option.name}
             value={selectedCustomer}
             onChange={onCustomerChange}
             loading={loading}
-            renderInput={(params) => {
+            renderInput={params => {
                 const { ref, color, size, ...inputProps } = params.inputProps;
                 return (
                     <Paper
@@ -51,9 +51,8 @@ export const CustomerSearch: FC<CustomerSearchProps> = ({
                             flex: 2,
                             display: 'flex',
                             mr: { xs: 0, sm: 0, md: 1, lg: 1, xl: 1 },
-                            mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 },
-                        }}
-                    >
+                            mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 0 }
+                        }}>
                         <InputBase
                             inputRef={ref}
                             {...inputProps}
@@ -69,10 +68,9 @@ export const CustomerSearch: FC<CustomerSearchProps> = ({
                                 padding: 1,
                                 transition: 'all 0s',
                                 '&:hover': {
-                                    filter: 'invert(100%)',
+                                    filter: 'invert(100%)'
                                 }
-                            }}
-                        >
+                            }}>
                             <SearchIcon sx={{ color: searchIconColor }} />
                         </IconButton>
                     </Paper>

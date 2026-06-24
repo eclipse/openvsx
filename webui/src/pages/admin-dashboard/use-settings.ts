@@ -26,7 +26,7 @@ export const useSettings = () => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: settingsQueryKey,
-        queryFn: ({ signal }) => service.admin.getSettings(controllerFromSignal(signal)),
+        queryFn: ({ signal }) => service.admin.getSettings(controllerFromSignal(signal))
     });
 };
 
@@ -40,8 +40,8 @@ export const useUpdateSettings = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (settings: Settings) => service.admin.updateSettings(settings),
-        onSuccess: (updated) => {
+        onSuccess: updated => {
             queryClient.setQueryData(settingsQueryKey, updated);
-        },
+        }
     });
 };

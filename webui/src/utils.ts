@@ -10,7 +10,7 @@
 
 import { ErrorResponse } from './server-request';
 
-export function addQuery(url: string, queries: { key: string, value: string | number | undefined }[]): string {
+export function addQuery(url: string, queries: { key: string; value: string | number | undefined }[]): string {
     const nonEmpty = queries.filter(q => q.value !== undefined);
     if (nonEmpty.length === 0) {
         return url;
@@ -18,7 +18,10 @@ export function addQuery(url: string, queries: { key: string, value: string | nu
     return url + '?' + nonEmpty.map<string>(q => q.key + '=' + encodeURIComponent(q.value!)).join('&');
 }
 
-export function createAbsoluteURL(arr: string[], queries?: { key: string, value: string | number | undefined }[]): string {
+export function createAbsoluteURL(
+    arr: string[],
+    queries?: { key: string; value: string | number | undefined }[]
+): string {
     const url = arr.length === 0 ? '' : arr.reduce((prev, curr) => prev + '/' + curr);
     if (queries && queries.length > 0) {
         return addQuery(url, queries);
@@ -27,7 +30,7 @@ export function createAbsoluteURL(arr: string[], queries?: { key: string, value:
     }
 }
 
-export function createRoute(arr: string[], queries?: { key: string, value: string | number }[]): string {
+export function createRoute(arr: string[], queries?: { key: string; value: string | number }[]): string {
     const url = createAbsoluteURL(arr, queries);
     return url.startsWith('/') ? url : '/' + url;
 }
@@ -68,7 +71,7 @@ export function toRelativeTime(timestamp?: string, isFutureTime: boolean = false
     if (isFutureTime) {
         const remaining = -elapsed;
         if (remaining < 0) {
-            return "now";
+            return 'now';
         } else if (remaining < msPerMinute) {
             const value = Math.round(remaining / msPerSecond);
             return `in ${value} second${value !== 1 ? 's' : ''}`;
@@ -119,8 +122,7 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
         console.error(err);
 
         if (err instanceof Error) {
-            if (err.message === 'Failed to fetch'
-                || err.message === 'Unexpected token < in JSON at position 0') {
+            if (err.message === 'Failed to fetch' || err.message === 'Unexpected token < in JSON at position 0') {
                 return 'Something went wrong while fetching data. Please contact the site administrators.';
             }
             return `An unexpected error occurred: ${err.message}`;

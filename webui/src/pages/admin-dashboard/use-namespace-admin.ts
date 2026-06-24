@@ -25,7 +25,7 @@ interface ChangeNamespaceRequest {
 }
 
 export const namespaceAdminKeys = {
-    detail: (name: string) => ['admin', 'namespace', name] as const,
+    detail: (name: string) => ['admin', 'namespace', name] as const
 };
 
 /**
@@ -46,7 +46,7 @@ export const useAdminNamespace = (name: string) => {
         },
         enabled: !!name,
         retry: false,
-        staleTime: 0,
+        staleTime: 0
     });
 };
 
@@ -60,7 +60,7 @@ export const useCreateNamespace = () => {
         mutationFn: (name: string) => service.admin.createNamespace({ name }),
         onSuccess: (_result, name) => {
             queryClient.invalidateQueries({ queryKey: namespaceAdminKeys.detail(name) });
-        },
+        }
     });
 };
 
@@ -77,7 +77,7 @@ export const useChangeNamespace = () => {
                 throw result;
             }
             return result;
-        },
+        }
     });
 };
 
@@ -94,7 +94,7 @@ export const useDeleteNamespace = () => {
                 throw result;
             }
             return result;
-        },
+        }
     });
 };
 

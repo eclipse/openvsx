@@ -36,7 +36,9 @@ const BreadcrumbsNav: FunctionComponent<{ routeNames: Record<string, string> }> 
                 const isLast = index === segments.length - 1;
 
                 return isLast ? (
-                    <Typography color='text.primary' key={to}>{label}</Typography>
+                    <Typography color='text.primary' key={to}>
+                        {label}
+                    </Typography>
                 ) : (
                     <Link component={RouterLink} to={to} underline='hover' color='inherit' key={to}>
                         {label}

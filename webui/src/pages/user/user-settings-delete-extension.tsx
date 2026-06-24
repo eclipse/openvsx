@@ -37,7 +37,11 @@ export const UserSettingsDeleteExtension: FunctionComponent<UserSettingsDeleteEx
     const findExtension = async () => {
         try {
             setLoading(true);
-            const extensionDetail = await service.getExtension(abortController.current, props.namespace, props.extension);
+            const extensionDetail = await service.getExtension(
+                abortController.current,
+                props.namespace,
+                props.extension
+            );
             if (isError(extensionDetail)) {
                 throw extensionDetail;
             }
@@ -59,18 +63,21 @@ export const UserSettingsDeleteExtension: FunctionComponent<UserSettingsDeleteEx
             return;
         }
 
-        await service.deleteExtensions(abortController.current, { namespace: extension.namespace, extension: extension.name, targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({ version, targetPlatform })) });
+        await service.deleteExtensions(abortController.current, {
+            namespace: extension.namespace,
+            extension: extension.name,
+            targetPlatformVersions: targetPlatformVersions?.map(({ version, targetPlatform }) => ({
+                version,
+                targetPlatform
+            }))
+        });
         await findExtension();
     };
 
     return (
         <Box>
             <DelayedLoadIndicator loading={loading} />
-            {
-                extension ?
-                    <ExtensionVersionContainer onRemove={onRemove} extension={extension} />
-                    : ''
-            }
+            {extension ? <ExtensionVersionContainer onRemove={onRemove} extension={extension} /> : ''}
         </Box>
     );
 };

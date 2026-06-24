@@ -11,18 +11,18 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useMemo } from "react";
-import { Box, Alert } from "@mui/material";
-import { useParams, useNavigate } from "react-router-dom";
-import { MainContext } from "../../../context";
-import type { Customer } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
-import { AdminDashboardRoutes } from "../admin-dashboard-routes";
-import { SearchListContainer } from "../search-list-container";
-import { CustomerSearch } from "./usage-stats-search";
-import { UsageStatsChart } from "../../../components/rate-limiting/usage-stats/usage-stats-chart";
-import { useAdminUsageStats } from "./use-usage-stats";
-import { useCustomers } from "../customers/use-customers";
+import { FC, useContext, useMemo } from 'react';
+import { Box, Alert } from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MainContext } from '../../../context';
+import type { Customer } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
+import { AdminDashboardRoutes } from '../admin-dashboard-routes';
+import { SearchListContainer } from '../search-list-container';
+import { CustomerSearch } from './usage-stats-search';
+import { UsageStatsChart } from '../../../components/rate-limiting/usage-stats/usage-stats-chart';
+import { useAdminUsageStats } from './use-usage-stats';
+import { useCustomers } from '../customers/use-customers';
 
 export const UsageStatsView: FC = () => {
     const { customer } = useParams<{ customer: string }>();
@@ -35,10 +35,7 @@ export const UsageStatsView: FC = () => {
 
     const { usageStats, dailyP95, loading, error: statsError, startDate, setStartDate } = useAdminUsageStats(customer);
 
-    const selectedCustomer = useMemo(
-        () => customers.find(c => c.name === customer) || null,
-        [customers, customer]
-    );
+    const selectedCustomer = useMemo(() => customers.find(c => c.name === customer) || null, [customers, customer]);
 
     const handleCustomerChange = (_: unknown, value: Customer | null) => {
         if (value) {
@@ -70,13 +67,14 @@ export const UsageStatsView: FC = () => {
                 loading={loading || customersLoading}
             />
             {customer && (
-              <UsageStatsChart
-                usageStats={usageStats}
-                dailyP95={dailyP95}
-                customer={selectedCustomer}
-                startDate={startDate}
-                onStartDateChange={setStartDate}
-            />)}
+                <UsageStatsChart
+                    usageStats={usageStats}
+                    dailyP95={dailyP95}
+                    customer={selectedCustomer}
+                    startDate={startDate}
+                    onStartDateChange={setStartDate}
+                />
+            )}
         </Box>
     );
 };

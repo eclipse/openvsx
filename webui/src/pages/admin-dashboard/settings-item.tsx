@@ -23,14 +23,7 @@ export interface SettingsItemProps {
     onChange: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void;
 }
 
-export const SettingsItem: FC<SettingsItemProps> = ({
-                                                        title,
-                                                        description,
-                                                        checked,
-                                                        disabled,
-                                                        loading,
-                                                        onChange,
-                                                    }) => {
+export const SettingsItem: FC<SettingsItemProps> = ({ title, description, checked, disabled, loading, onChange }) => {
     return (
         <Box
             sx={{
@@ -39,9 +32,8 @@ export const SettingsItem: FC<SettingsItemProps> = ({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: 3,
-                flexWrap: { xs: 'wrap', sm: 'nowrap' },
-            }}
-        >
+                flexWrap: { xs: 'wrap', sm: 'nowrap' }
+            }}>
             <Box sx={{ flex: { xs: '1 1 0', sm: '1 1 320px' } }}>
                 <Typography variant='subtitle1' gutterBottom>
                     {title}
@@ -51,20 +43,28 @@ export const SettingsItem: FC<SettingsItemProps> = ({
                 </Typography>
             </Box>
 
-            {(loading) ? (
-                <Skeleton variant='rounded' width={60} height={24}/>
+            {loading ? (
+                <Skeleton variant='rounded' width={60} height={24} />
             ) : (
                 <FormGroup>
-                    <FormControlLabel control={<Switch checked={checked}
-                                                       onChange={onChange}
-                                                       disabled={disabled}
-                                                       inputProps={{ 'aria-label': `Toggle ${title}` }} />}
-                                      label={checked ? "Enabled" : "Disabled"} />
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={checked}
+                                onChange={onChange}
+                                disabled={disabled}
+                                inputProps={{ 'aria-label': `Toggle ${title}` }}
+                            />
+                        }
+                        label={checked ? 'Enabled' : 'Disabled'}
+                    />
                 </FormGroup>
             )}
 
-            <Typography variant='body2' color='text.secondary'
-                        sx={{ display: { xs: 'block', sm: 'none' }, flexBasis: '100%' }}>
+            <Typography
+                variant='body2'
+                color='text.secondary'
+                sx={{ display: { xs: 'block', sm: 'none' }, flexBasis: '100%' }}>
                 {description}
             </Typography>
         </Box>

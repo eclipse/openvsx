@@ -25,13 +25,12 @@ import { LoginComponent } from '../../default/login';
 import { UserSettingsDeleteExtension } from './user-settings-delete-extension';
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
-
     const { pageSettings, user, loginProviders } = useContext(MainContext);
     const { tab, namespace, extension } = useParams();
 
     const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
         if (tab == null && namespace != null && extension != null) {
-            return <UserSettingsDeleteExtension namespace={namespace} extension={extension}/>;
+            return <UserSettingsDeleteExtension namespace={namespace} extension={extension} />;
         }
 
         switch (tab) {
@@ -56,51 +55,64 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
         }
 
         if (!user) {
-            return loginProviders ? <Container>
-                <Box mt={6}>
-                    <Typography variant='h4'>Not Logged In</Typography>
-                    <Box mt={2}>
-                        <Typography variant='body1'>
-                            Please <LoginComponent loginProviders={loginProviders} renderButton={(href, onClick) => {
-return (<Link color='secondary' href={href} onClick={onClick}>log in</Link>);
-}}/> to
-                            access your account settings.
-                        </Typography>
+            return loginProviders ? (
+                <Container>
+                    <Box mt={6}>
+                        <Typography variant='h4'>Not Logged In</Typography>
+                        <Box mt={2}>
+                            <Typography variant='body1'>
+                                Please{' '}
+                                <LoginComponent
+                                    loginProviders={loginProviders}
+                                    renderButton={(href, onClick) => {
+                                        return (
+                                            <Link color='secondary' href={href} onClick={onClick}>
+                                                log in
+                                            </Link>
+                                        );
+                                    }}
+                                />{' '}
+                                to access your account settings.
+                            </Typography>
+                        </Box>
                     </Box>
-                </Box>
-            </Container> : null;
+                </Container>
+            ) : null;
         }
 
-        return <Container maxWidth={'xl'}>
-            <Box mt={6}>
-                <Grid container sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
-                    <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
-                        <UserSettingTabs />
-                    </Grid>
+        return (
+            <Container maxWidth={'xl'}>
+                <Box mt={6}>
                     <Grid
-                        item
-                        sx={{
-                            pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
-                            pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
-                            flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
-                            width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
-                        }}
-                    >
-                        <Box>
-                            {renderTab(user, tab, namespace, extension)}
-                        </Box>
+                        container
+                        sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
+                        <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
+                            <UserSettingTabs />
+                        </Grid>
+                        <Grid
+                            item
+                            sx={{
+                                pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
+                                pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
+                                flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
+                                width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
+                            }}>
+                            <Box>{renderTab(user, tab, namespace, extension)}</Box>
+                        </Grid>
                     </Grid>
-                </Grid>
-            </Box>
-        </Container>;
+                </Box>
+            </Container>
+        );
     };
 
-    return <>
-        <Helmet>
-            <title>Settings – { pageSettings.pageTitle }</title>
-        </Helmet>
-        { renderContent() }
-    </>;
+    return (
+        <>
+            <Helmet>
+                <title>Settings – {pageSettings.pageTitle}</title>
+            </Helmet>
+            {renderContent()}
+        </>
+    );
 };
 
 export interface UserSettingsProps {

@@ -19,7 +19,7 @@ import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { usePublisherInfo } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const UpdateContext = createContext({ handleUpdate: () => { } });
+export const UpdateContext = createContext({ handleUpdate: () => {} });
 
 export const PublisherAdmin: FunctionComponent = () => {
     const { publisher: publisherParam } = useParams<{ publisher: string }>();
@@ -52,22 +52,34 @@ export const PublisherAdmin: FunctionComponent = () => {
 
     let listContainer: ReactNode = '';
     if (publisher && pageSettings && user) {
-        listContainer = <UpdateContext.Provider value={{ handleUpdate }}>
-            <PublisherDetails publisherInfo={publisher} />
-        </UpdateContext.Provider>;
+        listContainer = (
+            <UpdateContext.Provider value={{ handleUpdate }}>
+                <PublisherDetails publisherInfo={publisher} />
+            </UpdateContext.Provider>
+        );
     } else if (notFound) {
-        listContainer = <Box display='flex' flexDirection='column'>
-            <Typography variant='body1' color='error'>
-                Publisher {notFound} not found.
-            </Typography>
-        </Box>;
+        listContainer = (
+            <Box display='flex' flexDirection='column'>
+                <Typography variant='body1' color='error'>
+                    Publisher {notFound} not found.
+                </Typography>
+            </Box>
+        );
     }
 
-    return <SearchListContainer
-        searchContainer={
-            [<StyledInput placeholder='Publisher Name' key='pi' value={publisherParam || ''} onSubmit={handleSubmit} onChange={() => {}} />]
-        }
-        listContainer={listContainer}
-        loading={loading}
-    />;
+    return (
+        <SearchListContainer
+            searchContainer={[
+                <StyledInput
+                    placeholder='Publisher Name'
+                    key='pi'
+                    value={publisherParam || ''}
+                    onSubmit={handleSubmit}
+                    onChange={() => {}}
+                />
+            ]}
+            listContainer={listContainer}
+            loading={loading}
+        />
+    );
 };

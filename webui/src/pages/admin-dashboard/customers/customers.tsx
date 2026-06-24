@@ -12,30 +12,20 @@
  *****************************************************************************/
 
 import { FC, useState, useEffect, useMemo } from 'react';
-import {
-    Box,
-    Button,
-    Paper,
-    Typography,
-    CircularProgress,
-    Alert,
-    IconButton,
-    Stack,
-    Chip
-} from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import type { Customer } from "../../../extension-registry-types";
-import { CustomerFormDialog } from "./customer-form-dialog";
-import { DeleteCustomerDialog } from "./delete-customer-dialog";
-import { createRoute, handleError } from "../../../utils";
-import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from "../components";
-import { AdminDashboardRoutes } from "../admin-dashboard-routes";
-import { Link } from "react-router-dom";
-import { useCreateCustomer, useCustomers, useDeleteCustomer, useUpdateCustomer } from "./use-customers";
+import { Box, Button, Paper, Typography, CircularProgress, Alert, IconButton, Stack, Chip } from '@mui/material';
+import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import type { Customer } from '../../../extension-registry-types';
+import { CustomerFormDialog } from './customer-form-dialog';
+import { DeleteCustomerDialog } from './delete-customer-dialog';
+import { createRoute, handleError } from '../../../utils';
+import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from '../components';
+import { AdminDashboardRoutes } from '../admin-dashboard-routes';
+import { Link } from 'react-router-dom';
+import { useCreateCustomer, useCustomers, useDeleteCustomer, useUpdateCustomer } from './use-customers';
 
 export const Customers: FC = () => {
     const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -98,118 +88,100 @@ export const Customers: FC = () => {
         setSelectedCustomer(undefined);
     };
 
-  // Extract unique values for filter dropdowns
-  const tierOptions = useMemo(() =>
-    [...new Set(customers.map(c => c.tier?.name).filter(Boolean))] as string[],
-    [customers]
-  );
-  const stateOptions = useMemo(() =>
-    [...new Set(customers.map(c => c.state).filter(Boolean))],
-    [customers]
-  );
-  const cidrBlockOptions = useMemo(() => {
-    const allCidrs = customers.reduce<string[]>((acc, c) => acc.concat(c.cidrBlocks), []);
-    return [...new Set(allCidrs)];
-  }, [customers]);
+    // Extract unique values for filter dropdowns
+    const tierOptions = useMemo(
+        () => [...new Set(customers.map(c => c.tier?.name).filter(Boolean))] as string[],
+        [customers]
+    );
+    const stateOptions = useMemo(() => [...new Set(customers.map(c => c.state).filter(Boolean))], [customers]);
+    const cidrBlockOptions = useMemo(() => {
+        const allCidrs = customers.reduce<string[]>((acc, c) => acc.concat(c.cidrBlocks), []);
+        return [...new Set(allCidrs)];
+    }, [customers]);
 
-  const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
-    {
-      field: 'tier',
-      headerName: 'Tier',
-      flex: 1,
-      minWidth: 120,
-      valueGetter: (value: Customer['tier']) => value?.name || '',
-      filterOperators: createMultiSelectFilterOperators(tierOptions)
-    },
-    {
-      field: 'state',
-      headerName: 'State',
-      flex: 1,
-      minWidth: 100,
-      filterOperators: createMultiSelectFilterOperators(stateOptions)
-    },
-    {
-      field: 'cidrBlocks',
-      headerName: 'CIDR Blocks',
-      flex: 2,
-      minWidth: 200,
-      sortable: false,
-      filterOperators: createArrayContainsFilterOperators(cidrBlockOptions),
-      renderCell: (params: GridRenderCellParams<Customer>) => {
-        const cidrBlocks = params.row.cidrBlocks;
-        const maxVisible = 2;
-        const visibleCidrs = cidrBlocks.slice(0, maxVisible);
-        const remainingCount = cidrBlocks.length - maxVisible;
+    const columns: GridColDef[] = [
+        { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+        {
+            field: 'tier',
+            headerName: 'Tier',
+            flex: 1,
+            minWidth: 120,
+            valueGetter: (value: Customer['tier']) => value?.name || '',
+            filterOperators: createMultiSelectFilterOperators(tierOptions)
+        },
+        {
+            field: 'state',
+            headerName: 'State',
+            flex: 1,
+            minWidth: 100,
+            filterOperators: createMultiSelectFilterOperators(stateOptions)
+        },
+        {
+            field: 'cidrBlocks',
+            headerName: 'CIDR Blocks',
+            flex: 2,
+            minWidth: 200,
+            sortable: false,
+            filterOperators: createArrayContainsFilterOperators(cidrBlockOptions),
+            renderCell: (params: GridRenderCellParams<Customer>) => {
+                const cidrBlocks = params.row.cidrBlocks;
+                const maxVisible = 2;
+                const visibleCidrs = cidrBlocks.slice(0, maxVisible);
+                const remainingCount = cidrBlocks.length - maxVisible;
 
-        return (
-          <Stack direction='row' spacing={0.5} alignItems='center' height='100%' sx={{ py: 0.5 }}>
-            {visibleCidrs.map((cidr: string) => (
-              <Chip key={cidr} label={cidr} size='small' variant='filled' />
-            ))}
-            {remainingCount > 0 && (
-              <Chip
-                label={`+${remainingCount}`}
-                size='small'
-                variant='outlined'
-                title={cidrBlocks.slice(maxVisible).join(', ')}
-              />
-            )}
-          </Stack>
-        );
-      }
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 160,
-      sortable: false,
-      filterable: false,
-      renderCell: (params: GridRenderCellParams<Customer>) => (
-        <>
-          <IconButton
-            size='small'
-            component={Link}
-            to={createRoute([AdminDashboardRoutes.CUSTOMERS, params.row.name])}
-            title='View Details'
-          >
-            <VisibilityIcon />
-          </IconButton>
-          <IconButton
-            size='small'
-            onClick={() => handleEditClick(params.row)}
-            title='Edit'
-          >
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            size='small'
-            onClick={() => handleDeleteClick(params.row)}
-            title='Delete'
-            color='error'
-          >
-            <DeleteIcon />
-          </IconButton>
-        </>
-      )
-    }
-  ];
+                return (
+                    <Stack direction='row' spacing={0.5} alignItems='center' height='100%' sx={{ py: 0.5 }}>
+                        {visibleCidrs.map((cidr: string) => (
+                            <Chip key={cidr} label={cidr} size='small' variant='filled' />
+                        ))}
+                        {remainingCount > 0 && (
+                            <Chip
+                                label={`+${remainingCount}`}
+                                size='small'
+                                variant='outlined'
+                                title={cidrBlocks.slice(maxVisible).join(', ')}
+                            />
+                        )}
+                    </Stack>
+                );
+            }
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 160,
+            sortable: false,
+            filterable: false,
+            renderCell: (params: GridRenderCellParams<Customer>) => (
+                <>
+                    <IconButton
+                        size='small'
+                        component={Link}
+                        to={createRoute([AdminDashboardRoutes.CUSTOMERS, params.row.name])}
+                        title='View Details'>
+                        <VisibilityIcon />
+                    </IconButton>
+                    <IconButton size='small' onClick={() => handleEditClick(params.row)} title='Edit'>
+                        <EditIcon />
+                    </IconButton>
+                    <IconButton size='small' onClick={() => handleDeleteClick(params.row)} title='Delete' color='error'>
+                        <DeleteIcon />
+                    </IconButton>
+                </>
+            )
+        }
+    ];
 
-  return (
-    <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant='h4' component='h1'>
-          Customer Management
-        </Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleCreateClick}
-          disabled={loading}
-        >
-          Create Customer
-        </Button>
-      </Box>
+    return (
+        <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant='h4' component='h1'>
+                    Customer Management
+                </Typography>
+                <Button variant='contained' startIcon={<AddIcon />} onClick={handleCreateClick} disabled={loading}>
+                    Create Customer
+                </Button>
+            </Box>
 
             {error && (
                 <Alert severity='error' sx={{ mb: 2 }} onClose={() => setErrorDismissed(true)}>
@@ -218,36 +190,38 @@ export const Customers: FC = () => {
             )}
 
             {loading && (
-                <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-                    <CircularProgress/>
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress />
                 </Box>
             )}
 
-      { !loading && customers.length === 0 && (
-        <Paper elevation={0} sx={{ p: 3, textAlign: "center" }}>
-          <Typography color='textSecondary' gutterBottom>
-            No customers found. Create one to get started.
-          </Typography>
-        </Paper>
-      )}
+            {!loading && customers.length === 0 && (
+                <Paper elevation={0} sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography color='textSecondary' gutterBottom>
+                        No customers found. Create one to get started.
+                    </Typography>
+                </Paper>
+            )}
 
-      { !loading && customers.length > 0 && (
-        <Paper elevation={0} sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
-          <DataGrid
-            rows={customers}
-            columns={columns}
-            getRowId={(row) => row.name}
-            pageSizeOptions={[20, 35, 50]}
-            initialState={{
-              pagination: { paginationModel: { pageSize: 20 } },
-            }}
-            disableRowSelectionOnClick
-            sx={{
-              flex: 1,
-            }}
-          />
-        </Paper>
-      )}
+            {!loading && customers.length > 0 && (
+                <Paper
+                    elevation={0}
+                    sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <DataGrid
+                        rows={customers}
+                        columns={columns}
+                        getRowId={row => row.name}
+                        pageSizeOptions={[20, 35, 50]}
+                        initialState={{
+                            pagination: { paginationModel: { pageSize: 20 } }
+                        }}
+                        disableRowSelectionOnClick
+                        sx={{
+                            flex: 1
+                        }}
+                    />
+                </Paper>
+            )}
 
             <CustomerFormDialog
                 open={formDialogOpen}

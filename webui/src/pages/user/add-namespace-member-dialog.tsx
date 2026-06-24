@@ -38,7 +38,12 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
             }
             props.setLoadingState(true);
             const endpoint = props.namespace.roleUrl;
-            const result = await service.setNamespaceMember(abortController.current, endpoint, user, config.defaultMemberRole ?? 'contributor');
+            const result = await service.setNamespaceMember(
+                abortController.current,
+                endpoint,
+                user,
+                config.defaultMemberRole ?? 'contributor'
+            );
             if (isError(result)) {
                 throw result;
             }

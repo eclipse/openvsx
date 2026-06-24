@@ -25,7 +25,7 @@ import {
     DialogTitle,
     Paper,
     Stack,
-    Typography,
+    Typography
 } from '@mui/material';
 import type { Settings } from '../../extension-registry-types';
 import { handleError } from '../../utils';
@@ -44,8 +44,8 @@ const NOTIFICATION_TIMEOUT = 2000;
 const SETTINGS: Record<keyof Settings, { title: string; description: string }> = {
     readOnly: {
         title: 'Read-only mode',
-        description: 'Blocks write operations while keeping browsing, search, and downloads available.',
-    },
+        description: 'Blocks write operations while keeping browsing, search, and downloads available.'
+    }
 };
 
 export const RuntimeSettingsPage: FC = () => {
@@ -71,13 +71,19 @@ export const RuntimeSettingsPage: FC = () => {
         setErrorDismissed(false);
     }, [loadError]);
 
-    useEffect(() => () => {
-        notifications.forEach(n => clearTimeout(n.timeout));
-    }, []);
+    useEffect(
+        () => () => {
+            notifications.forEach(n => clearTimeout(n.timeout));
+        },
+        []
+    );
 
-    useEffect(() => () => {
-        if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
-    }, []);
+    useEffect(
+        () => () => {
+            if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
+        },
+        []
+    );
 
     const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
@@ -97,12 +103,17 @@ export const RuntimeSettingsPage: FC = () => {
         });
     };
 
-    const handleFlagChange = useCallback((key: keyof Settings) => (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
-        setDraftSettings(current => current ? { ...current, [key]: checked } : current);
-        setSaveSuccess(false);
-    }, []);
+    const handleFlagChange = useCallback(
+        (key: keyof Settings) => (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
+            setDraftSettings(current => (current ? { ...current, [key]: checked } : current));
+            setSaveSuccess(false);
+        },
+        []
+    );
 
-    const hasChanges = draftSettings !== null && settings != null &&
+    const hasChanges =
+        draftSettings !== null &&
+        settings != null &&
         (Object.keys(SETTINGS) as (keyof Settings)[]).some(k => draftSettings[k] !== settings[k]);
 
     const handleSaveClick = () => setConfirmOpen(true);
@@ -118,11 +129,11 @@ export const RuntimeSettingsPage: FC = () => {
                 if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
                 saveSuccessTimer.current = setTimeout(() => setSaveSuccess(false), 2000);
             },
-            onError: (err) => {
+            onError: err => {
                 addNotification({
-                    message: `Failed to save runtime settings. ${handleError(err as Error)}`,
+                    message: `Failed to save runtime settings. ${handleError(err as Error)}`
                 });
-            },
+            }
         });
     }, [draftSettings, saveSettings, addNotification]);
 
@@ -144,18 +155,23 @@ export const RuntimeSettingsPage: FC = () => {
                     </Alert>
                 )}
 
-                <Paper variant='outlined' elevation={0} sx={{ overflow: 'hidden', borderColor: hasChanges ? 'red' : 'grey' }}>
-                    {(Object.entries(SETTINGS) as [keyof Settings, { title: string; description: string }][]).map(([key, flag]) => (
-                        <SettingsItem
-                            key={key}
-                            title={flag.title}
-                            description={flag.description}
-                            checked={draftSettings?.[key] ?? false}
-                            loading={loading || !draftSettings}
-                            disabled={loading || saving || !draftSettings}
-                            onChange={handleFlagChange(key)}
-                        />
-                    ))}
+                <Paper
+                    variant='outlined'
+                    elevation={0}
+                    sx={{ overflow: 'hidden', borderColor: hasChanges ? 'red' : 'grey' }}>
+                    {(Object.entries(SETTINGS) as [keyof Settings, { title: string; description: string }][]).map(
+                        ([key, flag]) => (
+                            <SettingsItem
+                                key={key}
+                                title={flag.title}
+                                description={flag.description}
+                                checked={draftSettings?.[key] ?? false}
+                                loading={loading || !draftSettings}
+                                disabled={loading || saving || !draftSettings}
+                                onChange={handleFlagChange(key)}
+                            />
+                        )
+                    )}
                 </Paper>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -170,22 +186,20 @@ export const RuntimeSettingsPage: FC = () => {
                             ...(saveSuccess && {
                                 backgroundColor: 'success.main',
                                 '&:hover': { backgroundColor: 'success.dark' },
-                                '&.Mui-disabled': { backgroundColor: 'success.main', color: 'white', opacity: 0.9 },
-                            }),
-                        }}
-                    >
+                                '&.Mui-disabled': { backgroundColor: 'success.main', color: 'white', opacity: 0.9 }
+                            })
+                        }}>
                         {saveSuccess ? 'Saved' : 'Save'}
                     </Button>
                 </Box>
-
             </Box>
 
             <Dialog open={confirmOpen} onClose={handleConfirmClose} maxWidth='xs' fullWidth>
                 <DialogTitle>Apply settings?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        These changes will be applied <strong>immediately</strong> and will affect all users of the registry.
-                        Make sure you understand the impact before proceeding.
+                        These changes will be applied <strong>immediately</strong> and will affect all users of the
+                        registry. Make sure you understand the impact before proceeding.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
@@ -204,19 +218,17 @@ export const RuntimeSettingsPage: FC = () => {
                         right: 24,
                         bottom: 24,
                         zIndex: theme => theme.zIndex.snackbar,
-                        width: 'min(420px, calc(100vw - 32px))',
-                    }}
-                >
+                        width: 'min(420px, calc(100vw - 32px))'
+                    }}>
                     {notifications.map(notification => (
-                    <Alert
-                        key={notification.id}
-                        onClose={() => handleNotificationClose(notification.id)}
-                        severity={notification.severity}
-                        variant='filled'
-                        sx={{ width: '100%' }}
-                    >
-                        {notification.message}
-                    </Alert>
+                        <Alert
+                            key={notification.id}
+                            onClose={() => handleNotificationClose(notification.id)}
+                            severity={notification.severity}
+                            variant='filled'
+                            sx={{ width: '100%' }}>
+                            {notification.message}
+                        </Alert>
                     ))}
                 </Stack>
             )}

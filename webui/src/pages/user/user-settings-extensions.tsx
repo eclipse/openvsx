@@ -18,7 +18,6 @@ import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
 
 export const UserSettingsExtensions: FunctionComponent = () => {
-
     const [loading, setLoading] = useState(true);
     const [extensions, setExtensions] = useState(Array<Extension>());
     const { user, service, handleError } = useContext(MainContext);
@@ -55,37 +54,39 @@ export const UserSettingsExtensions: FunctionComponent = () => {
         }
     };
 
-    return <>
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
-                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-            }}
-        >
-            <Box>
-                <Typography variant='h5' gutterBottom>Extensions</Typography>
-            </Box>
+    return (
+        <>
             <Box
                 sx={{
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-                }}
-            >
-                <Box mr={1} mb={1}>
-                    <PublishExtensionDialog extensionPublished={handleExtensionPublished}/>
+                    justifyContent: 'space-between',
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                    alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                }}>
+                <Box>
+                    <Typography variant='h5' gutterBottom>
+                        Extensions
+                    </Typography>
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                    }}>
+                    <Box mr={1} mb={1}>
+                        <PublishExtensionDialog extensionPublished={handleExtensionPublished} />
+                    </Box>
                 </Box>
             </Box>
-        </Box>
-        <Box mt={2}>
-            <DelayedLoadIndicator loading={loading} />
-            {
-                extensions && extensions.length > 0
-                ? <UserExtensionList extensions={extensions} loading={loading} canDelete />
-                : <Typography variant='body1'>You haven&apos;t published any extensions yet.</Typography>
-            }
-        </Box>
-    </>;
+            <Box mt={2}>
+                <DelayedLoadIndicator loading={loading} />
+                {extensions && extensions.length > 0 ? (
+                    <UserExtensionList extensions={extensions} loading={loading} canDelete />
+                ) : (
+                    <Typography variant='body1'>You haven&apos;t published any extensions yet.</Typography>
+                )}
+            </Box>
+        </>
+    );
 };

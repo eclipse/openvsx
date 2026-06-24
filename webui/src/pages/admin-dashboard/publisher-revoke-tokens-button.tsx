@@ -31,14 +31,13 @@ export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeToken
         }
     };
 
-    return <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <ButtonWithProgress
-            autoFocus
-            working={working}
-            onClick={doRevoke} >
-            Revoke Access Tokens
-        </ButtonWithProgress>
-    </Box>;
+    return (
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <ButtonWithProgress autoFocus working={working} onClick={doRevoke}>
+                Revoke Access Tokens
+            </ButtonWithProgress>
+        </Box>
+    );
 };
 
 export interface PublisherRevokeTokensButtonProps {

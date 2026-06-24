@@ -9,27 +9,64 @@
  ********************************************************************************/
 
 import {
-    Extension, UserData, ExtensionCategory, ExtensionReviewList, PersonalAccessToken, SearchResult, NewReview,
-    SuccessResult, ErrorResult, CsrfTokenJson, isError, Namespace, NamespaceDetails, MembershipRole, SortBy,
-    SortOrder, UrlString, NamespaceMembershipList, PublisherInfo, SearchEntry, RegistryVersion,
-    LoginProviders, ScanResultJson, ScanCounts, ScanResultsResponse, ScanFilterOptions,
-    FilesResponse, FileDecisionCountsJson, ScanDecisionRequest, ScanDecisionResponse,
-    FileDecisionRequest, FileDecisionResponse, FileDecisionDeleteRequest, FileDecisionDeleteResponse,
-    Tier, TierList, Customer, CustomerList, UsageStatsList, LogPageableList, CustomerMembershipList, RateLimitToken,
-    Settings,
+    Extension,
+    UserData,
+    ExtensionCategory,
+    ExtensionReviewList,
+    PersonalAccessToken,
+    SearchResult,
+    NewReview,
+    SuccessResult,
+    ErrorResult,
+    CsrfTokenJson,
+    isError,
+    Namespace,
+    NamespaceDetails,
+    MembershipRole,
+    SortBy,
+    SortOrder,
+    UrlString,
+    NamespaceMembershipList,
+    PublisherInfo,
+    SearchEntry,
+    RegistryVersion,
+    LoginProviders,
+    ScanResultJson,
+    ScanCounts,
+    ScanResultsResponse,
+    ScanFilterOptions,
+    FilesResponse,
+    FileDecisionCountsJson,
+    ScanDecisionRequest,
+    ScanDecisionResponse,
+    FileDecisionRequest,
+    FileDecisionResponse,
+    FileDecisionDeleteRequest,
+    FileDecisionDeleteResponse,
+    Tier,
+    TierList,
+    Customer,
+    CustomerList,
+    UsageStatsList,
+    LogPageableList,
+    CustomerMembershipList,
+    RateLimitToken,
+    Settings
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest } from './server-request';
 
 export class ExtensionRegistryService {
-
     readonly admin: AdminService;
 
-    constructor(readonly serverUrl: string = '', AdminConstructor: AdminServiceConstructor = AdminServiceImpl) {
+    constructor(
+        readonly serverUrl: string = '',
+        AdminConstructor: AdminServiceConstructor = AdminServiceImpl
+    ) {
         this.admin = new AdminConstructor(this);
     }
 
-    async getLoginProviders(abortController: AbortController): Promise<Readonly<LoginProviders|SuccessResult>> {
+    async getLoginProviders(abortController: AbortController): Promise<Readonly<LoginProviders | SuccessResult>> {
         const endpoint = createAbsoluteURL([this.serverUrl, 'login-providers']);
         return sendRequest({ abortController, endpoint });
     }
@@ -38,7 +75,7 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'logout']);
     }
 
-    getExtensionApiUrl(ext: { namespace: string, name: string, target?: string, version?: string }): string {
+    getExtensionApiUrl(ext: { namespace: string; name: string; target?: string; version?: string }): string {
         const arr = [this.serverUrl, 'api', ext.namespace, ext.name];
         if (ext.target) {
             arr.push(ext.target);
@@ -55,7 +92,11 @@ export class ExtensionRegistryService {
         return sendRequest({ abortController, endpoint });
     }
 
-    async setNamespaceDetails(abortController: AbortController, endpoint: string, details: NamespaceDetails): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async setNamespaceDetails(
+        abortController: AbortController,
+        endpoint: string,
+        details: NamespaceDetails
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -75,7 +116,12 @@ export class ExtensionRegistryService {
         });
     }
 
-    async setNamespaceLogo(abortController: AbortController, endpoint: string, logoFile: Blob, logoName: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async setNamespaceLogo(
+        abortController: AbortController,
+        endpoint: string,
+        logoFile: Blob,
+        logoName: string
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -96,27 +142,27 @@ export class ExtensionRegistryService {
         });
     }
 
-    async search(abortController: AbortController, filter?: ExtensionFilter): Promise<Readonly<SearchResult | ErrorResult>> {
-        const query: { key: string, value: string | number }[] = [];
+    async search(
+        abortController: AbortController,
+        filter?: ExtensionFilter
+    ): Promise<Readonly<SearchResult | ErrorResult>> {
+        const query: { key: string; value: string | number }[] = [];
         if (filter) {
-            if (filter.query)
-                query.push({ key: 'query', value: filter.query });
-            if (filter.category)
-                query.push({ key: 'category', value: filter.category });
-            if (filter.offset)
-                query.push({ key: 'offset', value: filter.offset });
-            if (filter.size)
-                query.push({ key: 'size', value: filter.size });
-            if (filter.sortBy)
-                query.push({ key: 'sortBy', value: filter.sortBy });
-            if (filter.sortOrder)
-                query.push({ key: 'sortOrder', value: filter.sortOrder });
+            if (filter.query) query.push({ key: 'query', value: filter.query });
+            if (filter.category) query.push({ key: 'category', value: filter.category });
+            if (filter.offset) query.push({ key: 'offset', value: filter.offset });
+            if (filter.size) query.push({ key: 'size', value: filter.size });
+            if (filter.sortBy) query.push({ key: 'sortBy', value: filter.sortBy });
+            if (filter.sortOrder) query.push({ key: 'sortOrder', value: filter.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
         return sendRequest({ abortController, endpoint });
     }
 
-    async getExtensionDetail(abortController: AbortController, extensionUrl: UrlString): Promise<Readonly<Extension | ErrorResult>> {
+    async getExtensionDetail(
+        abortController: AbortController,
+        extensionUrl: UrlString
+    ): Promise<Readonly<Extension | ErrorResult>> {
         return sendRequest({ abortController, endpoint: extensionUrl });
     }
 
@@ -124,7 +170,7 @@ export class ExtensionRegistryService {
         return sendRequest({
             abortController,
             endpoint: extension.files.readme,
-            headers: { 'Accept': 'text/plain' },
+            headers: { Accept: 'text/plain' },
             followRedirect: true
         });
     }
@@ -133,12 +179,15 @@ export class ExtensionRegistryService {
         return sendRequest({
             abortController,
             endpoint: extension.files.changelog,
-            headers: { 'Accept': 'text/plain' },
+            headers: { Accept: 'text/plain' },
             followRedirect: true
         });
     }
 
-    async getExtensionIcon(abortController: AbortController, extension: Extension | SearchEntry): Promise<string | undefined> {
+    async getExtensionIcon(
+        abortController: AbortController,
+        extension: Extension | SearchEntry
+    ): Promise<string | undefined> {
         if (!extension.files.icon) {
             return Promise.resolve(undefined);
         }
@@ -146,7 +195,7 @@ export class ExtensionRegistryService {
         return sendRequest({
             abortController,
             endpoint: extension.files.icon,
-            headers: { 'Accept': 'application/octet-stream' },
+            headers: { Accept: 'application/octet-stream' },
             followRedirect: true
         }).then(value => {
             const blob = value as Blob;
@@ -174,11 +223,18 @@ export class ExtensionRegistryService {
         ];
     }
 
-    async getExtensionReviews(abortController: AbortController, extension: Extension): Promise<Readonly<ExtensionReviewList>> {
+    async getExtensionReviews(
+        abortController: AbortController,
+        extension: Extension
+    ): Promise<Readonly<ExtensionReviewList>> {
         return sendRequest({ abortController, endpoint: extension.reviewsUrl });
     }
 
-    async postReview(abortController: AbortController, review: NewReview, postReviewUrl: UrlString): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async postReview(
+        abortController: AbortController,
+        review: NewReview,
+        postReviewUrl: UrlString
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -197,7 +253,10 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteReview(abortController: AbortController, deleteReviewUrl: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteReview(
+        abortController: AbortController,
+        deleteReviewUrl: string
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -213,7 +272,11 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteUserReview(abortController: AbortController, extension: Extension, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteUserReview(
+        abortController: AbortController,
+        extension: Extension,
+        user: UserData
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -224,7 +287,17 @@ export class ExtensionRegistryService {
             abortController,
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.serverUrl, 'admin', 'extension', extension.namespace, extension.name, 'review', user.provider || 'github', user.loginName, 'delete']),
+            endpoint: createAbsoluteURL([
+                this.serverUrl,
+                'admin',
+                'extension',
+                extension.namespace,
+                extension.name,
+                'review',
+                user.provider || 'github',
+                user.loginName,
+                'delete'
+            ]),
             headers
         });
     }
@@ -261,7 +334,11 @@ export class ExtensionRegistryService {
         });
     }
 
-    async createAccessToken(abortController: AbortController, user: UserData, description: string): Promise<Readonly<PersonalAccessToken>> {
+    async createAccessToken(
+        abortController: AbortController,
+        user: UserData,
+        description: string
+    ): Promise<Readonly<PersonalAccessToken>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -279,7 +356,10 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAccessToken(abortController: AbortController, token: PersonalAccessToken): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteAccessToken(
+        abortController: AbortController,
+        token: PersonalAccessToken
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -295,20 +375,27 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteAllAccessTokens(abortController: AbortController, tokens: PersonalAccessToken[]): Promise<Readonly<SuccessResult | ErrorResult>[]> {
+    async deleteAllAccessTokens(
+        abortController: AbortController,
+        tokens: PersonalAccessToken[]
+    ): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return await Promise.all(tokens.map(token => sendRequest<SuccessResult | ErrorResult>({
-            abortController,
-            method: 'POST',
-            credentials: true,
-            endpoint: token.deleteTokenUrl,
-            headers
-        })));
+        return await Promise.all(
+            tokens.map(token =>
+                sendRequest<SuccessResult | ErrorResult>({
+                    abortController,
+                    method: 'POST',
+                    credentials: true,
+                    endpoint: token.deleteTokenUrl,
+                    headers
+                })
+            )
+        );
     }
 
     async getCsrfToken(abortController?: AbortController): Promise<Readonly<CsrfTokenJson | ErrorResult>> {
@@ -335,18 +422,28 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>> {
-        const query: { key: string, value: string | number }[] = [];
+    async getUsageStats(
+        abortController: AbortController,
+        customerName: string,
+        date: Date
+    ): Promise<Readonly<UsageStatsList>> {
+        const query: { key: string; value: string | number }[] = [];
         query.push({ key: 'date', value: date.toISOString() });
 
-        return sendRequest({
-            abortController,
-            endpoint: createAbsoluteURL([this.serverUrl, 'user', 'customers', customerName, 'usage'], query),
-            credentials: true
-        }, false);
+        return sendRequest(
+            {
+                abortController,
+                endpoint: createAbsoluteURL([this.serverUrl, 'user', 'customers', customerName, 'usage'], query),
+                credentials: true
+            },
+            false
+        );
     }
 
-    async getNamespaceMembers(abortController: AbortController, namespace: Namespace): Promise<Readonly<NamespaceMembershipList>> {
+    async getNamespaceMembers(
+        abortController: AbortController,
+        namespace: Namespace
+    ): Promise<Readonly<NamespaceMembershipList>> {
         return sendRequest({
             abortController,
             credentials: true,
@@ -354,7 +451,12 @@ export class ExtensionRegistryService {
         });
     }
 
-    async setNamespaceMember(abortController: AbortController, endpoint: UrlString, user: UserData, role: MembershipRole | 'remove'): Promise<Readonly<SuccessResult | ErrorResult>[]> {
+    async setNamespaceMember(
+        abortController: AbortController,
+        endpoint: UrlString,
+        user: UserData,
+        role: MembershipRole | 'remove'
+    ): Promise<Readonly<SuccessResult | ErrorResult>[]> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -395,12 +497,15 @@ export class ExtensionRegistryService {
         return sendRequest({
             abortController,
             endpoint: url,
-            headers: { 'Accept': 'text/plain' },
+            headers: { Accept: 'text/plain' },
             followRedirect: true
         });
     }
 
-    async publishExtension(abortController: AbortController, extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
+    async publishExtension(
+        abortController: AbortController,
+        extensionPackage: File
+    ): Promise<Readonly<Extension | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream'
@@ -410,17 +515,23 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest<Extension | ErrorResult>({
-            abortController,
-            method: 'POST',
-            credentials: true,
-            payload: extensionPackage,
-            headers: headers,
-            endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
-        }, false); // do not retry publishing an extension but show the explicit error received
+        return sendRequest<Extension | ErrorResult>(
+            {
+                abortController,
+                method: 'POST',
+                credentials: true,
+                payload: extensionPackage,
+                headers: headers,
+                endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
+            },
+            false
+        ); // do not retry publishing an extension but show the explicit error received
     }
 
-    async createNamespace(abortController: AbortController, name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async createNamespace(
+        abortController: AbortController,
+        name: string
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -457,7 +568,11 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
+    async getExtension(
+        abortController: AbortController,
+        namespace: string,
+        extension: string
+    ): Promise<Readonly<Extension>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -474,7 +589,10 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteExtensions(abortController: AbortController, req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteExtensions(
+        abortController: AbortController,
+        req: { namespace: string; extension: string; targetPlatformVersions?: object[] }
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -501,27 +619,81 @@ export class ExtensionRegistryService {
 }
 
 export interface AdminService {
-    getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>>
-    deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>>
-    getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>
-    createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
-    deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>
-    changeNamespace(req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>>
-    getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>>
-    revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>
-    getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all' }): Promise<Readonly<ScanResultsResponse>>
-    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>
-    retryFailedScannerJobs(scanId: string): Promise<Readonly<ScanResultJson>>
-    getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>>
-    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>
+    getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>>;
+    deleteExtensions(req: {
+        namespace: string;
+        extension: string;
+        targetPlatformVersions?: object[];
+    }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>;
+    createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    changeNamespace(req: {
+        oldNamespace: string;
+        newNamespace: string;
+        removeOldNamespace: boolean;
+        mergeIfNewNamespaceAlreadyExists: boolean;
+    }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getPublisherInfo(
+        abortController: AbortController,
+        provider: string,
+        login: string
+    ): Promise<Readonly<PublisherInfo>>;
+    revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    getAllScans(
+        abortController: AbortController,
+        params?: {
+            size?: number;
+            offset?: number;
+            status?: string | string[];
+            publisher?: string;
+            namespace?: string;
+            name?: string;
+            validationType?: string[];
+            threatScannerName?: string[];
+            dateStartedFrom?: string;
+            dateStartedTo?: string;
+            enforcement?: 'enforced' | 'notEnforced' | 'all';
+        }
+    ): Promise<Readonly<ScanResultsResponse>>;
+    getScan(abortController: AbortController, scanId: string): Promise<Readonly<ScanResultJson>>;
+    retryFailedScannerJobs(scanId: string): Promise<Readonly<ScanResultJson>>;
+    getScanCounts(
+        abortController: AbortController,
+        params?: {
+            dateStartedFrom?: string;
+            dateStartedTo?: string;
+            enforcement?: 'enforced' | 'notEnforced' | 'all';
+            threatScannerName?: string[];
+            validationType?: string[];
+        }
+    ): Promise<Readonly<ScanCounts>>;
+    getScanFilterOptions(abortController: AbortController): Promise<Readonly<ScanFilterOptions>>;
     // Files API
-    getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>>;
-    getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>>
+    getFiles(
+        abortController: AbortController,
+        params?: {
+            size?: number;
+            offset?: number;
+            decision?: string;
+            publisher?: string;
+            namespace?: string;
+            name?: string;
+            dateDecidedFrom?: string;
+            dateDecidedTo?: string;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }
+    ): Promise<Readonly<FilesResponse>>;
+    getFileCounts(
+        abortController: AbortController,
+        params?: { dateDecidedFrom?: string; dateDecidedTo?: string }
+    ): Promise<Readonly<FileDecisionCountsJson>>;
     // Decision APIs
-    makeScanDecision(request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>
-    makeFileDecision(request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>
-    deleteFileDecisions(request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>
+    makeScanDecision(request: ScanDecisionRequest): Promise<Readonly<ScanDecisionResponse>>;
+    makeFileDecision(request: FileDecisionRequest): Promise<Readonly<FileDecisionResponse>>;
+    deleteFileDecisions(request: FileDecisionDeleteRequest): Promise<Readonly<FileDecisionDeleteResponse>>;
     getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
     createTier(tier: Tier): Promise<Readonly<Tier>>;
     updateTier(name: string, tier: Tier): Promise<Readonly<Tier>>;
@@ -534,9 +706,21 @@ export interface AdminService {
     getCustomerMembers(abortController: AbortController, name: string): Promise<Readonly<CustomerMembershipList>>;
     addCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
     removeCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult | ErrorResult>>;
-    getUsageStats(abortController: AbortController, customerName: string, date: Date): Promise<Readonly<UsageStatsList>>;
-    getLogs(abortController: AbortController, page?: number, size?: number, period?: string): Promise<Readonly<LogPageableList>>;
-    getCustomerRateLimitTokens(abortController: AbortController, customerName: string): Promise<Readonly<RateLimitToken[]>>;
+    getUsageStats(
+        abortController: AbortController,
+        customerName: string,
+        date: Date
+    ): Promise<Readonly<UsageStatsList>>;
+    getLogs(
+        abortController: AbortController,
+        page?: number,
+        size?: number,
+        period?: string
+    ): Promise<Readonly<LogPageableList>>;
+    getCustomerRateLimitTokens(
+        abortController: AbortController,
+        customerName: string
+    ): Promise<Readonly<RateLimitToken[]>>;
     createCustomerRateLimitToken(customerName: string, description: string): Promise<Readonly<RateLimitToken>>;
     deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
@@ -544,14 +728,17 @@ export interface AdminService {
 }
 
 export interface AdminServiceConstructor {
-    new (registry: ExtensionRegistryService): AdminService
+    new (registry: ExtensionRegistryService): AdminService;
 }
 
 export class AdminServiceImpl implements AdminService {
-
     constructor(readonly registry: ExtensionRegistryService) {}
 
-    async getExtension(abortController: AbortController, namespace: string, extension: string): Promise<Readonly<Extension>> {
+    async getExtension(
+        abortController: AbortController,
+        namespace: string,
+        extension: string
+    ): Promise<Readonly<Extension>> {
         return sendNonRetriableRequest({
             abortController,
             credentials: true,
@@ -559,7 +746,11 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteExtensions(req: { namespace: string, extension: string, targetPlatformVersions?: object[] }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteExtensions(req: {
+        namespace: string;
+        extension: string;
+        targetPlatformVersions?: object[];
+    }): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -572,7 +763,14 @@ export class AdminServiceImpl implements AdminService {
         return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'extension', req.namespace, req.extension, 'delete']),
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'extension',
+                req.namespace,
+                req.extension,
+                'delete'
+            ]),
             headers,
             payload: req.targetPlatformVersions
         });
@@ -620,7 +818,12 @@ export class AdminServiceImpl implements AdminService {
             headers
         });
     }
-    async changeNamespace(req: {oldNamespace: string, newNamespace: string, removeOldNamespace: boolean, mergeIfNewNamespaceAlreadyExists: boolean}): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async changeNamespace(req: {
+        oldNamespace: string;
+        newNamespace: string;
+        removeOldNamespace: boolean;
+        mergeIfNewNamespaceAlreadyExists: boolean;
+    }): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -638,7 +841,11 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getPublisherInfo(abortController: AbortController, provider: string, login: string): Promise<Readonly<PublisherInfo>> {
+    async getPublisherInfo(
+        abortController: AbortController,
+        provider: string,
+        login: string
+    ): Promise<Readonly<PublisherInfo>> {
         return sendNonRetriableRequest({
             abortController,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login]),
@@ -646,7 +853,10 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async revokePublisherContributions(
+        provider: string,
+        login: string
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -671,38 +881,54 @@ export class AdminServiceImpl implements AdminService {
         return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'tokens', 'revoke']),
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'publisher',
+                provider,
+                login,
+                'tokens',
+                'revoke'
+            ]),
             headers
         });
     }
 
-    async getAllScans(abortController: AbortController, params?: { size?: number; offset?: number; status?: string | string[]; publisher?: string; namespace?: string; name?: string; validationType?: string[]; threatScannerName?: string[]; dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; adminDecision?: string[] }): Promise<Readonly<ScanResultsResponse>> {
-        const query: { key: string, value: string | number }[] = [];
+    async getAllScans(
+        abortController: AbortController,
+        params?: {
+            size?: number;
+            offset?: number;
+            status?: string | string[];
+            publisher?: string;
+            namespace?: string;
+            name?: string;
+            validationType?: string[];
+            threatScannerName?: string[];
+            dateStartedFrom?: string;
+            dateStartedTo?: string;
+            enforcement?: 'enforced' | 'notEnforced' | 'all';
+            adminDecision?: string[];
+        }
+    ): Promise<Readonly<ScanResultsResponse>> {
+        const query: { key: string; value: string | number }[] = [];
         if (params) {
-            if (params.size !== undefined)
-                query.push({ key: 'size', value: params.size });
-            if (params.offset !== undefined)
-                query.push({ key: 'offset', value: params.offset });
+            if (params.size !== undefined) query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined) query.push({ key: 'offset', value: params.offset });
             if (params.status) {
                 const statusValue = Array.isArray(params.status) ? params.status.join(',') : params.status;
                 query.push({ key: 'status', value: statusValue });
             }
-            if (params.publisher)
-                query.push({ key: 'publisher', value: params.publisher });
-            if (params.namespace)
-                query.push({ key: 'namespace', value: params.namespace });
-            if (params.name)
-                query.push({ key: 'name', value: params.name });
+            if (params.publisher) query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace) query.push({ key: 'namespace', value: params.namespace });
+            if (params.name) query.push({ key: 'name', value: params.name });
             if (params.validationType && params.validationType.length > 0)
                 query.push({ key: 'validationType', value: params.validationType.join(',') });
             if (params.threatScannerName && params.threatScannerName.length > 0)
                 query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
-            if (params.dateStartedFrom)
-                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
-            if (params.dateStartedTo)
-                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
-            if (params.enforcement)
-                query.push({ key: 'enforcement', value: params.enforcement });
+            if (params.dateStartedFrom) query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo) query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement) query.push({ key: 'enforcement', value: params.enforcement });
             if (params.adminDecision && params.adminDecision.length > 0)
                 query.push({ key: 'adminDecision', value: params.adminDecision.join(',') });
         }
@@ -734,19 +960,25 @@ export class AdminServiceImpl implements AdminService {
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', scanId, 'jobs', 'retry']),
-            headers,
+            headers
         });
     }
 
-    async getScanCounts(abortController: AbortController, params?: { dateStartedFrom?: string; dateStartedTo?: string; enforcement?: 'enforced' | 'notEnforced' | 'all'; threatScannerName?: string[]; validationType?: string[] }): Promise<Readonly<ScanCounts>> {
-        const query: { key: string, value: string | number }[] = [];
+    async getScanCounts(
+        abortController: AbortController,
+        params?: {
+            dateStartedFrom?: string;
+            dateStartedTo?: string;
+            enforcement?: 'enforced' | 'notEnforced' | 'all';
+            threatScannerName?: string[];
+            validationType?: string[];
+        }
+    ): Promise<Readonly<ScanCounts>> {
+        const query: { key: string; value: string | number }[] = [];
         if (params) {
-            if (params.dateStartedFrom)
-                query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
-            if (params.dateStartedTo)
-                query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
-            if (params.enforcement)
-                query.push({ key: 'enforcement', value: params.enforcement });
+            if (params.dateStartedFrom) query.push({ key: 'dateStartedFrom', value: params.dateStartedFrom });
+            if (params.dateStartedTo) query.push({ key: 'dateStartedTo', value: params.dateStartedTo });
+            if (params.enforcement) query.push({ key: 'enforcement', value: params.enforcement });
             if (params.threatScannerName && params.threatScannerName.length > 0) {
                 query.push({ key: 'threatScannerName', value: params.threatScannerName.join(',') });
             }
@@ -770,29 +1002,33 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getFiles(abortController: AbortController, params?: { size?: number; offset?: number; decision?: string; publisher?: string; namespace?: string; name?: string; dateDecidedFrom?: string; dateDecidedTo?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }): Promise<Readonly<FilesResponse>> {
-        const query: { key: string, value: string | number }[] = [];
+    async getFiles(
+        abortController: AbortController,
+        params?: {
+            size?: number;
+            offset?: number;
+            decision?: string;
+            publisher?: string;
+            namespace?: string;
+            name?: string;
+            dateDecidedFrom?: string;
+            dateDecidedTo?: string;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }
+    ): Promise<Readonly<FilesResponse>> {
+        const query: { key: string; value: string | number }[] = [];
         if (params) {
-            if (params.size !== undefined)
-                query.push({ key: 'size', value: params.size });
-            if (params.offset !== undefined)
-                query.push({ key: 'offset', value: params.offset });
-            if (params.decision)
-                query.push({ key: 'decision', value: params.decision });
-            if (params.publisher)
-                query.push({ key: 'publisher', value: params.publisher });
-            if (params.namespace)
-                query.push({ key: 'namespace', value: params.namespace });
-            if (params.name)
-                query.push({ key: 'name', value: params.name });
-            if (params.dateDecidedFrom)
-                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
-            if (params.dateDecidedTo)
-                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
-            if (params.sortBy)
-                query.push({ key: 'sortBy', value: params.sortBy });
-            if (params.sortOrder)
-                query.push({ key: 'sortOrder', value: params.sortOrder });
+            if (params.size !== undefined) query.push({ key: 'size', value: params.size });
+            if (params.offset !== undefined) query.push({ key: 'offset', value: params.offset });
+            if (params.decision) query.push({ key: 'decision', value: params.decision });
+            if (params.publisher) query.push({ key: 'publisher', value: params.publisher });
+            if (params.namespace) query.push({ key: 'namespace', value: params.namespace });
+            if (params.name) query.push({ key: 'name', value: params.name });
+            if (params.dateDecidedFrom) query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo) query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
+            if (params.sortBy) query.push({ key: 'sortBy', value: params.sortBy });
+            if (params.sortOrder) query.push({ key: 'sortOrder', value: params.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files'], query);
         return sendNonRetriableRequest({
@@ -802,13 +1038,14 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getFileCounts(abortController: AbortController, params?: { dateDecidedFrom?: string; dateDecidedTo?: string }): Promise<Readonly<FileDecisionCountsJson>> {
-        const query: { key: string, value: string | number }[] = [];
+    async getFileCounts(
+        abortController: AbortController,
+        params?: { dateDecidedFrom?: string; dateDecidedTo?: string }
+    ): Promise<Readonly<FileDecisionCountsJson>> {
+        const query: { key: string; value: string | number }[] = [];
         if (params) {
-            if (params.dateDecidedFrom)
-                query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
-            if (params.dateDecidedTo)
-                query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
+            if (params.dateDecidedFrom) query.push({ key: 'dateDecidedFrom', value: params.dateDecidedFrom });
+            if (params.dateDecidedTo) query.push({ key: 'dateDecidedTo', value: params.dateDecidedTo });
         }
         const endpoint = createAbsoluteURL([this.registry.serverUrl, 'admin', 'scans', 'files', 'counts'], query);
         return sendNonRetriableRequest({
@@ -1005,11 +1242,14 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getCustomerMembers(abortController: AbortController, name: string): Promise<Readonly<CustomerMembershipList>> {
+    async getCustomerMembers(
+        abortController: AbortController,
+        name: string
+    ): Promise<Readonly<CustomerMembershipList>> {
         return sendNonRetriableRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "members"]),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, 'members'])
         });
     }
 
@@ -1022,13 +1262,16 @@ export class AdminServiceImpl implements AdminService {
         }
         const query = [
             { key: 'user', value: user.loginName },
-            { key: 'provider', value: user.provider },
+            { key: 'provider', value: user.provider }
         ];
         return sendNonRetriableRequest({
             headers,
             method: 'POST',
             credentials: true,
-            endpoint: addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "add-member"]), query),
+            endpoint: addQuery(
+                createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, 'add-member']),
+                query
+            )
         });
     }
 
@@ -1041,13 +1284,16 @@ export class AdminServiceImpl implements AdminService {
         }
         const query = [
             { key: 'user', value: user.loginName },
-            { key: 'provider', value: user.provider },
+            { key: 'provider', value: user.provider }
         ];
         return sendNonRetriableRequest({
             headers,
             method: 'POST',
             credentials: true,
-            endpoint: addQuery(createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, "remove-member"]), query),
+            endpoint: addQuery(
+                createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name, 'remove-member']),
+                query
+            )
         });
     }
 
@@ -1057,14 +1303,17 @@ export class AdminServiceImpl implements AdminService {
     async getUsageStats(
         abortController: AbortController,
         customerName: string,
-        date: Date,
+        date: Date
     ): Promise<Readonly<UsageStatsList>> {
-        const query: { key: string, value: string | number }[] = [];
+        const query: { key: string; value: string | number }[] = [];
         query.push({ key: 'date', value: date.toISOString() });
 
         return sendNonRetriableRequest({
             abortController,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'], query),
+            endpoint: createAbsoluteURL(
+                [this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'usage'],
+                query
+            ),
             credentials: true
         });
     }
@@ -1075,7 +1324,7 @@ export class AdminServiceImpl implements AdminService {
         size: number = 20,
         period?: string
     ): Promise<Readonly<LogPageableList>> {
-        const query: { key: string, value: string | number }[] = [
+        const query: { key: string; value: string | number }[] = [
             { key: 'page', value: page },
             { key: 'size', value: size }
         ];
@@ -1090,11 +1339,21 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async getCustomerRateLimitTokens(abortController: AbortController, customerName: string): Promise<Readonly<RateLimitToken[]>> {
+    async getCustomerRateLimitTokens(
+        abortController: AbortController,
+        customerName: string
+    ): Promise<Readonly<RateLimitToken[]>> {
         return sendNonRetriableRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens']),
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'ratelimit',
+                'customers',
+                customerName,
+                'tokens'
+            ])
         });
     }
 
@@ -1106,7 +1365,14 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        const url = createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens']);
+        const url = createAbsoluteURL([
+            this.registry.serverUrl,
+            'admin',
+            'ratelimit',
+            'customers',
+            customerName,
+            'tokens'
+        ]);
         const endpoint = description !== undefined ? addQuery(url, [{ key: 'description', value: description }]) : url;
         return sendNonRetriableRequest({
             method: 'POST',
@@ -1116,7 +1382,10 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async deleteCustomerRateLimitToken(
+        customerName: string,
+        tokenId: number
+    ): Promise<Readonly<SuccessResult | ErrorResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -1128,7 +1397,15 @@ export class AdminServiceImpl implements AdminService {
         return sendNonRetriableRequest({
             method: 'DELETE',
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', customerName, 'tokens', `${tokenId}`]),
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'ratelimit',
+                'customers',
+                customerName,
+                'tokens',
+                `${tokenId}`
+            ]),
             headers
         });
     }
@@ -1137,7 +1414,7 @@ export class AdminServiceImpl implements AdminService {
         return sendNonRetriableRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings'])
         });
     }
 

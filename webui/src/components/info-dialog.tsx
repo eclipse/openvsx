@@ -12,33 +12,28 @@ import { FunctionComponent, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions } from '@mui/material';
 
 export const InfoDialog: FunctionComponent<InfoDialogProps> = props => {
-
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => document.removeEventListener('keydown', handleEnter);
     }, []);
 
     const handleEnter = (event: KeyboardEvent): void => {
-        if (event.code ===  'Enter') {
+        if (event.code === 'Enter') {
             props.handleCloseDialog();
         }
     };
 
-    return <Dialog
-        open={props.isInfoDialogOpen}
-        onClose={props.handleCloseDialog} >
-        <DialogTitle>Info</DialogTitle>
-        <DialogContent>
-            <DialogContentText sx={{ color: 'text.primary' }}>
-                {props.infoMessage}
-            </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={props.handleCloseDialog}>
-                Close
-            </Button>
-        </DialogActions>
-    </Dialog>;
+    return (
+        <Dialog open={props.isInfoDialogOpen} onClose={props.handleCloseDialog}>
+            <DialogTitle>Info</DialogTitle>
+            <DialogContent>
+                <DialogContentText sx={{ color: 'text.primary' }}>{props.infoMessage}</DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={props.handleCloseDialog}>Close</Button>
+            </DialogActions>
+        </Dialog>
+    );
 };
 
 export interface InfoDialogProps {

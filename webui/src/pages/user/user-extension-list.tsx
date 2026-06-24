@@ -17,29 +17,29 @@ import { Extension } from '../../extension-registry-types';
 interface UserExtensionListProps {
     extensions?: Extension[];
     loading: boolean;
-    canDelete?: boolean
+    canDelete?: boolean;
 }
 
 export const UserExtensionList: FunctionComponent<UserExtensionListProps> = props => {
-    return <Box
-        component='div'
-        sx={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
-            gap: '.5rem',
-            mt: '1rem'
-        }}
-    >
-        <DelayedLoadIndicator loading={props.loading} />
-        {
-            props.extensions && props.extensions.length > 0 ?
-            props.extensions.map((extension: Extension) => <UserNamespaceExtensionListItem
-                key={`${extension.namespace}.${extension.name}-${extension.version}`}
-                extension={extension}
-                canDelete={props.canDelete}
-            />)
-            : null
-        }
-    </Box>;
+    return (
+        <Box
+            component='div'
+            sx={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
+                gap: '.5rem',
+                mt: '1rem'
+            }}>
+            <DelayedLoadIndicator loading={props.loading} />
+            {props.extensions && props.extensions.length > 0
+                ? props.extensions.map((extension: Extension) => (
+                      <UserNamespaceExtensionListItem
+                          key={`${extension.namespace}.${extension.name}-${extension.version}`}
+                          extension={extension}
+                          canDelete={props.canDelete}
+                      />
+                  ))
+                : null}
+        </Box>
+    );
 };
-

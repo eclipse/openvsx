@@ -76,40 +76,45 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
     };
 
     const handleEnter = (e: KeyboardEvent) => {
-        if (open && e.code ===  'Enter') {
+        if (open && e.code === 'Enter') {
             handleCreateNamespace();
         }
     };
 
-    return <>
-        <Button variant='outlined' onClick={handleOpenDialog}>Create namespace</Button>
-        <Dialog open={open} onClose={handleCancel}>
-            <DialogTitle>Create new namespace</DialogTitle>
-            <DialogContent>
-                <Box my={2}>
-                    <TextField
-                        fullWidth
-                        label='Namespace Name'
-                        error={Boolean(nameError)}
-                        helperText={nameError}
-                        onChange={handleNameChange} />
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={handleCancel} color='secondary'>
-                    Cancel
-                </Button>
-            <ButtonWithProgress
-                    autoFocus
-                    sx={{ ml: 1 }}
-                    error={Boolean(nameError) || !name}
-                    working={posted}
-                    onClick={handleCreateNamespace} >
-                Create Namespace
-            </ButtonWithProgress>
-            </DialogActions>
-        </Dialog>
-    </>;
+    return (
+        <>
+            <Button variant='outlined' onClick={handleOpenDialog}>
+                Create namespace
+            </Button>
+            <Dialog open={open} onClose={handleCancel}>
+                <DialogTitle>Create new namespace</DialogTitle>
+                <DialogContent>
+                    <Box my={2}>
+                        <TextField
+                            fullWidth
+                            label='Namespace Name'
+                            error={Boolean(nameError)}
+                            helperText={nameError}
+                            onChange={handleNameChange}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancel} color='secondary'>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress
+                        autoFocus
+                        sx={{ ml: 1 }}
+                        error={Boolean(nameError) || !name}
+                        working={posted}
+                        onClick={handleCreateNamespace}>
+                        Create Namespace
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };
 
 export interface CreateNamespaceDialogProps {

@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useState, useRef, useEffect } from 'react';
-import { LinearProgress } from "@mui/material";
+import { LinearProgress } from '@mui/material';
 
 export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> = props => {
     const [waiting, setWaiting] = useState<boolean>(false);
@@ -38,9 +38,7 @@ export const DelayedLoadIndicator: FunctionComponent<DelayedLoadIndicatorProps> 
         }
     };
 
-    return props.loading && !waiting
-        ? <LinearProgress color={props.color ?? 'secondary'}/>
-        : null;
+    return props.loading && !waiting ? <LinearProgress color={props.color ?? 'secondary'} /> : null;
 };
 
 export interface DelayedLoadIndicatorProps {

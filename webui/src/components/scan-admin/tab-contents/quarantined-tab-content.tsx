@@ -44,7 +44,7 @@ export const QuarantinedTabContent: FunctionComponent = () => {
         deselectAll,
         isAllSelected,
         bulkActions,
-        hasThreatScanners,
+        hasThreatScanners
     } = useQuarantinedTab();
 
     // Calculate allowed/blocked/needs review counts from scanCounts
@@ -71,16 +71,41 @@ export const QuarantinedTabContent: FunctionComponent = () => {
                     onNamespaceChange={search.handleNamespaceChange}
                     onNameChange={search.handleNameChange}
                     filters={[
-                        { label: 'Allowed', value: 'allowed', checked: quarantineFilters.filters.has('allowed'), onChange: quarantineFilters.toggle },
-                        { label: 'Blocked', value: 'blocked', checked: quarantineFilters.filters.has('blocked'), onChange: quarantineFilters.toggle },
-                        { label: 'Needs Review', value: 'needs-review', checked: quarantineFilters.filters.has('needs-review'), onChange: quarantineFilters.toggle },
+                        {
+                            label: 'Allowed',
+                            value: 'allowed',
+                            checked: quarantineFilters.filters.has('allowed'),
+                            onChange: quarantineFilters.toggle
+                        },
+                        {
+                            label: 'Blocked',
+                            value: 'blocked',
+                            checked: quarantineFilters.filters.has('blocked'),
+                            onChange: quarantineFilters.toggle
+                        },
+                        {
+                            label: 'Needs Review',
+                            value: 'needs-review',
+                            checked: quarantineFilters.filters.has('needs-review'),
+                            onChange: quarantineFilters.toggle
+                        }
                     ]}
                     showSelectAll={true}
                     allSelected={isAllSelected}
                     onSelectAllChange={handleSelectAllChange}
                     actionButtons={[
-                        { label: 'ALLOW', color: theme.palette.allowed!, disabled: !bulkActions.canPerformBulkAction, onClick: bulkActions.openAllowDialog },
-                        { label: 'BLOCK', color: theme.palette.blocked!, disabled: !bulkActions.canPerformBulkAction, onClick: bulkActions.openBlockDialog },
+                        {
+                            label: 'ALLOW',
+                            color: theme.palette.allowed!,
+                            disabled: !bulkActions.canPerformBulkAction,
+                            onClick: bulkActions.openAllowDialog
+                        },
+                        {
+                            label: 'BLOCK',
+                            color: theme.palette.blocked!,
+                            disabled: !bulkActions.canPerformBulkAction,
+                            onClick: bulkActions.openBlockDialog
+                        }
                     ]}
                     selectedCount={selection.selectedCount}
                 />
@@ -89,12 +114,12 @@ export const QuarantinedTabContent: FunctionComponent = () => {
                         { label: 'Total', value: totalCount, color: 'text.primary' },
                         { label: 'Allowed', value: allowedCount, color: theme.palette.allowed },
                         { label: 'Blocked', value: blockedCount, color: theme.palette.blocked },
-                        { label: 'Needs Review', value: needsReviewCount, color: theme.palette.review },
+                        { label: 'Needs Review', value: needsReviewCount, color: theme.palette.review }
                     ]}
                     filterOptions={quarantineFilters.availableThreatScanners.map(scanner => ({
                         label: scanner,
                         value: scanner,
-                        checked: quarantineFilters.threatScannerFilters.has(scanner),
+                        checked: quarantineFilters.threatScannerFilters.has(scanner)
                     }))}
                     onFilterOptionToggle={quarantineFilters.toggleThreatScanner}
                     dateRange={globalFilters.dateRange}
@@ -112,7 +137,7 @@ export const QuarantinedTabContent: FunctionComponent = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                     <CircularProgress color='secondary' />
                 </Box>
-            ) : (!hasThreatScanners || scans.length === 0) ? (
+            ) : !hasThreatScanners || scans.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
                     <Typography variant='h6' color='text.secondary'>
                         No quarantined extensions
@@ -122,7 +147,7 @@ export const QuarantinedTabContent: FunctionComponent = () => {
                     </Typography>
                 </Box>
             ) : (
-                scans.map((scan) => {
+                scans.map(scan => {
                     // Only show checkbox for scans that need review:
                     // - No admin decision yet AND
                     // - Has at least one enforced threat (unenforced threats don't require review)

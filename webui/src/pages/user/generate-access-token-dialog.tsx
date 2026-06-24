@@ -33,15 +33,19 @@ export const GenerateAccessTokenDialog: FunctionComponent<GenerateTokenDialogPro
         return token.value!;
     };
 
-    return <>
-        <Button variant='outlined' onClick={() => setOpen(true)}>Generate new token</Button>
-        <GenerateTokenDialog
-            open={open}
-            onClose={() => setOpen(false)}
-            onGenerate={handleGenerate}
-            onError={context.handleError}
-        />
-    </>;
+    return (
+        <>
+            <Button variant='outlined' onClick={() => setOpen(true)}>
+                Generate new token
+            </Button>
+            <GenerateTokenDialog
+                open={open}
+                onClose={() => setOpen(false)}
+                onGenerate={handleGenerate}
+                onError={context.handleError}
+            />
+        </>
+    );
 };
 
 export interface GenerateTokenDialogProps {

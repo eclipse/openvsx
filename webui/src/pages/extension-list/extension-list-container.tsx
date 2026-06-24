@@ -17,7 +17,6 @@ import { ExtensionList } from './extension-list';
 import { ExtensionListHeader } from './extension-list-header';
 
 export const ExtensionListContainer: FunctionComponent = () => {
-
     const [searchQuery, setSearchQuery] = useState('');
     const [category, setCategory] = useState<ExtensionCategory | ''>('');
     const [resultNumber, setResultNumber] = useState(0);
@@ -30,9 +29,9 @@ export const ExtensionListContainer: FunctionComponent = () => {
     useEffect(() => {
         const searchParams = new URLSearchParams(search);
         setSearchQuery(searchParams.get('search') ?? '');
-        setCategory(searchParams.get('category') as ExtensionCategory ?? '');
-        setSortBy(searchParams.get('sortBy') as SortBy ?? 'relevance');
-        setSortOrder(searchParams.get('sortOrder') as SortOrder ?? 'desc');
+        setCategory((searchParams.get('category') as ExtensionCategory) ?? '');
+        setSortBy((searchParams.get('sortBy') as SortBy) ?? 'relevance');
+        setSortOrder((searchParams.get('sortOrder') as SortOrder) ?? 'desc');
     }, []);
 
     const onSearchChanged = (searchQuery: string): void => {
@@ -61,8 +60,13 @@ export const ExtensionListContainer: FunctionComponent = () => {
         updateURL(searchQuery, category, sortBy, sortOrder);
     };
 
-    const updateURL = (searchQuery: string, category: ExtensionCategory | '', sortBy?: SortBy, sortOrder?: SortOrder): void => {
-        const queries: { key: string, value: string }[] = [];
+    const updateURL = (
+        searchQuery: string,
+        category: ExtensionCategory | '',
+        sortBy?: SortBy,
+        sortOrder?: SortOrder
+    ): void => {
+        const queries: { key: string; value: string }[] = [];
         if (searchQuery) {
             queries.push({ key: 'search', value: searchQuery });
         }
@@ -81,22 +85,25 @@ export const ExtensionListContainer: FunctionComponent = () => {
 
     const handleUpdate = (resultNumber: number): void => setResultNumber(resultNumber);
 
-    return <Box display='flex' flexDirection='column' >
-        <ExtensionListHeader
-            resultNumber={resultNumber}
-            searchQuery={searchQuery}
-            category={category}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSearchChanged={onSearchChanged}
-            onSearchSubmit={onSearchSubmit}
-            onCategoryChanged={onCategoryChanged}
-            onSortByChanged={onSortByChanged}
-            onSortOrderChanged={onSortOrderChanged} />
-        <ExtensionList
-            filter={{ query: searchQuery, category, offset: 0, size: 10, sortBy, sortOrder }}
-            debounceTime={searchDebounceTime}
-            onUpdate={handleUpdate}
-        />
-    </Box>;
+    return (
+        <Box display='flex' flexDirection='column'>
+            <ExtensionListHeader
+                resultNumber={resultNumber}
+                searchQuery={searchQuery}
+                category={category}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSearchChanged={onSearchChanged}
+                onSearchSubmit={onSearchSubmit}
+                onCategoryChanged={onCategoryChanged}
+                onSortByChanged={onSortByChanged}
+                onSortOrderChanged={onSortOrderChanged}
+            />
+            <ExtensionList
+                filter={{ query: searchQuery, category, offset: 0, size: 10, sortBy, sortOrder }}
+                debounceTime={searchDebounceTime}
+                onUpdate={handleUpdate}
+            />
+        </Box>
+    );
 };

@@ -112,12 +112,12 @@ export interface Extension {
     downloads: { [targetPlatform: string]: UrlString };
     allTargetPlatformVersions?: VersionTargetPlatforms[];
 
-    deprecated: boolean
+    deprecated: boolean;
     replacement?: {
-        url: string
-        displayName: string
-    }
-    downloadable: boolean
+        url: string;
+        displayName: string;
+    };
+    downloadable: boolean;
 }
 
 export interface Badge {
@@ -167,7 +167,7 @@ export interface UserData {
     publisherAgreement?: {
         status: 'none' | 'signed' | 'outdated';
         timestamp?: TimestampString;
-    },
+    };
     additionalLogins?: UserData[];
 }
 
@@ -187,21 +187,21 @@ export interface PersonalAccessToken {
 }
 
 export type ExtensionCategory =
-    'Programming Languages' |
-    'Snippets' |
-    'Linters' |
-    'Themes' |
-    'Debuggers' |
-    'Formatters' |
-    'Keymaps' |
-    'SCM Providers' |
-    'Other' |
-    'Extension Packs' |
-    'Language Packs' |
-    'Data Science' |
-    'Machine Learning' |
-    'Visualization' |
-    'Notebooks';
+    | 'Programming Languages'
+    | 'Snippets'
+    | 'Linters'
+    | 'Themes'
+    | 'Debuggers'
+    | 'Formatters'
+    | 'Keymaps'
+    | 'SCM Providers'
+    | 'Other'
+    | 'Extension Packs'
+    | 'Language Packs'
+    | 'Data Science'
+    | 'Machine Learning'
+    | 'Visualization'
+    | 'Notebooks';
 
 export interface CsrfTokenJson {
     value: string;
@@ -252,11 +252,11 @@ export interface TargetPlatformVersion {
 }
 
 export interface RegistryVersion {
-    version: string
+    version: string;
 }
 
 export interface LoginProviders {
-    loginProviders: Record<string, string>
+    loginProviders: Record<string, string>;
 }
 
 export type MembershipRole = 'contributor' | 'owner';

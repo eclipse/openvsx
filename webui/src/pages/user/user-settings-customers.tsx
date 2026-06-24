@@ -35,8 +35,7 @@ const CustomersTabs = (props: CustomerTabsProps) => {
             variant={isATablet ? 'scrollable' : 'standard'}
             scrollButtons={isATablet ? 'auto' : false}
             indicatorColor='secondary'
-            sx={{ width: { xs: '80%', sm: '80%', md: '80%', lg: '160px', xl: '160px' } }}
-        >
+            sx={{ width: { xs: '80%', sm: '80%', md: '80%', lg: '160px', xl: '160px' } }}>
             {props.customers.map(customer => (
                 <Tab
                     sx={{
@@ -88,28 +87,23 @@ export const UserSettingsCustomers: FunctionComponent = () => {
                     width: '100%',
                     flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' },
                     alignItems: { xs: 'center', sm: 'center', md: 'center', lg: 'normal', xl: 'normal' }
-                }}
-            >
-                <CustomersTabs
-                    chosenCustomer={chosenCustomer}
-                    customers={customers}
-                    onChange={setChosenCustomer}
-                />
+                }}>
+                <CustomersTabs chosenCustomer={chosenCustomer} customers={customers} onChange={setChosenCustomer} />
                 <UserSettingsCustomerDetail customer={chosenCustomer} />
             </Box>
         );
     } else if (!loading) {
         customerContainer = (
-            <Typography variant='body1'>
-                You are not a member of any rate limiting customer group.
-            </Typography>
+            <Typography variant='body1'>You are not a member of any rate limiting customer group.</Typography>
         );
     }
 
     return (
         <>
             <Box>
-                <Typography variant='h5' gutterBottom>Rate Limiting</Typography>
+                <Typography variant='h5' gutterBottom>
+                    Rate Limiting
+                </Typography>
             </Box>
             <Box mt={2}>
                 <DelayedLoadIndicator loading={loading} />

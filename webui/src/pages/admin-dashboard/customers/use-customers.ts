@@ -21,7 +21,7 @@ export const customerKeys = {
     all: ['admin', 'customers'] as const,
     detail: (name: string) => ['admin', 'customers', name] as const,
     tokens: (name: string) => ['admin', 'customers', name, 'tokens'] as const,
-    members: (name: string) => ['admin', 'customers', name, 'members'] as const,
+    members: (name: string) => ['admin', 'customers', name, 'members'] as const
 };
 
 /**
@@ -31,7 +31,7 @@ export const useCustomers = () => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: customerKeys.all,
-        queryFn: ({ signal }) => service.admin.getCustomers(controllerFromSignal(signal)),
+        queryFn: ({ signal }) => service.admin.getCustomers(controllerFromSignal(signal))
     });
 };
 
@@ -43,7 +43,7 @@ export const useCustomer = (name: string | undefined) => {
     return useQuery({
         queryKey: customerKeys.detail(name ?? ''),
         queryFn: ({ signal }) => service.admin.getCustomer(controllerFromSignal(signal), name!),
-        enabled: !!name,
+        enabled: !!name
     });
 };
 
@@ -57,7 +57,7 @@ export const useCreateCustomer = () => {
         mutationFn: (customer: Customer) => service.admin.createCustomer(customer),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
-        },
+        }
     });
 };
 
@@ -73,7 +73,7 @@ export const useUpdateCustomer = () => {
         onSuccess: (_data, { name }) => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
             queryClient.invalidateQueries({ queryKey: customerKeys.detail(name) });
-        },
+        }
     });
 };
 
@@ -87,7 +87,7 @@ export const useDeleteCustomer = () => {
         mutationFn: (name: string) => service.admin.deleteCustomer(name),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.all });
-        },
+        }
     });
 };
 
@@ -98,7 +98,7 @@ export const useCustomerTokens = (name: string) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: customerKeys.tokens(name),
-        queryFn: ({ signal }) => service.admin.getCustomerRateLimitTokens(controllerFromSignal(signal), name),
+        queryFn: ({ signal }) => service.admin.getCustomerRateLimitTokens(controllerFromSignal(signal), name)
     });
 };
 
@@ -112,7 +112,7 @@ export const useCreateCustomerToken = (name: string) => {
         mutationFn: (description: string) => service.admin.createCustomerRateLimitToken(name, description),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.tokens(name) });
-        },
+        }
     });
 };
 
@@ -132,7 +132,7 @@ export const useDeleteCustomerToken = (name: string) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.tokens(name) });
-        },
+        }
     });
 };
 
@@ -143,7 +143,7 @@ export const useCustomerMembers = (name: string) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: customerKeys.members(name),
-        queryFn: ({ signal }) => service.admin.getCustomerMembers(controllerFromSignal(signal), name),
+        queryFn: ({ signal }) => service.admin.getCustomerMembers(controllerFromSignal(signal), name)
     });
 };
 
@@ -163,7 +163,7 @@ export const useAddCustomerMember = (name: string) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.members(name) });
-        },
+        }
     });
 };
 
@@ -183,6 +183,6 @@ export const useRemoveCustomerMember = (name: string) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.members(name) });
-        },
+        }
     });
 };

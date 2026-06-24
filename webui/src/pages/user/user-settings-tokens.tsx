@@ -9,7 +9,19 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Theme, Typography, Box, Paper, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import {
+    Theme,
+    Typography,
+    Box,
+    Paper,
+    Button,
+    Link,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Link as RouteLink } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -42,7 +54,6 @@ const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
 }));
 
 export const UserSettingsTokens: FunctionComponent = () => {
-
     const { service, user, handleError, pageSettings } = useContext(MainContext);
 
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
@@ -57,7 +68,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
         };
     }, []);
 
-    const updateTokens = async() => {
+    const updateTokens = async () => {
         if (!user) {
             return;
         }
@@ -101,22 +112,34 @@ export const UserSettingsTokens: FunctionComponent = () => {
     };
 
     const renderToken = (token: PersonalAccessToken): ReactNode => {
-        return <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
-            <Box alignItems='center' overflow='auto'>
-                <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{token.description}</Typography>
-                <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp}/></Typography>
-                <Typography variant='body2'>Expires: {token.expiresTimestamp ? <Timestamp value={token.expiresTimestamp} isFutureTime={true} /> : 'never'}</Typography>
-                <Typography variant='body2'>Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp}/> : 'never'}</Typography>
+        return (
+            <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
+                <Box alignItems='center' overflow='auto'>
+                    <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {token.description}
+                    </Typography>
+                    <Typography variant='body2'>
+                        Created: <Timestamp value={token.createdTimestamp} />
+                    </Typography>
+                    <Typography variant='body2'>
+                        Expires:{' '}
+                        {token.expiresTimestamp ? (
+                            <Timestamp value={token.expiresTimestamp} isFutureTime={true} />
+                        ) : (
+                            'never'
+                        )}
+                    </Typography>
+                    <Typography variant='body2'>
+                        Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp} /> : 'never'}
+                    </Typography>
+                </Box>
+                <Box display='flex' alignItems='center'>
+                    <DeleteButton variant='outlined' onClick={() => handleDelete(token)} disabled={loading}>
+                        Delete
+                    </DeleteButton>
+                </Box>
             </Box>
-            <Box display='flex' alignItems='center'>
-                <DeleteButton
-                    variant='outlined'
-                    onClick={() => handleDelete(token)}
-                    disabled={loading}>
-                    Delete
-                </DeleteButton>
-            </Box>
-        </Box>;
+        );
     };
 
     const agreement = user?.publisherAgreement;
@@ -124,95 +147,86 @@ export const UserSettingsTokens: FunctionComponent = () => {
         const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
         const publisherAgreementContact = pageSettings?.publisherAgreement?.email;
 
-        return <Box>
-            <EmptyTypography variant='body1'>
-                Access tokens cannot be created as you currently do not have
-                an {publisherAgreementName} Publisher Agreement signed. Please return to
-                your <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page
-                to sign the Publisher Agreement.
-                { publisherAgreementContact !== undefined &&
-                    <> Should you believe this is in error, please
-                        contact <StyledLink href='mailto:{publisherAgreementContact}'>{publisherAgreementContact}</StyledLink>.
-                    </>
-                }
-            </EmptyTypography>
-        </Box>;
+        return (
+            <Box>
+                <EmptyTypography variant='body1'>
+                    Access tokens cannot be created as you currently do not have an {publisherAgreementName} Publisher
+                    Agreement signed. Please return to your{' '}
+                    <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page to sign the
+                    Publisher Agreement.
+                    {publisherAgreementContact !== undefined && (
+                        <>
+                            {' '}
+                            Should you believe this is in error, please contact{' '}
+                            <StyledLink href='mailto:{publisherAgreementContact}'>
+                                {publisherAgreementContact}
+                            </StyledLink>
+                            .
+                        </>
+                    )}
+                </EmptyTypography>
+            </Box>
+        );
     }
 
-    return <>
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
-                alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-            }}
-        >
-            <Box>
-                <Typography variant='h5' gutterBottom>Access Tokens</Typography>
-            </Box>
+    return (
+        <>
             <Box
                 sx={{
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-                }}
-            >
-                <Box mr={1} mb={1}>
-                    <GenerateAccessTokenDialog
-                        handleTokenGenerated={handleTokenGenerated}
-                    />
-                </Box>
+                    justifyContent: 'space-between',
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
+                    alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                }}>
                 <Box>
-                    <DeleteButton
-                        variant='outlined'
-                        onClick={onShowDeleteAll}
-                        disabled={loading || tokens.length === 0}>
-                        Delete all
-                    </DeleteButton>
+                    <Typography variant='h5' gutterBottom>
+                        Access Tokens
+                    </Typography>
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
+                    }}>
+                    <Box mr={1} mb={1}>
+                        <GenerateAccessTokenDialog handleTokenGenerated={handleTokenGenerated} />
+                    </Box>
+                    <Box>
+                        <DeleteButton
+                            variant='outlined'
+                            onClick={onShowDeleteAll}
+                            disabled={loading || tokens.length === 0}>
+                            Delete all
+                        </DeleteButton>
+                    </Box>
                 </Box>
             </Box>
-        </Box>
-        <Box mt={2}>
-            {
-                tokens.length === 0 && !loading ?
-                <EmptyTypography variant='body1'>
-                    You currently have no tokens.
-                </EmptyTypography> : null
-            }
-        </Box>
-        <Box mt={2}>
-            <DelayedLoadIndicator loading={loading}/>
-            <Paper elevation={3}>
-                {tokens.map(token => renderToken(token))}
-            </Paper>
-        </Box>
-        <Dialog
-            open={showDeleteAll}
-            onClose={onHideDeleteAll} >
-            <DialogTitle >
-                Delete all access tokens
-            </DialogTitle>
-            <DialogContent>
-                <DialogContentText component='div'>
-                    Are you sure you want to delete all access tokens?
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={onHideDeleteAll} >
-                    Cancel
-                </Button>
-                <Button
-                    variant='contained'
-                    color='secondary'
-                    autoFocus
-                    onClick={handleDeleteAll} >
-                    Delete
-                </Button>
-            </DialogActions>
-        </Dialog>
-    </>;
+            <Box mt={2}>
+                {tokens.length === 0 && !loading ? (
+                    <EmptyTypography variant='body1'>You currently have no tokens.</EmptyTypography>
+                ) : null}
+            </Box>
+            <Box mt={2}>
+                <DelayedLoadIndicator loading={loading} />
+                <Paper elevation={3}>{tokens.map(token => renderToken(token))}</Paper>
+            </Box>
+            <Dialog open={showDeleteAll} onClose={onHideDeleteAll}>
+                <DialogTitle>Delete all access tokens</DialogTitle>
+                <DialogContent>
+                    <DialogContentText component='div'>
+                        Are you sure you want to delete all access tokens?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={onHideDeleteAll}>
+                        Cancel
+                    </Button>
+                    <Button variant='contained' color='secondary' autoFocus onClick={handleDeleteAll}>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };

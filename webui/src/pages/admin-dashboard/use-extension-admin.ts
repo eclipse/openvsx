@@ -38,7 +38,11 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
     return useQuery({
         queryKey: ['admin', 'extension', target?.namespace ?? '', target?.extension ?? ''],
         queryFn: async ({ signal }) => {
-            const result = await service.admin.getExtension(controllerFromSignal(signal), target!.namespace, target!.extension);
+            const result = await service.admin.getExtension(
+                controllerFromSignal(signal),
+                target!.namespace,
+                target!.extension
+            );
             if (isError(result)) {
                 throw result;
             }
@@ -46,7 +50,7 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
         },
         enabled: !!target,
         retry: false,
-        staleTime: 0,
+        staleTime: 0
     });
 };
 
@@ -58,7 +62,7 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
 export const useDeleteExtension = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req),
+        mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req)
     });
 };
 
@@ -77,6 +81,6 @@ export const useExtensionIcon = (extension: Extension) => {
             return icon ?? null;
         },
         gcTime: 0,
-        staleTime: 0,
+        staleTime: 0
     });
 };

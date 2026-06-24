@@ -50,7 +50,7 @@ export const useConfirmAction = (
             // Backend handles adding enforced threat files to allow/block list automatically
             const scanResponse = await service.admin.makeScanDecision({
                 scanIds: selectedScanIds,
-                decision,
+                decision
             });
 
             if (scanResponse.error) {
@@ -59,7 +59,7 @@ export const useConfirmAction = (
 
             return { skipped: false };
         },
-        onSuccess: (result) => {
+        onSuccess: result => {
             if (result.skipped) {
                 dispatch({ type: 'CLOSE_CONFIRM_DIALOG' });
                 return;
@@ -68,9 +68,9 @@ export const useConfirmAction = (
             dispatch({ type: 'EXECUTE_CONFIRM_ACTION' });
             dispatch({ type: 'TRIGGER_REFRESH' });
         },
-        onError: (err) => {
+        onError: err => {
             handleErrorRef.current(err);
-        },
+        }
     });
 
     return useCallback(() => {
@@ -96,18 +96,21 @@ export const useRetryFailedScannerJobsAction = (
         onSuccess: () => {
             dispatch({ type: 'TRIGGER_REFRESH' });
         },
-        onError: (err) => {
+        onError: err => {
             handleErrorRef.current(err);
-        },
+        }
     });
 
-    return useCallback(async (scanId: string): Promise<void> => {
-        try {
-            await mutateAsync(scanId);
-        } catch {
-            // Error is surfaced via the mutation's onError handler.
-        }
-    }, [mutateAsync]);
+    return useCallback(
+        async (scanId: string): Promise<void> => {
+            try {
+                await mutateAsync(scanId);
+            } catch {
+                // Error is surfaced via the mutation's onError handler.
+            }
+        },
+        [mutateAsync]
+    );
 };
 
 // ============================================================================
@@ -134,7 +137,7 @@ export const useFileAction = (
 
             if (state.fileActionType === 'delete') {
                 const response = await service.admin.deleteFileDecisions({
-                    fileIds: selectedFileIds,
+                    fileIds: selectedFileIds
                 });
 
                 if (response.error) {
@@ -148,7 +151,7 @@ export const useFileAction = (
 
                 const response = await service.admin.makeFileDecision({
                     fileHashes,
-                    decision,
+                    decision
                 });
 
                 if (response.error) {
@@ -158,7 +161,7 @@ export const useFileAction = (
 
             return { skipped: false };
         },
-        onSuccess: (result) => {
+        onSuccess: result => {
             if (result.skipped) {
                 dispatch({ type: 'CLOSE_FILE_DIALOG' });
                 return;
@@ -169,9 +172,9 @@ export const useFileAction = (
             dispatch({ type: 'RESET_PAGE' }); // Go back to first page after action
             dispatch({ type: 'TRIGGER_REFRESH' });
         },
-        onError: (err) => {
+        onError: err => {
             handleErrorRef.current(err);
-        },
+        }
     });
 
     return useCallback(() => {

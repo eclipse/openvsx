@@ -14,49 +14,50 @@ import { Paper, Grid, Button, Collapse } from '@mui/material';
 export const Banner: FunctionComponent<PropsWithChildren<BannerProps>> = props => {
     const cardColor = props.theme === 'dark' ? '#fff' : '#000';
     const cardBackground = `${props.color}.${props.theme}`;
-    return <Collapse in={props.open}>
-        <Paper
-            elevation={0}
-            sx={{
-                display: 'block',
-                width: '100%',
-                mx: 'auto',
-                pb: 2, pr: 2, pl: 2, pt: 2,
-                color: cardColor,
-                bgcolor: cardBackground,
-                '& a': {
+    return (
+        <Collapse in={props.open}>
+            <Paper
+                elevation={0}
+                sx={{
+                    display: 'block',
+                    width: '100%',
+                    mx: 'auto',
+                    pb: 2,
+                    pr: 2,
+                    pl: 2,
+                    pt: 2,
                     color: cardColor,
-                    fontWeight: 'bold'
-                }
-            }}
-        >
-            <Grid
-                container
-                spacing={2}
-            >
-                <Grid item xs={12} sm sx={{ alignSelf: 'center' }}>
-                    {props.children}
-                </Grid>
-                {
-                    props.showDismissButton &&
-                    <Grid item xs={12} sm='auto' sx={{
-                        whiteSpace: 'nowrap',
-                        alignSelf: 'center',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        flexBasis: '100%'
-                    }}>
-                        <Button
-                            variant='outlined'
-                            onClick={props.dismissButtonOnClick}
-                        >
-                            {props.dismissButtonLabel ?? 'Close'}
-                        </Button>
+                    bgcolor: cardBackground,
+                    '& a': {
+                        color: cardColor,
+                        fontWeight: 'bold'
+                    }
+                }}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12} sm sx={{ alignSelf: 'center' }}>
+                        {props.children}
                     </Grid>
-                }
-            </Grid>
-        </Paper>
-    </Collapse>;
+                    {props.showDismissButton && (
+                        <Grid
+                            item
+                            xs={12}
+                            sm='auto'
+                            sx={{
+                                whiteSpace: 'nowrap',
+                                alignSelf: 'center',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                flexBasis: '100%'
+                            }}>
+                            <Button variant='outlined' onClick={props.dismissButtonOnClick}>
+                                {props.dismissButtonLabel ?? 'Close'}
+                            </Button>
+                        </Grid>
+                    )}
+                </Grid>
+            </Paper>
+        </Collapse>
+    );
 };
 
 interface BannerProps {

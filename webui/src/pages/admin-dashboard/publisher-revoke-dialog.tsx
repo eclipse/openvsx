@@ -10,7 +10,14 @@
 
 import { FunctionComponent, useState, useContext } from 'react';
 import {
-    Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Link
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Typography,
+    Link
 } from '@mui/material';
 import { createAbsoluteURL } from '../../utils';
 import { ButtonWithProgress } from '../../components/button-with-progress';
@@ -26,14 +33,18 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     const [dialogOpen, setDialogOpen] = useState(false);
 
-    if (props.publisherInfo.user.publisherAgreement
-            && !(user?.additionalLogins?.find(login => login.provider === 'eclipse'))) {
+    if (
+        props.publisherInfo.user.publisherAgreement &&
+        !user?.additionalLogins?.find(login => login.provider === 'eclipse')
+    ) {
         // If a publisher agreement is required, the admin must be logged in with Eclipse to revoke it
-        return <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
-            <Button variant='contained' color='secondary'>
-                Log in with Eclipse
-            </Button>
-        </Link>;
+        return (
+            <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                <Button variant='contained' color='secondary'>
+                    Log in with Eclipse
+                </Button>
+            </Link>
+        );
     }
 
     const doRevoke = async () => {
@@ -51,68 +62,59 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     const extensionCount = props.publisherInfo.extensions.filter(e => e.active).length;
     const hasAgreement = props.publisherInfo.user.publisherAgreement?.status !== 'none';
 
-    return <>
-        <Button
-            variant='contained'
-            color='secondary'
-            onClick={() => setDialogOpen(true)} >
-            Revoke Publisher Contributions
-        </Button>
-        <Dialog
-            open={dialogOpen}
-            onClose={() => setDialogOpen(false)}>
-            <DialogTitle >Revoke Publisher Contributions</DialogTitle>
-            <DialogContent>
-                <DialogContentText component='div'>
-                    <Typography component='div'>
-                        {
-                            !tokenCount && !extensionCount && !hasAgreement ?
-                            <>
-                                Publisher {props.publisherInfo.user.loginName} currently has no contributions to revoke.
-                                Send the request anyway?
-                            </>
-                            :
-                            <>
-                                The following actions will be executed:
-                                <ul>
-                                    {
-                                        tokenCount > 0 ?
-                                        <li>Deactivate {tokenCount} access token{tokenCount > 1 ? 's' : ''} of {props.publisherInfo.user.loginName}</li>
-                                        : null
-                                    }
-                                    {
-                                        extensionCount > 0 ?
-                                        <li>Deactivate {extensionCount} published extension version{extensionCount > 1 ? 's' : ''}</li>
-                                        : null
-                                    }
-                                    {
-                                        hasAgreement ?
-                                        <li>Revoke the Publisher Agreement of {props.publisherInfo.user.loginName}</li>
-                                        : null
-                                    }
-                                </ul>
-                            </>
-                        }
-                    </Typography>
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={() => setDialogOpen(false)} >
-                    Cancel
-                </Button>
-                <ButtonWithProgress
-                    autoFocus
-                    sx={{ ml: 1 }}
-                    working={working}
-                    onClick={doRevoke} >
-                    Revoke Contributions
-                </ButtonWithProgress>
-            </DialogActions>
-        </Dialog>
-    </>;
+    return (
+        <>
+            <Button variant='contained' color='secondary' onClick={() => setDialogOpen(true)}>
+                Revoke Publisher Contributions
+            </Button>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                <DialogTitle>Revoke Publisher Contributions</DialogTitle>
+                <DialogContent>
+                    <DialogContentText component='div'>
+                        <Typography component='div'>
+                            {!tokenCount && !extensionCount && !hasAgreement ? (
+                                <>
+                                    Publisher {props.publisherInfo.user.loginName} currently has no contributions to
+                                    revoke. Send the request anyway?
+                                </>
+                            ) : (
+                                <>
+                                    The following actions will be executed:
+                                    <ul>
+                                        {tokenCount > 0 ? (
+                                            <li>
+                                                Deactivate {tokenCount} access token{tokenCount > 1 ? 's' : ''} of{' '}
+                                                {props.publisherInfo.user.loginName}
+                                            </li>
+                                        ) : null}
+                                        {extensionCount > 0 ? (
+                                            <li>
+                                                Deactivate {extensionCount} published extension version
+                                                {extensionCount > 1 ? 's' : ''}
+                                            </li>
+                                        ) : null}
+                                        {hasAgreement ? (
+                                            <li>
+                                                Revoke the Publisher Agreement of {props.publisherInfo.user.loginName}
+                                            </li>
+                                        ) : null}
+                                    </ul>
+                                </>
+                            )}
+                        </Typography>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={() => setDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress autoFocus sx={{ ml: 1 }} working={working} onClick={doRevoke}>
+                        Revoke Contributions
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };
 
 export interface PublisherRevokeDialogProps {

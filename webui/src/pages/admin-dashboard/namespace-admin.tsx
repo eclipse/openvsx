@@ -70,35 +70,37 @@ export const NamespaceAdmin: FunctionComponent = () => {
 
     let listContainer: ReactNode = '';
     if (currentNamespace && pageSettings && user) {
-        listContainer = <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
-            <NamespaceDetail
-                setLoadingState={setDetailLoading}
-                onDelete={handleDeleteNamespace}
-                namespace={currentNamespace}
-                filterUsers={() => true}
-                fixSelf={false}
-            />
-        </NamespaceDetailConfigContext.Provider>;
+        listContainer = (
+            <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
+                <NamespaceDetail
+                    setLoadingState={setDetailLoading}
+                    onDelete={handleDeleteNamespace}
+                    namespace={currentNamespace}
+                    filterUsers={() => true}
+                    fixSelf={false}
+                />
+            </NamespaceDetailConfigContext.Provider>
+        );
     } else if (notFound) {
-        listContainer = <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
-            <Typography variant='body1'>
-                Namespace {notFound} not found. Do you want to create it?
-            </Typography>
-            <Box mt={3}>
-                <ButtonWithProgress
-                    working={isCreatingNamespace}
-                    onClick={onCreate}>
-                    Create Namespace {notFound}
-                </ButtonWithProgress>
+        listContainer = (
+            <Box display='flex' flexDirection='column' justifyContent='center' alignItems='center'>
+                <Typography variant='body1'>Namespace {notFound} not found. Do you want to create it?</Typography>
+                <Box mt={3}>
+                    <ButtonWithProgress working={isCreatingNamespace} onClick={onCreate}>
+                        Create Namespace {notFound}
+                    </ButtonWithProgress>
+                </Box>
             </Box>
-        </Box>;
+        );
     }
 
-    return <SearchListContainer
-        searchContainer={
-            [<StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />]
-        }
-        listContainer={listContainer}
-        loading={loading}
-    />;
+    return (
+        <SearchListContainer
+            searchContainer={[
+                <StyledInput key='nsi' placeholder='Namespace' onSubmit={fetchNamespace} onChange={onChangeInput} />
+            ]}
+            listContainer={listContainer}
+            loading={loading}
+        />
+    );
 };

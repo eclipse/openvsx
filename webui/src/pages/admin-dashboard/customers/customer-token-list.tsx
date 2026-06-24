@@ -29,7 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { MainContext } from '../../../context';
 import { Customer } from '../../../extension-registry-types';
 import { GenerateTokenDialog } from '../../../components/generate-token-dialog';
-import { Timestamp } from "../../../components/timestamp";
+import { Timestamp } from '../../../components/timestamp';
 import { useCreateCustomerToken, useCustomerTokens, useDeleteCustomerToken } from './use-customers';
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
@@ -56,62 +56,72 @@ export const CustomerTokenList: FunctionComponent<CustomerTokenListProps> = prop
 
     const handleDelete = (tokenId: number) => {
         deleteToken(tokenId, {
-            onError: (err) => handleError(err),
+            onError: err => handleError(err)
         });
     };
 
-    return <Paper {...sectionPaperProps}>
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-            }}
-        >
-            <Typography variant='h6'>Tokens</Typography>
-            <Button size='small' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-                Generate Token
-            </Button>
-        </Box>
-        <Divider sx={{ mb: 1 }} />
-        {tokens.length === 0 ? (
-            <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
-                No rate limiting tokens for this customer.
-            </Typography>
-        ) : (
-            <List dense disablePadding>
-                {tokens.map(token => (
-                    <ListItem
-                        key={token.id}
-                        secondaryAction={
-                            <IconButton edge='end' size='small' color='error' onClick={() => handleDelete(token.id)} title='Delete token'>
-                                <DeleteIcon fontSize='small' />
-                            </IconButton>
-                        }
-                    >
-                        <ListItemText
-                            primary={
-                                <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{token.description || 'N/A'}</Typography>
-                            }
-                            secondary={
-                                <Typography variant='body2'>Created: <Timestamp value={token.createdTimestamp}/></Typography>
-                            }
-                        />
-                    </ListItem>
-                ))}
-            </List>
-        )}
+    return (
+        <Paper {...sectionPaperProps}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                }}>
+                <Typography variant='h6'>Tokens</Typography>
+                <Button size='small' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+                    Generate Token
+                </Button>
+            </Box>
+            <Divider sx={{ mb: 1 }} />
+            {tokens.length === 0 ? (
+                <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
+                    No rate limiting tokens for this customer.
+                </Typography>
+            ) : (
+                <List dense disablePadding>
+                    {tokens.map(token => (
+                        <ListItem
+                            key={token.id}
+                            secondaryAction={
+                                <IconButton
+                                    edge='end'
+                                    size='small'
+                                    color='error'
+                                    onClick={() => handleDelete(token.id)}
+                                    title='Delete token'>
+                                    <DeleteIcon fontSize='small' />
+                                </IconButton>
+                            }>
+                            <ListItemText
+                                primary={
+                                    <Typography
+                                        sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {token.description || 'N/A'}
+                                    </Typography>
+                                }
+                                secondary={
+                                    <Typography variant='body2'>
+                                        Created: <Timestamp value={token.createdTimestamp} />
+                                    </Typography>
+                                }
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
 
-        <GenerateTokenDialog
-            open={dialogOpen}
-            onClose={() => setDialogOpen(false)}
-            onGenerate={handleGenerate}
-            onError={handleError}
-            title='Generate token'
-        />
-    </Paper>;
+            <GenerateTokenDialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                onGenerate={handleGenerate}
+                onError={handleError}
+                title='Generate token'
+            />
+        </Paper>
+    );
 };
 
 export interface CustomerTokenListProps {

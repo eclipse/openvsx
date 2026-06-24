@@ -29,26 +29,22 @@ export const useSearch = () => {
         return !!(state.publisherQuery || state.namespaceQuery || state.nameQuery);
     }, [state.publisherQuery, state.namespaceQuery, state.nameQuery]);
 
-    return useMemo(() => ({
-        publisherQuery: state.publisherQuery,
-        namespaceQuery: state.namespaceQuery,
-        nameQuery: state.nameQuery,
-        setPublisherQuery: actions.setPublisherQuery,
-        setNamespaceQuery: actions.setNamespaceQuery,
-        setNameQuery: actions.setNameQuery,
-        handlePublisherChange: actions.handlePublisherChange,
-        handleNamespaceChange: actions.handleNamespaceChange,
-        handleNameChange: actions.handleNameChange,
-        clearSearch,
-        hasActiveSearch,
-    }), [
-        state.publisherQuery,
-        state.namespaceQuery,
-        state.nameQuery,
-        actions,
-        clearSearch,
-        hasActiveSearch,
-    ]);
+    return useMemo(
+        () => ({
+            publisherQuery: state.publisherQuery,
+            namespaceQuery: state.namespaceQuery,
+            nameQuery: state.nameQuery,
+            setPublisherQuery: actions.setPublisherQuery,
+            setNamespaceQuery: actions.setNamespaceQuery,
+            setNameQuery: actions.setNameQuery,
+            handlePublisherChange: actions.handlePublisherChange,
+            handleNamespaceChange: actions.handleNamespaceChange,
+            handleNameChange: actions.handleNameChange,
+            clearSearch,
+            hasActiveSearch
+        }),
+        [state.publisherQuery, state.namespaceQuery, state.nameQuery, actions, clearSearch, hasActiveSearch]
+    );
 };
 
 export type UseSearchReturn = ReturnType<typeof useSearch>;

@@ -46,12 +46,12 @@ interface CustomerFormDialogProps {
 const NO_TIERS: Tier[] = [];
 
 const Code = styled('code')(({ theme }) => ({
-  fontFamily: 'source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
-  backgroundColor: theme.palette.action.hover, // Subtle gray background
-  padding: '2px 6px',
-  borderRadius: '4px',
-  fontSize: '0.9em',
-  color: theme.palette.text.primary,
+    fontFamily: 'source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace',
+    backgroundColor: theme.palette.action.hover, // Subtle gray background
+    padding: '2px 6px',
+    borderRadius: '4px',
+    fontSize: '0.9em',
+    color: theme.palette.text.primary
 }));
 
 export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer, onClose, onSubmit }) => {
@@ -102,10 +102,10 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         clearFieldError(name);
 
         if (name === 'tierName') {
-            const tier = tiers.find((tier) => tier.name === value);
+            const tier = tiers.find(tier => tier.name === value);
             setFormData(prev => ({
                 ...prev,
-                tier: tier,
+                tier: tier
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -123,15 +123,15 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
     const fieldValidators: Record<string, () => string | undefined> = {
         name: () => {
             if (formData.name === undefined) {
-                return "Customer name is required";
+                return 'Customer name is required';
             } else if (formData.name.trim() !== formData.name) {
-                return "Customer name must not contain trailing whitespace";
+                return 'Customer name must not contain trailing whitespace';
             } else {
                 return undefined;
             }
         },
-        tierName: () => formData.tier?.name ? undefined : 'Tier selection is required',
-        state: () => formData.state ? undefined : 'State is required',
+        tierName: () => (formData.tier?.name ? undefined : 'Tier selection is required'),
+        state: () => (formData.state ? undefined : 'State is required'),
         cidrBlocks: () => {
             if (formData.cidrBlocks && formData.cidrBlocks.length > 0) {
                 const invalidEntries = formData.cidrBlocks.filter(cidr => !isValidCIDR(cidr.trim()));
@@ -140,7 +140,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                 }
             }
             return undefined;
-        },
+        }
     };
 
     const validateField = (fieldName: string): string | undefined => {
@@ -176,7 +176,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         // Always update the value so the user can see and correct invalid entries
         setFormData(prev => ({
             ...prev,
-            cidrBlocks: value.map(cidr => cidr.trim()),
+            cidrBlocks: value.map(cidr => cidr.trim())
         }));
     };
 
@@ -186,7 +186,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
             name: true,
             tierName: true,
             state: true,
-            cidrBlocks: true,
+            cidrBlocks: true
         });
 
         const newErrors: Record<string, string> = {};
@@ -225,95 +225,98 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
         <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                {errors.submit && (
-                  <Alert severity='error'>{errors.submit}</Alert>
-                )}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+                    {errors.submit && <Alert severity='error'>{errors.submit}</Alert>}
 
-                <TextField
-                    label='Customer Name'
-                    name='name'
-                    value={formData.name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    placeholder='e.g., Acme Corp, TechStart Inc'
-                    required={true}
-                    disabled={loading}
-                    error={touched.name && !!errors.name}
-                    helperText={touched.name && errors.name}
-                />
-
-                <FormControl fullWidth disabled={loading} required={true} error={touched.tierName && !!errors.tierName}>
-                    <InputLabel>Tier</InputLabel>
-                    <Select
-                        name='tierName'
-                        value={formData.tier?.name ?? ''}
+                    <TextField
+                        label='Customer Name'
+                        name='name'
+                        value={formData.name}
                         onChange={handleChange}
-                        onBlur={(e) => {
-                            setTouched(prev => ({ ...prev, tierName: true }));
-                            validateField('tierName');
+                        onBlur={handleBlur}
+                        fullWidth
+                        placeholder='e.g., Acme Corp, TechStart Inc'
+                        required={true}
+                        disabled={loading}
+                        error={touched.name && !!errors.name}
+                        helperText={touched.name && errors.name}
+                    />
+
+                    <FormControl
+                        fullWidth
+                        disabled={loading}
+                        required={true}
+                        error={touched.tierName && !!errors.tierName}>
+                        <InputLabel>Tier</InputLabel>
+                        <Select
+                            name='tierName'
+                            value={formData.tier?.name ?? ''}
+                            onChange={handleChange}
+                            onBlur={e => {
+                                setTouched(prev => ({ ...prev, tierName: true }));
+                                validateField('tierName');
+                            }}
+                            label='Tier'>
+                            {tiers
+                                .filter(tier => tier.tierType === 'NON_FREE')
+                                .map(tier => (
+                                    <MenuItem key={tier.name} value={tier.name}>
+                                        {tier.name}
+                                    </MenuItem>
+                                ))}
+                        </Select>
+                        {touched.tierName && errors.tierName && <FormHelperText>{errors.tierName}</FormHelperText>}
+                    </FormControl>
+
+                    <FormControl fullWidth disabled={loading} required={true} error={touched.state && !!errors.state}>
+                        <InputLabel>State</InputLabel>
+                        <Select
+                            name='state'
+                            value={formData.state}
+                            onChange={handleChange}
+                            onBlur={e => {
+                                setTouched(prev => ({ ...prev, state: true }));
+                                validateField('state');
+                            }}
+                            label='State'>
+                            {Object.keys(EnforcementState).map(key => (
+                                <MenuItem key={key} value={EnforcementState[key as keyof typeof EnforcementState]}>
+                                    {key}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                        {touched.state && errors.state && <FormHelperText>{errors.state}</FormHelperText>}
+                    </FormControl>
+
+                    <Autocomplete
+                        multiple
+                        freeSolo
+                        limitTags={5}
+                        disabled={loading}
+                        options={[]}
+                        value={formData.cidrBlocks || []}
+                        onChange={handleCidrBlocksChange}
+                        onBlur={() => {
+                            setTouched(prev => ({ ...prev, cidrBlocks: true }));
+                            validateField('cidrBlocks');
                         }}
-                        label='Tier'
-                    >
-                        {tiers
-                            .filter(tier => tier.tierType === 'NON_FREE')
-                            .map(tier => (
-                            <MenuItem key={tier.name} value={tier.name}>
-                                {tier.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    {touched.tierName && errors.tierName && <FormHelperText>{errors.tierName}</FormHelperText>}
-                </FormControl>
-
-                <FormControl fullWidth disabled={loading} required={true} error={touched.state && !!errors.state}>
-                    <InputLabel>State</InputLabel>
-                    <Select
-                        name='state'
-                        value={formData.state}
-                        onChange={handleChange}
-                        onBlur={(e) => {
-                            setTouched(prev => ({ ...prev, state: true }));
-                            validateField('state');
-                        }}
-                        label='State'
-                    >
-                        {Object.keys(EnforcementState).map(key => (
-                            <MenuItem key={key} value={EnforcementState[key as keyof typeof EnforcementState]}>
-                                {key}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    {touched.state && errors.state && <FormHelperText>{errors.state}</FormHelperText>}
-                </FormControl>
-
-                <Autocomplete
-                    multiple
-                    freeSolo
-                    limitTags={5}
-                    disabled={loading}
-                    options={[]}
-                    value={formData.cidrBlocks || []}
-                    onChange={handleCidrBlocksChange}
-                    onBlur={() => {
-                        setTouched(prev => ({ ...prev, cidrBlocks: true }));
-                        validateField('cidrBlocks');
-                    }}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label='CIDR Blocks'
-                            placeholder='e.g., 192.168.1.0/24'
-                            error={touched.cidrBlocks && !!errors.cidrBlocks}
-                            helperText={(touched.cidrBlocks && errors.cidrBlocks) || (
-                              <>Enter CIDR blocks and press <Code>Enter</Code> to add each one</>
-                            )}
-                        />
-                    )}
-                />
-
-              </Box>
+                        renderInput={params => (
+                            <TextField
+                                {...params}
+                                label='CIDR Blocks'
+                                placeholder='e.g., 192.168.1.0/24'
+                                error={touched.cidrBlocks && !!errors.cidrBlocks}
+                                helperText={
+                                    (touched.cidrBlocks && errors.cidrBlocks) || (
+                                        <>
+                                            Enter CIDR blocks and press <Code>Enter</Code> to add each one
+                                        </>
+                                    )
+                                }
+                            />
+                        )}
+                    />
+                </Box>
             </DialogContent>
 
             <DialogActions sx={{ p: 2 }}>
@@ -324,8 +327,7 @@ export const CustomerFormDialog: FC<CustomerFormDialogProps> = ({ open, customer
                     onClick={handleSubmit}
                     variant='contained'
                     disabled={loading || Object.keys(errors).length > 0}
-                    startIcon={loading ? <CircularProgress size={20} /> : undefined}
-                >
+                    startIcon={loading ? <CircularProgress size={20} /> : undefined}>
                     {isEditMode ? 'Update' : 'Create'}
                 </Button>
             </DialogActions>

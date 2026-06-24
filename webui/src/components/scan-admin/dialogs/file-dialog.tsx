@@ -12,7 +12,18 @@
  ********************************************************************************/
 
 import { FunctionComponent } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, List, ListItem, ListItemText, Box } from '@mui/material';
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    Typography,
+    List,
+    ListItem,
+    ListItemText,
+    Box
+} from '@mui/material';
 import { useDialogs } from '../../../hooks/scan-admin';
 import { useTheme } from '@mui/material/styles';
 import { FileDecision } from '../../../context/scan-admin';
@@ -26,33 +37,34 @@ export const FileDialog: FunctionComponent = () => {
     const { fileDialog } = useDialogs();
 
     return (
-        <Dialog
-            open={fileDialog.isOpen}
-            onClose={fileDialog.close}
-            maxWidth='md'
-            fullWidth
-        >
+        <Dialog open={fileDialog.isOpen} onClose={fileDialog.close} maxWidth='md' fullWidth>
             <DialogTitle>
-                {fileDialog.actionType === 'allow' ? 'Confirm Allow Files' : fileDialog.actionType === 'block' ? 'Confirm Block Files' : 'Confirm Delete Files'}
+                {fileDialog.actionType === 'allow'
+                    ? 'Confirm Allow Files'
+                    : fileDialog.actionType === 'block'
+                      ? 'Confirm Block Files'
+                      : 'Confirm Delete Files'}
             </DialogTitle>
             <DialogContent>
                 <Typography variant='body1' sx={{ mb: 2 }}>
-                    Are you sure you want to {fileDialog.actionType} {fileDialog.selectedFiles.length !== 1 ? 'these' : 'this'} {fileDialog.selectedFiles.length} file{fileDialog.selectedFiles.length !== 1 ? 's' : ''}?
+                    Are you sure you want to {fileDialog.actionType}{' '}
+                    {fileDialog.selectedFiles.length !== 1 ? 'these' : 'this'} {fileDialog.selectedFiles.length} file
+                    {fileDialog.selectedFiles.length !== 1 ? 's' : ''}?
                 </Typography>
-                <List sx={{
-                    maxHeight: '400px',
-                    overflow: 'auto',
-                    border: `1px solid ${theme.palette.scanBackground.default}`,
-                    borderRadius: 1,
-                }}>
+                <List
+                    sx={{
+                        maxHeight: '400px',
+                        overflow: 'auto',
+                        border: `1px solid ${theme.palette.scanBackground.default}`,
+                        borderRadius: 1
+                    }}>
                     {fileDialog.selectedFiles.map((file: FileDecision) => (
                         <ListItem
                             key={file.id}
                             sx={{
                                 borderBottom: `1px solid ${theme.palette.scanBackground.dark}`,
-                                '&:last-child': { borderBottom: 'none' },
-                            }}
-                        >
+                                '&:last-child': { borderBottom: 'none' }
+                            }}>
                             <ListItemText
                                 primary={
                                     <Typography
@@ -61,9 +73,8 @@ export const FileDialog: FunctionComponent = () => {
                                             fontWeight: 500,
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                        }}
-                                    >
+                                            whiteSpace: 'nowrap'
+                                        }}>
                                         {file.fileName}
                                     </Typography>
                                 }
@@ -75,9 +86,8 @@ export const FileDialog: FunctionComponent = () => {
                                             sx={{
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
+                                                whiteSpace: 'nowrap'
+                                            }}>
                                             Hash: {file.fileHash}
                                         </Typography>
                                         <Typography
@@ -86,9 +96,8 @@ export const FileDialog: FunctionComponent = () => {
                                             sx={{
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
+                                                whiteSpace: 'nowrap'
+                                            }}>
                                             {file.displayName}
                                         </Typography>
                                         <Typography
@@ -97,9 +106,8 @@ export const FileDialog: FunctionComponent = () => {
                                             sx={{
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
+                                                whiteSpace: 'nowrap'
+                                            }}>
                                             {file.namespace}.{file.extensionName}
                                         </Typography>
                                         <Typography
@@ -108,9 +116,8 @@ export const FileDialog: FunctionComponent = () => {
                                             sx={{
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
+                                                whiteSpace: 'nowrap'
+                                            }}>
                                             Version: {file.version}
                                         </Typography>
                                     </Box>
@@ -127,9 +134,19 @@ export const FileDialog: FunctionComponent = () => {
                 <Button
                     onClick={fileDialog.execute}
                     variant='contained'
-                    color={fileDialog.actionType === 'allow' ? 'success' : fileDialog.actionType === 'block' ? 'error' : 'secondary'}
-                >
-                    Confirm {fileDialog.actionType === 'allow' ? 'Allow' : fileDialog.actionType === 'block' ? 'Block' : 'Delete'}
+                    color={
+                        fileDialog.actionType === 'allow'
+                            ? 'success'
+                            : fileDialog.actionType === 'block'
+                              ? 'error'
+                              : 'secondary'
+                    }>
+                    Confirm{' '}
+                    {fileDialog.actionType === 'allow'
+                        ? 'Allow'
+                        : fileDialog.actionType === 'block'
+                          ? 'Block'
+                          : 'Delete'}
                 </Button>
             </DialogActions>
         </Dialog>

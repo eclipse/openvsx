@@ -39,7 +39,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             // Tab-specific default enforcement:
             // - Tabs 1 (Quarantined) and 2 (Auto Rejected): default to 'enforced'
             // - Other tabs: default to 'all'
-            const defaultEnforcement = (tab === 1 || tab === 2) ? 'enforced' : 'all';
+            const defaultEnforcement = tab === 1 || tab === 2 ? 'enforced' : 'all';
             return {
                 ...state,
                 selectedTab: tab,
@@ -65,7 +65,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                 fileCounts: null,
                 // Clear selection state to prevent stale counts
                 quarantinedChecked: {},
-                filesChecked: new Set(),
+                filesChecked: new Set()
             };
         }
 
@@ -73,13 +73,31 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
         // Search actions
         // ============================================================
         case 'SET_PUBLISHER_QUERY':
-            return { ...state, publisherQuery: action.payload, currentPage: 0, quarantinedChecked: {}, filesChecked: new Set<string>() };
+            return {
+                ...state,
+                publisherQuery: action.payload,
+                currentPage: 0,
+                quarantinedChecked: {},
+                filesChecked: new Set<string>()
+            };
 
         case 'SET_NAMESPACE_QUERY':
-            return { ...state, namespaceQuery: action.payload, currentPage: 0, quarantinedChecked: {}, filesChecked: new Set<string>() };
+            return {
+                ...state,
+                namespaceQuery: action.payload,
+                currentPage: 0,
+                quarantinedChecked: {},
+                filesChecked: new Set<string>()
+            };
 
         case 'SET_NAME_QUERY':
-            return { ...state, nameQuery: action.payload, currentPage: 0, quarantinedChecked: {}, filesChecked: new Set<string>() };
+            return {
+                ...state,
+                nameQuery: action.payload,
+                currentPage: 0,
+                quarantinedChecked: {},
+                filesChecked: new Set<string>()
+            };
 
         case 'CLEAR_SEARCH':
             return {
@@ -87,7 +105,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                 publisherQuery: '',
                 namespaceQuery: '',
                 nameQuery: '',
-                filesChecked: new Set<string>(),
+                filesChecked: new Set<string>()
             };
 
         // ============================================================
@@ -103,14 +121,20 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
         // Global filter actions
         // ============================================================
         case 'SET_DATE_RANGE':
-            return { ...state, dateRange: action.payload, currentPage: 0, quarantinedChecked: {}, filesChecked: new Set() };
+            return {
+                ...state,
+                dateRange: action.payload,
+                currentPage: 0,
+                quarantinedChecked: {},
+                filesChecked: new Set()
+            };
 
         case 'SET_ENFORCEMENT':
             return {
                 ...state,
                 enforcement: action.payload,
                 currentPage: 0,
-                quarantinedChecked: {},
+                quarantinedChecked: {}
             };
 
         case 'SET_FILE_DATE_RANGE':
@@ -123,7 +147,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             return {
                 ...state,
                 statusFilters: toggleSetValue(state.statusFilters, action.payload),
-                currentPage: 0,
+                currentPage: 0
             };
 
         case 'SET_STATUS_FILTERS':
@@ -134,7 +158,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                 ...state,
                 quarantineFilters: toggleSetValue(state.quarantineFilters, action.payload),
                 currentPage: 0,
-                quarantinedChecked: {},
+                quarantinedChecked: {}
             };
 
         case 'SET_QUARANTINE_FILTERS':
@@ -145,7 +169,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                 ...state,
                 threatScannerFilters: toggleSetValue(state.threatScannerFilters, action.payload),
                 currentPage: 0,
-                quarantinedChecked: {},
+                quarantinedChecked: {}
             };
 
         case 'SET_THREAT_SCANNER_FILTERS':
@@ -155,7 +179,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             return {
                 ...state,
                 validationTypeFilters: toggleSetValue(state.validationTypeFilters, action.payload),
-                currentPage: 0,
+                currentPage: 0
             };
 
         case 'SET_VALIDATION_TYPE_FILTERS':
@@ -196,8 +220,8 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                 ...state,
                 quarantinedChecked: {
                     ...state.quarantinedChecked,
-                    [action.payload.id]: action.payload.checked,
-                },
+                    [action.payload.id]: action.payload.checked
+                }
             };
 
         case 'SELECT_ALL_QUARANTINED': {
@@ -224,28 +248,28 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             return {
                 ...state,
                 confirmDialogOpen: true,
-                confirmAction: action.payload,
+                confirmAction: action.payload
             };
 
         case 'CLOSE_CONFIRM_DIALOG':
             return {
                 ...state,
                 confirmDialogOpen: false,
-                confirmAction: null,
+                confirmAction: null
             };
 
         case 'OPEN_FILE_DIALOG':
             return {
                 ...state,
                 fileDialogOpen: true,
-                fileActionType: action.payload,
+                fileActionType: action.payload
             };
 
         case 'CLOSE_FILE_DIALOG':
             return {
                 ...state,
                 fileDialogOpen: false,
-                fileActionType: null,
+                fileActionType: null
             };
 
         // ============================================================
@@ -255,7 +279,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             return {
                 ...state,
                 scans: action.payload.scans,
-                totalScans: action.payload.totalScans,
+                totalScans: action.payload.totalScans
             };
 
         case 'SET_LOADING_SCANS':
@@ -280,7 +304,7 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
             return {
                 ...state,
                 files: action.payload.files,
-                totalFiles: action.payload.totalFiles,
+                totalFiles: action.payload.totalFiles
             };
 
         case 'SET_LOADING_FILES':
@@ -305,13 +329,13 @@ export const scanReducer = (state: ScanState, action: ScanAction): ScanState => 
                     scanDecisions: newDecisions,
                     quarantinedChecked: {},
                     confirmDialogOpen: false,
-                    confirmAction: null,
+                    confirmAction: null
                 };
             }
             return {
                 ...state,
                 confirmDialogOpen: false,
-                confirmAction: null,
+                confirmAction: null
             };
         }
 

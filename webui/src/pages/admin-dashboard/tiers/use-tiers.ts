@@ -26,7 +26,7 @@ export const useTiers = () => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: tiersQueryKey,
-        queryFn: ({ signal }) => service.admin.getTiers(controllerFromSignal(signal)),
+        queryFn: ({ signal }) => service.admin.getTiers(controllerFromSignal(signal))
     });
 };
 
@@ -40,7 +40,7 @@ export const useCreateTier = () => {
         mutationFn: (tier: Tier) => service.admin.createTier(tier),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
-        },
+        }
     });
 };
 
@@ -54,7 +54,7 @@ export const useUpdateTier = () => {
         mutationFn: ({ name, tier }: { name: string; tier: Tier }) => service.admin.updateTier(name, tier),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
-        },
+        }
     });
 };
 
@@ -68,6 +68,6 @@ export const useDeleteTier = () => {
         mutationFn: (name: string) => service.admin.deleteTier(name),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: tiersQueryKey });
-        },
+        }
     });
 };

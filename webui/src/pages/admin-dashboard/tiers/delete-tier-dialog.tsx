@@ -23,7 +23,7 @@ import {
     Alert
 } from '@mui/material';
 import type { Tier } from '../../../extension-registry-types';
-import { handleError } from "../../../utils";
+import { handleError } from '../../../utils';
 
 interface DeleteTierDialogProps {
     open: boolean;
@@ -73,8 +73,7 @@ export const DeleteTierDialog: FC<DeleteTierDialogProps> = ({ open, tier, onClos
                     variant='contained'
                     color='error'
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : undefined}
-                >
+                    startIcon={loading ? <CircularProgress size={20} /> : undefined}>
                     Delete
                 </Button>
             </DialogActions>

@@ -47,37 +47,40 @@ export interface UseDialogsReturn {
 export const useDialogs = (): UseDialogsReturn => {
     const { state, actions, derived } = useScanContext();
 
-    return useMemo(() => ({
-        confirmDialog: {
-            isOpen: state.confirmDialogOpen,
-            action: state.confirmAction,
-            selectedExtensions: derived.selectedExtensions,
-            close: actions.closeConfirmDialog,
-            execute: actions.executeConfirmAction,
-        },
-        fileDialog: {
-            isOpen: state.fileDialogOpen,
-            actionType: state.fileActionType,
-            selectedFiles: derived.selectedFiles,
-            close: actions.closeFileDialog,
-            execute: actions.executeFileAction,
-        },
-        openAllowDialog: actions.openAllowDialog,
-        openBlockDialog: actions.openBlockDialog,
-        openFileDialog: actions.openFileDialog,
-    }), [
-        state.confirmDialogOpen,
-        state.confirmAction,
-        state.fileDialogOpen,
-        state.fileActionType,
-        derived.selectedExtensions,
-        derived.selectedFiles,
-        actions.closeConfirmDialog,
-        actions.executeConfirmAction,
-        actions.closeFileDialog,
-        actions.executeFileAction,
-        actions.openAllowDialog,
-        actions.openBlockDialog,
-        actions.openFileDialog,
-    ]);
+    return useMemo(
+        () => ({
+            confirmDialog: {
+                isOpen: state.confirmDialogOpen,
+                action: state.confirmAction,
+                selectedExtensions: derived.selectedExtensions,
+                close: actions.closeConfirmDialog,
+                execute: actions.executeConfirmAction
+            },
+            fileDialog: {
+                isOpen: state.fileDialogOpen,
+                actionType: state.fileActionType,
+                selectedFiles: derived.selectedFiles,
+                close: actions.closeFileDialog,
+                execute: actions.executeFileAction
+            },
+            openAllowDialog: actions.openAllowDialog,
+            openBlockDialog: actions.openBlockDialog,
+            openFileDialog: actions.openFileDialog
+        }),
+        [
+            state.confirmDialogOpen,
+            state.confirmAction,
+            state.fileDialogOpen,
+            state.fileActionType,
+            derived.selectedExtensions,
+            derived.selectedFiles,
+            actions.closeConfirmDialog,
+            actions.executeConfirmAction,
+            actions.closeFileDialog,
+            actions.executeFileAction,
+            actions.openAllowDialog,
+            actions.openBlockDialog,
+            actions.openFileDialog
+        ]
+    );
 };

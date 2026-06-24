@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import fetchBuilder from "fetch-retry";
+import fetchBuilder from 'fetch-retry';
 
 export interface ServerAPIRequest {
     abortController?: AbortController;
@@ -38,7 +38,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
     }
 
     const param: RequestInit = {
-        method: req.method,
+        method: req.method
     };
 
     if (req.abortController) {
@@ -48,7 +48,8 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
     }
 
     if (req.payload) {
-        param.body = (req.payload instanceof File || req.payload instanceof FormData) ? req.payload : JSON.stringify(req.payload);
+        param.body =
+            req.payload instanceof File || req.payload instanceof FormData ? req.payload : JSON.stringify(req.payload);
     }
     param.headers = req.headers;
     if (req.followRedirect) {
@@ -58,15 +59,17 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         param.credentials = 'include';
     }
 
-    const options: any = retry ? {
-        retries: 10,
-        retryDelay: (attempt: number, error: Error, response: Response) => {
-            return Math.pow(2, attempt) * 1000;
-        },
-        retryOn: (attempt: number, error: Error, response: Response) => {
-            return error !== null || response.status >= 500;
-        }
-    } : {};
+    const options: any = retry
+        ? {
+              retries: 10,
+              retryDelay: (attempt: number, error: Error, response: Response) => {
+                  return Math.pow(2, attempt) * 1000;
+              },
+              retryOn: (attempt: number, error: Error, response: Response) => {
+                  return error !== null || response.status >= 500;
+              }
+          }
+        : {};
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
@@ -87,9 +90,10 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         const retryAfter = response.headers.get('Retry-After');
         const retrySeconds = retryAfterSeconds ?? retryAfter ?? '0';
         const jitter = Math.floor(Math.random() * 100);
-        const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
-        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))
-            .then(request => sendRequest(request));
+        const timeoutMillis = (Number(retrySeconds) + 1) * 1000 + jitter;
+        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req)).then(request =>
+            sendRequest(request)
+        );
     } else {
         let err: ErrorResponse;
         try {

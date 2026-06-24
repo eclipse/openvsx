@@ -13,8 +13,16 @@
 
 import { FC, useState, useContext, useEffect, useRef } from 'react';
 import {
-    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button,
-    TextField, Autocomplete, Box, Avatar
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Button,
+    TextField,
+    Autocomplete,
+    Box,
+    Avatar
 } from '@mui/material';
 import type { UserData } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -52,8 +60,8 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
     }, []);
 
     const isUserExcluded = (user: UserData) =>
-        existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider)
-        || (externalFilter && !externalFilter(user));
+        existingUsers.some(u => u.loginName === user.loginName && u.provider === user.provider) ||
+        (externalFilter && !externalFilter(user));
 
     const handleInputChange = (_: unknown, value: string) => {
         clearTimeout(debounceTimeout.current);
@@ -95,8 +103,8 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
                 <Autocomplete<UserData>
                     options={options}
                     loading={loading}
-                    filterOptions={(opts) => opts.filter(u => !isUserExcluded(u))}
-                    getOptionLabel={(option) => option.loginName}
+                    filterOptions={opts => opts.filter(u => !isUserExcluded(u))}
+                    getOptionLabel={option => option.loginName}
                     isOptionEqualToValue={(option, value) =>
                         option.loginName === value.loginName && option.provider === value.provider
                     }
@@ -107,27 +115,18 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
                             component='li'
                             {...props}
                             key={user.loginName + user.provider}
-                            sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-                        >
-                            <Avatar
-                                variant='rounded'
-                                src={user.avatarUrl}
-                                sx={{ width: 36, height: 36 }}
-                            />
+                            sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Avatar variant='rounded' src={user.avatarUrl} sx={{ width: 36, height: 36 }} />
                             <Box>
                                 <Box fontWeight='bold'>{user.loginName}</Box>
-                                <Box fontSize='0.75rem' color='text.secondary'>{user.fullName}</Box>
+                                <Box fontSize='0.75rem' color='text.secondary'>
+                                    {user.fullName}
+                                </Box>
                             </Box>
                         </Box>
                     )}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            autoFocus
-                            margin='dense'
-                            label='Search User'
-                            fullWidth
-                        />
+                    renderInput={params => (
+                        <TextField {...params} autoFocus margin='dense' label='Search User' fullWidth />
                     )}
                 />
             </DialogContent>

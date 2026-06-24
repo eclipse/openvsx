@@ -21,7 +21,7 @@ import {
     useScanCountsEffect,
     useFilesEffect,
     useFileCountsEffect,
-    useAutoRefreshEffect,
+    useAutoRefreshEffect
 } from './scan-api-effects';
 import { useConfirmAction, useFileAction, useRetryFailedScannerJobsAction } from './scan-api-actions';
 import { useScanActions } from './scan-actions';
@@ -87,28 +87,30 @@ export const ScanProvider: FC<ScanProviderProps> = ({ children, service, handleE
         return Math.ceil(total / state.pageSize);
     }, [state.selectedTab, state.totalScans, state.totalFiles, state.pageSize]);
 
-    const derived: DerivedData = useMemo(() => ({
-        selectedExtensions,
-        selectedFiles,
-        totalPages,
-    }), [selectedExtensions, selectedFiles, totalPages]);
+    const derived: DerivedData = useMemo(
+        () => ({
+            selectedExtensions,
+            selectedFiles,
+            totalPages
+        }),
+        [selectedExtensions, selectedFiles, totalPages]
+    );
 
     // ========================================================================
     // Context Value
     // ========================================================================
 
-    const contextValue = useMemo(() => ({
-        state,
-        dispatch,
-        actions,
-        derived,
-    }), [state, actions, derived]);
-
-    return (
-        <ScanContext.Provider value={contextValue}>
-            {children}
-        </ScanContext.Provider>
+    const contextValue = useMemo(
+        () => ({
+            state,
+            dispatch,
+            actions,
+            derived
+        }),
+        [state, actions, derived]
     );
+
+    return <ScanContext.Provider value={contextValue}>{children}</ScanContext.Provider>;
 };
 
 // ============================================================================

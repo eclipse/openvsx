@@ -9,13 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, lazy, Suspense } from 'react';
-import {
-    Box,
-    Container,
-    CssBaseline,
-    Typography,
-    IconButton,
-} from '@mui/material';
+import { Box, Container, CssBaseline, Typography, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
@@ -29,7 +23,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SpeedIcon from '@mui/icons-material/Speed';
 import StarIcon from '@mui/icons-material/Star';
-import { LoginComponent } from "../../default/login";
+import { LoginComponent } from '../../default/login';
 import { MainContext } from '../../context';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { AdminSidepanel } from './admin-sidepanel';
@@ -50,21 +44,61 @@ const ExtensionAdmin = lazy(() => import('./extension-admin').then(m => ({ defau
 const UsageStatsView = lazy(() => import('./usage-stats/usage-stats').then(m => ({ default: m.UsageStatsView })));
 
 const navConfig: NavEntry[] = [
-    { path: AdminDashboardRoutes.NAMESPACE_ADMIN, name: 'Namespaces', icon: <AssignmentIndIcon />, description: 'Manage user roles and create new namespaces' },
-    { path: AdminDashboardRoutes.EXTENSION_ADMIN, name: 'Extensions', icon: <ExtensionSharpIcon />, description: 'Search for extensions and remove certain versions' },
-    { path: AdminDashboardRoutes.PUBLISHER_ADMIN, name: 'Publisher', icon: <PersonIcon />, description: 'Search for publishers and revoke their contributions' },
-    { path: AdminDashboardRoutes.SCANS_ADMIN, name: 'Scans', icon: <SecurityIcon />, description: 'View security scan results and manage quarantined extensions' },
+    {
+        path: AdminDashboardRoutes.NAMESPACE_ADMIN,
+        name: 'Namespaces',
+        icon: <AssignmentIndIcon />,
+        description: 'Manage user roles and create new namespaces'
+    },
+    {
+        path: AdminDashboardRoutes.EXTENSION_ADMIN,
+        name: 'Extensions',
+        icon: <ExtensionSharpIcon />,
+        description: 'Search for extensions and remove certain versions'
+    },
+    {
+        path: AdminDashboardRoutes.PUBLISHER_ADMIN,
+        name: 'Publisher',
+        icon: <PersonIcon />,
+        description: 'Search for publishers and revoke their contributions'
+    },
+    {
+        path: AdminDashboardRoutes.SCANS_ADMIN,
+        name: 'Scans',
+        icon: <SecurityIcon />,
+        description: 'View security scan results and manage quarantined extensions'
+    },
     {
         name: 'Rate Limiting',
         icon: <SpeedIcon />,
         children: [
-            { path: AdminDashboardRoutes.TIERS, name: 'Tiers', icon: <StarIcon />, description: 'Manage rate-limit tiers' },
-            { path: AdminDashboardRoutes.CUSTOMERS, name: 'Customers', icon: <PeopleIcon />, description: 'Manage rate-limit customers' },
-            { path: AdminDashboardRoutes.USAGE_STATS, name: 'Usage Stats', icon: <BarChartIcon />, description: 'Show usage stats for customers' },
-        ],
+            {
+                path: AdminDashboardRoutes.TIERS,
+                name: 'Tiers',
+                icon: <StarIcon />,
+                description: 'Manage rate-limit tiers'
+            },
+            {
+                path: AdminDashboardRoutes.CUSTOMERS,
+                name: 'Customers',
+                icon: <PeopleIcon />,
+                description: 'Manage rate-limit customers'
+            },
+            {
+                path: AdminDashboardRoutes.USAGE_STATS,
+                name: 'Usage Stats',
+                icon: <BarChartIcon />,
+                description: 'Show usage stats for customers'
+            }
+        ]
     },
-    { path: AdminDashboardRoutes.SETTINGS, name: 'Settings', icon: <SettingsIcon />, description: 'Manage runtime settings for the registry' },
-    { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' },
+    {
+        path: AdminDashboardRoutes.SETTINGS,
+        name: 'Settings',
+        icon: <SettingsIcon />,
+        description: 'Manage runtime settings for the registry'
+    },
+    { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' }
 ];
 
 const routeNames: { [key: string]: string } = {
@@ -78,36 +112,39 @@ const routeNames: { [key: string]: string } = {
             acc[entry.path] = entry.name;
         }
         return acc;
-    }, {}),
+    }, {})
 };
 
 const ScrollableContent = styled(Box)(({ theme }) => ({
     flex: 1,
     overflowY: 'auto',
     '&::-webkit-scrollbar': {
-        width: '12px',
+        width: '12px'
     },
     '&::-webkit-scrollbar-track': {
-        backgroundColor: theme.palette.action.hover,
+        backgroundColor: theme.palette.action.hover
     },
     '&::-webkit-scrollbar-thumb': {
         backgroundColor: theme.palette.action.selected,
         borderRadius: '6px',
         '&:hover': {
-            backgroundColor: theme.palette.action.focus,
-        },
-    },
+            backgroundColor: theme.palette.action.focus
+        }
+    }
 }));
 
-const Message: FunctionComponent<{message: string}> = ({ message }) => {
-    return (<Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%'
-    }}>
-        <Typography variant='h6'>{message}</Typography>
-    </Box>);
+const Message: FunctionComponent<{ message: string }> = ({ message }) => {
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '100%'
+            }}>
+            <Typography variant='h6'>{message}</Typography>
+        </Box>
+    );
 };
 
 export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
@@ -118,7 +155,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
 
     let content: ReactNode = null;
     if (user?.role === 'admin') {
-        content =
+        content = (
             <Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
                 <CssBaseline />
                 <AdminSidepanel items={navConfig} />
@@ -128,61 +165,65 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                         <Container sx={{ pt: 3, pb: 4, px: 3 }} maxWidth={false}>
                             <Suspense fallback={null}>
                                 <Routes>
-                                    <Route path='/namespaces' element={<NamespaceAdmin/>} />
-                                    <Route path='/extensions' element={<ExtensionAdmin/>} />
-                                    <Route path='/extensions/:namespace/:extension' element={<ExtensionAdmin/>} />
-                                    <Route path='/publisher' element={<PublisherAdmin/>} />
-                                    <Route path='/publisher/:publisher' element={<PublisherAdmin/>} />
-                                    <Route path='/scans' element={<ScanAdmin/>} />
-                                    <Route path='/tiers' element={<Tiers/>} />
-                                    <Route path='/customers' element={<Customers/>} />
-                                    <Route path='/customers/:customer' element={<CustomerDetails/>} />
-                                    <Route path='/usage' element={<UsageStatsView/>} />
-                                    <Route path='/usage/:customer' element={<UsageStatsView/>} />
-                                    <Route path='/settings' element={<RuntimeSettingsPage/>} />
-                                    <Route path='/logs' element={<Logs/>} />
+                                    <Route path='/namespaces' element={<NamespaceAdmin />} />
+                                    <Route path='/extensions' element={<ExtensionAdmin />} />
+                                    <Route path='/extensions/:namespace/:extension' element={<ExtensionAdmin />} />
+                                    <Route path='/publisher' element={<PublisherAdmin />} />
+                                    <Route path='/publisher/:publisher' element={<PublisherAdmin />} />
+                                    <Route path='/scans' element={<ScanAdmin />} />
+                                    <Route path='/tiers' element={<Tiers />} />
+                                    <Route path='/customers' element={<Customers />} />
+                                    <Route path='/customers/:customer' element={<CustomerDetails />} />
+                                    <Route path='/usage' element={<UsageStatsView />} />
+                                    <Route path='/usage/:customer' element={<UsageStatsView />} />
+                                    <Route path='/settings' element={<RuntimeSettingsPage />} />
+                                    <Route path='/logs' element={<Logs />} />
                                     <Route path='*' element={<Welcome items={navConfig} />} />
                                 </Routes>
                             </Suspense>
                         </Container>
                     </ScrollableContent>
                 </Box>
-            </Box>;
-    } else if (user) {
-        content = <Message message='You are not authorized as administrator.'/>;
-    } else if (!props.userLoading && loginProviders) {
-
-        content = <Box display='flex' alignItems='center'>
-            <Message message='You are not logged in.'/>
-            <Box height='fit-content' alignItems='center' display='flex'>
-            <LoginComponent
-                loginProviders={loginProviders}
-                renderButton={(href, onClick) => {
-                    if (href) {
-                        return (<IconButton
-                            href={href}
-                            title='Log In'
-                            aria-label='Log In' >
-                            <AccountBoxIcon />
-                        </IconButton>);
-                    } else {
-                        return (<IconButton
-                            onClick={onClick}
-                            title='Log In'
-                            aria-label='Log In' >
-                            <AccountBoxIcon />
-                        </IconButton>);
-                    }
-                }}
-            />
             </Box>
-        </Box>;
+        );
+    } else if (user) {
+        content = <Message message='You are not authorized as administrator.' />;
+    } else if (!props.userLoading && loginProviders) {
+        content = (
+            <Box display='flex' alignItems='center'>
+                <Message message='You are not logged in.' />
+                <Box height='fit-content' alignItems='center' display='flex'>
+                    <LoginComponent
+                        loginProviders={loginProviders}
+                        renderButton={(href, onClick) => {
+                            if (href) {
+                                return (
+                                    <IconButton href={href} title='Log In' aria-label='Log In'>
+                                        <AccountBoxIcon />
+                                    </IconButton>
+                                );
+                            } else {
+                                return (
+                                    <IconButton onClick={onClick} title='Log In' aria-label='Log In'>
+                                        <AccountBoxIcon />
+                                    </IconButton>
+                                );
+                            }
+                        }}
+                    />
+                </Box>
+            </Box>
+        );
     }
 
-    return <>
-        <CssBaseline />
-        <Box display='flex' height='100vh' justifyContent='center'>{content}</Box>
-    </>;
+    return (
+        <>
+            <CssBaseline />
+            <Box display='flex' height='100vh' justifyContent='center'>
+                {content}
+            </Box>
+        </>
+    );
 };
 
 export interface AdminDashboardProps {

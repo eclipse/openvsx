@@ -10,7 +10,18 @@
 
 import { FunctionComponent, useCallback, useContext } from 'react';
 import {
-    Typography, Box, Container, Link, Avatar, Paper, Badge, Tabs, Tab, Stack, useTheme, PaletteMode,
+    Typography,
+    Box,
+    Container,
+    Link,
+    Avatar,
+    Paper,
+    Badge,
+    Tabs,
+    Tab,
+    Stack,
+    useTheme,
+    PaletteMode,
     decomposeColor
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
@@ -50,16 +61,14 @@ const PreviewBadge = styled(Badge)(({ theme }) => ({
 enum ExtensionTab {
     OVERVIEW = 'overview',
     CHANGES = 'changes',
-    REVIEWS = 'reviews',
+    REVIEWS = 'reviews'
 }
 
 const TAB_VALUES = new Set<string>(Object.values(ExtensionTab));
 
-const isTabSegment = (segment?: string): segment is ExtensionTab =>
-    TAB_VALUES.has(segment ?? '');
+const isTabSegment = (segment?: string): segment is ExtensionTab => TAB_VALUES.has(segment ?? '');
 
-const parseTab = (segment?: string): ExtensionTab =>
-    isTabSegment(segment) ? segment : ExtensionTab.OVERVIEW;
+const parseTab = (segment?: string): ExtensionTab => (isTabSegment(segment) ? segment : ExtensionTab.OVERVIEW);
 
 const buildExtensionPath = (namespace: string, name: string, target?: string, ...extra: string[]) => {
     const arr = [ExtensionDetailRoutes.ROOT, namespace, name];
@@ -89,18 +98,16 @@ const UnverifiedBanner: FunctionComponent<{
                 bgcolor: `warning.${themeType}`,
                 color: headerTextColor,
                 '& a': { color: headerTextColor, textDecoration: 'underline' }
-            }}
-        >
+            }}>
             <WarningIcon fontSize='large' />
             <Box ml={1}>
-                This version of the &ldquo;{extension.displayName ?? extension.name}&rdquo; extension was published
-                by <Link href={extension.publishedBy.homepage}>
-                    {extension.publishedBy.loginName}
-                </Link>. That user account is not a verified publisher of
-                the namespace &ldquo;{extension.namespace}&rdquo; of
-                this extension. <Link href={pageSettings.urls.namespaceAccessInfo} target='_blank'>
+                This version of the &ldquo;{extension.displayName ?? extension.name}&rdquo; extension was published by{' '}
+                <Link href={extension.publishedBy.homepage}>{extension.publishedBy.loginName}</Link>. That user account
+                is not a verified publisher of the namespace &ldquo;{extension.namespace}&rdquo; of this extension.{' '}
+                <Link href={pageSettings.urls.namespaceAccessInfo} target='_blank'>
                     See the documentation
-                </Link> to learn how we handle namespaces and what you can do to eliminate this warning.
+                </Link>{' '}
+                to learn how we handle namespaces and what you can do to eliminate this warning.
             </Box>
         </Paper>
     );
@@ -145,9 +152,14 @@ const UserPopover: FunctionComponent<{
     return (
         <StyledHoverPopover id={`user_${user.loginName}_popover`} popupContent={popupContent}>
             <StyledLink href={user.homepage} sx={{ color }}>
-                {user.avatarUrl
-                    ? <>{user.loginName}&nbsp;<Avatar src={user.avatarUrl} alt={user.loginName} sx={{ width: '20px', height: '20px' }} /></>
-                    : user.loginName}
+                {user.avatarUrl ? (
+                    <>
+                        {user.loginName}&nbsp;
+                        <Avatar src={user.avatarUrl} alt={user.loginName} sx={{ width: '20px', height: '20px' }} />
+                    </>
+                ) : (
+                    user.loginName
+                )}
             </StyledLink>
         </StyledHoverPopover>
     );
@@ -159,7 +171,10 @@ const LicenseLink: FunctionComponent<{
 }> = ({ extension, color }) => {
     if (extension.files.license) {
         return (
-            <StyledLink href={extension.files.license} sx={{ color }} title={extension.license ? 'License type' : undefined}>
+            <StyledLink
+                href={extension.files.license}
+                sx={{ color }}
+                title={extension.license ? 'License type' : undefined}>
                 {extension.license || 'Provided license'}
             </StyledLink>
         );
@@ -167,7 +182,10 @@ const LicenseLink: FunctionComponent<{
     return <>{extension.license || 'Unlicensed'}</>;
 };
 
-const compactNumber = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as Intl.NumberFormatOptions);
+const compactNumber = new Intl.NumberFormat(undefined, {
+    notation: 'compact',
+    compactDisplay: 'short'
+} as Intl.NumberFormatOptions);
 
 const ExtensionHeaderInfo: FunctionComponent<{
     extension: Extension;
@@ -190,24 +208,38 @@ const ExtensionHeaderInfo: FunctionComponent<{
                     <Typography>
                         This extension has been deprecated.
                         {extension.replacement && (
-                            <>&nbsp;Use <StyledLink sx={{ color: headerTextColor }} href={extension.replacement.url}>
-                                {extension.replacement.displayName}
-                            </StyledLink> instead.</>
+                            <>
+                                &nbsp;Use{' '}
+                                <StyledLink sx={{ color: headerTextColor }} href={extension.replacement.url}>
+                                    {extension.replacement.displayName}
+                                </StyledLink>{' '}
+                                instead.
+                            </>
                         )}
                     </Typography>
                 </Stack>
             )}
 
-            <Box sx={{ display: 'flex', alignItems: 'center', color: headerTextColor, flexDirection: { xs: 'column', md: 'row' } }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: headerTextColor,
+                    flexDirection: { xs: 'column', md: 'row' }
+                }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    <VerificationIcon verified={extension.verified} color={headerTextColor} />&nbsp;
-                    <StyledRouteLink to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])} style={{ color: headerTextColor }}>
+                    <VerificationIcon verified={extension.verified} color={headerTextColor} />
+                    &nbsp;
+                    <StyledRouteLink
+                        to={createRoute([NamespaceDetailRoutes.ROOT, extension.namespace])}
+                        style={{ color: headerTextColor }}>
                         {extension.namespaceDisplayName}
                     </StyledRouteLink>
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} collapseSmall />
                 <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    Published by&nbsp;<UserPopover user={extension.publishedBy} color={headerTextColor} />
+                    Published by&nbsp;
+                    <UserPopover user={extension.publishedBy} color={headerTextColor} />
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} collapseSmall />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -219,11 +251,23 @@ const ExtensionHeaderInfo: FunctionComponent<{
                 <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{extension.description}</Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', color: headerTextColor, justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                <Box component='span' sx={{ display: 'flex', alignItems: 'center' }}
-                    title={extension.downloadCount && extension.downloadCount >= 1000 ? `${extension.downloadCount} downloads` : undefined}
-                >
-                    <SaveAltIcon fontSize='small' />&nbsp;{downloadCountFormatted}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: headerTextColor,
+                    justifyContent: { xs: 'center', md: 'flex-start' }
+                }}>
+                <Box
+                    component='span'
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                    title={
+                        extension.downloadCount && extension.downloadCount >= 1000
+                            ? `${extension.downloadCount} downloads`
+                            : undefined
+                    }>
+                    <SaveAltIcon fontSize='small' />
+                    &nbsp;{downloadCountFormatted}&nbsp;{extension.downloadCount === 1 ? 'download' : 'downloads'}
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} />
                 <StyledLink
@@ -233,10 +277,9 @@ const ExtensionHeaderInfo: FunctionComponent<{
                         extension.averageRating === undefined
                             ? 'Not rated yet'
                             : `Average rating: ${Math.round(extension.averageRating * 10) / 10} out of 5 (${extension.reviewCount} reviews)`
-                    }
-                >
-                    <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='small' />
-                    ({reviewCountFormatted})
+                    }>
+                    <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='small' />(
+                    {reviewCountFormatted})
                 </StyledLink>
             </Box>
         </Box>
@@ -268,8 +311,7 @@ const ExtensionHeader: FunctionComponent<{
                 bgcolor: headerColor,
                 color: headerTextColor,
                 filter: extension.deprecated ? 'grayscale(100%)' : undefined
-            }}
-        >
+            }}>
             <Container maxWidth='xl'>
                 <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
                     <UnverifiedBanner extension={extension} headerTextColor={headerTextColor} themeType={themeType} />
@@ -280,8 +322,7 @@ const ExtensionHeader: FunctionComponent<{
                             flexDirection: { xs: 'column', md: 'row' },
                             textAlign: { xs: 'center', md: 'start' },
                             alignItems: { xs: 'center', md: 'normal' }
-                        }}
-                    >
+                        }}>
                         <Box
                             component='img'
                             src={icon ?? pageSettings.urls.extensionDefaultIcon}
@@ -307,14 +348,24 @@ export const ExtensionDetail: FunctionComponent = () => {
     const activeTab = parseTab(version);
 
     // React Router v6 returns a possibly undefined type for params, but our route configuration guarantees these will be defined.
-    const { loading, error, extension, icon, reload } = useExtensionDetail(namespace!, name!, target!, effectiveVersion!);
+    const { loading, error, extension, icon, reload } = useExtensionDetail(
+        namespace!,
+        name!,
+        target!,
+        effectiveVersion!
+    );
 
-    const navigateToVersion = useCallback((selectedVersion: string) => {
-        if (!namespace || !name) return;
-        navigate(selectedVersion === 'latest'
-            ? buildExtensionPath(namespace, name, target)
-            : buildExtensionPath(namespace, name, target, selectedVersion));
-    }, [navigate, namespace, name, target]);
+    const navigateToVersion = useCallback(
+        (selectedVersion: string) => {
+            if (!namespace || !name) return;
+            navigate(
+                selectedVersion === 'latest'
+                    ? buildExtensionPath(namespace, name, target)
+                    : buildExtensionPath(namespace, name, target, selectedVersion)
+            );
+        },
+        [navigate, namespace, name, target]
+    );
 
     if (!namespace || !name) return null;
 
@@ -340,19 +391,44 @@ export const ExtensionDetail: FunctionComponent = () => {
                     <ExtensionHeader extension={extension} icon={icon} />
                     <Container maxWidth='xl'>
                         <Tabs value={activeTab} indicatorColor='secondary'>
-                            <Tab value={ExtensionTab.OVERVIEW} label='Overview' component={RouteLink} to={overviewPath} />
+                            <Tab
+                                value={ExtensionTab.OVERVIEW}
+                                label='Overview'
+                                component={RouteLink}
+                                to={overviewPath}
+                            />
                             <Tab value={ExtensionTab.CHANGES} label='Changes' component={RouteLink} to={changesPath} />
-                            <Tab value={ExtensionTab.REVIEWS} label='Ratings &amp; Reviews' component={RouteLink} to={reviewsPath} />
+                            <Tab
+                                value={ExtensionTab.REVIEWS}
+                                label='Ratings &amp; Reviews'
+                                component={RouteLink}
+                                to={reviewsPath}
+                            />
                         </Tabs>
                         <Routes>
-                            <Route path={ExtensionTab.REVIEWS} element={<ExtensionDetailReviews extension={extension} reviewsDidUpdate={reload} />} />
-                            <Route path={ExtensionTab.CHANGES} element={<ExtensionDetailChanges extension={extension} />} />
-                            <Route path='*' element={<ExtensionDetailOverview extension={extension} selectVersion={navigateToVersion} />} />
+                            <Route
+                                path={ExtensionTab.REVIEWS}
+                                element={<ExtensionDetailReviews extension={extension} reviewsDidUpdate={reload} />}
+                            />
+                            <Route
+                                path={ExtensionTab.CHANGES}
+                                element={<ExtensionDetailChanges extension={extension} />}
+                            />
+                            <Route
+                                path='*'
+                                element={
+                                    <ExtensionDetailOverview extension={extension} selectVersion={navigateToVersion} />
+                                }
+                            />
                         </Routes>
                     </Container>
                 </>
             )}
-            {error && <Box p={4}><Typography variant='h5'>{error.message}</Typography></Box>}
+            {error && (
+                <Box p={4}>
+                    <Typography variant='h5'>{error.message}</Typography>
+                </Box>
+            )}
         </>
     );
 };

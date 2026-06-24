@@ -37,7 +37,7 @@ export const BlockListTabContent: FunctionComponent = () => {
         pagination,
         lastRefreshed,
         autoRefresh,
-        onAutoRefreshChange,
+        onAutoRefreshChange
     } = useBlockListTab();
 
     return (
@@ -55,21 +55,19 @@ export const BlockListTabContent: FunctionComponent = () => {
                             label: 'ALLOW',
                             color: theme.palette.allowed!,
                             disabled: !fileActions.canPerformAction,
-                            onClick: fileActions.openAllowDialog,
+                            onClick: fileActions.openAllowDialog
                         },
                         {
                             label: 'DELETE',
                             color: theme.palette.secondary.main,
                             disabled: !fileActions.canPerformAction,
-                            onClick: fileActions.openDeleteDialog,
-                        },
+                            onClick: fileActions.openDeleteDialog
+                        }
                     ]}
                     selectedCount={selection.selectedCount}
                 />
                 <CountsToolbar
-                    counts={[
-                        { label: 'Blocked Files', value: fileCount, color: theme.palette.blocked },
-                    ]}
+                    counts={[{ label: 'Blocked Files', value: fileCount, color: theme.palette.blocked }]}
                     dateRange={state.fileDateRange}
                     onDateRangeChange={actions.setFileDateRange}
                 />

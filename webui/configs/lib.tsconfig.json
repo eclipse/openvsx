@@ -1,13 +1,9 @@
 {
-  "extends": "./base.tsconfig.json",
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "outDir": "../lib"
-  },
-  "include": [
-    "../src/**/*"
-  ],
-  "exclude": [
-    "../src/default/server.ts"
-  ]
+    "extends": "./base.tsconfig.json",
+    "compilerOptions": {
+        "skipLibCheck": true,
+        "outDir": "../lib"
+    },
+    "include": ["../src/**/*"],
+    "exclude": ["../src/default/server.ts"]
 }

@@ -9,7 +9,7 @@
  * https://www.eclipse.org/legal/epl-2.0
  *
  * SPDX-License-Identifier: EPL-2.0
-********************************************************************************/
+ ********************************************************************************/
 
 import { FunctionComponent } from 'react';
 import { Box, Typography, Pagination, CircularProgress } from '@mui/material';
@@ -34,7 +34,7 @@ export const AutoRejectedTabContent: FunctionComponent = () => {
         globalFilters,
         validationTypeFilters,
         pagination,
-        hasValidationTypes,
+        hasValidationTypes
     } = useAutoRejectedTab();
 
     return (
@@ -49,13 +49,11 @@ export const AutoRejectedTabContent: FunctionComponent = () => {
                     onNameChange={search.handleNameChange}
                 />
                 <CountsToolbar
-                    counts={[
-                        { label: 'Total', value: totalCount, color: 'text.primary' },
-                    ]}
+                    counts={[{ label: 'Total', value: totalCount, color: 'text.primary' }]}
                     filterOptions={validationTypeFilters.availableValidationTypes.map(type => ({
                         label: type,
                         value: type,
-                        checked: validationTypeFilters.filters.has(type),
+                        checked: validationTypeFilters.filters.has(type)
                     }))}
                     onFilterOptionToggle={validationTypeFilters.toggle}
                     dateRange={globalFilters.dateRange}
@@ -73,7 +71,7 @@ export const AutoRejectedTabContent: FunctionComponent = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                     <CircularProgress color='secondary' />
                 </Box>
-            ) : (!hasValidationTypes || scans.length === 0) ? (
+            ) : !hasValidationTypes || scans.length === 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
                     <Typography variant='h6' color='text.secondary'>
                         No auto rejected extensions
@@ -83,9 +81,7 @@ export const AutoRejectedTabContent: FunctionComponent = () => {
                     </Typography>
                 </Box>
             ) : (
-                scans.map((scan) => (
-                    <ScanCard key={scan.id} scan={scan} />
-                ))
+                scans.map(scan => <ScanCard key={scan.id} scan={scan} />)
             )}
             {pagination.totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>

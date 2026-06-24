@@ -56,18 +56,17 @@ export const ConditionalTooltip: FunctionComponent<ConditionalTooltipProps> = ({
                         name: 'preventOverflow',
                         enabled: true,
                         options: {
-                            boundary: 'clippingParents',
-                        },
-                    },
+                            boundary: 'clippingParents'
+                        }
+                    }
                 ],
                 sx: {
-                    pointerEvents: 'none',
-                },
+                    pointerEvents: 'none'
+                }
             }}
-            {...tooltipProps}
-        >
+            {...tooltipProps}>
             {cloneElement(children as ReactElement, {
-                ref: textRef,
+                ref: textRef
             })}
         </Tooltip>
     );

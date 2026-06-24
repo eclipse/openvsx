@@ -28,11 +28,11 @@ export const AdminSidepanel: FunctionComponent<AdminSidepanelProps> = ({ items }
 
     return (
         <Sidepanel open={open} onToggle={() => setOpen(prev => !prev)}>
-            {items.map((entry) => {
+            {items.map(entry => {
                 if (isNavGroup(entry)) {
                     return (
                         <NavigationItem key={entry.name} label={entry.name} icon={entry.icon}>
-                            {entry.children.map((child) => (
+                            {entry.children.map(child => (
                                 <NavigationItem
                                     key={child.path}
                                     active={pathname.startsWith(child.path)}

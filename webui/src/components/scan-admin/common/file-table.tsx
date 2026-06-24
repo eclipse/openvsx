@@ -21,7 +21,7 @@ import {
     TableRow,
     Checkbox,
     Typography,
-    Chip,
+    Chip
 } from '@mui/material';
 import { FileDecision } from '../../../context/scan-admin';
 import { ConditionalTooltip, formatDateTime } from './index';
@@ -34,7 +34,7 @@ interface FileTableProps {
     onSelectionChange?: (fileIds: Set<string>) => void;
 }
 
-export const FileTable: FunctionComponent<FileTableProps> = (props) => {
+export const FileTable: FunctionComponent<FileTableProps> = props => {
     const { files, type, selectedFiles = new Set(), onSelectionChange } = props;
     const [internalSelection, setInternalSelection] = useState<Set<string>>(selectedFiles);
     const theme = useTheme();
@@ -45,7 +45,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
         actionBy: 130,
         extension: 250,
         publisher: 150,
-        version: 100,
+        version: 100
     });
 
     const selection = onSelectionChange ? selectedFiles : internalSelection;
@@ -78,7 +78,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
         event.preventDefault();
 
         const minWidth = 80;
-        const columns: (keyof typeof columnWidths)[] = ['file', 'type', 'date', 'actionBy', 'extension', 'publisher', 'version'];
+        const columns: (keyof typeof columnWidths)[] = [
+            'file',
+            'type',
+            'date',
+            'actionBy',
+            'extension',
+            'publisher',
+            'version'
+        ];
         const currentIndex = columns.indexOf(column);
 
         const canvas = document.createElement('canvas');
@@ -97,7 +105,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
             actionBy: type === 'allowed' ? 'Allowed By' : 'Blocked By',
             extension: 'Extension',
             publisher: 'Publisher',
-            version: 'Version',
+            version: 'Version'
         };
         idealWidth = Math.max(idealWidth, context.measureText(headerTexts[column]).width + padding);
 
@@ -148,7 +156,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
         if (growthNeeded <= 0) {
             setColumnWidths(prev => ({
                 ...prev,
-                [column]: idealWidth,
+                [column]: idealWidth
             }));
             return;
         }
@@ -187,7 +195,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
         const startWidths = { ...columnWidths };
         const minWidth = 80;
 
-        const columns: (keyof typeof columnWidths)[] = ['file', 'type', 'date', 'actionBy', 'extension', 'publisher', 'version'];
+        const columns: (keyof typeof columnWidths)[] = [
+            'file',
+            'type',
+            'date',
+            'actionBy',
+            'extension',
+            'publisher',
+            'version'
+        ];
         const currentIndex = columns.indexOf(column);
 
         if (currentIndex === columns.length - 1) return;
@@ -210,7 +226,6 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                 }
 
                 newWidths[column] = startWidths[column] + (diff - remainingDiff);
-
             } else if (diff < 0) {
                 let remainingDiff = Math.abs(diff);
 
@@ -247,12 +262,12 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
     const cellStyle = {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap' as const,
+        whiteSpace: 'nowrap' as const
     };
 
     const truncateStyle = {
         display: 'block',
-        ...cellStyle,
+        ...cellStyle
     };
 
     return (
@@ -262,9 +277,8 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                 backgroundColor: theme.palette.scanBackground.default,
                 borderRadius: 2,
                 boxShadow: 2,
-                overflowX: 'hidden',
-            }}
-        >
+                overflowX: 'hidden'
+            }}>
             <Table size='small' sx={{ tableLayout: 'fixed', width: '100%' }}>
                 <TableHead>
                     <TableRow sx={{ height: '52px' }}>
@@ -276,19 +290,19 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                 sx={{
                                     color: theme.palette.checkboxUnchecked,
                                     '&.Mui-checked': {
-                                        color: 'secondary.main',
+                                        color: 'secondary.main'
                                     },
                                     '&.MuiCheckbox-indeterminate': {
-                                        color: 'secondary.main',
-                                    },
+                                        color: 'secondary.main'
+                                    }
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.file, position: 'relative', ...cellStyle }}>
                             File
                             <div
-                                onMouseDown={(e) => handleMouseDown('file', e)}
-                                onDoubleClick={(e) => handleDoubleClick('file', e)}
+                                onMouseDown={e => handleMouseDown('file', e)}
+                                onDoubleClick={e => handleDoubleClick('file', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -296,15 +310,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.type, position: 'relative', ...cellStyle }}>
                             Type
                             <div
-                                onMouseDown={(e) => handleMouseDown('type', e)}
-                                onDoubleClick={(e) => handleDoubleClick('type', e)}
+                                onMouseDown={e => handleMouseDown('type', e)}
+                                onDoubleClick={e => handleDoubleClick('type', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -312,15 +326,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.date, position: 'relative', ...cellStyle }}>
                             {type === 'allowed' ? 'Date Allowed' : 'Date Blocked'}
                             <div
-                                onMouseDown={(e) => handleMouseDown('date', e)}
-                                onDoubleClick={(e) => handleDoubleClick('date', e)}
+                                onMouseDown={e => handleMouseDown('date', e)}
+                                onDoubleClick={e => handleDoubleClick('date', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -328,15 +342,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.actionBy, position: 'relative', ...cellStyle }}>
                             {type === 'allowed' ? 'Allowed By' : 'Blocked By'}
                             <div
-                                onMouseDown={(e) => handleMouseDown('actionBy', e)}
-                                onDoubleClick={(e) => handleDoubleClick('actionBy', e)}
+                                onMouseDown={e => handleMouseDown('actionBy', e)}
+                                onDoubleClick={e => handleDoubleClick('actionBy', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -344,15 +358,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.extension, position: 'relative', ...cellStyle }}>
                             Extension
                             <div
-                                onMouseDown={(e) => handleMouseDown('extension', e)}
-                                onDoubleClick={(e) => handleDoubleClick('extension', e)}
+                                onMouseDown={e => handleMouseDown('extension', e)}
+                                onDoubleClick={e => handleDoubleClick('extension', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -360,15 +374,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.publisher, position: 'relative', ...cellStyle }}>
                             Publisher
                             <div
-                                onMouseDown={(e) => handleMouseDown('publisher', e)}
-                                onDoubleClick={(e) => handleDoubleClick('publisher', e)}
+                                onMouseDown={e => handleMouseDown('publisher', e)}
+                                onDoubleClick={e => handleDoubleClick('publisher', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -376,15 +390,15 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
                         <TableCell sx={{ width: columnWidths.version, position: 'relative', ...cellStyle }}>
                             Version
                             <div
-                                onMouseDown={(e) => handleMouseDown('version', e)}
-                                onDoubleClick={(e) => handleDoubleClick('version', e)}
+                                onMouseDown={e => handleMouseDown('version', e)}
+                                onDoubleClick={e => handleDoubleClick('version', e)}
                                 style={{
                                     position: 'absolute',
                                     right: 0,
@@ -392,7 +406,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     bottom: 0,
                                     width: '5px',
                                     cursor: 'col-resize',
-                                    userSelect: 'none',
+                                    userSelect: 'none'
                                 }}
                             />
                         </TableCell>
@@ -408,7 +422,7 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                             </TableCell>
                         </TableRow>
                     ) : (
-                        files.map((file) => {
+                        files.map(file => {
                             const selected = isSelected(file.id);
                             const dateField = file.dateDecided;
                             const actionByField = file.decidedBy;
@@ -422,27 +436,28 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     sx={{
                                         cursor: 'pointer',
                                         '&.Mui-selected': {
-                                            backgroundColor: theme.palette.selected.background,
+                                            backgroundColor: theme.palette.selected.background
                                         },
                                         '&.Mui-selected:hover': {
-                                            backgroundColor: theme.palette.selected.backgroundHover,
-                                        },
-                                    }}
-                                >
+                                            backgroundColor: theme.palette.selected.backgroundHover
+                                        }
+                                    }}>
                                     <TableCell padding='checkbox'>
                                         <Checkbox
                                             checked={selected}
                                             sx={{
                                                 color: theme.palette.checkboxUnchecked,
                                                 '&.Mui-checked': {
-                                                    color: 'secondary.main',
-                                                },
+                                                    color: 'secondary.main'
+                                                }
                                             }}
                                         />
                                     </TableCell>
                                     <TableCell sx={{ width: columnWidths.file, ...cellStyle }}>
                                         <ConditionalTooltip title={file.fileName} arrow>
-                                            <Typography variant='body2' sx={{ fontFamily: 'monospace', ...truncateStyle }}>
+                                            <Typography
+                                                variant='body2'
+                                                sx={{ fontFamily: 'monospace', ...truncateStyle }}>
                                                 {file.fileName}
                                             </Typography>
                                         </ConditionalTooltip>
@@ -453,9 +468,8 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                                     fontFamily: 'monospace',
                                                     fontSize: '0.7rem',
                                                     color: 'text.secondary',
-                                                    ...truncateStyle,
-                                                }}
-                                            >
+                                                    ...truncateStyle
+                                                }}>
                                                 {file.fileHash}
                                             </Typography>
                                         </ConditionalTooltip>
@@ -479,22 +493,30 @@ export const FileTable: FunctionComponent<FileTableProps> = (props) => {
                                     </TableCell>
                                     <TableCell sx={{ width: columnWidths.extension, ...cellStyle }}>
                                         <ConditionalTooltip title={file.displayName} arrow>
-                                            <Typography variant='body2' sx={truncateStyle}>{file.displayName}</Typography>
+                                            <Typography variant='body2' sx={truncateStyle}>
+                                                {file.displayName}
+                                            </Typography>
                                         </ConditionalTooltip>
                                         <ConditionalTooltip title={`${file.namespace}.${file.extensionName}`} arrow>
-                                            <Typography variant='caption' sx={{ color: 'text.secondary', ...truncateStyle }}>
+                                            <Typography
+                                                variant='caption'
+                                                sx={{ color: 'text.secondary', ...truncateStyle }}>
                                                 {file.namespace}.{file.extensionName}
                                             </Typography>
                                         </ConditionalTooltip>
                                     </TableCell>
                                     <TableCell sx={{ width: columnWidths.publisher, ...cellStyle }}>
                                         <ConditionalTooltip title={file.publisher} arrow>
-                                            <Typography variant='body2' sx={truncateStyle}>{file.publisher}</Typography>
+                                            <Typography variant='body2' sx={truncateStyle}>
+                                                {file.publisher}
+                                            </Typography>
                                         </ConditionalTooltip>
                                     </TableCell>
                                     <TableCell sx={{ width: columnWidths.version, ...cellStyle }}>
                                         <ConditionalTooltip title={file.version} arrow>
-                                            <Typography variant='body2' sx={truncateStyle}>{file.version}</Typography>
+                                            <Typography variant='body2' sx={truncateStyle}>
+                                                {file.version}
+                                            </Typography>
                                         </ConditionalTooltip>
                                     </TableCell>
                                 </TableRow>

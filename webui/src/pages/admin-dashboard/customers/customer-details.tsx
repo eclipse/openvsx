@@ -11,14 +11,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useState } from "react";
-import {
-    Box,
-    Typography,
-    Button,
-    Alert,
-    LinearProgress
-} from "@mui/material";
+import { FC, useState } from 'react';
+import { Box, Typography, Button, Alert, LinearProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { useParams } from 'react-router-dom';
 import type { Customer } from '../../../extension-registry-types';
@@ -32,7 +26,7 @@ import { useCustomer, useUpdateCustomer } from './use-customers';
 
 const CustomerDetailsLoading: FC = () => (
     <Box sx={{ p: 3 }}>
-        <LinearProgress color='secondary' sx={{ width: "100%" }} />
+        <LinearProgress color='secondary' sx={{ width: '100%' }} />
     </Box>
 );
 
@@ -52,9 +46,9 @@ export const CustomerDetails: FC = () => {
     const { usageStats, dailyP95, error: statsError, startDate, setStartDate } = useAdminUsageStats(customerName);
 
     const error = customerError
-        ? ((customerError as { status?: number }).status === 404
+        ? (customerError as { status?: number }).status === 404
             ? `Customer "${customerName}" not found.`
-            : handleError(customerError as Error))
+            : handleError(customerError as Error)
         : null;
 
     const handleFormSubmit = async (updatedCustomer: Customer) => {
@@ -76,37 +70,39 @@ export const CustomerDetails: FC = () => {
     }
 
     return (
-      <>
-        <Box sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Typography variant='h4' component='h1'>
-                    {customer.name}
-                </Typography>
+        <>
+            <Box sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <Typography variant='h4' component='h1'>
+                        {customer.name}
+                    </Typography>
+                </Box>
+
+                <GeneralDetails
+                    customer={customer}
+                    headerAction={
+                        <Button size='small' startIcon={<EditIcon />} onClick={() => setFormDialogOpen(true)}>
+                            Edit
+                        </Button>
+                    }
+                />
+                <CustomerMemberList customer={customer} />
+                <CustomerTokenList customer={customer} />
+                <UsageStats
+                    usageStats={usageStats}
+                    dailyP95={dailyP95}
+                    customer={customer}
+                    startDate={startDate}
+                    onStartDateChange={setStartDate}
+                />
             </Box>
 
-            <GeneralDetails
+            <CustomerFormDialog
+                open={formDialogOpen}
                 customer={customer}
-                headerAction={
-                    <Button size='small' startIcon={<EditIcon />} onClick={() => setFormDialogOpen(true)}>
-                        Edit
-                    </Button>
-                }
+                onClose={() => setFormDialogOpen(false)}
+                onSubmit={handleFormSubmit}
             />
-            <CustomerMemberList
-                customer={customer}
-            />
-            <CustomerTokenList
-                customer={customer}
-            />
-            <UsageStats usageStats={usageStats} dailyP95={dailyP95} customer={customer} startDate={startDate} onStartDateChange={setStartDate} />
-        </Box>
-
-        <CustomerFormDialog
-            open={formDialogOpen}
-            customer={customer}
-            onClose={() => setFormDialogOpen(false)}
-            onSubmit={handleFormSubmit}
-        />
-      </>
+        </>
     );
 };

@@ -24,8 +24,8 @@ import {
     Box
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
-import type { Customer } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
+import type { Customer } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
 
 interface DeleteCustomerDialogProps {
     open: boolean;
@@ -61,7 +61,11 @@ export const DeleteCustomerDialog: FC<DeleteCustomerDialogProps> = ({ open, cust
                 </Box>
             </DialogTitle>
             <DialogContent>
-                {error && <Alert severity='error' sx={{ mb: 2 }}>{error}</Alert>}
+                {error && (
+                    <Alert severity='error' sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
                 <Typography gutterBottom>
                     Are you sure you want to delete the customer <strong>{customer.name}</strong>?
                 </Typography>
@@ -83,8 +87,7 @@ export const DeleteCustomerDialog: FC<DeleteCustomerDialogProps> = ({ open, cust
                     variant='contained'
                     color='error'
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : undefined}
-                >
+                    startIcon={loading ? <CircularProgress size={20} /> : undefined}>
                     Delete
                 </Button>
             </DialogActions>

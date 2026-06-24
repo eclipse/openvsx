@@ -40,16 +40,22 @@ export const useFileListTab = ({ tabIndex, decisionType, tabName }: UseFileListT
     const onAutoRefreshChange = actions.setAutoRefresh;
 
     // Selection state (files already filtered server-side by decision)
-    const selection = useMemo(() => ({
-        checked: state.filesChecked,
-        selectedCount: state.filesChecked.size,
-        selectedFiles: derived.selectedFiles,
-    }), [state.filesChecked, derived.selectedFiles]);
+    const selection = useMemo(
+        () => ({
+            checked: state.filesChecked,
+            selectedCount: state.filesChecked.size,
+            selectedFiles: derived.selectedFiles
+        }),
+        [state.filesChecked, derived.selectedFiles]
+    );
 
     // Selection actions
-    const setFilesChecked = useCallback((fileIds: Set<string>) => {
-        actions.setFilesChecked(fileIds);
-    }, [actions]);
+    const setFilesChecked = useCallback(
+        (fileIds: Set<string>) => {
+            actions.setFilesChecked(fileIds);
+        },
+        [actions]
+    );
 
     const selectAll = useCallback(() => {
         const allIds = new Set(files.map(f => f.id));
@@ -69,57 +75,65 @@ export const useFileListTab = ({ tabIndex, decisionType, tabName }: UseFileListT
     }, [files, state.filesChecked, isAllSelected]);
 
     // File actions
-    const fileActions = useMemo(() => ({
-        openAllowDialog: () => actions.openFileDialog('allow'),
-        openBlockDialog: () => actions.openFileDialog('block'),
-        openDeleteDialog: () => actions.openFileDialog('delete'),
-        canPerformAction: selection.selectedCount > 0,
-    }), [actions, selection.selectedCount]);
+    const fileActions = useMemo(
+        () => ({
+            openAllowDialog: () => actions.openFileDialog('allow'),
+            openBlockDialog: () => actions.openFileDialog('block'),
+            openDeleteDialog: () => actions.openFileDialog('delete'),
+            canPerformAction: selection.selectedCount > 0
+        }),
+        [actions, selection.selectedCount]
+    );
 
     // Get count from file counts
     const fileCount = state.fileCounts
-        ? (decisionType === 'allowed' ? state.fileCounts.allowed : state.fileCounts.blocked)
+        ? decisionType === 'allowed'
+            ? state.fileCounts.allowed
+            : state.fileCounts.blocked
         : 0;
 
-    return useMemo(() => ({
-        tabIndex,
-        tabName,
-        decisionType,
-        files,
-        isLoading: state.isLoadingFiles,
-        fileCount,
-        lastRefreshed,
-        autoRefresh,
-        onAutoRefreshChange,
-        search,
-        pagination,
-        selection,
-        setFilesChecked,
-        selectAll,
-        deselectAll,
-        isAllSelected,
-        isSomeSelected,
-        fileActions,
-    }), [
-        tabIndex,
-        tabName,
-        decisionType,
-        files,
-        state.isLoadingFiles,
-        fileCount,
-        lastRefreshed,
-        autoRefresh,
-        onAutoRefreshChange,
-        search,
-        pagination,
-        selection,
-        setFilesChecked,
-        selectAll,
-        deselectAll,
-        isAllSelected,
-        isSomeSelected,
-        fileActions,
-    ]);
+    return useMemo(
+        () => ({
+            tabIndex,
+            tabName,
+            decisionType,
+            files,
+            isLoading: state.isLoadingFiles,
+            fileCount,
+            lastRefreshed,
+            autoRefresh,
+            onAutoRefreshChange,
+            search,
+            pagination,
+            selection,
+            setFilesChecked,
+            selectAll,
+            deselectAll,
+            isAllSelected,
+            isSomeSelected,
+            fileActions
+        }),
+        [
+            tabIndex,
+            tabName,
+            decisionType,
+            files,
+            state.isLoadingFiles,
+            fileCount,
+            lastRefreshed,
+            autoRefresh,
+            onAutoRefreshChange,
+            search,
+            pagination,
+            selection,
+            setFilesChecked,
+            selectAll,
+            deselectAll,
+            isAllSelected,
+            isSomeSelected,
+            fileActions
+        ]
+    );
 };
 
 /**
@@ -129,7 +143,7 @@ export const useAllowListTab = () => {
     return useFileListTab({
         tabIndex: 3,
         decisionType: 'allowed',
-        tabName: 'Allow List',
+        tabName: 'Allow List'
     });
 };
 
@@ -140,7 +154,7 @@ export const useBlockListTab = () => {
     return useFileListTab({
         tabIndex: 4,
         decisionType: 'blocked',
-        tabName: 'Block List',
+        tabName: 'Block List'
     });
 };
 

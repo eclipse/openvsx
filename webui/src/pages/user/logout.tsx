@@ -44,12 +44,12 @@ export const LogoutForm = forwardRef<HTMLFormElement, PropsWithChildren>(({ chil
         }
     };
 
-    return <form ref={ref} method='post' action={context.service.getLogoutUrl()}>
-        {csrf ? <input name='_csrf' type='hidden' value={csrf} /> : null}
-        <LogoutButton type='submit'>
-            {children}
-        </LogoutButton>
-    </form>;
+    return (
+        <form ref={ref} method='post' action={context.service.getLogoutUrl()}>
+            {csrf ? <input name='_csrf' type='hidden' value={csrf} /> : null}
+            <LogoutButton type='submit'>{children}</LogoutButton>
+        </form>
+    );
 });
 
 LogoutForm.displayName = 'LogoutForm';

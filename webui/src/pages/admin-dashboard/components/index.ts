@@ -12,7 +12,4 @@
  *****************************************************************************/
 
 export { MultiSelectFilterInput } from './data-grid-filter';
-export {
-  createMultiSelectFilterOperators,
-  createArrayContainsFilterOperators
-} from './data-grid-filter-operators';
+export { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from './data-grid-filter-operators';

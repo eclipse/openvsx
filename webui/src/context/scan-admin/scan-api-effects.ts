@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import type { Dispatch, MutableRefObject } from "react";
+import type { Dispatch, MutableRefObject } from 'react';
 import { useEffect } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ScanState, ScanAction, ScanResult } from './scan-types';
@@ -43,11 +43,13 @@ const convertScans = (response: any): { scans: ScanResult[]; totalScans: number 
         dateScanEnded: scan.dateScanEnded || null,
         dateQuarantined: scan.dateQuarantined || null,
         dateRejected: scan.dateRejected || null,
-        adminDecision: scan.adminDecision ? {
-            decision: scan.adminDecision.decision,
-            decidedBy: scan.adminDecision.decidedBy,
-            dateDecided: scan.adminDecision.dateDecided,
-        } : null,
+        adminDecision: scan.adminDecision
+            ? {
+                  decision: scan.adminDecision.decision,
+                  decidedBy: scan.adminDecision.decidedBy,
+                  dateDecided: scan.adminDecision.dateDecided
+              }
+            : null,
         threats: (scan.threats || []).map((threat: any) => ({
             id: threat.id,
             fileName: threat.fileName,
@@ -58,7 +60,7 @@ const convertScans = (response: any): { scans: ScanResult[]; totalScans: number 
             severity: threat.severity,
             enforcedFlag: threat.enforcedFlag ?? true,
             reason: threat.reason,
-            dateDetected: threat.dateDetected,
+            dateDetected: threat.dateDetected
         })),
         validationFailures: (scan.validationFailures || []).map((failure: any) => ({
             id: failure.id,
@@ -66,7 +68,7 @@ const convertScans = (response: any): { scans: ScanResult[]; totalScans: number 
             ruleName: failure.ruleName,
             reason: failure.reason,
             dateDetected: failure.dateDetected,
-            enforcedFlag: failure.enforcedFlag ?? true,
+            enforcedFlag: failure.enforcedFlag ?? true
         })),
         checkResults: (scan.checkResults || []).map((result: any) => ({
             checkType: result.checkType,
@@ -80,7 +82,7 @@ const convertScans = (response: any): { scans: ScanResult[]; totalScans: number 
             summary: result.summary || null,
             errorMessage: result.errorMessage || null,
             required: result.required ?? null,
-            externalUrl: result.externalUrl || null,
+            externalUrl: result.externalUrl || null
         })),
         scannerJobs: (scan.scannerJobs || []).map((job: any) => ({
             id: job.id,
@@ -89,11 +91,11 @@ const convertScans = (response: any): { scans: ScanResult[]; totalScans: number 
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
             errorMessage: job.errorMessage || null,
-            externalUrl: job.externalUrl || null,
+            externalUrl: job.externalUrl || null
         })),
         extensionIcon: scan.extensionIcon,
         downloadUrl: scan.downloadUrl || null,
-        errorMessage: scan.errorMessage || null,
+        errorMessage: scan.errorMessage || null
     }));
 
     return { scans, totalScans: response.totalSize };
@@ -115,7 +117,7 @@ export const useFilterOptionsEffect = (
     const { data, error } = useQuery({
         queryKey: ['admin', 'scan', 'filter-options', state.refreshTrigger],
         queryFn: ({ signal }) => service.admin.getScanFilterOptions(controllerFromSignal(signal)),
-        staleTime: 0,
+        staleTime: 0
     });
 
     useEffect(() => {
@@ -158,7 +160,9 @@ export const useScansEffect = (
 
     const { data, error, isLoading } = useQuery({
         queryKey: [
-            'admin', 'scan', 'scans',
+            'admin',
+            'scan',
+            'scans',
             state.selectedTab,
             state.currentPage,
             state.pageSize,
@@ -173,7 +177,7 @@ export const useScansEffect = (
             state.availableValidationTypes,
             state.dateRange,
             state.enforcement,
-            state.refreshTrigger,
+            state.refreshTrigger
         ],
         enabled,
         staleTime: 0,
@@ -228,7 +232,7 @@ export const useScansEffect = (
             });
 
             return convertScans(response);
-        },
+        }
     });
 
     useEffect(() => {
@@ -278,7 +282,9 @@ export const useScanCountsEffect = (
 
     const { data, error } = useQuery({
         queryKey: [
-            'admin', 'scan', 'scan-counts',
+            'admin',
+            'scan',
+            'scan-counts',
             state.selectedTab,
             Array.from(state.threatScannerFilters),
             Array.from(state.validationTypeFilters),
@@ -286,7 +292,7 @@ export const useScanCountsEffect = (
             state.availableValidationTypes,
             state.dateRange,
             state.enforcement,
-            state.refreshTrigger,
+            state.refreshTrigger
         ],
         staleTime: 0,
         queryFn: async ({ signal }) => {
@@ -312,9 +318,9 @@ export const useScanCountsEffect = (
                 ...dateParams,
                 enforcement: state.enforcement,
                 threatScannerName: threatScannerParam,
-                validationType: validationTypeParam,
+                validationType: validationTypeParam
             });
-        },
+        }
     });
 
     useEffect(() => {
@@ -348,7 +354,9 @@ export const useFilesEffect = (
 
     const { data, error, isLoading } = useQuery({
         queryKey: [
-            'admin', 'scan', 'files',
+            'admin',
+            'scan',
+            'files',
             state.selectedTab,
             state.currentPage,
             state.pageSize,
@@ -356,7 +364,7 @@ export const useFilesEffect = (
             state.namespaceQuery,
             state.nameQuery,
             state.fileDateRange,
-            state.refreshTrigger,
+            state.refreshTrigger
         ],
         enabled,
         staleTime: 0,
@@ -372,11 +380,11 @@ export const useFilesEffect = (
                 name: state.nameQuery || undefined,
                 decision: decisionParam,
                 dateDecidedFrom: dateParams.dateDecidedFrom,
-                dateDecidedTo: dateParams.dateDecidedTo,
+                dateDecidedTo: dateParams.dateDecidedTo
             });
 
             return { files: response.files, totalFiles: response.totalSize };
-        },
+        }
     });
 
     useEffect(() => {
@@ -417,17 +425,14 @@ export const useFileCountsEffect = (
     const dateParams = getFileDateRange(state.fileDateRange);
 
     const { data, error } = useQuery({
-        queryKey: [
-            'admin', 'scan', 'file-counts',
-            state.fileDateRange,
-            state.refreshTrigger,
-        ],
+        queryKey: ['admin', 'scan', 'file-counts', state.fileDateRange, state.refreshTrigger],
         enabled,
         staleTime: 0,
-        queryFn: ({ signal }) => service.admin.getFileCounts(controllerFromSignal(signal), {
-            dateDecidedFrom: dateParams.dateDecidedFrom,
-            dateDecidedTo: dateParams.dateDecidedTo,
-        }),
+        queryFn: ({ signal }) =>
+            service.admin.getFileCounts(controllerFromSignal(signal), {
+                dateDecidedFrom: dateParams.dateDecidedFrom,
+                dateDecidedTo: dateParams.dateDecidedTo
+            })
     });
 
     useEffect(() => {
@@ -450,10 +455,7 @@ export const useFileCountsEffect = (
 /**
  * Hook for periodic refresh - refreshes data every 30 seconds when enabled and page is visible
  */
-export const useAutoRefreshEffect = (
-    state: ScanState,
-    dispatch: Dispatch<ScanAction>
-) => {
+export const useAutoRefreshEffect = (state: ScanState, dispatch: Dispatch<ScanAction>) => {
     useEffect(() => {
         if (!state.autoRefresh) {
             return; // Don't set up interval if auto-refresh is disabled

@@ -9,7 +9,15 @@
  ********************************************************************************/
 
 import { FunctionComponent, useState, useContext } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from '@mui/material';
+import {
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Typography
+} from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Extension, TargetPlatformVersion } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -38,48 +46,41 @@ export const ExtensionRemoveDialog: FunctionComponent<ExtensionRemoveDialogProps
     };
 
     const buttonText = removeVersions() ? 'Remove Versions' : 'Remove Version';
-    return <>
-        <Button
-            variant='contained'
-            color='secondary'
-            onClick={() => setDialogOpen(true)}
-            disabled={props.targetPlatformVersions.length === 0} >
-            {buttonText}
-        </Button>
-        <Dialog
-            open={dialogOpen}
-            onClose={() => setDialogOpen(false)} >
-            <DialogTitle >
-                Remove {
-                    props.targetPlatformVersions.length
-                } version{
-                    removeVersions() ? 's' : ''
-                } of {props.extension.name}?
-            </DialogTitle>
-            <DialogContent>
-                <DialogContentText component='div'>
-                    {
-                        props.targetPlatformVersions
-                            .map((targetPlatformVersion, key) => <Typography key={key} variant='body2'>{targetPlatformVersion.version} ({getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform)})</Typography>)}
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={() => setDialogOpen(false)} >
-                    Cancel
-                </Button>
-                <ButtonWithProgress
-                    sx={{ ml: 1 }}
-                    autoFocus
-                    working={working}
-                    onClick={handleRemoveVersions} >
-                    Remove
-                </ButtonWithProgress>
-            </DialogActions>
-        </Dialog>
-    </>;
+    return (
+        <>
+            <Button
+                variant='contained'
+                color='secondary'
+                onClick={() => setDialogOpen(true)}
+                disabled={props.targetPlatformVersions.length === 0}>
+                {buttonText}
+            </Button>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                <DialogTitle>
+                    Remove {props.targetPlatformVersions.length} version{removeVersions() ? 's' : ''} of{' '}
+                    {props.extension.name}?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText component='div'>
+                        {props.targetPlatformVersions.map((targetPlatformVersion, key) => (
+                            <Typography key={key} variant='body2'>
+                                {targetPlatformVersion.version} (
+                                {getTargetPlatformDisplayName(targetPlatformVersion.targetPlatform)})
+                            </Typography>
+                        ))}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={() => setDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress sx={{ ml: 1 }} autoFocus working={working} onClick={handleRemoveVersions}>
+                        Remove
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };
 
 export interface ExtensionRemoveDialogProps {

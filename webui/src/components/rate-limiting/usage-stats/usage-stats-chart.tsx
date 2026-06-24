@@ -11,30 +11,17 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useMemo } from "react";
-import {
-    Box,
-    Paper,
-    Typography,
-    Alert,
-    Stack,
-    IconButton
-} from "@mui/material";
-import { BarPlot } from "@mui/x-charts/BarChart";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import type { Customer, UsageStats } from "../../../extension-registry-types";
-import {
-    ChartsReferenceLine,
-    ChartsTooltip,
-    ChartsXAxis,
-    ChartsYAxis,
-    ChartsContainer,
-} from "@mui/x-charts";
-import { DateTime } from "luxon";
+import { FC, useMemo } from 'react';
+import { Box, Paper, Typography, Alert, Stack, IconButton } from '@mui/material';
+import { BarPlot } from '@mui/x-charts/BarChart';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import type { Customer, UsageStats } from '../../../extension-registry-types';
+import { ChartsReferenceLine, ChartsTooltip, ChartsXAxis, ChartsYAxis, ChartsContainer } from '@mui/x-charts';
+import { DateTime } from 'luxon';
 
 interface UsageStatsChartProps {
     usageStats: readonly UsageStats[];
@@ -62,48 +49,39 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
 
     // we have 5min steps
     const step = 5 * 60;
-    const tierCapacity =
-        customer?.tier !== undefined ? customer.tier.capacity * step / customer.tier.duration : 0;
-    const tierRps =
-        customer?.tier !== undefined ? customer.tier.capacity / customer.tier.duration : 0;
+    const tierCapacity = customer?.tier !== undefined ? (customer.tier.capacity * step) / customer.tier.duration : 0;
+    const tierRps = customer?.tier !== undefined ? customer.tier.capacity / customer.tier.duration : 0;
     const tierRpsRounded = Math.round(tierRps * 100) / 100;
 
-    const data: UsageStats[] = useMemo(
-        () => {
-            const arr: UsageStats[] = [];
+    const data: UsageStats[] = useMemo(() => {
+        const arr: UsageStats[] = [];
 
-            for (let idx = dayStart; idx <= dayEnd; idx += step) {
-                arr.push({
-                    windowStart: idx,
-                    duration: step,
-                    count: 0
-                });
+        for (let idx = dayStart; idx <= dayEnd; idx += step) {
+            arr.push({
+                windowStart: idx,
+                duration: step,
+                count: 0
+            });
+        }
+
+        for (const stat of usageStats) {
+            const idx = (stat.windowStart - dayStart) / step;
+            if (idx >= 0 && idx < arr.length) {
+                arr[idx].count = stat.count;
             }
+        }
+        return arr;
+    }, [usageStats]);
 
-            for (const stat of usageStats) {
-                const idx = (stat.windowStart - dayStart) / step;
-                if (idx >= 0 && idx < arr.length) {
-                    arr[idx].count = stat.count;
-                }
-            }
-            return arr;
-        }, [usageStats]
-    );
+    const maxDataValue: number = useMemo(() => {
+        if (usageStats.length === 0) {
+            return 0;
+        } else {
+            return Math.max(...usageStats.map(v => v.count));
+        }
+    }, [usageStats]);
 
-    const maxDataValue: number = useMemo(
-        () => {
-            if (usageStats.length === 0) {
-                return 0;
-            } else {
-                return Math.max(...usageStats.map(v => v.count));
-            }
-        }, [usageStats]
-    );
-
-    const totalRequests = useMemo(
-        () => usageStats.reduce((sum, d) => sum + d.count, 0),
-        [usageStats]
-    );
+    const totalRequests = useMemo(() => usageStats.reduce((sum, d) => sum + d.count, 0), [usageStats]);
 
     const Wrapper: typeof Box = embedded ? Box : Paper;
 
@@ -130,101 +108,104 @@ export const UsageStatsChart: FC<UsageStatsChartProps> = ({
                 </Stack>
             </Wrapper>
 
-            {usageStats.length === 0 ?
+            {usageStats.length === 0 ? (
                 <Alert severity='info'>No usage data available for this customer.</Alert>
-             :
+            ) : (
                 <>
-                <Wrapper sx={{ p: 2 }}>
-                    <ChartsContainer
-                        series={[{
-                            type: 'bar',
-                            data: data.map(d => d.count),
-                            label: 'Request Count',
-                            color: 'lightgray',
-                        }]}
+                    <Wrapper sx={{ p: 2 }}>
+                        <ChartsContainer
+                            series={[
+                                {
+                                    type: 'bar',
+                                    data: data.map(d => d.count),
+                                    label: 'Request Count',
+                                    color: 'lightgray'
+                                }
+                            ]}
+                            height={compact ? 300 : 400}
+                            margin={{ top: 30 }}
+                            xAxis={[
+                                {
+                                    id: 'date',
+                                    data: data.map(value => value.windowStart * 1000),
+                                    valueFormatter: value =>
+                                        DateTime.fromMillis(value, { zone: 'UTC' }).toLocaleString(
+                                            DateTime.TIME_24_SIMPLE
+                                        ),
+                                    scaleType: 'band',
+                                    height: 50
+                                }
+                            ]}
+                            yAxis={[
+                                {
+                                    id: 'requests',
+                                    scaleType: 'linear',
+                                    min: 0,
+                                    max: Math.max(tierCapacity, maxDataValue) * 1.2,
+                                    valueFormatter: value => formatter.format(value),
+                                    width: 50
+                                }
+                            ]}>
+                            <BarPlot />
 
-                        height={compact ? 300 : 400}
-                        margin={{ top: 30 }}
-                        xAxis={[
-                            {
-                                id: 'date',
-                                data: data.map((value) => value.windowStart * 1000),
-                                valueFormatter: (value) => DateTime.fromMillis(value, { zone: 'UTC' }).toLocaleString(DateTime.TIME_24_SIMPLE),
-                                scaleType: 'band',
-                                height: 50,
-                            },
-                        ]}
-                        yAxis={[
-                            {
-                                id: 'requests',
-                                scaleType: 'linear',
-                                min: 0,
-                                max: Math.max(tierCapacity, maxDataValue) * 1.2,
-                                valueFormatter: (value) => formatter.format(value),
-                                width: 50
-                            },
-                        ]}
-                    >
-                        <BarPlot />
+                            {tierCapacity > 0 && (
+                                <ChartsReferenceLine
+                                    y={tierCapacity}
+                                    label={`Tier Limit (${tierRpsRounded} rps)`}
+                                    labelAlign='end'
+                                    lineStyle={{
+                                        strokeDasharray: '10 5',
+                                        strokeWidth: 2,
+                                        stroke: '#a83244'
+                                    }}
+                                />
+                            )}
 
-                        {tierCapacity > 0 &&
-                            <ChartsReferenceLine
-                                y={tierCapacity}
-                                label={`Tier Limit (${tierRpsRounded} rps)`}
-                                labelAlign='end'
-                                lineStyle={{
-                                    strokeDasharray: '10 5',
-                                    strokeWidth: 2,
-                                    stroke: '#a83244',
+                            {dailyP95 !== undefined && (
+                                <ChartsReferenceLine
+                                    y={dailyP95}
+                                    label={`Daily P95 (${dailyP95})`}
+                                    labelAlign='end'
+                                    lineStyle={{
+                                        strokeDasharray: '10 5',
+                                        strokeWidth: 2,
+                                        stroke: '#A88132FF'
+                                    }}
+                                />
+                            )}
+
+                            <ChartsXAxis
+                                label='Time (UTC)'
+                                position='bottom'
+                                axisId='date'
+                                tickInterval='auto'
+                                tickLabelInterval={value => {
+                                    const d = new Date(value);
+                                    return d.getMinutes() === 0 && (!compact || d.getHours() % 3 === 0);
+                                }}
+                                tickLabelPlacement='middle'
+                                tickLabelStyle={{
+                                    fontSize: 10
                                 }}
                             />
-                        }
-
-                        {dailyP95 !== undefined &&
-                            <ChartsReferenceLine
-                                y={dailyP95}
-                                label={`Daily P95 (${dailyP95})`}
-                                labelAlign='end'
-                                lineStyle={{
-                                    strokeDasharray: '10 5',
-                                    strokeWidth: 2,
-                                    stroke: '#A88132FF',
-                                }}
+                            <ChartsYAxis
+                                label='Requests'
+                                position='left'
+                                axisId='requests'
+                                tickLabelStyle={{ fontSize: 10 }}
                             />
-                        }
+                            <ChartsTooltip />
+                        </ChartsContainer>
+                    </Wrapper>
 
-                        <ChartsXAxis
-                            label='Time (UTC)'
-                            position='bottom'
-                            axisId='date'
-                            tickInterval='auto'
-                            tickLabelInterval={(value) => {
-                                const d = new Date(value);
-                                return d.getMinutes() === 0 && (!compact || d.getHours() % 3 === 0);
-                            }}
-                            tickLabelPlacement='middle'
-                            tickLabelStyle={{
-                                fontSize: 10,
-                            }}
-                        />
-                        <ChartsYAxis
-                            label='Requests'
-                            position='left'
-                            axisId='requests'
-                            tickLabelStyle={{ fontSize: 10 }}
-                        />
-                        <ChartsTooltip />
-                    </ChartsContainer>
-                </Wrapper>
-
-                <Box mt={2}>
-                    <Typography variant='body2' color='text.secondary'>
-                        Total requests in selected range: {totalRequests.toLocaleString()}
-                        {usageStats.length > 0 && <> ({usageStats.length} data points)</>}
-                    </Typography>
-                </Box>
+                    <Box mt={2}>
+                        <Typography variant='body2' color='text.secondary'>
+                            Total requests in selected range: {totalRequests.toLocaleString()}
+                            {usageStats.length > 0 && <> ({usageStats.length} data points)</>}
+                        </Typography>
+                    </Box>
                 </>
-            }
+            )}
         </LocalizationProvider>
     );
 };

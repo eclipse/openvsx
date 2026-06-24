@@ -9,10 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, PropsWithChildren, ReactNode, useContext, useRef, useState } from 'react';
-import {
-    Collapse, List, ListItemButton, ListItemIcon, ListItemText,
-    Popover, Tooltip,
-} from '@mui/material';
+import { Collapse, List, ListItemButton, ListItemIcon, ListItemText, Popover, Tooltip } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useNavigate } from 'react-router';
@@ -49,9 +46,8 @@ export const NavigationItem: FunctionComponent<PropsWithChildren<NavigationProps
             sx={{
                 minHeight: 48,
                 px: 2.5,
-                justifyContent: collapsed ? 'center' : 'initial',
-            }}
-        >
+                justifyContent: collapsed ? 'center' : 'initial'
+            }}>
             {props.icon && (
                 <ListItemIcon sx={{ minWidth: 0, mr: collapsed ? 'auto' : 3, justifyContent: 'center' }}>
                     {props.icon}
@@ -90,8 +86,7 @@ export const NavigationItem: FunctionComponent<PropsWithChildren<NavigationProps
                     anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                     disableRestoreFocus
-                    elevation={2}
-                >
+                    elevation={2}>
                     <SidebarContext.Provider value={EXPANDED_CONTEXT}>
                         <List disablePadding onClick={() => setPopoverOpen(false)}>
                             {props.children}

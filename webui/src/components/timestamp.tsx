@@ -17,12 +17,11 @@ export const Timestamp: FunctionComponent<TimestampProps> = props => {
     const sx = props.sx ?? [];
     const isFutureTime = props.isFutureTime ?? false;
     const timestamp = props.value;
-    return <Box
-        component='span'
-        title={toLocalTime(timestamp)}
-        sx={[...(Array.isArray(sx) ? sx : [sx])]}>
-        {toRelativeTime(timestamp, isFutureTime)}
-    </Box>;
+    return (
+        <Box component='span' title={toLocalTime(timestamp)} sx={[...(Array.isArray(sx) ? sx : [sx])]}>
+            {toRelativeTime(timestamp, isFutureTime)}
+        </Box>
+    );
 };
 
 export interface TimestampProps {

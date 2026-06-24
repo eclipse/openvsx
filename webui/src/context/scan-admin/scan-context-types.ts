@@ -19,7 +19,7 @@ import {
     EnforcementType,
     FileActionType,
     FileDecision,
-    ScanResult,
+    ScanResult
 } from './scan-types';
 
 // ============================================================================

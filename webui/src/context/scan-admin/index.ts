@@ -33,7 +33,7 @@ export {
     useScanCountsEffect,
     useFilesEffect,
     useFileCountsEffect,
-    useAutoRefreshEffect,
+    useAutoRefreshEffect
 } from './scan-api-effects';
 
 // API Actions (for testing or advanced use cases)

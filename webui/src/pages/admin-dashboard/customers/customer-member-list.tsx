@@ -21,7 +21,10 @@ import {
     ListItem,
     ListItemAvatar,
     Avatar,
-    ListItemText, IconButton, type PaperProps, Paper
+    ListItemText,
+    IconButton,
+    type PaperProps,
+    Paper
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
@@ -77,78 +80,82 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
         }
     };
 
-    return <Paper {...sectionPaperProps}>
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-            }}
-        >
-            <Typography variant='h6'>Members</Typography>
-            <Button size='small' startIcon={<PersonAddIcon />} onClick={handleOpenAddDialog}>
-                Add Member
-            </Button>
-        </Box>
-        <Divider sx={{ mb: 1 }} />
-        {members.length === 0 ? (
-            <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
-                No members assigned to this customer.
-            </Typography>
-        ) : (
-            <List dense disablePadding>
-                {users.map(user => (
-                    <ListItem
-                        key={`${user.loginName}-${user.provider}`}
-                        secondaryAction={
-                            <IconButton edge='end' size='small' color='error' onClick={() => handleRemoveUser(user)} title='Remove member'>
-                                <DeleteIcon fontSize='small' />
-                            </IconButton>
-                        }
-                    >
-                        <ListItemAvatar>
-                            <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={
-                                <RouterLink style={{ color: 'inherit' }} to={createRoute([AdminDashboardRoutes.PUBLISHER_ADMIN, user.loginName])}>
-                                    {user.loginName}
-                                </RouterLink>
-                            }
-                            secondary={user.fullName}
-                        />
-                    </ListItem>
-                ))}
-            </List>
-        )}
+    return (
+        <Paper {...sectionPaperProps}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                }}>
+                <Typography variant='h6'>Members</Typography>
+                <Button size='small' startIcon={<PersonAddIcon />} onClick={handleOpenAddDialog}>
+                    Add Member
+                </Button>
+            </Box>
+            <Divider sx={{ mb: 1 }} />
+            {members.length === 0 ? (
+                <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
+                    No members assigned to this customer.
+                </Typography>
+            ) : (
+                <List dense disablePadding>
+                    {users.map(user => (
+                        <ListItem
+                            key={`${user.loginName}-${user.provider}`}
+                            secondaryAction={
+                                <IconButton
+                                    edge='end'
+                                    size='small'
+                                    color='error'
+                                    onClick={() => handleRemoveUser(user)}
+                                    title='Remove member'>
+                                    <DeleteIcon fontSize='small' />
+                                </IconButton>
+                            }>
+                            <ListItemAvatar>
+                                <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={
+                                    <RouterLink
+                                        style={{ color: 'inherit' }}
+                                        to={createRoute([AdminDashboardRoutes.PUBLISHER_ADMIN, user.loginName])}>
+                                        {user.loginName}
+                                    </RouterLink>
+                                }
+                                secondary={user.fullName}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
 
+            {/*{members.length ?*/}
+            {/*    <Paper elevation={3}>*/}
+            {/*        {members.map(member =>*/}
+            {/*            <UserNamespaceMember*/}
+            {/*                key={'nspcmbr-' + member.user.loginName + member.user.provider}*/}
+            {/*                namespace={props.namespace}*/}
+            {/*                member={member}*/}
+            {/*                fixSelf={props.fixSelf}*/}
+            {/*                onChangeRole={role => changeRole(member, role)}*/}
+            {/*                onRemoveUser={() => changeRole(member, 'remove')} />)}*/}
+            {/*    </Paper> :*/}
+            {/*    <Typography variant='body1'>There are no members assigned yet.</Typography>}*/}
 
-
-
-        {/*{members.length ?*/}
-        {/*    <Paper elevation={3}>*/}
-        {/*        {members.map(member =>*/}
-        {/*            <UserNamespaceMember*/}
-        {/*                key={'nspcmbr-' + member.user.loginName + member.user.provider}*/}
-        {/*                namespace={props.namespace}*/}
-        {/*                member={member}*/}
-        {/*                fixSelf={props.fixSelf}*/}
-        {/*                onChangeRole={role => changeRole(member, role)}*/}
-        {/*                onRemoveUser={() => changeRole(member, 'remove')} />)}*/}
-        {/*    </Paper> :*/}
-        {/*    <Typography variant='body1'>There are no members assigned yet.</Typography>}*/}
-
-        <AddUserDialog
-            open={addDialogIsOpen}
-            title='Add Member'
-            description='Search for a user by login name to add them to this customer.'
-            existingUsers={members.map(member => member.user)}
-            onClose={handleCloseAddDialog}
-            onAddUser={handleAddUser}
-        />
-    </Paper>;
+            <AddUserDialog
+                open={addDialogIsOpen}
+                title='Add Member'
+                description='Search for a user by login name to add them to this customer.'
+                existingUsers={members.map(member => member.user)}
+                onClose={handleCloseAddDialog}
+                onAddUser={handleAddUser}
+            />
+        </Paper>
+    );
 };
 
 export interface CustomerMemberListProps {

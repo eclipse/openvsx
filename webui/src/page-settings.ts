@@ -27,29 +27,33 @@ export interface PageSettings {
         footer?: {
             content: ComponentType<{ expanded: boolean }>;
             props: {
-                footerHeight?: number
-            }
+                footerHeight?: number;
+            };
         };
         searchHeader?: ComponentType;
-        reportAbuse?: ComponentType<{ extension: Extension, sx?: SxProps<Theme> }>;
-        claimNamespace?: ComponentType<{ extension: Extension, sx?: SxProps<Theme> }>;
+        reportAbuse?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
+        claimNamespace?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
         downloadTerms?: ComponentType;
         additionalRoutes?: ReactNode;
         banner?: {
             content: ComponentType;
             props?: {
                 dismissButton?: {
-                    show?: boolean,
-                    label?: string
-                },
-                onClose?: () => void,
-                color?: 'info' | 'warning'
-            },
-            cookie?: Cookie
+                    show?: boolean;
+                    label?: string;
+                };
+                onClose?: () => void;
+                color?: 'info' | 'warning';
+            };
+            cookie?: Cookie;
         };
         mainHeadTags?: ComponentType<{ pageSettings: PageSettings }>;
-        extensionHeadTags?: ComponentType<{ extension?: Extension, pageSettings: PageSettings }>;
-        namespaceHeadTags?: ComponentType<{ namespaceDetails?: NamespaceDetails, name: string, pageSettings: PageSettings }>;
+        extensionHeadTags?: ComponentType<{ extension?: Extension; pageSettings: PageSettings }>;
+        namespaceHeadTags?: ComponentType<{
+            namespaceDetails?: NamespaceDetails;
+            name: string;
+            pageSettings: PageSettings;
+        }>;
     };
     urls: {
         extensionDefaultIcon: string;
