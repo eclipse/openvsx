@@ -4,6 +4,9 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Changed
+
+- Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 
 ## [v1.0.2] (23/06/2026)
 
