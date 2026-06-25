@@ -26,12 +26,12 @@ export const publisherAdminKeys = {
     list: (search: string, role: string) => ['admin', 'publishers', { search, role }] as const
 };
 
-export const usePublisherInfo = (login: string, provider = 'github') => {
+export const usePublisherInfo = (login: string, provider = 'github', enabled = true) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: publisherAdminKeys.detail(provider, login),
         queryFn: ({ signal }) => service.admin.getPublisherInfo(controllerFromSignal(signal), provider, login),
-        enabled: !!login,
+        enabled: enabled && !!login,
         staleTime: 0
     });
 };

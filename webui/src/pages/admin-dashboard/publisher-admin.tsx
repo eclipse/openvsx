@@ -15,17 +15,14 @@ import {
     AccordionSummary,
     Alert,
     Avatar,
-    Badge,
     Box,
     Chip,
     CircularProgress,
     Divider,
     FormControl,
-    IconButton,
-    InputLabel,
+    InputBase,
     MenuItem,
     Paper,
-    Popover,
     Select,
     Stack,
     Tooltip,
@@ -34,7 +31,6 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import InfiniteScroll from 'react-infinite-scroller';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonIcon from '@mui/icons-material/Person';
@@ -91,40 +87,6 @@ function findScrollableAncestor(el: HTMLElement | null): HTMLElement | null {
     return null;
 }
 
-const FiltersPopover: FunctionComponent<{
-    anchorEl: HTMLElement | null;
-    onClose: () => void;
-    roleFilter: string;
-    onRoleChange: (role: string) => void;
-}> = ({ anchorEl, onClose, roleFilter, onRoleChange }) => (
-    <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={onClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}>
-        <Box sx={{ p: 2, width: 220 }}>
-            <Typography variant='subtitle2' sx={{ mb: 1.5 }}>
-                Filters
-            </Typography>
-            <FormControl size='small' fullWidth>
-                <InputLabel id='role-filter-label'>Role</InputLabel>
-                <Select
-                    labelId='role-filter-label'
-                    value={roleFilter}
-                    label='Role'
-                    onChange={e => onRoleChange(e.target.value)}>
-                    {ROLE_FILTER_OPTIONS.map(o => (
-                        <MenuItem key={o.value} value={o.value}>
-                            {o.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-        </Box>
-    </Popover>
-);
-
 const RoleEditor: FunctionComponent<{
     roleDraft: PublisherRole;
     onChange: (role: PublisherRole) => void;
@@ -150,43 +112,29 @@ const RoleEditor: FunctionComponent<{
     </Stack>
 );
 
-const PublisherDetailsSection: FunctionComponent<{ provider: string | undefined; loginName: string }> = ({
-    provider,
-    loginName
-}) => {
-    const { data, isLoading, error } = usePublisherInfo(loginName, provider ?? 'github');
-    return (
-        <>
-            <Divider sx={{ my: 2 }} />
-            {error && (
-                <Alert severity='error' sx={{ mb: 2 }}>
-                    {formatError(error as Error | Partial<ErrorResponse>)}
-                </Alert>
-            )}
-            {isLoading && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                    <CircularProgress size={24} />
-                </Box>
-            )}
-            {data && <PublisherDetails publisherInfo={data} />}
-        </>
-    );
-};
-
 interface PublisherListItemProps {
     entry: PublisherRelationships;
     index: number;
-    expanded: boolean;
+    selected: boolean;
     onToggle: (loginName: string, isExpanded: boolean) => void;
 }
 
-const PublisherListItem: FunctionComponent<PublisherListItemProps> = ({ entry, index, expanded, onToggle }) => {
+const PublisherListItem: FunctionComponent<PublisherListItemProps> = ({ entry, index, selected, onToggle }) => {
     const { user } = entry;
     const { user: currentUser } = useContext(MainContext);
     const isCurrentUser = currentUser?.loginName === user.loginName && currentUser?.provider === user.provider;
 
     const [roleDraft, setRoleDraft] = useState<PublisherRole>(() => (user.role as PublisherRole) ?? 'none');
     const updateRole = useUpdatePublisherRole();
+
+    // Fetch details only for the row being opened, and keep the panel closed until
+    // they arrive so it expands fully-formed instead of popping into place.
+    const {
+        data: publisherInfo,
+        isLoading,
+        error
+    } = usePublisherInfo(user.loginName, user.provider ?? 'github', selected);
+    const expanded = selected && (!!publisherInfo || !!error);
 
     const handleSaveRole = () => {
         if (roleDraft === (user.role ?? 'none') || !user.provider) {
@@ -203,7 +151,9 @@ const PublisherListItem: FunctionComponent<PublisherListItemProps> = ({ entry, i
             elevation={0}
             slotProps={{ transition: { unmountOnExit: true } }}
             sx={{ '&:before': { display: 'none' }, borderTop: index === 0 ? 'none' : 1, borderColor: 'divider' }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
+            <AccordionSummary
+                expandIcon={selected && isLoading ? <CircularProgress size={20} /> : <ExpandMoreIcon />}
+                sx={{ px: 0 }}>
                 <Stack direction='row' spacing={2} alignItems='center' sx={{ minWidth: 0, width: '100%' }}>
                     <Avatar variant='rounded' src={user.avatarUrl} sx={{ width: 36, height: 36 }} />
                     <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -316,7 +266,9 @@ const PublisherListItem: FunctionComponent<PublisherListItemProps> = ({ entry, i
                         </Stack>
                     )}
                 </Box>
-                <PublisherDetailsSection provider={user.provider} loginName={user.loginName} />
+                <Divider sx={{ my: 2 }} />
+                {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
+                {publisherInfo && <PublisherDetails publisherInfo={publisherInfo} />}
             </AccordionDetails>
         </Accordion>
     );
@@ -329,7 +281,6 @@ export const PublisherAdmin: FunctionComponent = () => {
 
     const [searchText, setSearchText] = useState(publisherParam ?? '');
     const [roleFilter, setRoleFilter] = useState('');
-    const [filterOpen, setFilterOpen] = useState(false);
 
     const debouncedSetSearch = useDebouncedCallback(setSearchText);
 
@@ -343,15 +294,8 @@ export const PublisherAdmin: FunctionComponent = () => {
     // Top progress bar tracks search/filter loads; pagination has its own spinner.
     const listLoading = isFetching && !isFetchingNextPage;
 
-    const filterButtonRef = useRef<HTMLButtonElement>(null);
     const scrollParentRef = useRef<HTMLElement | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    const expandedPublisherKey = useMemo(() => {
-        if (!publisherParam) return undefined;
-        const matched = publishers.find(p => p.user.loginName === publisherParam);
-        return matched ? getPublisherKey(matched) : undefined;
-    }, [publisherParam, publishers]);
 
     const updateContextValue = useMemo(
         () => ({
@@ -386,40 +330,38 @@ export const PublisherAdmin: FunctionComponent = () => {
             <Box ref={containerRef}>
                 <SearchListContainer
                     searchContainer={[
-                        <StyledInput
+                        <Box
                             key='publisher-admin-search'
-                            placeholder='Search by login or display name...'
-                            value={searchText}
-                            onChange={debouncedSetSearch}
-                        />
+                            sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+                            <StyledInput
+                                placeholder='Search by login or display name...'
+                                value={searchText}
+                                onChange={debouncedSetSearch}
+                            />
+                            <Paper elevation={3} sx={{ flex: 1, display: 'flex' }}>
+                                <Select
+                                    value={roleFilter}
+                                    onChange={e => setRoleFilter(e.target.value)}
+                                    displayEmpty
+                                    input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
+                                    {ROLE_FILTER_OPTIONS.map(o => (
+                                        <MenuItem key={o.value} value={o.value}>
+                                            {o.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </Paper>
+                        </Box>
                     ]}
                     listContainer={null}
                     loading={listLoading}
                 />
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Stack direction='row' alignItems='center' justifyContent='space-between'>
-                        <IconButton
-                            ref={filterButtonRef}
-                            onClick={() => setFilterOpen(true)}
-                            size='small'
-                            title='Filters'>
-                            <Badge color='primary' variant='dot' invisible={!roleFilter}>
-                                <FilterListIcon />
-                            </Badge>
-                        </IconButton>
-                        {totalSize > 0 && (
-                            <Typography variant='body2' color='text.secondary'>
-                                {totalSize} publisher{totalSize === 1 ? '' : 's'} found
-                            </Typography>
-                        )}
-                    </Stack>
-
-                    <FiltersPopover
-                        anchorEl={filterOpen ? filterButtonRef.current : null}
-                        onClose={() => setFilterOpen(false)}
-                        roleFilter={roleFilter}
-                        onRoleChange={setRoleFilter}
-                    />
+                    {totalSize > 0 && (
+                        <Typography variant='body2' color='text.secondary' sx={{ alignSelf: 'flex-end' }}>
+                            {totalSize} publisher{totalSize === 1 ? '' : 's'} found
+                        </Typography>
+                    )}
 
                     {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
 
@@ -448,7 +390,7 @@ export const PublisherAdmin: FunctionComponent = () => {
                                         key={getPublisherKey(entry)}
                                         entry={entry}
                                         index={index}
-                                        expanded={expandedPublisherKey === getPublisherKey(entry)}
+                                        selected={entry.user.loginName === publisherParam}
                                         onToggle={handleAccordionToggle}
                                     />
                                 ))}
