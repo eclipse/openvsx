@@ -26,17 +26,12 @@ export const publisherAdminKeys = {
     list: (search: string, role: string) => ['admin', 'publishers', { search, role }] as const
 };
 
-/**
- * Looks up publisher info for the admin search view. `staleTime: 0` keeps each
- * lookup fresh and `retry: false` lets a 404 surface immediately as "not found".
- */
 export const usePublisherInfo = (login: string, provider = 'github') => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: publisherAdminKeys.detail(provider, login),
         queryFn: ({ signal }) => service.admin.getPublisherInfo(controllerFromSignal(signal), provider, login),
         enabled: !!login,
-        retry: false,
         staleTime: 0
     });
 };
