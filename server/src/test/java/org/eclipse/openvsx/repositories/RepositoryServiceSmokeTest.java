@@ -207,7 +207,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findTargetPlatformVersions("version", "extensionName", "namespaceName"),
                 () -> repositories.findUserByLoginName("provider", "loginName"),
-                () -> repositories.findUsersByLoginNameStartingWith("loginNameStart", 1),
                 () -> repositories.searchUsers("search", "role", Pageable.ofSize(25)),
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),

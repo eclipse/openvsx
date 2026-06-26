@@ -21,10 +21,21 @@ import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
-import org.eclipse.openvsx.json.*;
-import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.json.AdminStatisticsJson;
+import org.eclipse.openvsx.json.ChangeNamespaceJson;
+import org.eclipse.openvsx.json.ExtensionJson;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
+import org.eclipse.openvsx.json.PersistedLogJson;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SettingsJson;
+import org.eclipse.openvsx.json.StatsJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
+import org.eclipse.openvsx.json.UserPublishInfoJson;
+import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
@@ -35,11 +46,19 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -155,17 +174,17 @@ public class AdminAPI {
     }
 
     @GetMapping(
-        path = "/users",
+        path = "/user/search",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<Page<UserRelationshipsJson>> getUsers(
+            @RequestParam(name = "query", required = false) String query,
             Pageable pageable,
-            @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "role", required = false) String role
     ) {
         try {
             admins.checkAdminUser();
-            return ResponseEntity.ok(admins.searchUsers(search, role, pageable));
+            return ResponseEntity.ok(admins.searchUsers(query, role, pageable));
         } catch (ErrorResultException exc) {
             var status = exc.getStatus() != null ? exc.getStatus() : HttpStatus.BAD_REQUEST;
             throw new ResponseStatusException(status);

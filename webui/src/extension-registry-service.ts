@@ -870,7 +870,7 @@ export class AdminServiceImpl implements AdminService {
         const query: { key: string; value: string | number }[] = [];
         if (params) {
             if (params.search) {
-                query.push({ key: 'search', value: params.search });
+                query.push({ key: 'query', value: params.search });
             }
             if (params.role) {
                 query.push({ key: 'role', value: params.role });
@@ -885,7 +885,7 @@ export class AdminServiceImpl implements AdminService {
         return sendNonRetriableRequest({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'users'], query)
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'user', 'search'], query)
         });
     }
 
