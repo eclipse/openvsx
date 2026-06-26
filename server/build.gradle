@@ -47,6 +47,8 @@ sourceSets {
 configurations {
     devImplementation.extendsFrom implementation
     devRuntimeOnly.extendsFrom runtimeOnly
+
+    testImplementation.exclude group: 'com.vaadin.external.google', module: 'android-json'
 }
 
 dependencies {
@@ -68,9 +70,13 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-zipkin"
+    implementation "org.springframework.boot:spring-boot-security-oauth2-client"
+
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
+
     implementation "org.springframework.session:spring-session-jdbc"
+
     implementation "org.springframework.boot:spring-boot-thymeleaf"
 
     implementation "org.apache.httpcomponents.client5:httpclient5"

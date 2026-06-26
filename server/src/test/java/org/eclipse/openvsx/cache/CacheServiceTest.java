@@ -161,6 +161,8 @@ class CacheServiceTest {
             registry.postReview(review, namespace.getName(), extension.getName());
             assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
+            entityManager.flush();
+
             json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
             assertEquals(Long.valueOf(1), json.getReviewCount());
             assertEquals(Double.valueOf(3), json.getAverageRating());
@@ -192,12 +194,17 @@ class CacheServiceTest {
             review.setTimestamp("2000-01-01T10:00Z");
 
             registry.postReview(review, namespace.getName(), extension.getName());
+
+            entityManager.flush();
+
             var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
             assertEquals(Long.valueOf(1), json.getReviewCount());
             assertEquals(Double.valueOf(3), json.getAverageRating());
 
             registry.deleteReview(namespace.getName(), extension.getName());
             assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+
+            entityManager.flush();
 
             json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
             assertEquals(Long.valueOf(0), json.getReviewCount());
@@ -250,6 +257,8 @@ class CacheServiceTest {
                 admins.deleteExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), newVersion, admin);
                 assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
+                entityManager.flush();
+
                 json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
                 assertFalse(json.getAllVersions().containsKey(newVersion));
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
@@ -279,6 +288,8 @@ class CacheServiceTest {
                 newTempFile.getResource().getExtension().setPreRelease(true);
                 extensions.updateExtension(extension);
                 assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+
+                entityManager.flush();
 
                 var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), oldVersion);
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
