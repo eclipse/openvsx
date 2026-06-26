@@ -12,13 +12,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import jakarta.annotation.Nonnull;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.util.Timeout;
 import org.eclipse.openvsx.util.TempFile;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.restclient.RestTemplateBuilder;
@@ -31,7 +32,6 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +63,7 @@ public class HttpClientExecutor {
      */
     public static HttpClientExecutor create(
             RemoteScannerProperties.HttpConfig httpConfig,
-            @Nullable RemoteScannerProperties.AuthConfig authConfig,
+            RemoteScannerProperties.@Nullable AuthConfig authConfig,
             String scannerName
     ) {
         logger.debug("Creating HTTP client for scanner '{}': socketTimeout={}ms, connectTimeout={}ms, auth={}",
@@ -329,7 +329,7 @@ public class HttpClientExecutor {
         }
 
         @Override
-        public @Nonnull String getFilename() {
+        public @NonNull String getFilename() {
             return tempFile.getResource() != null ? tempFile.getResource().getName() : tempFile.getPath().toFile().getName();
         }
     }

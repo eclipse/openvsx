@@ -13,19 +13,19 @@
 package org.eclipse.openvsx.scanning;
 
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Exception thrown when a scan operation fails.
  */
 public class ScannerException extends Exception {
 
-    public ScannerException(@Nonnull String message) {
+    public ScannerException(@NonNull String message) {
         super(message);
     }
 
-    public ScannerException(@Nonnull String message, @Nullable Throwable cause) {
+    public ScannerException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

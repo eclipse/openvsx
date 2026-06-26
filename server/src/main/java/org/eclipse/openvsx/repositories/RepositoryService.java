@@ -52,6 +52,7 @@ import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.web.SitemapRow;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -59,8 +60,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
-
-import jakarta.annotation.Nullable;
 
 @Component
 public class RepositoryService {
@@ -927,7 +926,7 @@ public class RepositoryService {
             @Nullable Collection<String> checkTypes,
             @Nullable Collection<String> scannerNames,
             @Nullable Boolean enforcedOnly,
-            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter,
+            org.eclipse.openvsx.admin.ScanAPI.@Nullable AdminDecisionFilterValues adminDecisionFilter,
             boolean includeCheckErrors,
             org.springframework.data.domain.Pageable pageable
     ) {
@@ -970,7 +969,7 @@ public class RepositoryService {
             @Nullable Collection<String> checkTypes,
             @Nullable Collection<String> scannerNames,
             @Nullable Boolean enforcedOnly,
-            @Nullable org.eclipse.openvsx.admin.ScanAPI.AdminDecisionFilterValues adminDecisionFilter,
+            org.eclipse.openvsx.admin.ScanAPI.@Nullable AdminDecisionFilterValues adminDecisionFilter,
             boolean includeCheckErrors
     ) {
         // Convert enums to strings for native query

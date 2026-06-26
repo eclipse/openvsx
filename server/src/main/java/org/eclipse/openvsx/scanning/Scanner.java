@@ -12,8 +12,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,17 +33,17 @@ public interface Scanner {
      * Command to start a scan. Contains metadata about what to scan.
      * Scanners retrieve the actual file via extensionVersionId using ScannerFileService.
      */
-    record Command(long extensionVersionId, @Nonnull String scanId) {}
+    record Command(long extensionVersionId, @NonNull String scanId) {}
     
     /**
      * Represents a scan that has been submitted to an external service.
      */
-    record Submission(@Nonnull String externalJobId, @Nullable Map<String, String> fileHashes) {
-        public Submission(@Nonnull String externalJobId) {
+    record Submission(@NonNull String externalJobId, @Nullable Map<String, String> fileHashes) {
+        public Submission(@NonNull String externalJobId) {
             this(externalJobId, null);
         }
         
-        @Nonnull
+        @NonNull
         public Map<String, String> fileHashes() {
             return fileHashes != null ? fileHashes : Collections.emptyMap();
         }
@@ -76,23 +77,23 @@ public interface Scanner {
             this.summary = summary;
         }
         
-        @Nonnull
+        @NonNull
         public static Result clean() {
             return new Result(true, Collections.emptyList(), null);
         }
 
-        @Nonnull
+        @NonNull
         public static Result clean(@Nullable String summary) {
             return new Result(true, Collections.emptyList(), summary);
         }
 
-        @Nonnull
-        public static Result withThreats(@Nonnull List<Threat> threats) {
+        @NonNull
+        public static Result withThreats(@NonNull List<Threat> threats) {
             return new Result(false, threats, null);
         }
 
-        @Nonnull
-        public static Result withThreats(@Nonnull List<Threat> threats, @Nullable String summary) {
+        @NonNull
+        public static Result withThreats(@NonNull List<Threat> threats, @Nullable String summary) {
             return new Result(false, threats, summary);
         }
         
@@ -100,7 +101,7 @@ public interface Scanner {
             return clean;
         }
         
-        @Nonnull
+        @NonNull
         public List<Threat> getThreats() {
             return Collections.unmodifiableList(threats);
         }
@@ -122,15 +123,15 @@ public interface Scanner {
         private final String filePath;
         private final String fileHash;
         
-        public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity) {
+        public Threat(@NonNull String name, @Nullable String description, @NonNull String severity) {
             this(name, description, severity, null, null);
         }
         
-        public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity, @Nullable String filePath) {
+        public Threat(@NonNull String name, @Nullable String description, @NonNull String severity, @Nullable String filePath) {
             this(name, description, severity, filePath, null);
         }
         
-        public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity, @Nullable String filePath, @Nullable String fileHash) {
+        public Threat(@NonNull String name, @Nullable String description, @NonNull String severity, @Nullable String filePath, @Nullable String fileHash) {
             this.name = name;
             this.description = description;
             this.severity = severity;
@@ -138,9 +139,9 @@ public interface Scanner {
             this.fileHash = fileHash;
         }
         
-        @Nonnull public String getName() { return name; }
+        @NonNull public String getName() { return name; }
         @Nullable public String getDescription() { return description; }
-        @Nonnull public String getSeverity() { return severity; }
+        @NonNull public String getSeverity() { return severity; }
         @Nullable public String getFilePath() { return filePath; }
         @Nullable public String getFileHash() { return fileHash; }
     }
@@ -153,14 +154,14 @@ public interface Scanner {
      * - Submitted: Async scan that requires polling
      */
     sealed interface Invocation {
-        record Completed(@Nonnull Result result) implements Invocation {}
-        record Submitted(@Nonnull Submission submission) implements Invocation {}
+        record Completed(@NonNull Result result) implements Invocation {}
+        record Submitted(@NonNull Submission submission) implements Invocation {}
     }
     
     /**
      * Returns the unique type identifier for this scanner.
      */
-    @Nonnull
+    @NonNull
     String getScannerType();
     
     /**
@@ -220,27 +221,26 @@ public interface Scanner {
      * Only relevant when maxConcurrency > 0.
      */
     default int getMaxQueueWaitMinutes() { return 120; }
-    
+
     /**
      * Get the polling configuration for this async scanner.
      * Returns null to use defaults.
      */
-    @Nullable
-    default RemoteScannerProperties.PollConfig getPollConfig() {
+    default RemoteScannerProperties.@Nullable PollConfig getPollConfig() {
         return null;
     }
     
     /**
      * Start a scan and return the invocation result.
      */
-    @Nonnull
-    Invocation startScan(@Nonnull Command command) throws ScannerException;
+    @NonNull
+    Invocation startScan(@NonNull Command command) throws ScannerException;
     
     /**
      * Poll status of an async scan job.
      */
-    @Nonnull
-    default PollStatus pollStatus(@Nonnull Submission submission) throws ScannerException {
+    @NonNull
+    default PollStatus pollStatus(@NonNull Submission submission) throws ScannerException {
         throw new UnsupportedOperationException(
             "Scanner " + getScannerType() + " does not support polling"
         );
@@ -249,8 +249,8 @@ public interface Scanner {
     /**
      * Retrieve final results from an async scan job.
      */
-    @Nonnull
-    default Result fetchResults(@Nonnull Submission submission) throws ScannerException {
+    @NonNull
+    default Result fetchResults(@NonNull Submission submission) throws ScannerException {
         throw new UnsupportedOperationException(
             "Scanner " + getScannerType() + " does not support result retrieval"
         );

@@ -14,7 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import com.google.re2j.Pattern;
 import jakarta.validation.constraints.NotNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

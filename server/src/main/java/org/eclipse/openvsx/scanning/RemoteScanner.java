@@ -11,12 +11,11 @@
  * SPDX-License-Identifier: EPL-2.0 
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,12 +42,12 @@ public class RemoteScanner implements Scanner {
     private final ScannerFileProvider scanFileService;
     
     public RemoteScanner(
-        @Nonnull String scannerName,
-        @Nonnull RemoteScannerProperties.ScannerConfig config,
-        @Nonnull HttpTemplateEngine templateEngine,
-        @Nonnull HttpClientExecutor httpExecutor,
-        @Nonnull HttpResponseExtractor responseExtractor,
-        @Nonnull ScannerFileProvider scanFileService
+        @NonNull String scannerName,
+            RemoteScannerProperties.@NonNull ScannerConfig config,
+        @NonNull HttpTemplateEngine templateEngine,
+        @NonNull HttpClientExecutor httpExecutor,
+        @NonNull HttpResponseExtractor responseExtractor,
+        @NonNull ScannerFileProvider scanFileService
     ) {
         this.scannerName = scannerName;
         this.config = config;
@@ -59,7 +58,7 @@ public class RemoteScanner implements Scanner {
     }
     
     @Override
-    @Nonnull
+    @NonNull
     public String getScannerType() {
         return config.getType();
     }
@@ -109,7 +108,7 @@ public class RemoteScanner implements Scanner {
         }
         return template.replace("{jobId}", externalJobId);
     }
-    
+
     /**
      * Start a scan by sending the entire .vsix file to the scanner.
      * <p>
@@ -117,8 +116,7 @@ public class RemoteScanner implements Scanner {
      * For async scanners: Extracts job ID from start response
      */
     @Override
-    @Nonnull
-    public Scanner.Invocation startScan(@Nonnull Command command) throws ScannerException {
+    public Scanner.@NonNull Invocation startScan(@NonNull Command command) throws ScannerException {
         logger.debug("Starting {} scan for extension version {}", 
             scannerName, command.extensionVersionId());
         
@@ -178,8 +176,8 @@ public class RemoteScanner implements Scanner {
      * to PollStatus.
      */
     @Override
-    @Nonnull
-    public PollStatus pollStatus(@Nonnull Submission submission) throws ScannerException {
+    @NonNull
+    public PollStatus pollStatus(@NonNull Submission submission) throws ScannerException {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
@@ -216,15 +214,14 @@ public class RemoteScanner implements Scanner {
             throw new ScannerException("Failed to poll scan status: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Retrieve results from a completed async scan.
      * <p>
      * Executes the configured result operation and parses threats.
      */
     @Override
-    @Nonnull
-    public Scanner.Result fetchResults(@Nonnull Submission submission) throws ScannerException {
+    public Scanner.@NonNull Result fetchResults(@NonNull Submission submission) throws ScannerException {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
@@ -482,7 +479,7 @@ public class RemoteScanner implements Scanner {
      * Extract threat severity using path or expression.
      * Always returns a non-null value (defaults to "MEDIUM").
      */
-    @Nonnull
+    @NonNull
     private String extractThreatSeverity(
         Map<String, Object> threatObj,
         RemoteScannerProperties.ThreatMapping threatMapping

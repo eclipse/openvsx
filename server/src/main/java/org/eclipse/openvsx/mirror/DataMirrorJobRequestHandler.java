@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
-import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.UserData;
@@ -19,6 +18,7 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.XmlUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;

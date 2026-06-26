@@ -15,9 +15,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.json.UserJson;
-
+import org.jspecify.annotations.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

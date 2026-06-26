@@ -20,13 +20,13 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -76,8 +76,8 @@ public class ExtensionScanService {
      * Creates a scan record from ExtensionProcessor metadata.
      * Use this when validation runs BEFORE extension creation.
      */
-    @Nonnull
-    public ExtensionScan initializeScan(@Nonnull ExtensionProcessor processor, @Nonnull UserData user) {
+    @NonNull
+    public ExtensionScan initializeScan(@NonNull ExtensionProcessor processor, @NonNull UserData user) {
         return initializeScan(
             processor.getNamespace(),
             processor.getExtensionName(),
@@ -115,9 +115,9 @@ public class ExtensionScanService {
      * then records findings and manages state transitions.
      */
     public void runValidation(
-            @Nonnull ExtensionScan scan,
-            @Nonnull TempFile extensionFile,
-            @Nonnull UserData user
+            @NonNull ExtensionScan scan,
+            @NonNull TempFile extensionFile,
+            @NonNull UserData user
     ) {
         transitionTo(scan, ScanStatus.VALIDATING);
 
@@ -187,7 +187,7 @@ public class ExtensionScanService {
      * and try to enqueue a JobRunr request. On enqueue failure we only log since the watchdog
      * will re-enqueue them for retry.
      */
-    public boolean submitScannerJobs(@Nonnull ExtensionScan scan, @Nonnull ExtensionVersion extVersion) {
+    public boolean submitScannerJobs(@NonNull ExtensionScan scan, @NonNull ExtensionVersion extVersion) {
         if (!config.isEnabled()) {
             logger.debug("Scanning is disabled, skipping scanner jobs for: {}", 
                 NamingUtil.toLogFormat(extVersion));
@@ -266,7 +266,7 @@ public class ExtensionScanService {
      * @throws ErrorResultException if the scan is not in a terminal state, the
      *     job does not belong to the scan, or the job is not in FAILED status.
      */
-    public void retryFailedJob(@Nonnull ExtensionScan scan, @Nonnull ScannerJob job) {
+    public void retryFailedJob(@NonNull ExtensionScan scan, @NonNull ScannerJob job) {
         if (job.getStatus().isActive()) {
             throw new ErrorResultException(
                     "Cannot retry: this job is currently in an active state (current: " + job.getStatus() + ")"
@@ -308,7 +308,7 @@ public class ExtensionScanService {
      * @throws ErrorResultException if the scan is not terminal, has no jobs,
      *     or has no failed jobs to retry.
      */
-    public ExtensionScan retryFailedJobs(@Nonnull ExtensionScan scan) {
+    public ExtensionScan retryFailedJobs(@NonNull ExtensionScan scan) {
         if (!scan.getStatus().isCompleted()) {
             throw new ErrorResultException(
                 String.format(
@@ -424,7 +424,7 @@ public class ExtensionScanService {
         };
     }
 
-    public void removeScan(@Nonnull ExtensionScan scan) {
+    public void removeScan(@NonNull ExtensionScan scan) {
         persistenceService.removeScan(scan);
     }
 

@@ -15,7 +15,7 @@ package org.eclipse.openvsx.scanning;
 import com.google.re2j.Pattern;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -206,7 +206,7 @@ public class SecretDetectorFactory {
      * Combines extensions from the global allowlist in the YAML with extensions from config.
      */
     private List<String> getGlobalExcludedExtensions(
-            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
+            SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
             @NotNull SecretDetectorConfig config) {
         List<String> result = new ArrayList<>();
 
@@ -225,7 +225,7 @@ public class SecretDetectorFactory {
      * Combines paths from the global allowlist in the YAML with paths from config.
      */
     private List<Pattern> getGlobalExcludedPathPatterns(
-            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
+            SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
             @NotNull SecretDetectorConfig config) {
         List<Pattern> result = new ArrayList<>();
 
@@ -243,7 +243,7 @@ public class SecretDetectorFactory {
      * Uses regex patterns from the global allowlist in the YAML, falling back to config.
      */
     private List<Pattern> getGlobalAllowlistPatterns(
-            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
+            SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
             @NotNull SecretDetectorConfig config) {
         List<Pattern> result = new ArrayList<>();
 
@@ -261,7 +261,7 @@ public class SecretDetectorFactory {
      * Uses stopwords from the global allowlist in the YAML, falling back to config.
      */
     private List<String> getGlobalStopwords(
-            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist,
+            SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
             @NotNull SecretDetectorConfig config) {
         List<String> result = new ArrayList<>();
 
@@ -290,7 +290,7 @@ public class SecretDetectorFactory {
      * Uses case-insensitive matching.
      */
     private List<Pattern> getSkipMimeTypePatterns(
-            @Nullable SecretRuleLoader.GlobalAllowlist globalAllowlist) {
+            SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist) {
         List<Pattern> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.skipMimeTypes != null) {

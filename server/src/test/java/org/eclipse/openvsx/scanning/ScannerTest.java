@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -125,9 +126,9 @@ class ScannerTest {
         // checks, self-hosted services without a dashboard). They simply don't
         // contribute a "View in scanner" deep link.
         Scanner scanner = new Scanner() {
-            @Override public @jakarta.annotation.Nonnull String getScannerType() { return "TEST"; }
+            @Override public @NonNull String getScannerType() { return "TEST"; }
             @Override public boolean isAsync() { return false; }
-            @Override public @jakarta.annotation.Nonnull Scanner.Invocation startScan(@jakarta.annotation.Nonnull Command command) { throw new UnsupportedOperationException(); }
+            @Override public Scanner.@NonNull Invocation startScan(@NonNull Command command) { throw new UnsupportedOperationException(); }
         };
 
         assertNull(scanner.buildExternalUrl("any-job-id"));

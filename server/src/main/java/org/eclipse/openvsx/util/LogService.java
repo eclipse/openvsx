@@ -12,12 +12,12 @@
  *****************************************************************************/
 package org.eclipse.openvsx.util;
 
-import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -32,7 +32,7 @@ public class LogService {
     }
 
     @Transactional
-    public void logAction(@Nonnull UserData user, @Nonnull ResultJson result) {
+    public void logAction(@NonNull UserData user, @NonNull ResultJson result) {
         Objects.requireNonNull(user);
         Objects.requireNonNull(result);
 

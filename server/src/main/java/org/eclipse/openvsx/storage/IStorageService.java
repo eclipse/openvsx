@@ -14,9 +14,9 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.util.Pair;
 
-import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;

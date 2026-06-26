@@ -17,12 +17,12 @@ import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,11 +67,11 @@ public class PublishCheckRunner{
      * This method does not persist anything. It only executes checks and returns findings.
      * The caller is responsible for recording failures and managing state.
      */
-    @Nonnull
+    @NonNull
     public Result runChecks(
-            @Nonnull ExtensionScan scan,
-            @Nonnull TempFile extensionFile,
-            @Nonnull UserData user
+            @NonNull ExtensionScan scan,
+            @NonNull TempFile extensionFile,
+            @NonNull UserData user
     ) {
         var context = new PublishCheck.Context(scan, extensionFile, user);
         var allFindings = new ArrayList<Finding>();
@@ -190,9 +190,9 @@ public class PublishCheckRunner{
      * Result of running all publish checks.
      */
     public record Result(
-        @Nonnull List<Finding> findings,
-        @Nonnull List<CheckExecution> checkExecutions,
-        @Nonnull List<CheckError> errors,
+        @NonNull List<Finding> findings,
+        @NonNull List<CheckExecution> checkExecutions,
+        @NonNull List<CheckError> errors,
         boolean hasEnforcedFailure,
         boolean hasRequiredCheckError
     ) {
@@ -215,7 +215,7 @@ public class PublishCheckRunner{
         /**
          * Get errors from required checks (these block publishing).
          */
-        @Nonnull
+        @NonNull
         public List<CheckError> getRequiredErrors() {
             return errors.stream()
                 .filter(CheckError::required)
@@ -225,7 +225,7 @@ public class PublishCheckRunner{
         /**
          * Get errors from non-required checks (these don't block publishing).
          */
-        @Nonnull
+        @NonNull
         public List<CheckError> getNonRequiredErrors() {
             return errors.stream()
                 .filter(e -> !e.required())
@@ -269,7 +269,7 @@ public class PublishCheckRunner{
         /**
          * Get findings that are enforced (would block publication).
          */
-        @Nonnull
+        @NonNull
         public List<Finding> getEnforcedFindings() {
             return findings.stream()
                 .filter(Finding::enforced)
@@ -279,7 +279,7 @@ public class PublishCheckRunner{
         /**
          * Get findings that are not enforced (warnings only).
          */
-        @Nonnull
+        @NonNull
         public List<Finding> getWarningFindings() {
             return findings.stream()
                 .filter(f -> !f.enforced())
@@ -291,8 +291,8 @@ public class PublishCheckRunner{
      * An error that occurred during a check execution.
      */
     public record CheckError(
-        @Nonnull String checkType,
-        @Nonnull Exception exception,
+        @NonNull String checkType,
+        @NonNull Exception exception,
         boolean required
     ) {}
 
@@ -301,8 +301,8 @@ public class PublishCheckRunner{
      * Contains all info needed for the service to record the failure.
      */
     public record Finding(
-        @Nonnull String checkType,
-        @Nonnull String ruleName,
+        @NonNull String checkType,
+        @NonNull String ruleName,
         @Nullable String reason,
         boolean enforced,
         @Nullable String userFacingMessage
@@ -313,10 +313,10 @@ public class PublishCheckRunner{
      * Used to record all checks that were run for audit trail.
      */
     public record CheckExecution(
-        @Nonnull String checkType,
-        @Nonnull LocalDateTime startedAt,
-        @Nonnull LocalDateTime completedAt,
-        @Nonnull ScanCheckResult.CheckResult result,
+        @NonNull String checkType,
+        @NonNull LocalDateTime startedAt,
+        @NonNull LocalDateTime completedAt,
+    ScanCheckResult.@NonNull CheckResult result,
         int findingsCount,
         @Nullable String errorMessage,
         @Nullable String summary,

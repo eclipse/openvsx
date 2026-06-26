@@ -14,12 +14,11 @@ package org.eclipse.openvsx.repositories;
 
 import org.eclipse.openvsx.entities.AdminScanDecision;
 import org.eclipse.openvsx.entities.ExtensionScan;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.util.Streamable;
-
-import jakarta.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.Collection;

@@ -13,9 +13,8 @@
 package org.eclipse.openvsx.scanning;
 
 
-import jakarta.annotation.Nonnull;
-
 import org.jobrunr.jobs.lambdas.JobRequest;
+import org.jspecify.annotations.NonNull;
 
 /**
  * JobRunr request to invoke a scanner for an extension version.
@@ -42,9 +41,9 @@ public class ScannerInvocationRequest implements JobRequest {
      * Create a scanner invocation request.
      */
     public ScannerInvocationRequest(
-        @Nonnull String scannerType,
+        @NonNull String scannerType,
         long extensionVersionId, 
-        @Nonnull String scanId
+        @NonNull String scanId
     ) {
         this.scannerType = scannerType;
         this.extensionVersionId = extensionVersionId;

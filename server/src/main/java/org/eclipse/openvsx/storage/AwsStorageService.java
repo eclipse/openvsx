@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import jakarta.annotation.Nullable;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -18,6 +17,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.util.Pair;

@@ -12,11 +12,10 @@
  *****************************************************************************/
 package org.eclipse.openvsx.util;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.apache.tika.Tika;
 import org.eclipse.openvsx.storage.StorageUtil;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -82,12 +81,12 @@ public class HttpHeadersUtil {
         return headers;
     }
 
-    public static HttpHeaders createFileResponseHeaders(@Nonnull Path file) {
+    public static HttpHeaders createFileResponseHeaders(@NonNull Path file) {
         var fileName = file.getFileName().toString();
         return createFileResponseHeaders(file, fileName);
     }
 
-    public static HttpHeaders createFileResponseHeaders(@Nonnull Path file, @Nullable String fileName) {
+    public static HttpHeaders createFileResponseHeaders(@NonNull Path file, @Nullable String fileName) {
         try (var inputStream = Files.newInputStream(file)) {
             return createFileResponseHeaders(inputStream, fileName);
         } catch (IOException ex) {

@@ -9,10 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.json;
 
-import jakarta.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.jspecify.annotations.Nullable;
 
 @JsonInclude(Include.NON_NULL)
 public class AccessTokenJson extends ResultJson {

@@ -14,7 +14,6 @@ package org.eclipse.openvsx.ratelimit;
 
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.ipv4.IPv4AddressAssociativeTrie;
-import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -27,6 +26,7 @@ import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;

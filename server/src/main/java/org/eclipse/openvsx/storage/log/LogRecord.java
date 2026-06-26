@@ -12,6 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.storage.log;
 
-import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
-public record LogRecord(@Nonnull String method, int status, @Nonnull String url) {}
+public record LogRecord(@NonNull String method, int status, @NonNull String url) {}

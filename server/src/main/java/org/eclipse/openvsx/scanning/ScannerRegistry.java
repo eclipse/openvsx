@@ -11,11 +11,10 @@
  * SPDX-License-Identifier: EPL-2.0 
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +32,7 @@ public class ScannerRegistry {
     /**
      * Register a scanner in the registry.
      */
-    public void registerScanner(@Nonnull Scanner scanner) {
+    public void registerScanner(@NonNull Scanner scanner) {
         String type = scanner.getScannerType();
         
         // Check for duplicate scanner types
@@ -50,7 +49,7 @@ public class ScannerRegistry {
      * Unregister a scanner from the registry.
      */
     @Nullable
-    public Scanner unregisterScanner(@Nonnull String scannerType) {
+    public Scanner unregisterScanner(@NonNull String scannerType) {
         return scanners.remove(scannerType);
     }
     
@@ -59,7 +58,7 @@ public class ScannerRegistry {
      * Used when scanner configuration changes at runtime.
      */
     @Nullable
-    public Scanner replaceScanner(@Nonnull Scanner scanner) {
+    public Scanner replaceScanner(@NonNull Scanner scanner) {
         return scanners.put(scanner.getScannerType(), scanner);
     }
     
@@ -67,21 +66,21 @@ public class ScannerRegistry {
      * Get a scanner by its type.
      */
     @Nullable
-    public Scanner getScanner(@Nonnull String scannerType) {
+    public Scanner getScanner(@NonNull String scannerType) {
         return scanners.get(scannerType);
     }
     
     /**
      * Check if a scanner type is registered.
      */
-    public boolean hasScanner(@Nonnull String scannerType) {
+    public boolean hasScanner(@NonNull String scannerType) {
         return scanners.containsKey(scannerType);
     }
     
     /**
      * Get all registered scanner types.
      */
-    @Nonnull
+    @NonNull
     public Set<String> getRegisteredTypes() {
         return Set.copyOf(scanners.keySet());
     }
@@ -89,7 +88,7 @@ public class ScannerRegistry {
     /**
      * Get all registered scanners.
      */
-    @Nonnull
+    @NonNull
     public List<Scanner> getAllScanners() {
         return List.copyOf(scanners.values());
     }
@@ -97,7 +96,7 @@ public class ScannerRegistry {
     /**
      * Get all registered async scanners (those that require polling).
      */
-    @Nonnull
+    @NonNull
     public List<Scanner> getAsyncScanners() {
         return scanners.values().stream()
             .filter(Scanner::isAsync)

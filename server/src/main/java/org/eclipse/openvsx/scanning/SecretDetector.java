@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
-
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +19,6 @@ import org.apache.tika.Tika;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.SizeLimitInputStream;
 import jakarta.validation.constraints.NotNull;
-import jakarta.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.BufferedInputStream;

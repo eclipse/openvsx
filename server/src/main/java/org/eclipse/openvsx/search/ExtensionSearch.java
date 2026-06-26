@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 

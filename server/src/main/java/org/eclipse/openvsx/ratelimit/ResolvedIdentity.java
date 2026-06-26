@@ -12,15 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.Tier;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public record ResolvedIdentity(
-        @Nonnull String ipAddress,
-        @Nonnull String cacheKey,
+        @NonNull String ipAddress,
+        @NonNull String cacheKey,
         @Nullable Customer customer,
         @Nullable Tier freeTier,
         @Nullable Tier safetyTier

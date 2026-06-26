@@ -13,13 +13,13 @@
 package org.eclipse.openvsx.ratelimit;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import jakarta.annotation.Nonnull;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.DailyUsageStats;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -174,7 +174,7 @@ public class UsageStatsService {
         }
     }
 
-    long getDailyPercentile(@Nonnull List<UsageStats> input, double percentile) {
+    long getDailyPercentile(@NonNull List<UsageStats> input, double percentile) {
         if (percentile < 0 || percentile > 100) {
             throw new IllegalArgumentException("Percentile must be between 0 and 100 inclusive.");
         }

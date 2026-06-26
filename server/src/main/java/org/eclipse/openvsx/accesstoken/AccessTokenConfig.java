@@ -12,8 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -95,7 +95,7 @@ public class AccessTokenConfig {
     @Value("${ovsx.data.mirror.enabled:false}")
     private boolean mirrorEnabled;
 
-    public @Nonnull String getPrefix() {
+    public @NonNull String getPrefix() {
         return this.prefix;
     }
 
@@ -103,7 +103,7 @@ public class AccessTokenConfig {
         return this.expiration.isPositive();
     }
 
-    public @Nonnull Duration getExpiration() {
+    public @NonNull Duration getExpiration() {
         return this.expiration;
     }
 
@@ -111,7 +111,7 @@ public class AccessTokenConfig {
         return this.notification.isPositive();
     }
 
-    public @Nonnull Duration getNotification() {
+    public @NonNull Duration getNotification() {
         return this.notification;
     }
 
@@ -127,7 +127,7 @@ public class AccessTokenConfig {
         return StringUtils.hasText(this.expirationSchedule);
     }
 
-    public @Nonnull String getExpirationSchedule() {
+    public @NonNull String getExpirationSchedule() {
         return this.expirationSchedule;
     }
 
@@ -135,7 +135,7 @@ public class AccessTokenConfig {
         return StringUtils.hasText(this.notificationSchedule);
     }
 
-    public @Nonnull String getNotificationSchedule() {
+    public @NonNull String getNotificationSchedule() {
         return this.notificationSchedule;
     }
 

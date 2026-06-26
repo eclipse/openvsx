@@ -188,7 +188,7 @@ jooq {
 }
 
 rewrite {
-    activeRecipe("org.openrewrite.java.migrate.jakarta.JavaxAnnotationMigrationToJakartaAnnotation")
+    activeRecipe("org.openrewrite.java.jspecify.MigrateFromJakartaAnnotationApi")
     setExportDatatables(true)
 }
 

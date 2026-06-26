@@ -17,12 +17,12 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import jakarta.annotation.Nullable;
 
 @Service
 public class SimilarityService {

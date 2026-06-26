@@ -9,9 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import jakarta.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;

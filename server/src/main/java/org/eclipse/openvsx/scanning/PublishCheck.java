@@ -15,8 +15,8 @@ package org.eclipse.openvsx.scanning;
 import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TempFile;
+import org.jspecify.annotations.NonNull;
 
-import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -97,9 +97,9 @@ public interface PublishCheck {
      * etc. to access extension metadata.
      */
     record Context(
-        @Nonnull ExtensionScan scan,
-        @Nonnull TempFile extensionFile,
-        @Nonnull UserData user
+        @NonNull ExtensionScan scan,
+        @NonNull TempFile extensionFile,
+        @NonNull UserData user
     ) {}
 
     /**

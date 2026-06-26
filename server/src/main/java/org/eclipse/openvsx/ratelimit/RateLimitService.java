@@ -17,14 +17,14 @@ import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.TokensInheritanceStrategy;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.EnforcementState;
 import org.eclipse.openvsx.entities.RefillStrategy;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.ratelimit.cache.ConfigurationChanged;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -72,7 +72,7 @@ public class RateLimitService {
             return new BucketPair(null, null);
         }
 
-        public static BucketPair of(@Nonnull Bucket bucket, MinimumBandwidth minimumBandwidth) {
+        public static BucketPair of(@NonNull Bucket bucket, MinimumBandwidth minimumBandwidth) {
             return new BucketPair(bucket, minimumBandwidth);
         }
     }

@@ -19,11 +19,11 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.PublishCheck;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Nullable;
 import java.util.List;
 
 /**

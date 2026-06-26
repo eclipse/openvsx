@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -20,7 +21,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
@@ -47,7 +47,7 @@ public class HttpAuthHandler {
      */
     public HttpAuthHandler(
         String scannerName,
-        @Nullable RemoteScannerProperties.AuthConfig authConfig,
+            RemoteScannerProperties.@Nullable AuthConfig authConfig,
         RestTemplate restTemplate
     ) {
         this.scannerName = scannerName;

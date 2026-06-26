@@ -9,12 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
-import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.util.Pair;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -22,7 +22,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.UriUtils;
 
-import jakarta.annotation.Nullable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -95,7 +94,7 @@ public final class UrlUtil {
     /**
      * Create a URL pointing to an API path.
      */
-    public static @Nonnull String createApiUrl(String baseUrl, String... segments) {
+    public static @NonNull String createApiUrl(String baseUrl, String... segments) {
         if (Arrays.stream(segments).anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Argument to createApiUrl has been null");
         }

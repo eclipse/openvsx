@@ -12,12 +12,12 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit.jobs;
 
-import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.ratelimit.UsageStatsService;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

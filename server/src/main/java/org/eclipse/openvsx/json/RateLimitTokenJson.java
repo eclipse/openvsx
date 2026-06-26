@@ -14,7 +14,7 @@ package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import jakarta.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @JsonInclude(Include.NON_NULL)
 public class RateLimitTokenJson extends ResultJson {
