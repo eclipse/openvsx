@@ -13,7 +13,7 @@ spring:
     name: openvsx-server
   autoconfigure:
     # don't send traces to Zipkin in development
-    exclude: org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
+    exclude: org.springframework.boot.zipkin.autoconfigure.ZipkinAutoConfiguration
   profiles:
     include: ovsx
 # connect to redis cluster configured in docker-compose.yml
@@ -39,9 +39,6 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: never
-  thymeleaf:
-    # explicitly disable thymeleaf view resolution
-    enabled: false
 
 #  mail:
 #    host: "localhost"
