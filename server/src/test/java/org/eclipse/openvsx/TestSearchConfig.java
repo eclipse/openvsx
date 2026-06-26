@@ -24,9 +24,10 @@ public class TestSearchConfig {
     @ServiceConnection
     ElasticsearchContainer elasticsearchContainer() {
         return new ElasticsearchContainer(
-                DockerImageName.parse("elasticsearch:8.17.3")
+                DockerImageName.parse("elasticsearch:9.2.8")
                         .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch"))
                 .withEnv("discovery.type", "single-node")
-                .withEnv("xpack.security.enabled", "false");
+                .withEnv("xpack.security.http.ssl.enabled", "false")
+                .withPassword("test-password");
     }
 }
