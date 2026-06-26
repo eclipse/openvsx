@@ -26,7 +26,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
-import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.resilience.annotation.EnableResilientMethods;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -46,7 +46,7 @@ import static org.springframework.data.web.config.EnableSpringDataWebSupport.Pag
         DataRedisRepositoriesAutoConfiguration.class,
 })
 @EnableScheduling
-@EnableRetry
+@EnableResilientMethods
 @EnableAsync
 @EnableConfigurationProperties(OAuth2AttributesConfig.class)
 // Need to enable serialization support for spring data's Page, see:

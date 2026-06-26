@@ -9,7 +9,6 @@ flyway          = "11.20.3"
 gatling         = "3.15.0"
 gcloud          = "2.62.1"
 ipaddress       = "5.5.1"
-jackson         = "3.1.4"
 java            = "25"
 jaxb-api        = "2.3.1"
 jaxb-impl       = "2.3.8"
@@ -21,7 +20,6 @@ loki4j          = "1.4.2"
 re2j            = "1.7"
 rewrite-java    = "3.26.0"
 spring-boot     = "4.0.7"
-spring-retry    = "2.0.13"
 springdoc       = "2.8.13"
 tika            = "3.3.1"
 woodstox        = "6.4.0"
@@ -50,13 +48,7 @@ gatling-app                  = { module = "io.gatling:gatling-app", version.ref 
 gatling-core                 = { module = "io.gatling:gatling-core", version.ref = "gatling" }
 google-cloud-storage         = { module = "com.google.cloud:google-cloud-storage", version.ref = "gcloud" }
 ipaddress                    = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress" }
-jackson-annotations          = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jackson-core                 = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
-jackson-databind             = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-dataformat-toml      = { module = "tools.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
-jackson-dataformat-xml       = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
-jackson-dataformat-yaml      = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
-jackson-jaxb-annotations     = { module = "com.fasterxml.jackson.module:jackson-module-jaxb-annotations", version.ref = "jackson" }
+jackson-dataformat-toml      = { module = "tools.jackson.dataformat:jackson-dataformat-toml" }
 jaxb-api                     = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl                    = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jedis                        = { module = "redis.clients:jedis", version.ref = "jedis" }
@@ -66,7 +58,6 @@ loki-logback-appender        = { module = "com.github.loki4j:loki-logback-append
 re2j                         = { module = "com.google.re2j:re2j", version.ref = "re2j" }
 rewrite-java                 = { module = "org.openrewrite.recipe:rewrite-migrate-java", version.ref = "rewrite-java"}
 springdoc                    = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
-spring-retry                 = { module = "org.springframework.retry:spring-retry", version.ref = "spring-retry" }
 testcontainers-elasticsearch = { module = "org.testcontainers:testcontainers-elasticsearch" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
 testcontainers-localstack    = { module = "org.testcontainers:testcontainers-localstack" }

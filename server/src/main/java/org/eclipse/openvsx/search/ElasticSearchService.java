@@ -42,7 +42,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
@@ -96,7 +96,7 @@ public class ElasticSearchService implements ISearchService {
      * not exist yet, it is created and initialized. Otherwise, nothing happens.
      */
     @EventListener
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void initSearchIndex(ApplicationStartedEvent event) {
         if (!isEnabled()) {
@@ -129,7 +129,7 @@ public class ElasticSearchService implements ISearchService {
      * consider the extension publishing timestamps in relation to the current
      * time or the extension rating.
      */
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     @CacheEvict(value = CACHE_AVERAGE_REVIEW_RATING, allEntries = true)
     public void updateSearchIndex() {
         if (!isEnabled()) {
@@ -151,7 +151,7 @@ public class ElasticSearchService implements ISearchService {
      * In any case, this method scans all extensions in the database and indexes their
      * relevant metadata.
      */
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void updateSearchIndex(boolean clear) {
         var locked = false;
         try {
@@ -196,12 +196,12 @@ public class ElasticSearchService implements ISearchService {
     }
 
     @Async
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void updateSearchEntriesAsync(List<Extension> extensions) {
         updateSearchEntries(extensions);
     }
 
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void updateSearchEntries(List<Extension> extensions) {
         if (!isEnabled() || extensions.isEmpty()) {
             return;
@@ -220,7 +220,7 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void updateSearchEntry(Extension extension) {
         if (!isEnabled()) {
             return;
@@ -251,7 +251,7 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void removeSearchEntries(Collection<Long> ids) {
         if (!isEnabled()) {
             return;
@@ -263,7 +263,7 @@ public class ElasticSearchService implements ISearchService {
     }
 
 
-    @Retryable(retryFor = DataAccessResourceFailureException.class)
+    @Retryable(includes = DataAccessResourceFailureException.class)
     public void removeSearchEntry(Extension extension) {
         if (!isEnabled()) {
             return;

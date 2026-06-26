@@ -18,7 +18,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;

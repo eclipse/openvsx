@@ -104,14 +104,7 @@ dependencies {
     implementation libs.awssdk.sts
 
     implementation libs.springdoc
-    implementation libs.spring.retry
 
-//    implementation libs.jackson.core
-//    implementation libs.jackson.annotations
-//    implementation libs.jackson.databind
-//    implementation libs.jackson.jaxb.annotations
-//    implementation libs.jackson.dataformat.xml
-//    implementation libs.jackson.dataformat.yaml
     implementation libs.jackson.dataformat.toml
 
     implementation libs.woodstox.core
