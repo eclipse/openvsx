@@ -171,13 +171,13 @@ export interface UserData {
     additionalLogins?: UserData[];
 }
 
-export interface AdminUser {
+export interface UserRelationships {
     user: UserData;
     namespaces: NamespaceDetails[];
 }
 
-export interface AdminUsersResult {
-    content: AdminUser[];
+export interface UserSearchResult {
+    content: UserRelationships[];
     page: {
         size: number;
         number: number;

@@ -30,7 +30,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonIcon from '@mui/icons-material/Person';
 import { useParams, useNavigate } from 'react-router-dom';
-import { AdminUser as PublisherRelationships } from '../../extension-registry-types';
+import { UserRelationships } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { PublisherDetails } from './publisher-details';
@@ -65,7 +65,7 @@ export const PublisherAdmin: FunctionComponent = () => {
     const [searchText, setSearchText] = useState(publisherParam ?? '');
     const [inputValue, setInputValue] = useState(publisherParam ?? '');
     const [roleFilter, setRoleFilter] = useState('');
-    const [selected, setSelected] = useState<PublisherRelationships | null>(null);
+    const [selected, setSelected] = useState<UserRelationships | null>(null);
 
     const debouncedSetSearch = useDebouncedCallback(setSearchText);
 
@@ -104,7 +104,7 @@ export const PublisherAdmin: FunctionComponent = () => {
         }
     };
 
-    const handleSelect = (_event: SyntheticEvent, value: PublisherRelationships | null) => {
+    const handleSelect = (_event: SyntheticEvent, value: UserRelationships | null) => {
         if (!value) {
             clearSelection();
             return;

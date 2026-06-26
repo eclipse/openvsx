@@ -52,7 +52,7 @@ import {
     CustomerMembershipList,
     RateLimitToken,
     Settings,
-    AdminUsersResult
+    UserSearchResult
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest } from './server-request';
@@ -643,7 +643,7 @@ export interface AdminService {
     getUsers(
         abortController: AbortController,
         params?: { search?: string; role?: string; page?: number; size?: number }
-    ): Promise<Readonly<AdminUsersResult>>;
+    ): Promise<Readonly<UserSearchResult>>;
     updateUserRole(
         provider: string,
         login: string,
@@ -866,7 +866,7 @@ export class AdminServiceImpl implements AdminService {
     async getUsers(
         abortController: AbortController,
         params?: { search?: string; role?: string; page?: number; size?: number }
-    ): Promise<Readonly<AdminUsersResult>> {
+    ): Promise<Readonly<UserSearchResult>> {
         const query: { key: string; value: string | number }[] = [];
         if (params) {
             if (params.search) {

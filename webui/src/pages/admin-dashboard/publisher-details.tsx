@@ -31,7 +31,7 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import GavelIcon from '@mui/icons-material/Gavel';
-import { AdminUser } from '../../extension-registry-types';
+import { UserRelationships } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { UserExtensionList } from '../user/user-extension-list';
@@ -45,6 +45,7 @@ import {
     usePublisherInfo,
     useUpdatePublisherRole
 } from './use-publisher-admin';
+import { SuccessResult } from '../../../lib';
 
 // Ordered as an escalating permission scale, low → high.
 const ROLE_OPTIONS: { value: PublisherRole; label: string }[] = [
@@ -84,7 +85,7 @@ const DetailSection: FunctionComponent<{ icon: ReactNode; title: string; count?:
  * available immediately from the search result; the account info (agreement, tokens,
  * extensions) loads on demand. A top progress bar reflects any write in flight.
  */
-export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entry }) => {
+export const PublisherDetails: FunctionComponent<{ entry: UserRelationships }> = ({ entry }) => {
     const { user } = entry;
     const { user: currentUser } = useContext(MainContext);
     const isCurrentUser = currentUser?.loginName === user.loginName && currentUser?.provider === user.provider;
@@ -103,7 +104,14 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
         setSelectedRole(role);
         updateRole.mutate(
             { provider: user.provider, login: user.loginName, role },
-            { onError: () => setSelectedRole((user.role as PublisherRole) ?? 'none') }
+            {
+                onSuccess() {
+                    setTimeout(() => {
+                        updateRole.reset();
+                    }, 3000);
+                },
+                onError: () => setSelectedRole((user.role as PublisherRole) ?? 'none')
+            }
         );
     };
 
@@ -184,6 +192,12 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
             {updateRole.isError && (
                 <Alert severity='error' sx={{ mb: 2 }} onClose={() => updateRole.reset()}>
                     {formatError(updateRole.error as Error | Partial<ErrorResponse>)}
+                </Alert>
+            )}
+
+            {updateRole.isSuccess && (
+                <Alert severity='success' sx={{ mb: 2 }}>
+                    {(updateRole.data as Partial<SuccessResult>).success ?? ''}
                 </Alert>
             )}
 
