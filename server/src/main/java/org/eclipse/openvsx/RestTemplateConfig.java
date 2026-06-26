@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx;
 
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
@@ -30,7 +31,7 @@ public class RestTemplateConfig {
 
     /**
      * Use to serve requests to ensure that response is given within 30 seconds.
-     * VS Code does not wait more than it and will timeout a request.
+     * VS Code does not wait more than it and will time out a request.
      */
     @Bean
     public HttpConnPoolConfig foregroundHttpConnPool(
@@ -140,51 +141,22 @@ public class RestTemplateConfig {
     }
 
     private HttpClientBuilder createHttpClientBuilder(HttpConnPoolConfig httpConnPoolConfig) {
+        var connectionConfig = ConnectionConfig.custom()
+                .setConnectTimeout(Timeout.of(httpConnPoolConfig.connectTimeout(), TimeUnit.MILLISECONDS))
+                .build();
+        httpConnPoolConfig.connectionManager().setDefaultConnectionConfig(connectionConfig);
         var requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(Timeout.of(httpConnPoolConfig.getConnectionRequestTimeout(), TimeUnit.MILLISECONDS))
-                .setConnectTimeout(Timeout.of(httpConnPoolConfig.getConnectTimeout(), TimeUnit.MILLISECONDS))
+                .setConnectionRequestTimeout(Timeout.of(httpConnPoolConfig.connectionRequestTimeout(), TimeUnit.MILLISECONDS))
                 .build();
         return HttpClientBuilder
                 .create()
-                .setConnectionManager(httpConnPoolConfig.getConnectionManager())
+                .setConnectionManager(httpConnPoolConfig.connectionManager())
                 .setDefaultRequestConfig(requestConfig);
     }
 
-    public static class HttpConnPoolConfig {
-
-        private final PoolingHttpClientConnectionManager connectionManager;
-        private final int connectionRequestTimeout;
-        private final int connectTimeout;
-        private final int socketTimeout;
-
-        public HttpConnPoolConfig(PoolingHttpClientConnectionManager connectionManager, int connectionRequestTimeout,
-                                  int connectTimeout, int socketTimeout) {
-            this.connectionManager = connectionManager;
-            this.connectionRequestTimeout = connectionRequestTimeout;
-            this.connectTimeout = connectTimeout;
-            this.socketTimeout = socketTimeout;
-        }
-
-        public PoolingHttpClientConnectionManager getConnectionManager() {
-            return connectionManager;
-        }
-        /**
-         *  the time to wait for a connection from the connection manager/pool
-         */
-        public int getConnectionRequestTimeout() {
-            return connectionRequestTimeout;
-        }
-        /**
-         * the time to establish the connection with the remote host
-         */
-        public int getConnectTimeout() {
-            return connectTimeout;
-        }
-        /**
-         * the time waiting for data – after establishing the connection; maximum time of inactivity between two data packets
-         */
-        public int getSocketTimeout() {
-            return socketTimeout;
-        }
-    }
+    public record HttpConnPoolConfig(
+            PoolingHttpClientConnectionManager connectionManager,
+            int connectionRequestTimeout,
+            int connectTimeout,
+            int socketTimeout) {}
 }
