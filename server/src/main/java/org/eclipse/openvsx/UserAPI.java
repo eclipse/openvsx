@@ -20,6 +20,7 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
@@ -156,6 +157,7 @@ public class UserAPI {
         }
         var json = user.toUserJson();
         var serverUrl = UrlUtil.getBaseUrl();
+        json.setRole(user.getRoleAsString());
         json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
         json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
         eclipse.enrichUserJsonWithPublisherAgreement(json, user);
@@ -591,6 +593,7 @@ public class UserAPI {
             var agreement = eclipse.signPublisherAgreement(user);
             var json = user.toUserJson();
             var serverUrl = UrlUtil.getBaseUrl();
+            json.setRole(user.getRoleAsString());
             json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
             json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
             eclipse.enrichUserJson(json, user, agreement);

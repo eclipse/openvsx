@@ -13,7 +13,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 @Converter
-public class UserRoleConverter implements AttributeConverter<UserData.Role, String> {
+class UserRoleConverter implements AttributeConverter<UserData.Role, String> {
 
     @Override
     public String convertToDatabaseColumn(UserData.Role role) {
@@ -24,5 +24,4 @@ public class UserRoleConverter implements AttributeConverter<UserData.Role, Stri
     public UserData.Role convertToEntityAttribute(String value) {
         return UserData.Role.valueOfIgnoreCase(value);
     }
-
 }

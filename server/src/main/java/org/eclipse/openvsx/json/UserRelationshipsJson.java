@@ -35,5 +35,4 @@ public class UserRelationshipsJson {
     public void setNamespaces(List<NamespaceDetailsJson> namespaces) {
         this.namespaces = namespaces;
     }
-
 }

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.json.UserJson;
 
 import jakarta.persistence.Column;
@@ -93,7 +94,6 @@ public class UserData implements Serializable {
         json.setAvatarUrl(this.getAvatarUrl());
         json.setHomepage(this.getProviderUrl());
         json.setProvider(this.getProvider());
-        json.setRole(Optional.ofNullable(this.getRole()).map(Role::toString).orElse(null));
         return json;
     }
 
@@ -107,6 +107,10 @@ public class UserData implements Serializable {
 
     public Role getRole() {
         return role;
+    }
+
+    public @Nullable String getRoleAsString() {
+        return Optional.ofNullable(this.getRole()).map(Role::toString).orElse(null);
     }
 
     public void setRole(Role role) {

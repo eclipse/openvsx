@@ -472,7 +472,9 @@ public class AdminService {
         }
 
         var userPublishInfo = new UserPublishInfoJson();
-        userPublishInfo.setUser(user.toUserJson());
+        var userJson = user.toUserJson();
+        userJson.setRole(user.getRoleAsString());
+        userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
         userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
         var extVersions = repositories.findLatestVersions(user);
@@ -501,7 +503,9 @@ public class AdminService {
         return repositories.searchUsers(search, role, pageable)
                 .map(user -> {
                     var json = new UserRelationshipsJson();
-                    json.setUser(user.toUserJson());
+                    var userJson = user.toUserJson();
+                    userJson.setRole(user.getRoleAsString());
+                    json.setUser(userJson);
                     json.setNamespaces(repositories.findMemberships(user).stream()
                             .map(membership -> membership.getNamespace().toNamespaceDetailsJson())
                             .toList());
@@ -518,7 +522,7 @@ public class AdminService {
 
         var updatedRole = "none".equalsIgnoreCase(role) ? null : parseRole(role);
         if (Objects.equals(user.getRole(), updatedRole)) {
-            return ResultJson.success("User " + provider + "/" + loginName + " already has the role " + user.getRole() + ".");
+            throw new ErrorResultException("User " + provider + "/" + loginName + " already has the role " + user.getRole() + ".");
         }
 
         user.setRole(updatedRole);
