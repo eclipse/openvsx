@@ -217,15 +217,17 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
                 {publisherInfo && (
                     <>
                         <Stack direction='row' spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                            <Tooltip title={toLocalTime(publisherInfo.user.publisherAgreement?.timestamp) ?? ''}>
-                                <Chip
-                                    icon={<GavelIcon fontSize='small' />}
-                                    label={`Publisher agreement: ${agreement.label}`}
-                                    size='small'
-                                    color={agreement.color}
-                                    variant={agreementStatus === 'none' ? 'outlined' : 'filled'}
-                                />
-                            </Tooltip>
+                            {publisherInfo.user.publisherAgreement && (
+                                <Tooltip title={toLocalTime(publisherInfo.user.publisherAgreement?.timestamp) ?? ''}>
+                                    <Chip
+                                        icon={<GavelIcon fontSize='small' />}
+                                        label={`Publisher agreement: ${agreement.label}`}
+                                        size='small'
+                                        color={agreement.color}
+                                        variant={agreementStatus === 'none' ? 'outlined' : 'filled'}
+                                    />
+                                </Tooltip>
+                            )}
                             <Chip
                                 icon={<VpnKeyIcon fontSize='small' />}
                                 label={`${publisherInfo.activeAccessTokenNum} active access token${
