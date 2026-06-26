@@ -18,9 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ReactiveElasticsearchRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
+import org.springframework.boot.data.elasticsearch.autoconfigure.DataElasticsearchReactiveRepositoriesAutoConfiguration;
+import org.springframework.boot.data.elasticsearch.autoconfigure.DataElasticsearchRepositoriesAutoConfiguration;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -41,9 +41,9 @@ import static org.springframework.data.web.config.EnableSpringDataWebSupport.Pag
         // exclude autoconfiguration for them to avoid unnecessary logging
         // messages due to existing jpa repositories
         // can be removed once such repositories are in use
-        ElasticsearchRepositoriesAutoConfiguration.class,
-        ReactiveElasticsearchRepositoriesAutoConfiguration.class,
-        RedisRepositoriesAutoConfiguration.class,
+        DataElasticsearchRepositoriesAutoConfiguration.class,
+        DataElasticsearchReactiveRepositoriesAutoConfiguration.class,
+        DataRedisRepositoriesAutoConfiguration.class,
 })
 @EnableScheduling
 @EnableRetry

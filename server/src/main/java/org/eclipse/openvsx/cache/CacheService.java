@@ -117,7 +117,7 @@ public class CacheService {
         // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
         // cache its acceptable.
         if (cache instanceof RedisCacheWriter redisCache) {
-            redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(extension).getBytes());
+            redisCache.clear(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 
@@ -179,7 +179,7 @@ public class CacheService {
         // This uses the redis KEYS command that might take a while but considering the typical size of the EXTENSION_JSON
         // cache its acceptable.
         if (cache instanceof RedisCacheWriter redisCache) {
-            redisCache.clean(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCacheKey.generateWildcard(extension).getBytes());
+            redisCache.clear(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 

@@ -26,8 +26,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -59,7 +59,7 @@ public class RateLimitConfig {
     }
 
     @Bean
-    public RedisClusterClient redisClusterClient(RedisProperties properties) {
+    public RedisClusterClient redisClusterClient(DataRedisProperties properties) {
         logger.info("Configure jedis-cluster rate-limiting cache");
 
         var builder = RedisClusterClient.builder();

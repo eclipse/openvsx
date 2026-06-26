@@ -15,15 +15,15 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -76,63 +76,50 @@ public class RestTemplateConfig {
     }
 
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder, HttpConnPoolConfig foregroundHttpConnPool) {
+    public RestTemplate restTemplate(HttpConnPoolConfig foregroundHttpConnPool) {
         var httpClient = createHttpClientBuilder(foregroundHttpConnPool).build();
-        return builder
-                .requestFactory(() -> {
-                    HttpComponentsClientHttpRequestFactory f = new HttpComponentsClientHttpRequestFactory();
-                    f.setHttpClient(httpClient);
-                    return f;
-                })
-                .messageConverters(
-                        new StringHttpMessageConverter(),
-                        new MappingJackson2HttpMessageConverter())
-                .build();
+        var factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClient);
+        var restTemplate = new RestTemplate(factory);
+        restTemplate.setMessageConverters(List.of(
+                new StringHttpMessageConverter(),
+                new JacksonJsonHttpMessageConverter()));
+        return restTemplate;
     }
 
     @Bean
-    public RestTemplate nonRedirectingRestTemplate(RestTemplateBuilder builder, HttpConnPoolConfig foregroundHttpConnPool) {
+    public RestTemplate nonRedirectingRestTemplate(HttpConnPoolConfig foregroundHttpConnPool) {
         var httpClient = createHttpClientBuilder(foregroundHttpConnPool).disableRedirectHandling().build();
-        return builder
-                .requestFactory(() -> {
-                    HttpComponentsClientHttpRequestFactory f = new HttpComponentsClientHttpRequestFactory();
-                    f.setHttpClient(httpClient);
-                    return f;
-                })
-                .build();
+        var factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClient);
+        return new RestTemplate(factory);
     }
 
     @Bean
-    public RestTemplate backgroundRestTemplate(RestTemplateBuilder builder, HttpConnPoolConfig backgroundHttpConnPool) {
+    public RestTemplate backgroundRestTemplate(HttpConnPoolConfig backgroundHttpConnPool) {
         var httpClient = createHttpClientBuilder(backgroundHttpConnPool).build();
-        DefaultUriBuilderFactory defaultUriBuilderFactory = new DefaultUriBuilderFactory();
+        var factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClient);
+        var restTemplate = new RestTemplate(factory);
+        var defaultUriBuilderFactory = new DefaultUriBuilderFactory();
         defaultUriBuilderFactory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE);
-        return builder
-                .uriTemplateHandler(defaultUriBuilderFactory)
-                .messageConverters(
-                        new StringHttpMessageConverter(),
-                        new MappingJackson2HttpMessageConverter())
-                .requestFactory(() -> {
-                    HttpComponentsClientHttpRequestFactory f = new HttpComponentsClientHttpRequestFactory();
-                    f.setHttpClient(httpClient);
-                    return f;
-                })
-                .build();
+        restTemplate.setUriTemplateHandler(defaultUriBuilderFactory);
+        restTemplate.setMessageConverters(List.of(
+                new StringHttpMessageConverter(),
+                new JacksonJsonHttpMessageConverter()));
+        return restTemplate;
     }
 
     @Bean
-    public RestTemplate backgroundNonRedirectingRestTemplate(RestTemplateBuilder builder, HttpConnPoolConfig backgroundHttpConnPool) {
+    public RestTemplate backgroundNonRedirectingRestTemplate(HttpConnPoolConfig backgroundHttpConnPool) {
         var httpClient = createHttpClientBuilder(backgroundHttpConnPool).disableRedirectHandling().build();
-        DefaultUriBuilderFactory defaultUriBuilderFactory = new DefaultUriBuilderFactory();
+        var factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClient);
+        var restTemplate = new RestTemplate(factory);
+        var defaultUriBuilderFactory = new DefaultUriBuilderFactory();
         defaultUriBuilderFactory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE);
-        return builder
-                .uriTemplateHandler(defaultUriBuilderFactory)
-                .requestFactory(() -> {
-                    HttpComponentsClientHttpRequestFactory f = new HttpComponentsClientHttpRequestFactory();
-                    f.setHttpClient(httpClient);
-                    return f;
-                })
-                .build();
+        restTemplate.setUriTemplateHandler(defaultUriBuilderFactory);
+        return restTemplate;
     }
 
     @Bean

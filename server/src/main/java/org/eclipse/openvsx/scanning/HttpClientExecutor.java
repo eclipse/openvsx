@@ -21,7 +21,6 @@ import org.apache.hc.core5.util.Timeout;
 import org.eclipse.openvsx.util.TempFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -123,13 +122,9 @@ public class HttpClientExecutor {
             .setDefaultRequestConfig(requestConfig)
             .build();
         
-        return new RestTemplateBuilder()
-            .requestFactory(() -> {
-                HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-                factory.setHttpClient(httpClient);
-                return factory;
-            })
-            .build();
+        var factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setHttpClient(httpClient);
+        return new RestTemplate(factory);
     }
     
     /**

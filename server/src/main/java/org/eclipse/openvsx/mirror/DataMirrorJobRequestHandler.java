@@ -117,7 +117,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
                 logger.error("failed to mirror {}", extensionId, e);
             }
             extensionIds.add(extensionId);
-            progress.increaseByOne();
+            progress.incrementSucceeded();
         }
 
         return extensionIds;

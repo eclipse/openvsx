@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -140,7 +140,7 @@ public class CacheConfig {
 
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-jedis'")
-    public RedisClient redisClient(RedisProperties properties) {
+    public RedisClient redisClient(DataRedisProperties properties) {
         logger.info("Configure 'redis-jedis' bucket4j rate-limiting cache");
         var builder = RedisClient.builder();
 
@@ -152,7 +152,7 @@ public class CacheConfig {
 
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-cluster-jedis'")
-    public RedisClusterClient redisClusterClient(RedisProperties properties) {
+    public RedisClusterClient redisClusterClient(DataRedisProperties properties) {
         logger.info("Configure 'redis-cluster-jedis' bucket4j rate-limiting cache");
 
         var builder = RedisClusterClient.builder();

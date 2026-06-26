@@ -12,9 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.repositories.FileDecisionRepository;
@@ -28,6 +25,10 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
@@ -502,7 +503,7 @@ public class ExtensionScanPersistenceService {
         }
         try {
             return objectMapper.writeValueAsString(fileHashes);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("Failed to serialize file hashes: {}", e.getMessage());
             return null;
         }
@@ -587,7 +588,7 @@ public class ExtensionScanPersistenceService {
         }
         try {
             return objectMapper.readValue(fileHashesJson, new TypeReference<Map<String, String>>() {});
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("Failed to parse file hashes JSON: {}", e.getMessage());
             return Collections.emptyMap();
         }

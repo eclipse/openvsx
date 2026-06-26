@@ -248,7 +248,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                 var statusCode = response.getStatusCode();
                 if (statusCode.is2xxSuccessful()) {
                     return ResponseEntity.status(HttpStatus.FOUND)
-                            .location(UriComponentsBuilder.fromHttpUrl(urlTemplate).build(uriVariables))
+                            .location(UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables))
                             .build();
                 }
                 if (statusCode.is3xxRedirection()) {

@@ -10,7 +10,7 @@
 package org.eclipse.openvsx.search;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,13 +82,13 @@ public class SearchConfig extends ElasticsearchConfiguration {
                 try {
                     sslContextBuilder.loadTrustMaterial(new File(trustStore), trustStorePassword.toCharArray());
                 } catch(NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
-                    logger.error("Unable to load password protected trust material " + trustStore, e);
+                    logger.error("Unable to load password protected trust material {}", trustStore, e);
                 }
             } else {
                 try {
                     sslContextBuilder.loadTrustMaterial(new File(trustStore));
                 } catch(NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException e) {
-                    logger.error("Unable to load trust material " + trustStore, e);
+                    logger.error("Unable to load trust material {}", trustStore, e);
                 }
             }
             try {

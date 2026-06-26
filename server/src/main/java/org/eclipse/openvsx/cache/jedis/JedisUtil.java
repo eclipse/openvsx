@@ -13,7 +13,7 @@
 package org.eclipse.openvsx.cache.jedis;
 
 import io.micrometer.common.util.StringUtils;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisClientConfig;
@@ -25,7 +25,7 @@ public class JedisUtil {
 
     private JedisUtil() {}
 
-    public static JedisClientConfig getClientConfig(RedisProperties properties) {
+    public static JedisClientConfig getClientConfig(DataRedisProperties properties) {
         var configBuilder = DefaultJedisClientConfig.builder();
         var username = properties.getUsername();
         if (StringUtils.isNotEmpty(username)) {
@@ -40,7 +40,7 @@ public class JedisUtil {
         return configBuilder.build();
     }
 
-    public static Set<HostAndPort> getNodes(RedisProperties properties) {
+    public static Set<HostAndPort> getNodes(DataRedisProperties properties) {
         return properties.getCluster().getNodes().stream()
                 .map(HostAndPort::from)
                 .collect(Collectors.toSet());

@@ -12,11 +12,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,7 @@ public class HttpResponseExtractor {
     private JsonNode parseJson(String json) throws ScannerException {
         try {
             return objectMapper.readTree(json);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new ScannerException("Failed to parse JSON response", e);
         }
     }
@@ -146,7 +146,7 @@ public class HttpResponseExtractor {
             if (node.isArray()) {
                 node.forEach(result::add);
             } else if (node.isObject()) {
-                node.fields().forEachRemaining(entry -> result.add(entry.getValue()));
+                node.properties().iterator().forEachRemaining(entry -> result.add(entry.getValue()));
             }
             return result;
         }

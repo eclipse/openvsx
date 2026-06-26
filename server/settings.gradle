@@ -1,1 +1,38 @@
+import groovy.xml.XmlSlurper
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    resolutionStrategy {
+        eachPlugin {
+            // Supply the Hibernate ORM plugin version from Spring Boot's BOM so it is
+            // always kept in sync with the managed hibernate-core dependency.
+            if (requested.id.id == 'org.hibernate.orm') {
+                useVersion(gradle.ext.hibernateOrmVersion)
+            }
+        }
+    }
+}
+
 rootProject.name = 'openvsx-server'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// Read the Spring Boot version from the version catalog file
+def tomlText = file("gradle/libs.versions.toml").text
+def springBootVersion = (tomlText =~ /(?m)^spring-boot\s*=\s*"([^"]+)"/).collect { it[1] }.first()
+
+// Resolve the Spring Boot BOM POM and extract the Hibernate ORM version it manages.
+// The BOM uses Maven property placeholders (e.g. ${hibernate.version}) in
+// <dependencyManagement>, so we read the resolved value from <properties> directly.
+def bomPomFile = buildscript.configurations.detachedConfiguration(
+    buildscript.dependencies.create("org.springframework.boot:spring-boot-dependencies:${springBootVersion}@pom")
+).singleFile
+def bomPom = new XmlSlurper().parse(bomPomFile)
+gradle.ext.hibernateOrmVersion = bomPom.properties['hibernate.version'].text()
