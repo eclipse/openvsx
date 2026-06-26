@@ -9,23 +9,24 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.utility.DockerImageName;
 
 @Configuration
-@Profile("test")
-public class TestSearchConfig extends ElasticsearchConfiguration {
+@Profile("test_search")
+public class TestSearchConfig {
 
-    @Override
-    public ClientConfiguration clientConfiguration() {
-        var container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:8.7.1")
+    @Bean
+    @ServiceConnection
+    ElasticsearchContainer elasticsearchContainer() {
+        return new ElasticsearchContainer(
+                DockerImageName.parse("elasticsearch:8.17.3")
+                        .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch"))
                 .withEnv("discovery.type", "single-node")
                 .withEnv("xpack.security.enabled", "false");
-
-        container.start();
-        return ClientConfiguration.create(container.getHttpHostAddress());
     }
 }

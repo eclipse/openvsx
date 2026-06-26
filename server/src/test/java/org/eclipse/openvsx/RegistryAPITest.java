@@ -746,14 +746,14 @@ class RegistryAPITest {
         extVersionsList.forEach(extVersion -> {
             var extension = extVersion.getExtension();
             extension.setActive(false);
-            extension.getVersions().get(0).setActive(false);
+            extension.getVersions().getFirst().setActive(false);
         });
         Mockito.when(repositories.findLatestVersions(extVersionsList.stream().map(ExtensionVersion::getExtension).map(Extension::getId).toList()))
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/-/search?query={query}&size={size}&offset={offset}", "foo", "10", "0"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("{\"offset\":0,\"totalSize\":1,\"extensions\":[]}"));
+                .andExpect(content().json("{\"offset\":0,\"totalSize\":1,\"extensions\":[]}"));
     }
 
     @Test
@@ -2125,9 +2125,9 @@ class RegistryAPITest {
         Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
                 .thenReturn(versions);
         Mockito.when(repositories.findLatestVersionsIsPreview(Set.of(extension.getId())))
-                .thenReturn(Map.of(extension.getId(), versions.get(0).isPreview()));
+                .thenReturn(Map.of(extension.getId(), versions.getFirst().isPreview()));
         Mockito.when(repositories.findActiveVersionStringsSorted(Set.of(extension.getId()), null))
-                .thenReturn(versions.stream().collect(Collectors.groupingBy(ev -> ev.getExtension().getId(), Collectors.mapping(ev -> ev.getVersion(), Collectors.toList()))));
+                .thenReturn(versions.stream().collect(Collectors.groupingBy(ev -> ev.getExtension().getId(), Collectors.mapping(ExtensionVersion::getVersion, Collectors.toList()))));
         Mockito.when(repositories.findVersionStringsSorted(extension, targetPlatform, true))
                 .thenReturn(versions.stream().map(ExtensionVersion::getVersion).collect(Collectors.toList()));
 

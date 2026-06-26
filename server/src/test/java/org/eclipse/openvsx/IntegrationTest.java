@@ -20,13 +20,9 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.IOException;
 import java.net.URI;
@@ -36,13 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-@ActiveProfiles("test")
-@Testcontainers
+@ActiveProfiles({"test", "test_db", "test_search"})
 class IntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16.2");
 
     protected final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
 
@@ -214,7 +205,7 @@ class IntegrationTest {
         var response = restTemplate.getForEntity(apiCall("/api/-/search?query=editorconfig"), SearchResultJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getExtensions().size()).isEqualTo(1);
-        assertThat(response.getBody().getExtensions().get(0).getDescription())
+        assertThat(response.getBody().getExtensions().getFirst().getDescription())
                 .isEqualTo("EditorConfig Support for Visual Studio Code");
     }
 
