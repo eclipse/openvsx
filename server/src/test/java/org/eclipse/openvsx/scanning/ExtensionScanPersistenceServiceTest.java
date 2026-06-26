@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.ScannerJob;
@@ -25,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 
@@ -35,7 +35,8 @@ import static org.mockito.Mockito.verify;
 class ExtensionScanPersistenceServiceTest {
 
     @Mock RepositoryService repositories;
-    @Mock ObjectMapper objectMapper;
+    @Mock
+    ObjectMapper objectMapper;
     @Mock FileDecisionRepository fileDecisionRepository;
     @Mock ScannerJobRepository scannerJobRepository;
     @Mock ScanCheckResultRepository scanCheckResultRepository;
