@@ -16,6 +16,11 @@ import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 import { useRevokeAccessTokens } from './use-publisher-admin';
 
+const dangerButtonSx = {
+    textTransform: 'none',
+    '&:hover': { bgcolor: 'error.main', color: 'common.white' }
+} as const;
+
 export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeTokensButtonProps> = props => {
     const { handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
@@ -38,14 +43,14 @@ export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeToken
 
     return (
         <>
-            <ButtonWithProgress working={false} color='error' onClick={() => setDialogOpen(true)}>
-                Revoke Access Tokens
+            <Button variant='outlined' color='error' sx={dangerButtonSx} onClick={() => setDialogOpen(true)}>
+                Revoke access tokens{' '}
                 <Box component='span' sx={{ ml: 0.75, opacity: 0.6 }}>
                     {tokenCount}
                 </Box>
-            </ButtonWithProgress>
+            </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle>Revoke Access Tokens</DialogTitle>
+                <DialogTitle>Revoke access tokens</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Deactivate {tokenCount} active access token{tokenCount === 1 ? '' : 's'} of {user.loginName}?
@@ -57,7 +62,7 @@ export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeToken
                         Cancel
                     </Button>
                     <ButtonWithProgress autoFocus sx={{ ml: 1 }} color='error' working={working} onClick={doRevoke}>
-                        Revoke Tokens
+                        Revoke tokens
                     </ButtonWithProgress>
                 </DialogActions>
             </Dialog>

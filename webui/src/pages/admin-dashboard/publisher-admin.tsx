@@ -15,7 +15,6 @@ import {
     Avatar,
     Box,
     Chip,
-    CircularProgress,
     IconButton,
     InputBase,
     MenuItem,
@@ -155,7 +154,6 @@ export const PublisherAdmin: FunctionComponent = () => {
                 inputProps={params.inputProps}
                 endAdornment={
                     <Stack direction='row' alignItems='center' spacing={0.5} sx={{ pr: 0.5 }}>
-                        {isFetching && <CircularProgress color='inherit' size={18} />}
                         {inputValue && (
                             <IconButton size='small' onClick={handleClear} aria-label='Clear search'>
                                 <ClearIcon fontSize='small' />

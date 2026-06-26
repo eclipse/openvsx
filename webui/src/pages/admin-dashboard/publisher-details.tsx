@@ -14,7 +14,6 @@ import {
     Avatar,
     Box,
     Chip,
-    CircularProgress,
     Divider,
     LinearProgress,
     Paper,
@@ -32,14 +31,13 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import GavelIcon from '@mui/icons-material/Gavel';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { AdminUser } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { UserExtensionList } from '../user/user-extension-list';
 import { handleError as formatError, toLocalTime } from '../../utils';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
-import { PublisherRevokeDialog } from './publisher-revoke-dialog';
+import { PublisherRevokeContributionsButton } from './publisher-revoke-dialog';
 import { PublisherRevokeTokensButton } from './publisher-revoke-tokens-button';
 import {
     type PublisherRole,
@@ -95,7 +93,7 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
     const updateRole = useUpdatePublisherRole();
     const busy = useIsMutating({ mutationKey: publisherMutationKey }) > 0;
 
-    const { data: publisherInfo, isLoading, error } = usePublisherInfo(user.loginName, user.provider ?? 'github', true);
+    const { data: publisherInfo, error } = usePublisherInfo(user.loginName, user.provider ?? 'github', true);
 
     const handleRoleChange = (role: PublisherRole) => {
         if (role === selectedRole || !user.provider) {
@@ -123,7 +121,7 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
                 display: 'flex',
                 flexDirection: 'column'
             }}>
-            {busy && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
+            {busy && <LinearProgress color='secondary' sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
 
             <Stack
                 direction={{ xs: 'column', md: 'row' }}
@@ -214,11 +212,6 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
                     )}
                 </DetailSection>
 
-                {isLoading && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                        <CircularProgress />
-                    </Box>
-                )}
                 {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
 
                 {publisherInfo && (
@@ -256,23 +249,60 @@ export const PublisherDetails: FunctionComponent<{ entry: AdminUser }> = ({ entr
                             )}
                         </DetailSection>
 
-                        <Box sx={{ mt: 'auto', border: 1, borderColor: 'error.main', borderRadius: 1, p: 2 }}>
-                            <Stack direction='row' spacing={0.75} alignItems='center' sx={{ mb: 0.5 }}>
-                                <WarningAmberIcon fontSize='small' color='error' />
-                                <Typography variant='subtitle2' color='error'>
-                                    Danger zone
-                                </Typography>
-                            </Stack>
-                            <Typography variant='body2' color='text.secondary' sx={{ mb: 1.5 }}>
-                                Revoking deactivates {user.loginName}&apos;s access tokens, published extensions, and
-                                publisher agreement. These actions cannot be undone.
+                        <Box sx={{ mt: 'auto' }}>
+                            <Typography variant='h6' sx={{ mb: 1.5 }}>
+                                Danger Zone
                             </Typography>
-                            <Stack direction='row' spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                            <Box
+                                sx={{
+                                    border: 1,
+                                    borderColor: 'error.light',
+                                    borderRadius: 1,
+                                    overflow: 'hidden'
+                                }}>
                                 {publisherInfo.activeAccessTokenNum > 0 && (
-                                    <PublisherRevokeTokensButton publisherInfo={publisherInfo} />
+                                    <>
+                                        <Stack
+                                            direction='row'
+                                            alignItems='center'
+                                            justifyContent='space-between'
+                                            sx={{ px: 2, py: 1.5 }}>
+                                            <Box>
+                                                <Typography variant='body2' fontWeight={600}>
+                                                    Revoke access tokens
+                                                </Typography>
+                                                <Typography variant='body2' color='text.secondary'>
+                                                    Deactivate {publisherInfo.activeAccessTokenNum} active access token
+                                                    {publisherInfo.activeAccessTokenNum === 1 ? '' : 's'} for{' '}
+                                                    {user.loginName}. This cannot be undone.
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ flexShrink: 0, ml: 2 }}>
+                                                <PublisherRevokeTokensButton publisherInfo={publisherInfo} />
+                                            </Box>
+                                        </Stack>
+                                        <Divider />
+                                    </>
                                 )}
-                                <PublisherRevokeDialog publisherInfo={publisherInfo} />
-                            </Stack>
+                                <Stack
+                                    direction='row'
+                                    alignItems='center'
+                                    justifyContent='space-between'
+                                    sx={{ px: 2, py: 1.5 }}>
+                                    <Box>
+                                        <Typography variant='body2' fontWeight={600}>
+                                            Revoke publisher contributions
+                                        </Typography>
+                                        <Typography variant='body2' color='text.secondary'>
+                                            Deactivate all extensions, access tokens, and revoke the publisher agreement
+                                            for {user.loginName}. This cannot be undone.
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ flexShrink: 0, ml: 2 }}>
+                                        <PublisherRevokeContributionsButton publisherInfo={publisherInfo} />
+                                    </Box>
+                                </Stack>
+                            </Box>
                         </Box>
                     </>
                 )}

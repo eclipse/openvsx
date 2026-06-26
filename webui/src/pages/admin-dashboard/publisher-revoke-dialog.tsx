@@ -26,7 +26,12 @@ import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 import { useRevokePublisherContributions } from './use-publisher-admin';
 
-export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps> = props => {
+const dangerButtonSx = {
+    textTransform: 'none',
+    '&:hover': { bgcolor: 'error.main', color: 'common.white' }
+} as const;
+
+export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevokeContributionsButtonProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
     const { mutateAsync: revokeContributions, isPending: working } = useRevokePublisherContributions();
@@ -64,11 +69,11 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     return (
         <>
-            <Button variant='contained' color='error' onClick={() => setDialogOpen(true)}>
-                Revoke Publisher Contributions
+            <Button variant='outlined' color='error' sx={dangerButtonSx} onClick={() => setDialogOpen(true)}>
+                Revoke publisher contributions
             </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle>Revoke Publisher Contributions</DialogTitle>
+                <DialogTitle>Revoke publisher contributions</DialogTitle>
                 <DialogContent>
                     <DialogContentText component='div'>
                         <Typography component='div'>
@@ -109,7 +114,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
                         Cancel
                     </Button>
                     <ButtonWithProgress autoFocus sx={{ ml: 1 }} color='error' working={working} onClick={doRevoke}>
-                        Revoke Contributions
+                        Revoke contributions
                     </ButtonWithProgress>
                 </DialogActions>
             </Dialog>
@@ -117,6 +122,6 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
     );
 };
 
-export interface PublisherRevokeDialogProps {
+export interface PublisherRevokeContributionsButtonProps {
     publisherInfo: PublisherInfo;
 }
