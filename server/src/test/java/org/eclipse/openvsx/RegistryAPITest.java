@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
@@ -66,6 +64,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -2027,7 +2027,7 @@ class RegistryAPITest {
         return namespace;
     }
 
-    private String namespaceJson(Consumer<NamespaceJson> content) throws JsonProcessingException {
+    private String namespaceJson(Consumer<NamespaceJson> content) throws JacksonException {
         var json = new NamespaceJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -2266,13 +2266,13 @@ class RegistryAPITest {
         return extVersion;
     }
 
-    private String extensionJson(Consumer<ExtensionJson> content) throws JsonProcessingException {
+    private String extensionJson(Consumer<ExtensionJson> content) throws JacksonException {
         var json = new ExtensionJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String queryResultJson(Consumer<ExtensionJson>... contents) throws JsonProcessingException {
+    private String queryResultJson(Consumer<ExtensionJson>... contents) throws JacksonException {
         var extensionJsons = new ArrayList<String>();
         for(var content : contents) {
             extensionJsons.add(extensionJson(content));
@@ -2388,7 +2388,7 @@ class RegistryAPITest {
                 .thenReturn(Streamable.of(review1, review2));
     }
 
-    private String reviewsJson(Consumer<ReviewListJson> content) throws JsonProcessingException {
+    private String reviewsJson(Consumer<ReviewListJson> content) throws JacksonException {
         var json = new ReviewListJson();
         json.setReviews(new ArrayList<>());
         content.accept(json);
@@ -2423,7 +2423,7 @@ class RegistryAPITest {
         return List.of(extVersion);
     }
 
-    private String searchJson(Consumer<SearchResultJson> content) throws JsonProcessingException {
+    private String searchJson(Consumer<SearchResultJson> content) throws JacksonException {
         var json = new SearchResultJson();
         json.setExtensions(new ArrayList<>());
         content.accept(json);
@@ -2557,7 +2557,7 @@ class RegistryAPITest {
                 .then((Answer<Extension>) invocation -> invocation.getArgument(0, Extension.class));
     }
 
-    private String reviewJson(Consumer<ReviewJson> content) throws JsonProcessingException {
+    private String reviewJson(Consumer<ReviewJson> content) throws JacksonException {
         var json = new ReviewJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -2572,17 +2572,17 @@ class RegistryAPITest {
         return userData;
     }
 
-    private String successJson(String message) throws JsonProcessingException {
+    private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String errorJson(String message) throws JsonProcessingException {
+    private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String warningJson(String message) throws JsonProcessingException {
+    private String warningJson(String message) throws JacksonException {
         var json = ResultJson.warning(message);
         return new ObjectMapper().writeValueAsString(json);
     }

@@ -12,9 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.cache.bucket4j;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giffing.bucket4j.spring.boot.starter.config.cache.CacheUpdateEvent;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
 import org.slf4j.Logger;
@@ -22,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.RedisClusterClient;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -109,7 +109,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
         try {
             CacheUpdateEvent<K, V> event = objectMapper.readValue(message, deserializeType);
             this.eventPublisher.publishEvent(event);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

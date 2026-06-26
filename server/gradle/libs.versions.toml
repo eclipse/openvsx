@@ -48,6 +48,7 @@ gatling-app                  = { module = "io.gatling:gatling-app", version.ref 
 gatling-core                 = { module = "io.gatling:gatling-core", version.ref = "gatling" }
 google-cloud-storage         = { module = "com.google.cloud:google-cloud-storage", version.ref = "gcloud" }
 ipaddress                    = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress" }
+jackson-dataformat-yaml      = { module = "tools.jackson.dataformat:jackson-dataformat-yaml" }
 jackson-dataformat-xml       = { module = "tools.jackson.dataformat:jackson-dataformat-xml" }
 jackson-dataformat-toml      = { module = "tools.jackson.dataformat:jackson-dataformat-toml" }
 jaxb-api                     = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }

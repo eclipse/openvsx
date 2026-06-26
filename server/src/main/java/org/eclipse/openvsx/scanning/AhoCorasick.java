@@ -12,7 +12,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
+
 import java.util.*;
 
 /**
@@ -77,9 +78,9 @@ public final class AhoCorasick {
          * @param keyword The keyword to search for (should be lowercase for case-insensitive matching)
          * @return this builder for chaining
          */
-        public Builder addKeyword(@NotNull String keyword) {
+        public Builder addKeyword(@NonNull String keyword) {
             checkNotBuilt();
-            if (keyword != null && !keyword.isEmpty()) {
+            if (!keyword.isEmpty()) {
                 keywords.add(keyword);
             }
             return this;
@@ -90,7 +91,7 @@ public final class AhoCorasick {
          * @param keywords Collection of keywords to search for
          * @return this builder for chaining
          */
-        public Builder addKeywords(@NotNull Collection<String> keywords) {
+        public Builder addKeywords(@NonNull Collection<String> keywords) {
             checkNotBuilt();
             for (String keyword : keywords) {
                 if (keyword != null && !keyword.isEmpty()) {
@@ -195,7 +196,7 @@ public final class AhoCorasick {
      * @param text Text to search in (should be lowercase for case-insensitive matching)
      * @return List of all keyword matches found
      */
-    public @NotNull List<Match> search(@NotNull String text) {
+    public @NonNull List<Match> search(@NonNull String text) {
         List<Match> matches = new ArrayList<>();
         TrieNode current = root;
         
@@ -231,13 +232,13 @@ public final class AhoCorasick {
         private final int startPos;
         private final int endPos;
         
-        public Match(@NotNull String keyword, int startPos, int endPos) {
+        public Match(@NonNull String keyword, int startPos, int endPos) {
             this.keyword = keyword;
             this.startPos = startPos;
             this.endPos = endPos;
         }
         
-        public @NotNull String getKeyword() {
+        public @NonNull String getKeyword() {
             return keyword;
         }
         

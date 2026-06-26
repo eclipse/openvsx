@@ -18,8 +18,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Configuration for extension similarity checking (name squatting protection).
- * 
- * 
+ * <p>
  * Configuration example:
  * ovsx:
  *   similarity:
@@ -35,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 public class SimilarityConfig {
     /**
      * If enabled, run similarity checks during extension publishing.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.enabled}
      * Default: {@code true}
      */
@@ -45,7 +44,7 @@ public class SimilarityConfig {
     /**
      * If enabled, only run similarity checks for the very first upload of an extension.
      * This means updates to an already existing extension (new versions) are not blocked by similarity.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.only-check-new-extensions}
      * Default: {@code false}
      */
@@ -54,11 +53,11 @@ public class SimilarityConfig {
 
     /**
      * Whether similarity failures are enforced (i.e. block publishing) when a similarity match is found.
-     *
+     * <p>
      * Why this exists:
      * - We sometimes want to run the check and store the audit trail (scan + failures)
      *   without rejecting publication (monitor-only mode).
-     *
+     * <p>
      * Default is true to preserve the historic behavior: when the similarity check is enabled,
      * it blocks publishing on matches unless explicitly configured otherwise.
      */
@@ -81,7 +80,7 @@ public class SimilarityConfig {
      * Threshold used to decide whether two extension identifiers are "too similar".
      * The check compares the edit distance against a fraction of the identifier length.
      * Larger values are stricter. For example {@code 0.2} requires at least ~20% difference.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.similarity-threshold}
      * Default: {@code 0.2}<br>
      * Valid range: {@code 0.0} - {@code 0.3} (validated at startup)
@@ -92,7 +91,7 @@ public class SimilarityConfig {
     /**
      * If enabled, do not run similarity checks for verified publishers.
      * This reduces friction for trusted publishers while keeping checks for unverified ones.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.skip-if-publisher-verified}
      * Default: {@code false}
      */
@@ -102,7 +101,7 @@ public class SimilarityConfig {
     /**
      * If enabled, compare new extensions only against extensions from verified publishers.
      * This reduces noise by focusing on protecting well-known publishers.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.only-protect-verified-names}
      * Default: {@code false}
      */
@@ -113,7 +112,7 @@ public class SimilarityConfig {
      * If enabled, exclude namespaces where the publishing user is a member (owner or contributor)
      * from similarity checks. This prevents false positives when a user uploads to namespaces
      * they legitimately have access to.
-     *
+     * <p>
      * Property: {@code ovsx.similarity.allow-similarity-to-own-names}
      * Default: {@code true}
      */

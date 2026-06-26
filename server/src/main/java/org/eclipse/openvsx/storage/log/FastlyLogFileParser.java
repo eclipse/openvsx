@@ -12,30 +12,26 @@
  *****************************************************************************/
 package org.eclipse.openvsx.storage.log;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 class FastlyLogFileParser implements LogFileParser {
     private final Logger logger = LoggerFactory.getLogger(FastlyLogFileParser.class);
 
-    private final ObjectMapper mapper;
+    private final JsonMapper mapper;
 
     public FastlyLogFileParser() {
-        this.mapper = new ObjectMapper();
-
-        SimpleModule module = new SimpleModule();
+        var module = new SimpleModule();
         module.addDeserializer(LogRecord.class, new LogRecordDeserializer());
-        mapper.registerModule(module);
+        this.mapper = JsonMapper.builder().addModule(module).build();
     }
 
     @Override
@@ -57,20 +53,15 @@ class FastlyLogFileParser implements LogFileParser {
 class LogRecordDeserializer extends StdDeserializer<LogRecord> {
 
     public LogRecordDeserializer() {
-        this(null);
-    }
-
-    public LogRecordDeserializer(Class<?> vc) {
-        super(vc);
+        super(LogRecord.class);
     }
 
     @Override
-    public LogRecord deserialize(JsonParser jp, DeserializationContext ctxt)
-            throws IOException {
-        JsonNode node = jp.getCodec().readTree(jp);
-        String operation = node.get("request_method").asText();
+    public LogRecord deserialize(JsonParser jp, DeserializationContext ctxt) throws JacksonException {
+        JsonNode node = ctxt.readTree(jp);
+        String operation = node.get("request_method").asString();
         int status = (Integer) node.get("response_status").numberValue();
-        String url = node.get("url").asText();
+        String url = node.get("url").asString();
         return new LogRecord(operation, status, url);
     }
 }

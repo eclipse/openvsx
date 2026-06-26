@@ -13,12 +13,13 @@
 package org.eclipse.openvsx.scanning;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Configuration for secret detection in extension packages.
@@ -247,7 +248,7 @@ public class SecretDetectorConfig {
     /**
      * Suppression markers that skip an entire line from scanning.
      */
-    public @NotNull List<String> getSuppressionMarkers() {
+    public @NonNull List<String> getSuppressionMarkers() {
         if (suppressionMarkers == null || suppressionMarkers.trim().isEmpty()) {
             return List.of();
         }
@@ -270,7 +271,7 @@ public class SecretDetectorConfig {
      * Get YAML rule paths, supporting comma-separated inputs.
      * Empty input yields an empty list so callers can fail fast.
      */
-    public @NotNull List<String> getRulePaths() {
+    public @NonNull List<String> getRulePaths() {
         if (rulesPath == null || rulesPath.trim().isEmpty()) {
             return List.of();
         }
@@ -320,7 +321,7 @@ public class SecretDetectorConfig {
      * Get gitleaks rule IDs to skip when generating rules.
      * Returns a set for efficient lookup.
      */
-    public @NotNull java.util.Set<String> getGitleaksSkipRuleIds() {
+    public @NonNull Set<String> getGitleaksSkipRuleIds() {
         if (gitleaksSkipRuleIds == null || gitleaksSkipRuleIds.trim().isEmpty()) {
             return java.util.Set.of();
         }
@@ -368,4 +369,3 @@ public class SecretDetectorConfig {
         }
     }
 }
-

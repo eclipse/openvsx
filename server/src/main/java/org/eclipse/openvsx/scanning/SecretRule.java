@@ -13,7 +13,7 @@
 package org.eclipse.openvsx.scanning;
 
 import com.google.re2j.Pattern;
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -34,27 +34,27 @@ import java.util.List;
  */
 public class SecretRule {
     /** Unique identifier for this rule (e.g., "github-pat", "aws-access-key") */
-    private final @NotNull String id;
+    private final @NonNull String id;
     
     /** Human-readable description of what this rule detects */
-    private final @NotNull String description;
+    private final @NonNull String description;
     
     /** Compiled regex pattern to match secrets (case-insensitive) */
-    private final @NotNull Pattern pattern;
+    private final @NonNull Pattern pattern;
     
     /** Minimum Shannon entropy threshold (0.0-8.0). If set, matches below this are filtered out. */
     private final @Nullable Double entropy;
     
     /** Keywords that must appear in a line before applying the regex (lowercase, for performance) */
-    private final @NotNull List<String> keywords;
+    private final @NonNull List<String> keywords;
     
     /** Compiled allowlist patterns to exclude known safe matches from this rule */
-    private final @NotNull List<Pattern> allowlistPatterns;
+    private final @NonNull List<Pattern> allowlistPatterns;
     
     /** Optional capture group index to extract the secret (default: 1 if available, else 0) */
     private final @Nullable Integer secretGroup;
 
-    private SecretRule(@NotNull Builder builder) {
+    private SecretRule(@NonNull Builder builder) {
         this.id = builder.id;
         this.description = builder.description;
         this.pattern = Pattern.compile(builder.regex, Pattern.CASE_INSENSITIVE);
@@ -81,15 +81,15 @@ public class SecretRule {
         }
     }
 
-    public @NotNull String getId() {
+    public @NonNull String getId() {
         return id;
     }
 
-    public @NotNull String getDescription() {
+    public @NonNull String getDescription() {
         return description;
     }
 
-    public @NotNull Pattern getPattern() {
+    public @NonNull Pattern getPattern() {
         return pattern;
     }
 
@@ -97,11 +97,11 @@ public class SecretRule {
         return entropy;
     }
 
-    public @NotNull List<String> getKeywords() {
+    public @NonNull List<String> getKeywords() {
         return keywords;
     }
 
-    public @NotNull List<Pattern> getAllowlistPatterns() {
+    public @NonNull List<Pattern> getAllowlistPatterns() {
         return allowlistPatterns;
     }
 

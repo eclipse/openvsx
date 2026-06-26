@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
@@ -56,6 +54,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -572,7 +572,7 @@ class UserAPITest {
         return userData;
     }
 
-    private String userJson(Consumer<UserJson> content) throws JsonProcessingException {
+    private String userJson(Consumer<UserJson> content) throws JacksonException {
         var json = new UserJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -602,13 +602,13 @@ class UserAPITest {
                 .thenReturn(Streamable.of(token1, token3));
     }
 
-    private String accessTokenJson(Consumer<AccessTokenJson> content) throws JsonProcessingException {
+    private String accessTokenJson(Consumer<AccessTokenJson> content) throws JacksonException {
         var json = new AccessTokenJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String accessTokensJson(Consumer<List<AccessTokenJson>> content) throws JsonProcessingException {
+    private String accessTokensJson(Consumer<List<AccessTokenJson>> content) throws JacksonException {
         var json = new ArrayList<AccessTokenJson>();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -636,13 +636,13 @@ class UserAPITest {
                 .thenReturn(Streamable.of(membership1, membership2));
     }
 
-    private String namespacesJson(Consumer<List<NamespaceJson>> content) throws JsonProcessingException {
+    private String namespacesJson(Consumer<List<NamespaceJson>> content) throws JacksonException {
         var json = new ArrayList<NamespaceJson>();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String extensionJson(Consumer<List<ExtensionJson>> content) throws JsonProcessingException {
+    private String extensionJson(Consumer<List<ExtensionJson>> content) throws JacksonException {
         var json = new ArrayList<ExtensionJson>();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -669,19 +669,19 @@ class UserAPITest {
                 .thenReturn(userRole.equals(NamespaceMembership.ROLE_OWNER) ? List.of(membership1, membership2) : Collections.emptyList());
     }
 
-    private String membershipsJson(Consumer<NamespaceMembershipListJson> content) throws JsonProcessingException {
+    private String membershipsJson(Consumer<NamespaceMembershipListJson> content) throws JacksonException {
         var json = new NamespaceMembershipListJson();
         json.setNamespaceMemberships(new ArrayList<>());
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String successJson(String message) throws JsonProcessingException {
+    private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String errorJson(String message) throws JsonProcessingException {
+    private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }

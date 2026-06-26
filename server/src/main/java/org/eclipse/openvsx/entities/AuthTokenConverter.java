@@ -12,26 +12,22 @@ package org.eclipse.openvsx.entities;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.web.server.ServerErrorException;
 
 @Converter
 public class AuthTokenConverter implements AttributeConverter<AuthToken, String> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public AuthTokenConverter() {
-        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-    }
+    private final JsonMapper jsonMapper = new JsonMapper();
 
     @Override
     public String convertToDatabaseColumn(AuthToken data) {
         if (data == null)
             return null;
         try {
-            return objectMapper.writeValueAsString(data);
-        } catch (JsonProcessingException exc) {
+            return jsonMapper.writeValueAsString(data);
+        } catch (JacksonException exc) {
             throw new ServerErrorException("Failed to serialize AuthToken to DB column.", exc);
         }
     }
@@ -41,10 +37,9 @@ public class AuthTokenConverter implements AttributeConverter<AuthToken, String>
         if (raw == null)
             return null;
         try {
-            return objectMapper.readValue(raw, AuthToken.class);
-        } catch (JsonProcessingException exc) {
+            return jsonMapper.readValue(raw, AuthToken.class);
+        } catch (JacksonException exc) {
             throw new ServerErrorException("Failed to parse AuthToken from DB column.", exc);
         }
     }
-
 }

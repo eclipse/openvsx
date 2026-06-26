@@ -12,7 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit;
 
-import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.Tier;
 import org.jspecify.annotations.NonNull;
@@ -29,7 +28,7 @@ public record ResolvedIdentity(
         return customer != null;
     }
 
-    public @NotNull Customer getCustomer() {
+    public @NonNull Customer getCustomer() {
         if (isCustomer()) {
             return customer;
         } else {

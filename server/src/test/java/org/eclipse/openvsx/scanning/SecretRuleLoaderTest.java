@@ -33,7 +33,7 @@ class SecretRuleLoaderTest {
         List<SecretRule> rules = loader.loadAll(List.of(
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-a.yaml",
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-b.yaml"
-        )).getRules();
+        )).rules();
 
         assertEquals(2, rules.size());
 
@@ -54,8 +54,8 @@ class SecretRuleLoaderTest {
     void loadAll_returnsEmptyWhenPathsEmpty() {
         // Empty path lists should return empty result with a warning (not throw)
         SecretRuleLoader.LoadedRules result = loader.loadAll(List.of());
-        assertTrue(result.getRules().isEmpty(), "Should return empty rules list");
-        assertNull(result.getGlobalAllowlist(), "Should return null global allowlist");
+        assertTrue(result.rules().isEmpty(), "Should return empty rules list");
+        assertNull(result.globalAllowlist(), "Should return null global allowlist");
     }
 
     @Test
@@ -85,7 +85,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.getGlobalAllowlist());
+        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.globalAllowlist());
         assertNotNull(allowlist.paths);
         assertEquals(3, allowlist.paths.size());
         assertTrue(allowlist.paths.contains("node_modules/"));
@@ -99,7 +99,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.getGlobalAllowlist());
+        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.globalAllowlist());
         assertNotNull(allowlist.regexes);
         assertEquals(3, allowlist.regexes.size());
         assertTrue(allowlist.regexes.contains("^test$"));
@@ -113,7 +113,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.getGlobalAllowlist());
+        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.globalAllowlist());
         assertNotNull(allowlist.stopwords);
         assertEquals(3, allowlist.stopwords.size());
         assertTrue(allowlist.stopwords.contains("example"));
@@ -127,7 +127,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.getGlobalAllowlist());
+        SecretRuleLoader.GlobalAllowlist allowlist = Objects.requireNonNull(result.globalAllowlist());
         assertNotNull(allowlist.fileExtensions);
         assertEquals(3, allowlist.fileExtensions.size());
         assertTrue(allowlist.fileExtensions.contains(".png"));
@@ -142,9 +142,9 @@ class SecretRuleLoaderTest {
         ));
 
         // Should return null when no global allowlist is present
-        assertNull(result.getGlobalAllowlist());
+        assertNull(result.globalAllowlist());
         // But rules should still be loaded
-        assertEquals(1, result.getRules().size());
+        assertEquals(1, result.rules().size());
     }
 
     @Test
@@ -155,7 +155,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-allowlist-2.yaml"  // has different allowlist
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         
         // Paths should be merged (3 from first file + 2 from second = 5)
@@ -194,7 +194,7 @@ class SecretRuleLoaderTest {
         assertTrue(allowlist.fileExtensions.contains(".gif"));
         
         // Both rules should be present (merged)
-        assertEquals(2, result.getRules().size());
+        assertEquals(2, result.rules().size());
     }
 
     @Test
@@ -204,11 +204,11 @@ class SecretRuleLoaderTest {
         ));
 
         // Verify both components are present
-        assertNotNull(result.getRules());
-        assertEquals(1, result.getRules().size());
-        assertEquals("test-rule-1", result.getRules().getFirst().getId());
+        assertNotNull(result.rules());
+        assertEquals(1, result.rules().size());
+        assertEquals("test-rule-1", result.rules().getFirst().getId());
         
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         assertNotNull(allowlist.paths);
         assertNotNull(allowlist.regexes);
@@ -224,7 +224,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-allowlist-3.yaml"  // partial (only paths and stopwords)
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         
         // Paths: 3 from first + 1 from second = 4
@@ -242,7 +242,7 @@ class SecretRuleLoaderTest {
         assertEquals(3, allowlist.fileExtensions.size());
         
         // Rules should be merged (1 + 1 = 2)
-        assertEquals(2, result.getRules().size());
+        assertEquals(2, result.rules().size());
     }
 
     @Test
@@ -253,7 +253,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"  // has allowlist
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         assertEquals(3, allowlist.paths.size());
         assertEquals(3, allowlist.regexes.size());
@@ -261,7 +261,7 @@ class SecretRuleLoaderTest {
         assertEquals(3, allowlist.fileExtensions.size());
         
         // Both rules should be present
-        assertEquals(2, result.getRules().size());
+        assertEquals(2, result.rules().size());
     }
 
     @Test
@@ -273,7 +273,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-allowlist-2.yaml"  // full
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         
         // Should have items from file 1 and file 3 (file 2 has no allowlist)
@@ -283,10 +283,10 @@ class SecretRuleLoaderTest {
         assertEquals(5, allowlist.fileExtensions.size());  // 3 + 2
         
         // All three rules should be present, but rule-a is overridden by file 2
-        assertEquals(3, result.getRules().size());
+        assertEquals(3, result.rules().size());
         
         // Verify rule-a was overridden (should have the description from file A, not the original)
-        SecretRule ruleA = result.getRules().stream()
+        SecretRule ruleA = result.rules().stream()
                 .filter(r -> r.getId().equals("rule-a"))
                 .findFirst()
                 .orElseThrow();
@@ -306,16 +306,16 @@ class SecretRuleLoaderTest {
         ));
 
         // All three unique rules should be present
-        assertEquals(3, result.getRules().size());
+        assertEquals(3, result.rules().size());
         
-        List<String> ruleIds = result.getRules().stream()
+        List<String> ruleIds = result.rules().stream()
                 .map(SecretRule::getId)
                 .sorted()
                 .toList();
         assertEquals(List.of("test-rule-1", "test-rule-2", "test-rule-3"), ruleIds);
         
         // All allowlists should be merged
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         
         // Paths: 3 + 2 + 1 = 6
@@ -340,7 +340,7 @@ class SecretRuleLoaderTest {
                 "classpath:org/eclipse/openvsx/scanning/secret-rules-with-allowlist.yaml"  // same file twice
         ));
 
-        SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
+        SecretRuleLoader.GlobalAllowlist allowlist = result.globalAllowlist();
         assertNotNull(allowlist);
         
         // Items should be duplicated (3 + 3 = 6)
@@ -350,7 +350,7 @@ class SecretRuleLoaderTest {
         assertEquals(6, allowlist.fileExtensions.size());
         
         // But rules should not be duplicated (same ID)
-        assertEquals(1, result.getRules().size());
+        assertEquals(1, result.rules().size());
     }
 }
 

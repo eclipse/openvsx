@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-
 import org.jobrunr.jobs.lambdas.JobRequest;
 import org.jspecify.annotations.NonNull;
 
@@ -88,4 +87,3 @@ public class ScannerInvocationRequest implements JobRequest {
             '}';
     }
 }
-

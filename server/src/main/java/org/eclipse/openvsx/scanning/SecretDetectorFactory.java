@@ -14,7 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import com.google.re2j.Pattern;
 import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +57,9 @@ public class SecretDetectorFactory {
     private volatile SecretDetector scanner;
 
     public SecretDetectorFactory(
-            @NotNull SecretRuleLoader ruleLoader, 
-            @NotNull SecretDetectorConfig config,
-            @NotNull ExtensionScanConfig scanConfig,
+            @NonNull SecretRuleLoader ruleLoader,
+            @NonNull SecretDetectorConfig config,
+            @NonNull ExtensionScanConfig scanConfig,
             @Nullable GitleaksRulesService gitleaksService) {
         this.ruleLoader = ruleLoader;
         this.config = config;
@@ -80,8 +80,8 @@ public class SecretDetectorFactory {
         
         // Load all rules from the rule paths
         SecretRuleLoader.LoadedRules loaded = ruleLoader.loadAll(rulePaths);
-        List<SecretRule> loadedRules = loaded.getRules();
-        SecretRuleLoader.GlobalAllowlist globalAllowlist = loaded.getGlobalAllowlist();
+        List<SecretRule> loadedRules = loaded.rules();
+        SecretRuleLoader.GlobalAllowlist globalAllowlist = loaded.globalAllowlist();
 
         // Build the keyword index for efficient keyword matching based on all loaded rules
         Set<String> allKeywords = new HashSet<>();
@@ -148,19 +148,19 @@ public class SecretDetectorFactory {
         return scanner;
     }
 
-    public @NotNull List<SecretRule> getRules() {
+    public @NonNull List<SecretRule> getRules() {
         return rules;
     }
 
-    public @NotNull Map<String, List<SecretRule>> getKeywordToRules() {
+    public @NonNull Map<String, List<SecretRule>> getKeywordToRules() {
         return keywordToRules;
     }
 
-    public @NotNull AhoCorasick getKeywordMatcher() {
+    public @NonNull AhoCorasick getKeywordMatcher() {
         return keywordMatcher;
     }
 
-    private Map<String, List<SecretRule>> buildKeywordIndex(@NotNull List<SecretRule> sourceRules, @NotNull Set<String> allKeywords) {
+    private Map<String, List<SecretRule>> buildKeywordIndex(@NonNull List<SecretRule> sourceRules, @NonNull Set<String> allKeywords) {
         Map<String, List<SecretRule>> index = new HashMap<>();
 
         for (SecretRule rule : sourceRules) {
@@ -207,7 +207,7 @@ public class SecretDetectorFactory {
      */
     private List<String> getGlobalExcludedExtensions(
             SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
-            @NotNull SecretDetectorConfig config) {
+            @NonNull SecretDetectorConfig config) {
         List<String> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.fileExtensions != null) {
@@ -226,7 +226,7 @@ public class SecretDetectorFactory {
      */
     private List<Pattern> getGlobalExcludedPathPatterns(
             SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
-            @NotNull SecretDetectorConfig config) {
+            @NonNull SecretDetectorConfig config) {
         List<Pattern> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.paths != null) {
@@ -244,7 +244,7 @@ public class SecretDetectorFactory {
      */
     private List<Pattern> getGlobalAllowlistPatterns(
             SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
-            @NotNull SecretDetectorConfig config) {
+            @NonNull SecretDetectorConfig config) {
         List<Pattern> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.regexes != null && !globalAllowlist.regexes.isEmpty()) {
@@ -262,7 +262,7 @@ public class SecretDetectorFactory {
      */
     private List<String> getGlobalStopwords(
             SecretRuleLoader.@Nullable GlobalAllowlist globalAllowlist,
-            @NotNull SecretDetectorConfig config) {
+            @NonNull SecretDetectorConfig config) {
         List<String> result = new ArrayList<>();
 
         if (globalAllowlist != null && globalAllowlist.stopwords != null) {
@@ -278,7 +278,7 @@ public class SecretDetectorFactory {
      * Get suppression markers from config.
      * Returns lowercase versions for case-insensitive matching.
      */
-    private List<String> getSuppressionMarkers(@NotNull SecretDetectorConfig config) {
+    private List<String> getSuppressionMarkers(@NonNull SecretDetectorConfig config) {
         return config.getSuppressionMarkers().stream()
                 .map(String::toLowerCase)
                 .toList();
@@ -333,5 +333,3 @@ public class SecretDetectorFactory {
         return paths;
     }
 }
-
-

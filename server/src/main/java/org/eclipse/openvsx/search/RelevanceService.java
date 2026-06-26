@@ -7,11 +7,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
 package org.eclipse.openvsx.search;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -21,7 +18,9 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,7 +29,7 @@ import java.util.Optional;
 /**
  * Provides relevance for a given extension
  */
-@Component
+@Service
 public class RelevanceService {
 
     protected final Logger logger = LoggerFactory.getLogger(RelevanceService.class);
@@ -112,7 +111,7 @@ public class RelevanceService {
             var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
                 message += " " + new ObjectMapper().writeValueAsString(stats);
-            } catch (JsonProcessingException exc) {
+            } catch (JacksonException exc) {
                 // Ignore exception
             }
             logger.error(message);
@@ -124,12 +123,7 @@ public class RelevanceService {
     }
 
     private double limit(double value) {
-        if (value < 0.0)
-            return 0.0;
-        else if (value > 1.0)
-            return 1.0;
-        else
-            return value;
+        return Math.clamp(value, 0.0, 1.0);
     }
 
     private double saturate(double value, double factor) {

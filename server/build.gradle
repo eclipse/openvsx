@@ -108,6 +108,7 @@ dependencies {
 
     implementation libs.springdoc
 
+    implementation libs.jackson.dataformat.yaml
     implementation libs.jackson.dataformat.xml
     implementation libs.jackson.dataformat.toml
 

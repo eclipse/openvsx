@@ -9,9 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.annotation.Observed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +31,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.util.List;
@@ -51,7 +50,7 @@ public class VSCodeAPI {
     private final UpstreamVSCodeService upstream;
     private final List<IVSCodeService> registries;
     private final IExtensionQueryRequestHandler extensionQueryRequestHandler;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     public VSCodeAPI(
             LocalVSCodeService local,
@@ -62,7 +61,7 @@ public class VSCodeAPI {
         this.upstream = upstream;
         this.registries = setupRegistries();
         this.extensionQueryRequestHandler = extensionQueryRequestHandler;
-        this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.jsonMapper = new JsonMapper();
     }
 
     private List<IVSCodeService> setupRegistries() {
@@ -114,8 +113,8 @@ public class VSCodeAPI {
         ExtensionQueryParam param;
 
         try {
-            param = objectMapper.readValue(query, ExtensionQueryParam.class);
-        } catch (JsonProcessingException ex) {
+            param = jsonMapper.readValue(query, ExtensionQueryParam.class);
+        } catch (JacksonException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query");
         }
 

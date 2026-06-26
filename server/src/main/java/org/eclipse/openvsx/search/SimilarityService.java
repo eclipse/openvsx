@@ -12,11 +12,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ public class SimilarityService {
             @Nullable String extensionName, 
             @Nullable String namespaceName, 
             @Nullable String displayName,
-            @NotNull List<String> excludeNamespaces,
+            @NonNull List<String> excludeNamespaces,
             double threshold,
             boolean verifiedOnly,
             int limit) {
@@ -76,8 +76,8 @@ public class SimilarityService {
      * Find namespaces similar to the given namespace name using Levenshtein distance.
      */
     public List<Namespace> findSimilarNamespaces(
-            @NotNull String namespaceName,
-            @NotNull List<String> excludeNamespaces,
+            @NonNull String namespaceName,
+            @NonNull List<String> excludeNamespaces,
             double threshold,
             boolean verifiedOnly,
             int limit) {
@@ -104,5 +104,4 @@ public class SimilarityService {
             );
         }
     }
-
 }

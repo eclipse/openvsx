@@ -59,4 +59,3 @@ public class ScannerPollRequest implements JobRequest {
         return ScannerPollHandler.class;
     }
 }
-

@@ -9,18 +9,17 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.common.KeyValue;
 import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.aop.ObservedAspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 public class RegistryObservationConvention implements ObservationConvention<ObservedAspect.ObservedAspectContext> {
 
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
     public RegistryObservationConvention() {
         this.mapper = new ObjectMapper();
@@ -50,7 +49,7 @@ public class RegistryObservationConvention implements ObservationConvention<Obse
         } else {
             try {
                 return mapper.writeValueAsString(arg);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 return  "";
             }
         }

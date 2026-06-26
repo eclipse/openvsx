@@ -9,10 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -28,12 +24,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -66,7 +65,7 @@ public class EclipseService {
     private final ExtensionService extensions;
     private final EntityManager entityManager;
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     @Value("${ovsx.eclipse.base-url:}")
     String eclipseApiUrl;
@@ -87,8 +86,7 @@ public class EclipseService {
         this.extensions = extensions;
         this.entityManager = entityManager;
         this.restTemplate = restTemplate;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.jsonMapper = new JsonMapper();
     }
 
     public boolean isActive() {
@@ -304,20 +302,20 @@ public class EclipseService {
 
         try {
             if (json.startsWith("[\"")) {
-                var error = objectMapper.readValue(json, TYPE_LIST_STRING);
+                var error = jsonMapper.readValue(json, TYPE_LIST_STRING);
                 logger.error("Profile request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
-                var profileList = objectMapper.readValue(json, TYPE_LIST_PROFILE);
+                var profileList = jsonMapper.readValue(json, TYPE_LIST_PROFILE);
                 if (profileList.isEmpty()) {
                     throw new ErrorResultException("No Eclipse user profile available.", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
                 return profileList.getFirst();
             } else {
-                return objectMapper.readValue(json, EclipseProfile.class);
+                return jsonMapper.readValue(json, EclipseProfile.class);
             }
-        } catch (JsonProcessingException exc) {
+        } catch (JacksonException exc) {
             logger.error("Failed to parse JSON response ({}):\n{}", response.getStatusCode(), json, exc);
             throw new ErrorResultException("Parsing Eclipse user profile failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
@@ -402,8 +400,8 @@ public class EclipseService {
 
             String payload;
             try {
-                payload = objectMapper.writeValueAsString(data);
-            } catch (JsonProcessingException exc2) {
+                payload = jsonMapper.writeValueAsString(data);
+            } catch (JacksonException exc2) {
                 payload = "<" + exc2.getMessage() + ">";
             }
             logger.error("Post request failed with URL: {} Payload: {}", requestUrl, payload, exc);
@@ -420,18 +418,18 @@ public class EclipseService {
         try {
             PublisherAgreementResponse agreementResponse;
             if (json.startsWith("[\"")) {
-                var error = objectMapper.readValue(json, TYPE_LIST_STRING);
+                var error = jsonMapper.readValue(json, TYPE_LIST_STRING);
                 logger.error("Publisher agreement request failed:\n{}", json);
                 throw new ErrorResultException("Request to the Eclipse Foundation server failed: " + error,
                         HttpStatus.INTERNAL_SERVER_ERROR);
             } else if (json.startsWith("[")) {
-                var profileList = objectMapper.readValue(json, TYPE_LIST_AGREEMENT);
+                var profileList = jsonMapper.readValue(json, TYPE_LIST_AGREEMENT);
                 if (profileList.isEmpty()) {
                     throw new ErrorResultException("No publisher agreement available.", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
                 agreementResponse = profileList.getFirst();
             } else {
-                agreementResponse = objectMapper.readValue(json, PublisherAgreementResponse.class);
+                agreementResponse = jsonMapper.readValue(json, PublisherAgreementResponse.class);
             }
 
             var timestamp = parseDate(agreementResponse.effectiveDate);
@@ -441,7 +439,7 @@ public class EclipseService {
                     agreementResponse.version,
                     timestamp
             );
-        } catch (JsonProcessingException exc) {
+        } catch (JacksonException exc) {
             logger.error("Failed to parse JSON response ({}):\n{}", response.getStatusCode(), json, exc);
             throw new ErrorResultException("Parsing publisher agreement response failed: " + exc.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);

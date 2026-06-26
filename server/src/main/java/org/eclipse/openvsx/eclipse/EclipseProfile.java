@@ -10,14 +10,14 @@
 package org.eclipse.openvsx.eclipse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -151,20 +151,20 @@ public class EclipseProfile {
             this.openVsx = openVsx;
         }
 
-        public static class Deserializer extends JsonDeserializer<PublisherAgreements> {
+        public static class Deserializer extends ValueDeserializer<PublisherAgreements> {
 
             private static final TypeReference<List<PublisherAgreement>> TYPE_LIST_AGREEMENT = new TypeReference<>() {};
 
 			@Override
-			public PublisherAgreements deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+			public PublisherAgreements deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
 				if (p.currentToken() == JsonToken.START_ARRAY) {
-                    var list = p.getCodec().readValue(p, TYPE_LIST_AGREEMENT);
+                    var list = ctxt.readValue(p, TYPE_LIST_AGREEMENT);
                     var result = new PublisherAgreements();
                     if (!list.isEmpty())
                         result.openVsx = list.getFirst();
                     return result;
                 }
-                return p.getCodec().readValue(p, PublisherAgreements.class);
+                return ctxt.readValue(p, PublisherAgreements.class);
             }
 
         }

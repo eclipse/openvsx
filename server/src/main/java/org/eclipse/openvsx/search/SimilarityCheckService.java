@@ -12,13 +12,13 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
-import jakarta.validation.constraints.NotNull;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.PublishCheck;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
@@ -104,7 +104,7 @@ public class SimilarityCheckService implements PublishCheck {
             return PublishCheck.Result.pass();
         }
 
-        var similarExt = similarExtensions.get(0);
+        var similarExt = similarExtensions.getFirst();
         var latestVersion = repositories.findLatestVersion(similarExt, null, false, true);
         String similarDisplayName = latestVersion != null ? latestVersion.getDisplayName() : null;
 
@@ -129,7 +129,7 @@ public class SimilarityCheckService implements PublishCheck {
             @Nullable String extensionName,
             @Nullable String namespaceName,
             @Nullable String displayName,
-            @NotNull UserData publishingUser
+            @NonNull UserData publishingUser
     ) {
         return similarityService.findSimilarExtensions(
             extensionName,
@@ -147,8 +147,8 @@ public class SimilarityCheckService implements PublishCheck {
      * Callers should check {@link #isEnabled()} before invoking this method.
      */
     public List<Namespace> findSimilarNamespacesForCreation(
-            @NotNull String namespaceName,
-            @NotNull UserData publishingUser
+            @NonNull String namespaceName,
+            @NonNull UserData publishingUser
     ) {
         return similarityService.findSimilarNamespaces(
             namespaceName,
@@ -164,7 +164,7 @@ public class SimilarityCheckService implements PublishCheck {
      * When configured, excludes namespaces where the user is a member (owner OR contributor).
      * This prevents false positives when uploading to namespaces the user legitimately controls.
      */
-    private List<String> getExcludedNamespaces(@NotNull UserData user) {
+    private List<String> getExcludedNamespaces(@NonNull UserData user) {
         if (!config.isAllowSimilarityToOwnNames()) {
             return List.of();
         }
@@ -176,5 +176,4 @@ public class SimilarityCheckService implements PublishCheck {
                 .toList();
     }
 }
-
 

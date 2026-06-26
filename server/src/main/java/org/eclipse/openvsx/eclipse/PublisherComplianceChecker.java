@@ -118,5 +118,4 @@ public class PublisherComplianceChecker {
             entityManager.merge(extension);
         }
     }
-    
 }

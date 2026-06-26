@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0 
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;

@@ -316,7 +316,7 @@ public class PublishCheckRunner{
         @NonNull String checkType,
         @NonNull LocalDateTime startedAt,
         @NonNull LocalDateTime completedAt,
-    ScanCheckResult.@NonNull CheckResult result,
+        ScanCheckResult.@NonNull CheckResult result,
         int findingsCount,
         @Nullable String errorMessage,
         @Nullable String summary,

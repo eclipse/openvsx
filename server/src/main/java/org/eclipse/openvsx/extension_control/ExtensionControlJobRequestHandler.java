@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.extension_control;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -20,6 +19,7 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
 
 @Component
 public class ExtensionControlJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>>  {
@@ -69,10 +69,10 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
         for(var item : node) {
             logger.atInfo()
                     .setMessage("malicious: {}")
-                    .addArgument(item::asText)
+                    .addArgument(item::asString)
                     .log();
 
-            var extensionId = NamingUtil.fromExtensionId(item.asText());
+            var extensionId = NamingUtil.fromExtensionId(item.asString());
             if(extensionId != null && repositories.hasExtension(extensionId.namespace(), extensionId.extension())) {
                 logger.info("delete malicious extension");
                 admin.deleteExtensionAndDependencies(extensionId.namespace(), extensionId.extension(), adminUser);
@@ -88,7 +88,7 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
             return;
         }
 
-        node.fields().forEachRemaining(field -> {
+        node.properties().iterator().forEachRemaining(field -> {
             logger.info("deprecated: {}", field.getKey());
             var extensionId = NamingUtil.fromExtensionId(field.getKey());
             if(extensionId == null) {
@@ -101,7 +101,7 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
             } else if(value.isObject()) {
                 var replacement = value.get("extension");
                 var replacementId = replacement != null && replacement.isObject()
-                        ? NamingUtil.fromExtensionId(replacement.get("id").asText())
+                        ? NamingUtil.fromExtensionId(replacement.get("id").asString())
                         : null;
 
                 var disallowInstall = value.has("disallowInstall") && value.get("disallowInstall").asBoolean(false);

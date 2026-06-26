@@ -383,5 +383,4 @@ public class ScannerPollHandler implements JobRequestHandler<ScannerPollRequest>
         job.setUpdatedAt(TimeUtil.getCurrentUTC());
         scanJobRepository.save(job);
     }
-    
 }

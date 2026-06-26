@@ -18,7 +18,8 @@ import org.eclipse.openvsx.util.VersionAlias;
 import org.springframework.stereotype.Component;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -105,7 +106,7 @@ public class ExtensionValidator {
         checkVersion(version, issues);
         return issues.isEmpty()
                 ? Optional.empty()
-                : Optional.of(issues.get(0));
+                : Optional.of(issues.getFirst());
     }
 
     public List<Issue> validateMetadata(ExtensionVersion extVersion) {
@@ -240,9 +241,9 @@ public class ExtensionValidator {
             value = value.substring(4);
         
         try {
-            var url = new URL(value);
+            var url = new URI(value).toURL();
             return url.getProtocol().matches("http(s)?") && StringUtils.isEmpty(url.getHost());
-        } catch (MalformedURLException exc) {
+        } catch (URISyntaxException | MalformedURLException exc) {
             return true;
         }
     }

@@ -9,9 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.json.*;
@@ -20,6 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,10 +37,10 @@ public class UpstreamProxyService {
 
     public NamespaceJson rewriteUrls(NamespaceJson json) {
         rewriteUrlMap(json.getExtensions());
-        if(!StringUtils.isEmpty(json.getMembersUrl())) {
+        if (!StringUtils.isEmpty(json.getMembersUrl())) {
             json.setMembersUrl(rewriteUrl(json.getMembersUrl()));
         }
-        if(!StringUtils.isEmpty(json.getRoleUrl())) {
+        if (!StringUtils.isEmpty(json.getRoleUrl())) {
             json.setRoleUrl(rewriteUrl(json.getRoleUrl()));
         }
 
@@ -131,10 +132,10 @@ public class UpstreamProxyService {
     }
 
     public JsonNode rewriteUrls(JsonNode json) {
-        if(json.isArray()) {
-            var list = new ObjectMapper().createArrayNode();
+        if (json.isArray()) {
+            var list = JsonMapper.shared().createArrayNode();
             var array = (ArrayNode) json;
-            array.forEach(url -> list.add(rewriteUrl(url.asText())));
+            array.forEach(url -> list.add(rewriteUrl(url.asString())));
             json = list;
         }
 
@@ -169,7 +170,7 @@ public class UpstreamProxyService {
     }
 
     private void rewriteUrlMap(Map<String, String> map) {
-        if(map != null) {
+        if (map != null) {
             map.replaceAll((k, v) -> rewriteUrl(v));
         }
     }

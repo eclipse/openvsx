@@ -9,8 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.extension_control;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.cache.CacheService;
@@ -29,6 +27,8 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -78,10 +78,10 @@ public class ExtensionControlService {
 
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
-        if(!enabled || mirrorEnabled) {
+        if (!enabled || mirrorEnabled) {
             return;
         }
-        if(updateOnStart) {
+        if (updateOnStart) {
             scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
         }
 
@@ -104,18 +104,18 @@ public class ExtensionControlService {
     @Transactional
     public void updateExtension(ExtensionId extensionId, boolean deprecated, ExtensionId replacementId, boolean downloadable) {
         var extension = repositories.findExtension(extensionId.extension(), extensionId.namespace());
-        if(extension == null) {
+        if (extension == null) {
             return;
         }
 
         var wasDeprecated = extension.isDeprecated();
         extension.setDeprecated(deprecated);
         extension.setDownloadable(downloadable);
-        if(replacementId != null) {
+        if (replacementId != null) {
             var replacement = repositories.findExtension(replacementId.extension(), replacementId.namespace());
             extension.setReplacement(replacement);
         }
-        if(deprecated != wasDeprecated) {
+        if (deprecated != wasDeprecated) {
             cache.evictNamespaceDetails(extension);
             cache.evictLatestExtensionVersion(extension);
             cache.evictExtensionJsons(extension);
@@ -125,7 +125,9 @@ public class ExtensionControlService {
 
     public JsonNode getExtensionControlJson() throws IOException {
         var url = URI.create("https://github.com/open-vsx/publish-extensions/raw/master/extension-control/extensions.json").toURL();
-        return new ObjectMapper().readValue(url, JsonNode.class);
+        try (var inputStream = url.openStream()) {
+            return new ObjectMapper().readValue(inputStream, JsonNode.class);
+        }
     }
 
     @Cacheable(CACHE_MALICIOUS_EXTENSIONS)
@@ -142,7 +144,7 @@ public class ExtensionControlService {
         }
 
         var list = new ArrayList<String>();
-        malicious.forEach(node -> list.add(node.asText()));
+        malicious.forEach(node -> list.add(node.asString()));
         return list;
     }
 }

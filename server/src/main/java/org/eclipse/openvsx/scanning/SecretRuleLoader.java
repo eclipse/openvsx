@@ -13,15 +13,15 @@
 package org.eclipse.openvsx.scanning;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,41 +47,16 @@ public class SecretRuleLoader {
      * Container for loaded rules and global allowlist configuration.
      * <p>
      * This is returned by {@link #loadAll(List)} and contains:
-     *   Compiled secret detection rules from all YAML files (deduplicated by ID)
-     *   Global allowlist configuration from the last YAML file
+     * Compiled secret detection rules from all YAML files (deduplicated by ID)
+     * Global allowlist configuration from the last YAML file
      */
-    public static class LoadedRules {
-        private final List<SecretRule> rules;
-        private final GlobalAllowlist globalAllowlist;
-
-        /**
-         * Create a container for loaded rules and global allowlist.
-         */
-        public LoadedRules(@NotNull List<SecretRule> rules, @Nullable GlobalAllowlist globalAllowlist) {
-            this.rules = rules;
-            this.globalAllowlist = globalAllowlist;
-        }
-
-        /**
-         * Get the compiled secret detection rules.
-         */
-        public @NotNull List<SecretRule> getRules() {
-            return rules;
-        }
-
-        /**
-         * Get the global allowlist configuration.
-         */
-        public @Nullable GlobalAllowlist getGlobalAllowlist() {
-            return globalAllowlist;
-        }
-    }
+    public record LoadedRules(@NonNull List<SecretRule> rules, @Nullable GlobalAllowlist globalAllowlist) {}
 
     /**
      * Load rules from a single path. Supports classpath: prefixed resources or absolute/relative file paths.
      */
-    public List<SecretRule> load(@NotNull String path) {
-        return loadAll(List.of(path)).getRules();
+    public List<SecretRule> load(@NonNull String path) {
+        return loadAll(List.of(path)).rules();
     }
 
     /**
@@ -89,7 +64,7 @@ public class SecretRuleLoader {
      * Later files override earlier ones by rule id.
      * Global allowlists are merged from all files.
      */
-    public LoadedRules loadAll(@NotNull List<String> paths) {
+    public LoadedRules loadAll(@NonNull List<String> paths) {
         if (paths.isEmpty()) {
             logger.warn("Secret detection rules path list is empty");
             return new LoadedRules(List.of(), null);
@@ -147,17 +122,9 @@ public class SecretRuleLoader {
     /**
      * Internal container for data loaded from a single YAML file.
      */
-    private static class RuleFileData {
-        final List<SecretRule> rules;
-        final GlobalAllowlist globalAllowlist;
+    private record RuleFileData(List<SecretRule> rules, GlobalAllowlist globalAllowlist) {}
 
-        RuleFileData(List<SecretRule> rules, GlobalAllowlist globalAllowlist) {
-            this.rules = rules;
-            this.globalAllowlist = globalAllowlist;
-        }
-    }
-
-    private RuleFileData loadSingle(@NotNull String path) {
+    private RuleFileData loadSingle(@NonNull String path) {
         // Fail when we cannot read rules and scanning is enabled.
         if (path.isBlank()) {
             var message = "Secret detection rules path is empty";
@@ -234,7 +201,7 @@ public class SecretRuleLoader {
         }
     }
 
-    private @Nullable InputStream openStream(@NotNull String path) throws IOException {
+    private @Nullable InputStream openStream(@NonNull String path) throws IOException {
         if (path.startsWith("classpath:")) {
             String cp = path.substring("classpath:".length());
             ClassPathResource resource = new ClassPathResource(cp);
@@ -351,4 +318,3 @@ public class SecretRuleLoader {
         public List<String> skipMimeTypes;
     }
 }
-

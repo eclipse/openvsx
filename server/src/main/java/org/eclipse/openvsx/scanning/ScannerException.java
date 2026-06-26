@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

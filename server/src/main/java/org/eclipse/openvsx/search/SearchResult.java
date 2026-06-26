@@ -9,7 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.search;
 
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +24,7 @@ public class SearchResult {
         hits = Collections.emptyList();
     }
 
-    public SearchResult(long totalHits, @NotNull List<ExtensionSearch> hits) {
+    public SearchResult(long totalHits, @NonNull List<ExtensionSearch> hits) {
         this.totalHits = totalHits;
         this.hits = hits;
     }

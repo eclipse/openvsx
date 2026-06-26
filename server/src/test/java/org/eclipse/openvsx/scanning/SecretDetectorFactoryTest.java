@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -142,7 +143,7 @@ class SecretDetectorFactoryTest {
         boolean wasCalled = false;
 
         @Override
-        public LoadedRules loadAll(List<String> paths) {
+        public LoadedRules loadAll(@NonNull List<String> paths) {
             wasCalled = true;
             // Delegate to the real loader so the behavior stays realistic.
             return super.loadAll(paths);

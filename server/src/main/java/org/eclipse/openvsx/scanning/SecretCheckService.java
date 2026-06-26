@@ -14,6 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.ArchiveUtil;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,7 +22,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +120,7 @@ public class SecretCheckService implements PublishCheck {
      * <p>
      * Callers should check {@link #isEnabled()} before invoking this method.
      */
-    private SecretDetector.Result scanForSecrets(@NotNull TempFile extensionFile) {
+    private SecretDetector.Result scanForSecrets(@NonNull TempFile extensionFile) {
         // Thread-safe collection for parallel processing
         List<SecretDetector.Finding> findings = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger findingsCount = new AtomicInteger(0);
@@ -271,4 +271,3 @@ class SecretScanningException extends RuntimeException {
         super(message, cause);
     }
 }
-

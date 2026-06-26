@@ -7,11 +7,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
 package org.eclipse.openvsx.search;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.List;
  * Wrap all available implementations and redirect to the implementation pickup
  * from configuration
  */
-@Component
+@Service
 public class SearchUtilService implements ISearchService {
 
     private final DatabaseSearchService databaseSearchService;
@@ -88,5 +87,4 @@ public class SearchUtilService implements ISearchService {
     public void removeSearchEntry(Extension extension) {
         getImplementation().removeSearchEntry(extension);
     }
-
 }

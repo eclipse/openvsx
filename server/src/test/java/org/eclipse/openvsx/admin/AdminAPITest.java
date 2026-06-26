@@ -107,11 +107,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(AdminAPI.class)
 @MockitoBean(types = {
@@ -1495,13 +1494,13 @@ class AdminAPITest {
         return namespace;
     }
 
-    private String namespaceJson(Consumer<NamespaceJson> content) throws JsonProcessingException {
+    private String namespaceJson(Consumer<NamespaceJson> content) throws JacksonException {
         var json = new NamespaceJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String namespaceMemberJson(Consumer<NamespaceMembershipListJson> content) throws JsonProcessingException {
+    private String namespaceMemberJson(Consumer<NamespaceMembershipListJson> content) throws JacksonException {
         var json = new NamespaceMembershipListJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
@@ -1638,30 +1637,30 @@ class AdminAPITest {
         return major + ".0.0";
     }
 
-    private String adminStatisticsJson(Consumer<AdminStatisticsJson> content) throws JsonProcessingException {
+    private String adminStatisticsJson(Consumer<AdminStatisticsJson> content) throws JacksonException {
         var json = new AdminStatisticsJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String extensionJson(Consumer<ExtensionJson> content) throws JsonProcessingException {
+    private String extensionJson(Consumer<ExtensionJson> content) throws JacksonException {
         var json = new ExtensionJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String publishInfoJson(Consumer<UserPublishInfoJson> content) throws JsonProcessingException {
+    private String publishInfoJson(Consumer<UserPublishInfoJson> content) throws JacksonException {
         var json = new UserPublishInfoJson();
         content.accept(json);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String successJson(String message) throws JsonProcessingException {
+    private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
         return new ObjectMapper().writeValueAsString(json);
     }
 
-    private String errorJson(String message) throws JsonProcessingException {
+    private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }

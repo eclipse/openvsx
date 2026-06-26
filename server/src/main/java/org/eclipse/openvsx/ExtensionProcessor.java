@@ -9,11 +9,11 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.MissingNode;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.MissingNode;
+import tools.jackson.dataformat.xml.XmlMapper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
@@ -99,9 +99,10 @@ public class ExtensionProcessor implements AutoCloseable {
                 throw new ErrorResultException(entryNotFoundMessage(PACKAGE_JSON));
             }
 
-            var mapper = new ObjectMapper();
-            packageJson = mapper.readTree(entryFile.getPath().toFile());
-        } catch (JsonParseException exc) {
+            try (var stream = Files.newInputStream(entryFile.getPath())) {
+                packageJson = new JsonMapper().readTree(stream);
+            }
+        } catch (JacksonException exc) {
             throw new ErrorResultException("Invalid JSON format in " + PACKAGE_JSON
                     + ": " + exc.getMessage());
         } catch (IOException exc) {
@@ -122,9 +123,10 @@ public class ExtensionProcessor implements AutoCloseable {
                 throw new ErrorResultException(entryNotFoundMessage(VSIX_MANIFEST));
             }
 
-            var mapper = new XmlMapper();
-            vsixManifest = mapper.readTree(entryFile.getPath().toFile());
-        } catch (JsonParseException exc) {
+            try (var stream = Files.newInputStream(entryFile.getPath())) {
+                vsixManifest = new XmlMapper().readTree(stream);
+            }
+        } catch (JacksonException exc) {
             throw new ErrorResultException("Invalid JSON format in " + VSIX_MANIFEST
                     + ": " + exc.getMessage());
         } catch (IOException exc) {
@@ -139,7 +141,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private JsonNode findByIdInArray(Iterable<JsonNode> iter, String id) {
         for(JsonNode node : iter){
             var idNode = node.get("Id");
-            if(idNode != null && idNode.asText().equals(id)){
+            if(idNode != null && idNode.asString().equals(id)){
                 return node;
             }
         }
@@ -148,72 +150,72 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public String getExtensionName() {
         loadVsixManifest();
-        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Id").asText();
+        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Id").asString();
     }
 
     public String getNamespace() {
         loadVsixManifest();
-        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Publisher").asText();
+        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Publisher").asString();
     }
 
     public List<String> getExtensionDependencies() {
         loadVsixManifest();
         var extDepenNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Code.ExtensionDependencies");
-        return asStringList(extDepenNode.path(MANIFEST_VALUE).asText(), ",");
+        return asStringList(extDepenNode.path(MANIFEST_VALUE).asString(), ",");
     }
 
     public List<String> getBundledExtensions() {
         loadVsixManifest();
         var extPackNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Code.ExtensionPack");
-        return asStringList(extPackNode.path(MANIFEST_VALUE).asText(), ",");
+        return asStringList(extPackNode.path(MANIFEST_VALUE).asString(), ",");
     }
 
     public List<String> getExtensionKinds() {
         loadVsixManifest();
         var extKindNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Code.ExtensionKind");
-        return asStringList(extKindNode.path(MANIFEST_VALUE).asText(), ",");
+        return asStringList(extKindNode.path(MANIFEST_VALUE).asString(), ",");
     }
 
     public String getHomepage() {
         loadVsixManifest();
         var extKindNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Services.Links.Learn");
-        return extKindNode.path(MANIFEST_VALUE).asText();
+        return extKindNode.path(MANIFEST_VALUE).asString();
     }
 
     public String getRepository() {
         loadVsixManifest();
         var sourceNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Services.Links.Source");
-        return sourceNode.path(MANIFEST_VALUE).asText();
+        return sourceNode.path(MANIFEST_VALUE).asString();
     }
 
     public String getBugs() {
         loadVsixManifest();
         var supportNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Services.Links.Support");
-        return supportNode.path(MANIFEST_VALUE).asText();
+        return supportNode.path(MANIFEST_VALUE).asString();
     }
 
     public String getGalleryColor() {
         loadVsixManifest();
         var colorNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Services.Branding.Color");
-        return colorNode.path(MANIFEST_VALUE).asText();
+        return colorNode.path(MANIFEST_VALUE).asString();
     }
 
     public String getGalleryTheme() {
         loadVsixManifest();
         var themeNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Services.Branding.Theme");
-        return themeNode.path(MANIFEST_VALUE).asText();
+        return themeNode.path(MANIFEST_VALUE).asString();
     }
 
     public List<String> getLocalizedLanguages() {
         loadVsixManifest();
         var languagesNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Code.LocalizedLanguages");
-        return asStringList(languagesNode.path(MANIFEST_VALUE).asText(), ",");
+        return asStringList(languagesNode.path(MANIFEST_VALUE).asString(), ",");
     }
 
     public boolean isPreview() {
         loadVsixManifest();
         var galleryFlags = vsixManifest.path(MANIFEST_METADATA).path("GalleryFlags");
-        return asStringList(galleryFlags.asText(), " ").contains("Preview");
+        return asStringList(galleryFlags.asString(), " ").contains("Preview");
     }
 
     public boolean isPreRelease() {
@@ -225,7 +227,7 @@ public class ExtensionProcessor implements AutoCloseable {
     public String getSponsorLink() {
         loadVsixManifest();
         var sponsorLinkNode = findByIdInArray(vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_PROPERTIES).path(MANIFEST_PROPERTY), "Microsoft.VisualStudio.Code.SponsorLink");
-        return sponsorLinkNode.path(MANIFEST_VALUE).asText();
+        return sponsorLinkNode.path(MANIFEST_VALUE).asString();
     }
 
     public ExtensionVersion getMetadata() {
@@ -236,25 +238,25 @@ public class ExtensionProcessor implements AutoCloseable {
         extVersion.setTargetPlatform(getTargetPlatform());
         extVersion.setPreview(isPreview());
         extVersion.setPreRelease(isPreRelease());
-        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asText();
+        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asString();
         if(StringUtils.isNotBlank(displayName)) {
             extVersion.setDisplayName(displayName);
         }
-        extVersion.setDescription(vsixManifest.path(MANIFEST_METADATA).path("Description").path("").asText());
+        extVersion.setDescription(vsixManifest.path(MANIFEST_METADATA).path("Description").path("").asString());
         extVersion.setEngines(getEngines(packageJson.path("engines")));
-        extVersion.setCategories(asStringList(vsixManifest.path(MANIFEST_METADATA).path("Categories").asText(), ","));
+        extVersion.setCategories(asStringList(vsixManifest.path(MANIFEST_METADATA).path("Categories").asString(), ","));
         extVersion.setExtensionKind(getExtensionKinds());
         extVersion.setTags(getTags());
-        extVersion.setLicense(packageJson.path("license").textValue());
+        extVersion.setLicense(packageJson.path("license").stringValue(null));
         extVersion.setHomepage(getHomepage());
         extVersion.setRepository(getRepository());
         extVersion.setSponsorLink(getSponsorLink());
         extVersion.setBugs(getBugs());
-        extVersion.setMarkdown(packageJson.path("markdown").textValue());
+        extVersion.setMarkdown(packageJson.path("markdown").stringValue(null));
         extVersion.setGalleryColor(getGalleryColor());
         extVersion.setGalleryTheme(getGalleryTheme());
         extVersion.setLocalizedLanguages(getLocalizedLanguages());
-        extVersion.setQna(packageJson.path("qna").textValue());
+        extVersion.setQna(packageJson.path("qna").stringValue(null));
 
         return extVersion;
     }
@@ -262,20 +264,20 @@ public class ExtensionProcessor implements AutoCloseable {
     public PackageMetadata getPackageMetadata() {
         loadPackageJson();
         return new PackageMetadata(
-                packageJson.path("publisher").asText(),
-                packageJson.path("name").asText(),
-                packageJson.path("version").asText(),
-                packageJson.path("displayName").asText()
+                packageJson.path("publisher").asString(),
+                packageJson.path("name").asString(),
+                packageJson.path("version").asString(),
+                packageJson.path("displayName").asString()
         );
     }
 
     public String getVersion() {
-        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Version").asText();
+        return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Version").asString();
     }
 
     public String getTargetPlatform() {
         loadVsixManifest();
-        var targetPlatform = vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("TargetPlatform").asText();
+        var targetPlatform = vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("TargetPlatform").asString();
         if (targetPlatform.isEmpty()) {
             targetPlatform = TargetPlatform.NAME_UNIVERSAL;
         }
@@ -285,7 +287,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
     public String getDisplayName() {
         loadVsixManifest();
-        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asText();
+        var displayName = vsixManifest.path(MANIFEST_METADATA).path("DisplayName").asString();
         if (StringUtils.isBlank(displayName)) {
             return getExtensionName();
         }
@@ -293,7 +295,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     private List<String> getTags() {
-        var tags = vsixManifest.path(MANIFEST_METADATA).path("Tags").asText();
+        var tags = vsixManifest.path(MANIFEST_METADATA).path("Tags").asString();
         return asStringList(tags, ",").stream()
                 .collect(Collectors.groupingBy(String::toLowerCase))
                 .entrySet().stream()
@@ -313,10 +315,8 @@ public class ExtensionProcessor implements AutoCloseable {
     private List<String> getEngines(JsonNode node) {
         if (node.isObject()) {
             var result = new ArrayList<String>();
-            var fieldIter = node.fields();
-            while (fieldIter.hasNext()) {
-                var entry = fieldIter.next();
-                result.add(entry.getKey() + "@" + entry.getValue().textValue());
+            for (Map.Entry<String, JsonNode> entry : node.properties()) {
+                result.add(entry.getKey() + "@" + entry.getValue().stringValue());
             }
             return result;
         }
@@ -464,7 +464,7 @@ public class ExtensionProcessor implements AutoCloseable {
 
     private String tryGetLicensePath() {
         loadVsixManifest();
-        var licensePath = vsixManifest.path(MANIFEST_METADATA).path("License").asText();
+        var licensePath = vsixManifest.path(MANIFEST_METADATA).path("License").asString();
         return licensePath.isEmpty()
                 ? tryGetAssetPath(ExtensionQueryResult.ExtensionFile.FILE_LICENSE)
                 : licensePath;
@@ -473,9 +473,9 @@ public class ExtensionProcessor implements AutoCloseable {
     private String tryGetAssetPath(String type) {
         loadVsixManifest();
         for(var asset : vsixManifest.path("Assets").path("Asset")) {
-            if(Optional.ofNullable(asset.findValue("Type")).map(JsonNode::asText).orElse("").equals(type)) {
+            if(Optional.ofNullable(asset.findValue("Type")).map(JsonNode::asString).orElse("").equals(type)) {
                 return Optional.ofNullable(asset.findValue("Path"))
-                        .map(JsonNode::asText)
+                        .map(JsonNode::asString)
                         .orElse(null);
             }
         }
@@ -489,8 +489,8 @@ public class ExtensionProcessor implements AutoCloseable {
         if (StringUtils.isEmpty(iconPath)) {
             loadPackageJson();
             var iconPathNode = packageJson.get("icon");
-            iconPath = iconPathNode != null && iconPathNode.isTextual()
-                    ? iconPathNode.asText().replace('\\', '/')
+            iconPath = iconPathNode != null && iconPathNode.isString()
+                    ? iconPathNode.asString().replace('\\', '/')
                     : null;
 
             if (StringUtils.isEmpty(iconPath)) {

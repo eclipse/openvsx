@@ -718,4 +718,3 @@ public class ExtensionScanCompletionService implements JobRequestHandler<Handler
         return scan.getNamespaceName() + "." + scan.getExtensionName() + " " + scan.getExtensionVersion();
     }
 }
-
