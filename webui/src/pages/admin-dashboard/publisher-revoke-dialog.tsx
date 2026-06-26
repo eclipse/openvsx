@@ -64,7 +64,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
 
     return (
         <>
-            <Button variant='contained' color='secondary' onClick={() => setDialogOpen(true)}>
+            <Button variant='contained' color='error' onClick={() => setDialogOpen(true)}>
                 Revoke Publisher Contributions
             </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
@@ -108,7 +108,7 @@ export const PublisherRevokeDialog: FunctionComponent<PublisherRevokeDialogProps
                     <Button variant='contained' color='primary' onClick={() => setDialogOpen(false)}>
                         Cancel
                     </Button>
-                    <ButtonWithProgress autoFocus sx={{ ml: 1 }} working={working} onClick={doRevoke}>
+                    <ButtonWithProgress autoFocus sx={{ ml: 1 }} color='error' working={working} onClick={doRevoke}>
                         Revoke Contributions
                     </ButtonWithProgress>
                 </DialogActions>

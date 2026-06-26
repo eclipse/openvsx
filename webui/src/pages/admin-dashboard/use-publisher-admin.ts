@@ -26,6 +26,10 @@ export const publisherAdminKeys = {
     list: (search: string, role: string) => ['admin', 'publishers', { search, role }] as const
 };
 
+// Shared prefix for the publisher write operations so a single `useIsMutating`
+// can tell whether any of them (role change, revokes) is currently in flight.
+export const publisherMutationKey = ['admin', 'publisher-mutation'] as const;
+
 export const usePublisherInfo = (login: string, provider = 'github', enabled = true) => {
     const { service } = useContext(MainContext);
     return useQuery({
@@ -69,6 +73,7 @@ export const useUpdatePublisherRole = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
+        mutationKey: [...publisherMutationKey, 'role'],
         mutationFn: async ({ provider, login, role }: { provider: string; login: string; role: PublisherRole }) => {
             const result = await service.admin.updateUserRole(provider, login, role);
             if (isError(result)) {
@@ -89,6 +94,7 @@ export const useUpdatePublisherRole = () => {
 export const useRevokePublisherContributions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
+        mutationKey: [...publisherMutationKey, 'revoke-contributions'],
         mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
             const result = await service.admin.revokePublisherContributions(provider, login);
             if (isError(result)) {
@@ -106,6 +112,7 @@ export const useRevokePublisherContributions = () => {
 export const useRevokeAccessTokens = () => {
     const { service } = useContext(MainContext);
     return useMutation({
+        mutationKey: [...publisherMutationKey, 'revoke-tokens'],
         mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
             const result = await service.admin.revokeAccessTokens(provider, login);
             if (isError(result)) {

@@ -8,51 +8,38 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, createContext, useContext, useMemo, useRef, useState } from 'react';
+import { FunctionComponent, SyntheticEvent, createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Alert,
+    Autocomplete,
     Avatar,
     Box,
     Chip,
     CircularProgress,
-    Divider,
-    FormControl,
+    IconButton,
     InputBase,
     MenuItem,
     Paper,
     Select,
     Stack,
-    Tooltip,
     Typography
 } from '@mui/material';
+import type { AutocompleteInputChangeReason, AutocompleteRenderInputParams } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import InfiniteScroll from 'react-infinite-scroller';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GitHubIcon from '@mui/icons-material/GitHub';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import PersonIcon from '@mui/icons-material/Person';
-import FolderSharedIcon from '@mui/icons-material/FolderShared';
-import BusinessIcon from '@mui/icons-material/Business';
-import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
-import { ButtonWithProgress } from '../../components/button-with-progress';
+import { useParams, useNavigate } from 'react-router-dom';
 import { AdminUser as PublisherRelationships } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { PublisherDetails } from './publisher-details';
-import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { handleError as formatError } from '../../utils';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
-import {
-    type PublisherRole,
-    useInfinitePublishers,
-    usePublisherInfo,
-    useUpdatePublisherRole
-} from './use-publisher-admin';
+import { useInfinitePublishers } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const UpdateContext = createContext({ handleUpdate: () => {} });
@@ -64,223 +51,22 @@ const ROLE_FILTER_OPTIONS = [
     { value: 'none', label: 'No role' }
 ];
 
-const ROLE_EDITOR_OPTIONS: { value: PublisherRole; label: string }[] = [
-    { value: 'none', label: 'No role' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'privileged', label: 'Privileged' }
-];
-
-const getPublisherKey = (entry: PublisherRelationships) => `${entry.user.provider}/${entry.user.loginName}`;
-
-const providerIcon = (provider: string | undefined) =>
-    provider === 'github' ? <GitHubIcon fontSize='small' /> : <PersonIcon fontSize='small' />;
+// How close to the bottom of the dropdown (in px) the user must scroll before the next page loads.
+const LOAD_MORE_THRESHOLD = 200;
 
 const roleIcon = (role: string | undefined) =>
     role ? <AdminPanelSettingsIcon fontSize='small' /> : <PersonIcon fontSize='small' />;
-
-function findScrollableAncestor(el: HTMLElement | null): HTMLElement | null {
-    while (el) {
-        const { overflowY } = getComputedStyle(el);
-        if (overflowY === 'auto' || overflowY === 'scroll') return el;
-        el = el.parentElement;
-    }
-    return null;
-}
-
-const RoleEditor: FunctionComponent<{
-    roleDraft: PublisherRole;
-    onChange: (role: PublisherRole) => void;
-    onSave: () => void;
-    saving: boolean;
-}> = ({ roleDraft, onChange, onSave, saving }) => (
-    <Stack spacing={1} sx={{ minWidth: 200 }}>
-        <Typography variant='subtitle2'>Role</Typography>
-        <Stack direction='row' spacing={1} alignItems='center'>
-            <FormControl size='small' sx={{ minWidth: 140 }}>
-                <Select value={roleDraft} onChange={e => onChange(e.target.value as PublisherRole)} displayEmpty>
-                    {ROLE_EDITOR_OPTIONS.map(o => (
-                        <MenuItem key={o.value} value={o.value}>
-                            {o.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-            <ButtonWithProgress working={saving} onClick={onSave} title='Save role'>
-                Save
-            </ButtonWithProgress>
-        </Stack>
-    </Stack>
-);
-
-interface PublisherListItemProps {
-    entry: PublisherRelationships;
-    index: number;
-    selected: boolean;
-    onToggle: (loginName: string, isExpanded: boolean) => void;
-}
-
-const PublisherListItem: FunctionComponent<PublisherListItemProps> = ({ entry, index, selected, onToggle }) => {
-    const { user } = entry;
-    const { user: currentUser } = useContext(MainContext);
-    const isCurrentUser = currentUser?.loginName === user.loginName && currentUser?.provider === user.provider;
-
-    const [roleDraft, setRoleDraft] = useState<PublisherRole>(() => (user.role as PublisherRole) ?? 'none');
-    const updateRole = useUpdatePublisherRole();
-
-    // Fetch details only for the row being opened, and keep the panel closed until
-    // they arrive so it expands fully-formed instead of popping into place.
-    const {
-        data: publisherInfo,
-        isLoading,
-        error
-    } = usePublisherInfo(user.loginName, user.provider ?? 'github', selected);
-    const expanded = selected && (!!publisherInfo || !!error);
-
-    const handleSaveRole = () => {
-        if (roleDraft === (user.role ?? 'none') || !user.provider) {
-            return;
-        }
-        updateRole.mutate({ provider: user.provider, login: user.loginName, role: roleDraft });
-    };
-
-    return (
-        <Accordion
-            expanded={expanded}
-            onChange={(_, isExpanded) => onToggle(user.loginName, isExpanded)}
-            disableGutters
-            elevation={0}
-            slotProps={{ transition: { unmountOnExit: true } }}
-            sx={{ '&:before': { display: 'none' }, borderTop: index === 0 ? 'none' : 1, borderColor: 'divider' }}>
-            <AccordionSummary
-                expandIcon={selected && isLoading ? <CircularProgress size={20} /> : <ExpandMoreIcon />}
-                sx={{ px: 0 }}>
-                <Stack direction='row' spacing={2} alignItems='center' sx={{ minWidth: 0, width: '100%' }}>
-                    <Avatar variant='rounded' src={user.avatarUrl} sx={{ width: 36, height: 36 }} />
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Stack direction='row' spacing={0.5} alignItems='center'>
-                            <Typography variant='subtitle2' noWrap>
-                                {user.loginName}
-                            </Typography>
-                            {isCurrentUser && (
-                                <Chip
-                                    label='you'
-                                    size='small'
-                                    color='info'
-                                    variant='outlined'
-                                    sx={{ height: 18, '& .MuiChip-label': { px: 0.5, fontSize: '0.65rem' } }}
-                                />
-                            )}
-                        </Stack>
-                        <Typography variant='caption' color='text.secondary' noWrap>
-                            {user.fullName || '—'}
-                        </Typography>
-                    </Box>
-                    <Stack direction='row' spacing={0.5} sx={{ flexShrink: 0 }}>
-                        <Chip
-                            icon={providerIcon(user.provider)}
-                            label={user.provider ?? '—'}
-                            size='small'
-                            variant='outlined'
-                        />
-                        <Chip
-                            icon={roleIcon(user.role)}
-                            label={user.role || 'none'}
-                            size='small'
-                            color={user.role ? 'primary' : 'default'}
-                            variant={user.role ? 'filled' : 'outlined'}
-                        />
-                    </Stack>
-                </Stack>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0, px: 0 }}>
-                {updateRole.isError && (
-                    <Alert severity='error' sx={{ mb: 2 }} onClose={() => updateRole.reset()}>
-                        {formatError(updateRole.error as Error | Partial<ErrorResponse>)}
-                    </Alert>
-                )}
-                <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                    <RoleEditor
-                        roleDraft={roleDraft}
-                        onChange={setRoleDraft}
-                        onSave={handleSaveRole}
-                        saving={updateRole.isPending}
-                    />
-                    {entry.namespaces.length > 0 && (
-                        <Stack spacing={1} sx={{ minWidth: 150 }}>
-                            <Stack direction='row' spacing={0.5} alignItems='center'>
-                                <FolderSharedIcon fontSize='small' color='action' />
-                                <Typography variant='subtitle2'>Namespaces</Typography>
-                            </Stack>
-                            <Stack direction='row' spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                                {entry.namespaces.map(ns => (
-                                    <Chip
-                                        key={ns.name}
-                                        label={ns.name}
-                                        size='small'
-                                        component={RouterLink}
-                                        to={`${AdminDashboardRoutes.NAMESPACE_ADMIN}/${encodeURIComponent(ns.name)}`}
-                                        clickable
-                                    />
-                                ))}
-                            </Stack>
-                        </Stack>
-                    )}
-                    {entry.customers.length > 0 && (
-                        <Stack spacing={1} sx={{ minWidth: 150 }}>
-                            <Stack direction='row' spacing={0.5} alignItems='center'>
-                                <BusinessIcon fontSize='small' color='action' />
-                                <Typography variant='subtitle2'>Customers</Typography>
-                            </Stack>
-                            <Stack spacing={0.5}>
-                                {entry.customers.map(cust => {
-                                    const tier = cust?.tier;
-                                    return (
-                                        <Stack key={cust.name} direction='row' spacing={0.5} alignItems='center'>
-                                            <Chip
-                                                label={cust.name}
-                                                size='small'
-                                                component={RouterLink}
-                                                to={`${AdminDashboardRoutes.CUSTOMERS}/${encodeURIComponent(cust.name)}`}
-                                                clickable
-                                            />
-                                            {tier && (
-                                                <Tooltip
-                                                    title={`${tier.capacity} req / ${tier.duration}s (${tier.refillStrategy.toLowerCase()})`}>
-                                                    <Chip
-                                                        label={tier.name}
-                                                        size='small'
-                                                        variant='outlined'
-                                                        color={tier.tierType === 'FREE' ? 'default' : 'primary'}
-                                                    />
-                                                </Tooltip>
-                                            )}
-                                            {cust && !tier && (
-                                                <Typography variant='caption' color='text.secondary'>
-                                                    no tier
-                                                </Typography>
-                                            )}
-                                        </Stack>
-                                    );
-                                })}
-                            </Stack>
-                        </Stack>
-                    )}
-                </Box>
-                <Divider sx={{ my: 2 }} />
-                {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
-                {publisherInfo && <PublisherDetails publisherInfo={publisherInfo} />}
-            </AccordionDetails>
-        </Accordion>
-    );
-};
 
 export const PublisherAdmin: FunctionComponent = () => {
     const { publisher: publisherParam } = useParams<{ publisher?: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { pageSettings } = useContext(MainContext);
 
     const [searchText, setSearchText] = useState(publisherParam ?? '');
+    const [inputValue, setInputValue] = useState(publisherParam ?? '');
     const [roleFilter, setRoleFilter] = useState('');
+    const [selected, setSelected] = useState<PublisherRelationships | null>(null);
 
     const debouncedSetSearch = useDebouncedCallback(setSearchText);
 
@@ -290,12 +76,17 @@ export const PublisherAdmin: FunctionComponent = () => {
     );
 
     const publishers = useMemo(() => data?.pages.flatMap(page => page.content) ?? [], [data]);
-    const totalSize = data?.pages[0]?.page.totalElements ?? 0;
-    // Top progress bar tracks search/filter loads; pagination has its own spinner.
     const listLoading = isFetching && !isFetchingNextPage;
 
-    const scrollParentRef = useRef<HTMLElement | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    // Resolve a deep-linked publisher once the matching page has loaded.
+    useEffect(() => {
+        if (publisherParam && !selected) {
+            const match = publishers.find(p => p.user.loginName === publisherParam);
+            if (match) {
+                setSelected(match);
+            }
+        }
+    }, [publisherParam, selected, publishers]);
 
     const updateContextValue = useMemo(
         () => ({
@@ -307,36 +98,148 @@ export const PublisherAdmin: FunctionComponent = () => {
         [queryClient]
     );
 
-    const getScrollParent = () => {
-        scrollParentRef.current ??= findScrollableAncestor(containerRef.current?.parentElement ?? null);
-        return scrollParentRef.current;
+    const clearSelection = () => {
+        if (selected || publisherParam) {
+            setSelected(null);
+            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
+        }
     };
 
-    const loadMorePublishers = () => {
-        if (hasNextPage && !isFetchingNextPage) {
+    const handleSelect = (_event: SyntheticEvent, value: PublisherRelationships | null) => {
+        if (!value) {
+            clearSelection();
+            return;
+        }
+        setSelected(value);
+        setInputValue(value.user.loginName);
+        navigate(`${AdminDashboardRoutes.PUBLISHER_ADMIN}/${encodeURIComponent(value.user.loginName)}`, {
+            replace: true
+        });
+    };
+
+    const handleInputChange = (_event: SyntheticEvent, value: string, reason: AutocompleteInputChangeReason) => {
+        setInputValue(value);
+        // 'reset' fires when the input syncs to the selected option's label — nothing else to do.
+        if (reason === 'reset') {
+            return;
+        }
+        clearSelection();
+        if (reason === 'clear') {
+            setSearchText('');
+        } else {
+            debouncedSetSearch(value);
+        }
+    };
+
+    const handleClear = () => {
+        setInputValue('');
+        setSearchText('');
+        clearSelection();
+    };
+
+    const loadMoreOnScroll = (event: SyntheticEvent) => {
+        const listbox = event.currentTarget as HTMLElement;
+        const reachedBottom = listbox.scrollHeight - listbox.scrollTop - listbox.clientHeight < LOAD_MORE_THRESHOLD;
+        if (reachedBottom && hasNextPage && !isFetchingNextPage) {
             void fetchNextPage();
         }
     };
 
-    const handleAccordionToggle = (loginName: string, isExpanded: boolean) => {
-        const target = isExpanded
-            ? `${AdminDashboardRoutes.PUBLISHER_ADMIN}/${encodeURIComponent(loginName)}`
-            : AdminDashboardRoutes.PUBLISHER_ADMIN;
-        navigate(target, { replace: true });
-    };
+    const searchIconColor = pageSettings?.themeType === 'dark' ? '#111111' : '#ffffff';
+
+    const renderInput = (params: AutocompleteRenderInputParams) => (
+        <Paper ref={params.InputProps.ref} elevation={3} sx={{ display: 'flex', width: '100%', alignItems: 'stretch' }}>
+            <InputBase
+                sx={{ flex: 1, pl: 1 }}
+                placeholder='Search by login or display name...'
+                inputProps={params.inputProps}
+                endAdornment={
+                    <Stack direction='row' alignItems='center' spacing={0.5} sx={{ pr: 0.5 }}>
+                        {isFetching && <CircularProgress color='inherit' size={18} />}
+                        {inputValue && (
+                            <IconButton size='small' onClick={handleClear} aria-label='Clear search'>
+                                <ClearIcon fontSize='small' />
+                            </IconButton>
+                        )}
+                    </Stack>
+                }
+            />
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: 'secondary.main',
+                    borderRadius: '0 4px 4px 0',
+                    p: 1
+                }}>
+                <SearchIcon sx={{ color: searchIconColor }} />
+            </Box>
+        </Paper>
+    );
 
     return (
         <UpdateContext.Provider value={updateContextValue}>
-            <Box ref={containerRef}>
+            <Box>
                 <SearchListContainer
                     searchContainer={[
                         <Box
                             key='publisher-admin-search'
                             sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-                            <StyledInput
-                                placeholder='Search by login or display name...'
-                                value={searchText}
-                                onChange={debouncedSetSearch}
+                            <Autocomplete
+                                sx={{ flex: 2, mr: { md: 1 }, mb: { xs: 2, md: 0 } }}
+                                options={publishers}
+                                value={selected}
+                                onChange={handleSelect}
+                                inputValue={inputValue}
+                                onInputChange={handleInputChange}
+                                getOptionLabel={option => option.user.loginName}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.user.loginName === value.user.loginName &&
+                                    option.user.provider === value.user.provider
+                                }
+                                filterOptions={x => x}
+                                autoHighlight
+                                clearOnBlur={false}
+                                handleHomeEndKeys
+                                forcePopupIcon={false}
+                                loading={listLoading}
+                                loadingText='Searching…'
+                                noOptionsText='No publishers matched the current filters.'
+                                ListboxProps={{ onScroll: loadMoreOnScroll }}
+                                renderInput={renderInput}
+                                renderOption={(props, option) => {
+                                    const { user } = option;
+                                    return (
+                                        <Box
+                                            component='li'
+                                            {...props}
+                                            key={`${user.provider}/${user.loginName}`}
+                                            sx={{ display: 'flex', gap: 0.6, alignItems: 'center' }}>
+                                            <Avatar
+                                                variant='rounded'
+                                                src={user.avatarUrl}
+                                                sx={{ width: 32, height: 32 }}
+                                            />
+                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                <Typography variant='body2' noWrap>
+                                                    {user.loginName}
+                                                </Typography>
+                                                <Typography variant='caption' color='text.secondary' noWrap>
+                                                    {user.fullName || '—'}
+                                                </Typography>
+                                            </Box>
+                                            {user.role ? (
+                                                <Chip
+                                                    icon={roleIcon(user.role)}
+                                                    label={user.role || 'none'}
+                                                    size='small'
+                                                    color='default'
+                                                    variant='outlined'
+                                                />
+                                            ) : null}
+                                        </Box>
+                                    );
+                                }}
                             />
                             <Paper elevation={3} sx={{ flex: 1, display: 'flex' }}>
                                 <Select
@@ -356,46 +259,40 @@ export const PublisherAdmin: FunctionComponent = () => {
                     listContainer={null}
                     loading={listLoading}
                 />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {totalSize > 0 && (
-                        <Typography variant='body2' color='text.secondary' sx={{ alignSelf: 'flex-end' }}>
-                            {totalSize} publisher{totalSize === 1 ? '' : 's'} found
-                        </Typography>
-                    )}
-
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        minHeight: { xs: 360, md: 'calc(100vh - 220px)' }
+                    }}>
                     {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
 
-                    {!isFetching && !error && publishers.length === 0 && (
-                        <Paper elevation={0} sx={{ p: 3, textAlign: 'center' }}>
-                            <Typography color='text.secondary'>No publishers matched the current filters.</Typography>
+                    {selected ? (
+                        <PublisherDetails
+                            key={`${selected.user.provider}/${selected.user.loginName}`}
+                            entry={selected}
+                        />
+                    ) : publisherParam && !isFetching ? (
+                        <Alert severity='info'>No publisher found for “{publisherParam}”.</Alert>
+                    ) : (
+                        <Paper
+                            variant='outlined'
+                            sx={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                gap: 1,
+                                p: 4,
+                                color: 'text.secondary',
+                                borderStyle: 'dashed'
+                            }}>
+                            <PersonIcon sx={{ fontSize: 56, opacity: 0.3 }} />
+                            <Typography>Search for a user and select one to view their details.</Typography>
                         </Paper>
-                    )}
-
-                    {publishers.length > 0 && (
-                        <InfiniteScroll
-                            loadMore={loadMorePublishers}
-                            hasMore={Boolean(hasNextPage)}
-                            threshold={200}
-                            useWindow={false}
-                            getScrollParent={getScrollParent}
-                            initialLoad={false}
-                            loader={
-                                <Box key='loader' sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                                    <CircularProgress size={24} />
-                                </Box>
-                            }>
-                            <Paper elevation={0} sx={{ overflow: 'hidden' }}>
-                                {publishers.map((entry, index) => (
-                                    <PublisherListItem
-                                        key={getPublisherKey(entry)}
-                                        entry={entry}
-                                        index={index}
-                                        selected={entry.user.loginName === publisherParam}
-                                        onToggle={handleAccordionToggle}
-                                    />
-                                ))}
-                            </Paper>
-                        </InfiniteScroll>
                     )}
                 </Box>
             </Box>

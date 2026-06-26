@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext } from 'react';
-import { Box } from '@mui/material';
+import { FunctionComponent, useContext, useState } from 'react';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { PublisherInfo } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -21,22 +21,47 @@ export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeToken
     const updateContext = useContext(UpdateContext);
     const { mutateAsync: revokeTokens, isPending: working } = useRevokeAccessTokens();
 
+    const [dialogOpen, setDialogOpen] = useState(false);
+
+    const { user } = props.publisherInfo;
+    const tokenCount = props.publisherInfo.activeAccessTokenNum;
+
     const doRevoke = async () => {
         try {
-            const user = props.publisherInfo.user;
             await revokeTokens({ provider: user.provider as string, login: user.loginName });
             updateContext.handleUpdate();
+            setDialogOpen(false);
         } catch (err) {
             handleError(err);
         }
     };
 
     return (
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <ButtonWithProgress autoFocus working={working} onClick={doRevoke}>
+        <>
+            <ButtonWithProgress working={false} color='error' onClick={() => setDialogOpen(true)}>
                 Revoke Access Tokens
+                <Box component='span' sx={{ ml: 0.75, opacity: 0.6 }}>
+                    {tokenCount}
+                </Box>
             </ButtonWithProgress>
-        </Box>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                <DialogTitle>Revoke Access Tokens</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Deactivate {tokenCount} active access token{tokenCount === 1 ? '' : 's'} of {user.loginName}?
+                        This cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={() => setDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress autoFocus sx={{ ml: 1 }} color='error' working={working} onClick={doRevoke}>
+                        Revoke Tokens
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 };
 

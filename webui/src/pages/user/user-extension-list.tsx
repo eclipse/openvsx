@@ -26,7 +26,7 @@ export const UserExtensionList: FunctionComponent<UserExtensionListProps> = prop
             component='div'
             sx={{
                 display: 'grid',
-                gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
+                gridTemplateColumns: `repeat(auto-fit, minmax(300px, 1fr))`,
                 gap: '.5rem',
                 mt: '1rem'
             }}>

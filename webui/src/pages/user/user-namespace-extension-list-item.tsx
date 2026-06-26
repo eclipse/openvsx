@@ -120,11 +120,12 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     return extension ? (
         <RouteLink to={route} style={{ textDecoration: 'none' }}>
             <Paper
-                elevation={0}
+                elevation={3}
                 title={`${extension.namespace}.${extension.name} ${extension.version} ${inactive ? '(deactivated)' : ''}`}
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
+                    p: 1,
                     opacity: getOpacity(extension),
                     filter: extension.deprecated ? 'grayscale(100%)' : null
                 }}>
@@ -133,6 +134,7 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     src={icon ?? pageSettings?.urls.extensionDefaultIcon ?? ''}
                     alt={extension.displayName ?? extension.name}
                     sx={{
+                        flex: '0 0 15%',
                         display: 'block',
                         mr: 2,
                         width: '3rem',
