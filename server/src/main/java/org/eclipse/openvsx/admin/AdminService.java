@@ -505,9 +505,6 @@ public class AdminService {
                     json.setNamespaces(repositories.findMemberships(user).stream()
                             .map(membership -> membership.getNamespace().toNamespaceDetailsJson())
                             .toList());
-                    json.setCustomers(repositories.findCustomerMemberships(user).stream()
-                            .map(membership -> membership.getCustomer().toJson())
-                            .toList());
                     return json;
                 });
     }

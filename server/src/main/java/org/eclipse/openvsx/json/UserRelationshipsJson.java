@@ -19,7 +19,6 @@ public class UserRelationshipsJson {
 
     private UserJson user;
     private List<NamespaceDetailsJson> namespaces;
-    private List<CustomerJson> customers;
 
     public UserJson getUser() {
         return user;
@@ -28,10 +27,6 @@ public class UserRelationshipsJson {
     public List<NamespaceDetailsJson> getNamespaces() {
         return namespaces;
     }
-
-    public List<CustomerJson> getCustomers() {
-        return customers;
-    }
     
     public void setUser(UserJson user) {
         this.user = user;
@@ -39,10 +34,6 @@ public class UserRelationshipsJson {
 
     public void setNamespaces(List<NamespaceDetailsJson> namespaces) {
         this.namespaces = namespaces;
-    }
-
-    public void setCustomers(List<CustomerJson> customers) {
-        this.customers = customers;
     }
 
 }

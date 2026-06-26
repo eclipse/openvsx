@@ -174,7 +174,6 @@ export interface UserData {
 export interface AdminUser {
     user: UserData;
     namespaces: NamespaceDetails[];
-    customers: Customer[];
 }
 
 export interface AdminUsersResult {
