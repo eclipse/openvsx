@@ -9,9 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.micrometer.observation.annotation.Observed;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
@@ -27,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -136,16 +135,6 @@ public class WebResourceService {
             try (var in = zip.getInputStream(fileEntry)) {
                 Files.copy(in, p);
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
-    }
-
-    private void writeJsonFile(Path file, ObjectMapper mapper, JsonNode node) {
-        FileUtil.writeSync(file, p -> {
-            try {
-                mapper.writeValue(p.toFile(), node);
-            } catch(IOException e) {
                 throw new UncheckedIOException(e);
             }
         });

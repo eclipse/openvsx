@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -31,6 +29,8 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 import java.io.IOException;
 import java.net.URI;
@@ -332,7 +332,7 @@ public class StorageUtilService implements IStorageService {
                     var mapper = new ObjectMapper();
                     var value = mapper.createArrayNode();
                     for (var item : node) {
-                        value.add(baseUrl + item.asText());
+                        value.add(baseUrl + item.asString());
                     }
                     mapper.writeValue(outputStream, value);
                 });

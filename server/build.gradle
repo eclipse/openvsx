@@ -23,6 +23,7 @@ def jooqSrcDir = 'src/main/jooq-gen'
 // ext['netty.version'] = '4.1.132.Final'
 
 ext['opentelemetry.version'] = '1.63.0'
+ext['flyway.version'] = libs.versions.flyway
 
 java {
     sourceCompatibility = libs.versions.java.get()
@@ -56,6 +57,7 @@ dependencies {
             replacedBy("org.springframework.boot:spring-boot-starter-jetty")
         }
     }
+    implementation "org.springframework.boot:spring-boot-starter-restclient"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-jooq"
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
@@ -65,10 +67,10 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-actuator"
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-mail"
-    implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
     implementation "org.springframework.session:spring-session-jdbc"
+    implementation "org.springframework.boot:spring-boot-thymeleaf"
 
     implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "com.github.ben-manes.caffeine:caffeine"
@@ -88,6 +90,7 @@ dependencies {
 
     implementation libs.jobrunr.spring
 
+    implementation "org.springframework.boot:spring-boot-flyway"
     implementation libs.flyway.core
     implementation libs.flyway.database.postgresql
 
@@ -98,6 +101,7 @@ dependencies {
 
     implementation libs.springdoc
 
+    implementation libs.jackson.dataformat.xml
     implementation libs.jackson.dataformat.toml
 
     implementation libs.woodstox.core
@@ -125,11 +129,11 @@ dependencies {
     testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test"
     testImplementation "org.springframework.security:spring-security-test"
 
+    testImplementation "org.springframework.boot:spring-boot-testcontainers"
     testImplementation libs.testcontainers.elasticsearch
     testImplementation libs.testcontainers.localstack
     testImplementation libs.testcontainers.junit.jupiter
-
-    testRuntimeOnly libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.postgresql
 
     gatling libs.gatling.core
     gatling libs.gatling.app

@@ -17,8 +17,6 @@ import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ListBlobsOptions;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
@@ -33,6 +31,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -213,7 +213,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
                 var node = getObjectMapper().readTree(line);
                 String[] pathParams = null;
                 if (isGetBlobOperation(node) && isStatusOk(node) && isExtensionPackageUri(node) && isNotOpenVSXUserAgent(node)) {
-                    var uri = node.get("uri").asText();
+                    var uri = node.get("uri").asString();
                     pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
                 }
                 if (pathParams != null && storageBlobContainer.equals(pathParams[1])) {
@@ -226,7 +226,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     }
 
     private boolean isGetBlobOperation(JsonNode node) {
-        return node.get("operationName").asText().equals("GetBlob");
+        return node.get("operationName").asString().equals("GetBlob");
     }
 
     private boolean isStatusOk(JsonNode node) {
@@ -234,11 +234,11 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     }
 
     private boolean isExtensionPackageUri(JsonNode node) {
-        return node.get("uri").asText().endsWith(".vsix");
+        return node.get("uri").asString().endsWith(".vsix");
     }
 
     private boolean isNotOpenVSXUserAgent(JsonNode node) {
-        var userAgentHeader = node.path("properties").path("userAgentHeader").asText();
+        var userAgentHeader = node.path("properties").path("userAgentHeader").asString();
         return !AZURE_USER_AGENT.equals(userAgentHeader);
     }
 
