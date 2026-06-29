@@ -10,7 +10,7 @@ USER gitpod
 RUN bash -c ". /home/gitpod/.sdkman/bin/sdkman-init.sh \
     && sdk install java 25-tem"
 
-RUN curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.7.1-linux-x86_64.tar.gz --output elasticsearch-linux-x86_64.tar.gz \
+RUN curl https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-9.2.8-linux-x86_64.tar.gz --output elasticsearch-linux-x86_64.tar.gz \
     && tar -xzf elasticsearch-linux-x86_64.tar.gz \
     && rm elasticsearch-linux-x86_64.tar.gz
-ENV ES_HOME="$HOME/elasticsearch-8.7.1"
+ENV ES_HOME="$HOME/elasticsearch-9.2.8"

@@ -51,7 +51,7 @@ You can find the deployment YAML configuration in the `openvsx-deployment.yml` f
 * `ROUTE_NAME`: The name of the route to access the OpenVSX server (default: internal)
 * `NAMESPACE`: The namespace where OpenVSX will be deployed (default: openvsx)
 * `POSTGRESQL_IMAGE`: The PostgreSQL image to use for the database (default: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:15-el8)
-* `OPENVSX_ELASTICSEARCH_IMAGE`: The image for Elasticsearch (default: docker.elastic.co/elasticsearch/elasticsearch:8.7.1).
+* `OPENVSX_ELASTICSEARCH_IMAGE`: The image for Elasticsearch (default: docker.elastic.co/elasticsearch/elasticsearch:9.2.8).
 * `OPENVSX_SERVER_IMAGE`: The image for the OpenVSX Server.
 * `OPENVSX_CLI_IMAGE`: The image for the OpenVSX CLI.
 * `OVSX_PAT_BASE64`: Base64 encoded OVSX personal access token.

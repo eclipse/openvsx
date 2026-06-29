@@ -264,7 +264,7 @@ objects:
         volumes:
         - name: extensions-storage
           persistentVolumeClaim:
-            claimName: extensions-pvc             
+            claimName: extensions-pvc
 - apiVersion: v1
   kind: Service
   metadata:
@@ -375,7 +375,7 @@ parameters:
   displayName: OpenVSX CLI image
   description: OpenVSX CLI image to use for the deployment of the OpenVSX CLI
 - name: OPENVSX_ELASTICSEARCH_IMAGE
-  value: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
+  value: docker.elastic.co/elasticsearch/elasticsearch:9.2.8
   displayName: OpenVSX Elasticsearch image
   description: OpenVSX Elasticsearch image to use for the deployment of the OpenVSX Elasticsearch
 - name: OVSX_PAT_BASE64

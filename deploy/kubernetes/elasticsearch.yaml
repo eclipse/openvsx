@@ -30,7 +30,7 @@ spec:
             privileged: true
       containers:
         - name: elasticsearch
-          image: docker.elastic.co/elasticsearch/elasticsearch:8.18.8
+          image: docker.elastic.co/elasticsearch/elasticsearch:9.2.8
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
