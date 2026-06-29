@@ -19,7 +19,7 @@ import org.springframework.web.server.ServerErrorException;
 @Converter
 public class AuthTokenConverter implements AttributeConverter<AuthToken, String> {
 
-    private final JsonMapper jsonMapper = new JsonMapper();
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     @Override
     public String convertToDatabaseColumn(AuthToken data) {
