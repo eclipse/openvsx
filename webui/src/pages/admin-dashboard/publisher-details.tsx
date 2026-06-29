@@ -31,7 +31,7 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import GavelIcon from '@mui/icons-material/Gavel';
-import { UserRelationships } from '../../extension-registry-types';
+import { UserRelationships, SuccessResult } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { UserExtensionList } from '../user/user-extension-list';
@@ -45,7 +45,6 @@ import {
     usePublisherInfo,
     useUpdatePublisherRole
 } from './use-publisher-admin';
-import { SuccessResult } from '../../../lib';
 
 // Ordered as an escalating permission scale, low → high.
 const ROLE_OPTIONS: { value: PublisherRole; label: string }[] = [
