@@ -39,6 +39,8 @@ spring:
     store-type: jdbc
     jdbc:
       initialize-schema: never
+  thymeleaf:
+    check-template-location: false
 
 #  mail:
 #    host: "localhost"
