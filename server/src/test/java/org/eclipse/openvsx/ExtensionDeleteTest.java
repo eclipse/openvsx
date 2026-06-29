@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -40,25 +41,27 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * Concurrency test for {@link ExtensionService#deleteExtension}.
+ * Concurrency tests for delete-all operations in {@link ExtensionService} and
+ * {@link AdminService}.
  * <p>
- * This test simulates a race condition where an extension owner deletes all of their published
- * versions at the same time as a different publisher commits a brand-new version of the same
- * extension.
+ * Both services expose a delete-all path that first checks how many versions exist
+ * and then deletes them. Without an extension-row lock, a concurrent publish can slip
+ * in between the check and the actual deletion and have its newly committed version
+ * silently removed as a side effect.
  * <p>
- * Without an extension-row lock, the delete-all operation may accidentally remove the other
- * publisher's newly committed version, which is an unauthorized side effect. With the lock,
- * the publishing is forced to wait until the delete finishes, preventing any unintended data loss.
+ * The race condition is deliberately triggered by intercepting the boundary call that
+ * separates the check from the act (using a spy), pausing the delete operation just
+ * long enough for the concurrent publish to commit.
  * <p>
- * The race condition is deliberately triggered by intercepting the call to
- * {@link RepositoryService#isDeleteAllVersions} using a spy, which pauses the delete operation
- * just long enough for the concurrent publish to slip in.
+ * {@link ExtensionService#deleteExtension} is protected by a {@code SELECT … FOR UPDATE NOWAIT}
+ * lock and therefore passes. {@link AdminService#deleteExtension} carries no such lock and
+ * is expected to fail these tests until the same protection is added.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
     "ovsx.elasticsearch.enabled=false"
 })
 @ActiveProfiles("test_db")
-class ExtensionServiceDeleteTest {
+class ExtensionDeleteTest {
 
     private static final String NAMESPACE = "race-testns";
     private static final String EXTENSION = "race-testext";
@@ -73,6 +76,9 @@ class ExtensionServiceDeleteTest {
 
     @Autowired
     ExtensionService extensionService;
+
+    @Autowired
+    AdminService adminService;
 
     @MockitoSpyBean
     RepositoryService repositories;
@@ -127,7 +133,7 @@ class ExtensionServiceDeleteTest {
     }
 
     @Test
-    void deleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
+    void userDeleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
         // Force a concurrent publish into the window between the check and the actual deletion.
         doAnswer(invocation -> {
             var result = invocation.callRealMethod();
@@ -155,6 +161,51 @@ class ExtensionServiceDeleteTest {
         assertThat(publisherSucceeded.get() && !otherVersionExists)
                 .as("a version successfully published by another user must never be silently "
                         + "deleted by a concurrent delete-all on the same extension")
+                .isFalse();
+        assertThat(otherVersionExists && !extensionExists())
+                .as("a committed version must never be left orphaned by a removed extension")
+                .isFalse();
+    }
+
+    /**
+     * {@link AdminService#deleteExtension} decides whether to delete the whole extension by
+     * comparing {@code countVersions} against the size of the requested target list. That
+     * comparison is not protected by any lock, so a concurrent publish that commits between
+     * the count check and the actual deletion will have its version silently swept away by
+     * the delete-all.
+     */
+    @Test
+    void adminDeleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
+        // Intercept the count check, which is the boundary between "decide delete-all" and
+        // "execute delete-all". Starting the concurrent publish here ensures it commits before
+        // the delete transaction opens, so findVersions will return both versions and both
+        // will be deleted — demonstrating the race condition.
+        doAnswer(invocation -> {
+            var result = invocation.callRealMethod();
+            if (raceTriggered.compareAndSet(false, true)) {
+                startConcurrentPublish();
+                publisherFinished.await(RACE_WINDOW_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            }
+            return result;
+        }).when(repositories).countVersions(any(), any());
+
+        var admin = new UserData();
+        admin.setId(ownerId);
+        admin.setLoginName(OWNER_LOGIN);
+
+        // The admin asks to delete the only version that currently exists.
+        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
+        adminService.deleteExtension(admin, NAMESPACE, EXTENSION, targets);
+
+        // Let the (possibly blocked) publisher run to completion now that the delete committed.
+        if (publisherThread != null) {
+            publisherThread.join(TimeUnit.SECONDS.toMillis(10));
+        }
+
+        var otherVersionExists = versionExists("2.0.0");
+        assertThat(publisherSucceeded.get() && !otherVersionExists)
+                .as("a version successfully published by another user must never be silently "
+                        + "deleted by a concurrent admin delete-all on the same extension")
                 .isFalse();
         assertThat(otherVersionExists && !extensionExists())
                 .as("a committed version must never be left orphaned by a removed extension")
