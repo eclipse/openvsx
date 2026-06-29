@@ -21,7 +21,7 @@ import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.RedisClusterClient;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JavaType;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,7 +34,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisClusterCacheListener.class);
 
     private final RedisClusterClient redisClusterClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
     private final String updateChannel;
     private final JavaType deserializeType;
     private final ApplicationEventPublisher eventPublisher;
@@ -48,7 +48,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
     public JedisClusterCacheListener(RedisClusterClient redisClusterClient, String cacheName, Class<K> keyType, Class<V> valueType, ApplicationEventPublisher eventPublisher) {
         this.redisClusterClient = redisClusterClient;
         this.updateChannel = cacheName.concat(":update");
-        this.deserializeType = objectMapper.getTypeFactory().constructParametricType(CacheUpdateEvent.class, keyType, valueType);
+        this.deserializeType = jsonMapper.getTypeFactory().constructParametricType(CacheUpdateEvent.class, keyType, valueType);
         this.eventPublisher = eventPublisher;
         subscribe();
     }
@@ -107,7 +107,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
 
     private void onCacheUpdateEvent(String message) {
         try {
-            CacheUpdateEvent<K, V> event = objectMapper.readValue(message, deserializeType);
+            CacheUpdateEvent<K, V> event = jsonMapper.readValue(message, deserializeType);
             this.eventPublisher.publishEvent(event);
         } catch (JacksonException e) {
             throw new RuntimeException(e);

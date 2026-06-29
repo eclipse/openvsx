@@ -110,7 +110,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(AdminAPI.class)
 @MockitoBean(types = {
@@ -1497,13 +1497,13 @@ class AdminAPITest {
     private String namespaceJson(Consumer<NamespaceJson> content) throws JacksonException {
         var json = new NamespaceJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String namespaceMemberJson(Consumer<NamespaceMembershipListJson> content) throws JacksonException {
         var json = new NamespaceMembershipListJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private List<ExtensionVersion> mockExtension(int numberOfVersions, int numberOfBundles, int numberOfDependants) {
@@ -1640,29 +1640,29 @@ class AdminAPITest {
     private String adminStatisticsJson(Consumer<AdminStatisticsJson> content) throws JacksonException {
         var json = new AdminStatisticsJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String extensionJson(Consumer<ExtensionJson> content) throws JacksonException {
         var json = new ExtensionJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String publishInfoJson(Consumer<UserPublishInfoJson> content) throws JacksonException {
         var json = new UserPublishInfoJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
     
     @TestConfiguration

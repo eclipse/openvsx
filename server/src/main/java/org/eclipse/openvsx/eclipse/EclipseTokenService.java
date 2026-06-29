@@ -30,7 +30,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.List;
@@ -44,6 +44,7 @@ public class EclipseTokenService {
     private final TransactionTemplate transactions;
     private final EntityManager entityManager;
     private final ClientRegistrationRepository clientRegistrationRepository;
+    private final JsonMapper jsonMapper;
 
     public EclipseTokenService(
             TransactionTemplate transactions,
@@ -53,6 +54,7 @@ public class EclipseTokenService {
         this.transactions = transactions;
         this.entityManager = entityManager;
         this.clientRegistrationRepository = clientRegistrationRepository;
+        this.jsonMapper = JsonMapper.builder().build();
     }
 
     public AuthToken updateEclipseToken(long userId, OAuth2AccessToken accessToken, OAuth2RefreshToken refreshToken) {
@@ -123,8 +125,6 @@ public class EclipseTokenService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
-        var objectMapper = new ObjectMapper();
-
         var data = new LinkedMultiValueMap<>();
         data.add("grant_type", "refresh_token");
         data.add("client_id", reg.getClientId());
@@ -135,7 +135,7 @@ public class EclipseTokenService {
             var request = new HttpEntity<>(data, headers);
             var restTemplate = new RestTemplate();
             var response = restTemplate.postForObject(tokenUri, request, String.class);
-            var root = objectMapper.readTree(response);
+            var root = jsonMapper.readTree(response);
             var newTokenValue = root.get("access_token").asString();
             var newRefreshTokenValue = root.get("refresh_token").asString();
             var expires_in = root.get("expires_in").asLong();

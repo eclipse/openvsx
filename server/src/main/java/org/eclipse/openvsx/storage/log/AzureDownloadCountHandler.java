@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.util.UriUtils;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -59,8 +59,8 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
 
     private final SettingsService settings;
     private final DownloadCountProcessor processor;
+    private final JsonMapper jsonMapper;
     private BlobContainerClient containerClient;
-    private ObjectMapper objectMapper;
     private Pattern blobItemNamePattern;
 
     @Value("${ovsx.logs.azure.sas-token:}")
@@ -84,6 +84,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     public AzureDownloadCountHandler(SettingsService settings, DownloadCountProcessor processor) {
         this.settings = settings;
         this.processor = processor;
+        this.jsonMapper = JsonMapper.shared();
     }
 
     public String getRecurringJobId() {
@@ -210,7 +211,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
             var lines = reader.lines().iterator();
             while (lines.hasNext()) {
                 var line = lines.next();
-                var node = getObjectMapper().readTree(line);
+                var node = jsonMapper.readTree(line);
                 String[] pathParams = null;
                 if (isGetBlobOperation(node) && isStatusOk(node) && isExtensionPackageUri(node) && isNotOpenVSXUserAgent(node)) {
                     var uri = node.get("uri").asString();
@@ -285,14 +286,6 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
         }
 
         return containerClient;
-    }
-
-    private ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-        }
-
-        return objectMapper;
     }
 
     private boolean isCorrectName(String name) {

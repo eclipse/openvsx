@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 
@@ -36,7 +36,7 @@ class ExtensionScanPersistenceServiceTest {
 
     @Mock RepositoryService repositories;
     @Mock
-    ObjectMapper objectMapper;
+    JsonMapper jsonMapper;
     @Mock FileDecisionRepository fileDecisionRepository;
     @Mock ScannerJobRepository scannerJobRepository;
     @Mock ScanCheckResultRepository scanCheckResultRepository;
@@ -46,7 +46,14 @@ class ExtensionScanPersistenceServiceTest {
 
     @BeforeEach
     void setUp() {
-        svc = new ExtensionScanPersistenceService(repositories, objectMapper, fileDecisionRepository, scannerJobRepository, scanCheckResultRepository, scannerRegistry);
+        svc = new ExtensionScanPersistenceService(
+                repositories,
+                jsonMapper,
+                fileDecisionRepository,
+                scannerJobRepository,
+                scanCheckResultRepository,
+                scannerRegistry
+        );
     }
 
     @Test

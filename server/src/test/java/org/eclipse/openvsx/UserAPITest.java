@@ -55,7 +55,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -575,7 +575,7 @@ class UserAPITest {
     private String userJson(Consumer<UserJson> content) throws JacksonException {
         var json = new UserJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private void mockAccessTokens() {
@@ -605,13 +605,13 @@ class UserAPITest {
     private String accessTokenJson(Consumer<AccessTokenJson> content) throws JacksonException {
         var json = new AccessTokenJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String accessTokensJson(Consumer<List<AccessTokenJson>> content) throws JacksonException {
         var json = new ArrayList<AccessTokenJson>();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private void mockOwnMemberships() {
@@ -639,13 +639,13 @@ class UserAPITest {
     private String namespacesJson(Consumer<List<NamespaceJson>> content) throws JacksonException {
         var json = new ArrayList<NamespaceJson>();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String extensionJson(Consumer<List<ExtensionJson>> content) throws JacksonException {
         var json = new ArrayList<ExtensionJson>();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private void mockNamespaceMemberships(String userRole) {
@@ -673,17 +673,17 @@ class UserAPITest {
         var json = new NamespaceMembershipListJson();
         json.setNamespaceMemberships(new ArrayList<>());
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private Namespace mockNamespace() {

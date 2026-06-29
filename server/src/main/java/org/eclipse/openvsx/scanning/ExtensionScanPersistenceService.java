@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -55,7 +55,7 @@ public class ExtensionScanPersistenceService {
     private static final Logger logger = LoggerFactory.getLogger(ExtensionScanPersistenceService.class);
 
     private final RepositoryService repositories;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
     private final FileDecisionRepository fileDecisionRepository;
     private final ScannerJobRepository scannerJobRepository;
     private final ScanCheckResultRepository scanCheckResultRepository;
@@ -63,14 +63,14 @@ public class ExtensionScanPersistenceService {
 
     public ExtensionScanPersistenceService(
             RepositoryService repositories,
-            ObjectMapper objectMapper,
+            JsonMapper jsonMapper,
             FileDecisionRepository fileDecisionRepository,
             ScannerJobRepository scannerJobRepository,
             ScanCheckResultRepository scanCheckResultRepository,
             ScannerRegistry scannerRegistry
     ) {
         this.repositories = repositories;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
         this.fileDecisionRepository = fileDecisionRepository;
         this.scannerJobRepository = scannerJobRepository;
         this.scanCheckResultRepository = scanCheckResultRepository;
@@ -502,7 +502,7 @@ public class ExtensionScanPersistenceService {
             return null;
         }
         try {
-            return objectMapper.writeValueAsString(fileHashes);
+            return jsonMapper.writeValueAsString(fileHashes);
         } catch (JacksonException e) {
             logger.warn("Failed to serialize file hashes: {}", e.getMessage());
             return null;
@@ -587,7 +587,7 @@ public class ExtensionScanPersistenceService {
             return Collections.emptyMap();
         }
         try {
-            return objectMapper.readValue(fileHashesJson, new TypeReference<Map<String, String>>() {});
+            return jsonMapper.readValue(fileHashesJson, new TypeReference<Map<String, String>>() {});
         } catch (JacksonException e) {
             logger.warn("Failed to parse file hashes JSON: {}", e.getMessage());
             return Collections.emptyMap();

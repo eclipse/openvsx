@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,12 +50,14 @@ public class ExtensionVersionIntegrityService {
     protected final Logger logger = LoggerFactory.getLogger(ExtensionVersionIntegrityService.class);
 
     private final EntityManager entityManager;
+    private final JsonMapper jsonMapper;
 
     @Value("${ovsx.integrity.key-pair:}")
     String keyPairMode;
 
     public ExtensionVersionIntegrityService(EntityManager entityManager) {
         this.entityManager = entityManager;
+        this.jsonMapper = JsonMapper.shared();
     }
 
     public boolean isEnabled() {
@@ -75,7 +77,7 @@ public class ExtensionVersionIntegrityService {
         boolean verified;
         try {
             var signer = new Ed25519Signer();
-            signer.init(false,  publicKeyParameters);
+            signer.init(false, publicKeyParameters);
             try (var in = Files.newInputStream(extensionFile.getPath())) {
                 int len;
                 var buffer = new byte[1024];
@@ -154,8 +156,7 @@ public class ExtensionVersionIntegrityService {
 
     private TempFile generateSignatureManifest(TempFile extensionFile) throws IOException {
         var base64 = new Base64();
-        var mapper = new ObjectMapper();
-        var manifestEntries = mapper.createObjectNode();
+        var manifestEntries = jsonMapper.createObjectNode();
         try(var zip = new ZipFile(extensionFile.getPath().toFile())) {
             var iterator = zip.stream().iterator();
             while(iterator.hasNext()) {
@@ -165,28 +166,28 @@ public class ExtensionVersionIntegrityService {
                 }
 
                 try (var entryStream = zip.getInputStream(entry)) {
-                    var manifestEntry = generateManifestEntry(entryStream, entry.getSize(), mapper, base64);
+                    var manifestEntry = generateManifestEntry(entryStream, entry.getSize(), base64);
                     manifestEntries.set(new String(base64.encode(entry.getName().getBytes(StandardCharsets.UTF_8))), manifestEntry);
                 }
             }
         }
 
-        var manifest = mapper.createObjectNode();
+        var manifest = jsonMapper.createObjectNode();
         try (var extensionStream = Files.newInputStream(extensionFile.getPath())) {
-            manifest.set("package", generateManifestEntry(extensionStream, Files.size(extensionFile.getPath()), mapper, base64));
+            manifest.set("package", generateManifestEntry(extensionStream, Files.size(extensionFile.getPath()), base64));
         }
         manifest.set("entries", manifestEntries);
 
         var manifestFile = new TempFile("signature", ".manifest");
-        mapper.writeValue(manifestFile.getPath().toFile(), manifest);
+        jsonMapper.writeValue(manifestFile.getPath().toFile(), manifest);
         return manifestFile;
     }
 
-    private JsonNode generateManifestEntry(InputStream stream, long size, ObjectMapper mapper, Base64 base64) throws IOException {
-        var manifestEntry = mapper.createObjectNode();
+    private JsonNode generateManifestEntry(InputStream stream, long size, Base64 base64) throws IOException {
+        var manifestEntry = jsonMapper.createObjectNode();
         manifestEntry.put("size", size);
 
-        var manifestEntryDigests = mapper.createObjectNode();
+        var manifestEntryDigests = jsonMapper.createObjectNode();
         var sha256 = new String(base64.encode(DigestUtils.sha256(stream)));
         manifestEntryDigests.put("sha256", sha256);
         manifestEntry.set("digests", manifestEntryDigests);

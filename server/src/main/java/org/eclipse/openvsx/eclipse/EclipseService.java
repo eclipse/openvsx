@@ -85,7 +85,7 @@ public class EclipseService {
         this.extensions = extensions;
         this.entityManager = entityManager;
         this.restTemplate = restTemplate;
-        this.jsonMapper = new JsonMapper();
+        this.jsonMapper = JsonMapper.builder().build();
     }
 
     public boolean isActive() {

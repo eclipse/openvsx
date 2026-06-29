@@ -28,7 +28,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -126,7 +126,7 @@ public class ExtensionControlService {
     public JsonNode getExtensionControlJson() throws IOException {
         var url = URI.create("https://github.com/open-vsx/publish-extensions/raw/master/extension-control/extensions.json").toURL();
         try (var inputStream = url.openStream()) {
-            return new ObjectMapper().readValue(inputStream, JsonNode.class);
+            return JsonMapper.shared().readValue(inputStream, JsonNode.class);
         }
     }
 

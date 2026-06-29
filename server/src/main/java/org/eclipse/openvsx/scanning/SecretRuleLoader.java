@@ -20,8 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +40,7 @@ import java.util.Map;
 public class SecretRuleLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(SecretRuleLoader.class);
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+    private final YAMLMapper yamlMapper = YAMLMapper.builder().build();
 
     /**
      * Container for loaded rules and global allowlist configuration.

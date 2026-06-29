@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -35,6 +35,7 @@ public class RelevanceService {
     protected final Logger logger = LoggerFactory.getLogger(RelevanceService.class);
 
     private final RepositoryService repositories;
+    private final JsonMapper jsonMapper;
 
     @Value("${ovsx.search.relevance.rating:1.0}")
     double ratingRelevance;
@@ -49,6 +50,7 @@ public class RelevanceService {
 
     public RelevanceService(RepositoryService repositories) {
         this.repositories = repositories;
+        this.jsonMapper = JsonMapper.shared();
     }
 
     public @Nullable ExtensionSearch toSearchEntry(Extension extension, SearchStats stats) {
@@ -110,7 +112,7 @@ public class RelevanceService {
             logger.debug("[{}] INVALID RELEVANCE", extensionId);
             var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
             try {
-                message += " " + new ObjectMapper().writeValueAsString(stats);
+                message += " " + jsonMapper.writeValueAsString(stats);
             } catch (JacksonException exc) {
                 // Ignore exception
             }

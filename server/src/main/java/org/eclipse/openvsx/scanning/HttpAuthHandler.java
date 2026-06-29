@@ -47,7 +47,7 @@ public class HttpAuthHandler {
      */
     public HttpAuthHandler(
         String scannerName,
-            RemoteScannerProperties.@Nullable AuthConfig authConfig,
+        RemoteScannerProperties.@Nullable AuthConfig authConfig,
         RestTemplate restTemplate
     ) {
         this.scannerName = scannerName;

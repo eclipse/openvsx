@@ -29,7 +29,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,6 +51,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
     private final RestTemplate nonRedirectingRestTemplate;
     private final UrlConfigService urlConfigService;
     private final ExtensionValidator extensionValidator;
+    private final JsonMapper jsonMapper;
 
     public UpstreamVSCodeService(
             RestTemplate restTemplate,
@@ -64,6 +65,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
         this.nonRedirectingRestTemplate = nonRedirectingRestTemplate;
         this.urlConfigService = urlConfigService;
         this.extensionValidator = extensionValidator;
+        this.jsonMapper = JsonMapper.shared();
     }
 
     public boolean isValid() {
@@ -168,11 +170,10 @@ public class UpstreamVSCodeService implements IVSCodeService {
                 }
 
                 if (proxy != null && MediaType.APPLICATION_JSON.equals(response.getHeaders().getContentType())) {
-                    var mapper = new ObjectMapper();
-                    var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
+                    var json = proxy.rewriteUrls(jsonMapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
                             .headers(HttpHeadersUtil.createJsonFileResponseHeaders())
-                            .body(outputStream -> mapper.writeValue(outputStream, json));
+                            .body(outputStream -> jsonMapper.writeValue(outputStream, json));
                 } else {
                     return streamResponse(response, org.springframework.util.StringUtils.getFilename(path), "browse");
                 }

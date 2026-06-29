@@ -14,19 +14,20 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.aop.ObservedAspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.jspecify.annotations.NonNull;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public class RegistryObservationConvention implements ObservationConvention<ObservedAspect.ObservedAspectContext> {
 
-    private final ObjectMapper mapper;
+    private final JsonMapper mapper;
 
     public RegistryObservationConvention() {
-        this.mapper = new ObjectMapper();
+        this.mapper = JsonMapper.shared();
     }
 
     @Override
-    public KeyValues getHighCardinalityKeyValues(ObservedAspect.ObservedAspectContext context) {
+    public KeyValues getHighCardinalityKeyValues(ObservedAspect.@NonNull ObservedAspectContext context) {
 //        var joinPoint = context.getProceedingJoinPoint();
 //        var args = joinPoint.getArgs();
 //        var methodSignature = (MethodSignature) joinPoint.getSignature();
@@ -56,7 +57,7 @@ public class RegistryObservationConvention implements ObservationConvention<Obse
     }
 
     @Override
-    public boolean supportsContext(Observation.Context context) {
+    public boolean supportsContext(Observation.@NonNull Context context) {
         return context instanceof ObservedAspect.ObservedAspectContext;
     }
 

@@ -71,6 +71,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     private final ObjectProvider<SecretDetectorFactory> detectorFactoryProvider;
     private final RedisClusterClient redisClusterClient;
     private final RulesUpdateChannelListener rulesUpdateChannelListener;
+    private final JsonMapper jsonMapper;
 
     // Path to generated rules file
     private String generatedRulesPath;
@@ -91,6 +92,8 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             this.rulesUpdateChannelListener = null;
             logger.debug("GitleaksRulesService initialized (local only, no Redis)");
         }
+
+        jsonMapper = JsonMapper.shared();
     }
     
     public String getGeneratedRulesPath() {
@@ -461,7 +464,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     private String quote(String value) {
         if (value == null) return "\"\"";
         try {
-            return JsonMapper.shared().writeValueAsString(value);
+            return jsonMapper.writeValueAsString(value);
         } catch (Exception e) {
             return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
         }

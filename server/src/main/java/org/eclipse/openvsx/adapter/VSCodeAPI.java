@@ -61,7 +61,7 @@ public class VSCodeAPI {
         this.upstream = upstream;
         this.registries = setupRegistries();
         this.extensionQueryRequestHandler = extensionQueryRequestHandler;
-        this.jsonMapper = new JsonMapper();
+        this.jsonMapper = JsonMapper.builder().build();
     }
 
     private List<IVSCodeService> setupRegistries() {

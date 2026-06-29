@@ -65,7 +65,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -2030,7 +2030,7 @@ class RegistryAPITest {
     private String namespaceJson(Consumer<NamespaceJson> content) throws JacksonException {
         var json = new NamespaceJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private void mockInactiveExtensionVersion(String namespaceName, String extensionName) {
@@ -2269,7 +2269,7 @@ class RegistryAPITest {
     private String extensionJson(Consumer<ExtensionJson> content) throws JacksonException {
         var json = new ExtensionJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String queryResultJson(Consumer<ExtensionJson>... contents) throws JacksonException {
@@ -2392,7 +2392,7 @@ class RegistryAPITest {
         var json = new ReviewListJson();
         json.setReviews(new ArrayList<>());
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private List<ExtensionVersion> mockSearch() {
@@ -2427,7 +2427,7 @@ class RegistryAPITest {
         var json = new SearchResultJson();
         json.setExtensions(new ArrayList<>());
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private PersonalAccessToken mockAccessToken() {
@@ -2560,7 +2560,7 @@ class RegistryAPITest {
     private String reviewJson(Consumer<ReviewJson> content) throws JacksonException {
         var json = new ReviewJson();
         content.accept(json);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private UserData mockUserData() {
@@ -2574,17 +2574,17 @@ class RegistryAPITest {
 
     private String successJson(String message) throws JacksonException {
         var json = ResultJson.success(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String errorJson(String message) throws JacksonException {
         var json = ResultJson.error(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private String warningJson(String message) throws JacksonException {
         var json = ResultJson.warning(message);
-        return new ObjectMapper().writeValueAsString(json);
+        return JsonMapper.shared().writeValueAsString(json);
     }
 
     private byte[] createExtensionPackage(String name, String version, String license) throws IOException {

@@ -29,7 +29,7 @@ import org.springframework.data.util.Pair;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 
 import java.io.IOException;
@@ -62,6 +62,7 @@ public class StorageUtilService implements IStorageService {
     private final EntityManager entityManager;
     private final FileCacheDurationConfig fileCacheDurationConfig;
     private final CdnServiceConfig cdnServiceConfig;
+    private final JsonMapper jsonMapper;
 
     /** Determines which external storage service to use in case multiple services are configured. */
     @Value("${ovsx.storage.primary-service:}")
@@ -97,6 +98,7 @@ public class StorageUtilService implements IStorageService {
         this.entityManager = entityManager;
         this.fileCacheDurationConfig = fileCacheDurationConfig;
         this.cdnServiceConfig = cdnServiceConfig;
+        this.jsonMapper = JsonMapper.shared();
     }
 
     public boolean shouldStoreExternally(FileResource resource) {
@@ -329,12 +331,11 @@ public class StorageUtilService implements IStorageService {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> {
-                    var mapper = new ObjectMapper();
-                    var value = mapper.createArrayNode();
+                    var value = jsonMapper.createArrayNode();
                     for (var item : node) {
                         value.add(baseUrl + item.asString());
                     }
-                    mapper.writeValue(outputStream, value);
+                    jsonMapper.writeValue(outputStream, value);
                 });
     }
 

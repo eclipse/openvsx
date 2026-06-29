@@ -44,7 +44,7 @@ public class RemoteScanner implements Scanner {
     
     public RemoteScanner(
         @NonNull String scannerName,
-            RemoteScannerProperties.@NonNull ScannerConfig config,
+        RemoteScannerProperties.@NonNull ScannerConfig config,
         @NonNull HttpTemplateEngine templateEngine,
         @NonNull HttpClientExecutor httpExecutor,
         @NonNull HttpResponseExtractor responseExtractor,
