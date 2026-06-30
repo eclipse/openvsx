@@ -174,7 +174,7 @@ public class AwsStorageService implements IStorageService {
     private AwsCredentialsProvider getCredentialsProvider() {
         // Use static credentials if provided, otherwise DefaultCredentialsProvider handles everything
         if (hasStaticCredentials()) {
-            var credentials = hasSessionToken() 
+            var credentials = hasSessionToken()
                 ? AwsSessionCredentials.create(accessKeyId, secretAccessKey, sessionToken)
                 : AwsBasicCredentials.create(accessKeyId, secretAccessKey);
             return StaticCredentialsProvider.create(credentials);
@@ -196,17 +196,17 @@ public class AwsStorageService implements IStorageService {
         if (StringUtils.isEmpty(region) || StringUtils.isEmpty(bucket)) {
             return false;
         }
-        
+
         // If any credential fields are provided, validate them properly
         boolean hasAccessKey = !StringUtils.isEmpty(accessKeyId);
         boolean hasSecretKey = !StringUtils.isEmpty(secretAccessKey);
         boolean hasSessionToken = !StringUtils.isEmpty(sessionToken);
-        
+
         if (hasAccessKey || hasSecretKey || hasSessionToken) {
             // If any credential is provided, both access key and secret key must be present
             return hasAccessKey && hasSecretKey;
         }
-        
+
         // No static credentials provided - allow AWS default credential provider chain
         return true;
     }

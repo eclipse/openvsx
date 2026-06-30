@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class ExtensionScanService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ExtensionScanService.class);
 
     private final ExtensionScanConfig config;
@@ -97,7 +97,7 @@ public class ExtensionScanService {
             UserData user
     ) {
         logger.debug("Starting publish scan for {}.{} v{}", namespaceName, extensionName, version);
-        
+
         return persistenceService.initializeScan(
             namespaceName,
             extensionName,
@@ -165,7 +165,7 @@ public class ExtensionScanService {
             transitionToTerminal(scan, ScanStatus.REJECTED);
             logger.info("Publication blocked due to policy violations: {}.{}",
                 scan.getNamespaceName(), scan.getExtensionName());
-            
+
             // Use user-facing messages from findings (which may be masked for security).
             // Detailed reasons are still stored in the database for admin review.
             var enforcedFindings = checkResult.getEnforcedFindings();
@@ -189,30 +189,30 @@ public class ExtensionScanService {
      */
     public boolean submitScannerJobs(@Nonnull ExtensionScan scan, @Nonnull ExtensionVersion extVersion) {
         if (!config.isEnabled()) {
-            logger.debug("Scanning is disabled, skipping scanner jobs for: {}", 
+            logger.debug("Scanning is disabled, skipping scanner jobs for: {}",
                 NamingUtil.toLogFormat(extVersion));
             return false;
         }
-        
+
         // Get all registered scanners
         List<Scanner> scanners = scannerRegistry.getAllScanners();
-        
+
         if (scanners.isEmpty()) {
-            logger.warn("No scanners registered, skipping scanner jobs for: {}", 
+            logger.warn("No scanners registered, skipping scanner jobs for: {}",
                 NamingUtil.toLogFormat(extVersion));
             return false;
         }
-        
+
         // Use ExtensionScan.id as the scan ID to link everything together
         String scanId = String.valueOf(scan.getId());
         long extensionVersionId = extVersion.getId();
-        
+
         logger.debug("Submitting {} scanner jobs for extension: {} (scanId={})",
             scanners.size(), NamingUtil.toLogFormat(extVersion), scanId);
-        
+
         // Transition to SCANNING status before submitting jobs
         transitionTo(scan, ScanStatus.SCANNING);
-        
+
         int enqueuedCount = 0;
 
         for (Scanner scanner : scanners) {
@@ -235,7 +235,7 @@ public class ExtensionScanService {
             job.setPollAttempts(0);
             job.setRecoveryInProgress(false);
             scanJobRepository.save(job);
-            
+
             if (scanner.getMaxConcurrency() <= 0) {
                 try {
                     jobScheduler.enqueue(new ScannerInvocationRequest(
@@ -394,12 +394,12 @@ public class ExtensionScanService {
         validateTransition(scan.getStatus(), newStatus);
         persistenceService.updateStatus(scan, newStatus);
     }
-    
+
     private void transitionToTerminal(ExtensionScan scan, ScanStatus newStatus) {
         validateTransition(scan.getStatus(), newStatus);
         persistenceService.completeWithStatus(scan, newStatus);
     }
-    
+
     private void validateTransition(ScanStatus from, ScanStatus to) {
         if (!isValidTransition(from, to)) {
             throw new IllegalStateException(String.format(
@@ -407,12 +407,12 @@ public class ExtensionScanService {
             ));
         }
     }
-    
+
     private boolean isValidTransition(ScanStatus from, ScanStatus to) {
         if (from.isCompleted()) {
             return false;
         }
-        
+
         return switch (from) {
             // Any in-progress state can end with an error.
             case STARTED -> to == ScanStatus.VALIDATING || to == ScanStatus.SCANNING || to == ScanStatus.ERRORED;
@@ -430,7 +430,7 @@ public class ExtensionScanService {
 
     /**
      * Build user-facing error message from findings.
-     * 
+     *
      * Uses the userFacingMessage from each check, which may be masked for security
      * Detailed reasons are stored in the database for admin review.
      */
@@ -456,7 +456,7 @@ public class ExtensionScanService {
             return "Extension publication blocked.";
         }
 
-        return "Extension publication blocked: " + String.join(", ", parts) + ". For details on " + 
+        return "Extension publication blocked: " + String.join(", ", parts) + ". For details on " +
             "publishing extensions, see: https://github.com/eclipse/openvsx/wiki/Publishing-Extensions";
     }
 }

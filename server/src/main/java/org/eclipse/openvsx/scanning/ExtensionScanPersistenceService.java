@@ -36,15 +36,15 @@ import static jakarta.transaction.Transactional.TxType;
 
 /**
  * Handles all transactional persistence operations for extension scans.
- * 
+ *
  * This service is separate from ExtensionScanService to avoid self-invocation issues
  * where @Transactional(TxType.REQUIRES_NEW) would be ignored.
- * 
+ *
  * Responsibilities:
  * - Creating and updating ExtensionScan records
  * - Recording validation failures
  * - Saving threats from scanner jobs
- * 
+ *
  * All methods use REQUIRES_NEW to ensure they commit independently,
  * preserving the scan audit trail even when the outer transaction rolls back.
  */
@@ -93,7 +93,7 @@ public class ExtensionScanPersistenceService {
         if (displayName == null || displayName.isBlank()) {
             displayName = extensionName;
         }
-        
+
         return initializeScanInternal(
             namespaceName,
             extensionName,
@@ -126,15 +126,15 @@ public class ExtensionScanPersistenceService {
             scan.setTargetPlatform(targetPlatform);
             scan.setUniversalTargetPlatform(isUniversal);
             scan.setExtensionDisplayName(displayName);
-            
+
             var publisherLoginName = user.getLoginName() != null ? user.getLoginName() : "unknown";
             var publisherUrl = user.getProviderUrl();
             scan.setPublisher(publisherLoginName);
             scan.setPublisherUrl(publisherUrl);
-            
+
             scan.setStartedAt(TimeUtil.getCurrentUTC());
             scan.setStatus(ScanStatus.STARTED);
-            
+
             return repositories.saveExtensionScan(scan);
         } catch (Exception e) {
             logger.error("FATAL: Failed to create extension scan", e);
@@ -218,7 +218,7 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Records a check execution result for audit trail.
-     * 
+     *
      * This records ALL check executions - both pass and fail - so admins
      * can see exactly what checks were run on an extension.
      */
@@ -251,9 +251,9 @@ public class ExtensionScanPersistenceService {
         checkResult.setErrorMessage(errorMessage);
         checkResult.setScannerJobId(scannerJobId);
         checkResult.setRequired(required);
-        
+
         repositories.saveScanCheckResult(checkResult);
-        
+
         logger.debug("Recorded check result: {}.{} {} (scan={}) type={}, result={}, duration={}ms, required={}",
             scan.getNamespaceName(), scan.getExtensionName(), scan.getExtensionVersion(),
             scan.getId(), checkType, result, checkResult.getDurationMs(), required);
@@ -261,7 +261,7 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Records a scanner job execution result for audit trail.
-     * 
+     *
      * Convenience method that looks up the ExtensionScan by scanId.
      */
     @Transactional(TxType.REQUIRES_NEW)
@@ -280,11 +280,11 @@ public class ExtensionScanPersistenceService {
             logger.warn("Cannot record scanner job result - scan not found: {}", scanId);
             return;
         }
-        
+
         // Look up the scanner to get its "required" configuration
         Scanner scanner = scannerRegistry.getScanner(job.getScannerType());
         Boolean required = scanner == null || scanner.isRequired();  // Default to required if scanner not found
-        
+
         recordCheckResult(
             scan,
             job.getScannerType(),
@@ -314,12 +314,12 @@ public class ExtensionScanPersistenceService {
         public boolean hasEnforcedThreats() {
             return enforcedCount > 0;
         }
-        
+
         /** Returns true if there are threats but none are enforced */
         public boolean allThreatsNotEnforced() {
             return totalThreats > 0 && enforcedCount == 0;
         }
-        
+
         /** Empty result for clean scans */
         public static ThreatSaveResult clean() {
             return new ThreatSaveResult(0, 0, 0);
@@ -328,12 +328,12 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Save threats from a Scanner.Result to the database.
-     * 
+     *
      * Used by both InvokeScannerHandler (sync) and PollScannerHandler (async).
-     * 
+     *
      * For async scanners with file extraction, file hashes are looked up from
      * the stored fileHashesJson on the ScannerJob.
-     * 
+     *
      * Returns enforcement statistics so callers can determine the check result:
      * - If no enforced threats → check PASSED (threats are warnings only)
      * - If enforced threats exist → check FOUND (blocks publication)
@@ -344,53 +344,53 @@ public class ExtensionScanPersistenceService {
             logger.debug("No threats to save for scanner job {}", job.getId());
             return ThreatSaveResult.clean();
         }
-        
+
         LocalDateTime now = TimeUtil.getCurrentUTC();
         long scanJobId = job.getId();
         String scanId = job.getScanId();
         String scannerType = job.getScannerType();
-        
+
         // Load the parent ExtensionScan entity
         ExtensionScan scan = repositories.findExtensionScan(Long.parseLong(scanId));
         if (scan == null) {
             logger.error("ExtensionScan not found for scanId={}, cannot save threats", scanId);
             return ThreatSaveResult.clean();
         }
-        
+
         // Parse stored file hashes for async scanners with file extraction
         Map<String, String> fileHashes = parseFileHashes(job.getFileHashesJson());
         if (!fileHashes.isEmpty()) {
             logger.debug("Loaded {} file hashes from scanner job for hash lookup", fileHashes.size());
         }
-        
+
         int enforcedCount = 0;
         int notEnforcedCount = 0;
-        
+
         for (Scanner.Threat threat : result.getThreats()) {
             ExtensionThreat scanThreat = createThreatEntity(
                     scan, scanJobId, scannerType, threat, fileHashes, scannerEnforced, now
             );
-            
+
             repositories.saveExtensionThreat(scanThreat);
-            
+
             // Track actual enforcement (may differ from scannerEnforced due to allowlist)
             if (scanThreat.isEnforced()) {
                 enforcedCount++;
             } else {
                 notEnforcedCount++;
             }
-            
+
             logger.debug("Saved threat: {} (severity: {}, file: {}, enforced: {})",
-                    threat.getName(), 
-                    threat.getSeverity(), 
+                    threat.getName(),
+                    threat.getSeverity(),
                     scanThreat.getFileName(),
                     scanThreat.isEnforced());
         }
-        
+
         int totalThreats = result.getThreats().size();
-        logger.debug("Saved {} threats ({} enforced, {} not enforced) for scanner job {}", 
+        logger.debug("Saved {} threats ({} enforced, {} not enforced) for scanner job {}",
                 totalThreats, enforcedCount, notEnforcedCount, scanJobId);
-        
+
         return new ThreatSaveResult(totalThreats, enforcedCount, notEnforcedCount);
     }
 
@@ -405,7 +405,7 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Process a completed scanner result: save threats, determine check result, record audit.
-     * 
+     *
      * This consolidates the result processing logic used by both InvokeScannerHandler (sync)
      * and PollScannerHandler (async) to avoid duplication.
      */
@@ -419,20 +419,20 @@ public class ExtensionScanPersistenceService {
         int threatCount = 0;
         String summary;
         ScanCheckResult.CheckResult checkResult;
-        
+
         if (result.isClean()) {
             checkResult = ScanCheckResult.CheckResult.PASSED;
             summary = "No threats found";
         } else {
             threatCount = result.getThreats().size();
-            
+
             // Save threats and get enforcement statistics
             var saveResult = saveThreats(job, result, scannerEnforced);
-            
+
             // Determine check result based on actual enforcement (considers allowlist)
             if (saveResult.hasEnforcedThreats()) {
                 checkResult = ScanCheckResult.CheckResult.QUARANTINE;
-                summary = String.format("Found %d threat(s) - %d enforced", 
+                summary = String.format("Found %d threat(s) - %d enforced",
                     threatCount, saveResult.enforcedCount());
             } else {
                 // Threats found but none enforced (scanner not enforced OR all on allowlist)
@@ -446,7 +446,7 @@ public class ExtensionScanPersistenceService {
         if (result.getSummary() != null && !result.getSummary().isBlank()) {
             summary = result.getSummary();
         }
-        
+
         // Record scanner job result for audit trail
         recordScannerJobResult(
             job.getScanId(),
@@ -458,7 +458,7 @@ public class ExtensionScanPersistenceService {
             summary,
             null   // errorMessage - none for successful completion
         );
-        
+
         return new CompletedScanResult(checkResult, threatCount, summary);
     }
 
@@ -510,7 +510,7 @@ public class ExtensionScanPersistenceService {
 
     /**
      * Create an ExtensionThreat entity from a Scanner.Threat.
-     * 
+     *
      * If the file hash is on the allowlist, the threat is recorded but NOT enforced.
      * This allows admins to see the threat was detected while allowing publication.
      */
@@ -524,15 +524,15 @@ public class ExtensionScanPersistenceService {
             LocalDateTime detectedAt
     ) {
         ExtensionThreat scanThreat = new ExtensionThreat();
-        
+
         scanThreat.setScan(scan);
         scanThreat.setJobId(scanJobId);
-        
+
         scanThreat.setType(scannerType);
-        
+
         String fileName = threat.getFilePath();
         scanThreat.setFileName(fileName);
-        
+
         // Determine file hash:
         // 1. First check if threat has hash directly (sync scanners)
         // 2. Then look up from stored fileHashes map (async scanners)
@@ -545,17 +545,17 @@ public class ExtensionScanPersistenceService {
             }
         }
         scanThreat.setFileHash(fileHash);
-        
+
         if (fileName != null && fileName.contains(".")) {
             int lastDot = fileName.lastIndexOf('.');
             scanThreat.setFileExtension(fileName.substring(lastDot + 1));
         }
-        
+
         scanThreat.setRuleName(threat.getName());
         String reason = threat.getDescription();
         scanThreat.setSeverity(threat.getSeverity());
         scanThreat.setDetectedAt(detectedAt);
-        
+
         // Check if this file hash is on the allowlist.
         // If allowed, set enforced=false so it doesn't block publication.
         // Add a note to the reason so admins know why it wasn't enforced.
@@ -566,15 +566,15 @@ public class ExtensionScanPersistenceService {
                 finalEnforced = false;
                 String allowlistNote = " [NOT ENFORCED: File is on the allowlist]";
                 reason = (reason != null ? reason + allowlistNote : allowlistNote);
-                
+
                 logger.debug("Threat for file '{}' not enforced because hash {} is on allowlist (scanner: {})",
                         fileName, fileHash, scannerType);
             }
         }
-        
+
         scanThreat.setReason(reason);
         scanThreat.setEnforced(finalEnforced);
-        
+
         return scanThreat;
     }
 
@@ -609,7 +609,7 @@ public class ExtensionScanPersistenceService {
                 .map(ScannerJob::getScanId)
                 .distinct()
                 .toList();
-        
+
         // Mark associated scans as ERRORED if they're not already in a terminal state
         for (String scanId : scanIds) {
             try {
@@ -626,7 +626,7 @@ public class ExtensionScanPersistenceService {
                 logger.warn("Invalid scan ID format: {}", scanId);
             }
         }
-        
+
         // Delete scanner jobs for this extension version
         scannerJobRepository.deleteByExtensionVersionId(extensionVersionId);
         logger.debug("Deleted {} scanner jobs for extension version {}", jobs.size(), extensionVersionId);

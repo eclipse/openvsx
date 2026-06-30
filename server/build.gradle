@@ -209,7 +209,7 @@ rewrite {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifact ('scripts/run-server.sh') 
+            artifact ('scripts/run-server.sh')
             artifact bootJar
         }
     }

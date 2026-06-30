@@ -52,7 +52,7 @@ public class CustomerMembership implements Serializable {
     public void setId(long id) {
 		this.id = id;
     }
-    
+
     public UserData getUser() {
         return user;
     }

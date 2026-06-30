@@ -9,7 +9,7 @@
 ## Gatling simulations
 ### Running against remote server:
 - Change `baseUrl` property in `resources/application.properties`.
-- If the remote server requires authentication, uncomment and change the `auth` property in `resources/application.properties`. 
+- If the remote server requires authentication, uncomment and change the `auth` property in `resources/application.properties`.
   Simulations use the `auth` value to set the Authorization request header.
 
 ### resources/access-tokens.csv:

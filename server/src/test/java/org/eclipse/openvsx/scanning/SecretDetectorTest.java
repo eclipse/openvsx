@@ -462,7 +462,7 @@ class SecretDetectorTest {
         toDelete.add(zipPath);
 
         List<SecretDetector.Finding> findings = new ArrayList<>();
-        
+
         // Set start time in the past to simulate timeout
         long startTime = System.currentTimeMillis() - 10_000; // 10 seconds ago
         long timeoutMillis = 100; // Very short timeout
@@ -504,7 +504,7 @@ class SecretDetectorTest {
         toDelete.add(zipPath);
 
         List<SecretDetector.Finding> findings = new ArrayList<>();
-        
+
         // Use a reasonable timeout that won't be exceeded during normal execution
         long startTime = System.currentTimeMillis();
         long timeoutMillis = 5000; // 5 seconds should be plenty
@@ -520,7 +520,7 @@ class SecretDetectorTest {
         // Test that files exceeding the byte limit are rejected by one of two defenses:
         // 1. Early check: entry.getSize() > maxFileSizeBytes
         // 2. Stream limit: SizeLimitInputStream counts actual bytes read
-        
+
         SecretRule rule = new SecretRule.Builder()
                 .id("test-rule")
                 .description("Test rule")
@@ -557,10 +557,10 @@ class SecretDetectorTest {
         // Create file with 200 bytes (exceeds 100 byte limit)
         byte[] largeContent = new byte[200];
         java.util.Arrays.fill(largeContent, (byte) 'A');
-        
+
         Path largePath = Files.createTempFile("large-", ".zip");
         toDelete.add(largePath);
-        
+
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(largePath))) {
             ZipEntry entry = new ZipEntry("large.txt");
             zos.putNextEntry(entry);
@@ -572,10 +572,10 @@ class SecretDetectorTest {
         try (ZipFile zipFile = new ZipFile(largePath.toFile())) {
             ZipEntry entry = zipFile.getEntry("large.txt");
             long declaredSize = entry.getSize();
-            
+
             List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
-            
+
             // Early check will reject this
             boolean result = scanner.scanFile(
                 zipFile,
@@ -597,7 +597,7 @@ class SecretDetectorTest {
     @Test
     void scanFile_acceptsFileWithinByteLimit() throws Exception {
         // Test that files within the byte limit are scanned successfully
-        
+
         SecretRule rule = new SecretRule.Builder()
                 .id("test-rule")
                 .description("Test rule")
@@ -634,10 +634,10 @@ class SecretDetectorTest {
         // Create file with 50 bytes (within 100 byte limit)
         byte[] validContent = new byte[50];
         java.util.Arrays.fill(validContent, (byte) 'B');
-        
+
         Path validPath = Files.createTempFile("valid-", ".zip");
         toDelete.add(validPath);
-        
+
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(validPath))) {
             ZipEntry entry = new ZipEntry("valid.txt");
             zos.putNextEntry(entry);
@@ -650,7 +650,7 @@ class SecretDetectorTest {
             ZipEntry entry = zipFile.getEntry("valid.txt");
             List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
-            
+
             boolean result = scanner.scanFile(
                     zipFile,
                     entry,
@@ -664,7 +664,7 @@ class SecretDetectorTest {
                         return true;
                     }
             );
-            
+
             assertTrue(result, "File within byte limit should be scanned successfully");
         }
     }
@@ -679,7 +679,7 @@ class SecretDetectorTest {
         // This simulates a malicious ZIP where the header lies about the uncompressed size.
         // We use Mockito to make getSize() return a fake small value while the actual
         // content is large, demonstrating the defense-in-depth protection.
-        
+
         SecretRule rule = new SecretRule.Builder()
                 .id("test-rule")
                 .description("Test rule")
@@ -716,10 +716,10 @@ class SecretDetectorTest {
         // Create actual content: 500 bytes (way over 100 byte limit)
         byte[] bombContent = new byte[500];
         java.util.Arrays.fill(bombContent, (byte) 'X');
-        
+
         Path bombPath = Files.createTempFile("bomb-", ".zip");
         toDelete.add(bombPath);
-        
+
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(bombPath))) {
             ZipEntry entry = new ZipEntry("bomb.txt");
             zos.putNextEntry(entry);
@@ -733,24 +733,24 @@ class SecretDetectorTest {
             ZipFile mockedZipFile = spy(realZipFile);
             ZipEntry realEntry = realZipFile.getEntry("bomb.txt");
             ZipEntry mockedEntry = spy(realEntry);
-            
+
             // ATTACK SIMULATION: Entry header claims 50 bytes (< 100 limit)
             // This bypasses the early size check
             when(mockedEntry.getSize()).thenReturn(50L);
             when(mockedEntry.getCompressedSize()).thenReturn(50L);
             when(mockedZipFile.getEntry("bomb.txt")).thenReturn(mockedEntry);
-            
+
             // But getInputStream() returns the real stream with 500 bytes
             when(mockedZipFile.getInputStream(mockedEntry))
                     .thenReturn(realZipFile.getInputStream(realEntry));
-            
+
             List<SecretDetector.Finding> findings = new ArrayList<>();
             AtomicInteger counter = new AtomicInteger(0);
-            
+
             // The early check sees 50 bytes and passes
             // But SizeLimitInputStream counts the ACTUAL 500 bytes being read
             // and throws IOException when it exceeds the 100 byte limit
-            Exception exception = assertThrows(IOException.class, () -> 
+            Exception exception = assertThrows(IOException.class, () ->
                 scanner.scanFile(
                         mockedZipFile,
                         mockedEntry,
@@ -765,16 +765,14 @@ class SecretDetectorTest {
                         }
                 )
             );
-                
+
             assertTrue(exception.getMessage().contains("exceeds limit"),
                     "SizeLimitInputStream should catch ZIP bomb during stream reading: " + exception.getMessage());
             assertTrue(exception.getMessage().contains(String.valueOf(maxFileSizeBytes)),
                     "Error should mention the " + maxFileSizeBytes + " byte limit: " + exception.getMessage());
-            
+
             // Verify the mock was called, proving the early check saw the fake size
             verify(mockedEntry, atLeastOnce()).getSize();
         }
     }
 }
-
-

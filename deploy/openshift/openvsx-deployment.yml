@@ -264,7 +264,7 @@ objects:
         volumes:
         - name: extensions-storage
           persistentVolumeClaim:
-            claimName: extensions-pvc             
+            claimName: extensions-pvc
 - apiVersion: v1
   kind: Service
   metadata:

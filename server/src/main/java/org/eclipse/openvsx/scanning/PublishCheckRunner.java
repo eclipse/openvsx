@@ -39,12 +39,12 @@ public class PublishCheckRunner{
 
     public PublishCheckRunner(List<PublishCheck> checks) {
         this.checks = checks;
-        
+
         logger.info("PublishCheckRunner initialized with {} checks: {}",
             checks.size(),
             checks.stream().map(PublishCheck::getCheckType).toList());
     }
-    
+
     /**
      * Get the list of check types that this runner will execute.
      */
@@ -53,7 +53,7 @@ public class PublishCheckRunner{
             .map(PublishCheck::getCheckType)
             .toList();
     }
-    
+
     /**
      * Get the number of checks that will be executed.
      */
@@ -81,7 +81,7 @@ public class PublishCheckRunner{
         boolean hasRequiredCheckError = false;
 
         String extId = scan.getNamespaceName() + "." + scan.getExtensionName() + " " + scan.getExtensionVersion();
-        
+
         for (var check : checks) {
             // Skip disabled checks - no record created
             if (!check.isEnabled()) {
@@ -90,27 +90,27 @@ public class PublishCheckRunner{
             }
 
             logger.debug("Scan {} ({}) - Running check: {}", scan.getId(), extId, check.getCheckType());
-            
+
             var startTime = TimeUtil.getCurrentUTC();
             try {
                 var result = check.check(context);
                 var endTime = TimeUtil.getCurrentUTC();
                 logger.debug("Scan {} ({}) - Check {} passed: {}", scan.getId(), extId, check.getCheckType(), result.passed());
-                
+
                 int findingsCount = 0;
                 ScanCheckResult.CheckResult checkResult;
                 String summary;
-                
+
                 if (result.passed()) {
                     checkResult = ScanCheckResult.CheckResult.PASSED;
                     summary = "No issues found";
                 } else {
                     boolean enforced = check.isEnforced();
                     findingsCount = result.failures().size();
-                    
+
                     // Get the user-facing message for this check's failures.
                     String userFacingMessage = check.getUserFacingMessage(result.failures());
-                    
+
                     // Convert each failure to a Finding.
                     for (var failure : result.failures()) {
                         allFindings.add(new Finding(
@@ -121,7 +121,7 @@ public class PublishCheckRunner{
                             userFacingMessage
                         ));
                     }
-                    
+
                     if (enforced) {
                         hasEnforcedFailure = true;
                         // Enforced issues reject the extension immediately
@@ -132,11 +132,11 @@ public class PublishCheckRunner{
                         checkResult = ScanCheckResult.CheckResult.PASSED;
                         summary = String.format("Found %d issue(s) - not enforced", findingsCount);
                     }
-                    
+
                     logger.debug("Scan {} - {} detected {} issue(s), enforced={}",
                         scan.getId(), check.getCheckType(), findingsCount, enforced);
                 }
-                
+
                 checkExecutions.add(new CheckExecution(
                     check.getCheckType(),
                     startTime,
@@ -147,11 +147,11 @@ public class PublishCheckRunner{
                     summary,
                     check.isRequired()
                 ));
-                
+
             } catch (Exception e) {
                 var endTime = TimeUtil.getCurrentUTC();
                 boolean isRequired = check.isRequired();
-                
+
                 // Record the check execution with ERROR result
                 checkExecutions.add(new CheckExecution(
                     check.getCheckType(),
@@ -163,9 +163,9 @@ public class PublishCheckRunner{
                     "Error: " + e.getMessage(),
                     isRequired
                 ));
-                
+
                 allErrors.add(new CheckError(check.getCheckType(), e, isRequired));
-                
+
                 if (isRequired) {
                     // Required check error - stop processing remaining checks
                     hasRequiredCheckError = true;
@@ -241,18 +241,18 @@ public class PublishCheckRunner{
             if (errors.isEmpty()) {
                 return null;
             }
-            
+
             var requiredErrors = getRequiredErrors();
             if (requiredErrors.isEmpty()) {
                 var error = errors.getFirst();
                 return error.checkType() + " check failed: " + error.exception().getMessage();
             }
-            
+
             if (requiredErrors.size() == 1) {
                 var error = requiredErrors.getFirst();
                 return error.checkType() + " check failed: " + error.exception().getMessage();
             }
-            
+
             // Multiple required errors - list them all with count
             var sb = new StringBuilder();
             sb.append(requiredErrors.size()).append(" required checks failed: ");

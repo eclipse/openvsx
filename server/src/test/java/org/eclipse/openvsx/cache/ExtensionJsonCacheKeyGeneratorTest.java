@@ -50,7 +50,7 @@ class ExtensionJsonCacheKeyGeneratorTest {
 
 		assertThat(results).startsWith("foobar.baz");
 	}
-	
+
 	private Extension mockExtension() {
 		var namespace = new Namespace();
 		namespace.setName("foobar");

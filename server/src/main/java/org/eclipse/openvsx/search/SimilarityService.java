@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
@@ -38,8 +38,8 @@ public class SimilarityService {
      * Find extensions similar to the given fields using Levenshtein distance.
      */
     public List<Extension> findSimilarExtensions(
-            @Nullable String extensionName, 
-            @Nullable String namespaceName, 
+            @Nullable String extensionName,
+            @Nullable String namespaceName,
             @Nullable String displayName,
             @NotNull List<String> excludeNamespaces,
             double threshold,
@@ -49,7 +49,7 @@ public class SimilarityService {
         if (extensionName == null && namespaceName == null && displayName == null) {
             return List.of();
         }
-        
+
         try {
             return repositories.findSimilarExtensionsByLevenshtein(
                 extensionName,
@@ -61,9 +61,9 @@ public class SimilarityService {
                 limit
             );
         } catch (Exception e) {
-            logger.error("Similarity check failed for extension='{}', namespace='{}', displayName='{}': {}", 
+            logger.error("Similarity check failed for extension='{}', namespace='{}', displayName='{}': {}",
                 extensionName, namespaceName, displayName, e.getMessage(), e);
-            
+
             throw new ErrorResultException(
                 "Unable to verify extension name uniqueness due to system error. " +
                 "Please try again later or contact support if the problem persists."
@@ -85,7 +85,7 @@ public class SimilarityService {
         if (namespaceName.isEmpty()) {
             return List.of();
         }
-        
+
         try {
             return repositories.findSimilarNamespacesByLevenshtein(
                 namespaceName,
@@ -95,9 +95,9 @@ public class SimilarityService {
                 limit
             );
         } catch (Exception e) {
-            logger.error("Similarity check failed for namespace='{}': {}", 
+            logger.error("Similarity check failed for namespace='{}': {}",
                 namespaceName, e.getMessage(), e);
-            
+
             throw new ErrorResultException(
                 "Unable to verify namespace name uniqueness due to system error. " +
                 "Please try again later or contact support if the problem persists."

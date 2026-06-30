@@ -92,7 +92,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             throw e;
         } finally {
             logger.debug("<< Completed DataMirrorJob");
-        } 
+        }
     }
 
     private List<String> processUrls(NodeList urls, UserData mirrorUser) {

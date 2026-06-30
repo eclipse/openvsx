@@ -36,7 +36,7 @@ import java.util.Set;
  * If neither is configured, initialization is skipped, allowing the application
  * to start without requiring secret detection infrastructure.
  * <p>
- * If auto-generation is enabled, this depends on {@link GitleaksRulesService} 
+ * If auto-generation is enabled, this depends on {@link GitleaksRulesService}
  * to ensure rules are generated before we try to load them.
  * Only loaded when secret detection is enabled via configuration.
  */
@@ -57,7 +57,7 @@ public class SecretDetectorFactory {
     private volatile SecretDetector scanner;
 
     public SecretDetectorFactory(
-            @NotNull SecretRuleLoader ruleLoader, 
+            @NotNull SecretRuleLoader ruleLoader,
             @NotNull SecretDetectorConfig config,
             @NotNull ExtensionScanConfig scanConfig,
             @Nullable GitleaksRulesService gitleaksService) {
@@ -71,13 +71,13 @@ public class SecretDetectorFactory {
     public void initialize() {
         // Build rules path list, prepending the generated file if auto-generation is enabled
         List<String> rulePaths = buildRulePaths();
-        
+
         // Skip initialization if there are no rule paths to load
         if (rulePaths.isEmpty()) {
             logger.info("No secret detection rules configured; skipping scanner initialization");
             return;
         }
-        
+
         // Load all rules from the rule paths
         SecretRuleLoader.LoadedRules loaded = ruleLoader.loadAll(rulePaths);
         List<SecretRule> loadedRules = loaded.getRules();
@@ -98,7 +98,7 @@ public class SecretDetectorFactory {
         // Build the matchers for global stopwords, excluded extensions, and inline suppressions
         AhoCorasick globalStopwordMatcher = buildMatcher(globalStopwords);
         AhoCorasick globalExcludedExtensionMatcher = buildMatcher(globalExcludedExtensions);
-        
+
         List<String> suppressionMarkersLower = getSuppressionMarkers(config);
         AhoCorasick suppressionMarkerMatcher = buildMatcher(suppressionMarkersLower);
 
@@ -133,10 +133,10 @@ public class SecretDetectorFactory {
 
     /**
      * Reinitialize the scanner with fresh rules.
-     * 
+     *
      * This method is called by the scheduled refresh job after rules are updated.
      * It reloads all rules and rebuilds the scanner.
-     * 
+     *
      * Thread-safe: uses synchronized to prevent concurrent reinitialization.
      */
     public synchronized void reinitialize() {
@@ -317,7 +317,7 @@ public class SecretDetectorFactory {
      */
     private List<String> buildRulePaths() {
         List<String> paths = new ArrayList<>();
-        
+
         // If auto-generation is enabled and the service bean exists, use the generated file
         if (gitleaksService != null) {
             String generatedPath = gitleaksService.getGeneratedRulesPath();
@@ -326,12 +326,10 @@ public class SecretDetectorFactory {
                 paths.add(generatedPath);
             }
         }
-        
+
         // Add configured paths (these may include custom rules or override gitleaks rules)
         paths.addAll(config.getRulePaths());
-        
+
         return paths;
     }
 }
-
-

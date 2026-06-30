@@ -249,18 +249,18 @@ public class UserAPI {
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
                     json.setFiles(fileUrls.get(latest.getId()));
-                    
+
                     // Add scan/review status information
                     enrichWithReviewStatus(json, latest);
-                    
+
                     return json;
                 })
                 .toList();
     }
-    
+
     /**
      * Add review/scan status information to the extension JSON.
-     * 
+     *
      * This shows users the current state of their extension in simple terms:
      * - "published" - Extension is active and publicly available
      * - "under_review" - Extension is being reviewed (validation, scanning, etc.)
@@ -283,14 +283,14 @@ public class UserAPI {
                 return;
             }
         }
-        
+
         if (scanResult == null) {
             // No scan result found - show as under review
             json.setReviewStatus("under_review");
             json.setReviewMessage("Your extension is being reviewed.");
             return;
         }
-        
+
         // Map internal status to simple user-facing status
         switch (scanResult.getStatus()) {
             case STARTED:

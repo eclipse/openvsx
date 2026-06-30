@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -27,13 +27,13 @@ import java.util.Map;
  * (returning results immediately) or asynchronous (requiring polling).
  */
 public interface Scanner {
-    
+
     /**
      * Command to start a scan. Contains metadata about what to scan.
      * Scanners retrieve the actual file via extensionVersionId using ScannerFileService.
      */
     record Command(long extensionVersionId, @Nonnull String scanId) {}
-    
+
     /**
      * Represents a scan that has been submitted to an external service.
      */
@@ -41,17 +41,17 @@ public interface Scanner {
         public Submission(@Nonnull String externalJobId) {
             this(externalJobId, null);
         }
-        
+
         @Nonnull
         public Map<String, String> fileHashes() {
             return fileHashes != null ? fileHashes : Collections.emptyMap();
         }
-        
+
         public boolean hasFileHashes() {
             return fileHashes != null && !fileHashes.isEmpty();
         }
     }
-    
+
     /**
      * Status returned by {@link #pollStatus(Submission)}.
      */
@@ -61,7 +61,7 @@ public interface Scanner {
         COMPLETED,
         FAILED
     }
-    
+
     /**
      * Result of a completed scan.
      */
@@ -75,7 +75,7 @@ public interface Scanner {
             this.threats = new ArrayList<>(threats);
             this.summary = summary;
         }
-        
+
         @Nonnull
         public static Result clean() {
             return new Result(true, Collections.emptyList(), null);
@@ -95,11 +95,11 @@ public interface Scanner {
         public static Result withThreats(@Nonnull List<Threat> threats, @Nullable String summary) {
             return new Result(false, threats, summary);
         }
-        
+
         public boolean isClean() {
             return clean;
         }
-        
+
         @Nonnull
         public List<Threat> getThreats() {
             return Collections.unmodifiableList(threats);
@@ -111,7 +111,7 @@ public interface Scanner {
             return summary;
         }
     }
-    
+
     /**
      * A security threat found during scanning.
      */
@@ -121,15 +121,15 @@ public interface Scanner {
         private final String severity;
         private final String filePath;
         private final String fileHash;
-        
+
         public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity) {
             this(name, description, severity, null, null);
         }
-        
+
         public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity, @Nullable String filePath) {
             this(name, description, severity, filePath, null);
         }
-        
+
         public Threat(@Nonnull String name, @Nullable String description, @Nonnull String severity, @Nullable String filePath, @Nullable String fileHash) {
             this.name = name;
             this.description = description;
@@ -137,14 +137,14 @@ public interface Scanner {
             this.filePath = filePath;
             this.fileHash = fileHash;
         }
-        
+
         @Nonnull public String getName() { return name; }
         @Nullable public String getDescription() { return description; }
         @Nonnull public String getSeverity() { return severity; }
         @Nullable public String getFilePath() { return filePath; }
         @Nullable public String getFileHash() { return fileHash; }
     }
-    
+
     /**
      * Result of invoking a scanner.
      * <p>
@@ -156,13 +156,13 @@ public interface Scanner {
         record Completed(@Nonnull Result result) implements Invocation {}
         record Submitted(@Nonnull Submission submission) implements Invocation {}
     }
-    
+
     /**
      * Returns the unique type identifier for this scanner.
      */
     @Nonnull
     String getScannerType();
-    
+
     /**
      * Indicates if this scanner is required for extension activation.
      * If true: Scanner failure blocks activation (fail-closed)
@@ -171,7 +171,7 @@ public interface Scanner {
     default boolean isRequired() {
         return true;
     }
-    
+
     /**
      * Indicates if threats from this scanner should block extension activation.
      * If true: Threats quarantine the extension
@@ -180,19 +180,19 @@ public interface Scanner {
     default boolean enforcesThreats() {
         return true;
     }
-    
+
     /**
      * Returns the timeout duration in minutes for async scanners.
      */
     default int getTimeoutMinutes() {
         return 60;
     }
-    
+
     /**
      * Indicates if this scanner is asynchronous.
      */
     boolean isAsync();
-    
+
     /**
      * Maximum concurrent invocations across all server pods.
      * -1 means no limit (default). Positive values enable the concurrency dispatcher
@@ -220,7 +220,7 @@ public interface Scanner {
      * Only relevant when maxConcurrency > 0.
      */
     default int getMaxQueueWaitMinutes() { return 120; }
-    
+
     /**
      * Get the polling configuration for this async scanner.
      * Returns null to use defaults.
@@ -229,13 +229,13 @@ public interface Scanner {
     default RemoteScannerProperties.PollConfig getPollConfig() {
         return null;
     }
-    
+
     /**
      * Start a scan and return the invocation result.
      */
     @Nonnull
     Invocation startScan(@Nonnull Command command) throws ScannerException;
-    
+
     /**
      * Poll status of an async scan job.
      */
@@ -245,7 +245,7 @@ public interface Scanner {
             "Scanner " + getScannerType() + " does not support polling"
         );
     }
-    
+
     /**
      * Retrieve final results from an async scan job.
      */

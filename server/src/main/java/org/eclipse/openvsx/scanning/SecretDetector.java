@@ -47,10 +47,10 @@ class SecretDetector {
     }
 
     private static final Logger logger = LoggerFactory.getLogger(SecretDetector.class);
-    
+
     // Tika for content-based file type detection (thread-safe, reusable)
     private static final Tika tika = new Tika();
-    
+
     private final AhoCorasick keywordMatcher;
     private final Map<String, List<SecretRule>> keywordToRules;
     private final List<SecretRule> rules;
@@ -122,7 +122,7 @@ class SecretDetector {
         if (entry.getSize() > maxFileSizeBytes) {
             return false;
         }
-        
+
         // Check if the file type is excluded
         if (isExcludedFileType(filePath)) {
             return false;
@@ -159,7 +159,7 @@ class SecretDetector {
                 if (line.length() > maxLineLength) {
                     continue;
                 }
-                
+
                 // Check if the line is likely to be a minified/bundled file
                 if (line.length() > longLineNoSpaceThreshold && !StringUtils.containsWhitespace(line)) {
                     continue;
@@ -252,7 +252,7 @@ class SecretDetector {
             // Extract the secret value from the matched group
             int groupIndex = matcher.groupCount() > 0 ? 1 : 0;
             Integer configuredGroup = rule.getSecretGroup();
-            
+
             if (configuredGroup != null) {
                 if (configuredGroup >= 0 && configuredGroup <= matcher.groupCount()) {
                     groupIndex = configuredGroup;
@@ -373,14 +373,14 @@ class SecretDetector {
 
     /**
      * Check if file should be skipped based on MIME type detection using Apache Tika.
-     * 
+     *
      * Uses Tika to detect MIME type from file content (magic bytes, structure, heuristics).
      * This is more reliable than extension-based detection for files without extensions
      * or with misleading extensions.
-     * 
+     *
      * Skip patterns are configured via {@code allowlist.skip-mime-types} in the YAML config.
      * Each pattern is a regex matched against the detected MIME type.
-     * 
+     *
      * @return true if file should be skipped, false if it should be scanned
      */
     private boolean shouldExcludeByMimeType(@NotNull ZipFile zipFile, @NotNull ZipEntry entry) {
@@ -388,35 +388,35 @@ class SecretDetector {
         if (skipMimeTypePatterns.isEmpty()) {
             return false;
         }
-        
+
         try (InputStream is = zipFile.getInputStream(entry);
              BufferedInputStream bis = new BufferedInputStream(is)) {
-            
+
             // Tika.detect() reads only the bytes needed for detection
             String mimeType = tika.detect(bis, entry.getName());
-            
+
             if (mimeType == null) {
                 return false;  // Unknown type, scan it to be safe
             }
-            
+
             // Check against configured skip patterns (regex)
             for (Pattern pattern : skipMimeTypePatterns) {
                 if (pattern.matcher(mimeType).find()) {
-                    logger.debug("Skipping file (MIME {} matches pattern {}): {}", 
+                    logger.debug("Skipping file (MIME {} matches pattern {}): {}",
                             mimeType, pattern.pattern(), entry.getName());
                     return true;
                 }
             }
-            
+
             return false;
-            
+
         } catch (IOException e) {
             // If we can't detect type, don't skip - let the main scan handle errors
             logger.debug("Could not detect file type for {}: {}", entry.getName(), e.getMessage());
             return false;
         }
     }
-    
+
     /**
      * Result of a secret scan. Immutable.
      */
@@ -471,7 +471,7 @@ class SecretDetector {
                 findings.size(), findings.size() == 1 ? "" : "s");
         }
     }
-    
+
     /**
      * A single secret finding. Secrets are redacted immediately.
      */
@@ -513,4 +513,3 @@ class SecretDetector {
         }
     }
 }
-

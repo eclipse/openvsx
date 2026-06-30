@@ -4,7 +4,7 @@ This guide provides the necessary steps to deploy a private OpenVSX registry on 
 
 ## Prerequisites
 - [Deploy and run Eclipse Che on your cluster](https://eclipse.dev/che/docs/stable/administration-guide/installing-che-in-the-cloud/)
-- [Create a workspace](https://eclipse.dev/che/docs/stable/end-user-guide/starting-a-workspace-from-a-git-repository-url/) from the [openvsx Git repository URL](https://github.com/eclipse/openvsx)  
+- [Create a workspace](https://eclipse.dev/che/docs/stable/end-user-guide/starting-a-workspace-from-a-git-repository-url/) from the [openvsx Git repository URL](https://github.com/eclipse/openvsx)
 
 ## Step-by-Step Instructions
 In the workspace, you'll find a set of predefined commands from the `devfile.yaml` that will assist you in preparing and deploying a private OpenVSX registry. To execute any of these commands within your workspace, navigate to Terminal -> Run Task -> devfile:

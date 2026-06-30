@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script automates the process of downloading, configuring, and publishing VS Code extensions to an OpenVSX registry 
+# This script automates the process of downloading, configuring, and publishing VS Code extensions to an OpenVSX registry
 # deployed on an OpenShift cluster.
 
 # Path to the extensions.txt file
@@ -25,7 +25,7 @@ while IFS= read -r line; do
    # Extract the vsix file name from the URL
    vsix_url="$line"
    vsix_filename=$(basename "$vsix_url")
-  
+
    # Download the vsix file into the /tmp directory
    echo "Downloading $vsix_url"
    kubectl exec -n "${OPENVSX_NAMESPACE}" "${OVSX_POD_NAME}" -- bash -c "wget -q -P /tmp '$vsix_url' "

@@ -157,7 +157,7 @@ class AuthHandlerTest {
         String authHeader = headers.getFirst("Authorization");
         assertNotNull(authHeader);
         assertTrue(authHeader.startsWith("Basic "));
-        
+
         // Decode and verify credentials
         String encoded = authHeader.substring("Basic ".length());
         String decoded = new String(Base64.getDecoder().decode(encoded));

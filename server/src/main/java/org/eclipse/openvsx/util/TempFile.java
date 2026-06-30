@@ -22,7 +22,7 @@ public class TempFile implements Closeable {
     private final Path path;
     private FileResource resource;
     private Namespace namespace;
-    
+
     public TempFile(String prefix, String suffix) throws IOException {
         path = Files.createTempFile(prefix, suffix);
     }
@@ -32,7 +32,7 @@ public class TempFile implements Closeable {
      * <p>
      * Used when extracting files to a pre-created temp location.
      * The file will be deleted when close() is called.
-     * 
+     *
      * @param existingPath Path to an existing temp file
      */
     public TempFile(Path existingPath) {

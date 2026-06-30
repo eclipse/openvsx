@@ -111,4 +111,3 @@ class SimilarityServiceTest {
                 .hasMessageContaining("Unable to verify namespace name uniqueness");
     }
 }
-

@@ -126,7 +126,7 @@ import jakarta.persistence.EntityManager;
     SettingsService.class
 })
 class AdminAPITest {
-    
+
     @MockitoSpyBean
     UserService users;
 
@@ -506,7 +506,7 @@ class AdminAPITest {
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
         Mockito.when(repositories.findMemberships(namespace.getName()))
                 .thenReturn(List.of(membership1));
-        
+
         mockMvc.perform(get("/admin/namespace/{namespace}/members", "foobar")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
@@ -588,7 +588,7 @@ class AdminAPITest {
         mockAdminUser();
         Mockito.when(repositories.findNamespaceName("foobar"))
                 .thenReturn("foobar");
- 
+
         mockMvc.perform(post("/admin/create-namespace")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(namespaceJson(n -> { n.setName("foobar"); }))
@@ -631,7 +631,7 @@ class AdminAPITest {
     @Test
     void testDeleteNamespaceHasMembers() throws Exception {
         mockAdminUser();
-        
+
         var namespace = mockNamespace(1);
         Mockito.when(repositories.findExtensions(namespace)).thenReturn(Streamable.empty());
 
@@ -1446,7 +1446,7 @@ class AdminAPITest {
                     "publishers": []
                 }
                 """;
-        
+
         var token = mockNonAdminToken();
         mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
                 .content(baseRequest)
@@ -1490,7 +1490,7 @@ class AdminAPITest {
 
         Mockito.when(repositories.findActiveReviews(user2))
             .thenReturn(Streamable.empty());
-        
+
         var namespace = mockNamespace();
         var membership = new NamespaceMembership();
         membership.setNamespace(namespace);
@@ -1707,7 +1707,7 @@ class AdminAPITest {
             Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(true);
             var memberships = new ArrayList<NamespaceMembership>(numberOfMembers);
-            
+
             var user = new UserData();
             user.setLoginName(UUID.randomUUID().toString());
             user.setFullName("Test User");
@@ -1721,7 +1721,7 @@ class AdminAPITest {
             Mockito.when(repositories.findMemberships(namespace))
                 .thenReturn(Streamable.of(memberships));
         }
-        
+
         return namespace;
     }
 
@@ -1810,7 +1810,7 @@ class AdminAPITest {
                 .thenReturn(Streamable.empty());
         Mockito.when(repositories.findDeprecatedExtensions(extension))
                 .thenReturn(Streamable.empty());
-                
+
         return versions;
     }
 
@@ -1899,7 +1899,7 @@ class AdminAPITest {
         var json = ResultJson.error(message);
         return new ObjectMapper().writeValueAsString(json);
     }
-    
+
     @TestConfiguration
     @Import(SecurityConfig.class)
     static class TestConfig {

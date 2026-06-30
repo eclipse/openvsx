@@ -72,7 +72,7 @@ public class SearchConfig extends ElasticsearchConfiguration {
     }
 
     /**
-     * Returns a new trust store if {@link #trustStore} (and {@link #trustStorePassword}) properties 
+     * Returns a new trust store if {@link #trustStore} (and {@link #trustStorePassword}) properties
      * are non empty. Returns {@link SSLContext#getDefault() default} SSLContext otherwise.
      */
     private SSLContext sslContext() {

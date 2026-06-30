@@ -76,11 +76,11 @@ public class ExtensionJson extends ResultJson {
 
     @Schema(hidden = true)
     private Boolean active;
-    
-    @Schema(description = "Review/publishing status: published (active and visible to all), under_review (being reviewed), rejected (blocked)", 
+
+    @Schema(description = "Review/publishing status: published (active and visible to all), under_review (being reviewed), rejected (blocked)",
             allowableValues = {"published", "under_review", "rejected"})
     private String reviewStatus;
-    
+
     @Schema(description = "Message explaining the review status (e.g., why extension was quarantined or rejected)")
     private String reviewMessage;
 
@@ -292,19 +292,19 @@ public class ExtensionJson extends ResultJson {
     public void setActive(Boolean active) {
         this.active = active;
     }
-    
+
     public String getReviewStatus() {
         return reviewStatus;
     }
-    
+
     public void setReviewStatus(String reviewStatus) {
         this.reviewStatus = reviewStatus;
     }
-    
+
     public String getReviewMessage() {
         return reviewMessage;
     }
-    
+
     public void setReviewMessage(String reviewMessage) {
         this.reviewMessage = reviewMessage;
     }

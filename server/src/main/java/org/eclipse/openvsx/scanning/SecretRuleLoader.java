@@ -130,7 +130,7 @@ public class SecretRuleLoader {
 
         // Create combined global allowlist if any items were found
         GlobalAllowlist combinedAllowlist = null;
-        if (!allPaths.isEmpty() || !allRegexes.isEmpty() || !allStopwords.isEmpty() || 
+        if (!allPaths.isEmpty() || !allRegexes.isEmpty() || !allStopwords.isEmpty() ||
             !allFileExtensions.isEmpty() || !allSkipMimeTypes.isEmpty()) {
             combinedAllowlist = new GlobalAllowlist();
             combinedAllowlist.paths = allPaths;
@@ -271,7 +271,7 @@ public class SecretRuleLoader {
     public static class RuleFile {
         /** List of secret detection rules */
         public List<RuleDefinition> rules;
-        
+
         /** Global allowlist configuration that applies to all rules */
         public GlobalAllowlist allowlist;
     }
@@ -284,22 +284,22 @@ public class SecretRuleLoader {
     public static class RuleDefinition {
         /** Unique rule identifier (required) */
         public String id;
-        
+
         /** Human-readable description of what this rule detects */
         public String description;
-        
+
         /** Regex pattern to match secrets (required, compiled as case-insensitive) */
         public String regex;
-        
+
         /** Minimum Shannon entropy threshold (0.0-8.0). Matches below this are filtered out. */
         public Double entropy;
-        
+
         /** Keywords that must appear in a line before applying regex (performance optimization) */
         public List<String> keywords;
-        
+
         /** Rule-specific allowlist patterns to exclude known safe matches */
         public List<Allowlist> allowlists;
-        
+
         /** Capture group index to extract the secret value (default: 1 if available, else 0) */
         public Integer secretGroup;
     }
@@ -331,18 +331,18 @@ public class SecretRuleLoader {
     public static class GlobalAllowlist {
         /** Regex patterns for file paths to exclude (e.g., "node_modules/", "\.test\.") */
         public List<String> paths;
-        
+
         /** Regex patterns for content to exclude as known safe (e.g., "^example$", "test.*") */
         public List<String> regexes;
-        
+
         /** Exact strings to exclude (case-insensitive, e.g., "placeholder", "changeme") */
         public List<String> stopwords;
-        
+
         /** File extensions to skip scanning (e.g., ".png", ".jpg", ".pdf") */
         @JsonProperty("file-extensions")
         public List<String> fileExtensions;
-        
-        /** 
+
+        /**
          * Regex patterns for MIME types to skip during scanning.
          * Uses Apache Tika for content-based MIME detection.
          * Examples: "^image/.*", "^application/x-(elf|msdownload|mach)", "^video/.*"
@@ -351,4 +351,3 @@ public class SecretRuleLoader {
         public List<String> skipMimeTypes;
     }
 }
-

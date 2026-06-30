@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("test")
 public class TestService {
-    
+
     @Autowired
     EntityManager entityManager;
 
@@ -39,5 +39,5 @@ public class TestService {
         token.setValue("test_token");
         entityManager.persist(token);
     }
-    
+
 }

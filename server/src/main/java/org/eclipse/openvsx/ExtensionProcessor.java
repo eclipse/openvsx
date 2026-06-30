@@ -50,7 +50,7 @@ public class ExtensionProcessor implements AutoCloseable {
     private static final String MANIFEST_PROPERTIES = "Properties";
     private static final String MANIFEST_PROPERTY = "Property";
     private static final String MANIFEST_VALUE = "Value";
-    
+
     protected final Logger logger = LoggerFactory.getLogger(ExtensionProcessor.class);
 
     private final TempFile extensionFile;

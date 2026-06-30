@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -156,7 +156,7 @@ public class HttpResponseExtractor {
             String key = segment.substring(0, segment.indexOf('['));
             String indexPart = segment.substring(segment.indexOf('[') + 1, segment.indexOf(']'));
             JsonNode next = node.get(key);
-            
+
             if (next != null && next.isArray()) {
                 // Handle wildcard [*] - return all array elements
                 if (indexPart.equals("*")) {
@@ -184,10 +184,10 @@ public class HttpResponseExtractor {
 
         return result;
     }
-    
+
     /**
      * Evaluate a simple condition expression.
-     * 
+     *
      * Supports:
      * - Literal "true" or "false"
      * - Basic comparisons: "$.detected == true", "$.status != 'clean'", "$.score > 5"
@@ -196,9 +196,9 @@ public class HttpResponseExtractor {
         if (condition == null || condition.trim().isEmpty()) {
             return true;  // No condition = always true
         }
-        
+
         String trimmed = condition.trim().toLowerCase();
-        
+
         // Handle literal true/false
         if (trimmed.equals("true")) {
             return true;
@@ -206,21 +206,21 @@ public class HttpResponseExtractor {
         if (trimmed.equals("false")) {
             return false;
         }
-        
+
         // Simple condition parsing
         // Format: "$.path operator value"
         String[] parts = condition.split("\\s+");
         if (parts.length < 3) {
             throw new IllegalArgumentException("Invalid condition format: " + condition);
         }
-        
+
         String path = parts[0];
         String operator = parts[1];
         String expectedValue = parts[2].replace("'", "").replace("\"", "");
-        
+
         // Extract actual value from object
         Object actualValue = extractValueFromMap(object, path);
-        
+
         // Compare based on operator
         return switch (operator) {
             case "==", "=" -> String.valueOf(actualValue).equals(expectedValue);
@@ -232,7 +232,7 @@ public class HttpResponseExtractor {
             default -> throw new IllegalArgumentException("Unsupported operator: " + operator);
         };
     }
-    
+
     /**
      * Extract a value from a map using a simple path (e.g., "$.detected.detail").
      */
@@ -260,7 +260,7 @@ public class HttpResponseExtractor {
 
         return current;
     }
-    
+
     /**
      * Compare two values numerically.
      */
@@ -273,10 +273,10 @@ public class HttpResponseExtractor {
             throw new IllegalArgumentException("Cannot compare non-numeric values: " + actual + " vs " + expected);
         }
     }
-    
+
     /**
      * Evaluate a simple expression to compute a value.
-     * 
+     *
      * Supports:
      * - Ternary: "detected ? 'HIGH' : 'CLEAN'"
      * - Direct value: "'MEDIUM'"
@@ -286,7 +286,7 @@ public class HttpResponseExtractor {
         if (expression == null || expression.trim().isEmpty()) {
             return null;
         }
-        
+
         // Check for ternary expression: "condition ? trueValue : falseValue"
         if (expression.contains("?") && expression.contains(":")) {
             String[] parts = expression.split("\\?");
@@ -294,28 +294,27 @@ public class HttpResponseExtractor {
             String[] values = parts[1].split(":");
             String trueValue = values[0].trim().replace("'", "").replace("\"", "");
             String falseValue = values[1].trim().replace("'", "").replace("\"", "");
-            
+
             // Evaluate condition (simple field check)
             Object fieldValue = extractValueFromMap(object, "$." + condition);
-            boolean conditionMet = fieldValue != null && 
+            boolean conditionMet = fieldValue != null &&
                 (fieldValue.equals(true) || fieldValue.equals("true"));
-            
+
             return conditionMet ? trueValue : falseValue;
         }
-        
+
         // Check for direct value (quoted string)
         if (expression.startsWith("'") || expression.startsWith("\"")) {
             return expression.replace("'", "").replace("\"", "");
         }
-        
+
         // Check for path reference
         if (expression.startsWith("$.")) {
             Object value = extractValueFromMap(object, expression);
             return value != null ? value.toString() : null;
         }
-        
+
         // Default: return as-is
         return expression;
     }
 }
-

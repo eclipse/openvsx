@@ -55,7 +55,7 @@ public class EclipseService {
             .appendLiteral(' ')
             .append(DateTimeFormatter.ISO_LOCAL_TIME)
             .toFormatter();
-    
+
     private static final TypeReference<List<String>> TYPE_LIST_STRING = new TypeReference<>() {};
     private static final TypeReference<List<EclipseProfile>> TYPE_LIST_PROFILE = new TypeReference<>() {};
     private static final TypeReference<List<PublisherAgreementResponse>> TYPE_LIST_AGREEMENT = new TypeReference<>() {};
@@ -377,7 +377,7 @@ public class EclipseService {
 
             // The request was successful: reactivate all previously published extensions
             extensions.reactivateExtensions(user);
-            
+
             // Parse the response and store the publisher agreement metadata
             return parseAgreementResponse(json);
         } catch (RestClientException exc) {

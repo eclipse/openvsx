@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * Common interface for all search service implementations.
  */
 public interface ISearchService {
-    
+
     /**
      * Indicates whether this storage service is enabled by application config.
      */

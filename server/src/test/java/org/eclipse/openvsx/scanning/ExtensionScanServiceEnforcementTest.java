@@ -58,7 +58,7 @@ class ExtensionScanServiceEnforcementTest {
     @BeforeEach
     void setUp() {
         svc = new ExtensionScanService(config, checkRunner, persistenceService, scannerRegistry, jobScheduler, scanJobRepository);
-        
+
         scan = new ExtensionScan();
         scan.setId(123);
         scan.setStatus(ScanStatus.STARTED);
@@ -70,7 +70,7 @@ class ExtensionScanServiceEnforcementTest {
 
         user = new UserData();
         user.setLoginName("testuser");
-        
+
         // Make mock persistence service actually update scan status for state machine validation
         lenient().doAnswer(invocation -> {
             ExtensionScan s = invocation.getArgument(0);
@@ -78,14 +78,14 @@ class ExtensionScanServiceEnforcementTest {
             s.setStatus(status);
             return null;
         }).when(persistenceService).updateStatus(any(ExtensionScan.class), any(ScanStatus.class));
-        
+
         lenient().doAnswer(invocation -> {
             ExtensionScan s = invocation.getArgument(0);
             ScanStatus status = invocation.getArgument(1);
             s.setStatus(status);
             return null;
         }).when(persistenceService).completeWithStatus(any(ExtensionScan.class), any(ScanStatus.class));
-        
+
         // Make mock persistence service actually add failures to scan
         lenient().doAnswer(invocation -> {
             ExtensionScan s = invocation.getArgument(0);
@@ -93,7 +93,7 @@ class ExtensionScanServiceEnforcementTest {
             String ruleName = invocation.getArgument(2);
             String reason = invocation.getArgument(3);
             boolean enforced = invocation.getArgument(4);
-            
+
             var failure = ExtensionValidationFailure.create(checkType, ruleName, reason);
             failure.setEnforced(enforced);
             s.addValidationFailure(failure);

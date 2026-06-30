@@ -15,5 +15,3 @@ public class InvalidMimeTypeExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
     }
 }
-
-

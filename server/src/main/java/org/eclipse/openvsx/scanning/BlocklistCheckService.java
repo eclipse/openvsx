@@ -134,7 +134,7 @@ public class BlocklistCheckService implements PublishCheck {
 
         try (ZipFile zipFile = new ZipFile(extensionFile.getPath().toFile())) {
             List<? extends ZipEntry> entries = Collections.list(zipFile.entries());
-            
+
             ArchiveUtil.enforceArchiveLimits(
                     entries,
                     scanConfig.getMaxEntryCount(),
@@ -146,7 +146,7 @@ public class BlocklistCheckService implements PublishCheck {
                     .toList();
 
             List<CompletableFuture<Void>> futures = new ArrayList<>(hashableEntries.size());
-            
+
             for (ZipEntry entry : hashableEntries) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
@@ -162,7 +162,7 @@ public class BlocklistCheckService implements PublishCheck {
             // Wait for all hashing to complete (non-blocking wait)
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-            logger.debug("Blocklist check: hashed {} files, skipped {}", 
+            logger.debug("Blocklist check: hashed {} files, skipped {}",
                     fileHashes.size(), entries.size() - hashableEntries.size());
 
         } catch (ZipException e) {
@@ -191,7 +191,7 @@ public class BlocklistCheckService implements PublishCheck {
             String hash = decision.getFileHash();
             String fileName = fileHashes.get(hash);
             result.add(new BlockedFileInfo(fileName, hash, decision));
-            
+
             logger.info("Blocked file detected: {} (hash: {})", fileName, hash);
         }
 

@@ -102,7 +102,7 @@ class SecretDetectorFactoryTest {
 
         assertNotNull(factory.getScanner(), "Scanner should be created");
         assertEquals(1, factory.getRules().size());
-        
+
         // Verify scanner was initialized (global allowlist is used internally)
         // We can't directly inspect the scanner's internal allowlist, but we can verify it was created
         assertNotNull(factory.getScanner());
@@ -122,7 +122,7 @@ class SecretDetectorFactoryTest {
         setField(config, "debugPreviewChars", 4);
         return config;
     }
-    
+
     private ExtensionScanConfig buildScanConfig() throws Exception {
         ExtensionScanConfig config = new ExtensionScanConfig();
         setField(config, "enabled", true);
@@ -166,4 +166,3 @@ class SecretDetectorFactoryTest {
         }
     }
 }
-

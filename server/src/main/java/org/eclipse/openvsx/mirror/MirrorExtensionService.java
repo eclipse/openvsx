@@ -96,11 +96,11 @@ public class MirrorExtensionService {
                 .log();
 
         data.updateMetadata(namespaceName, extensionName, latest);
-        
+
         logger.debug("updating namespace metadata: {}", namespaceName);
         data.mirrorNamespaceMetadata(namespaceName);
     }
-    
+
     private boolean shouldMirrorExtensionVersions(String namespaceName, String extensionName, LocalDate lastModified, ExtensionJson latest) {
         if (lastModified == null) {
             return true;
@@ -144,7 +144,7 @@ public class MirrorExtensionService {
             );
         }
         toAdd.sort(Comparator.comparing(extensionJson -> TimeUtil.fromUTCString(extensionJson.getTimestamp())));
-        
+
         for(var i = 0; i < toAdd.size(); i++) {
             var json = toAdd.get(i);
             jobContext.logger().info("mirroring " + NamingUtil.toLogFormat(json) + " (" + (i+1) + "/" +  toAdd.size() + ")");

@@ -376,7 +376,7 @@ public class RepositoryService {
     public NamespaceMembership findMembership(UserData user, Namespace namespace) {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
-    
+
     public void deleteMemberships(UserData user) {
         membershipRepo.deleteByUser(user);
     }

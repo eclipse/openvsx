@@ -27,7 +27,7 @@ public class UserRelationshipsJson {
     public List<NamespaceDetailsJson> getNamespaces() {
         return namespaces;
     }
-    
+
     public void setUser(UserJson user) {
         this.user = user;
     }

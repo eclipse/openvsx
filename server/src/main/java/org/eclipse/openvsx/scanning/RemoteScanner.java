@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -32,16 +32,16 @@ import java.util.Map;
  * Adding new scanners requires only YAML configuration - no Java code needed.
  */
 public class RemoteScanner implements Scanner {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(RemoteScanner.class);
-    
+
     private final String scannerName;
     private final RemoteScannerProperties.ScannerConfig config;
     private final HttpTemplateEngine templateEngine;
     private final HttpClientExecutor httpExecutor;
     private final HttpResponseExtractor responseExtractor;
     private final ScannerFileProvider scanFileService;
-    
+
     public RemoteScanner(
         @Nonnull String scannerName,
         @Nonnull RemoteScannerProperties.ScannerConfig config,
@@ -57,39 +57,39 @@ public class RemoteScanner implements Scanner {
         this.responseExtractor = responseExtractor;
         this.scanFileService = scanFileService;
     }
-    
+
     @Override
     @Nonnull
     public String getScannerType() {
         return config.getType();
     }
-    
+
     @Override
     public boolean isRequired() {
         return config.isRequired();
     }
-    
+
     @Override
     public int getTimeoutMinutes() {
         return config.getTimeoutMinutes();
     }
-    
+
     @Override
     public boolean isAsync() {
         return config.isAsync();
     }
-    
+
     @Override
     public int getMaxConcurrency() { return config.getMaxConcurrency(); }
-    
+
     @Override
     public int getMaxQueueWaitMinutes() { return config.getMaxQueueWaitMinutes(); }
-    
+
     @Override
     public boolean enforcesThreats() {
         return config.isEnforced();
     }
-    
+
     @Override
     public RemoteScannerProperties.PollConfig getPollConfig() {
         return config.getPolling();
@@ -109,7 +109,7 @@ public class RemoteScanner implements Scanner {
         }
         return template.replace("{jobId}", externalJobId);
     }
-    
+
     /**
      * Start a scan by sending the entire .vsix file to the scanner.
      * <p>
@@ -119,32 +119,32 @@ public class RemoteScanner implements Scanner {
     @Override
     @Nonnull
     public Scanner.Invocation startScan(@Nonnull Command command) throws ScannerException {
-        logger.debug("Starting {} scan for extension version {}", 
+        logger.debug("Starting {} scan for extension version {}",
             scannerName, command.extensionVersionId());
-        
+
         RemoteScannerProperties.HttpOperation configOp = config.getStart();
         if (configOp == null) {
             throw new ScannerException("No start operation configured for scanner: " + scannerName);
         }
-        
+
         try (var extensionFile = scanFileService.getExtensionFile(command.extensionVersionId())) {
             File file = extensionFile.getPath().toFile();
             String fileName = extensionFile.getResource() != null ? extensionFile.getResource().getName() : file.getName();
-            
+
             // Copy operation to avoid mutating shared config (thread safety)
             RemoteScannerProperties.HttpOperation startOp = configOp.copy();
-            
+
             // Process URL and headers with placeholders
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("fileName", fileName);
-            
+
             processOperation(startOp, placeholders);
-            
+
             // Execute HTTP request
             String response = httpExecutor.execute(startOp, extensionFile);
-            
+
             logger.debug("Start operation response: {}", response);
-            
+
             return parseStartResponse(response, startOp);
         } catch (java.io.IOException | ScannerException e) {
             throw new ScannerException("Failed to start scan: " + e.getMessage(), e);
@@ -170,10 +170,10 @@ public class RemoteScanner implements Scanner {
             return new Scanner.Invocation.Completed(result);
         }
     }
-    
+
     /**
      * Poll status of an async scan.
-     * 
+     *
      * Executes the configured poll operation and maps the response
      * to PollStatus.
      */
@@ -183,40 +183,40 @@ public class RemoteScanner implements Scanner {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
-        
+
         RemoteScannerProperties.HttpOperation configOp = config.getPoll();
         if (configOp == null) {
             throw new ScannerException("No poll operation configured for scanner: " + scannerName);
         }
-        
+
         try {
             RemoteScannerProperties.HttpOperation pollOp = configOp.copy();
-            
+
             // Process URL and headers with job ID
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("jobId", submission.externalJobId());
-            
+
             processOperation(pollOp, placeholders);
-            
+
             // Execute HTTP request
             String response = httpExecutor.execute(pollOp, null);
-            
+
             logger.debug("Poll operation response: {}", response);
-            
+
             // Extract and map status
             String status = extractStatus(response, pollOp);
             PollStatus mappedStatus = mapStatus(status, pollOp);
-            
-            logger.debug("Job {} status: {} -> {}", 
+
+            logger.debug("Job {} status: {} -> {}",
                 submission.externalJobId(), status, mappedStatus);
-            
+
             return mappedStatus;
-            
+
         } catch (Exception e) {
             throw new ScannerException("Failed to poll scan status: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Retrieve results from a completed async scan.
      * <p>
@@ -228,41 +228,41 @@ public class RemoteScanner implements Scanner {
         if (!config.isAsync()) {
             throw new UnsupportedOperationException("Scanner is not async: " + scannerName);
         }
-        
+
         RemoteScannerProperties.HttpOperation configOp = config.getResult();
         if (configOp == null) {
             throw new ScannerException("No result operation configured for scanner: " + scannerName);
         }
-        
+
         try {
             // Copy operation to avoid mutating shared config (thread safety)
             RemoteScannerProperties.HttpOperation resultOp = configOp.copy();
-            
+
             // Process URL and headers with job ID
             Map<String, String> placeholders = new HashMap<>();
             placeholders.put("jobId", submission.externalJobId());
-            
+
             processOperation(resultOp, placeholders);
-            
+
             // Execute HTTP request
             String response = httpExecutor.execute(resultOp, null);
-            
+
             logger.debug("Result operation response: {}", response);
-            
+
             // Parse result
             Scanner.Result result = parseResult(response, resultOp);
-            
-            logger.debug("Scan {} completed: {}", 
+
+            logger.debug("Scan {} completed: {}",
                 submission.externalJobId(),
                 result.isClean() ? "clean" : result.getThreats().size() + " threats found");
-            
+
             return result;
-            
+
         } catch (Exception e) {
             throw new ScannerException("Failed to retrieve scan results: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Process an operation by substituting placeholders in URL and headers.
      */
@@ -273,14 +273,14 @@ public class RemoteScanner implements Scanner {
         // Process URL
         String processedUrl = templateEngine.process(operation.getUrl(), placeholders);
         operation.setUrl(processedUrl);
-        
+
         // Process headers
         Map<String, String> processedHeaders = templateEngine.processMap(
             operation.getHeaders(),
             placeholders
         );
         operation.setHeaders(processedHeaders);
-        
+
         // Process query params
         Map<String, String> processedParams = templateEngine.processMap(
             operation.getQueryParams(),
@@ -288,7 +288,7 @@ public class RemoteScanner implements Scanner {
         );
         operation.setQueryParams(processedParams);
     }
-    
+
     /**
      * Extract job ID from start operation response.
      */
@@ -300,20 +300,20 @@ public class RemoteScanner implements Scanner {
         if (responseConfig == null || responseConfig.getJobIdPath() == null) {
             throw new ScannerException("No job ID path configured");
         }
-        
+
         String jobId = responseExtractor.extractString(
             response,
             responseConfig.getFormat(),
             responseConfig.getJobIdPath()
         );
-        
+
         if (jobId == null) {
             throw new ScannerException("Failed to extract job ID from response");
         }
-        
+
         return jobId;
     }
-    
+
     /**
      * Extract status from poll operation response.
      */
@@ -325,20 +325,20 @@ public class RemoteScanner implements Scanner {
         if (responseConfig == null || responseConfig.getStatusPath() == null) {
             throw new ScannerException("No status path configured");
         }
-        
+
         String status = responseExtractor.extractString(
             response,
             responseConfig.getFormat(),
             responseConfig.getStatusPath()
         );
-        
+
         if (status == null) {
             throw new ScannerException("Failed to extract status from response");
         }
-        
+
         return status;
     }
-    
+
     /**
      * Map scanner-specific status to PollStatus.
      */
@@ -348,11 +348,11 @@ public class RemoteScanner implements Scanner {
     ) throws ScannerException {
         RemoteScannerProperties.ResponseConfig responseConfig = operation.getResponse();
         Map<String, String> statusMapping = responseConfig.getStatusMapping();
-        
+
         if (statusMapping == null || statusMapping.isEmpty()) {
             throw new ScannerException("No status mapping configured");
         }
-        
+
         // Look up mapped status
         String mappedStatus = statusMapping.get(status.toLowerCase());
         if (mappedStatus == null) {
@@ -360,14 +360,14 @@ public class RemoteScanner implements Scanner {
             logger.warn("Unknown status '{}', assuming PROCESSING", status);
             return PollStatus.PROCESSING;
         }
-        
+
         try {
             return PollStatus.valueOf(mappedStatus.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new ScannerException("Invalid mapped status: " + mappedStatus);
         }
     }
-    
+
     /**
      * Parse scan result from response.
      */
@@ -379,7 +379,7 @@ public class RemoteScanner implements Scanner {
         if (responseConfig == null) {
             throw new ScannerException("No response config for result parsing");
         }
-        
+
         // Check for errors first
         if (responseConfig.getErrorPath() != null) {
             String error = responseExtractor.extractString(
@@ -391,7 +391,7 @@ public class RemoteScanner implements Scanner {
                 throw new ScannerException("Scanner reported error: " + error);
             }
         }
-        
+
         String summary = null;
         if (responseConfig.getSummaryPath() != null) {
             summary = responseExtractor.extractString(
@@ -407,23 +407,23 @@ public class RemoteScanner implements Scanner {
             // No threats path - assume clean
             return Scanner.Result.clean(summary);
         }
-        
+
         List<Map<String, Object>> threatObjects = responseExtractor.extractList(
             response,
             responseConfig.getFormat(),
             threatsPath
         );
-        
+
         // Map threats
         List<Scanner.Threat> threats = mapThreats(threatObjects, responseConfig);
-        
+
         if (threats.isEmpty()) {
             return Scanner.Result.clean(summary);
         } else {
             return Scanner.Result.withThreats(threats, summary);
         }
     }
-    
+
     /**
      * Map threat objects to ScanResult.Threat instances.
      */
@@ -435,9 +435,9 @@ public class RemoteScanner implements Scanner {
         if (threatMapping == null) {
             throw new ScannerException("No threat mapping configured");
         }
-        
+
         List<Scanner.Threat> threats = new ArrayList<>();
-        
+
         for (Map<String, Object> threatObj : threatObjects) {
             // Check condition filter
             if (threatMapping.getCondition() != null) {
@@ -449,20 +449,20 @@ public class RemoteScanner implements Scanner {
                     continue;  // Skip this threat
                 }
             }
-            
+
             // Extract threat fields
             String name = extractThreatField(threatObj, threatMapping.getNamePath());
             String description = extractThreatField(threatObj, threatMapping.getDescriptionPath());
             String severity = extractThreatSeverity(threatObj, threatMapping);
             String filePath = extractThreatField(threatObj, threatMapping.getFilePathPath());
             String fileHash = extractThreatField(threatObj, threatMapping.getFileHashPath());
-            
+
             threats.add(new Scanner.Threat(name, description, severity, filePath, fileHash));
         }
-        
+
         return threats;
     }
-    
+
     /**
      * Extract a threat field value.
      * Returns null if path is not configured or value not found.
@@ -471,13 +471,13 @@ public class RemoteScanner implements Scanner {
         if (path == null) {
             return null;
         }
-        
+
         // Simple path extraction (e.g., "$.name" -> "name")
         String key = path.startsWith("$.") ? path.substring(2) : path;
         Object value = threatObj.get(key);
         return value != null ? value.toString() : null;
     }
-    
+
     /**
      * Extract threat severity using path or expression.
      * Always returns a non-null value (defaults to "MEDIUM").
@@ -497,7 +497,7 @@ public class RemoteScanner implements Scanner {
                 return result;
             }
         }
-        
+
         // Fall back to path
         if (threatMapping.getSeverityPath() != null) {
             String result = extractThreatField(threatObj, threatMapping.getSeverityPath());
@@ -505,7 +505,7 @@ public class RemoteScanner implements Scanner {
                 return result;
             }
         }
-        
+
         // Default severity
         return "MEDIUM";
     }

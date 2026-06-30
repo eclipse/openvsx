@@ -28,7 +28,7 @@ import java.util.List;
  */
 @Configuration
 public class SecretDetectorConfig {
-    
+
     /**
      * Enables or disables secret detection for extension publishing.
      *
@@ -172,7 +172,7 @@ public class SecretDetectorConfig {
      */
     @Value("${ovsx.scanning.secret-detection.timeout-seconds:5}")
     private int timeoutSeconds;
-    
+
     /**
      * Maximum findings to collect before aborting to protect memory and UX.
      * <p>
@@ -261,7 +261,7 @@ public class SecretDetectorConfig {
     public int getTimeoutSeconds() {
         return timeoutSeconds;
     }
-    
+
     public int getMaxFindings() {
         return maxFindings;
     }
@@ -341,7 +341,7 @@ public class SecretDetectorConfig {
             throw new IllegalArgumentException(
                 "ovsx.secret-detection.timeout-seconds must be positive, got: " + timeoutSeconds);
         }
-        
+
         if (maxFindings <= 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-detection.max-findings must be positive, got: " + maxFindings);
@@ -361,11 +361,10 @@ public class SecretDetectorConfig {
             throw new IllegalArgumentException(
                 "ovsx.secret-detection.regex-context-chars must be >= 0, got: " + regexContextChars);
         }
-        
+
         if (debugPreviewChars < 0) {
             throw new IllegalArgumentException(
                 "ovsx.secret-detection.debug-preview-chars must be >= 0, got: " + debugPreviewChars);
         }
     }
 }
-

@@ -47,23 +47,23 @@ import java.util.zip.ZipFile;
 public class SecretCheckService implements PublishCheck {
 
     public static final String CHECK_TYPE = "SECRET";
-    
+
     private static final Logger logger = LoggerFactory.getLogger(SecretCheckService.class);
-    
+
     private final SecretDetectorConfig config;
     private final ExtensionScanConfig scanConfig;
     private final SecretDetector fileContentScanner;
     private final AsyncTaskExecutor taskExecutor;
 
     private final int maxFindings;
-    
+
     /**
      * Exception thrown when scan is cancelled due to finding limits or other constraints.
      */
     static class ScanCancelledException extends RuntimeException {
         ScanCancelledException(String message) { super(message); }
     }
-    
+
     /**
      * Constructs a secret detection service with the specified configuration and executor.
      */
@@ -75,7 +75,7 @@ public class SecretCheckService implements PublishCheck {
         this.config = config;
         this.scanConfig = scanConfig;
         this.taskExecutor = taskExecutor;
-        
+
         this.maxFindings = config.getMaxFindings();
 
         this.fileContentScanner = scannerFactory.getScanner();
@@ -90,7 +90,7 @@ public class SecretCheckService implements PublishCheck {
     public boolean isRequired() {
         return config.isRequired();
     }
-    
+
     @Override
     public boolean isEnabled() {
         return config.isEnabled();
@@ -114,7 +114,7 @@ public class SecretCheckService implements PublishCheck {
 
         return PublishCheck.Result.fail(failures);
     }
-    
+
     /**
      * Scans an extension package for potential secrets.
      * <p>
@@ -124,36 +124,36 @@ public class SecretCheckService implements PublishCheck {
         // Thread-safe collection for parallel processing
         List<SecretDetector.Finding> findings = Collections.synchronizedList(new ArrayList<>());
         AtomicInteger findingsCount = new AtomicInteger(0);
-        
+
         try (ZipFile zipFile = new ZipFile(extensionFile.getPath().toFile())) {
             List<? extends ZipEntry> entries = Collections.list(zipFile.entries());
             ArchiveUtil.enforceArchiveLimits(entries, scanConfig.getMaxEntryCount(), scanConfig.getMaxArchiveSizeBytes());
-            
+
             // Filter to only scannable entries BEFORE creating tasks (optimization)
             List<? extends ZipEntry> scannableEntries = entries.stream()
                     .filter(entry -> !entry.isDirectory())
                     .toList();
-            
+
             AtomicInteger filesScanned = new AtomicInteger(0);
             AtomicInteger filesSkipped = new AtomicInteger(0);
-            
+
             long startTime = System.currentTimeMillis();
             long timeoutMillis = config.getTimeoutSeconds() * 1000L;
-            
+
             // Submit all tasks and collect CompletableFutures
             List<CompletableFuture<Void>> futures = new ArrayList<>(scannableEntries.size());
-            
+
             for (ZipEntry entry : scannableEntries) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     // Check timeout at start of each task
                     if (System.currentTimeMillis() - startTime > timeoutMillis) {
                         throw new SecretScanningTimeoutException("Secret detection timed out");
                     }
-                    
+
                     if (Thread.currentThread().isInterrupted()) {
                         return;
                     }
-                    
+
                     String filePath = entry.getName();
                     try {
                         boolean scanned = fileContentScanner.scanFile(
@@ -179,7 +179,7 @@ public class SecretCheckService implements PublishCheck {
                 }, taskExecutor);
                 futures.add(future);
             }
-            
+
             // Wait for all tasks to complete (or fail)
             boolean timedOut = false;
             try {
@@ -205,10 +205,10 @@ public class SecretCheckService implements PublishCheck {
                 }
                 // Other exceptions: log and continue
             }
-            
+
             logger.debug("Secret scan complete: {} files scanned, {} files skipped, {} findings, timedOut={}",
                         filesScanned.get(), filesSkipped.get(), findings.size(), timedOut);
-            
+
             // Return results (partial if timed out with findings)
             if (timedOut) {
                 return SecretDetector.Result.timedOut(findings);
@@ -217,7 +217,7 @@ public class SecretCheckService implements PublishCheck {
             } else {
                 return SecretDetector.Result.secretsFound(findings);
             }
-            
+
         } catch (SecretScanningTimeoutException e) {
             // Timeout at top level (before parallel processing started) - no partial results possible
             logger.error("Secret detection timed out after {} seconds", config.getTimeoutSeconds());
@@ -234,7 +234,7 @@ public class SecretCheckService implements PublishCheck {
             throw new SecretScanningException("Failed to scan extension file: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Record a finding while respecting the global cap.
      */
@@ -266,9 +266,8 @@ class SecretScanningException extends RuntimeException {
     SecretScanningException(String message) {
         super(message);
     }
-    
+
     SecretScanningException(String message, Throwable cause) {
         super(message, cause);
     }
 }
-

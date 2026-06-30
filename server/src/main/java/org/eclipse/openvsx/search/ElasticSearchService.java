@@ -170,7 +170,7 @@ public class ElasticSearchService implements ISearchService {
                 locked = true;
                 indexOps.create();
             }
-            
+
             // Scan all extensions and create index queries
             var allExtensions = repositories.findAllActiveExtensions();
             if (allExtensions.isEmpty()) {

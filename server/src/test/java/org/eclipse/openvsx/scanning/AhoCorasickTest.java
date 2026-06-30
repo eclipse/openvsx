@@ -122,7 +122,7 @@ class AhoCorasickTest {
         keywords.add("valid");
         keywords.add("");
         keywords.add(null);
-        
+
         var ac = AhoCorasick.builder()
             .addKeywords(keywords)
             .build();
@@ -178,16 +178,16 @@ class AhoCorasickTest {
         assertTrue(str.contains("5"));
         assertTrue(str.contains("9"));
     }
-    
+
     @Test
     void builder_cannotBeReused() {
         var builder = AhoCorasick.builder().addKeyword("test");
         builder.build();
-        
+
         assertThrows(IllegalStateException.class, () -> builder.addKeyword("another"));
         assertThrows(IllegalStateException.class, builder::build);
     }
-    
+
     @Test
     void builder_addKeywordChains() {
         var ac = AhoCorasick.builder()
@@ -195,7 +195,7 @@ class AhoCorasickTest {
             .addKeyword("two")
             .addKeyword("three")
             .build();
-            
+
         var matches = ac.search("one two three");
         assertEquals(3, matches.size());
     }

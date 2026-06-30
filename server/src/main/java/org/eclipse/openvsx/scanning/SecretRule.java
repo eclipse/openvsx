@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -29,28 +29,28 @@ import java.util.List;
  *   Optional allowlist patterns to exclude known safe matches
  *   Optional capture group specification to extract the actual secret value
  * <p>
- * 
+ *
  * Rules are loaded from YAML files and compiled into efficient Pattern objects.
  */
 public class SecretRule {
     /** Unique identifier for this rule (e.g., "github-pat", "aws-access-key") */
     private final @NotNull String id;
-    
+
     /** Human-readable description of what this rule detects */
     private final @NotNull String description;
-    
+
     /** Compiled regex pattern to match secrets (case-insensitive) */
     private final @NotNull Pattern pattern;
-    
+
     /** Minimum Shannon entropy threshold (0.0-8.0). If set, matches below this are filtered out. */
     private final @Nullable Double entropy;
-    
+
     /** Keywords that must appear in a line before applying the regex (lowercase, for performance) */
     private final @NotNull List<String> keywords;
-    
+
     /** Compiled allowlist patterns to exclude known safe matches from this rule */
     private final @NotNull List<Pattern> allowlistPatterns;
-    
+
     /** Optional capture group index to extract the secret (default: 1 if available, else 0) */
     private final @Nullable Integer secretGroup;
 

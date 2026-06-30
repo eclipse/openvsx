@@ -270,4 +270,3 @@ class SimilarityCheckServiceTest {
         verify(similarityService).findSimilarNamespaces("ns", List.of("owned-ns"), 0.2, true, 10);
     }
 }
-

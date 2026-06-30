@@ -46,4 +46,3 @@ public class EntropyCalculator {
         return entropy;
     }
 }
-

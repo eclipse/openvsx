@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
@@ -54,7 +54,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
 
     /** Find all scans with a specific status */
     Streamable<ExtensionScan> findByStatus(ScanStatus status);
-    
+
     /** Find the oldest N scans with a specific status (for batch processing) */
     @Query(value = """
         SELECT s.* FROM extension_scan s
@@ -63,7 +63,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
         LIMIT :limit
         """, nativeQuery = true)
     List<ExtensionScan> findOldestByStatus(@Param("status") String status, @Param("limit") int limit);
-    
+
     /** Find oldest N scans with a specific status (convenience overload) */
     default List<ExtensionScan> findOldestByStatus(ScanStatus status, int limit) {
         return findOldestByStatus(status.name(), limit);
@@ -99,11 +99,11 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
 
     /**
      * Paginated query with optional filters for status, namespace, publisher, name, and date range.
-     * 
+     *
      * Filter parameters:
      * - statuses: list of ScanStatus values (empty = no filter)
      * - namespace: partial match on namespace_name (null/empty = no filter)
-     * - publisher: partial match on publisher (null/empty = no filter)  
+     * - publisher: partial match on publisher (null/empty = no filter)
      * - name: partial match on extension_name OR extension_display_name (null/empty = no filter)
      * - startedFrom/startedTo: date range filter on started_at (null = no filter)
      */
@@ -185,7 +185,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
 
     /**
      * Count scans for statistics with all filters.
-     * 
+     *
      * Enforcement behavior matches the list endpoint:
      * - When checkTypes is specified: enforcement modifies that filter (AND logic)
      * - When scannerNames is specified: enforcement modifies that filter (AND logic)
@@ -225,7 +225,7 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
 
     /**
      * Full paginated query with ALL filters including validationType, scannerNames, enforcement, adminDecision, and check errors.
-     * 
+     *
      * Enforcement behavior:
      * - When validationType is specified: enforcement modifies that filter (AND logic)
      * - When threatScannerName is specified: enforcement modifies that filter (AND logic)
@@ -335,4 +335,3 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
         @Param("includeCheckErrors") boolean includeCheckErrors
     );
 }
-

@@ -52,8 +52,8 @@ async function loadTestExtensions() {
 }
 
 /**
- * @param {Registry} registry 
- * @param {import('../lib/registry').Extension} extension 
+ * @param {Registry} registry
+ * @param {import('../lib/registry').Extension} extension
  * @param {RateLimiter} rateLimiter
  */
 async function download(registry, extension, rateLimiter) {
@@ -72,8 +72,8 @@ async function download(registry, extension, rateLimiter) {
 }
 
 /**
- * @param {Registry} registry 
- * @param {import('../lib/registry').Extension} extension 
+ * @param {Registry} registry
+ * @param {import('../lib/registry').Extension} extension
  * @param {RateLimiter} rateLimiter
  */
 async function createNamespace(registry, extension, rateLimiter) {
@@ -90,8 +90,8 @@ async function createNamespace(registry, extension, rateLimiter) {
 }
 
 /**
- * @param {Registry} registry 
- * @param {string} fileName 
+ * @param {Registry} registry
+ * @param {string} fileName
  * @param {RateLimiter} rateLimiter
  */
 async function publishExtension(registry, fileName, rateLimiter) {

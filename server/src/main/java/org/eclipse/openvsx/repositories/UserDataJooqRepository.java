@@ -89,7 +89,7 @@ public class UserDataJooqRepository {
             var like = "%" + search.toLowerCase(Locale.ROOT) + "%";
             var searchCondition = DSL.lower(USER_DATA.LOGIN_NAME).like(like)
                     .or(DSL.lower(USER_DATA.FULL_NAME).like(like));
-                    
+
             conditions.add(searchCondition);
         }
 

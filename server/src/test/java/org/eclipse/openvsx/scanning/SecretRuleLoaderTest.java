@@ -157,7 +157,7 @@ class SecretRuleLoaderTest {
 
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
-        
+
         // Paths should be merged (3 from first file + 2 from second = 5)
         assertNotNull(allowlist.paths);
         assertEquals(5, allowlist.paths.size());
@@ -166,7 +166,7 @@ class SecretRuleLoaderTest {
         assertTrue(allowlist.paths.contains("test/"));
         assertTrue(allowlist.paths.contains("vendor/"));
         assertTrue(allowlist.paths.contains("build/"));
-        
+
         // Regexes should be merged (3 + 2 = 5)
         assertNotNull(allowlist.regexes);
         assertEquals(5, allowlist.regexes.size());
@@ -174,7 +174,7 @@ class SecretRuleLoaderTest {
         assertTrue(allowlist.regexes.contains("^example$"));
         assertTrue(allowlist.regexes.contains("^placeholder$"));
         assertTrue(allowlist.regexes.contains("^dummy$"));
-        
+
         // Stopwords should be merged (3 + 2 = 5)
         assertNotNull(allowlist.stopwords);
         assertEquals(5, allowlist.stopwords.size());
@@ -183,7 +183,7 @@ class SecretRuleLoaderTest {
         assertTrue(allowlist.stopwords.contains("dummy"));
         assertTrue(allowlist.stopwords.contains("fake"));
         assertTrue(allowlist.stopwords.contains("mock"));
-        
+
         // File extensions should be merged (3 + 2 = 5)
         assertNotNull(allowlist.fileExtensions);
         assertEquals(5, allowlist.fileExtensions.size());
@@ -192,7 +192,7 @@ class SecretRuleLoaderTest {
         assertTrue(allowlist.fileExtensions.contains(".zip"));
         assertTrue(allowlist.fileExtensions.contains(".svg"));
         assertTrue(allowlist.fileExtensions.contains(".gif"));
-        
+
         // Both rules should be present (merged)
         assertEquals(2, result.getRules().size());
     }
@@ -207,7 +207,7 @@ class SecretRuleLoaderTest {
         assertNotNull(result.getRules());
         assertEquals(1, result.getRules().size());
         assertEquals("test-rule-1", result.getRules().getFirst().getId());
-        
+
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
         assertNotNull(allowlist.paths);
@@ -226,21 +226,21 @@ class SecretRuleLoaderTest {
 
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
-        
+
         // Paths: 3 from first + 1 from second = 4
         assertEquals(4, allowlist.paths.size());
         assertTrue(allowlist.paths.contains("dist/"));
-        
+
         // Regexes: 3 from first + 0 from second = 3
         assertEquals(3, allowlist.regexes.size());
-        
+
         // Stopwords: 3 from first + 1 from second = 4
         assertEquals(4, allowlist.stopwords.size());
         assertTrue(allowlist.stopwords.contains("sample"));
-        
+
         // File extensions: 3 from first + 0 from second = 3
         assertEquals(3, allowlist.fileExtensions.size());
-        
+
         // Rules should be merged (1 + 1 = 2)
         assertEquals(2, result.getRules().size());
     }
@@ -259,7 +259,7 @@ class SecretRuleLoaderTest {
         assertEquals(3, allowlist.regexes.size());
         assertEquals(3, allowlist.stopwords.size());
         assertEquals(3, allowlist.fileExtensions.size());
-        
+
         // Both rules should be present
         assertEquals(2, result.getRules().size());
     }
@@ -275,22 +275,22 @@ class SecretRuleLoaderTest {
 
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
-        
+
         // Should have items from file 1 and file 3 (file 2 has no allowlist)
         assertEquals(5, allowlist.paths.size());  // 3 + 2
         assertEquals(5, allowlist.regexes.size());  // 3 + 2
         assertEquals(5, allowlist.stopwords.size());  // 3 + 2
         assertEquals(5, allowlist.fileExtensions.size());  // 3 + 2
-        
+
         // All three rules should be present, but rule-a is overridden by file 2
         assertEquals(3, result.getRules().size());
-        
+
         // Verify rule-a was overridden (should have the description from file A, not the original)
         SecretRule ruleA = result.getRules().stream()
                 .filter(r -> r.getId().equals("rule-a"))
                 .findFirst()
                 .orElseThrow();
-        
+
         // File 2 (secret-rules-a.yaml) is loaded second, so its version should win
         assertEquals("a[0-9]{3}", ruleA.getPattern().pattern());
         assertEquals(List.of("token", "shared"), ruleA.getKeywords());
@@ -307,26 +307,26 @@ class SecretRuleLoaderTest {
 
         // All three unique rules should be present
         assertEquals(3, result.getRules().size());
-        
+
         List<String> ruleIds = result.getRules().stream()
                 .map(SecretRule::getId)
                 .sorted()
                 .toList();
         assertEquals(List.of("test-rule-1", "test-rule-2", "test-rule-3"), ruleIds);
-        
+
         // All allowlists should be merged
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
-        
+
         // Paths: 3 + 2 + 1 = 6
         assertEquals(6, allowlist.paths.size());
-        
+
         // Regexes: 3 + 2 + 0 = 5
         assertEquals(5, allowlist.regexes.size());
-        
+
         // Stopwords: 3 + 2 + 1 = 6
         assertEquals(6, allowlist.stopwords.size());
-        
+
         // File extensions: 3 + 2 + 0 = 5
         assertEquals(5, allowlist.fileExtensions.size());
     }
@@ -342,15 +342,14 @@ class SecretRuleLoaderTest {
 
         SecretRuleLoader.GlobalAllowlist allowlist = result.getGlobalAllowlist();
         assertNotNull(allowlist);
-        
+
         // Items should be duplicated (3 + 3 = 6)
         assertEquals(6, allowlist.paths.size());
         assertEquals(6, allowlist.regexes.size());
         assertEquals(6, allowlist.stopwords.size());
         assertEquals(6, allowlist.fileExtensions.size());
-        
+
         // But rules should not be duplicated (same ID)
         assertEquals(1, result.getRules().size());
     }
 }
-

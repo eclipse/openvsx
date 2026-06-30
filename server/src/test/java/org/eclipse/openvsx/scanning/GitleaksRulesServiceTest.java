@@ -251,4 +251,3 @@ class GitleaksRulesServiceTest {
         field.set(target, value);
     }
 }
-

@@ -62,7 +62,7 @@ public class RegistryApplication {
     public TimedAspect timedAspect(MeterRegistry registry) {
         return new TimedAspect(registry);
     }
-    
+
     @Bean
     public TaskScheduler taskScheduler() {
         return new ThreadPoolTaskScheduler();

@@ -45,12 +45,12 @@ import java.util.stream.Collectors;
 
 /**
  * Manages gitleaks secret detection rules: generation, scheduled refresh, and Redis sync.
- * 
+ *
  * This service combines three responsibilities:
  * 1. Generates rules from gitleaks.toml at startup (if auto-fetch enabled)
  * 2. Refreshes rules on a schedule (if scheduled-refresh enabled)
  * 3. Syncs rules across pods via Redis (if Redis enabled)
- * 
+ *
  * Only loaded when gitleaks.auto-fetch is enabled.
  */
 @Service
@@ -58,8 +58,8 @@ import java.util.stream.Collectors;
 public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(GitleaksRulesService.class);
-    
-    private static final String GITLEAKS_URL = 
+
+    private static final String GITLEAKS_URL =
         "https://raw.githubusercontent.com/gitleaks/gitleaks/master/config/gitleaks.toml";
 
     // Redis keys for sync
@@ -74,7 +74,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     // Path to generated rules file
     private String generatedRulesPath;
-    
+
     public GitleaksRulesService(
             SecretDetectorConfig config,
             ObjectProvider<SecretDetectorFactory> detectorFactoryProvider,
@@ -92,7 +92,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             logger.debug("GitleaksRulesService initialized (local only, no Redis)");
         }
     }
-    
+
     public String getGeneratedRulesPath() {
         return generatedRulesPath;
     }
@@ -101,7 +101,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
     public void initialize() {
         // Generate rules at startup
         generateRulesIfNeeded();
-        
+
         // Start Redis subscriber if available
         if (rulesUpdateChannelListener != null) {
             rulesUpdateChannelListener.startSubscriber();
@@ -129,23 +129,23 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             if (outputFile == null) {
                 throw new IllegalStateException("Cannot resolve output file for generated rules");
             }
-            
+
             this.generatedRulesPath = outputFile.getAbsolutePath();
-            
+
             if (outputFile.exists() && !config.isGitleaksForceRefresh()) {
                 logger.debug("Secret rules file already exists: {}", outputFile.getName());
                 return;
             }
 
             generateRules(outputFile.toPath());
-            
+
             if (!outputFile.exists() || outputFile.length() == 0) {
                 throw new IllegalStateException("Failed to generate rules: " + outputFile.getAbsolutePath());
             }
-            
-            logger.info("Generated secret detection rules: {} ({} bytes)", 
+
+            logger.info("Generated secret detection rules: {} ({} bytes)",
                 outputFile.getName(), outputFile.length());
-            
+
         } catch (Exception e) {
             logger.error("Failed to generate secret detection rules", e);
             throw new IllegalStateException(
@@ -163,19 +163,19 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
                 logger.error("Cannot resolve output file for rules refresh");
                 return false;
             }
-            
+
             logger.debug("Refreshing gitleaks rules from remote source...");
             generateRules(outputFile.toPath());
-            
+
             if (!outputFile.exists() || outputFile.length() == 0) {
                 logger.error("Rules refresh failed: output file is missing or empty");
                 return false;
             }
-            
+
             this.generatedRulesPath = outputFile.getAbsolutePath();
             logger.debug("Refreshed gitleaks rules: {} ({} bytes)", outputFile.getName(), outputFile.length());
             return true;
-            
+
         } catch (Exception e) {
             logger.error("Failed to refresh gitleaks rules", e);
             return false;
@@ -191,9 +191,9 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
         if (!config.isGitleaksScheduledRefresh()) {
             return;
         }
-        
+
         logger.debug("Starting scheduled gitleaks rules refresh");
-        
+
         try {
             boolean rulesRefreshed = refreshRules();
             if (!rulesRefreshed) {
@@ -211,11 +211,11 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
                     }
                 }
             }
-            
+
             // Reinitialize scanner with new rules
             reinitializeDetector();
             logger.debug("Scheduled gitleaks rules refresh completed");
-            
+
         } catch (Exception e) {
             logger.error("Scheduled gitleaks rules refresh failed", e);
         }
@@ -240,7 +240,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
      */
     public boolean storeAndPublishRules(String rulesContent) {
         if (redisClusterClient == null) return false;
-        
+
         try {
             String version = String.valueOf(System.currentTimeMillis());
             redisClusterClient.set(RULES_KEY, rulesContent);
@@ -257,7 +257,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     private void loadRulesFromRedisIfNewer() {
         if (redisClusterClient == null) return;
-        
+
         try {
             String redisVersion = redisClusterClient.get(RULES_VERSION_KEY);
             if (redisVersion == null) {
@@ -285,7 +285,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     private void loadRulesFromRedis() {
         if (redisClusterClient == null) return;
-        
+
         try {
             String rulesContent = redisClusterClient.get(RULES_KEY);
             if (rulesContent == null || rulesContent.isEmpty()) {
@@ -355,11 +355,11 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     private List<Rule> buildRules(List<RawRule> rawRules) {
         if (rawRules == null) return new ArrayList<>();
-        
+
         Set<String> skipRuleIds = config.getGitleaksSkipRuleIds();
         List<Rule> result = new ArrayList<>();
         int skipped = 0;
-        
+
         for (RawRule raw : rawRules) {
             if (raw.id != null && skipRuleIds.contains(raw.id)) {
                 skipped++;
@@ -368,7 +368,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             Rule normalized = normalizeRule(raw);
             if (normalized != null) result.add(normalized);
         }
-        
+
         logger.info("Parsed {} rules (skipped {} via skip-rule-ids config)", result.size(), skipped);
         return result;
     }
@@ -386,17 +386,17 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
 
     private Rule normalizeRule(RawRule raw) {
         if (raw == null || raw.id == null || raw.regex == null) return null;
-        
+
         Rule rule = new Rule();
         rule.id = raw.id;
         rule.description = raw.description != null ? raw.description : "";
         rule.regex = raw.regex;
         rule.entropy = raw.entropy;
         rule.secretGroup = raw.secretGroup;
-        rule.keywords = raw.keywords != null 
+        rule.keywords = raw.keywords != null
             ? raw.keywords.stream().map(String::toLowerCase).collect(Collectors.toList())
             : new ArrayList<>();
-        
+
         List<RawAllowlist> rawAllowlists = raw.getAllowlists();
         if (!rawAllowlists.isEmpty()) {
             rule.allowlists = new ArrayList<>();
@@ -419,7 +419,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
         writeYamlList(yaml, "  regexes", allowlist.regexes);
         writeYamlList(yaml, "  stopwords", allowlist.stopwords);
         writeYamlList(yaml, "  file-extensions", allowlist.fileExtensions);
-        
+
         yaml.append("\nrules:\n");
         for (Rule rule : rules) {
             yaml.append("  - id: ").append(rule.id).append("\n");
@@ -473,7 +473,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
             throw new IllegalStateException(
                 "gitleaks.auto-fetch enabled but 'gitleaks.output-path' not configured");
         }
-        
+
         File outputFile = new File(path);
         File parentDir = outputFile.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -514,7 +514,7 @@ public class GitleaksRulesService implements JobRequestHandler<HandlerJobRequest
         public List<String> keywords;
         public List<RawAllowlist> allowlist;
         public List<RawAllowlist> allowlists;
-        
+
         List<RawAllowlist> getAllowlists() {
             if (allowlists != null && !allowlists.isEmpty()) return allowlists;
             if (allowlist != null && !allowlist.isEmpty()) return allowlist;

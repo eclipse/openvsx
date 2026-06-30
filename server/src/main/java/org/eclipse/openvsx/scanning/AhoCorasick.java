@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -30,7 +30,7 @@ import java.util.*;
  * This class is immutable after construction. Use {@link #builder()} to create instances.
  */
 public final class AhoCorasick {
-    
+
     /**
      * Node in the Aho-Corasick trie.
      * Each node represents a state in the automaton.
@@ -38,40 +38,40 @@ public final class AhoCorasick {
     private static class TrieNode {
         // Children nodes indexed by character
         final Map<Character, TrieNode> children = new HashMap<>();
-        
+
         // Failure link - where to go if no match found
         // This is the key to Aho-Corasick's efficiency
         TrieNode failure = null;
-        
+
         // Output patterns at this node (if this node ends a pattern)
         final List<String> outputs = new ArrayList<>();
     }
-    
+
     private final TrieNode root;
-    
+
     /**
      * Private constructor - use {@link #builder()} to create instances.
      */
     private AhoCorasick(TrieNode root) {
         this.root = root;
     }
-    
+
     /**
      * Create a new builder for constructing an AhoCorasick automaton.
      */
     public static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Builder for constructing immutable AhoCorasick instances.
      */
     public static final class Builder {
         private final Set<String> keywords = new HashSet<>();
         private boolean built = false;
-        
+
         private Builder() {}
-        
+
         /**
          * Add a single keyword to the automaton.
          * @param keyword The keyword to search for (should be lowercase for case-insensitive matching)
@@ -84,7 +84,7 @@ public final class AhoCorasick {
             }
             return this;
         }
-        
+
         /**
          * Add multiple keywords to the automaton.
          * @param keywords Collection of keywords to search for
@@ -99,7 +99,7 @@ public final class AhoCorasick {
             }
             return this;
         }
-        
+
         /**
          * Build the immutable AhoCorasick automaton.
          * This builder cannot be reused after calling build().
@@ -108,39 +108,39 @@ public final class AhoCorasick {
         public AhoCorasick build() {
             checkNotBuilt();
             built = true;
-            
+
             TrieNode root = new TrieNode();
-            
+
             // Step 1: Build the trie (prefix tree)
             for (String keyword : keywords) {
                 addKeywordToTrie(root, keyword);
             }
-            
+
             // Step 2: Build failure links using BFS
             buildFailureLinks(root);
-            
+
             return new AhoCorasick(root);
         }
-        
+
         private void checkNotBuilt() {
             if (built) {
                 throw new IllegalStateException("Builder has already been used to build an AhoCorasick instance");
             }
         }
-        
+
         /**
          * Add a single keyword to the trie.
          */
         private static void addKeywordToTrie(TrieNode root, String keyword) {
             TrieNode current = root;
-            
+
             for (char c : keyword.toCharArray()) {
                 current = current.children.computeIfAbsent(c, k -> new TrieNode());
             }
-            
+
             current.outputs.add(keyword);
         }
-        
+
         /**
          * Build failure links for all nodes using BFS.
          * Failure links point to the longest proper suffix that is also a prefix of some pattern.
@@ -148,29 +148,29 @@ public final class AhoCorasick {
          */
         private static void buildFailureLinks(TrieNode root) {
             Queue<TrieNode> queue = new LinkedList<>();
-            
+
             // Initialize: all children of root fail back to root
             for (TrieNode child : root.children.values()) {
                 child.failure = root;
                 queue.add(child);
             }
-            
+
             // BFS to build failure links for all nodes
             while (!queue.isEmpty()) {
                 TrieNode current = queue.poll();
-                
+
                 for (Map.Entry<Character, TrieNode> entry : current.children.entrySet()) {
                     char c = entry.getKey();
                     TrieNode child = entry.getValue();
                     queue.add(child);
-                    
+
                     // Find the failure link for this child
                     // Walk up failure links until we find a node that has a child for 'c'
                     TrieNode failNode = current.failure;
                     while (failNode != null && !failNode.children.containsKey(c)) {
                         failNode = failNode.failure;
                     }
-                    
+
                     if (failNode == null) {
                         // No suffix match found, fail to root
                         child.failure = root;
@@ -178,7 +178,7 @@ public final class AhoCorasick {
                         // Found a suffix match
                         child.failure = failNode.children.get(c);
                     }
-                    
+
                     // Copy outputs from failure node (for overlapping patterns)
                     if (child.failure != null && child.failure != root) {
                         child.outputs.addAll(child.failure.outputs);
@@ -187,31 +187,31 @@ public final class AhoCorasick {
             }
         }
     }
-    
+
     /**
      * Search for all keyword matches in the given text.
      * Returns a list of matches with their positions.
-     * 
+     *
      * @param text Text to search in (should be lowercase for case-insensitive matching)
      * @return List of all keyword matches found
      */
     public @NotNull List<Match> search(@NotNull String text) {
         List<Match> matches = new ArrayList<>();
         TrieNode current = root;
-        
+
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            
+
             // Follow failure links until we find a match or reach root
             while (current != root && !current.children.containsKey(c)) {
                 current = current.failure;
             }
-            
+
             // Move to next state if possible
             if (current.children.containsKey(c)) {
                 current = current.children.get(c);
             }
-            
+
             // If this node has outputs, we found matches
             for (String keyword : current.outputs) {
                 // Calculate the start position of the match
@@ -219,10 +219,10 @@ public final class AhoCorasick {
                 matches.add(new Match(keyword, startPos, i + 1));
             }
         }
-        
+
         return matches;
     }
-    
+
     /**
      * Represents a keyword match in the text.
      */
@@ -230,25 +230,25 @@ public final class AhoCorasick {
         private final String keyword;
         private final int startPos;
         private final int endPos;
-        
+
         public Match(@NotNull String keyword, int startPos, int endPos) {
             this.keyword = keyword;
             this.startPos = startPos;
             this.endPos = endPos;
         }
-        
+
         public @NotNull String getKeyword() {
             return keyword;
         }
-        
+
         public int getStartPos() {
             return startPos;
         }
-        
+
         public int getEndPos() {
             return endPos;
         }
-        
+
         @Override
         public String toString() {
             return String.format("Match{keyword='%s', pos=[%d,%d)}", keyword, startPos, endPos);

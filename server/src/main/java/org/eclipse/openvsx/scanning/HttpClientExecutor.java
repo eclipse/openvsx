@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
@@ -44,12 +44,12 @@ import java.util.concurrent.TimeUnit;
  * Use static factory methods to create instances with scanner-specific configs.
  */
 public class HttpClientExecutor {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(HttpClientExecutor.class);
-    
+
     private final RestTemplate restTemplate;
     private final HttpAuthHandler authHandler;
-    
+
     /**
      * Private constructor - use static factory methods.
      */
@@ -57,7 +57,7 @@ public class HttpClientExecutor {
         this.restTemplate = restTemplate;
         this.authHandler = authHandler;
     }
-    
+
     /**
      * Create an HttpClientExecutor with HTTP config and authentication.
      */
@@ -72,17 +72,17 @@ public class HttpClientExecutor {
             httpConfig.getConnectTimeoutMs(),
             authConfig != null ? authConfig.getType() : "none"
         );
-        
+
         RestTemplate restTemplate = createRestTemplate(httpConfig);
-        
+
         HttpAuthHandler authHandler = null;
         if (authConfig != null && authConfig.getType() != null) {
             authHandler = new HttpAuthHandler(scannerName, authConfig, restTemplate);
         }
-        
+
         return new HttpClientExecutor(restTemplate, authHandler);
     }
-    
+
     /**
      * Create an HttpClientExecutor with HTTP config only (no auth).
      */
@@ -92,14 +92,14 @@ public class HttpClientExecutor {
     ) {
         return create(httpConfig, null, scannerName);
     }
-    
+
     /**
      * Create an HttpClientExecutor with default HTTP configuration.
      */
     public static HttpClientExecutor createWithDefaults(String scannerName) {
         return create(new RemoteScannerProperties.HttpConfig(), null, scannerName);
     }
-    
+
     /**
      * Create a RestTemplate with the specified HTTP configuration.
      */
@@ -108,21 +108,21 @@ public class HttpClientExecutor {
             .setConnectTimeout(Timeout.of(httpConfig.getConnectTimeoutMs(), TimeUnit.MILLISECONDS))
             .setSocketTimeout(Timeout.of(httpConfig.getSocketTimeoutMs(), TimeUnit.MILLISECONDS))
             .build();
-        
+
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(httpConfig.getMaxTotal());
         connectionManager.setDefaultMaxPerRoute(httpConfig.getDefaultMaxPerRoute());
         connectionManager.setDefaultConnectionConfig(connectionConfig);
-        
+
         var requestConfig = RequestConfig.custom()
             .setConnectionRequestTimeout(Timeout.of(httpConfig.getConnectionRequestTimeoutMs(), TimeUnit.MILLISECONDS))
             .build();
-        
+
         var httpClient = HttpClientBuilder.create()
             .setConnectionManager(connectionManager)
             .setDefaultRequestConfig(requestConfig)
             .build();
-        
+
         return new RestTemplateBuilder()
             .requestFactory(() -> {
                 HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
@@ -131,7 +131,7 @@ public class HttpClientExecutor {
             })
             .build();
     }
-    
+
     /**
      * Execute an HTTP request based on configuration.
      */
@@ -142,10 +142,10 @@ public class HttpClientExecutor {
         try {
             // Build request entity (includes auth headers)
             HttpEntity<?> requestEntity = buildRequestEntity(operation, file);
-            
+
             // Build URL with auth query params if needed
             String url = buildUrlWithAuth(operation.getUrl());
-            
+
             // Execute request
             HttpMethod method = HttpMethod.valueOf(operation.getMethod().toUpperCase());
             ResponseEntity<String> response = restTemplate.exchange(
@@ -154,10 +154,10 @@ public class HttpClientExecutor {
                 requestEntity,
                 String.class
             );
-            
+
             // Return response body for successful requests
             return response.getBody();
-            
+
         } catch (HttpStatusCodeException e) {
             // 5xx = server error — always treat as failure even if body is present
             if (e.getStatusCode().is5xxServerError()) {
@@ -180,15 +180,15 @@ public class HttpClientExecutor {
             }
             // No body on a 4xx — genuine error
             throw new ScannerException(
-                "Failed to execute HTTP request: " + e.getStatusCode() + " " + 
-                e.getStatusText() + " on " + operation.getMethod() + " request for \"" + 
+                "Failed to execute HTTP request: " + e.getStatusCode() + " " +
+                e.getStatusText() + " on " + operation.getMethod() + " request for \"" +
                 operation.getUrl() + "\"", e
             );
         } catch (Exception e) {
             throw new ScannerException("Failed to execute HTTP request: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Build URL with authentication query parameters if needed.
      */
@@ -196,17 +196,17 @@ public class HttpClientExecutor {
         if (authHandler == null) {
             return baseUrl;
         }
-        
+
         Map<String, String> authParams = authHandler.getAuthQueryParams();
         if (authParams.isEmpty()) {
             return baseUrl;
         }
-        
+
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
         authParams.forEach(builder::queryParam);
         return builder.build().toUriString();
     }
-    
+
     /**
      * Build the HTTP request entity based on configuration.
      */
@@ -216,24 +216,24 @@ public class HttpClientExecutor {
     ) {
         // Build headers
         HttpHeaders headers = new HttpHeaders();
-        
+
         // Apply authentication headers first (can be overridden by operation headers)
         if (authHandler != null) {
             authHandler.applyAuth(headers);
         }
-        
+
         // Apply operation-specific headers (may override auth headers)
         if (operation.getHeaders() != null) {
             operation.getHeaders().forEach(headers::set);
         }
-        
+
         // Build body based on type
         RemoteScannerProperties.BodyConfig bodyConfig = operation.getBody();
         if (bodyConfig == null) {
             // No body - just headers
             return new HttpEntity<>(headers);
         }
-        
+
         String bodyType = bodyConfig.getType();
         return switch (bodyType.toLowerCase()) {
             case "multipart" -> buildMultipartEntity(bodyConfig, file, headers);
@@ -243,7 +243,7 @@ public class HttpClientExecutor {
             default -> throw new IllegalArgumentException("Unsupported body type: " + bodyType);
         };
     }
-    
+
     /**
      * Build multipart/form-data request entity.
      * Used for file uploads.
@@ -254,23 +254,23 @@ public class HttpClientExecutor {
         HttpHeaders headers
     ) {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        
+
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        
+
         // Add file if present
         if (file != null) {
             String fileField = bodyConfig.getFileField();
             body.add(fileField, new TempFileResource(file));
         }
-        
+
         // Add additional fields
         if (bodyConfig.getFields() != null) {
             bodyConfig.getFields().forEach(body::add);
         }
-        
+
         return new HttpEntity<>(body, headers);
     }
-    
+
     /**
      * Build JSON request entity.
      */
@@ -279,15 +279,15 @@ public class HttpClientExecutor {
         HttpHeaders headers
     ) {
         headers.setContentType(MediaType.APPLICATION_JSON);
-        
+
         String jsonBody = bodyConfig.getTemplate();
         if (jsonBody == null) {
             jsonBody = "{}";
         }
-        
+
         return new HttpEntity<>(jsonBody, headers);
     }
-    
+
     /**
      * Build form-urlencoded request entity.
      */
@@ -296,15 +296,15 @@ public class HttpClientExecutor {
         HttpHeaders headers
     ) {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        
+
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         if (bodyConfig.getFields() != null) {
             bodyConfig.getFields().forEach(body::add);
         }
-        
+
         return new HttpEntity<>(body, headers);
     }
-    
+
     /**
      * Build raw text request entity.
      */
@@ -316,7 +316,7 @@ public class HttpClientExecutor {
         if (rawBody == null) {
             rawBody = "";
         }
-        
+
         return new HttpEntity<>(rawBody, headers);
     }
 
@@ -334,4 +334,3 @@ public class HttpClientExecutor {
         }
     }
 }
-

@@ -23,7 +23,7 @@ import java.io.InputStream;
  * Useful for preventing OOM from misleading archive entry headers.
  */
 public class SizeLimitInputStream extends FilterInputStream {
-    
+
     private final long maxBytes;
     private long bytesRead = 0;
 
@@ -58,4 +58,3 @@ public class SizeLimitInputStream extends FilterInputStream {
         }
     }
 }
-
