@@ -26,4 +26,6 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
     Streamable<NamespaceMembership> findByUserOrderByNamespaceName(UserData user);
 
     NamespaceMembership findFirstByNamespaceNameIgnoreCase(String namespaceName);
+    
+    void deleteByUser(UserData user);
 }

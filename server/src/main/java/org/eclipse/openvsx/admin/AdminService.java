@@ -20,6 +20,7 @@ import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +41,8 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.BulkPublisherRevokeRequestJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -536,6 +539,11 @@ public class AdminService {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
+        return revokePublisherContributions(provider, loginName, admin, null);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin, String reason) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
@@ -570,10 +578,25 @@ public class AdminService {
         for (var extension : affectedExtensions) {
             extensions.updateExtension(extension);
         }
+        
+        // revoke namespace memberships
+        var namespaceMemberships = repositories.findMemberships(user);
+        var numberOfNamespaceMemberships = 0L;
+        // add a null check due to tests using mocks which return null
+        if (namespaceMemberships != null) {
+            numberOfNamespaceMemberships = namespaceMemberships.stream().count();
+            repositories.deleteMemberships(user);
+        }
 
-        var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens, deactivated " + deactivatedExtensionCount + " extensions of user "
-                + provider + "/" + loginName + ".");
+        var message = "Deactivated " + deactivatedTokenCount + " tokens, "
+            + "deactivated " + deactivatedExtensionCount + " extensions, "
+            + "removed " + numberOfNamespaceMemberships + " namespace memberships of user "
+            + provider + "/" + loginName + ".";
+
+        if (reason != null) {
+            message += " Reason: " + reason;
+        }
+        var result = ResultJson.success(message);
         logs.logAction(admin, result);
         return result;
     }

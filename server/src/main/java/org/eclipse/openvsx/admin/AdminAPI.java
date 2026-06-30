@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,8 @@ import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.json.AdminStatisticsJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeRequestJson;
+import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -70,9 +73,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 @RestController
 @RequestMapping("/admin")
 @ApiResponse(
-        responseCode = "403",
-        description = "Administration role is required",
-        content = @Content()
+    responseCode = "403",
+    description = "Administration role is required",
+    content = @Content()
 )
 public class AdminAPI {
 
@@ -84,12 +87,12 @@ public class AdminAPI {
     private final SearchUtilService search;
 
     public AdminAPI(
-            RepositoryService repositories,
-            AdminService admins,
-            SettingsService settings,
-            LogService logs,
-            LocalRegistryService local,
-            SearchUtilService search
+        RepositoryService repositories,
+        AdminService admins,
+        SettingsService settings,
+        LogService logs,
+        LocalRegistryService local,
+        SearchUtilService search
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -100,28 +103,28 @@ public class AdminAPI {
     }
 
     @GetMapping(
-            path = "/report",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/report",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
     @Operation(summary = "Get the admin report for the given month and year")
     @ApiResponse(
-            responseCode = "200",
-            description = "The report is returned",
-            content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AdminStatisticsJson.class)),
-                    @Content(mediaType = "text/csv", schema = @Schema(type = "string"))
-            }
+        responseCode = "200",
+        description = "The report is returned",
+        content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AdminStatisticsJson.class)),
+            @Content(mediaType = "text/csv", schema = @Schema(type = "string"))
+        }
     )
     @ApiResponse(
-            responseCode = "400",
-            description = "An error message is returned in JSON format",
-            content = @Content()
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content()
     )
     public ResponseEntity<AdminStatisticsJson> getReportJson(
-            @RequestParam("token") @Parameter(description = "A personal access token") String tokenValue,
-            @RequestParam("year") int year,
-            @RequestParam("month") int month
+        @RequestParam("token") @Parameter(description = "A personal access token") String tokenValue,
+        @RequestParam("year") int year,
+        @RequestParam("month") int month
     ) {
         try {
             var statistics = getReport(tokenValue, year, month);
@@ -132,15 +135,15 @@ public class AdminAPI {
     }
 
     @GetMapping(
-            path = "/report",
-            produces = "text/csv"
+        path = "/report",
+        produces = "text/csv"
     )
     @CrossOrigin
     @Operation(hidden = true)
     public ResponseEntity<String> getReportCsv(
-            @RequestParam("token") String tokenValue,
-            @RequestParam("year") int year,
-            @RequestParam("month") int month
+        @RequestParam("token") String tokenValue,
+        @RequestParam("year") int year,
+        @RequestParam("month") int month
     ) {
         try {
             var statistics = getReport(tokenValue, year, month);
@@ -158,6 +161,17 @@ public class AdminAPI {
     @GetMapping(
         path = "/stats",
         produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Retrieve basic registry statistics")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Statistics are returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = StatsJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = StatsJson.class))
     )
     public ResponseEntity<StatsJson> getStats() {
         try {
@@ -177,10 +191,21 @@ public class AdminAPI {
         path = "/user/search",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Search for users")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Matching users are returned as a paginated list in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned"
+    )
     public ResponseEntity<Page<UserRelationshipsJson>> getUsers(
-            @RequestParam(name = "query", required = false) String query,
-            Pageable pageable,
-            @RequestParam(name = "role", required = false) String role
+        @RequestParam(name = "query", required = false)
+        @Parameter(description = "Search query for login name or full name") String query,
+        Pageable pageable,
+        @RequestParam(name = "role", required = false)
+        @Parameter(description = "Filter by role", schema = @Schema(allowableValues = {"admin", "privileged"})) String role
     ) {
         try {
             admins.checkAdminUser();
@@ -195,7 +220,19 @@ public class AdminAPI {
         path = "/log",
         produces = MediaType.TEXT_PLAIN_VALUE
     )
-    public String getLog(@RequestParam(name = "period", required = false) String periodString) {
+    @Operation(hidden = true, summary = "Get the persisted activity log as plain text")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Log entries are returned as plain text"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned"
+    )
+    public String getLog(
+        @RequestParam(name = "period", required = false)
+        @Parameter(description = "ISO 8601 period to filter log entries, e.g. P1D for the last day") String periodString
+    ) {
         try {
             admins.checkAdminUser();
 
@@ -224,9 +261,20 @@ public class AdminAPI {
         path = "/logs",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Get the persisted activity log as a paginated list")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Log entries are returned as a paginated list in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned"
+    )
     public ResponseEntity<Page<PersistedLogJson>> getLog(
-            Pageable pageable,
-            @RequestParam(name = "period", required = false) String periodString
+        Pageable pageable,
+        @RequestParam(name = "period", required = false)
+        @Parameter(description = "ISO 8601 period to filter log entries, e.g. P1D for the last day")
+        String periodString
     ) {
         try {
             admins.checkAdminUser();
@@ -267,6 +315,17 @@ public class AdminAPI {
         path = "/update-search-index",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Trigger a full update of the search index")
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> updateSearchIndex() {
         try {
             var adminUser = admins.checkAdminUser();
@@ -285,8 +344,26 @@ public class AdminAPI {
         path = "/extension/{namespaceName}/{extensionName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ExtensionJson> getExtension(@PathVariable String namespaceName,
-                                                      @PathVariable String extensionName) {
+    @Operation(hidden = true, summary = "Get an extension")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Extension data is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ExtensionJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content(schema = @Schema(implementation = ExtensionJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ExtensionJson.class))
+    )
+    public ResponseEntity<ExtensionJson> getExtension(
+        @PathVariable @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
+        @PathVariable @Parameter(description = "Extension name", example = "language-julia") String extensionName
+    ) {
         try {
             admins.checkAdminUser();
             ExtensionJson json;
@@ -324,25 +401,25 @@ public class AdminAPI {
     @Operation(summary = "Delete an extension or one or multiple extension versions")
     @MutatingOperation
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "400",
-            description = "An error message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "404",
-            description = "Extension not found",
-            content = @Content()
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content()
     )
     public ResponseEntity<ResultJson> deleteExtension(
-            @PathVariable @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
-            @PathVariable @Parameter(description = "Extension name", example = "language-julia") String extensionName,
-            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
-            @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
+        @PathVariable @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
+        @PathVariable @Parameter(description = "Extension name", example = "language-julia") String extensionName,
+        @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
+        @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
@@ -354,18 +431,34 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/extension/{namespaceName}/{extensionName}/delete",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/extension/{namespaceName}/{extensionName}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Delete an extension or one or multiple extension versions")
     @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content()
+    )
     public ResponseEntity<ResultJson> deleteExtension(
-            @PathVariable String namespaceName,
-            @PathVariable String extensionName,
-            @RequestBody List<TargetPlatformVersionJson> targetVersions
+        @PathVariable @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
+        @PathVariable @Parameter(description = "Extension name", example = "language-julia") String extensionName,
+        @RequestBody List<TargetPlatformVersionJson> targetVersions
     ) {
         try {
             var adminUser = admins.checkAdminUser();
-            var result =  admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -373,32 +466,32 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @Operation(summary = "Delete a review for an extension by a user")
+    @Operation(hidden = true, summary = "Delete a review for an extension by a user")
     @MutatingOperation
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "404",
-            description = "Extension not found",
-            content = @Content()
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content()
     )
     @ApiResponse(
-            responseCode = "404",
-            description = "Review not found",
-            content = @Content()
+        responseCode = "404",
+        description = "Review not found",
+        content = @Content()
     )
     public ResponseEntity<ResultJson> deleteReview(
-            @PathVariable String namespace,
-            @PathVariable String extension,
-            @PathVariable String provider,
-            @PathVariable String loginName
+        @PathVariable String namespace,
+        @PathVariable String extension,
+        @PathVariable String provider,
+        @PathVariable String loginName
     ) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -414,16 +507,27 @@ public class AdminAPI {
         path = "/user/{provider}/{loginName}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Update the role of a user")
     @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> updateUserRole(
-            @PathVariable String provider,
-            @PathVariable String loginName,
-            @RequestParam
-            @Parameter(
-                    description = "The role to assign to the user, or 'none' to remove their role",
-                    schema = @Schema(allowableValues = {"admin", "privileged", "none"})
-            )
-            String role
+        @PathVariable String provider,
+        @PathVariable String loginName,
+        @RequestParam
+        @Parameter(
+            description = "The role to assign to the user, or 'none' to remove their role",
+            schema = @Schema(allowableValues = {"admin", "privileged", "none"})
+        )
+        String role
     ) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -437,7 +541,25 @@ public class AdminAPI {
         path = "/namespace/{namespaceName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<NamespaceJson> getNamespace(@PathVariable String namespaceName) {
+    @Operation(hidden = true, summary = "Get information about a namespace")
+    @ApiResponse(
+        responseCode = "200",
+        description = "Namespace data is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NamespaceJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Namespace not found",
+        content = @Content(schema = @Schema(implementation = NamespaceJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = NamespaceJson.class))
+    )
+    public ResponseEntity<NamespaceJson> getNamespace(
+        @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName
+    ) {
         try {
             admins.checkAdminUser();
 
@@ -463,7 +585,18 @@ public class AdminAPI {
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Create a new namespace")
     @MutatingOperation
+    @ApiResponse(
+        responseCode = "201",
+        description = "Namespace created, a success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> createNamespace(@RequestBody NamespaceJson namespace) {
         try {
             admins.checkAdminUser();
@@ -478,23 +611,23 @@ public class AdminAPI {
     }
 
     @DeleteMapping(
-            path = "/namespace/{namespaceName}"
+        path = "/namespace/{namespaceName}"
     )
-    @Operation(summary = "Delete a namespace")
+    @Operation(hidden = true, summary = "Delete a namespace")
     @MutatingOperation
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format"
+        responseCode = "200",
+        description = "A success message is returned in JSON format"
     )
     @ApiResponse(
-            responseCode = "403",
-            description = "An error message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "403",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "404",
-            description = "An error message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "404",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ResultJson> deleteNamespace(@PathVariable String namespaceName) {
         try {
@@ -509,11 +642,22 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/change-namespace",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/change-namespace",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Schedule a namespace rename")
     @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> changeNamespace(@RequestBody ChangeNamespaceJson json) {
         try {
             admins.checkAdminUser();
@@ -531,14 +675,20 @@ public class AdminAPI {
     @CrossOrigin
     @Operation(summary = "Get members for a namespace")
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format"
+        responseCode = "200",
+        description = "The namespace membership list is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NamespaceMembershipListJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = NamespaceMembershipListJson.class))
     )
     public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(
-            @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName,
-            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
+        @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName,
+        @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
-        try{
+        try {
             admins.checkAdminUser(tokenValue);
             var memberships = repositories.findMemberships(namespaceName);
             var membershipList = new NamespaceMembershipListJson();
@@ -553,7 +703,20 @@ public class AdminAPI {
         path = "/namespace/{namespaceName}/members",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(@PathVariable String namespaceName) {
+    @Operation(hidden = true, summary = "Get members of a namespace")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The namespace membership list is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = NamespaceMembershipListJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = NamespaceMembershipListJson.class))
+    )
+    public ResponseEntity<NamespaceMembershipListJson> getNamespaceMembers(
+        @PathVariable @Parameter(description = "Namespace name", example = "mtxr") String namespaceName
+    ) {
         try{
             admins.checkAdminUser();
             var memberships = repositories.findMemberships(namespaceName);
@@ -573,26 +736,25 @@ public class AdminAPI {
     @Operation(summary = "Edit a member of a namespace")
     @MutatingOperation
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "400",
-            description = "An error message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ResultJson> editNamespaceMember(
-            @PathVariable @Parameter(description = "Namespace name", example = "BeardedBear") String namespaceName,
-            @RequestParam("user") @Parameter(description = "User name") String userName,
-            @RequestParam(required = false) @Parameter(description = "Login provider name", example = "github") String provider,
-            @RequestParam
-            @Parameter(
-                    description = "The role to assign to the user or remove the user from the namespace",
-                    schema = @Schema(allowableValues = {NamespaceMembership.ROLE_CONTRIBUTOR, NamespaceMembership.ROLE_OWNER, "remove"})
-            )
-            String role,
-            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
+        @PathVariable @Parameter(description = "Namespace name", example = "BeardedBear") String namespaceName,
+        @RequestParam("user") @Parameter(description = "User name") String userName,
+        @RequestParam(required = false) @Parameter(description = "Login provider name", example = "github") String provider,
+        @RequestParam
+        @Parameter(
+            description = "The role to assign to the user or remove the user from the namespace",
+            schema = @Schema(allowableValues = {NamespaceMembership.ROLE_CONTRIBUTOR, NamespaceMembership.ROLE_OWNER, "remove"})
+        ) String role,
+        @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
@@ -607,12 +769,28 @@ public class AdminAPI {
         path = "/namespace/{namespaceName}/change-member",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Edit a member of a namespace")
     @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
     public ResponseEntity<ResultJson> editNamespaceMember(
-            @PathVariable String namespaceName,
-            @RequestParam("user") String userName,
-            @RequestParam(required = false) String provider,
-            @RequestParam String role
+            @PathVariable @Parameter(description = "Namespace name", example = "BeardedBear") String namespaceName,
+            @RequestParam("user") @Parameter(description = "User name") String userName,
+            @RequestParam(required = false) @Parameter(description = "Login provider name", example = "github") String provider,
+            @RequestParam
+            @Parameter(
+                description = "The role to assign to the user or remove the user from the namespace",
+                schema = @Schema(allowableValues = {NamespaceMembership.ROLE_CONTRIBUTOR, NamespaceMembership.ROLE_OWNER, "remove"})
+            )
+            String role
     ) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -627,7 +805,21 @@ public class AdminAPI {
         path = "/publisher/{provider}/{loginName}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<UserPublishInfoJson> getUserPublishInfo(@PathVariable String provider, @PathVariable String loginName) {
+    @Operation(hidden = true, summary = "Get publishing information for a user")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The user publish info is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = UserPublishInfoJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = UserPublishInfoJson.class))
+    )
+    public ResponseEntity<UserPublishInfoJson> getUserPublishInfo(
+        @PathVariable @Parameter(description = "Login provider name", example = "github") String provider,
+        @PathVariable @Parameter(description = "User login name") String loginName
+    ) {
         try {
             admins.checkAdminUser();
             var userPublishInfo = admins.getUserPublishInfo(provider, loginName);
@@ -641,8 +833,22 @@ public class AdminAPI {
         path = "/publisher/{provider}/{loginName}/revoke",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(hidden = true, summary = "Revoke all publish contributions of a user")
     @MutatingOperation
-    public ResponseEntity<ResultJson> revokePublisherContributions(@PathVariable String loginName, @PathVariable String provider) {
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<ResultJson> revokePublisherContributions(
+        @PathVariable @Parameter(description = "User login name") String loginName,
+        @PathVariable @Parameter(description = "Login provider name", example = "github") String provider
+    ) {
         try {
             var adminUser = admins.checkAdminUser();
             var result = admins.revokePublisherContributions(provider, loginName, adminUser);
@@ -653,11 +859,68 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/publisher/{provider}/{loginName}/tokens/revoke",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/api/publisher/bulk-revoke",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(summary = "Bulk revoke publisher contributions")
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = BulkPublisherRevokeResponseJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<BulkPublisherRevokeResponseJson> revokeBulkPublishers(
+        @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue,
+        @RequestBody BulkPublisherRevokeRequestJson request
+    ) {
+        if (request.publishers().size() > 100) {
+            var json = BulkPublisherRevokeResponseJson.error("Max number of revocations requested exceeded (100).");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+
+            var resultMap = new HashMap<String, ResultJson>();
+            for (var publisher : request.publishers()) {
+                var key = "%s:%s".formatted(publisher.loginName(), publisher.provider());
+                try {
+                    var result = admins.revokePublisherContributions(publisher.provider(), publisher.loginName(), adminUser, request.reason());
+                    resultMap.put(key, result);
+                } catch (ErrorResultException exc) {
+                    resultMap.put(key, exc.toResponseEntity().getBody());
+                }
+            }
+
+            return ResponseEntity.ok(new BulkPublisherRevokeResponseJson(resultMap));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(BulkPublisherRevokeResponseJson.class);
+        }
+    }
+
+    @PostMapping(
+        path = "/publisher/{provider}/{loginName}/tokens/revoke",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Revoke all access tokens of a user")
     @MutatingOperation
-    public ResponseEntity<ResultJson> revokePublisherTokens(@PathVariable String loginName, @PathVariable String provider) {
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<ResultJson> revokePublisherTokens(
+        @PathVariable @Parameter(description = "User login name") String loginName,
+        @PathVariable @Parameter(description = "Login provider name", example = "github") String provider
+    ) {
         try {
             var adminUser = admins.checkAdminUser();
             var result = admins.revokePublisherTokens(provider, loginName, adminUser);
@@ -668,8 +931,19 @@ public class AdminAPI {
     }
 
     @GetMapping(
-            path = "/settings",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/settings",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Get the current registry settings")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The current settings are returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SettingsJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = SettingsJson.class))
     )
     public ResponseEntity<SettingsJson> getSettings() {
         try {
@@ -681,9 +955,20 @@ public class AdminAPI {
     }
 
     @PutMapping(
-            path = "/settings",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/settings",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Update registry settings")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The updated settings are returned in JSON format",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SettingsJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = SettingsJson.class))
     )
     public ResponseEntity<SettingsJson> updateSettings(@RequestBody SettingsJson newSettings) {
         try {

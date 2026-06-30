@@ -3,9 +3,7 @@
 
 .gradle/
 .idea/
-.settings/
 .classpath
-.project
 .metals
 .bloop
 

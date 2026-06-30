@@ -12,6 +12,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -103,7 +104,7 @@ class GitleaksRulesServiceTest {
         File result = (File) resolveMethod.invoke(service);
 
         assertNotNull(result);
-        assertTrue(Files.exists(result.getParentFile().toPath()), 
+        assertTrue(Files.exists(result.getParentFile().toPath()),
             "Parent directory should be created");
         assertEquals(outputFile.toString(), result.getAbsolutePath());
     }
@@ -113,10 +114,10 @@ class GitleaksRulesServiceTest {
         // Create a directory structure where the parent doesn't exist yet
         // and make it impossible to create by having a file in the way
         Path subDir = tempDir.resolve("subdir");
-        
+
         // First create the subdir as a file (not a directory)
         Files.writeString(subDir, "content");
-        
+
         // Now try to create a file under it - this should fail
         Path impossiblePath = tempDir.resolve("subdir/content/rules.yaml");
 
@@ -151,7 +152,7 @@ class GitleaksRulesServiceTest {
         // File should not be modified
         assertEquals(originalSize, Files.size(outputFile), "File should not be regenerated");
         assertEquals("existing content", Files.readString(outputFile), "Content should be unchanged");
-        
+
         // Path should still be set
         assertEquals(outputFile.toAbsolutePath().toString(), service.getGeneratedRulesPath());
     }
@@ -185,7 +186,7 @@ class GitleaksRulesServiceTest {
         Exception exception = assertThrows(Exception.class, () -> {
             resolveMethod.invoke(service);
         });
-        
+
         // Unwrap the InvocationTargetException
         Throwable cause = exception.getCause();
         assertInstanceOf(IllegalStateException.class, cause, "Cause should be IllegalStateException");
@@ -209,17 +210,23 @@ class GitleaksRulesServiceTest {
 
     @Test
     void acceptsRelativePath() throws Exception {
-        String relativePath = "relative/path/rules.yaml";
+        try {
+            String relativePath = "relative/path/rules.yaml";
 
-        SecretDetectorConfig config = buildConfig(true, true, relativePath);
-        GitleaksRulesService service = new GitleaksRulesService(config, null, null);
+            SecretDetectorConfig config = buildConfig(true, true, relativePath);
+            GitleaksRulesService service = new GitleaksRulesService(config, null, null);
 
-        Method resolveMethod = GitleaksRulesService.class.getDeclaredMethod("resolveOutputFile");
-        resolveMethod.setAccessible(true);
-        File result = (File) resolveMethod.invoke(service);
+            Method resolveMethod = GitleaksRulesService.class.getDeclaredMethod("resolveOutputFile");
+            resolveMethod.setAccessible(true);
+            File result = (File) resolveMethod.invoke(service);
 
-        assertNotNull(result);
-        assertTrue(result.getPath().contains("relative"));
+            assertNotNull(result);
+            assertTrue(result.getPath().contains("relative"));
+        } finally {
+            // FIXME: refactor the test to not create a file in the current working directory
+            //        that we need to cleanup after the test
+            FileUtils.deleteDirectory(new File("relative"));
+        }
     }
 
     // Helper methods
