@@ -77,7 +77,7 @@ public class MaliciousZipCheckService implements PublishCheck {
             // yauzl which is used by VS Code to extract vsix archives, silently normalizes
             // backslash characters to forward slashes, so we reject any extension that contains
             // duplicate filenames after normalization to avoid any potential issue.
-            var normalizedName = Path.of(name).normalize().toString().replaceAll("\\\\+", "/");
+            var normalizedName = Path.of(name).normalize().toString().replaceAll("\\\\+", "/").replaceAll("/+", "/");
             if (!seen.add(normalizedName)) {
                 return PublishCheck.Result.fail(DUPLICATE_ENTRIES_RULE, DUPLICATE_ENTRIES_MESSAGE);
             }
