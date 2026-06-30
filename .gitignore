@@ -1,4 +1,4 @@
 .idea/
+.project/
+.settings/
 data/
-/.project
-.settings/org.eclipse.buildship.core.prefs
