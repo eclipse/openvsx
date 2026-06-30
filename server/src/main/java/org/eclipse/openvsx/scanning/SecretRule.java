@@ -35,22 +35,22 @@ import java.util.List;
 public class SecretRule {
     /** Unique identifier for this rule (e.g., "github-pat", "aws-access-key") */
     private final @NonNull String id;
-    
+
     /** Human-readable description of what this rule detects */
     private final @NonNull String description;
-    
+
     /** Compiled regex pattern to match secrets (case-insensitive) */
     private final @NonNull Pattern pattern;
-    
+
     /** Minimum Shannon entropy threshold (0.0-8.0). If set, matches below this are filtered out. */
     private final @Nullable Double entropy;
 
     /** Keywords that must appear in a line before applying the regex (lowercase, for performance) */
     private final @NonNull List<String> keywords;
-    
+
     /** Compiled allowlist patterns to exclude known safe matches from this rule */
     private final @NonNull List<Pattern> allowlistPatterns;
-    
+
     /** Optional capture group index to extract the secret (default: 1 if available, else 0) */
     private final @Nullable Integer secretGroup;
 

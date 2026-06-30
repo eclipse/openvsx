@@ -284,7 +284,7 @@ class SecretRuleLoaderTest {
 
         // All three rules should be present, but rule-a is overridden by file 2
         assertEquals(3, result.rules().size());
-        
+
         // Verify rule-a was overridden (should have the description from file A, not the original)
         SecretRule ruleA = result.rules().stream()
                 .filter(r -> r.getId().equals("rule-a"))

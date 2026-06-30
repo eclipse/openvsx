@@ -231,13 +231,13 @@ public final class AhoCorasick {
         private final String keyword;
         private final int startPos;
         private final int endPos;
-        
+
         public Match(@NonNull String keyword, int startPos, int endPos) {
             this.keyword = keyword;
             this.startPos = startPos;
             this.endPos = endPos;
         }
-        
+
         public @NonNull String getKeyword() {
             return keyword;
         }

@@ -176,4 +176,3 @@ public class SimilarityCheckService implements PublishCheck {
                 .toList();
     }
 }
-

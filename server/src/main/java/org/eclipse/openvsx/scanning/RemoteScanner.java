@@ -118,7 +118,7 @@ public class RemoteScanner implements Scanner {
      */
     @Override
     public Scanner.@NonNull Invocation startScan(@NonNull Command command) throws ScannerException {
-        logger.debug("Starting {} scan for extension version {}", 
+        logger.debug("Starting {} scan for extension version {}",
             scannerName, command.extensionVersionId());
 
         RemoteScannerProperties.HttpOperation configOp = config.getStart();

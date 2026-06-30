@@ -34,7 +34,7 @@ public interface Scanner {
      * Scanners retrieve the actual file via extensionVersionId using ScannerFileService.
      */
     record Command(long extensionVersionId, @NonNull String scanId) {}
-    
+
     /**
      * Represents a scan that has been submitted to an external service.
      */
@@ -42,7 +42,7 @@ public interface Scanner {
         public Submission(@NonNull String externalJobId) {
             this(externalJobId, null);
         }
-        
+
         @NonNull
         public Map<String, String> fileHashes() {
             return fileHashes != null ? fileHashes : Collections.emptyMap();
@@ -76,7 +76,7 @@ public interface Scanner {
             this.threats = new ArrayList<>(threats);
             this.summary = summary;
         }
-        
+
         @NonNull
         public static Result clean() {
             return new Result(true, Collections.emptyList(), null);
@@ -100,7 +100,7 @@ public interface Scanner {
         public boolean isClean() {
             return clean;
         }
-        
+
         @NonNull
         public List<Threat> getThreats() {
             return Collections.unmodifiableList(threats);
@@ -122,15 +122,15 @@ public interface Scanner {
         private final String severity;
         private final String filePath;
         private final String fileHash;
-        
+
         public Threat(@NonNull String name, @Nullable String description, @NonNull String severity) {
             this(name, description, severity, null, null);
         }
-        
+
         public Threat(@NonNull String name, @Nullable String description, @NonNull String severity, @Nullable String filePath) {
             this(name, description, severity, filePath, null);
         }
-        
+
         public Threat(@NonNull String name, @Nullable String description, @NonNull String severity, @Nullable String filePath, @Nullable String fileHash) {
             this.name = name;
             this.description = description;
@@ -138,7 +138,7 @@ public interface Scanner {
             this.filePath = filePath;
             this.fileHash = fileHash;
         }
-        
+
         @NonNull public String getName() { return name; }
         @Nullable public String getDescription() { return description; }
         @NonNull public String getSeverity() { return severity; }
@@ -235,7 +235,7 @@ public interface Scanner {
      */
     @NonNull
     Invocation startScan(@NonNull Command command) throws ScannerException;
-    
+
     /**
      * Poll status of an async scan job.
      */
