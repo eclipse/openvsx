@@ -723,7 +723,7 @@ class UserAPITest {
             versions.add(extVersion);
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.findVersion(user, extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
+            Mockito.when(repositories.findVersionForUser(user, extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
         }
 

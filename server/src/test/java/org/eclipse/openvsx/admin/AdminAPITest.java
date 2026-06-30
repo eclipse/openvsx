@@ -1743,6 +1743,8 @@ class AdminAPITest {
         Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.findExtension("baz", "foobar"))
                 .thenReturn(extension);
+        Mockito.when(repositories.findExtensionForUpdateNoWait("baz", "foobar"))
+                .thenReturn(extension);
         Mockito.when(repositories.findExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
 
@@ -1962,8 +1964,7 @@ class AdminAPITest {
                 CacheService cache,
                 JobRequestScheduler scheduler,
                 MailService mail,
-                LogService logs,
-                ExtensionScanPersistenceService scanPersistenceService
+                LogService logs
         ) {
             return new AdminService(
                     repositories,
@@ -1978,8 +1979,7 @@ class AdminAPITest {
                     cache,
                     scheduler,
                     mail,
-                    logs,
-                    scanPersistenceService
+                    logs
             );
         }
 

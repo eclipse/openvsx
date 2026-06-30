@@ -13,6 +13,7 @@ import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
@@ -23,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
+import java.util.List;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -79,11 +81,10 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     private void deleteExtension(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         admins.deleteExtension(
+                service.getUser(),
                 extension.getNamespace().getName(),
                 extension.getName(),
-                extVersion.getTargetPlatform(),
-                extVersion.getVersion(),
-                service.getUser()
+                List.of(new TargetPlatformVersionJson(extVersion.getTargetPlatform(), extVersion.getVersion()))
         );
     }
 }

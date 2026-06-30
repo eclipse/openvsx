@@ -218,14 +218,47 @@ public class ExtensionService {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(
+            UserData user,
             String namespaceName,
             String extensionName,
-            List<TargetPlatformVersionJson> targetVersions,
-            UserData user
+            List<TargetPlatformVersionJson> targetVersions
     ) throws ErrorResultException {
-        // Lock the extension row (NOWAIT) so a delete-all and a concurrent publish can't interleave.
-        // Publishing takes the same lock (waiting); if the lock can not be acquired, this fails fast,
-        // and we ask the user to retry.
+        var extension = lockExtension(namespaceName, extensionName);
+        if (repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
+            return deleteExtension(user, extension);
+        }
+
+        // A user may only delete versions they published; foreign/unknown versions resolve to null
+        // and surface as 404 (without leaking that another publisher's version exists).
+        return deleteExtensionVersions(user, targetVersions.stream()
+                .map(target -> {
+                    var extVersion = repositories.findVersionForUser(user, target.version(), target.targetPlatform(), extensionName, namespaceName);
+                    if (extVersion == null) throw new ErrorResultException(
+					"Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, target.targetPlatform(), target.version()),
+					HttpStatus.NOT_FOUND);
+                    return extVersion;
+                })
+                .toList());
+    }
+
+    /**
+     * Deletes the given pre-resolved extension versions without any ownership check.
+     * Callers are responsible for authorisation (e.g. scoping the lookup to the owning user
+     * before calling this, or using an admin-level unscoped lookup).
+     */
+    public ResultJson deleteExtensionVersions(UserData user, List<ExtensionVersion> versions) {
+        var results = new ArrayList<ResultJson>();
+        for (var version : versions) {
+            results.add(deleteExtension(user, version));
+        }
+        return combineResults(results);
+    }
+
+    /**
+     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}). 
+     * this fails fast with {@code 409}
+     */
+    public Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
         Extension extension;
         try {
             extension = repositories.findExtensionForUpdateNoWait(extensionName, namespaceName);
@@ -235,34 +268,26 @@ public class ExtensionService {
                             + " can not be locked due to concurrent modification. Please try again.",
                     HttpStatus.CONFLICT);
         }
-
         if (extension == null) {
-            var message = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
-            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+            throw new ErrorResultException(
+                    "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName),
+                    HttpStatus.NOT_FOUND);
         }
+        return extension;
+    }
 
-        var results = new ArrayList<ResultJson>();
-        if (repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
-            results.add(deleteExtension(user, extension));
-        } else {
-            for (var targetVersion : targetVersions) {
-                var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
-                if (extVersion == null) {
-                    var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version());
-                    throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
-                }
-
-                results.add(deleteExtension(user, extVersion));
-            }
-        }
-
+    /**
+     * Merges the per-version delete outcomes into a single result, concatenating any success and
+     * error messages.
+     */
+    public ResultJson combineResults(List<ResultJson> results) {
         var result = new ResultJson();
         result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
         result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
         return result;
     }
 
-    protected ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
+    public ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         if (!bundledRefs.isEmpty()) {
             throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
@@ -280,13 +305,14 @@ public class ExtensionService {
         }
 
         cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
-
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
         for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
@@ -301,7 +327,7 @@ public class ExtensionService {
         return result;
     }
 
-    protected ResultJson deleteExtension(UserData user, ExtensionVersion extVersion) {
+    public ResultJson deleteExtension(UserData user, ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);

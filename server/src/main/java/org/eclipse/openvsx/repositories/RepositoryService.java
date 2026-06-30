@@ -250,7 +250,7 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
-    public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+    public ExtensionVersion findVersionForUser(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
     }
 

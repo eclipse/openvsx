@@ -23,6 +23,7 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -240,11 +241,10 @@ public class DataMirrorService {
     public void deleteExtensionVersion(ExtensionVersion extVersion, UserData user) {
         var extension = extVersion.getExtension();
         admin.deleteExtension(
+                user,
                 extension.getNamespace().getName(),
                 extension.getName(),
-                extVersion.getTargetPlatform(),
-                extVersion.getVersion(),
-                user
+                List.of(new TargetPlatformVersionJson(extVersion.getTargetPlatform(), extVersion.getVersion()))
         );
     }
 

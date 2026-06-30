@@ -18,7 +18,6 @@ import static org.eclipse.openvsx.entities.FileResource.README;
 import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -53,7 +52,6 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -90,7 +88,6 @@ public class AdminService {
     private final JobRequestScheduler scheduler;
     private final MailService mail;
     private final LogService logs;
-    private final ExtensionScanPersistenceService scanPersistenceService;
 
     public AdminService(
             RepositoryService repositories,
@@ -105,8 +102,7 @@ public class AdminService {
             CacheService cache,
             JobRequestScheduler scheduler,
             MailService mail,
-            LogService logs,
-            ExtensionScanPersistenceService scanPersistenceService
+            LogService logs
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -121,7 +117,6 @@ public class AdminService {
         this.scheduler = scheduler;
         this.mail = mail;
         this.logs = logs;
-        this.scanPersistenceService = scanPersistenceService;
     }
 
     @EventListener
@@ -156,28 +151,7 @@ public class AdminService {
             deleteExtensionAndDependencies(dependRef, admin, depth);
         }
 
-        for (var extVersion : repositories.findVersions(extension)) {
-            removeExtensionVersion(extVersion);
-        }
-        for (var review : repositories.findAllReviews(extension)) {
-            entityManager.remove(review);
-        }
-
-        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for (var deprecatedExtension : deprecatedExtensions) {
-            deprecatedExtension.setReplacement(null);
-            cache.evictExtensionJsons(deprecatedExtension);
-        }
-
-        entityManager.remove(extension);
-
-        // evict the cache entries only after the changes have been commited
-        cache.evictExtensionJsons(extension);
-        cache.evictNamespaceDetails(extension);
-        cache.evictLatestExtensionVersion(extension);
-
-        search.removeSearchEntry(extension);
-        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
+        extensions.deleteExtension(admin, extension);
     }
 
     protected void deleteExtensionAndDependencies(ExtensionVersion extVersion, UserData admin, int depth) {
@@ -187,10 +161,15 @@ public class AdminService {
             return;
         }
 
-        removeExtensionVersion(extVersion);
-        extension.getVersions().remove(extVersion);
-        extensions.updateExtension(extension);
-        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+        extensions.deleteExtension(admin, extVersion);
+    }
+    
+    public ResultJson deleteExtension(
+            UserData adminUser,
+            String namespaceName,
+            String extensionName
+    ) {
+        return this.deleteExtension(adminUser, namespaceName, extensionName, null);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -200,99 +179,21 @@ public class AdminService {
             String extensionName,
             List<TargetPlatformVersionJson> targetVersions
     ) {
+        var extension = extensions.lockExtension(namespaceName, extensionName);
         if (targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
-            return deleteExtension(namespaceName, extensionName, adminUser);
+            return extensions.deleteExtension(adminUser, extension);
         }
 
-        var results = new ArrayList<ResultJson>();
-        for (var targetVersion : targetVersions) {
-            results.add(deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
-        }
-
-        var result = new ResultJson();
-        result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-        result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-        return result;
-    }
-
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(String namespaceName, String extensionName, UserData admin)
-            throws ErrorResultException {
-        var extension = repositories.findExtension(extensionName, namespaceName);
-        if (extension == null) {
-            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
-            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
-        }
-        return deleteExtension(extension, admin);
-    }
-
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(String namespaceName, String extensionName, String targetPlatform, String version, UserData admin)
-            throws ErrorResultException {
-        var extVersion = repositories.findVersion(version, targetPlatform, extensionName, namespaceName);
-        if (extVersion == null) {
-            var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetPlatform, version);
-
-            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
-        }
-
-        return deleteExtension(extVersion, admin);
-    }
-
-    protected ResultJson deleteExtension(Extension extension, UserData admin) throws ErrorResultException {
-        var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        if (!bundledRefs.isEmpty()) {
-            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
-                    + " is bundled by the following extension packs: "
-                    + bundledRefs.stream()
-                        .map(NamingUtil::toFileFormat)
-                        .collect(Collectors.joining(", ")));
-        }
-        var dependRefs = repositories.findDependenciesReference(extension);
-        if (!dependRefs.isEmpty()) {
-            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
-                    + dependRefs.stream()
-                        .map(NamingUtil::toFileFormat)
-                        .collect(Collectors.joining(", ")));
-        }
-
-        for (var extVersion : repositories.findVersions(extension)) {
-            removeExtensionVersion(extVersion);
-        }
-
-        for (var review : repositories.findAllReviews(extension)) {
-            entityManager.remove(review);
-        }
-
-        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for (var deprecatedExtension : deprecatedExtensions) {
-            deprecatedExtension.setReplacement(null);
-            cache.evictExtensionJsons(deprecatedExtension);
-        }
-
-        entityManager.remove(extension);
-
-        // evict the cache entries only after the changes have been commited
-        cache.evictExtensionJsons(extension);
-        cache.evictNamespaceDetails(extension);
-        cache.evictLatestExtensionVersion(extension);
-
-        search.removeSearchEntry(extension);
-
-        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
-        logs.logAction(admin, result);
-        return result;
-    }
-
-    protected ResultJson deleteExtension(ExtensionVersion extVersion, UserData admin) {
-        var extension = extVersion.getExtension();
-        removeExtensionVersion(extVersion);
-        extension.getVersions().remove(extVersion);
-        extensions.updateExtension(extension);
-
-        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
-        logs.logAction(admin, result);
-        return result;
+        // Admins may delete any publisher's version, so the unscoped lookup is used here.
+        return extensions.deleteExtensionVersions(adminUser, targetVersions.stream()
+                .map(target -> {
+                    var extVersion = repositories.findVersion(target.version(), target.targetPlatform(), extensionName, namespaceName);
+                    if (extVersion == null) throw new ErrorResultException(
+                    "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, target.targetPlatform(), target.version()),
+                    HttpStatus.NOT_FOUND);
+                    return extVersion;
+                })
+                .toList());
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -331,16 +232,6 @@ public class AdminService {
         var result = ResultJson.success("Deleted namespace " + namespace.getName());
         logs.logAction(admin, result);
         return result;
-    }
-
-    private void removeExtensionVersion(ExtensionVersion extVersion) {
-        // Clean up any pending scan jobs for this extension version
-        // to prevent "file not found" errors after deletion
-        scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
-
-        repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
-        repositories.deleteFiles(extVersion);
-        entityManager.remove(extVersion);
     }
 
     private String userNotFoundMessage(String user) {

@@ -306,7 +306,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findNotMigratedItems(page),
                 () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1),
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
-                () -> repositories.findVersion(userData,"version", "targetPlatform", "extensionName", "namespace"),
+                () -> repositories.findVersionForUser(userData,"version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
                 () -> repositories.deactivateAccessTokens(userData),

@@ -393,7 +393,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
-            var result = extensions.deleteExtension(namespaceName, extensionName, targetVersions, user);
+            var result = extensions.deleteExtension(user, namespaceName, extensionName, targetVersions);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();

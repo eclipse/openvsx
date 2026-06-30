@@ -150,7 +150,7 @@ class ExtensionDeleteTest {
 
         // The owner asks to delete the only version they published.
         var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner);
+        extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets);
 
         // Let the (possibly blocked) publisher run to completion now that the delete committed.
         if (publisherThread != null) {
@@ -232,7 +232,7 @@ class ExtensionDeleteTest {
 
         // The owner deletes only their own version; this is not a delete-all.
         var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner);
+        extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets);
 
         assertThat(extensionExists())
                 .as("the extension must survive while another publisher's version remains")
@@ -279,7 +279,7 @@ class ExtensionDeleteTest {
         var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
 
         try {
-            assertThatThrownBy(() -> extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner))
+            assertThatThrownBy(() -> extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets))
                     .as("the delete must fail fast (not block) while a publish holds the lock")
                     .isInstanceOf(ErrorResultException.class);
         } finally {
