@@ -239,7 +239,7 @@ public class ExtensionValidator {
             return true;
         if (value.startsWith("git+") && value.length() > 4)
             value = value.substring(4);
-        
+
         try {
             var url = new URI(value).toURL();
             return url.getProtocol().matches("http(s)?") && StringUtils.isEmpty(url.getHost());

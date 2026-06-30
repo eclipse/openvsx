@@ -47,7 +47,7 @@ public class ExtensionScanConfig {
     /**
      * Maximum total size of the uncompressed archive in bytes.
      * This limit is shared by all scanning checks (secret detection, blocklist, etc.).
-     * 
+     *
      * Property: {@code ovsx.scanning.max-archive-size-bytes}
      * Default: {@code 536870912} (512 MB)
      */
@@ -58,7 +58,7 @@ public class ExtensionScanConfig {
      * Maximum size of a single file to process in bytes.
      * Files larger than this are skipped by scanning checks.
      * This limit is shared by all scanning checks.
-     * 
+     *
      * Property: {@code ovsx.scanning.max-single-file-bytes}
      * Default: {@code 268435456} (256 MB)
      */
@@ -68,7 +68,7 @@ public class ExtensionScanConfig {
     /**
      * Maximum number of zip entries to inspect in an archive.
      * This limit is shared by all scanning checks.
-     * 
+     *
      * Property: {@code ovsx.scanning.max-entry-count}
      * Default: {@code 50000}
      */

@@ -114,7 +114,7 @@ public class ExtensionService {
     private ExtensionVersion publishVersionWithScan(InputStream content, PersonalAccessToken token) throws ErrorResultException {
         var extensionFile = createExtensionFile(content);
         ExtensionScan scan = null;
-        
+
         try (var processor = new ExtensionProcessor(extensionFile)) {
             scan = scanService.initializeScan(processor, token.getUser());
 
@@ -298,7 +298,7 @@ public class ExtensionService {
         // Clean up any pending scan jobs for this extension version
         // to prevent "file not found" errors after deletion
         scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
-        
+
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);

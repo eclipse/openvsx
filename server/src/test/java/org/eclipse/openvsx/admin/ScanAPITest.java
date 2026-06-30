@@ -141,7 +141,7 @@ class ScanAPITest {
             any(), any(), any(), any(),
             any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanC), PageRequest.of(0, 1), 2));
-        
+
         when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
         when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
         when(storageUtil.getFileUrls(anyList(), anyString(), any(), any())).thenReturn(Map.of());
@@ -182,7 +182,7 @@ class ScanAPITest {
             any(), any(), any(), any(),
             any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanA)));
-        
+
         when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
         when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
         when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
@@ -257,7 +257,7 @@ class ScanAPITest {
             any(), any(), any(), any(),
             any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scanPassed, scanErrored)));
-        
+
         when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
         when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
         when(repositories.findVersion(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
@@ -377,7 +377,7 @@ class ScanAPITest {
         when(repositories.countScansForStatistics(
             eq(ScanStatus.REJECTED), any(), any(), any(), any(), eq(false)
         )).thenReturn(1L);
-        
+
         // Other statuses return 0 when enforcement filter is applied
         when(repositories.countScansForStatistics(
             argThat(s -> s != ScanStatus.REJECTED), any(), any(), any(), any(), anyBoolean()
@@ -408,7 +408,7 @@ class ScanAPITest {
             any(), any(), any(), any(),
             any(), any(), anyBoolean(), any()
         )).thenReturn(new PageImpl<>(List.of(scan)));
-        
+
         when(repositories.findVersion("0.0.1", "universal", "ext", "ns")).thenReturn(null);
         when(repositories.findValidationFailures(any())).thenReturn(Streamable.empty());
         when(repositories.findExtensionThreats(any())).thenReturn(Streamable.empty());
@@ -514,4 +514,3 @@ class ScanAPITest {
         }
     }
 }
-

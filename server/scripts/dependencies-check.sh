@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Clone and build license tool
-if [ ! -d "/workspace/dash-licenses" ] 
+if [ ! -d "/workspace/dash-licenses" ]
 then
     cd /workspace || exit
     git clone https://github.com/eclipse/dash-licenses.git

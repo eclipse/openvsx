@@ -73,7 +73,7 @@ public class CustomerService {
             logger.warn("Could not determine IP address from string {}", ipAddress);
             return Optional.empty();
         }
-        
+
         var node = customersByIPAddress.elementsContaining(ip);
         if (node != null) {
             return Optional.of(node.getValue());

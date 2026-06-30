@@ -2,11 +2,11 @@
 
 # Open VSX Publisher Agreement
 
-Thank you for your interest in publishing in the Eclipse Open VSX Registry (“Open VSX”). As used in this Eclipse Open VSX Publisher Agreement (“Agreement”), the term “you”, ”your” or “publisher” refers to you as an individual, and, to the extent you are the agent or employee of another person or entity (such person or entity, a “Principal”) “you” and “publisher” also includes that Principal.  
+Thank you for your interest in publishing in the Eclipse Open VSX Registry (“Open VSX”). As used in this Eclipse Open VSX Publisher Agreement (“Agreement”), the term “you”, ”your” or “publisher” refers to you as an individual, and, to the extent you are the agent or employee of another person or entity (such person or entity, a “Principal”) “you” and “publisher” also includes that Principal.
 
-This Agreement describes the relationship between you and the Eclipse Foundation AISBL, a Belgian international not-for-profit association (AISBL/IVZW) incorporated under the laws of Belgium as well as its Affiliates (as defined herein) (collectively, “Eclipse,” “us” or “we”) and governs your publication of any Offering (as defined below) within the Registry (as defined below).  
+This Agreement describes the relationship between you and the Eclipse Foundation AISBL, a Belgian international not-for-profit association (AISBL/IVZW) incorporated under the laws of Belgium as well as its Affiliates (as defined herein) (collectively, “Eclipse,” “us” or “we”) and governs your publication of any Offering (as defined below) within the Registry (as defined below).
 
-By clicking where indicated to accept this Agreement, the individual entering into this Agreement represents and warrants to Eclipse that such individual has the authority to enter into this Agreement (including the right to bind his or her Principal), and you (including such individual and any such Principal) agree to be bound by its terms.  
+By clicking where indicated to accept this Agreement, the individual entering into this Agreement represents and warrants to Eclipse that such individual has the authority to enter into this Agreement (including the right to bind his or her Principal), and you (including such individual and any such Principal) agree to be bound by its terms.
 
 ## SECTION 1 Definitions.
 

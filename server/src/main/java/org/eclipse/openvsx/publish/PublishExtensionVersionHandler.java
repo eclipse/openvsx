@@ -143,7 +143,7 @@ public class PublishExtensionVersionHandler {
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
-        
+
         var extVersion = processor.getMetadata();
         var displayName = extVersion.getDisplayName();
         validateExtensionName(namespaceName, extensionName, displayName, user);
@@ -386,7 +386,7 @@ public class PublishExtensionVersionHandler {
             try (var sha256File = processor.generateSha256Checksum(extVersion)) {
                 consumer.accept(sha256File);
             }
-            
+
             // Submit scans to all registered scanners (if scan record provided and scanning enabled)
             // Scanning happens after file resources are stored but before activation
             // Extension remains INACTIVE until all scans complete via AsyncScanCompletionService
@@ -395,7 +395,7 @@ public class PublishExtensionVersionHandler {
                 try {
                     // Submit to scanners - transitions scan to SCANNING status
                     boolean submitted = scanService.submitScannerJobs(scan, extVersion);
-                    
+
                     if (!submitted) {
                         // No scanners available
                         logger.warn("No scanners available, activating extension immediately: {}", NamingUtil.toLogFormat(extVersion));
@@ -410,7 +410,7 @@ public class PublishExtensionVersionHandler {
                     // Extension remains inactive until scans complete or are manually approved
                 }
             } else {
-                logger.debug("Scanning disabled or no scan record, activating immediately: {}", 
+                logger.debug("Scanning disabled or no scan record, activating immediately: {}",
                     NamingUtil.toLogFormat(extVersion));
                 // If scanning is disabled or no scan record, activate the extension immediately
                 if (scan != null) {

@@ -55,7 +55,7 @@ class LatestExtensionVersionCacheKeyGeneratorTest {
 
 		assertThat(results).startsWith("foobar.baz");
 	}
-	
+
 	private Extension mockExtension() {
 		var namespace = new Namespace();
 		namespace.setName("foobar");

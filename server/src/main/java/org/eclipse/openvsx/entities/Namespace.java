@@ -51,7 +51,7 @@ public class Namespace implements Serializable {
 	private String supportLink;
 
 	private String logoName;
-	
+
 	@Column(length = 32)
 	private String logoStorageType;
 

@@ -89,7 +89,7 @@ class UserAPITest {
 
     @MockitoBean
     EntityManager entityManager;
-    
+
     @MockitoBean
     RepositoryService repositories;
 

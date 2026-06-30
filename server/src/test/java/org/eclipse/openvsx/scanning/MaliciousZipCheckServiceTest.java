@@ -130,6 +130,30 @@ class MaliciousZipCheckServiceTest {
         assertEquals("UNSAFE_PATH_DETECTED", result.failures().getLast().ruleName());
     }
 
+    @Test
+    void check_failsWhenEntriesCollideAfterDotDotSegmentNormalizationMultipleSlashes() throws Exception {
+        TempFile extensionFile = createZipWithEntries("dotdot-segment.vsix",
+            "extension\\/package.json", "extension/package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+    }
+
+    @Test
+    void check_failsWhenEntriesCollideAfterDotDotSegmentNormalizationMultipleSlashes2() throws Exception {
+        TempFile extensionFile = createZipWithEntries("dotdot-segment.vsix",
+            "extension/\\package.json", "extension/package.json");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+    }
+
     // --- Unsafe paths checks ---
 
     @Test

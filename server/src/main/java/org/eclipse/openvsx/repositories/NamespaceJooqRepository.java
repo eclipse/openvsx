@@ -80,35 +80,35 @@ public class NamespaceJooqRepository {
             int limit
     ) {
         var query = dsl.selectQuery();
-        
+
         query.addSelect(
                 NAMESPACE.ID,
                 NAMESPACE.PUBLIC_ID,
                 NAMESPACE.NAME,
                 NAMESPACE.DISPLAY_NAME
         );
-        
+
         query.addFrom(NAMESPACE);
-        
+
         if (excludeNamespaces != null && !excludeNamespaces.isEmpty()) {
             query.addConditions(NAMESPACE.NAME.notIn(excludeNamespaces));
         }
-        
+
         if (verifiedOnly) {
             var hasOwnerSubquery = DSL.selectOne()
                     .from(NAMESPACE_MEMBERSHIP)
                     .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(NAMESPACE.ID))
                     .and(NAMESPACE_MEMBERSHIP.ROLE.eq("owner"));
-            
+
             query.addConditions(DSL.exists(hasOwnerSubquery));
         }
-        
+
         var lowerNamespaceName = namespaceName.toLowerCase();
 
         int inputLen = namespaceName.length();
         int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
         int maxLen = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
-        
+
         query.addConditions(DSL.length(NAMESPACE.NAME).between(minLen, maxLen));
 
         var maxLength = DSL.greatest(
@@ -116,7 +116,7 @@ public class NamespaceJooqRepository {
                 DSL.length(NAMESPACE.NAME)
         );
         var maxDistance = maxLength.mul(levenshteinThreshold);
-        
+
         var levenshteinDist = DSL.function("levenshtein_less_equal", Integer.class,
                 DSL.val(lowerNamespaceName),
                 DSL.lower(NAMESPACE.NAME),
@@ -125,13 +125,13 @@ public class NamespaceJooqRepository {
                 DSL.val(1), // substitution cost
                 maxDistance.cast(Integer.class)
         );
-        
+
         query.addConditions(levenshteinDist.le(maxDistance));
-        
+
         // Order by best match first (lowest Levenshtein distance)
         query.addOrderBy(levenshteinDist.asc());
         query.addLimit(limit);
-        
+
         // Map results to Namespace entities
         return query.fetch().map(record -> {
             var namespace = new Namespace();

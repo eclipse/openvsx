@@ -1,14 +1,14 @@
 /********************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation 
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional 
+ * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
  *
- * This program and the accompanying materials are made available under the 
+ * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * https://www.eclipse.org/legal/epl-2.0
  *
- * SPDX-License-Identifier: EPL-2.0 
+ * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
@@ -74,7 +74,7 @@ public class ScanCheckResult implements Serializable {
     @JoinColumn(name = "scan_id", nullable = false)
     private ExtensionScan scan;
 
-    /** 
+    /**
      * Type of check performed.
      */
     @Column(name = "check_type", nullable = false, length = 100)
@@ -110,7 +110,7 @@ public class ScanCheckResult implements Serializable {
     @Column(name = "findings_count")
     private Integer findingsCount;
 
-    /** 
+    /**
      * Brief summary of the check result.
      */
     @Column(name = "summary", length = 512)
@@ -120,7 +120,7 @@ public class ScanCheckResult implements Serializable {
     @Column(name = "error_message", length = 2048)
     private String errorMessage;
 
-    /** 
+    /**
      * Reference to ScannerJob ID for SCANNER_JOB category.
      * Null for PUBLISH_CHECK category.
      */
@@ -338,7 +338,7 @@ public class ScanCheckResult implements Serializable {
         result.setCompletedAt(TimeUtil.getCurrentUTC());
         result.setDurationMs(java.time.Duration.between(startedAt, result.getCompletedAt()).toMillis());
         result.setErrorMessage(errorMessage);
-        result.setSummary("Error: " + (errorMessage != null && errorMessage.length() > 100 
+        result.setSummary("Error: " + (errorMessage != null && errorMessage.length() > 100
             ? errorMessage.substring(0, 100) + "..." : errorMessage));
         return result;
     }

@@ -42,7 +42,7 @@ public class LocalStorageService implements IStorageService {
     public boolean isEnabled() {
         return !StringUtils.isEmpty(storageDirectory);
     }
-    
+
     @PostConstruct
     public void validateStorageDirectory() throws IOException {
         if (!isEnabled()) {

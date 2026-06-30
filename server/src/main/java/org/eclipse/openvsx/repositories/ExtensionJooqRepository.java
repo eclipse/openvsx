@@ -317,7 +317,7 @@ public class ExtensionJooqRepository {
                     .from(NAMESPACE_MEMBERSHIP)
                     .where(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(NAMESPACE.ID))
                     .and(NAMESPACE_MEMBERSHIP.ROLE.eq("owner"));
-            
+
             query.addConditions(DSL.exists(hasOwnerSubquery));
         }
 
@@ -325,20 +325,20 @@ public class ExtensionJooqRepository {
 
         if (extensionName != null && !extensionName.isEmpty()) {
             var lowerExtensionName = extensionName.toLowerCase();
-            
+
             var conditionList = new ArrayList<Condition>();
-            
+
             int inputLen = extensionName.length();
             int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
             int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
             conditionList.add(DSL.length(EXTENSION.NAME).between(minLen, lenMax));
-            
+
             var maxLen = DSL.greatest(
                     DSL.val(lowerExtensionName.length()),
                     DSL.length(EXTENSION.NAME)
             );
             var maxDistance = maxLen.mul(levenshteinThreshold);
-            
+
             var levenshteinDist = DSL.function("levenshtein_less_equal", Integer.class,
                     DSL.val(lowerExtensionName),
                     DSL.lower(EXTENSION.NAME),
@@ -347,28 +347,28 @@ public class ExtensionJooqRepository {
                     DSL.val(1), // substitution cost
                     maxDistance.cast(Integer.class)
             );
-            
+
             conditionList.add(levenshteinDist.le(maxDistance));
-            
+
             conditions.add(DSL.and(conditionList));
         }
 
         if (namespaceName != null && !namespaceName.isEmpty()) {
             var lowerNamespaceName = namespaceName.toLowerCase();
-            
+
             var conditionList = new ArrayList<Condition>();
-            
+
             int inputLen = namespaceName.length();
             int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
             int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
             conditionList.add(DSL.length(NAMESPACE.NAME).between(minLen, lenMax));
-            
+
             var maxLen = DSL.greatest(
                     DSL.val(lowerNamespaceName.length()),
                     DSL.length(NAMESPACE.NAME)
             );
             var maxDistance = maxLen.mul(levenshteinThreshold);
-            
+
             var levenshteinDist = DSL.function("levenshtein_less_equal", Integer.class,
                     DSL.val(lowerNamespaceName),
                     DSL.lower(NAMESPACE.NAME),
@@ -377,27 +377,27 @@ public class ExtensionJooqRepository {
                     DSL.val(1), // substitution cost
                     maxDistance.cast(Integer.class)
             );
-            
+
             conditionList.add(levenshteinDist.le(maxDistance));
-            
+
             conditions.add(DSL.and(conditionList));
         }
 
         if (displayName != null && !displayName.isEmpty()) {
             var evLatest = EXTENSION_VERSION.as("ev_latest");
-            
+
             var lowerDisplayName = displayName.toLowerCase();
-            
+
             int inputLen = displayName.length();
             int minLen = (int) Math.floor(inputLen * (1.0 - levenshteinThreshold));
             int lenMax = (int) Math.ceil(inputLen / (1.0 - levenshteinThreshold));
-            
+
             var maxDisplayNameLen = DSL.greatest(
                 DSL.val(lowerDisplayName.length()),
                 DSL.length(evLatest.DISPLAY_NAME)
             );
             var maxDisplayNameDistance = maxDisplayNameLen.mul(levenshteinThreshold);
-            
+
             var displayNameLevenshtein = DSL.function("levenshtein_less_equal", Integer.class,
                     DSL.val(lowerDisplayName),
                     DSL.lower(evLatest.DISPLAY_NAME),
@@ -406,7 +406,7 @@ public class ExtensionJooqRepository {
                     DSL.val(1), // substitution cost
                     maxDisplayNameDistance.cast(Integer.class)
             );
-            
+
             var latestQuery = extensionVersionRepo.findLatestQuery(null, false, true);
             latestQuery.addSelect(EXTENSION_VERSION.ID);
             latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
@@ -421,7 +421,7 @@ public class ExtensionJooqRepository {
                     .and(evLatest.DISPLAY_NAME.ne(""))
                     .and(DSL.length(evLatest.DISPLAY_NAME).between(minLen, lenMax))
                     .and(displayNameLevenshtein.le(maxDisplayNameDistance));
-            
+
             conditions.add(DSL.exists(displayNameSimilaritySubquery));
         }
 
@@ -442,7 +442,7 @@ public class ExtensionJooqRepository {
         }
 
         query.addLimit(limit);
-        
+
         return query.fetch().map(this::toExtension);
     }
 }

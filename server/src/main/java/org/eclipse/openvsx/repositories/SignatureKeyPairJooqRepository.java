@@ -61,4 +61,3 @@ public class SignatureKeyPairJooqRepository {
         return query.fetchOne(SIGNATURE_KEY_PAIR.PUBLIC_ID);
     }
 }
-

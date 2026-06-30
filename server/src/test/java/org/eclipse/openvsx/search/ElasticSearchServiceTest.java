@@ -276,7 +276,7 @@ class ElasticSearchServiceTest {
         boolean created;
         boolean deleted;
     }
-    
+
     @TestConfiguration
     static class TestConfig {
         @Bean

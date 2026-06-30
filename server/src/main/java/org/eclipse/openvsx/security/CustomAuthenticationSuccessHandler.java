@@ -35,5 +35,5 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         }
         return determineTargetUrl(request, response);
     }
-    
+
 }

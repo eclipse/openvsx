@@ -81,7 +81,7 @@ public class StorageMigration {
                     migrationCount[index]++;
                 });
         }
-        
+
         if (!resourceQueue.isEmpty()) {
             for (var i = 0; i < migrations.size(); i++) {
                 if (migrationCount[i] > 0) {

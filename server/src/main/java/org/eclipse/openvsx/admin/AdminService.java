@@ -337,7 +337,7 @@ public class AdminService {
         // Clean up any pending scan jobs for this extension version
         // to prevent "file not found" errors after deletion
         scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
-        
+
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
         entityManager.remove(extVersion);
@@ -467,7 +467,7 @@ public class AdminService {
 
         scheduler.enqueue(new ChangeNamespaceJobRequest(json));
     }
-    
+
     public UserPublishInfoJson getUserPublishInfo(String provider, String loginName) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
@@ -573,12 +573,12 @@ public class AdminService {
             affectedExtensions.add(version.getExtension());
             deactivatedExtensionCount++;
         }
-        
+
         // Update affected extensions
         for (var extension : affectedExtensions) {
             extensions.updateExtension(extension);
         }
-        
+
         // revoke namespace memberships
         var namespaceMemberships = repositories.findMemberships(user);
         var numberOfNamespaceMemberships = 0L;

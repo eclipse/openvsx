@@ -37,7 +37,7 @@ class AwsStorageServiceTest {
         var fileCacheDurationConfig = new FileCacheDurationConfig();
         var filesCacheKeyGenerator = new FilesCacheKeyGenerator();
         storageService = new AwsStorageService(fileCacheDurationConfig, filesCacheKeyGenerator);
-        
+
         // Set up test entities
         setupTestEntities();
     }
@@ -66,7 +66,7 @@ class AwsStorageServiceTest {
         // Test with no credentials
         ReflectionTestUtils.setField(storageService, "accessKeyId", "");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "");
-        
+
         assertFalse(storageService.isEnabled(), "Service should not be enabled without credentials");
     }
 
@@ -77,7 +77,7 @@ class AwsStorageServiceTest {
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
         ReflectionTestUtils.setField(storageService, "region", "us-east-1");
         ReflectionTestUtils.setField(storageService, "bucket", "test-bucket");
-        
+
         assertTrue(storageService.isEnabled(), "Service should be enabled with static credentials");
     }
 
@@ -86,7 +86,7 @@ class AwsStorageServiceTest {
         // Test with both access key and secret key
         ReflectionTestUtils.setField(storageService, "accessKeyId", "AKIAIOSFODNN7EXAMPLE");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-        
+
         Boolean hasCredentials = ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials");
         assertTrue(hasCredentials, "Should detect static credentials when both access key and secret key are present");
 
@@ -106,7 +106,7 @@ class AwsStorageServiceTest {
     void testHasSessionToken() {
         // Test with session token
         ReflectionTestUtils.setField(storageService, "sessionToken", "AQoDYXdzEJr...<remainder of security token>");
-        
+
         Boolean hasToken = ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken");
         assertTrue(hasToken, "Should detect session token when present");
 
@@ -127,7 +127,7 @@ class AwsStorageServiceTest {
         ReflectionTestUtils.setField(storageService, "accessKeyId", "AKIAIOSFODNN7EXAMPLE");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
         ReflectionTestUtils.setField(storageService, "sessionToken", "");
-        
+
         Boolean hasStaticCreds1 = ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials");
         Boolean hasSessionToken1 = ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken");
         assertTrue(hasStaticCreds1);
@@ -135,7 +135,7 @@ class AwsStorageServiceTest {
 
         // Test 2: Static credentials with session token (temporary credentials)
         ReflectionTestUtils.setField(storageService, "sessionToken", "AQoDYXdzEJr...<remainder of security token>");
-        
+
         Boolean hasStaticCreds2 = ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials");
         Boolean hasSessionToken2 = ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken");
         assertTrue(hasStaticCreds2);
@@ -145,7 +145,7 @@ class AwsStorageServiceTest {
         ReflectionTestUtils.setField(storageService, "accessKeyId", "");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "");
         ReflectionTestUtils.setField(storageService, "sessionToken", "");
-        
+
         Boolean hasStaticCreds3 = ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials");
         Boolean hasSessionToken3 = ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken");
         assertFalse(hasStaticCreds3);
@@ -183,11 +183,11 @@ class AwsStorageServiceTest {
     @Test
     void testObjectKeyGenerationWithDifferentTargetPlatforms() {
         String[] platforms = {"universal", "win32-x64", "linux-x64", "darwin-x64", "darwin-arm64"};
-        
+
         for (String platform : platforms) {
             extVersion.setTargetPlatform(platform);
             var objectKey = (String) ReflectionTestUtils.invokeMethod(storageService, "getObjectKey", resource);
-            
+
             if ("universal".equals(platform)) {
                 assertEquals("testnamespace/test-extension/1.0.0/extension.vsix", objectKey);
             } else {
@@ -200,7 +200,7 @@ class AwsStorageServiceTest {
     void testNamespaceLogoObjectKeyGeneration() {
         // Test different logo file types
         String[] logoNames = {"logo.png", "logo.jpg", "logo.svg", "namespace-logo.webp"};
-        
+
         for (String logoName : logoNames) {
             namespace.setLogoName(logoName);
             var logoKey = (String) ReflectionTestUtils.invokeMethod(storageService, "getObjectKey", namespace);
@@ -235,13 +235,13 @@ class AwsStorageServiceTest {
         ReflectionTestUtils.setField(storageService, "accessKeyId", "AKIAIOSFODNN7EXAMPLE");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
         ReflectionTestUtils.setField(storageService, "sessionToken", "");
-        
+
         assertTrue((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials"));
         assertFalse((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken"));
 
         // Test session token detection
         ReflectionTestUtils.setField(storageService, "sessionToken", "test-session-token");
-        
+
         assertTrue((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials"));
         assertTrue((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken"));
 
@@ -249,7 +249,7 @@ class AwsStorageServiceTest {
         ReflectionTestUtils.setField(storageService, "accessKeyId", "");
         ReflectionTestUtils.setField(storageService, "secretAccessKey", "");
         ReflectionTestUtils.setField(storageService, "sessionToken", "");
-        
+
         assertFalse((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials"));
         assertFalse((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken"));
     }

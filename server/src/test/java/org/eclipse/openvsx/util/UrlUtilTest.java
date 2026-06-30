@@ -28,12 +28,12 @@ class UrlUtilTest {
     private HttpServletRequest request;
 
     private AutoCloseable closeable;
-    
+
     @BeforeEach
     void openMocks() {
      closeable = MockitoAnnotations.openMocks(this);
     }
-    
+
     @AfterEach
     void releaseMocks() throws Exception {
         closeable.close();
@@ -89,7 +89,7 @@ class UrlUtilTest {
         doReturn(8080).when(request).getServerPort();
         doReturn("/").when(request).getContextPath();
         assertThat(UrlUtil.getBaseUrl(request)).isEqualTo("http://localhost:8080/");
-    }    
+    }
 
     // Check base URL is using XForwarded headers
     @Test
@@ -107,7 +107,7 @@ class UrlUtilTest {
         doReturn(Collections.enumeration(items)).when(request).getHeaders("X-Forwarded-Host");
         doReturn("/openvsx").when(request).getHeader("X-Forwarded-Prefix");
         assertThat(UrlUtil.getBaseUrl(request)).isEqualTo("https://open-vsx.org/openvsx/");
-    } 
+    }
 
     // Check base URL is using array X-Forwarded-Host headers
     @Test

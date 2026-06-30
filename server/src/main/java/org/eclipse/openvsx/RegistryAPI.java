@@ -767,7 +767,7 @@ public class RegistryAPI {
             @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset,
-            @RequestParam(defaultValue = "desc") 
+            @RequestParam(defaultValue = "desc")
             @Parameter(description = "Descending or ascending sort order", schema = @Schema(type = "string", allowableValues = {"asc", "desc"}))
             String sortOrder,
             @RequestParam(defaultValue = SortBy.RELEVANCE)

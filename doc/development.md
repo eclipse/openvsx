@@ -8,7 +8,7 @@ To get started quickly, it is recommended to use Gitpod as default with the deve
 
 ### Using Red Hat OpenShift Dev Spaces
 
-Open a development environment in Red Hat OpenShift Dev Spaces. 
+Open a development environment in Red Hat OpenShift Dev Spaces.
 
 [![Open in Dev Spaces](https://www.eclipse.org/che/contribute.svg)](https://workspaces.openshift.com#https://github.com/eclipse-openvsx/openvsx)
 
@@ -169,7 +169,7 @@ Run:
 
 or
 
-- in `server/`:  
+- in `server/`:
   `gradlew downloadTestExtensions` to download vsix files from the official store and from Github.
 - in project root (the server application must be running):
   ```bash

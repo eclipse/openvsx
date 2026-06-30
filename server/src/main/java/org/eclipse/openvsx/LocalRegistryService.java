@@ -54,7 +54,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     private static final String RESTRICTED_ACCESS = "restricted";
     private static final String ACCESS_TOKEN_ERROR = "Invalid access token.";
-    
+
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final ExtensionService extensions;

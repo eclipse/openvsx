@@ -64,7 +64,7 @@ class EntropyCalculatorTest {
     void calculate_englishWordHasModerateEntropy() {
         // English words have moderate entropy
         double entropy = calculator.calculate("password");
-        assertTrue(entropy > 2.0 && entropy < 4.0, 
+        assertTrue(entropy > 2.0 && entropy < 4.0,
             "English word should have moderate entropy");
     }
 

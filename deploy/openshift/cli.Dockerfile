@@ -11,6 +11,6 @@ RUN microdnf -y --nodocs --setopt=install_weak_deps=0 install \
   && microdnf clean all
 
 USER 1001
-  
+
 RUN npm install -g "ovsx@${OVSX_VERSION}" \
     && ovsx --version

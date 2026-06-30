@@ -111,7 +111,7 @@ public class PublisherComplianceChecker {
                         .log();
             }
         }
-        
+
         // Update affected extensions
         for (var extension : affectedExtensions) {
             extensions.updateExtension(extension);

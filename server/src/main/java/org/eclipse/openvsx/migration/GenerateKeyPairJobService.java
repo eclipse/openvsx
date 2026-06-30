@@ -60,7 +60,7 @@ public class GenerateKeyPairJobService {
         keyPair.setActive(true);
         return keyPair;
     }
-    
+
     private String getPublicKeyText(AsymmetricCipherKeyPair pair) throws IOException {
         var publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pair.getPublic());
         var pemObject = new PemObject("PUBLIC KEY", publicKeyInfo.getEncoded());

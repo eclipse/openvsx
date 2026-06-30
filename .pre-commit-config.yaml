@@ -1,11 +1,12 @@
+exclude: '^((cli|webui)/.yarn|server/src/main/resources/db/migration)'
 repos:
-#- repo: https://github.com/pre-commit/pre-commit-hooks
-#  rev: v6.0.0
-#  hooks:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0
+  hooks:
 #    - id: check-yaml
-#    - id: end-of-file-fixer
-#    - id: mixed-line-ending
-#    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: mixed-line-ending
+    - id: trailing-whitespace
 #- repo: https://github.com/Lucas-C/pre-commit-hooks
 #  rev: v1.5.5
 #  hooks:

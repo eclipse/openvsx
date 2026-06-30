@@ -290,7 +290,7 @@ public class ExtensionVersion implements Serializable {
 	}
 
 	public boolean isPreview() {
-        return preview; 
+        return preview;
     }
 
     public void setPreview(boolean preview) {

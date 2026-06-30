@@ -112,7 +112,7 @@ public class DataMirrorService {
     public boolean needsMatch() {
         return !excludeExtensions.isEmpty() || !includeExtensions.isEmpty();
     }
-    
+
     public boolean match(String namespaceName, String extensionName) {
         var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
         if (!excludeExtensions.isEmpty() &&

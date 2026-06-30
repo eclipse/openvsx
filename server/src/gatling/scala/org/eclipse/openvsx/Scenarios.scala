@@ -26,7 +26,7 @@ object Scenarios {
   val ExtensionFeed = "extensions.csv"
   val ExtensionVersionFeed = "extension-versions.csv"
   val NamespaceFeed = "namespaces.csv"
-  
+
   val conf = ConfigFactory.load()
   val users = 5
   val httpProtocol = http

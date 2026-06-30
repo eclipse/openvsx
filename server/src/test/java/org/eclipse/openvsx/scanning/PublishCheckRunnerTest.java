@@ -125,7 +125,7 @@ class PublishCheckRunnerTest {
         // Create a simple mock that won't be called
         var afterErrorCheck = mock(PublishCheck.class);
         when(afterErrorCheck.getCheckType()).thenReturn("AFTER");
-        
+
         var runner = new PublishCheckRunner(List.of(errorCheck, afterErrorCheck));
 
         var result = runner.runChecks(scan, extensionFile, user);

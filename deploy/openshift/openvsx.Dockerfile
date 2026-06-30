@@ -16,7 +16,7 @@ RUN curl -fsSL https://rpm.nodesource.com/setup_20.x -o nodesource_setup.sh \
   && node -v \
   && rm -rf nodesource_setup.sh
 
-RUN npm install -g corepack \ 
+RUN npm install -g corepack \
     && corepack enable \
     && corepack prepare yarn@stable --activate
 

@@ -194,4 +194,3 @@ class LocalRegistryServiceTest {
         return membership;
     }
 }
-

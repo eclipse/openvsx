@@ -67,7 +67,7 @@ public class AzureBlobStorageService implements IStorageService {
 	public boolean isEnabled() {
 		return !StringUtils.isEmpty(serviceEndpoint);
     }
-    
+
     protected BlobContainerClient getContainerClient() {
         if (containerClient == null) {
             containerClient = new BlobContainerClientBuilder()
