@@ -501,20 +501,6 @@ public class AdminService {
         return userPublishInfo;
     }
 
-    public BulkPublisherRevokeResponseJson revokeBulkPublishersContributions(BulkPublisherRevokeRequestJson request, UserData admin) {
-        var resultMap = new HashMap<String, ResultJson>();
-        for (var publisher : request.publishers()) {
-            var key = "%s:%s".formatted(publisher.loginName(), publisher.provider());
-            try {
-                var result = this.revokePublisherContributions(publisher.provider(), publisher.loginName(), admin, request.reason());
-                resultMap.put(key, result);
-            } catch (ErrorResultException exc) {
-                resultMap.put(key, exc.toResponseEntity().getBody());
-            }
-        }
-        return new BulkPublisherRevokeResponseJson(resultMap);
-    }
-
     @Transactional
     public Page<UserRelationshipsJson> searchUsers(String search, String role, Pageable pageable) {
         return repositories.searchUsers(search, role, pageable)
@@ -562,9 +548,6 @@ public class AdminService {
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
-        if (UserData.ROLE_ADMIN.equals(user.getRole())) {
-        	throw new ErrorResultException("Cannot revoke contributions for admins through publisher flow", HttpStatus.BAD_REQUEST);
-        }
 
         // Send a DELETE request to the Eclipse publisher agreement API
         if (eclipse.isActive() && user.getEclipsePersonId() != null) {
@@ -598,16 +581,14 @@ public class AdminService {
         
         // revoke namespace memberships
         var namespaceMemberships = repositories.findMemberships(user);
-        var numberOfNamespaceMemberships = 0;
-        if (namespaceMemberships != null) {
-        	numberOfNamespaceMemberships = namespaceMemberships.toSet().size();
-        }
+        var numberOfNamespaceMemberships = namespaceMemberships.stream().count();
         repositories.deleteMemberships(user);
 
-        var message = "Deactivated " + deactivatedTokenCount
-                + " tokens, deactivated " + deactivatedExtensionCount + " extensions, "
-        		+ numberOfNamespaceMemberships + " namespace memberships of user "
-                + provider + "/" + loginName + ".";
+        var message = "Deactivated " + deactivatedTokenCount + " tokens, "
+            + "deactivated " + deactivatedExtensionCount + " extensions, "
+            + "removed " + numberOfNamespaceMemberships + " namespace memberships of user "
+            + provider + "/" + loginName + ".";
+
         if (reason != null) {
             message += " Reason: " + reason;
         }
