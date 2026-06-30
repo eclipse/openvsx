@@ -30,6 +30,8 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.defaultsmode.DefaultsMode;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.S3ServiceClientConfiguration;
 import software.amazon.awssdk.services.s3.endpoints.S3EndpointParams;
 import software.amazon.awssdk.services.s3.endpoints.S3EndpointProvider;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
@@ -133,6 +135,13 @@ public class AwsStorageService implements IStorageService {
                             .region(Region.of(region))
                             .credentialsProvider(getCredentialsProvider());
 
+                    if (pathStyleAccess) {
+                        builder = builder.serviceConfiguration(
+                                S3Configuration.builder()
+                                    .pathStyleAccessEnabled(true)
+                                    .build()
+                        );
+                    }
                     var serviceEndpoint = getServiceEndpoint();
                     if (serviceEndpoint != null) {
                         builder = builder.endpointOverride(serviceEndpoint);
