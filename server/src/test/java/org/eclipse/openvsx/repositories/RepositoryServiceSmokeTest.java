@@ -202,6 +202,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findMembership(userData, namespace),
                 () -> repositories.findMemberships(namespace),
                 () -> repositories.findMemberships(namespace, "role"),
+                () -> repositories.deleteMemberships(userData),
                 () -> repositories.findNamespace("name"),
                 () -> repositories.findOrphanNamespaces(),
                 () -> repositories.findPersistedLogsAfter(NOW),
@@ -267,7 +268,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findLatestVersionByTargetPlatform(extension, true, true),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.isNamespaceOwner(userData, namespace),
-                () -> repositories.findMembershipsForOwner(userData,"namespaceName"),
+                () -> repositories.findMembershipsForOwner(userData, "namespaceName"),
                 () -> repositories.findNamespaceName("namespaceName"),
                 () -> repositories.findMemberships("namespaceName"),
                 () -> repositories.findActiveExtensionNames(namespace),
@@ -417,7 +418,6 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
                 () -> repositories.deleteTier(tier),
-                () -> repositories.deleteMemberships(userData),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails
                 () -> repositories.deleteExtensionScan(scan)
