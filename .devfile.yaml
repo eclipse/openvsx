@@ -17,7 +17,7 @@ components:
           path: /home/user/.local/
   - name: elasticsearch
     container:
-      image: docker.elastic.co/elasticsearch/elasticsearch:8.18.8
+      image: docker.elastic.co/elasticsearch/elasticsearch:9.2.8
       memoryRequest: 256Mi
       memoryLimit: 2Gi
       cpuRequest: 100m
