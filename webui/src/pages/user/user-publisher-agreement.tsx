@@ -9,9 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import {
-    Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link
-} from '@mui/material';
+import { Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link } from '@mui/material';
 import { UserData, isError, ReportedError } from '../../extension-registry-types';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -98,84 +96,90 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
 
     let content: ReactNode;
     if (publisherAgreementSigned) {
-        content = <Box display='flex' justifyContent='space-between' alignItems='start'>
-            <Typography variant='body1'>
-            {
-                user.publisherAgreement.timestamp
-                    ? <>You signed the {publisherAgreementName} Publisher Agreement <Timestamp value={user.publisherAgreement.timestamp} />.</>
-                    : <>You signed the {publisherAgreementName} Publisher Agreement.</>
-            }
-            </Typography>
-            <Box display='flex' justifyContent='flex-end'>
-                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                    Show Publisher Agreement
-                </Button>
-            </Box>
-        </Box>;
-    } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
-        content = <>
-            <Typography variant='body1'>
-                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish
-                any extension to this registry.
-            </Typography>
-            <Box mt={2} display='flex' justifyContent='flex-end'>
-                <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                    Show Publisher Agreement
-                </Button>
-            </Box>
-        </>;
-    } else {
-        content = <>
-            <Typography variant='body1'>
-                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish
-                any extension to this registry. To start the signing process, please log in with
-                an Eclipse Foundation account.
-            </Typography>
-            <Box mt={2} display='flex' justifyContent='flex-end'>
-                <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
-                    <Button variant='outlined' color='secondary'>
-                        Log in with Eclipse
+        content = (
+            <Box display='flex' justifyContent='space-between' alignItems='start'>
+                <Typography variant='body1'>
+                    {user.publisherAgreement.timestamp ? (
+                        <>
+                            You signed the {publisherAgreementName} Publisher Agreement{' '}
+                            <Timestamp value={user.publisherAgreement.timestamp} />.
+                        </>
+                    ) : (
+                        <>You signed the {publisherAgreementName} Publisher Agreement.</>
+                    )}
+                </Typography>
+                <Box display='flex' justifyContent='flex-end'>
+                    <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                        Show Publisher Agreement
                     </Button>
-                </Link>
+                </Box>
             </Box>
-        </>;
+        );
+    } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
+        content = (
+            <>
+                <Typography variant='body1'>
+                    You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any
+                    extension to this registry.
+                </Typography>
+                <Box mt={2} display='flex' justifyContent='flex-end'>
+                    <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                        Show Publisher Agreement
+                    </Button>
+                </Box>
+            </>
+        );
+    } else {
+        content = (
+            <>
+                <Typography variant='body1'>
+                    You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any
+                    extension to this registry. To start the signing process, please log in with an Eclipse Foundation
+                    account.
+                </Typography>
+                <Box mt={2} display='flex' justifyContent='flex-end'>
+                    <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                        <Button variant='outlined' color='secondary'>
+                            Log in with Eclipse
+                        </Button>
+                    </Link>
+                </Box>
+            </>
+        );
     }
 
-    return <>
-        <Paper sx={{ p: 2 }} elevation={3}>{content}</Paper>
-        <Dialog
-            open={dialogOpen}
-            onClose={onClose}
-            maxWidth='xl'
-            sx={{ paperScrollPaper: { height: '75%', width: '100%' } }}>
-            <DialogContent>
-                {
-                    agreementText ?
+    return (
+        <>
+            <Paper sx={{ p: 2 }} elevation={3}>
+                {content}
+            </Paper>
+            <Dialog
+                open={dialogOpen}
+                onClose={onClose}
+                maxWidth='xl'
+                sx={{ paperScrollPaper: { height: '75%', width: '100%' } }}>
+                <DialogContent>
+                    {agreementText ? (
                         <DialogContentText component='div'>
-                            <SanitizedMarkdown
-                                content={agreementText}
-                                sanitize={false}
-                                linkify={false} />
-                            <Box display='flex' justifyContent='flex-end' >
-                                <Button onClick={closePublisherAgreement}>
-                                    Close
-                                </Button>
-                                { !publisherAgreementSigned &&
+                            <SanitizedMarkdown content={agreementText} sanitize={false} linkify={false} />
+                            <Box display='flex' justifyContent='flex-end'>
+                                <Button onClick={closePublisherAgreement}>Close</Button>
+                                {!publisherAgreementSigned && (
                                     <ButtonWithProgress working={working} onClick={signPublisherAgreement}>
                                         Agree
                                     </ButtonWithProgress>
-                                }
+                                )}
                             </Box>
                         </DialogContentText>
-                        :
+                    ) : (
                         <Box height={1} display='flex' justifyContent='center' alignItems='center'>
                             <CircularProgress color='secondary' />
                         </Box>
-                }
-            </DialogContent>
-        </Dialog>
-    </>;
-
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 };
 
 export interface UserPublisherAgreementProps {

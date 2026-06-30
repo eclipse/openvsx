@@ -35,7 +35,7 @@ export const ScansTabContent: FunctionComponent = () => {
         search,
         globalFilters,
         statusFilters,
-        pagination,
+        pagination
     } = useScansTab();
 
     return (
@@ -49,21 +49,50 @@ export const ScansTabContent: FunctionComponent = () => {
                     onNamespaceChange={search.handleNamespaceChange}
                     onNameChange={search.handleNameChange}
                     filters={[
-                        { label: 'Running', value: 'running', checked: statusFilters.filters.has('running'), onChange: statusFilters.toggle },
-                        { label: 'Passed', value: 'PASSED', checked: statusFilters.filters.has('PASSED'), onChange: statusFilters.toggle },
-                        { label: 'Quarantined', value: 'QUARANTINED', checked: statusFilters.filters.has('QUARANTINED'), onChange: statusFilters.toggle },
-                        { label: 'Auto Rejected', value: 'AUTO REJECTED', checked: statusFilters.filters.has('AUTO REJECTED'), onChange: statusFilters.toggle },
-                        { label: 'Error', value: 'ERROR', checked: statusFilters.filters.has('ERROR'), onChange: statusFilters.toggle },
+                        {
+                            label: 'Running',
+                            value: 'running',
+                            checked: statusFilters.filters.has('running'),
+                            onChange: statusFilters.toggle
+                        },
+                        {
+                            label: 'Passed',
+                            value: 'PASSED',
+                            checked: statusFilters.filters.has('PASSED'),
+                            onChange: statusFilters.toggle
+                        },
+                        {
+                            label: 'Quarantined',
+                            value: 'QUARANTINED',
+                            checked: statusFilters.filters.has('QUARANTINED'),
+                            onChange: statusFilters.toggle
+                        },
+                        {
+                            label: 'Auto Rejected',
+                            value: 'AUTO REJECTED',
+                            checked: statusFilters.filters.has('AUTO REJECTED'),
+                            onChange: statusFilters.toggle
+                        },
+                        {
+                            label: 'Error',
+                            value: 'ERROR',
+                            checked: statusFilters.filters.has('ERROR'),
+                            onChange: statusFilters.toggle
+                        }
                     ]}
                 />
                 <CountsToolbar
                     counts={[
                         { label: 'Total', value: counts.total, color: 'text.primary' },
-                        { label: 'Running', value: counts.started + counts.validating + counts.scanning, color: 'secondary.main' },
+                        {
+                            label: 'Running',
+                            value: counts.started + counts.validating + counts.scanning,
+                            color: 'secondary.main'
+                        },
                         { label: 'Passed', value: counts.passed, color: theme.palette.passed.dark },
                         { label: 'Quarantined', value: counts.quarantined, color: theme.palette.quarantined.dark },
                         { label: 'Auto Rejected', value: counts.autoRejected, color: theme.palette.rejected.dark },
-                        { label: 'Error', value: counts.error, color: theme.palette.errorStatus.dark },
+                        { label: 'Error', value: counts.error, color: theme.palette.errorStatus.dark }
                     ]}
                     dateRange={globalFilters.dateRange}
                     onDateRangeChange={globalFilters.setDateRange}
@@ -86,13 +115,13 @@ export const ScansTabContent: FunctionComponent = () => {
                         No scans found
                     </Typography>
                     <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
-                        {search.hasActiveSearch ? 'Try adjusting your search query' : 'Running and completed scans will appear here'}
+                        {search.hasActiveSearch
+                            ? 'Try adjusting your search query'
+                            : 'Running and completed scans will appear here'}
                     </Typography>
                 </Box>
             ) : (
-                scans.map((scan) => (
-                    <ScanCard key={scan.id} scan={scan} />
-                ))
+                scans.map(scan => <ScanCard key={scan.id} scan={scan} />)
             )}
             {pagination.totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>

@@ -93,7 +93,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             const newExtensions: SearchEntry[] = [];
             const newExtensionKeys = new Set<string>();
             newExtensions.push(...extensions);
-            extensionKeys.forEach((key) => newExtensionKeys.add(key));
+            extensionKeys.forEach(key => newExtensionKeys.add(key));
             const searchResult = result as SearchResult;
             if (enableLoadMore.current && isSameFilter(props.filter, filter)) {
                 // Check for duplicate keys to avoid problems due to asynchronous user edit / loadMore call
@@ -117,7 +117,12 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     };
 
     const isSameFilter = (f1: ExtensionFilter, f2: ExtensionFilter): boolean => {
-        return f1.category === f2.category && f1.query === f2.query && f1.sortBy === f2.sortBy && f1.sortOrder === f2.sortOrder;
+        return (
+            f1.category === f2.category &&
+            f1.query === f2.query &&
+            f1.sortBy === f2.sortBy &&
+            f1.sortOrder === f2.sortOrder
+        );
     };
 
     const copyFilter = (f: ExtensionFilter): ExtensionFilter => {
@@ -136,27 +141,28 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             idx={idx}
             extension={ext}
             filterSize={filterSize.current}
-            key={`${ext.namespace}.${ext.name}`} />
+            key={`${ext.namespace}.${ext.name}`}
+        />
     ));
 
-    const loader = <Box component='div' key='extension-list-loader' sx={{ display: 'flex', justifyContent: 'center', m: 3 }}>
-        <CircularProgress size='3rem' color='secondary' />
-    </Box>;
+    const loader = (
+        <Box component='div' key='extension-list-loader' sx={{ display: 'flex', justifyContent: 'center', m: 3 }}>
+            <CircularProgress size='3rem' color='secondary' />
+        </Box>
+    );
 
-    return <>
-        <DelayedLoadIndicator loading={loading}/>
-        <InfiniteScroll
-            loadMore={loadMore}
-            hasMore={hasMore}
-            loader={loader}
-            threshold={200} >
-            <Container maxWidth='xl'>
-                <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-                    {extensionList}
-                </Grid>
-            </Container>
-        </InfiniteScroll>
-    </>;
+    return (
+        <>
+            <DelayedLoadIndicator loading={loading} />
+            <InfiniteScroll loadMore={loadMore} hasMore={hasMore} loader={loader} threshold={200}>
+                <Container maxWidth='xl'>
+                    <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
+                        {extensionList}
+                    </Grid>
+                </Container>
+            </InfiniteScroll>
+        </>
+    );
 };
 
 export interface ExtensionListProps {

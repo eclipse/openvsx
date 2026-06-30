@@ -21,13 +21,7 @@ import { ScanCardContent } from './scan-card-content';
 import { ScanCardExpandStrip } from './scan-card-expand-strip';
 import { ScanCardExpandedContent } from './scan-card-expanded-content';
 import { useScanCardState } from '../../../hooks/scan-admin';
-import {
-    ICON_SIZE,
-    shouldShowStriped,
-    getStatusBarColor,
-    hasFailedScannerJobs,
-    isRunning,
-} from './utils';
+import { ICON_SIZE, shouldShowStriped, getStatusBarColor, hasFailedScannerJobs, isRunning } from './utils';
 
 interface ScanCardProps {
     scan: ScanResult;
@@ -47,24 +41,12 @@ interface ScanCardProps {
  *
  * State is managed via the useScanCardState hook.
  */
-export const ScanCard: FunctionComponent<ScanCardProps> = ({
-    scan,
-    showCheckbox,
-    onCheckboxChange,
-    checked,
-}) => {
+export const ScanCard: FunctionComponent<ScanCardProps> = ({ scan, showCheckbox, onCheckboxChange, checked }) => {
     const theme = useTheme();
     const { actions } = useScanContext();
     const [collapseComplete, setCollapseComplete] = useState(true);
     const [isRetryingFailedScannerJobs, setIsRetryingFailedScannerJobs] = useState(false);
-    const {
-        expanded,
-        handleExpandClick,
-        showExpandButton,
-        badges,
-        liveDuration,
-        cardRef,
-    } = useScanCardState(scan);
+    const { expanded, handleExpandClick, showExpandButton, badges, liveDuration, cardRef } = useScanCardState(scan);
     const canRetryFailedScannerJobs = !isRunning(scan.status) && hasFailedScannerJobs(scan);
 
     const handleRetryFailedScannerJobs = async () => {
@@ -95,7 +77,7 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
                 outline: checked ? '2px solid' : 'none',
                 outlineColor: checked ? 'secondary.main' : 'transparent',
                 '&:hover': {
-                    boxShadow: theme.palette.mode === 'light' ? 6 : 4,
+                    boxShadow: theme.palette.mode === 'light' ? 6 : 4
                 },
                 overflow: 'hidden',
                 paddingLeft: '16px',
@@ -109,10 +91,9 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
                     background: shouldShowStriped(scan)
                         ? `${theme.palette.unenforced.stripe}, ${getStatusBarColor(scan.status, theme)}`
                         : getStatusBarColor(scan.status, theme),
-                    zIndex: 0,
-                },
-            }}
-        >
+                    zIndex: 0
+                }
+            }}>
             <CardContent
                 sx={{
                     position: 'relative',
@@ -121,17 +102,17 @@ export const ScanCard: FunctionComponent<ScanCardProps> = ({
                     pr: 5,
                     pl: 5,
                     pb: showExpandButton ? 0 : 5,
-                    '&:last-child': { pb: showExpandButton ? 0 : 5 },
-                }}
-            >
-                {/* 3 Row x 6 Column Grid Layout */}
-                <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: `${ICON_SIZE}px 1fr 1fr 1fr 1fr 180px`,
-                    gridTemplateRows: 'auto auto auto',
-                    gap: 2,
-                    alignItems: 'start',
+                    '&:last-child': { pb: showExpandButton ? 0 : 5 }
                 }}>
+                {/* 3 Row x 6 Column Grid Layout */}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: `${ICON_SIZE}px 1fr 1fr 1fr 1fr 180px`,
+                        gridTemplateRows: 'auto auto auto',
+                        gap: 2,
+                        alignItems: 'start'
+                    }}>
                     <ScanCardHeader scan={scan} />
                     <ScanCardContent
                         scan={scan}

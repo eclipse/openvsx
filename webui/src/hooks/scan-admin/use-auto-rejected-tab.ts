@@ -43,43 +43,50 @@ export const useAutoRejectedTab = () => {
     }, [autoRejectedScans]);
 
     // Get total count from the counts API (unaffected by search filters)
-    const totalCount = (state.scanCounts?.STARTED ?? 0) + (state.scanCounts?.VALIDATING ?? 0) +
-        (state.scanCounts?.SCANNING ?? 0) + (state.scanCounts?.PASSED ?? 0) +
-        (state.scanCounts?.QUARANTINED ?? 0) + (state.scanCounts?.AUTO_REJECTED ?? 0) +
+    const totalCount =
+        (state.scanCounts?.STARTED ?? 0) +
+        (state.scanCounts?.VALIDATING ?? 0) +
+        (state.scanCounts?.SCANNING ?? 0) +
+        (state.scanCounts?.PASSED ?? 0) +
+        (state.scanCounts?.QUARANTINED ?? 0) +
+        (state.scanCounts?.AUTO_REJECTED ?? 0) +
         (state.scanCounts?.ERROR ?? 0);
 
     // Check if there are any validation types available to filter by
     const hasValidationTypes = state.availableValidationTypes.length > 0;
 
-    return useMemo(() => ({
-        tabIndex: 2,
-        tabName: 'Auto Rejected',
-        scans: autoRejectedScans,
-        isLoading: state.isLoadingScans,
-        lastRefreshed: state.lastRefreshed,
-        autoRefresh: state.autoRefresh,
-        onAutoRefreshChange: actions.setAutoRefresh,
-        totalCount,
-        hasValidationTypes,
-        search,
-        globalFilters,
-        validationTypeFilters,
-        pagination,
-        validationTypeBreakdown,
-    }), [
-        autoRejectedScans,
-        state.isLoadingScans,
-        state.lastRefreshed,
-        state.autoRefresh,
-        actions.setAutoRefresh,
-        totalCount,
-        hasValidationTypes,
-        search,
-        globalFilters,
-        validationTypeFilters,
-        pagination,
-        validationTypeBreakdown,
-    ]);
+    return useMemo(
+        () => ({
+            tabIndex: 2,
+            tabName: 'Auto Rejected',
+            scans: autoRejectedScans,
+            isLoading: state.isLoadingScans,
+            lastRefreshed: state.lastRefreshed,
+            autoRefresh: state.autoRefresh,
+            onAutoRefreshChange: actions.setAutoRefresh,
+            totalCount,
+            hasValidationTypes,
+            search,
+            globalFilters,
+            validationTypeFilters,
+            pagination,
+            validationTypeBreakdown
+        }),
+        [
+            autoRejectedScans,
+            state.isLoadingScans,
+            state.lastRefreshed,
+            state.autoRefresh,
+            actions.setAutoRefresh,
+            totalCount,
+            hasValidationTypes,
+            search,
+            globalFilters,
+            validationTypeFilters,
+            pagination,
+            validationTypeBreakdown
+        ]
+    );
 };
 
 export type UseAutoRejectedTabReturn = ReturnType<typeof useAutoRejectedTab>;

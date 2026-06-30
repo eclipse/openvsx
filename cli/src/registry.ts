@@ -10,7 +10,6 @@
 
 import * as http from 'http';
 import * as fs from 'fs';
-import * as querystring from 'querystring';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
 import { rejectError, statusError } from './util';
@@ -34,6 +33,7 @@ export class Registry {
             this.url = options.registryUrl;
         else
             this.url = DEFAULT_URL;
+
         this.maxNamespaceSize = options.maxNamespaceSize ?? DEFAULT_NAMESPACE_SIZE;
         this.maxPublishSize = options.maxPublishSize ?? DEFAULT_PUBLISH_SIZE;
         this.username = options.username;
@@ -47,8 +47,7 @@ export class Registry {
 
     createNamespace(name: string, pat: string): Promise<Response> {
         try {
-            const query: { [key: string]: string } = { token: pat };
-            const url = this.getUrl('api/-/namespace/create', query);
+            const url = this.getUrl(['api', '-', 'namespace', 'create'], { token: pat });
             const namespace = { name };
             return this.post(JSON.stringify(namespace), url, {
                 'Content-Type': 'application/json'
@@ -60,8 +59,7 @@ export class Registry {
 
     verifyPat(namespace: string, pat: string): Promise<Response> {
         try {
-            const query: { [key: string]: string } = { token: pat };
-            return this.getJson(this.getUrl(`api/${namespace}/verify-pat`, query));
+            return this.getJson(this.getUrl(['api', namespace, 'verify-pat'], { token: pat }));
         } catch (err) {
             return rejectError(err);
         }
@@ -69,8 +67,7 @@ export class Registry {
 
     publish(file: string, pat: string): Promise<Extension> {
         try {
-            const query: { [key: string]: string } = { token: pat };
-            const url = this.getUrl('api/-/publish', query);
+            const url = this.getUrl(['api', '-', 'publish'], { token: pat });
             return this.postFile(file, url, {
                 'Content-Type': 'application/octet-stream'
             }, this.maxPublishSize);
@@ -81,11 +78,11 @@ export class Registry {
 
     getMetadata(namespace: string, extension: string, target?: string): Promise<Extension> {
         try {
-            let path = `api/${encodeURIComponent(namespace)}/${encodeURIComponent(extension)}`;
+            const segments = ['api', namespace, extension];
             if (target) {
-                path += `/${encodeURIComponent(target)}`;
+                segments.push(target);
             }
-            return this.getJson(this.getUrl(path));
+            return this.getJson(this.getUrl(segments));
         } catch (err) {
             return rejectError(err);
         }
@@ -157,15 +154,13 @@ export class Registry {
         });
     }
 
-    private getUrl(path: string, query?: { [key: string]: string }): URL {
+    private getUrl(segments: string[], query?: Record<string, string>): URL {
         const url = new URL(this.url);
-        if (url.pathname.endsWith("/")) {
-            url.pathname += path;
-        } else {
-            url.pathname += `/${path}`;
-        }
+        const basePath = url.pathname.replace(/\/+$/, '');
+        const encodedSegments = segments.filter(s => s.length > 0).map(encodeURIComponent);
+        url.pathname = `${basePath}/${encodedSegments.join('/')}`;
         if (query) {
-            url.search = querystring.stringify(query);
+            url.search = new URLSearchParams(query).toString();
         }
         return url;
     }

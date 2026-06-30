@@ -18,10 +18,7 @@ import { useLocation } from 'react-router-dom';
 export const HeaderMenu: FunctionComponent = () => {
     const theme = useTheme();
     const { pageSettings } = useContext(MainContext);
-    const {
-        defaultMenuContent: DefaultMenuContent,
-        mobileMenuContent: MobileMenuContent
-    } = pageSettings.elements;
+    const { defaultMenuContent: DefaultMenuContent, mobileMenuContent: MobileMenuContent } = pageSettings.elements;
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     if (isMobile && MobileMenuContent) {
         return <MobileHeaderMenu menuContent={MobileMenuContent} />;
@@ -33,7 +30,6 @@ export const HeaderMenu: FunctionComponent = () => {
 };
 
 export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props => {
-
     const location = useLocation();
     const [open, setOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<Element>();
@@ -43,25 +39,27 @@ export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props 
     }, [location]);
 
     const MenuContent = props.menuContent;
-    return <>
-        <IconButton
-            title='Menu'
-            aria-label='Menu'
-            onClick={(event) => {
-                setAnchorEl(event.currentTarget);
-                setOpen(!open);
-            }}>
-            <MenuIcon />
-        </IconButton>
-        <Menu
-            open={open}
-            anchorEl={anchorEl}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            onClose={() => setOpen(false)} >
-            <MenuContent />
-        </Menu>
-    </>;
+    return (
+        <>
+            <IconButton
+                title='Menu'
+                aria-label='Menu'
+                onClick={event => {
+                    setAnchorEl(event.currentTarget);
+                    setOpen(!open);
+                }}>
+                <MenuIcon />
+            </IconButton>
+            <Menu
+                open={open}
+                anchorEl={anchorEl}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                onClose={() => setOpen(false)}>
+                <MenuContent />
+            </Menu>
+        </>
+    );
 };
 
 export interface MobileHeaderMenuProps {

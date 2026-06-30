@@ -30,7 +30,7 @@ export const formatDuration = (start: string, end?: string): string => {
 
 export const formatDateTime = (isoString: string): string => {
     const date = new Date(isoString);
-    const pad = (n: number) => n < 10 ? '0' + n : n.toString();
+    const pad = (n: number) => (n < 10 ? '0' + n : n.toString());
 
     const year = date.getFullYear();
     const month = pad(date.getMonth() + 1);

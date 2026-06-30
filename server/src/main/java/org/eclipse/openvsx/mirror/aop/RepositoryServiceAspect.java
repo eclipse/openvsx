@@ -29,6 +29,9 @@ public class RepositoryServiceAspect {
         this.storageUtil = storageUtil;
     }
 
+    // FIXME: In PublishExtensionVersionHandler.mirror(TempFile extensionFile, String signatureName)
+    //        it is mentioned that FileResources should not be stored but generated on the fly
+    //        however they are persisted in the DB and this pointcut points to a non-existing method
     @Around("execution(* org.eclipse.openvsx.repositories.RepositoryService.findFileByTypeAndName(..))")
     public Object findFileByTypeAndName(ProceedingJoinPoint joinPoint) throws Throwable {
         var args = joinPoint.getArgs();

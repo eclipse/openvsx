@@ -8,14 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ChangeEvent, FunctionComponent, useState, useContext, useEffect, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, useState, useContext, useEffect } from 'react';
 import {
-    Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, TextField
+    Button,
+    Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    FormControlLabel,
+    TextField
 } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { Namespace, SuccessResult, isError } from '../../extension-registry-types';
+import { Namespace, SuccessResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { InfoDialog } from '../../components/info-dialog';
+import { useChangeNamespace } from './use-namespace-admin';
 
 export interface NamespaceChangeDialogProps {
     open: boolean;
@@ -26,20 +35,13 @@ export interface NamespaceChangeDialogProps {
 
 export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps> = props => {
     const { open } = props;
-    const { service, handleError } = useContext(MainContext);
-    const [working, setWorking] = useState(false);
+    const { handleError } = useContext(MainContext);
+    const { mutateAsync: changeNamespace, isPending: working } = useChangeNamespace();
     const [newNamespace, setNewNamespace] = useState('');
     const [removeOldNamespace, setRemoveOldNamespace] = useState(false);
     const [mergeIfNewNamespaceAlreadyExists, setMergeIfNewNamespaceAlreadyExists] = useState(false);
     const [infoDialogIsOpen, setInfoDialogIsOpen] = useState(false);
     const [infoDialogMessage, setInfoDialogMessage] = useState('');
-
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
 
     useEffect(() => {
         if (open) {
@@ -63,79 +65,81 @@ export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps
         setMergeIfNewNamespaceAlreadyExists(checked);
     };
     const handleChangeNamespace = async () => {
+        if (!props.namespace) {
+            return;
+        }
+        props.setLoadingState(true);
         try {
-            if (!props.namespace) {
-                return;
-            }
-            setWorking(true);
-            props.setLoadingState(true);
             const oldNamespace = props.namespace.name;
-            const result = await service.admin.changeNamespace(abortController.current, {
+            const result = await changeNamespace({
                 oldNamespace,
                 newNamespace,
                 removeOldNamespace,
                 mergeIfNewNamespaceAlreadyExists
             });
-            if (isError(result)) {
-                throw result;
-            }
 
             const successResult = result as SuccessResult;
             props.setLoadingState(false);
-            setWorking(false);
             setInfoDialogIsOpen(true);
             setInfoDialogMessage(successResult.success);
         } catch (err) {
             props.setLoadingState(false);
-            setWorking(false);
             handleError(err);
         }
     };
 
-    return <>
-        <Dialog onClose={onClose} open={open} aria-labelledby='form-dialog-title'>
-            <DialogTitle id='form-dialog-title'>Change Namespace</DialogTitle>
-            <DialogContent>
-                <DialogContentText>
-                    Enter the new Namespace name.
-                </DialogContentText>
-                <TextField
-                    autoFocus
-                    margin='dense'
-                    id='name'
-                    autoComplete='off'
-                    label='New Open VSX Namespace'
-                    fullWidth
-                    onChange={(event) => {
-                        setNewNamespace(event.target.value);
-                    }}
-                />
-                <FormControlLabel
-                    control={<Checkbox checked={removeOldNamespace} onChange={onRemoveOldNamespaceChange}
-                                       name='remove-old-namespace'/>}
-                    label={`Remove '${props.namespace.name}' namespace after namespace change`}/>
-                <FormControlLabel
-                    control={<Checkbox checked={mergeIfNewNamespaceAlreadyExists}
-                                       onChange={onMergeIfNewNamespaceAlreadyExistsChange}
-                                       name='merge-change-namespace'/>}
-                    label='Merge namespaces if new namespace already exists'/>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={onClose}>
-                    Cancel
-                </Button>
-                <ButtonWithProgress
-                    sx={{ ml: 1 }}
-                    working={working}
-                    onClick={handleChangeNamespace}>
-                    Change Namespace
-                </ButtonWithProgress>
-            </DialogActions>
-        </Dialog>
-        <InfoDialog infoMessage={infoDialogMessage} isInfoDialogOpen={infoDialogIsOpen}
-                    handleCloseDialog={onInfoDialogClose}/>
-    </>;
+    return (
+        <>
+            <Dialog onClose={onClose} open={open} aria-labelledby='form-dialog-title'>
+                <DialogTitle id='form-dialog-title'>Change Namespace</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>Enter the new Namespace name.</DialogContentText>
+                    <TextField
+                        autoFocus
+                        margin='dense'
+                        id='name'
+                        autoComplete='off'
+                        label='New Open VSX Namespace'
+                        fullWidth
+                        onChange={event => {
+                            setNewNamespace(event.target.value);
+                        }}
+                    />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={removeOldNamespace}
+                                onChange={onRemoveOldNamespaceChange}
+                                name='remove-old-namespace'
+                            />
+                        }
+                        label={`Remove '${props.namespace.name}' namespace after namespace change`}
+                    />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={mergeIfNewNamespaceAlreadyExists}
+                                onChange={onMergeIfNewNamespaceAlreadyExistsChange}
+                                name='merge-change-namespace'
+                            />
+                        }
+                        label='Merge namespaces if new namespace already exists'
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <ButtonWithProgress sx={{ ml: 1 }} working={working} onClick={handleChangeNamespace}>
+                        Change Namespace
+                    </ButtonWithProgress>
+                </DialogActions>
+            </Dialog>
+            <InfoDialog
+                infoMessage={infoDialogMessage}
+                isInfoDialogOpen={infoDialogIsOpen}
+                handleCloseDialog={onInfoDialogClose}
+            />
+        </>
+    );
 };

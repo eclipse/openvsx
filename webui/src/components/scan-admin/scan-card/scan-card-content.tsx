@@ -14,10 +14,7 @@
 import { FunctionComponent, PropsWithChildren, useState } from 'react';
 import { Box, Typography, Link, IconButton, Tooltip } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
-import {
-    Check as CheckIcon,
-    Warning as WarningAmberIcon,
-} from '@mui/icons-material';
+import { Check as CheckIcon, Warning as WarningAmberIcon } from '@mui/icons-material';
 import { ScanResult } from '../../../context/scan-admin';
 import { ConditionalTooltip, formatDateTime, formatDuration } from '../common';
 import { isRunning, hasDownload, getFileName } from './utils';
@@ -27,11 +24,11 @@ import { isRunning, hasDownload, getFileName } from './utils';
  * Note: MUI's Grid/Grid2 components are flexbox-based, not CSS Grid.
  */
 const GridCell = styled(Box, {
-    shouldForwardProp: (prop) => prop !== 'row' && prop !== 'column' && prop !== 'columnSpan',
+    shouldForwardProp: prop => prop !== 'row' && prop !== 'column' && prop !== 'columnSpan'
 })<{ row: number; column: number; columnSpan?: number }>(({ row, column, columnSpan }) => ({
     gridRow: String(row),
     gridColumn: columnSpan ? `${column} / span ${columnSpan}` : String(column),
-    minWidth: 0,
+    minWidth: 0
 }));
 
 /** Typography with text-overflow ellipsis */
@@ -39,14 +36,14 @@ const EllipsisText = styled(Typography)({
     display: 'block',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap'
 });
 
 /** Box with text-overflow ellipsis */
 const EllipsisBox = styled(Box)({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap'
 });
 
 /** Link with text-overflow ellipsis */
@@ -54,7 +51,7 @@ const EllipsisLink = styled(Link)({
     display: 'block',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap'
 });
 
 /** Shimmer-animated text for in-progress scan states */
@@ -67,13 +64,13 @@ const ShimmerText = styled(EllipsisText)(({ theme }) => ({
     animation: 'shimmer 2s infinite',
     '@keyframes shimmer': {
         '0%': { backgroundPosition: '200% 0' },
-        '100%': { backgroundPosition: '-200% 0' },
-    },
+        '100%': { backgroundPosition: '-200% 0' }
+    }
 }));
 
 /** Circular checkbox outline with checked/hover state transitions */
 const CheckboxOutline = styled(Box, {
-    shouldForwardProp: (prop) => prop !== 'isChecked' && prop !== 'isHovering',
+    shouldForwardProp: prop => prop !== 'isChecked' && prop !== 'isHovering'
 })<{ isChecked: boolean; isHovering: boolean }>(({ theme, isChecked, isHovering }) => {
     const borderColor = isHovering ? theme.palette.selected.border : theme.palette.scanBackground.light;
     const uncheckedBg = isHovering ? theme.palette.selected.background : 'transparent';
@@ -85,7 +82,7 @@ const CheckboxOutline = styled(Box, {
         borderRadius: '50%',
         border: isChecked ? 'none' : `2px solid ${borderColor}`,
         backgroundColor: isChecked ? theme.palette.secondary.main : uncheckedBg,
-        transition: 'border-color 0.2s, background-color 0.2s',
+        transition: 'border-color 0.2s, background-color 0.2s'
     };
 });
 
@@ -98,13 +95,15 @@ const CaptionLabel: FunctionComponent<PropsWithChildren> = ({ children }) => (
 
 /** N/A placeholder for unavailable data */
 const NotAvailable: FunctionComponent = () => (
-    <Typography variant='body2' color='text.disabled'>N/A</Typography>
+    <Typography variant='body2' color='text.disabled'>
+        N/A
+    </Typography>
 );
 
 /** Publisher name with external link */
 const PublisherCell: FunctionComponent<{ publisher: string; publisherUrl: string | null }> = ({
     publisher,
-    publisherUrl,
+    publisherUrl
 }) => (
     <>
         <CaptionLabel>Publisher</CaptionLabel>
@@ -114,8 +113,7 @@ const PublisherCell: FunctionComponent<{ publisher: string; publisherUrl: string
                     href={publisherUrl || undefined}
                     target='_blank'
                     rel='noopener noreferrer'
-                    variant='body2'
-                >
+                    variant='body2'>
                     {publisher}
                 </EllipsisLink>
             </EllipsisBox>
@@ -166,19 +164,21 @@ const DownloadCell: FunctionComponent<{ scan: ScanResult }> = ({ scan }) => {
                             title='Potentially malicious'
                             arrow
                             disableInteractive
-                            PopperProps={{ disablePortal: true, sx: { pointerEvents: 'none' } }}
-                        >
+                            PopperProps={{ disablePortal: true, sx: { pointerEvents: 'none' } }}>
                             <WarningAmberIcon
                                 sx={{
                                     fontSize: 16,
                                     color: theme.palette.quarantined.dark,
-                                    flexShrink: 0,
+                                    flexShrink: 0
                                 }}
                             />
                         </Tooltip>
                     )}
                     <ConditionalTooltip title={getFileName(scan.downloadUrl)} arrow>
-                        <EllipsisLink href={scan.downloadUrl} variant='body2' sx={{ fontSize: '0.875rem', minWidth: 0 }}>
+                        <EllipsisLink
+                            href={scan.downloadUrl}
+                            variant='body2'
+                            sx={{ fontSize: '0.875rem', minWidth: 0 }}>
                             {getFileName(scan.downloadUrl)}
                         </EllipsisLink>
                     </ConditionalTooltip>
@@ -210,8 +210,7 @@ const SelectionCheckbox: FunctionComponent<{
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             disableRipple
-            sx={{ padding: 0, width: 36, height: 36, backgroundColor: 'transparent' }}
-        >
+            sx={{ padding: 0, width: 36, height: 36, backgroundColor: 'transparent' }}>
             <Box
                 className='checkbox-circle'
                 sx={{
@@ -220,14 +219,9 @@ const SelectionCheckbox: FunctionComponent<{
                     height: 36,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <CheckboxOutline
-                    className='checkbox-circle-outline'
-                    isChecked={checked}
-                    isHovering={isHovering}
-                />
+                    justifyContent: 'center'
+                }}>
+                <CheckboxOutline className='checkbox-circle-outline' isChecked={checked} isHovering={isHovering} />
                 <CheckIcon
                     className='checkbox-icon'
                     sx={{
@@ -235,7 +229,7 @@ const SelectionCheckbox: FunctionComponent<{
                         color: checked ? 'white' : uncheckedIconColor,
                         position: 'relative',
                         zIndex: 1,
-                        transition: 'color 0.2s',
+                        transition: 'color 0.2s'
                     }}
                 />
             </Box>
@@ -258,7 +252,7 @@ const ScanStartCell: FunctionComponent<{ dateScanStarted: string }> = ({ dateSca
 /** Scan end timestamp with shimmer animation for running scans */
 const ScanEndCell: FunctionComponent<{ status: ScanResult['status']; dateScanEnded: string | null }> = ({
     status,
-    dateScanEnded,
+    dateScanEnded
 }) => {
     const renderValue = () => {
         if (isRunning(status)) {
@@ -322,17 +316,15 @@ const DecisionStatusCell: FunctionComponent<{ adminDecision: ScanResult['adminDe
                 title={`Decided by ${adminDecision.decidedBy} on ${formatDateTime(adminDecision.dateDecided)}`}
                 arrow
                 disableInteractive
-                PopperProps={{ disablePortal: true, sx: { pointerEvents: 'none' } }}
-            >
+                PopperProps={{ disablePortal: true, sx: { pointerEvents: 'none' } }}>
                 <Typography
                     variant='h6'
                     sx={{
                         fontWeight: 700,
                         color: isAllowed ? theme.palette.allowed : theme.palette.blocked,
                         whiteSpace: 'nowrap',
-                        cursor: 'help',
-                    }}
-                >
+                        cursor: 'help'
+                    }}>
                     {isAllowed ? 'ALLOWED' : 'BLOCKED'}
                 </Typography>
             </Tooltip>
@@ -345,9 +337,8 @@ const DecisionStatusCell: FunctionComponent<{ adminDecision: ScanResult['adminDe
             sx={{
                 fontWeight: 700,
                 color: theme.palette.review,
-                whiteSpace: 'nowrap',
-            }}
-        >
+                whiteSpace: 'nowrap'
+            }}>
             NEEDS REVIEW
         </Typography>
     );
@@ -372,7 +363,7 @@ export const ScanCardContent: FunctionComponent<ScanCardContentProps> = ({
     showCheckbox,
     checked,
     onCheckboxChange,
-    liveDuration,
+    liveDuration
 }) => (
     <>
         {/* ROW 2 - Publisher, Version, Platform, Download, Checkbox */}
@@ -388,16 +379,9 @@ export const ScanCardContent: FunctionComponent<ScanCardContentProps> = ({
         <GridCell row={2} column={5}>
             <DownloadCell scan={scan} />
         </GridCell>
-        <GridCell
-            row={2}
-            column={6}
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-        >
+        <GridCell row={2} column={6} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
             {showCheckbox && (
-                <SelectionCheckbox
-                    checked={checked}
-                    onChange={(newChecked) => onCheckboxChange?.(scan.id, newChecked)}
-                />
+                <SelectionCheckbox checked={checked} onChange={newChecked => onCheckboxChange?.(scan.id, newChecked)} />
             )}
         </GridCell>
 
@@ -419,9 +403,9 @@ export const ScanCardContent: FunctionComponent<ScanCardContentProps> = ({
         {scan.status === 'QUARANTINED' && (
             <GridCell
                 row={3}
-                column={5} columnSpan={2}
-                sx={{ display: 'flex', justifyContent: 'flex-end', alignSelf: 'end' }}
-            >
+                column={5}
+                columnSpan={2}
+                sx={{ display: 'flex', justifyContent: 'flex-end', alignSelf: 'end' }}>
                 <DecisionStatusCell adminDecision={scan.adminDecision} />
             </GridCell>
         )}

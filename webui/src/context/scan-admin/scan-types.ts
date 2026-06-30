@@ -28,8 +28,8 @@ export interface ValidationFailure {
 
 export interface Threat {
     id: string;
-    fileName: string | null;      // Null if scanner doesn't report file-level info
-    fileHash: string | null;      // Null if scanner doesn't report file hashes
+    fileName: string | null; // Null if scanner doesn't report file-level info
+    fileHash: string | null; // Null if scanner doesn't report file hashes
     fileExtension: string | null;
     type: string;
     ruleName: string;
@@ -349,5 +349,5 @@ export const initialScanState: ScanState = {
     files: [],
     totalFiles: 0,
     isLoadingFiles: false,
-    fileCounts: null,
+    fileCounts: null
 };

@@ -23,6 +23,7 @@ import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -312,10 +313,7 @@ public class StorageUtilService implements IStorageService {
     }
 
     public ResponseEntity<StreamingResponseBody> getFileResponse(Path path) {
-        var fileName = path.getFileName().toString();
-        var headers = new HttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName));
-        headers.setCacheControl(StorageUtil.getCacheControl(fileName));
+        var headers = HttpHeadersUtil.createFileResponseHeaders(path);
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> {
@@ -327,14 +325,13 @@ public class StorageUtilService implements IStorageService {
 
     public ResponseEntity<StreamingResponseBody> getFileResponse(ArrayNode node) {
         var baseUrl = UrlUtil.getBaseUrl();
-        var headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        var headers = HttpHeadersUtil.createJsonFileResponseHeaders();
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(outputStream -> {
                     var mapper = new ObjectMapper();
                     var value = mapper.createArrayNode();
-                    for(var item : node) {
+                    for (var item : node) {
                         value.add(baseUrl + item.asText());
                     }
                     mapper.writeValue(outputStream, value);

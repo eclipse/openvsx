@@ -11,6 +11,9 @@
 import { FunctionComponent, ReactNode, useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { CssBaseline } from '@mui/material';
 import { Route, Routes } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './query-client';
 import { AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard-routes';
 import { ErrorDialog } from './components/error-dialog';
 import { handleError } from './utils';
@@ -23,13 +26,15 @@ import { OtherPages } from './other-pages';
 
 import '../src/main.css';
 
-const AdminDashboard = lazy(() => import('./pages/admin-dashboard/admin-dashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminDashboard = lazy(() =>
+    import('./pages/admin-dashboard/admin-dashboard').then(m => ({ default: m.AdminDashboard }))
+);
 
 export const Main: FunctionComponent<MainProps> = props => {
     const [user, setUser] = useState<UserData>();
     const [userLoading, setUserLoading] = useState<boolean>(true);
     const [loginProviders, setLoginProviders] = useState<Record<string, string> | undefined>(props.loginProviders);
-    const [error, setError] = useState<{message: string, code?: number | string}>();
+    const [error, setError] = useState<{ message: string; code?: number | string }>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
     const abortController = useRef<AbortController>(new AbortController());
 
@@ -96,26 +101,30 @@ export const Main: FunctionComponent<MainProps> = props => {
 
     const renderPageContent = (): ReactNode => {
         const { mainHeadTags: MainHeadTagsComponent } = props.pageSettings.elements;
-        return <>
-            { MainHeadTagsComponent ? <MainHeadTagsComponent pageSettings={props.pageSettings}/> : null }
-            <Routes>
-                <Route path={AdminDashboardRoutes.MAIN + '/*'} element={
-                    <Suspense fallback={null}>
-                        <AdminDashboard userLoading={userLoading} />
-                    </Suspense>
-                } />
-                <Route path='*' element={<OtherPages user={user} userLoading={userLoading} />} />
-            </Routes>
-            {
-                error ?
+        return (
+            <>
+                {MainHeadTagsComponent ? <MainHeadTagsComponent pageSettings={props.pageSettings} /> : null}
+                <Routes>
+                    <Route
+                        path={AdminDashboardRoutes.MAIN + '/*'}
+                        element={
+                            <Suspense fallback={null}>
+                                <AdminDashboard userLoading={userLoading} />
+                            </Suspense>
+                        }
+                    />
+                    <Route path='*' element={<OtherPages user={user} userLoading={userLoading} />} />
+                </Routes>
+                {error ? (
                     <ErrorDialog
                         errorMessage={error.message}
                         errorCode={error.code}
                         isErrorDialogOpen={isErrorDialogOpen}
-                        handleCloseDialog={onErrorDialogClose} />
-                    : null
-            }
-        </>;
+                        handleCloseDialog={onErrorDialogClose}
+                    />
+                ) : null}
+            </>
+        );
     };
 
     const mainContext: MainContext = {
@@ -126,12 +135,15 @@ export const Main: FunctionComponent<MainProps> = props => {
         loginProviders,
         handleError: onError
     };
-    return <>
-        <CssBaseline />
-        <MainContext.Provider value={mainContext}>
-            {renderPageContent()}
-        </MainContext.Provider>
-    </>;
+    return (
+        <>
+            <CssBaseline />
+            <QueryClientProvider client={queryClient}>
+                <MainContext.Provider value={mainContext}>{renderPageContent()}</MainContext.Provider>
+                <ReactQueryDevtools initialIsOpen={false} />
+            </QueryClientProvider>
+        </>
+    );
 };
 
 export interface MainProps {

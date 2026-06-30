@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useMemo } from "react";
+import { FC, useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Paper,
@@ -21,13 +21,13 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    SelectChangeEvent,
-} from "@mui/material";
-import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams } from "@mui/x-data-grid";
-import { MainContext } from "../../../context";
-import type { Log } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
-import { createMultiSelectFilterOperators } from "../components";
+    SelectChangeEvent
+} from '@mui/material';
+import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams } from '@mui/x-data-grid';
+import type { Log } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
+import { createMultiSelectFilterOperators } from '../components';
+import { useLogs } from './use-logs';
 
 type PeriodFilter = '' | 'P1D' | 'P7D' | 'P30D' | 'P90D' | 'P1Y';
 
@@ -37,54 +37,33 @@ const periodOptions: { value: PeriodFilter; label: string }[] = [
     { value: 'P7D', label: 'Last 7 Days' },
     { value: 'P30D', label: 'Last 30 Days' },
     { value: 'P90D', label: 'Last 90 Days' },
-    { value: 'P1Y', label: 'Last Year' },
+    { value: 'P1Y', label: 'Last Year' }
 ];
 
 export const Logs: FC = () => {
-    const { service } = useContext(MainContext);
-    const [logs, setLogs] = useState<Log[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0,
-        pageSize: 20,
+        pageSize: 20
     });
-    const [totalElements, setTotalElements] = useState(0);
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('');
-    const logsWithId = useMemo(() =>
-        logs.map((log, index) => ({ ...log, id: index })),
-        [logs]
-    );
+    const [errorDismissed, setErrorDismissed] = useState(false);
 
+    const {
+        data,
+        isFetching: loading,
+        error: loadError
+    } = useLogs(paginationModel.page, paginationModel.pageSize, periodFilter || undefined);
+
+    const logs: Log[] = useMemo(() => (data?.content ? [...data.content] : []), [data]);
+    const totalElements = data?.page.totalElements ?? 0;
+    const logsWithId = useMemo(() => logs.map((log, index) => ({ ...log, id: index })), [logs]);
+
+    // A fresh load error should be shown again even if a previous one was dismissed.
     useEffect(() => {
-        const abortController = new AbortController();
+        setErrorDismissed(false);
+    }, [loadError]);
 
-        const loadLogs = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await service.admin.getLogs(
-                    abortController,
-                    paginationModel.page,
-                    paginationModel.pageSize,
-                    periodFilter || undefined
-                );
-                setLogs(data.content);
-                setTotalElements(data.page.totalElements);
-            } catch (err: any) {
-                if (!abortController.signal.aborted) {
-                    setError(handleError(err));
-                }
-            } finally {
-                if (!abortController.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        loadLogs();
-        return () => abortController.abort();
-    }, [service, paginationModel.page, paginationModel.pageSize, periodFilter]);
+    const error = loadError && !errorDismissed ? handleError(loadError as Error) : null;
 
     const handlePaginationModelChange = (newModel: GridPaginationModel) => {
         setPaginationModel(newModel);
@@ -97,10 +76,7 @@ export const Logs: FC = () => {
     };
 
     // Extract unique values for filter dropdowns
-    const userOptions = useMemo(() =>
-        [...new Set(logs.map(l => l.user).filter(Boolean))],
-        [logs]
-    );
+    const userOptions = useMemo(() => [...new Set(logs.map(l => l.user).filter(Boolean))], [logs]);
 
     const columns: GridColDef[] = [
         {
@@ -111,11 +87,7 @@ export const Logs: FC = () => {
             renderCell: (params: GridRenderCellParams<Log>) => {
                 if (!params.value) return null;
                 const date = new Date(params.value as string);
-                return (
-                    <Typography variant='caption'>
-                        {date.toLocaleString()}
-                    </Typography>
-                );
+                return <Typography variant='caption'>{date.toLocaleString()}</Typography>;
             }
         },
         {
@@ -131,21 +103,22 @@ export const Logs: FC = () => {
             headerName: 'Message',
             flex: 5,
             minWidth: 300,
-            sortable: false,
-        },
+            sortable: false
+        }
     ];
 
     return (
         <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 2,
-                width: '100%',
-            }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                    width: '100%'
+                }}>
                 <Typography variant='h4' component='h1'>
                     Admin Logs
                 </Typography>
@@ -156,8 +129,7 @@ export const Logs: FC = () => {
                         id='period-filter'
                         value={periodFilter}
                         label='Time Period'
-                        onChange={handlePeriodChange}
-                    >
+                        onChange={handlePeriodChange}>
                         {periodOptions.map(option => (
                             <MenuItem key={option.value} value={option.value}>
                                 {option.label}
@@ -168,13 +140,13 @@ export const Logs: FC = () => {
             </Box>
 
             {error && (
-                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setError(null)}>
+                <Alert severity='error' sx={{ mb: 2 }} onClose={() => setErrorDismissed(true)}>
                     {error}
                 </Alert>
             )}
 
             {!loading && !error && logs.length === 0 && (
-                <Paper elevation={0} sx={{ p: 3, textAlign: "center" }}>
+                <Paper elevation={0} sx={{ p: 3, textAlign: 'center' }}>
                     <Typography color='textSecondary' gutterBottom>
                         No logs found for the selected time period.
                     </Typography>
@@ -182,7 +154,9 @@ export const Logs: FC = () => {
             )}
 
             {!error && logs.length > 0 && (
-                <Paper elevation={0} sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Paper
+                    elevation={0}
+                    sx={{ flex: 1, minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column' }}>
                     <DataGrid
                         rows={logsWithId}
                         columns={columns}
@@ -194,7 +168,7 @@ export const Logs: FC = () => {
                         loading={loading}
                         disableRowSelectionOnClick
                         sx={{
-                            flex: 1,
+                            flex: 1
                         }}
                     />
                 </Paper>

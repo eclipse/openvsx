@@ -24,18 +24,13 @@ interface TabPanelProps {
  * TabPanel component for conditionally displaying tab content.
  * Shows children when the selected tab value matches this panel's index.
  */
-export const TabPanel: FunctionComponent<TabPanelProps> = ({
-    children,
-    value,
-    index,
-}) => {
+export const TabPanel: FunctionComponent<TabPanelProps> = ({ children, value, index }) => {
     return (
         <Box
             role='tabpanel'
             hidden={value !== index}
             id={`scan-tabpanel-${index}`}
-            aria-labelledby={`scan-tab-${index}`}
-        >
+            aria-labelledby={`scan-tab-${index}`}>
             {value === index && children}
         </Box>
     );

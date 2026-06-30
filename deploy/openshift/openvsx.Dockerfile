@@ -25,10 +25,10 @@ ENV VERSION=$OPENVSX_VERSION
 
 RUN git clone --branch ${VERSION} --depth 1 https://github.com/eclipse/openvsx.git /workdir
 
-RUN yarn --version \
-  && yarn --cwd webui \
-  && yarn --cwd webui install \
-  && yarn --cwd webui build:default
+RUN cd webui \
+  && yarn --version \
+  && yarn install --immutable \
+  && yarn build:default
 
 # Main image derived from openvsx-server
 FROM ghcr.io/eclipse-openvsx/openvsx-server:${OPENVSX_VERSION}

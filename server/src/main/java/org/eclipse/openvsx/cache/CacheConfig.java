@@ -18,8 +18,8 @@ import com.github.benmanes.caffeine.cache.Scheduler;
 import com.github.benmanes.caffeine.jcache.CacheManagerImpl;
 import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration;
 import com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider;
-import io.micrometer.common.util.StringUtils;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
+import org.eclipse.openvsx.cache.jedis.JedisUtil;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
@@ -42,17 +42,13 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.*;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.*;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 
@@ -107,43 +103,63 @@ public class CacheConfig {
     public @Qualifier("fileCacheManager") CacheManager fileCacheManager(
             Cache<Object, Object> extensionCache,
             Cache<Object, Object> webResourceCache,
-            Cache<Object, Object> browseCache
+            Cache<Object, Object> browseCache,
+            Cache<Object, Object> settingCache
     ) {
         logger.info("Configure file cache manager");
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.registerCustomCache(CACHE_EXTENSION_FILES, extensionCache);
         caffeineCacheManager.registerCustomCache(CACHE_WEB_RESOURCE_FILES, webResourceCache);
         caffeineCacheManager.registerCustomCache(CACHE_BROWSE_EXTENSION_FILES, browseCache);
+        caffeineCacheManager.registerCustomCache(CACHE_SETTING, settingCache);
+
+        return caffeineCacheManager;
+    }
+
+    @Bean
+    public Cache<Object, Object> settingCache(
+            @Value("${ovsx.caching.setting.ttl:PT1M}") Duration timeToIdle
+    ) {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(timeToIdle)
+                .scheduler(Scheduler.systemScheduler())
+                .recordStats()
+                .build();
+    }
+
+    @Bean
+    public @Qualifier("localCacheManager") CacheManager localCacheManager(
+            Cache<Object, Object> settingCache
+    ) {
+        logger.info("Configure local cache manager");
+        CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
+        caffeineCacheManager.registerCustomCache(CACHE_SETTING, settingCache);
 
         return caffeineCacheManager;
     }
 
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-jedis'")
-    public JedisPool jedisPool(RedisProperties properties) {
+    public RedisClient redisClient(RedisProperties properties) {
         logger.info("Configure 'redis-jedis' bucket4j rate-limiting cache");
-        return new JedisPool(properties.getHost(), properties.getPort(), properties.getUsername(), properties.getPassword());
+        var builder = RedisClient.builder();
+
+        builder.hostAndPort(properties.getHost(), properties.getPort());
+        builder.clientConfig(JedisUtil.getClientConfig(properties));
+
+        return builder.build();
     }
 
     @Bean
     @ConditionalOnExpression("${bucket4j.enabled:false} && '${bucket4j.cache-to-use:}' == 'redis-cluster-jedis'")
-    public JedisCluster jedisCluster(RedisProperties properties) {
+    public RedisClusterClient redisClusterClient(RedisProperties properties) {
         logger.info("Configure 'redis-cluster-jedis' bucket4j rate-limiting cache");
-        var configBuilder = DefaultJedisClientConfig.builder();
-        var username = properties.getUsername();
-        if(StringUtils.isNotEmpty(username)) {
-            configBuilder.user(username);
-        }
-        var password = properties.getPassword();
-        if(StringUtils.isNotEmpty(password)) {
-            configBuilder.password(password);
-        }
 
-        var nodes = properties.getCluster().getNodes().stream()
-                .map(HostAndPort::from)
-                .collect(Collectors.toSet());
+        var builder = RedisClusterClient.builder();
+        builder.nodes(JedisUtil.getNodes(properties));
+        builder.clientConfig(JedisUtil.getClientConfig(properties));
 
-        return new JedisCluster(nodes, configBuilder.build());
+        return builder.build();
     }
 
     @Bean

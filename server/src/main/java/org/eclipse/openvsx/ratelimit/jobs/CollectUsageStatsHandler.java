@@ -12,8 +12,10 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit.jobs;
 
+import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.ratelimit.UsageStatsService;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
@@ -27,15 +29,21 @@ public class CollectUsageStatsHandler implements JobRequestHandler<HandlerJobReq
 
     private final Logger logger = LoggerFactory.getLogger(CollectUsageStatsHandler.class);
 
-    private UsageStatsService usageStatsService;
+    private final SettingsService settings;
+    private final UsageStatsService usageStatsService;
 
-    public CollectUsageStatsHandler(Optional<UsageStatsService> usageStatsService) {
-        usageStatsService.ifPresent(service -> this.usageStatsService = service);
+    public CollectUsageStatsHandler(SettingsService settings, @Nullable UsageStatsService usageStatsService) {
+        this.settings = settings;
+        this.usageStatsService = usageStatsService;
     }
 
     @Override
     @Job(name = "Collect usage stats", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         if (usageStatsService != null) {
             logger.debug(">> Start collecting usage data");
             usageStatsService.persistUsageStats();

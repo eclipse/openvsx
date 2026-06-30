@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.ExtensionValidator;
@@ -157,28 +158,23 @@ public class UpstreamVSCodeService implements IVSCodeService {
             @Override
             public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
-                if(statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
+                if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
                     handleResponseError(urlTemplate, uriVariables, response);
                 }
 
                 var failed = !statusCode.is2xxSuccessful() && !statusCode.is3xxRedirection();
-                if(failed) {
+                if (failed) {
                     throw new NotFoundException();
                 }
 
-                var headers = new HttpHeaders();
-                headers.addAll(response.getHeaders());
-                headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-                headers.remove(HttpHeaders.VARY);
-
-                if (proxy != null && MediaType.APPLICATION_JSON.equals(headers.getContentType())) {
+                if (proxy != null && MediaType.APPLICATION_JSON.equals(response.getHeaders().getContentType())) {
                     var mapper = new ObjectMapper();
                     var json = proxy.rewriteUrls(mapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
-                            .headers(headers)
+                            .headers(HttpHeadersUtil.createJsonFileResponseHeaders())
                             .body(outputStream -> mapper.writeValue(outputStream, json));
                 } else {
-                    return streamResponse(response, headers, "browse");
+                    return streamResponse(response, org.springframework.util.StringUtils.getFilename(path), "browse");
                 }
             }
         };
@@ -306,12 +302,8 @@ public class UpstreamVSCodeService implements IVSCodeService {
                     throw new NotFoundException();
                 }
 
-                var headers = new HttpHeaders();
-                headers.addAll(response.getHeaders());
-                headers.remove(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
-                headers.remove(HttpHeaders.VARY);
-
-                return streamResponse(response, headers, "asset");
+                // we cant safely know the filename of the asset, so just pass null
+                return streamResponse(response, null, "asset");
             }
         };
 
@@ -348,7 +340,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
     private ResponseEntity<StreamingResponseBody> streamResponse(
             ClientHttpResponse response,
-            HttpHeaders headers,
+            @Nullable String fileName,
             String prefix
     ) throws IOException {
         var tempFile = new TempFile(prefix, null);
@@ -356,6 +348,8 @@ public class UpstreamVSCodeService implements IVSCodeService {
             try (var out = Files.newOutputStream(tempFile.getPath())) {
                 response.getBody().transferTo(out);
             }
+
+            var headers = HttpHeadersUtil.createFileResponseHeaders(tempFile.getPath(), fileName);
 
             return ResponseEntity.status(response.getStatusCode())
                     .headers(headers)

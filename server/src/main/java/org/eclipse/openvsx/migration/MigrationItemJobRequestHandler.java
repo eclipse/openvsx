@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.SettingsService;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
@@ -26,29 +28,37 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationItemJobRequestHandler.class);
 
+    private final SettingsService settings;
     private final RepositoryService repositories;
     private final MigrationService migrations;
     private final MigrationScheduler scheduler;
 
     public MigrationItemJobRequestHandler(
+            SettingsService settings,
             RepositoryService repositories,
             MigrationService migrations,
             MigrationScheduler scheduler
     ) {
+        this.settings = settings;
         this.repositories = repositories;
         this.migrations = migrations;
         this.scheduler = scheduler;
     }
 
     @Override
+    @Job(name = "Migration item processing", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         var items = repositories.findNotMigratedItems(PageRequest.ofSize(25000));
-        for(var item : items) {
+        for (var item : items) {
             migrations.enqueueMigration(item);
         }
 
         logger.info("Scheduled migration items: {}", items.getNumberOfElements());
-        if(!items.hasNext()) {
+        if (!items.hasNext()) {
             logger.info("Migration completed, deleting recurring job");
             scheduler.deleteScheduleMigrationItemsJob();
         }

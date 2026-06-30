@@ -9,8 +9,25 @@
  ********************************************************************************/
 
 import { ChangeEvent, FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, TextField, Typography, Grid, Button, IconButton, Slider, Stack, Dialog, DialogActions, DialogTitle,
-    DialogContent, InputAdornment, Select, MenuItem, Paper, SelectChangeEvent } from '@mui/material';
+import {
+    Box,
+    TextField,
+    Typography,
+    Grid,
+    Button,
+    IconButton,
+    Slider,
+    Stack,
+    Dialog,
+    DialogActions,
+    DialogTitle,
+    DialogContent,
+    InputAdornment,
+    Select,
+    MenuItem,
+    Paper,
+    SelectChangeEvent
+} from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
 import BusinessIcon from '@mui/icons-material/Business';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -194,14 +211,23 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
                 ? 'https://twitter.com/' + details.socialLinks.twitter
                 : undefined;
 
-            const result = await context.service.setNamespaceDetails(abortController.current, props.namespace.detailsUrl, details);
+            const result = await context.service.setNamespaceDetails(
+                abortController.current,
+                props.namespace.detailsUrl,
+                details
+            );
             if (isError(result)) {
                 throw result;
             }
 
             if (logoPreview) {
                 const logoFile = await (await fetch(logoPreview)).blob();
-                await context.service.setNamespaceLogo(abortController.current, props.namespace.detailsUrl, logoFile, details.logo as string);
+                await context.service.setNamespaceLogo(
+                    abortController.current,
+                    props.namespace.detailsUrl,
+                    logoFile,
+                    details.logo as string
+                );
                 await getNamespaceDetails();
             } else {
                 setCurrentDetails(copy(newDetails));
@@ -303,7 +329,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const rotateRight = () => setEditorRotation(editorRotation + 90);
 
     const handleEditorScaleChange = (event: Event, value: number | number[]) => {
-        setEditorScale((typeof value === 'number') ? value : value[0]);
+        setEditorScale(typeof value === 'number' ? value : value[0]);
         setEditorScaleAdjusted(adjustScale(editorScale));
     };
 
@@ -317,7 +343,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
 
     const handleApplyLogo = () => {
         const canvasScaled = editor.current?.getImageScaledToCanvas();
-        canvasScaled?.toBlob(async (blob) => {
+        canvasScaled?.toBlob(async blob => {
             if (blob) {
                 if (logoPreview) {
                     URL.revokeObjectURL(logoPreview);
@@ -335,7 +361,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     };
 
     const adjustScale = (x: number) => {
-        return x < 1 ? (0.5 + (x / 2)) : x;
+        return x < 1 ? 0.5 + x / 2 : x;
     };
 
     const percentageLabelFormat = (value: number) => {
@@ -371,258 +397,307 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     }
 
     const successColor = context.pageSettings.themeType === 'dark' ? '#fff' : '#000';
-    return <>
-        <Dialog
-            open={editing}
-            onClose={() => setEditing(false)} >
-            <DialogTitle >
-                Edit namespace logo
-            </DialogTitle>
-            <DialogContent sx={{ overflowY: 'unset' }}>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} sx={{ display: 'flex' }}>
-                        <AvatarEditor
-                            style={{ margin: '0 auto' }}
-                            ref={editor}
-                            image={dropzoneFile ?? ''}
-                            width={120}
-                            height={120}
-                            border={8}
-                            color={[200, 200, 200, 0.6]}
-                            scale={editorScaleAdjusted}
-                            rotate={editorRotation}
-                            position={editorPosition}
-                            onPositionChange={handleEditorPositionChange}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Grid container spacing={2}>
-                            <Grid item><ZoomOutIcon/></Grid>
-                            <Grid item xs>
-                                <Slider
-                                    min={0}
-                                    max={2}
-                                    step={0.01}
-                                    scale={adjustScale}
-                                    color='secondary'
-                                    valueLabelDisplay='auto'
-                                    valueLabelFormat={percentageLabelFormat}
-                                    value={editorScale}
-                                    onChange={handleEditorScaleChange}/>
+    return (
+        <>
+            <Dialog open={editing} onClose={() => setEditing(false)}>
+                <DialogTitle>Edit namespace logo</DialogTitle>
+                <DialogContent sx={{ overflowY: 'unset' }}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sx={{ display: 'flex' }}>
+                            <AvatarEditor
+                                style={{ margin: '0 auto' }}
+                                ref={editor}
+                                image={dropzoneFile ?? ''}
+                                width={120}
+                                height={120}
+                                border={8}
+                                color={[200, 200, 200, 0.6]}
+                                scale={editorScaleAdjusted}
+                                rotate={editorRotation}
+                                position={editorPosition}
+                                onPositionChange={handleEditorPositionChange}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Grid container spacing={2}>
+                                <Grid item>
+                                    <ZoomOutIcon />
+                                </Grid>
+                                <Grid item xs>
+                                    <Slider
+                                        min={0}
+                                        max={2}
+                                        step={0.01}
+                                        scale={adjustScale}
+                                        color='secondary'
+                                        valueLabelDisplay='auto'
+                                        valueLabelFormat={percentageLabelFormat}
+                                        value={editorScale}
+                                        onChange={handleEditorScaleChange}
+                                    />
+                                </Grid>
+                                <Grid item>
+                                    <ZoomInIcon />
+                                </Grid>
                             </Grid>
-                            <Grid item><ZoomInIcon/></Grid>
+                        </Grid>
+                        <Grid item xs={12} sx={{ display: 'flex' }}>
+                            <Stack direction='row' spacing={2} sx={{ margin: '0 auto' }}>
+                                <IconButton onClick={rotateLeft} title='Rotate image counter-clockwise'>
+                                    <RotateLeftIcon />
+                                </IconButton>
+                                <IconButton onClick={rotateRight} title='Rotate image clockwise'>
+                                    <RotateRightIcon />
+                                </IconButton>
+                            </Stack>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} sx={{ display: 'flex' }}>
-                        <Stack direction='row' spacing={2} sx={{ margin: '0 auto' }}>
-                            <IconButton onClick={rotateLeft} title='Rotate image counter-clockwise'>
-                                <RotateLeftIcon/>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant='contained' color='primary' onClick={handleCancelEditLogo}>
+                        Cancel
+                    </Button>
+                    <Button autoFocus onClick={handleApplyLogo}>
+                        Apply logo
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Grid container spacing={2}>
+                <Grid item xs={12}>
+                    <Typography variant='h5'>Details</Typography>
+                </Grid>
+                {detailsUpdated ? (
+                    <Grid item xs={12} alignItems='center'>
+                        <Paper
+                            sx={{
+                                mb: 2,
+                                p: 2,
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                color: successColor,
+                                bgcolor: `success.${context.pageSettings.themeType}`
+                            }}>
+                            <CheckCircleOutline fontSize='large' />
+                            <Typography variant='body1' sx={{ ml: 1 }}>
+                                The details of the &ldquo;{bannerNamespaceName}&rdquo; namespace were updated.
+                            </Typography>
+                            <IconButton sx={{ ml: 'auto' }} onClick={handleClose}>
+                                <CloseIcon />
                             </IconButton>
-                            <IconButton onClick={rotateRight} title='Rotate image clockwise'>
-                                <RotateRightIcon/>
-                            </IconButton>
-                        </Stack>
+                        </Paper>
                     </Grid>
-                </Grid>
-            </DialogContent>
-            <DialogActions>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    onClick={handleCancelEditLogo} >
-                    Cancel
-                </Button>
-                <Button
-                    autoFocus
-                    onClick={handleApplyLogo} >
-                    Apply logo
-                </Button>
-            </DialogActions>
-        </Dialog>
-        <Grid container spacing={2}>
-            <Grid item xs={12}>
-                <Typography variant='h5'>Details</Typography>
-            </Grid>
-            {   detailsUpdated
-                ? <Grid item xs={12} alignItems='center'>
-                    <Paper
-                        sx={{
-                            mb: 2,
-                            p: 2,
-                            flex: 1,
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            color: successColor,
-                            bgcolor: `success.${context.pageSettings.themeType}`
-                        }}
-                    >
-                        <CheckCircleOutline fontSize='large' />
-                        <Typography variant='body1' sx={{ ml: 1 }}>The details of the &ldquo;{bannerNamespaceName}&rdquo; namespace were updated.</Typography>
-                        <IconButton sx={{ ml: 'auto' }} onClick={handleClose}><CloseIcon /></IconButton>
-                    </Paper>
-                </Grid>
-                : null
-            }
-            <Grid item xs={4} alignItems='center'>
-                <Dropzone
-                    onDrop={handleDrop}
-                    onFileDialogOpen={handleFileDialogOpen}
-                    noClick={isDropzoneDisabled()}
-                    noKeyboard={isDropzoneDisabled()}
-                    noDrag={isDropzoneDisabled()}
-                    maxFiles={1}
-                    maxSize={4 * 1024 * 1024}>
-                    {({ getRootProps, getInputProps, isFocused, isDragAccept, isDragReject }) => (
-                        <Box component='section' sx={{ display: 'grid' }}>
-                            <DropzoneDiv
-                                {...getRootProps({ isFocused, isDragAccept, isDragReject })}
-                                style={{ borderColor: getColor(isFocused, isDragAccept, isDragReject) }}
-                            >
-                                <input {...getInputProps({ accept: 'image/jpeg,image/png', multiple: false })} />
-                                <img src={logoPreview ?? newDetails?.logo ?? context.pageSettings.urls.extensionDefaultIcon}/>
-                            </DropzoneDiv>
-                            { logoPreview || newDetails?.logo ?
-                                <Box
-                                    component='div'
-                                    sx={{
-                                        gridRow: 1,
-                                        gridColumn: 1,
-                                        mb: -6,
-                                        display: 'flex',
-                                        opacity: 0,
-                                        height: '100%',
-                                        justifyContent: 'flex-end',
-                                        '&:hover': {
-                                            opacity: 1
+                ) : null}
+                <Grid item xs={4} alignItems='center'>
+                    <Dropzone
+                        onDrop={handleDrop}
+                        onFileDialogOpen={handleFileDialogOpen}
+                        noClick={isDropzoneDisabled()}
+                        noKeyboard={isDropzoneDisabled()}
+                        noDrag={isDropzoneDisabled()}
+                        maxFiles={1}
+                        maxSize={4 * 1024 * 1024}>
+                        {({ getRootProps, getInputProps, isFocused, isDragAccept, isDragReject }) => (
+                            <Box component='section' sx={{ display: 'grid' }}>
+                                <DropzoneDiv
+                                    {...getRootProps({ isFocused, isDragAccept, isDragReject })}
+                                    style={{ borderColor: getColor(isFocused, isDragAccept, isDragReject) }}>
+                                    <input {...getInputProps({ accept: 'image/jpeg,image/png', multiple: false })} />
+                                    <img
+                                        src={
+                                            logoPreview ??
+                                            newDetails?.logo ??
+                                            context.pageSettings.urls.extensionDefaultIcon
                                         }
-                                    }}
-                                >
-                                    { logoPreview ?
-                                        <IconButton onClick={editLogo} title='Edit logo' sx={{ height: 'fit-content' }}>
-                                            <EditIcon/>
+                                    />
+                                </DropzoneDiv>
+                                {logoPreview || newDetails?.logo ? (
+                                    <Box
+                                        component='div'
+                                        sx={{
+                                            gridRow: 1,
+                                            gridColumn: 1,
+                                            mb: -6,
+                                            display: 'flex',
+                                            opacity: 0,
+                                            height: '100%',
+                                            justifyContent: 'flex-end',
+                                            '&:hover': {
+                                                opacity: 1
+                                            }
+                                        }}>
+                                        {logoPreview ? (
+                                            <IconButton
+                                                onClick={editLogo}
+                                                title='Edit logo'
+                                                sx={{ height: 'fit-content' }}>
+                                                <EditIcon />
+                                            </IconButton>
+                                        ) : null}
+                                        <IconButton
+                                            onClick={deleteLogo}
+                                            title='Delete logo'
+                                            sx={{ height: 'fit-content' }}>
+                                            <DeleteIcon />
                                         </IconButton>
-                                        : null
-                                    }
-                                    <IconButton onClick={deleteLogo} title='Delete logo' sx={{ height: 'fit-content' }}>
-                                        <DeleteIcon/>
-                                    </IconButton>
-                                </Box>
-                                : null
-                            }
-                        </Box>
-                    )}
-                </Dropzone>
-            </Grid>
-            <Grid item xs={8}>
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                        <TextField fullWidth
-                            label='Display name'
-                            name={INPUT_DISPLAY_NAME}
-                            value={ newDetails.displayName ?? '' }
-                            onChange={ handleInputChange } />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField fullWidth
-                            multiline
-                            rows={3}
-                            margin='dense'
-                            variant='outlined'
-                            label='Description'
-                            name={INPUT_DESCRIPTION}
-                            value={ newDetails.description ?? '' }
-                            onChange={ handleInputChange } />
+                                    </Box>
+                                ) : null}
+                            </Box>
+                        )}
+                    </Dropzone>
+                </Grid>
+                <Grid item xs={8}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label='Display name'
+                                name={INPUT_DISPLAY_NAME}
+                                value={newDetails.displayName ?? ''}
+                                onChange={handleInputChange}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={3}
+                                margin='dense'
+                                variant='outlined'
+                                label='Description'
+                                name={INPUT_DESCRIPTION}
+                                value={newDetails.description ?? ''}
+                                onChange={handleInputChange}
+                            />
+                        </Grid>
                     </Grid>
                 </Grid>
-            </Grid>
-            <Grid item xs={12}>
-                <TextField fullWidth
+                <Grid item xs={12}>
+                    <TextField
+                        fullWidth
                         label='Website'
                         type='url'
                         name={INPUT_WEBSITE}
-                        value={ newDetails.website ?? '' }
-                        onChange={ handleInputChange } />
-            </Grid>
-            <Grid item xs={12}>
-                <TextField fullWidth
-                    label='Support link'
-                    type='url'
-                    name={INPUT_SUPPORT_LINK}
-                    value={ newDetails.supportLink ?? '' }
-                    onChange={ handleInputChange } />
-            </Grid>
-            <Grid item xs={12}>
-                <Grid container spacing={2}>
-                    <GridIconItem item>
-                        <LinkedInIcon titleAccess='LinkedIn profile'/>
-                    </GridIconItem>
-                    <Grid item xs>
-                        <TextField fullWidth
-                            name={INPUT_LINKEDIN}
-                            value={ newDetails.socialLinks.linkedin ?? '' }
-                            onChange={ handleInputChange }
-                            InputProps={{ startAdornment: <InputAdornment position='start'>
-                                <Select
-                                    value={ linkedInAccountType }
-                                    onChange={ handleSelectChange }
-                                    sx={{
-                                        '& .MuiSelect-select': {
-                                            py: 1.75
-                                        },
-                                        '&.Mui-focused': {
-                                            '& .MuiOutlinedInput-notchedOutline': {
-                                                border: 0
-                                            }
-                                        },
-                                        '& .MuiOutlinedInput-notchedOutline': {
-                                            border: 0
-                                        }
-                                    }}
-                                >
-                                    <MenuItem value={ LINKED_IN_PERSONAL } selected={true}><PersonIcon sx={{ color: 'text.secondary' }} titleAccess='Personal profile'/></MenuItem>
-                                    <MenuItem value={ LINKED_IN_COMPANY }><BusinessIcon sx={{ color: 'text.secondary' }} titleAccess='Company profile'/></MenuItem>
-                                </Select>
-                                <Typography color='textSecondary'>https://www.linkedin.com/{linkedInAccountType}/</Typography>
-                            </InputAdornment> }}/>
+                        value={newDetails.website ?? ''}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12}>
+                    <TextField
+                        fullWidth
+                        label='Support link'
+                        type='url'
+                        name={INPUT_SUPPORT_LINK}
+                        value={newDetails.supportLink ?? ''}
+                        onChange={handleInputChange}
+                    />
+                </Grid>
+                <Grid item xs={12}>
+                    <Grid container spacing={2}>
+                        <GridIconItem item>
+                            <LinkedInIcon titleAccess='LinkedIn profile' />
+                        </GridIconItem>
+                        <Grid item xs>
+                            <TextField
+                                fullWidth
+                                name={INPUT_LINKEDIN}
+                                value={newDetails.socialLinks.linkedin ?? ''}
+                                onChange={handleInputChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position='start'>
+                                            <Select
+                                                value={linkedInAccountType}
+                                                onChange={handleSelectChange}
+                                                sx={{
+                                                    '& .MuiSelect-select': {
+                                                        py: 1.75
+                                                    },
+                                                    '&.Mui-focused': {
+                                                        '& .MuiOutlinedInput-notchedOutline': {
+                                                            border: 0
+                                                        }
+                                                    },
+                                                    '& .MuiOutlinedInput-notchedOutline': {
+                                                        border: 0
+                                                    }
+                                                }}>
+                                                <MenuItem value={LINKED_IN_PERSONAL} selected={true}>
+                                                    <PersonIcon
+                                                        sx={{ color: 'text.secondary' }}
+                                                        titleAccess='Personal profile'
+                                                    />
+                                                </MenuItem>
+                                                <MenuItem value={LINKED_IN_COMPANY}>
+                                                    <BusinessIcon
+                                                        sx={{ color: 'text.secondary' }}
+                                                        titleAccess='Company profile'
+                                                    />
+                                                </MenuItem>
+                                            </Select>
+                                            <Typography color='textSecondary'>
+                                                https://www.linkedin.com/{linkedInAccountType}/
+                                            </Typography>
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
                     </Grid>
                 </Grid>
-            </Grid>
-            <Grid item xs={12}>
-                <Grid container spacing={2}>
-                    <GridIconItem item>
-                        <GitHubIcon titleAccess='GitHub profile'/>
-                    </GridIconItem>
-                    <Grid item xs>
-                        <TextField fullWidth
-                            name={INPUT_GITHUB}
-                            value={ newDetails.socialLinks.github ?? '' }
-                            onChange={ handleInputChange }
-                            InputProps={{ startAdornment: <InputAdornment position='start'>https://github.com/</InputAdornment> }}/>
+                <Grid item xs={12}>
+                    <Grid container spacing={2}>
+                        <GridIconItem item>
+                            <GitHubIcon titleAccess='GitHub profile' />
+                        </GridIconItem>
+                        <Grid item xs>
+                            <TextField
+                                fullWidth
+                                name={INPUT_GITHUB}
+                                value={newDetails.socialLinks.github ?? ''}
+                                onChange={handleInputChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position='start'>https://github.com/</InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
                     </Grid>
                 </Grid>
-            </Grid>
-            <Grid item xs={12}>
-                <Grid container spacing={2}>
-                    <GridIconItem item>
-                        <TwitterIcon titleAccess='Twitter profile'/>
-                    </GridIconItem>
-                    <Grid item xs>
-                        <TextField fullWidth
-                            name={INPUT_TWITTER}
-                            value={ newDetails.socialLinks.twitter ?? '' }
-                            onChange={ handleInputChange }
-                            InputProps={{ startAdornment: <InputAdornment position='start'>https://twitter.com/</InputAdornment> }}/>
+                <Grid item xs={12}>
+                    <Grid container spacing={2}>
+                        <GridIconItem item>
+                            <TwitterIcon titleAccess='Twitter profile' />
+                        </GridIconItem>
+                        <Grid item xs>
+                            <TextField
+                                fullWidth
+                                name={INPUT_TWITTER}
+                                value={newDetails.socialLinks.twitter ?? ''}
+                                onChange={handleInputChange}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position='start'>https://twitter.com/</InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
                     </Grid>
                 </Grid>
+                <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                        sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}
+                        variant='outlined'
+                        disabled={noChanges}
+                        onClick={setNamespaceDetails}>
+                        Save Namespace Details
+                    </Button>
+                </Grid>
             </Grid>
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' disabled={noChanges} onClick={setNamespaceDetails}>
-                    Save Namespace Details
-                </Button>
-            </Grid>
-        </Grid>
-    </>;
+        </>
+    );
 };
 
 export interface UserNamespaceDetailsProps {

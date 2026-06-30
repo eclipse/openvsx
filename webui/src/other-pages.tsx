@@ -51,10 +51,13 @@ const Footer = styled('footer')(({ theme }: { theme: Theme }) => ({
     padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
     backgroundColor: theme.palette.background.paper,
     boxShadow: '0px -2px 6px 0px rgba(0, 0, 0, 0.5)',
-    backgroundImage: theme.palette.mode == 'dark' ? 'linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08))' : undefined
+    backgroundImage:
+        theme.palette.mode == 'dark'
+            ? 'linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08))'
+            : undefined
 }));
 
-export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
+export const OtherPages: FunctionComponent<OtherPagesProps> = props => {
     const { pageSettings } = useContext(MainContext);
     const {
         additionalRoutes: AdditionalRoutes,
@@ -98,55 +101,54 @@ export const OtherPages: FunctionComponent<OtherPagesProps> = (props) => {
         return footerHeight ? footerHeight + 24 : 0;
     };
 
-    return <Wrapper>
-        <AppBar position='relative' color='inherit' elevation={3}>
-            <Toolbar sx={{ justifyContent: 'space-between' }}>
-                <ToolbarItem>
-                    {ToolbarContent ? <ToolbarContent /> : null}
-                </ToolbarItem>
-                <ToolbarItem>
-                    <HeaderMenu />
-                </ToolbarItem>
-            </Toolbar>
-        </AppBar>
-        {
-            BannerComponent ?
+    return (
+        <Wrapper>
+            <AppBar position='relative' color='inherit' elevation={3}>
+                <Toolbar sx={{ justifyContent: 'space-between' }}>
+                    <ToolbarItem>{ToolbarContent ? <ToolbarContent /> : null}</ToolbarItem>
+                    <ToolbarItem>
+                        <HeaderMenu />
+                    </ToolbarItem>
+                </Toolbar>
+            </AppBar>
+            {BannerComponent ? (
                 <Banner
                     open={isBannerOpen}
                     showDismissButton={BannerComponent.props?.dismissButton?.show}
                     dismissButtonLabel={BannerComponent.props?.dismissButton?.label}
                     dismissButtonOnClick={onDismissBannerButtonClick}
                     color={BannerComponent.props?.color}
-                    theme={pageSettings.themeType}
-                >
+                    theme={pageSettings.themeType}>
                     <BannerComponent.content />
                 </Banner>
-                : null
-        }
-        <Box pb={`${getContentPadding()}px`}>
-            <Suspense fallback={null}>
-                <Routes>
-                    <Route path={ExtensionListRoutes.MAIN} element={ <ExtensionListContainer /> } />
-                    <Route path={UserSettingsRoutes.MAIN} element={<UserSettings userLoading={props.userLoading} />} />
-                    <Route path={UserSettingsRoutes.DELETE_EXTENSION} element={<UserSettings userLoading={props.userLoading} />} />
-                    <Route path={NamespaceDetailRoutes.MAIN} element={ <NamespaceDetail /> } />
-                    <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
-                    <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />
-                    {AdditionalRoutes ?? null}
-                    <Route path='*' element={<NotFound />} />
-                </Routes>
-            </Suspense>
-        </Box>
-        {
-            FooterComponent ?
-                <Footer
-                    onMouseEnter={() => setIsFooterExpanded(true)}
-                    onMouseLeave={() => setIsFooterExpanded(false)} >
+            ) : null}
+            <Box pb={`${getContentPadding()}px`}>
+                <Suspense fallback={null}>
+                    <Routes>
+                        <Route path={ExtensionListRoutes.MAIN} element={<ExtensionListContainer />} />
+                        <Route
+                            path={UserSettingsRoutes.MAIN}
+                            element={<UserSettings userLoading={props.userLoading} />}
+                        />
+                        <Route
+                            path={UserSettingsRoutes.DELETE_EXTENSION}
+                            element={<UserSettings userLoading={props.userLoading} />}
+                        />
+                        <Route path={NamespaceDetailRoutes.MAIN} element={<NamespaceDetail />} />
+                        <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
+                        <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />
+                        {AdditionalRoutes ?? null}
+                        <Route path='*' element={<NotFound />} />
+                    </Routes>
+                </Suspense>
+            </Box>
+            {FooterComponent ? (
+                <Footer onMouseEnter={() => setIsFooterExpanded(true)} onMouseLeave={() => setIsFooterExpanded(false)}>
                     <FooterComponent.content expanded={isFooterExpanded} />
                 </Footer>
-                : null
-        }
-    </Wrapper>;
+            ) : null}
+        </Wrapper>
+    );
 };
 
 export interface OtherPagesProps {

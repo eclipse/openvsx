@@ -24,7 +24,7 @@ interface AutoRefreshProps {
 export const AutoRefresh: FunctionComponent<AutoRefreshProps> = ({
     lastRefreshed,
     autoRefresh = false,
-    onAutoRefreshChange,
+    onAutoRefreshChange
 }) => {
     if (!lastRefreshed) {
         return null;
@@ -36,9 +36,8 @@ export const AutoRefresh: FunctionComponent<AutoRefreshProps> = ({
                 display: 'flex',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
-                gap: 1,
-            }}
-        >
+                gap: 1
+            }}>
             {onAutoRefreshChange && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Typography
@@ -46,19 +45,18 @@ export const AutoRefresh: FunctionComponent<AutoRefreshProps> = ({
                         sx={{
                             color: 'text.secondary',
                             fontSize: '0.75rem',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
+                            whiteSpace: 'nowrap'
+                        }}>
                         30s auto-refresh
                     </Typography>
                     <Switch
                         size='small'
                         checked={autoRefresh}
-                        onChange={(e) => onAutoRefreshChange(e.target.checked)}
+                        onChange={e => onAutoRefreshChange(e.target.checked)}
                         color='secondary'
                         sx={{
                             transform: 'scale(0.7)',
-                            marginRight: -0.5,
+                            marginRight: -0.5
                         }}
                     />
                 </Box>
@@ -69,9 +67,8 @@ export const AutoRefresh: FunctionComponent<AutoRefreshProps> = ({
                     color: 'text.secondary',
                     fontSize: '0.75rem',
                     whiteSpace: 'nowrap',
-                    pl: 1,
-                }}
-            >
+                    pl: 1
+                }}>
                 Last Refreshed: {formatDateTime(lastRefreshed.toISOString())}
             </Typography>
         </Box>

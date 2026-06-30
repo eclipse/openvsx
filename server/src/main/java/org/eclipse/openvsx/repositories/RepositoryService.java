@@ -9,7 +9,43 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.eclipse.openvsx.entities.*;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD_SIG;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.eclipse.openvsx.entities.AdminScanDecision;
+import org.eclipse.openvsx.entities.AdminStatistics;
+import org.eclipse.openvsx.entities.Customer;
+import org.eclipse.openvsx.entities.CustomerMembership;
+import org.eclipse.openvsx.entities.DailyUsageStats;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionReview;
+import org.eclipse.openvsx.entities.ExtensionScan;
+import org.eclipse.openvsx.entities.ExtensionThreat;
+import org.eclipse.openvsx.entities.ExtensionValidationFailure;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.MigrationItem;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersistedLog;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.RateLimitToken;
+import org.eclipse.openvsx.entities.ScanCheckResult;
+import org.eclipse.openvsx.entities.ScanStatus;
+import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.eclipse.openvsx.entities.Tier;
+import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.UsageStats;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
@@ -25,16 +61,6 @@ import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Nullable;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 public class RepositoryService {
@@ -81,6 +107,7 @@ public class RepositoryService {
     private final UsageStatsRepository usageStatsRepository;
     private final RateLimitTokenRepository rateLimitTokenRepository;
     private final DailyUsageStatsRepository dailyUsageStatsRepository;
+    private final UserDataJooqRepository userDataJooqRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -117,7 +144,8 @@ public class RepositoryService {
             CustomerMembershipRepository customerMembershipRepo,
             UsageStatsRepository usageStatsRepository,
             RateLimitTokenRepository rateLimitTokenRepository,
-            DailyUsageStatsRepository dailyUsageStatsRepository
+            DailyUsageStatsRepository dailyUsageStatsRepository,
+            UserDataJooqRepository userDataJooqRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -154,6 +182,7 @@ public class RepositoryService {
         this.usageStatsRepository = usageStatsRepository;
         this.rateLimitTokenRepository = rateLimitTokenRepository;
         this.dailyUsageStatsRepository = dailyUsageStatsRepository;
+        this.userDataJooqRepo = userDataJooqRepo;
     }
 
     public Namespace findNamespace(String name) {
@@ -336,12 +365,12 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
-    public Page<UserData> findUsersByLoginNameStartingWith(String loginNameStart, int limit) {
-        return userDataRepo.findByLoginNameStartingWith(loginNameStart, Pageable.ofSize(limit));
-    }
-
     public long countUsers() {
         return userDataRepo.count();
+    }
+
+    public Page<UserData> searchUsers(String search, String role, Pageable pageable) {
+        return userDataJooqRepo.findUsers(search, role, pageable);
     }
 
     public NamespaceMembership findMembership(UserData user, Namespace namespace) {

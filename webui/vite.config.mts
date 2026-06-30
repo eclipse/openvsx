@@ -1,18 +1,19 @@
+/// <reference types="vitest/config" />
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, PluginOption } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-const outRootDir = path.join(__dirname, "dist");
+const outRootDir = path.join(__dirname, 'dist');
 
 export default defineConfig(() => ({
     plugins: [react(), visualizer() as PluginOption],
     server: {
         host: true,
-        port: 3000,
+        port: 3000
     },
     preview: {
-        port: 3000,
+        port: 3000
     },
     resolve: {
         alias: {
@@ -20,6 +21,10 @@ export default defineConfig(() => ({
         }
     },
     publicDir: 'static',
+    test: {
+        include: ['test/unit/**/*.spec.{ts,tsx}'],
+        environment: 'node'
+    },
     build: {
         target: 'es2020',
         minify: true,
@@ -35,9 +40,9 @@ export default defineConfig(() => ({
                 manualChunks: {
                     lodash: ['lodash'],
                     material: ['@mui/material'],
-                    'mui-x': ['@mui/x-charts', '@mui/x-data-grid', '@mui/x-date-pickers'],
+                    'mui-x': ['@mui/x-charts', '@mui/x-data-grid', '@mui/x-date-pickers']
                 }
             }
         }
-    },
+    }
 }));

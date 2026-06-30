@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
@@ -61,6 +62,7 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
 
     private static final String LOG_LOCATION_PREFIX = "AWSLogs/";
 
+    private final SettingsService settings;
     private final AwsStorageService  awsStorageService;
     private final DownloadCountProcessor processor;
 
@@ -81,7 +83,8 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
 
     LogFileParser logFileParser;
 
-    public AwsDownloadCountHandler(AwsStorageService awsStorageService, DownloadCountProcessor processor) {
+    public AwsDownloadCountHandler(SettingsService settings, AwsStorageService awsStorageService, DownloadCountProcessor processor) {
+        this.settings = settings;
         this.awsStorageService = awsStorageService;
         this.processor = processor;
     }
@@ -121,6 +124,11 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
     @Job(name = "Update AWS Download Counts", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         if (!isEnabled()) {
+            return;
+        }
+
+        if (settings.isReadOnly()) {
+            logger.info("[AwsDownloadCountService] registry is in read-only mode, skipping job");
             return;
         }
 
@@ -181,6 +189,11 @@ public class AwsDownloadCountHandler implements JobRequestHandler<HandlerJobRequ
 
                 if (processedOn.isAfter(maxExecutionTime)) {
                     logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                    return false;
+                }
+
+                if (settings.isReadOnly()) {
+                    logger.info("skip processing log files as registry is in read-only mode");
                     return false;
                 }
 

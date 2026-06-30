@@ -24,11 +24,7 @@ interface TabToolbarProps {
  * TabToolbar component for the scan admin tab navigation.
  * Renders the Paper/Tabs bar for switching between scan tabs.
  */
-export const TabToolbar: FunctionComponent<TabToolbarProps> = ({
-    selectedTab,
-    onTabChange,
-    tabs,
-}) => {
+export const TabToolbar: FunctionComponent<TabToolbarProps> = ({ selectedTab, onTabChange, tabs }) => {
     return (
         <Paper sx={{ mb: 1.5 }}>
             <Tabs
@@ -40,13 +36,12 @@ export const TabToolbar: FunctionComponent<TabToolbarProps> = ({
                     borderColor: 'divider',
                     minHeight: '48px',
                     '& .MuiTabs-indicator': {
-                        backgroundColor: 'secondary.main',
+                        backgroundColor: 'secondary.main'
                     },
                     '& .MuiTab-root': {
-                        minHeight: '48px',
-                    },
-                }}
-            >
+                        minHeight: '48px'
+                    }
+                }}>
                 {tabs.map((label, index) => (
                     <Tab key={index} label={label} />
                 ))}

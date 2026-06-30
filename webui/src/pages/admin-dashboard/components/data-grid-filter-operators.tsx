@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { MultiSelectFilterInput } from "./data-grid-filter";
+import { MultiSelectFilterInput } from './data-grid-filter';
 import { GridFilterOperator, GridFilterInputValueProps } from '@mui/x-data-grid';
 
 /**
@@ -23,36 +23,32 @@ import { GridFilterOperator, GridFilterInputValueProps } from '@mui/x-data-grid'
  *
  */
 export const createMultiSelectFilterOperators = (options: string[]): GridFilterOperator[] => [
-  {
-    label: 'is any of',
-    value: 'isAnyOf',
-    getApplyFilterFn: (filterItem) => {
-      if (!filterItem.value || (filterItem.value as string[]).length === 0) {
-        return null;
-      }
-      const filterValues = filterItem.value as string[];
+    {
+        label: 'is any of',
+        value: 'isAnyOf',
+        getApplyFilterFn: filterItem => {
+            if (!filterItem.value || (filterItem.value as string[]).length === 0) {
+                return null;
+            }
+            const filterValues = filterItem.value as string[];
 
-      return (value) => filterValues.indexOf(value as string) !== -1;
+            return value => filterValues.indexOf(value as string) !== -1;
+        },
+        InputComponent: (props: GridFilterInputValueProps) => <MultiSelectFilterInput {...props} options={options} />
     },
-    InputComponent: (props: GridFilterInputValueProps) => (
-      <MultiSelectFilterInput {...props} options={options} />
-    ),
-  },
-  {
-    label: 'is none of',
-    value: 'isNoneOf',
-    getApplyFilterFn: (filterItem) => {
-      if (!filterItem.value || (filterItem.value as string[]).length === 0) {
-        return null;
-      }
-      const filterValues = filterItem.value as string[];
+    {
+        label: 'is none of',
+        value: 'isNoneOf',
+        getApplyFilterFn: filterItem => {
+            if (!filterItem.value || (filterItem.value as string[]).length === 0) {
+                return null;
+            }
+            const filterValues = filterItem.value as string[];
 
-      return (value) => filterValues.indexOf(value as string) === -1;
-    },
-    InputComponent: (props: GridFilterInputValueProps) => (
-      <MultiSelectFilterInput {...props} options={options} />
-    ),
-  },
+            return value => filterValues.indexOf(value as string) === -1;
+        },
+        InputComponent: (props: GridFilterInputValueProps) => <MultiSelectFilterInput {...props} options={options} />
+    }
 ];
 
 /**
@@ -64,34 +60,30 @@ export const createMultiSelectFilterOperators = (options: string[]): GridFilterO
  *
  */
 export const createArrayContainsFilterOperators = (options: string[]): GridFilterOperator[] => [
-  {
-    label: 'contains any of',
-    value: 'containsAnyOf',
-    getApplyFilterFn: (filterItem) => {
-      if (!filterItem.value || (filterItem.value as string[]).length === 0) {
-        return null;
-      }
-      const filterValues = filterItem.value as string[];
+    {
+        label: 'contains any of',
+        value: 'containsAnyOf',
+        getApplyFilterFn: filterItem => {
+            if (!filterItem.value || (filterItem.value as string[]).length === 0) {
+                return null;
+            }
+            const filterValues = filterItem.value as string[];
 
-      return (value) => filterValues.some(fv => (value as string[]).indexOf(fv) !== -1);
+            return value => filterValues.some(fv => (value as string[]).indexOf(fv) !== -1);
+        },
+        InputComponent: (props: GridFilterInputValueProps) => <MultiSelectFilterInput {...props} options={options} />
     },
-    InputComponent: (props: GridFilterInputValueProps) => (
-      <MultiSelectFilterInput {...props} options={options} />
-    ),
-  },
-  {
-    label: 'contains none of',
-    value: 'containsNoneOf',
-    getApplyFilterFn: (filterItem) => {
-      if (!filterItem.value || (filterItem.value as string[]).length === 0) {
-        return null;
-      }
-      const filterValues = filterItem.value as string[];
+    {
+        label: 'contains none of',
+        value: 'containsNoneOf',
+        getApplyFilterFn: filterItem => {
+            if (!filterItem.value || (filterItem.value as string[]).length === 0) {
+                return null;
+            }
+            const filterValues = filterItem.value as string[];
 
-      return (value) => !filterValues.some(fv => (value as string[]).indexOf(fv) !== -1);
-    },
-    InputComponent: (props: GridFilterInputValueProps) => (
-      <MultiSelectFilterInput {...props} options={options} />
-    ),
-  },
+            return value => !filterValues.some(fv => (value as string[]).indexOf(fv) !== -1);
+        },
+        InputComponent: (props: GridFilterInputValueProps) => <MultiSelectFilterInput {...props} options={options} />
+    }
 ];

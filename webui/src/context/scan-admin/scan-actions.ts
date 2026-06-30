@@ -29,64 +29,69 @@ export const useScanActions = (
     executeFileAction: () => void,
     retryFailedScannerJobs: (scanId: string) => Promise<void>
 ): ScanActions => {
-    return useMemo(() => ({
-        // Tab
-        setTab: (tab: number) => dispatch({ type: 'SET_TAB', payload: tab }),
+    return useMemo(
+        () => ({
+            // Tab
+            setTab: (tab: number) => dispatch({ type: 'SET_TAB', payload: tab }),
 
-        // Search
-        setPublisherQuery: (query: string) => dispatch({ type: 'SET_PUBLISHER_QUERY', payload: query }),
-        setNamespaceQuery: (query: string) => dispatch({ type: 'SET_NAMESPACE_QUERY', payload: query }),
-        setNameQuery: (query: string) => dispatch({ type: 'SET_NAME_QUERY', payload: query }),
-        handlePublisherChange: (event: ChangeEvent<HTMLInputElement>) =>
-            dispatch({ type: 'SET_PUBLISHER_QUERY', payload: event.target.value }),
-        handleNamespaceChange: (event: ChangeEvent<HTMLInputElement>) =>
-            dispatch({ type: 'SET_NAMESPACE_QUERY', payload: event.target.value }),
-        handleNameChange: (event: ChangeEvent<HTMLInputElement>) =>
-            dispatch({ type: 'SET_NAME_QUERY', payload: event.target.value }),
+            // Search
+            setPublisherQuery: (query: string) => dispatch({ type: 'SET_PUBLISHER_QUERY', payload: query }),
+            setNamespaceQuery: (query: string) => dispatch({ type: 'SET_NAMESPACE_QUERY', payload: query }),
+            setNameQuery: (query: string) => dispatch({ type: 'SET_NAME_QUERY', payload: query }),
+            handlePublisherChange: (event: ChangeEvent<HTMLInputElement>) =>
+                dispatch({ type: 'SET_PUBLISHER_QUERY', payload: event.target.value }),
+            handleNamespaceChange: (event: ChangeEvent<HTMLInputElement>) =>
+                dispatch({ type: 'SET_NAMESPACE_QUERY', payload: event.target.value }),
+            handleNameChange: (event: ChangeEvent<HTMLInputElement>) =>
+                dispatch({ type: 'SET_NAME_QUERY', payload: event.target.value }),
 
-        // Pagination
-        setPage: (page: number) => dispatch({ type: 'SET_PAGE', payload: page }),
+            // Pagination
+            setPage: (page: number) => dispatch({ type: 'SET_PAGE', payload: page }),
 
-        // Filters
-        setDateRange: (range: DateRangeType) => dispatch({ type: 'SET_DATE_RANGE', payload: range }),
-        setEnforcement: (enforcement: EnforcementType) => dispatch({ type: 'SET_ENFORCEMENT', payload: enforcement }),
-        setAutoRefresh: (enabled: boolean) => dispatch({ type: 'SET_AUTO_REFRESH', payload: enabled }),
-        setFileDateRange: (range: DateRangeType) => dispatch({ type: 'SET_FILE_DATE_RANGE', payload: range }),
-        toggleStatusFilter: (status: string) => dispatch({ type: 'TOGGLE_STATUS_FILTER', payload: status }),
-        toggleQuarantineFilter: (filter: string) => dispatch({ type: 'TOGGLE_QUARANTINE_FILTER', payload: filter }),
-        toggleThreatScannerFilter: (scanner: string) => dispatch({ type: 'TOGGLE_THREAT_SCANNER_FILTER', payload: scanner }),
-        toggleValidationTypeFilter: (type: string) => dispatch({ type: 'TOGGLE_VALIDATION_TYPE_FILTER', payload: type }),
+            // Filters
+            setDateRange: (range: DateRangeType) => dispatch({ type: 'SET_DATE_RANGE', payload: range }),
+            setEnforcement: (enforcement: EnforcementType) =>
+                dispatch({ type: 'SET_ENFORCEMENT', payload: enforcement }),
+            setAutoRefresh: (enabled: boolean) => dispatch({ type: 'SET_AUTO_REFRESH', payload: enabled }),
+            setFileDateRange: (range: DateRangeType) => dispatch({ type: 'SET_FILE_DATE_RANGE', payload: range }),
+            toggleStatusFilter: (status: string) => dispatch({ type: 'TOGGLE_STATUS_FILTER', payload: status }),
+            toggleQuarantineFilter: (filter: string) => dispatch({ type: 'TOGGLE_QUARANTINE_FILTER', payload: filter }),
+            toggleThreatScannerFilter: (scanner: string) =>
+                dispatch({ type: 'TOGGLE_THREAT_SCANNER_FILTER', payload: scanner }),
+            toggleValidationTypeFilter: (type: string) =>
+                dispatch({ type: 'TOGGLE_VALIDATION_TYPE_FILTER', payload: type }),
 
-        // Menu anchors
-        openFilterMenu: (event: MouseEvent<HTMLElement>) =>
-            dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
-        closeFilterMenu: () => dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: null }),
-        openQuarantineFilterMenu: (event: MouseEvent<HTMLElement>) =>
-            dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
-        closeQuarantineFilterMenu: () => dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: null }),
-        openAutoRejectedFilterMenu: (event: MouseEvent<HTMLElement>) =>
-            dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
-        closeAutoRejectedFilterMenu: () => dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: null }),
+            // Menu anchors
+            openFilterMenu: (event: MouseEvent<HTMLElement>) =>
+                dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
+            closeFilterMenu: () => dispatch({ type: 'SET_FILTER_MENU_ANCHOR', payload: null }),
+            openQuarantineFilterMenu: (event: MouseEvent<HTMLElement>) =>
+                dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
+            closeQuarantineFilterMenu: () => dispatch({ type: 'SET_QUARANTINE_FILTER_MENU_ANCHOR', payload: null }),
+            openAutoRejectedFilterMenu: (event: MouseEvent<HTMLElement>) =>
+                dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: event.currentTarget }),
+            closeAutoRejectedFilterMenu: () =>
+                dispatch({ type: 'SET_AUTO_REJECTED_FILTER_MENU_ANCHOR', payload: null }),
 
-        // Selection
-        toggleQuarantinedCheck: (id: string, checked: boolean) =>
-            dispatch({ type: 'TOGGLE_QUARANTINED_CHECKED', payload: { id, checked } }),
-        selectAllQuarantined: (scans: ScanResult[]) =>
-            dispatch({ type: 'SELECT_ALL_QUARANTINED', payload: scans }),
-        deselectAllQuarantined: () => dispatch({ type: 'DESELECT_ALL_QUARANTINED' }),
-        setFilesChecked: (fileIds: Set<string>) =>
-            dispatch({ type: 'SET_FILES_CHECKED', payload: fileIds }),
+            // Selection
+            toggleQuarantinedCheck: (id: string, checked: boolean) =>
+                dispatch({ type: 'TOGGLE_QUARANTINED_CHECKED', payload: { id, checked } }),
+            selectAllQuarantined: (scans: ScanResult[]) => dispatch({ type: 'SELECT_ALL_QUARANTINED', payload: scans }),
+            deselectAllQuarantined: () => dispatch({ type: 'DESELECT_ALL_QUARANTINED' }),
+            setFilesChecked: (fileIds: Set<string>) => dispatch({ type: 'SET_FILES_CHECKED', payload: fileIds }),
 
-        // Dialogs
-        openAllowDialog: () => dispatch({ type: 'OPEN_CONFIRM_DIALOG', payload: 'allow' }),
-        openBlockDialog: () => dispatch({ type: 'OPEN_CONFIRM_DIALOG', payload: 'block' }),
-        closeConfirmDialog: () => dispatch({ type: 'CLOSE_CONFIRM_DIALOG' }),
-        executeConfirmAction,
-        openFileDialog: (action: FileActionType) => dispatch({ type: 'OPEN_FILE_DIALOG', payload: action }),
-        closeFileDialog: () => dispatch({ type: 'CLOSE_FILE_DIALOG' }),
-        executeFileAction,
+            // Dialogs
+            openAllowDialog: () => dispatch({ type: 'OPEN_CONFIRM_DIALOG', payload: 'allow' }),
+            openBlockDialog: () => dispatch({ type: 'OPEN_CONFIRM_DIALOG', payload: 'block' }),
+            closeConfirmDialog: () => dispatch({ type: 'CLOSE_CONFIRM_DIALOG' }),
+            executeConfirmAction,
+            openFileDialog: (action: FileActionType) => dispatch({ type: 'OPEN_FILE_DIALOG', payload: action }),
+            closeFileDialog: () => dispatch({ type: 'CLOSE_FILE_DIALOG' }),
+            executeFileAction,
 
-        // Scan actions
-        retryFailedScannerJobs,
-    }), [dispatch, executeConfirmAction, executeFileAction, retryFailedScannerJobs]);
+            // Scan actions
+            retryFailedScannerJobs
+        }),
+        [dispatch, executeConfirmAction, executeFileAction, retryFailedScannerJobs]
+    );
 };

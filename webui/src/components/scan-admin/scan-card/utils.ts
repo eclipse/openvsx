@@ -135,32 +135,32 @@ export const getStatusColorSx = (status: ScanResult['status'], theme: any) => {
                 backgroundColor: theme.palette.passed.dark,
                 color: theme.palette.passed.light,
                 '& .MuiChip-icon': {
-                    color: theme.palette.passed.light,
-                },
+                    color: theme.palette.passed.light
+                }
             };
         case 'QUARANTINED':
             return {
                 backgroundColor: theme.palette.quarantined.dark,
                 color: theme.palette.quarantined.light,
                 '& .MuiChip-icon': {
-                    color: theme.palette.quarantined.light,
-                },
+                    color: theme.palette.quarantined.light
+                }
             };
         case 'AUTO REJECTED':
             return {
                 backgroundColor: theme.palette.rejected.dark,
                 color: theme.palette.rejected.light,
                 '& .MuiChip-icon': {
-                    color: theme.palette.rejected.light,
-                },
+                    color: theme.palette.rejected.light
+                }
             };
         case 'ERROR':
             return {
                 backgroundColor: theme.palette.errorStatus.dark,
                 color: theme.palette.errorStatus.light,
                 '& .MuiChip-icon': {
-                    color: theme.palette.errorStatus.light,
-                },
+                    color: theme.palette.errorStatus.light
+                }
             };
         default:
             return {};
@@ -190,7 +190,13 @@ export const shouldShowExpandButton = (scan: ScanResult): boolean => {
     const hasErrorMessage = scan.status === 'ERROR' && !!scan.errorMessage;
     const hasCheckResults = scan.checkResults && scan.checkResults.length > 0;
     const hasScannerJobs = scan.scannerJobs && scan.scannerJobs.length > 0;
-    return scan.threats.length > 0 || scan.validationFailures.length > 0 || hasCheckResults || hasScannerJobs || hasErrorMessage;
+    return (
+        scan.threats.length > 0 ||
+        scan.validationFailures.length > 0 ||
+        hasCheckResults ||
+        hasScannerJobs ||
+        hasErrorMessage
+    );
 };
 
 export const hasDownload = (scan: ScanResult): boolean => {

@@ -102,19 +102,52 @@ public final class ArchiveUtil {
     }
 
     /**
-     * Reject zip entries that attempt path traversal or absolute paths.
+     * Returns whether the given path is considered to be a safe path for a zip entry.
+     * <p>
+     * The following paths are not considered to be safe:
+     * <ul>
+     *     <li>paths containing a null byte</li>
+     *     <li>absolute paths</li>
+     *     <li>paths containing traversal patterns</li>
+     * </ul>
      */
     public static boolean isSafePath(String filePath) {
+        // 1. Null byte injection
+        if (filePath.contains("\0")) {
+            return false;
+        }
+
+        // 2. Absolute paths (Unix and Windows)
+        if (filePath.startsWith("/") || filePath.startsWith("\\")) {
+            return false;
+        }
+
+        // 3. Windows drive letters (e.g. C:\, D:/)
+        if (filePath.length() >= 2 && Character.isLetter(filePath.charAt(0)) && filePath.charAt(1) == ':') {
+            return false;
+        }
+
         try {
-            if (filePath.startsWith("/") || filePath.startsWith("\\")) {
+            // 4. Resolve and check confinement (catches ../, encoded, and Unicode tricks)
+            Path tmpDir = Path.of("/tmp");
+            Path resolved = tmpDir.resolve(filePath).normalize();
+            if (!resolved.startsWith(tmpDir)) {
                 return false;
             }
 
-            Path normalized = Paths.get(filePath).normalize();
+            Path entryPath = Path.of(filePath);
 
-            return !(normalized.isAbsolute() || normalized.startsWith("..") || normalized.toString().startsWith(".."));
+            // 5. Suspicious segments (defense-in-depth, catches obfuscated variants)
+            for (Path segment : entryPath) {
+                String seg = segment.toString();
+                if (seg.equals("..") || seg.startsWith("..\\") || seg.startsWith("../")) {
+                    return false;
+                }
+            }
         } catch (InvalidPathException e) {
             return false;
         }
+
+        return true;
     }
 }

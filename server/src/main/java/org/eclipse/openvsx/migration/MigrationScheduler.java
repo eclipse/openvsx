@@ -39,7 +39,7 @@ public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?
     @Job(name = "Schedule migrations", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
         orphanNamespaceMigration.fixOrphanNamespaces();
-        if(!mirrorEnabled) {
+        if (!mirrorEnabled) {
             scheduler.enqueue(new HandlerJobRequest<>(GenerateKeyPairJobRequestHandler.class));
         }
 

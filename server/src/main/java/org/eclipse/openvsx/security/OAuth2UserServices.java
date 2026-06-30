@@ -34,9 +34,6 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNullElse;
-import static org.eclipse.openvsx.entities.UserData.ROLE_ADMIN;
-import static org.eclipse.openvsx.entities.UserData.ROLE_PRIVILEGED;
 import static org.eclipse.openvsx.security.CodedAuthException.*;
 import static org.springframework.security.core.authority.AuthorityUtils.createAuthorityList;
 
@@ -147,10 +144,13 @@ public class OAuth2UserServices {
     }
 
     private Collection<GrantedAuthority> getAuthorities(UserData userData) {
-        return switch (requireNonNullElse(userData.getRole(), "")) {
-            case ROLE_ADMIN -> createAuthorityList("ROLE_ADMIN");
-            case ROLE_PRIVILEGED -> createAuthorityList("ROLE_PRIVILEGED");
-            default -> emptyList();
+        var role = userData.getRole();
+        if (role == null) {
+            return emptyList();
+        }
+        return switch (role) {
+            case ADMIN -> createAuthorityList("ROLE_ADMIN");
+            case PRIVILEGED -> createAuthorityList("ROLE_PRIVILEGED");
         };
     }
 }

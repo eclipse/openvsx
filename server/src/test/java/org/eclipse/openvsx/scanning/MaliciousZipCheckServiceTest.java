@@ -125,8 +125,35 @@ class MaliciousZipCheckServiceTest {
         var result = service.check(createContext(extensionFile));
 
         assertFalse(result.passed());
-        assertEquals(1, result.failures().size());
+        assertEquals(2, result.failures().size());
         assertEquals("DUPLICATE_NORMALIZED_ENTRIES", result.failures().getFirst().ruleName());
+        assertEquals("UNSAFE_PATH_DETECTED", result.failures().getLast().ruleName());
+    }
+
+    // --- Unsafe paths checks ---
+
+    @Test
+    void check_failsWhenAbsolutePathIsFound() throws Exception {
+        TempFile extensionFile = createZipWithEntries("extra.vsix", "/etc/passwd");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("UNSAFE_PATH_DETECTED", result.failures().getFirst().ruleName());
+        assertTrue(result.failures().getFirst().reason().contains("extension file contains zip entries with a suspicious path"));
+    }
+
+    @Test
+    void check_failsWhenPathTraversalIsFound() throws Exception {
+        TempFile extensionFile = createZipWithEntries("extra.vsix", "abc/../../test.txt");
+
+        var result = service.check(createContext(extensionFile));
+
+        assertFalse(result.passed());
+        assertEquals(1, result.failures().size());
+        assertEquals("UNSAFE_PATH_DETECTED", result.failures().getFirst().ruleName());
+        assertTrue(result.failures().getFirst().reason().contains("extension file contains zip entries with a suspicious path"));
     }
 
     // --- Helper methods ---

@@ -97,7 +97,7 @@ const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
             content: '" "',
             width: '16px',
             height: '16px',
-            marginRight: '8px',
+            marginRight: '8px'
         },
         '& p': {
             margin: 0
@@ -156,7 +156,6 @@ const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
 }));
 
 export const SanitizedMarkdown: FunctionComponent<SanitizedMarkdownProps> = ({ content, sanitize, linkify }) => {
-
     const markdownIt = new MarkdownIt({
         html: true,
         linkify: true,
@@ -186,8 +185,7 @@ export const SanitizedMarkdown: FunctionComponent<SanitizedMarkdownProps> = ({ c
     }, []);
 
     const renderedMd = markdownIt.render(content);
-    const sanitized = sanitize === undefined || sanitize
-        ? DOMPurify.sanitize(renderedMd) : renderedMd;
+    const sanitized = sanitize === undefined || sanitize ? DOMPurify.sanitize(renderedMd) : renderedMd;
 
     return <Markdown dangerouslySetInnerHTML={{ __html: sanitized }} />;
 };

@@ -21,29 +21,30 @@ export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = 
     const memberUser = props.member.user;
     const context = useContext(MainContext);
     const contextUser = context.user;
-    return <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
-        <Box alignItems='center' overflow='auto' width='33%'>
-            <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>{memberUser.loginName}</Typography>
-            {memberUser.fullName ? <Typography variant='body2'>{memberUser.fullName}</Typography> : ''}
-        </Box>
-        {
-            memberUser.avatarUrl ?
+    return (
+        <Box key={'member:' + memberUser.loginName} p={2} display='flex' alignItems='center'>
+            <Box alignItems='center' overflow='auto' width='33%'>
+                <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {memberUser.loginName}
+                </Typography>
+                {memberUser.fullName ? <Typography variant='body2'>{memberUser.fullName}</Typography> : ''}
+            </Box>
+            {memberUser.avatarUrl ? (
                 <Box display='flex' alignItems='center'>
                     <Avatar src={memberUser.avatarUrl}></Avatar>
                 </Box>
-                : ''
-        }
-        <Box
-            sx={{
-                flex: 1,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-            }}
-        >
-            {
-                props.fixSelf && equalUser(memberUser, contextUser) ?
+            ) : (
+                ''
+            )}
+            <Box
+                sx={{
+                    flex: 1,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                }}>
+                {props.fixSelf && equalUser(memberUser, contextUser) ? (
                     <Box
                         sx={{
                             fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -55,17 +56,18 @@ export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = 
                             borderRadius: 4,
                             padding: '5px 15px',
                             fontSize: '0.875rem'
-                        }}
-                    >
+                        }}>
                         Owner
                     </Box>
-                    :
+                ) : (
                     <>
                         <Box m={1}>
                             <Select
                                 variant='outlined'
                                 value={props.member.role}
-                                onChange={(event: SelectChangeEvent<MembershipRole>) => props.onChangeRole(event.target.value as MembershipRole)}>
+                                onChange={(event: SelectChangeEvent<MembershipRole>) =>
+                                    props.onChangeRole(event.target.value as MembershipRole)
+                                }>
                                 <MenuItem value='contributor'>Contributor</MenuItem>
                                 <MenuItem value='owner'>Owner</MenuItem>
                             </Select>
@@ -77,9 +79,10 @@ export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = 
                             Delete
                         </Button>
                     </>
-            }
+                )}
+            </Box>
         </Box>
-    </Box>;
+    );
 };
 
 export interface UserNamespaceMemberProps {

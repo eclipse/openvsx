@@ -18,18 +18,19 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.SemanticVersion;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -43,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
 @RestController
+@Validated
 public class RegistryAPI {
     private static final int REVIEW_TITLE_SIZE = 255;
     private static final int REVIEW_COMMENT_SIZE = 2048;
@@ -95,14 +97,15 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                         .body(registry.getNamespace(namespace));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
+
         var json = NamespaceJson.error("Namespace not found: " + namespace);
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -135,7 +138,7 @@ public class RegistryAPI {
             return ResponseEntity.ok(local.verifyToken(namespace, token));
         } catch (NotFoundException exc) {
             var json = ResultJson.error("Namespace not found: " + namespace);
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
         }
@@ -163,6 +166,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
+                        // do not cache to avoid stale data
                         .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getNamespaceDetails(namespace));
             } catch (NotFoundException exc) {
@@ -170,7 +174,7 @@ public class RegistryAPI {
             }
         }
         var json = NamespaceDetailsJson.error(namespaceNotFoundMessage(namespace));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     private String extensionNotFoundMessage(String extension) {
@@ -179,18 +183,6 @@ public class RegistryAPI {
 
     private String namespaceNotFoundMessage(String namespace) {
         return "Namespace not found: " + namespace;
-    }
-
-    private String negativeSizeMessage() {
-      return negativeParameterMessage("size");
-    }
-
-    private String negativeOffsetMessage() {
-        return negativeParameterMessage("offset");
-    }
-
-    private String negativeParameterMessage(String field) {
-        return "The parameter '" + field + "' must not be negative.";
     }
 
     @GetMapping(
@@ -221,7 +213,7 @@ public class RegistryAPI {
             }
         }
 
-        throw new NotFoundException();
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping(
@@ -248,6 +240,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
+                        // do not cache the response, avoid stale data
                         .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getExtension(namespace, extension, null));
             } catch (NotFoundException exc) {
@@ -255,7 +248,7 @@ public class RegistryAPI {
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -295,14 +288,15 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        // do not cache the response, avoid stale data
+                        .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getExtension(namespace, extension, targetPlatform.toString()));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform.toString(), null)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -330,15 +324,21 @@ public class RegistryAPI {
     ) {
         for (var registry : getRegistries()) {
             try {
-                return ResponseEntity.ok()
-                        .cacheControl(CacheControl.noCache().cachePublic())
-                        .body(registry.getExtension(namespace, extension, null, version));
+                var result = registry.getExtension(namespace, extension, null, version);
+                var response = ResponseEntity.ok();
+                if (VersionAlias.isAlias(version)) {
+                    // if it's a version alias, do not cache the response, avoid stale data
+                    response = response.cacheControl(CacheControl.noCache().cachePublic());
+                } else {
+                    response = response.cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic());
+                }
+                return response.body(result);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, version)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -379,15 +379,21 @@ public class RegistryAPI {
     ) {
         for (var registry : getRegistries()) {
             try {
-                return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
-                        .body(registry.getExtension(namespace, extension, targetPlatform, version));
+                var result = registry.getExtension(namespace, extension, targetPlatform, version);
+                var response = ResponseEntity.ok();
+                if (VersionAlias.isAlias(version)) {
+                    // if it's a version alias, do not cache the response, avoid stale data
+                    response = response.cacheControl(CacheControl.noCache().cachePublic());
+                } else {
+                    response = response.cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic());
+                }
+                return response.body(result);
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = ExtensionJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform, version)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -411,9 +417,12 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension name", example = "vim")
             String extension,
             @RequestParam(defaultValue = "18")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 100, message = "parameter must not exceed 100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "18"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
@@ -454,9 +463,12 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @RequestParam(defaultValue = "18")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 100, message = "parameter must not exceed 100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "18"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
@@ -464,25 +476,19 @@ public class RegistryAPI {
     }
 
     private ResponseEntity<VersionsJson> handleGetVersions(String namespace, String extension, String targetPlatform, int size, int offset) {
-        if (size < 0) {
-            var json = VersionsJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = VersionsJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
         for (var registry : getRegistries()) {
             try {
+                // allow to cache the response for upto 5 min and force clients to revalidate
+                // as the response is not yet cached internally and will require DB access
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                         .body(registry.getVersions(namespace, extension, targetPlatform, size, offset));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = VersionsJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -506,9 +512,12 @@ public class RegistryAPI {
             @PathVariable @Parameter(description = "Extension name", example = "svelte-vscode")
             String extension,
             @RequestParam(defaultValue = "18")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 100, message = "parameter must not exceed 100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "18"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
@@ -549,9 +558,12 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @RequestParam(defaultValue = "18")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 100, message = "parameter must not exceed 100")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "18"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
@@ -559,25 +571,19 @@ public class RegistryAPI {
     }
 
     private ResponseEntity<VersionReferencesJson> handleGetVersionReferences(String namespace, String extension, String targetPlatform, int size, int offset) {
-        if (size < 0) {
-            var json = VersionReferencesJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = VersionReferencesJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
         for (var registry : getRegistries()) {
             try {
+                // allow to cache the response for upto 5 min and force clients to revalidate
+                // as the response is not yet cached internally and will require DB access
                 return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                         .body(registry.getVersionReferences(namespace, extension, targetPlatform, size, offset));
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
         var json = VersionReferencesJson.error(extensionNotFoundMessage(NamingUtil.toLogFormat(namespace, extension, targetPlatform)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping("/api/{namespace}/{extension}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
@@ -619,7 +625,8 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/api/{namespace}/{extension}/{targetPlatform:" + TargetPlatform.NAMES_PATH_PARAM_REGEX + "}/{version:" + VERSION_PATH_PARAM_REGEX + "}/file/**")
@@ -674,7 +681,8 @@ public class RegistryAPI {
                 // Try the next registry
             }
         }
-        throw new NotFoundException();
+
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping(
@@ -701,6 +709,7 @@ public class RegistryAPI {
         for (var registry : getRegistries()) {
             try {
                 return ResponseEntity.ok()
+                        // do not cache to avoid stale data and show reviews immediately
                         .cacheControl(CacheControl.noCache().cachePublic())
                         .body(registry.getReviews(namespace, extension));
             } catch (NotFoundException exc) {
@@ -708,7 +717,7 @@ public class RegistryAPI {
             }
         }
         var json = ReviewListJson.error(extensionNotFoundMessage(NamingUtil.toExtensionId(namespace, extension)));
-        return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
     }
 
     @GetMapping(
@@ -750,9 +759,12 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @RequestParam(defaultValue = "18")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 1000, message = "parameter must not exceed 1000")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "1000", defaultValue = "18"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset,
             @RequestParam(defaultValue = "desc") 
@@ -765,15 +777,6 @@ public class RegistryAPI {
             @Parameter(description = "Whether to include information on all available versions for each returned entry")
             boolean includeAllVersions
     ) {
-        if (size < 0) {
-            var json = SearchResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = SearchResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-
         var options = new ISearchService.Options(query, category, targetPlatform, size, offset, sortOrder, sortBy, includeAllVersions, null);
         var resultOffset = 0;
         var resultSize = 0;
@@ -805,6 +808,7 @@ public class RegistryAPI {
         result.setTotalSize(resultSize);
         result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
+                // do not cache to avoid stale data, elasticsearch in general is fast
                 .cacheControl(CacheControl.noCache().cachePublic())
                 .body(result);
     }
@@ -876,21 +880,16 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @RequestParam(defaultValue = "100")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "100"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 1000, message = "parameter must not exceed 1000")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "1000", defaultValue = "100"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
-        if (size < 0) {
-            var json = QueryResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if(!List.of("true", "false", "links").contains(includeAllVersions)) {
+        if (!List.of("true", "false", "links").contains(includeAllVersions)) {
             var json = QueryResultJson.error("Invalid includeAllVersions value: " + includeAllVersions + ".");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
@@ -935,7 +934,8 @@ public class RegistryAPI {
         result.setTotalSize(resultSize);
         result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                // cache the response for upto 5 min and force clients to revalidate
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                 .body(result);
     }
 
@@ -993,21 +993,15 @@ public class RegistryAPI {
             )
             String targetPlatform,
             @RequestParam(defaultValue = "100")
-            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "100"))
+            @Min(value = 0, message = "parameter must not be negative")
+            @Max(value = 1000, message = "parameter must not exceed 1000")
+            @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "1000", defaultValue = "100"))
             int size,
             @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
             @Parameter(description = "Number of entries to skip (usually a multiple of the page size)", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
             int offset
     ) {
-        if (size < 0) {
-            var json = QueryResultJson.error(negativeSizeMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (offset < 0) {
-            var json = QueryResultJson.error(negativeOffsetMessage());
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        
         var request = new QueryRequest(
                 namespaceName,
                 extensionName,
@@ -1048,7 +1042,8 @@ public class RegistryAPI {
         result.setOffset(resultOffset);
         result.setExtensions(resultExtensions);
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                // cache the response for upto 5 min and force client to revalidate
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                 .body(result);
     }
 
@@ -1095,6 +1090,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(summary = "Create a namespace")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully created the namespace",
@@ -1155,6 +1151,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully created the namespace",
@@ -1222,6 +1219,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully published the extension",
@@ -1269,6 +1267,7 @@ public class RegistryAPI {
             required = true
         )
     )
+    @MutatingOperation
     @ApiResponse(
         responseCode = "201",
         description = "Successfully published the extension",
@@ -1315,6 +1314,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
+    @MutatingOperation
     public ResponseEntity<ResultJson> postReview(
             @RequestBody(required = false) ReviewJson review,
             @PathVariable String namespace,
@@ -1349,6 +1349,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(hidden = true)
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteReview(@PathVariable String namespace, @PathVariable String extension) {
         var json = local.deleteReview(namespace, extension);
         if (json.getError() == null) {
@@ -1405,7 +1406,7 @@ public class RegistryAPI {
     public ResponseEntity<RegistryVersionJson> getServerVersion() {
         try {
             return ResponseEntity.ok()
-                        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                        .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                         .body(local.getRegistryVersion());
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(RegistryVersionJson.class);

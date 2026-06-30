@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror.aop;
 
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class DownloadCountServiceAspect {
 
     @Around("execution(* org.eclipse.openvsx.storage.log.*DownloadCountService.isEnabled(..))")
-    public Object isEnabled() throws Throwable {
+    public Object isEnabled(ProceedingJoinPoint ignoredPjp) throws Throwable {
         return false;
     }
 }

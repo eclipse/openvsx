@@ -31,18 +31,18 @@ const URL_PARAMS = {
     STATUS_FILTERS: 'status',
     QUARANTINE_FILTERS: 'quarantine',
     THREAT_SCANNER_FILTERS: 'threatScanner',
-    VALIDATION_TYPE_FILTERS: 'validationType',
+    VALIDATION_TYPE_FILTERS: 'validationType'
 } as const;
 
 /**
  * Tab name to index mapping
  */
 const TAB_NAME_TO_INDEX: Record<string, number> = {
-    'scans': 0,
-    'quarantined': 1,
+    scans: 0,
+    quarantined: 1,
     'auto-rejected': 2,
     'allowed-files': 3,
-    'blocked-files': 4,
+    'blocked-files': 4
 };
 
 const TAB_INDEX_TO_NAME: Record<number, string> = {
@@ -50,7 +50,7 @@ const TAB_INDEX_TO_NAME: Record<number, string> = {
     1: 'quarantined',
     2: 'auto-rejected',
     3: 'allowed-files',
-    4: 'blocked-files',
+    4: 'blocked-files'
 };
 
 /**
@@ -207,7 +207,7 @@ export const useUrlSync = () => {
 
         // Enforcement (only add if not tab-specific default)
         // Tabs 1 (Quarantined) and 2 (Auto Rejected) default to 'enforced', others default to 'all'
-        const defaultEnforcement = (state.selectedTab === 1 || state.selectedTab === 2) ? 'enforced' : 'all';
+        const defaultEnforcement = state.selectedTab === 1 || state.selectedTab === 2 ? 'enforced' : 'all';
         if (state.enforcement !== defaultEnforcement) {
             params.set(URL_PARAMS.ENFORCEMENT, state.enforcement);
         }
@@ -234,15 +234,26 @@ export const useUrlSync = () => {
 
         // Build new URL
         const newSearch = params.toString();
-        const newUrl = newSearch
-            ? `${window.location.pathname}?${newSearch}`
-            : window.location.pathname;
+        const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
 
         // Update URL without triggering a page reload
         if (window.location.search !== (newSearch ? `?${newSearch}` : '')) {
             window.history.replaceState(null, '', newUrl);
         }
-    }, [state.selectedTab, state.currentPage, state.publisherQuery, state.namespaceQuery, state.nameQuery, state.dateRange, state.fileDateRange, state.enforcement, state.statusFilters, state.quarantineFilters, state.threatScannerFilters, state.validationTypeFilters]);
+    }, [
+        state.selectedTab,
+        state.currentPage,
+        state.publisherQuery,
+        state.namespaceQuery,
+        state.nameQuery,
+        state.dateRange,
+        state.fileDateRange,
+        state.enforcement,
+        state.statusFilters,
+        state.quarantineFilters,
+        state.threatScannerFilters,
+        state.validationTypeFilters
+    ]);
 
     /**
      * Handle browser back/forward navigation
@@ -286,7 +297,7 @@ export const useUrlSync = () => {
 
     return {
         initializeFromUrl,
-        updateUrlFromState,
+        updateUrlFromState
     };
 };
 

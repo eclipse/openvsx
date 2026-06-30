@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.accesstoken;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.settings.SettingsService;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +22,21 @@ public class ExpirePersonalAccessTokensHandler implements JobRequestHandler<Hand
 
     private final Logger logger = LoggerFactory.getLogger(ExpirePersonalAccessTokensHandler.class);
 
+    private final SettingsService settings;
     private final AccessTokenService tokens;
 
-    public ExpirePersonalAccessTokensHandler(AccessTokenService tokens) {
+    public ExpirePersonalAccessTokensHandler(SettingsService settings, AccessTokenService tokens) {
+        this.settings = settings;
         this.tokens = tokens;
     }
 
     @Override
+    @Job(name = "Expire access tokens", retries = 0)
     public void run(HandlerJobRequest<?> handlerJobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         var count = tokens.expireAccessTokens();
         if (count > 0) {
             logger.info("Expired {} personal access token(s)", count);

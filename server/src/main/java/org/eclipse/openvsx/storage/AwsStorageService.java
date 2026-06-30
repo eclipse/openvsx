@@ -7,14 +7,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
 package org.eclipse.openvsx.storage;
 
+import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -76,45 +78,75 @@ public class AwsStorageService implements IStorageService {
     @Value("${ovsx.storage.aws.path-style-access:false}")
     boolean pathStyleAccess;
 
-    private S3Client s3Client;
+    private volatile S3Client s3Client;
+    private volatile S3Presigner s3Presigner;
 
     public AwsStorageService(FileCacheDurationConfig fileCacheDurationConfig, FilesCacheKeyGenerator filesCacheKeyGenerator) {
         this.fileCacheDurationConfig = fileCacheDurationConfig;
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
     }
 
+    @PreDestroy
+    public void close() {
+        if (s3Presigner != null) {
+            try {
+                s3Presigner.close();
+            } catch (RuntimeException _) {}
+        }
+
+        if (s3Client != null) {
+            try {
+                s3Client.close();
+            } catch (RuntimeException _) {}
+        }
+    }
+
     public S3Client getS3Client() {
+        // lazily generates the s3 client using double-checked locking
         if (s3Client == null) {
-            var s3ClientBuilder = S3Client.builder()
-                    .defaultsMode(DefaultsMode.STANDARD)
-                    .forcePathStyle(pathStyleAccess)
-                    .region(Region.of(region))
-                    .credentialsProvider(getCredentialsProvider());
+            synchronized (this) {
+                if (s3Client == null) {
+                    var s3ClientBuilder = S3Client.builder()
+                            .defaultsMode(DefaultsMode.STANDARD)
+                            .forcePathStyle(pathStyleAccess)
+                            .region(Region.of(region))
+                            .credentialsProvider(getCredentialsProvider());
 
-            if(StringUtils.isNotEmpty(serviceEndpoint)) {
-                var endpointParams = S3EndpointParams.builder()
-                        .endpoint(serviceEndpoint)
-                        .region(Region.of(region))
-                        .build();
+                    var serviceEndpoint = getServiceEndpoint();
+                    if (serviceEndpoint != null) {
+                        s3ClientBuilder = s3ClientBuilder.endpointOverride(serviceEndpoint);
+                    }
 
-                var endpoint = S3EndpointProvider
-                        .defaultProvider()
-                        .resolveEndpoint(endpointParams).join();
-
-                s3ClientBuilder = s3ClientBuilder.endpointOverride(endpoint.url());
+                    s3Client = s3ClientBuilder.build();
+                }
             }
-
-            s3Client = s3ClientBuilder.build();
         }
         return s3Client;
     }
 
     private S3Presigner getS3Presigner() {
-        var builder = S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(getCredentialsProvider());
+        // lazily generates the s3 presigner using double-checked locking
+        if (s3Presigner == null) {
+            synchronized (this) {
+                if (s3Presigner == null) {
+                    var builder = S3Presigner.builder()
+                            .region(Region.of(region))
+                            .credentialsProvider(getCredentialsProvider());
 
-        if(StringUtils.isNotEmpty(serviceEndpoint)) {
+                    var serviceEndpoint = getServiceEndpoint();
+                    if (serviceEndpoint != null) {
+                        builder = builder.endpointOverride(serviceEndpoint);
+                    }
+
+                    s3Presigner = builder.build();
+                }
+            }
+        }
+        return s3Presigner;
+    }
+
+    private @Nullable URI getServiceEndpoint() {
+        if (StringUtils.isNotEmpty(serviceEndpoint)) {
             var endpointParams = S3EndpointParams.builder()
                     .endpoint(serviceEndpoint)
                     .region(Region.of(region))
@@ -124,10 +156,10 @@ public class AwsStorageService implements IStorageService {
                     .defaultProvider()
                     .resolveEndpoint(endpointParams).join();
 
-            builder = builder.endpointOverride(endpoint.url());
+            return endpoint.url();
         }
 
-        return builder.build();
+        return null;
     }
 
     private AwsCredentialsProvider getCredentialsProvider() {
@@ -141,7 +173,6 @@ public class AwsStorageService implements IStorageService {
         return DefaultCredentialsProvider.create();
     }
 
-
     private boolean hasStaticCredentials() {
         return !StringUtils.isEmpty(accessKeyId) && !StringUtils.isEmpty(secretAccessKey);
     }
@@ -149,6 +180,7 @@ public class AwsStorageService implements IStorageService {
     private boolean hasSessionToken() {
         return !StringUtils.isEmpty(sessionToken);
     }
+
     @Override
     public boolean isEnabled() {
         // Require region and bucket to be configured
@@ -183,12 +215,20 @@ public class AwsStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectKey) {
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
+
+        // see https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingMetadata.html
         var metadata = new HashMap<String, String>();
-        metadata.put("Content-Type", StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix")) {
-            metadata.put("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        } else {
-            metadata.put("Cache-Control", StorageUtil.getCacheControl(fileName).getHeaderValue());
+        if (headers.getContentType() != null) {
+            metadata.put("Content-Type", headers.getContentType().toString());
+        }
+
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            metadata.put("Content-Disposition", headers.getContentDisposition().toString());
+        }
+
+        if (headers.getCacheControl() != null) {
+            metadata.put("Cache-Control", headers.getCacheControl());
         }
 
         var request = PutObjectRequest.builder()
@@ -240,10 +280,8 @@ public class AwsStorageService implements IStorageService {
                 .getObjectRequest(objectRequest)
                 .build();
 
-        try (var presigner = getS3Presigner()) {
-            var presignedRequest = presigner.presignGetObject(presignRequest);
-            return presignedRequest.httpRequest().getUri();
-        }
+        var presignedRequest = getS3Presigner().presignGetObject(presignRequest);
+        return presignedRequest.httpRequest().getUri();
     }
 
     @Override

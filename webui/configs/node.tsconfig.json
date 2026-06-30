@@ -1,27 +1,22 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
+    "compilerOptions": {
+        "target": "ESNext",
 
-    "lib": [
-      "ESNext"
-    ],
+        "lib": ["ESNext"],
 
-    "module": "ESNext",
-    "skipLibCheck": true,
+        "module": "ESNext",
+        "skipLibCheck": true,
 
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "moduleDetection": "force",
-    "noEmit": true,
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "moduleDetection": "force",
+        "noEmit": true,
 
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true
+    },
 
-  "include": [
-    "../vite.config.mts",
-    "../configs/**.ts"
-  ]
+    "include": ["../vite.config.mts", "../configs/**.ts"]
 }

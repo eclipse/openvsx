@@ -9,18 +9,53 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import jakarta.servlet.http.HttpServletRequest;
+import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.ICON;
+import static org.eclipse.openvsx.entities.FileResource.LICENSE;
+import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
+import static org.eclipse.openvsx.entities.FileResource.README;
+import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
+import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.*;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.ScanStatus;
+import org.eclipse.openvsx.entities.UsageStats;
+import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.json.CsrfTokenJson;
+import org.eclipse.openvsx.json.CustomerJson;
+import org.eclipse.openvsx.json.ErrorJson;
+import org.eclipse.openvsx.json.ExtensionJson;
+import org.eclipse.openvsx.json.LoginProvidersJson;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
+import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.NamespaceMembershipListJson;
+import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
+import org.eclipse.openvsx.json.UsageStatsListJson;
+import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,16 +63,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.eclipse.openvsx.entities.FileResource.*;
-import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class UserAPI {
@@ -122,7 +157,7 @@ public class UserAPI {
         }
         var json = user.toUserJson();
         var serverUrl = UrlUtil.getBaseUrl();
-        json.setRole(user.getRole());
+        json.setRole(user.getRoleAsString());
         json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
         json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
         eclipse.enrichUserJsonWithPublisherAgreement(json, user);
@@ -163,6 +198,7 @@ public class UserAPI {
         path = "/user/token/create",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<AccessTokenJson> createAccessToken(@RequestParam(required = false) String description) {
         if (description != null && description.length() > TOKEN_DESCRIPTION_SIZE) {
             var json = AccessTokenJson.error("The description must not be longer than " + TOKEN_DESCRIPTION_SIZE + " characters.");
@@ -180,6 +216,7 @@ public class UserAPI {
         path = "/user/token/delete/{id}",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteAccessToken(@PathVariable long id) {
         var user = users.findLoggedInUser();
         if (user == null) {
@@ -345,6 +382,7 @@ public class UserAPI {
             path = "/user/extension/{namespaceName}/{extensionName}/delete",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteExtension(
             @PathVariable String namespaceName,
             @PathVariable String extensionName,
@@ -400,6 +438,7 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/details",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> updateNamespaceDetails(@RequestBody NamespaceDetailsJson details) {
         var user = users.findLoggedInUser();
         if (user == null) {
@@ -423,6 +462,7 @@ public class UserAPI {
             produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> updateNamespaceDetailsLogo(
             @PathVariable String namespace,
             @RequestParam MultipartFile file
@@ -464,6 +504,7 @@ public class UserAPI {
         path = "/user/namespace/{namespace}/role",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> setNamespaceMember(@PathVariable String namespace, @RequestParam String user,
             @RequestParam String role, @RequestParam(required = false) String provider) {
         var requestingUser = users.findLoggedInUser();
@@ -533,7 +574,8 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        return repositories.findUsersByLoginNameStartingWith(name, 5).stream()
+        var pageable = Pageable.ofSize(5);
+        return repositories.searchUsers(name, null, pageable).stream()
                 .map(UserData::toUserJson)
                 .toList();
     }
@@ -551,7 +593,7 @@ public class UserAPI {
             var agreement = eclipse.signPublisherAgreement(user);
             var json = user.toUserJson();
             var serverUrl = UrlUtil.getBaseUrl();
-            json.setRole(user.getRole());
+            json.setRole(user.getRoleAsString());
             json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
             json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
             eclipse.enrichUserJson(json, user, agreement);

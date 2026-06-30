@@ -22,11 +22,11 @@ export const TAB_DEFINITIONS = [
     { index: 1, name: 'Quarantined', path: 'quarantined' },
     { index: 2, name: 'Auto Rejected', path: 'auto-rejected' },
     { index: 3, name: 'Allowed Files', path: 'allowed-files' },
-    { index: 4, name: 'Blocked Files', path: 'blocked-files' },
+    { index: 4, name: 'Blocked Files', path: 'blocked-files' }
 ] as const;
 
 export type TabIndex = 0 | 1 | 2 | 3 | 4;
-export type TabName = typeof TAB_DEFINITIONS[number]['name'];
+export type TabName = (typeof TAB_DEFINITIONS)[number]['name'];
 
 /**
  * Hook for managing tab navigation state and actions.
@@ -34,11 +34,14 @@ export type TabName = typeof TAB_DEFINITIONS[number]['name'];
 export const useTabNavigation = () => {
     const { state, actions } = useScanContext();
 
-    const setTab = useCallback((tab: number) => {
-        if (tab >= 0 && tab <= 4) {
-            actions.setTab(tab);
-        }
-    }, [actions]);
+    const setTab = useCallback(
+        (tab: number) => {
+            if (tab >= 0 && tab <= 4) {
+                actions.setTab(tab);
+            }
+        },
+        [actions]
+    );
 
     const currentTab = useMemo(() => {
         return TAB_DEFINITIONS[state.selectedTab] || TAB_DEFINITIONS[0];
@@ -53,30 +56,33 @@ export const useTabNavigation = () => {
     const isScanDataTab = state.selectedTab <= 2;
     const isFileDataTab = state.selectedTab >= 3;
 
-    return useMemo(() => ({
-        selectedTab: state.selectedTab,
-        currentTab,
-        tabs: TAB_DEFINITIONS,
-        setTab,
-        isScansTab,
-        isQuarantinedTab,
-        isAutoRejectedTab,
-        isAllowListTab,
-        isBlockListTab,
-        isScanDataTab,
-        isFileDataTab,
-    }), [
-        state.selectedTab,
-        currentTab,
-        setTab,
-        isScansTab,
-        isQuarantinedTab,
-        isAutoRejectedTab,
-        isAllowListTab,
-        isBlockListTab,
-        isScanDataTab,
-        isFileDataTab,
-    ]);
+    return useMemo(
+        () => ({
+            selectedTab: state.selectedTab,
+            currentTab,
+            tabs: TAB_DEFINITIONS,
+            setTab,
+            isScansTab,
+            isQuarantinedTab,
+            isAutoRejectedTab,
+            isAllowListTab,
+            isBlockListTab,
+            isScanDataTab,
+            isFileDataTab
+        }),
+        [
+            state.selectedTab,
+            currentTab,
+            setTab,
+            isScansTab,
+            isQuarantinedTab,
+            isAutoRejectedTab,
+            isAllowListTab,
+            isBlockListTab,
+            isScanDataTab,
+            isFileDataTab
+        ]
+    );
 };
 
 export type UseTabNavigationReturn = ReturnType<typeof useTabNavigation>;

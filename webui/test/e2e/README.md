@@ -17,10 +17,10 @@ npm install --with-deps
 
 The smoke tests run against the webui and can be executed in various modes, each suitable for different stages of development and debugging:
 
-* *Headless Mode* (default): Use `yarn smoke-tests` in [`webui/`](../..), which runs tests in headless mode. This mode is faster and ideal if you are just interested in the results and for CI/CD environments.
-* *Headed Mode*: If you want to observe the tests execution in a browser window, you can run them in headed mode using `yarn smoke-tests --headed`.
-* *UI Mode*: Playwright provides a dedicated UI mode with `yarn smoke-tests --ui`. The UI mode provides a visual interactive interface to execute and step through tests.
-* *Debugging*: For debugging, Playwright provides a `--debug` mode, which opens the Playwright Inspector for a more in-depth examination of test execution.
+- _Headless Mode_ (default): Use `yarn smoke-tests` in [`webui/`](../..), which runs tests in headless mode. This mode is faster and ideal if you are just interested in the results and for CI/CD environments.
+- _Headed Mode_: If you want to observe the tests execution in a browser window, you can run them in headed mode using `yarn smoke-tests --headed`.
+- _UI Mode_: Playwright provides a dedicated UI mode with `yarn smoke-tests --ui`. The UI mode provides a visual interactive interface to execute and step through tests.
+- _Debugging_: For debugging, Playwright provides a `--debug` mode, which opens the Playwright Inspector for a more in-depth examination of test execution.
 
 More detailed information on running tests can be found in the [Playwright documentation](https://playwright.dev/docs/running-tests) and the [command line options guide](https://playwright.dev/docs/test-cli).
 
@@ -65,6 +65,6 @@ export default defineConfig<SmokeTestOptions>({
 To execute the tests with the custom configuration above, use the following command:
 
 ```bash
-npx playwright test --config=staging.playwright.dev.config.ts 
+npx playwright test --config=staging.playwright.dev.config.ts
 
 ```

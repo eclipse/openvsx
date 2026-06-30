@@ -24,10 +24,7 @@ const getQueryStringVal = (key: string): string | null => {
     return getQuery().get(key);
 };
 
-const useQueryParam = (
-    key: string,
-    defaultVal: string
-): [string, (val: string) => void] => {
+const useQueryParam = (key: string, defaultVal: string): [string, (val: string) => void] => {
     const [query, setQuery] = useState(getQueryStringVal(key) || defaultVal);
 
     const updateUrl = (newVal: string) => {

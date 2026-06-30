@@ -9,19 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.QueryRequest;
-import org.eclipse.openvsx.storage.*;
-import org.eclipse.openvsx.util.ExtensionId;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.Invocation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ActiveProfiles;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.lang.reflect.Modifier;
 import java.time.Duration;
@@ -30,9 +20,37 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import org.eclipse.openvsx.entities.AdminScanDecision;
+import org.eclipse.openvsx.entities.Customer;
+import org.eclipse.openvsx.entities.DailyUsageStats;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionScan;
+import org.eclipse.openvsx.entities.ExtensionThreat;
+import org.eclipse.openvsx.entities.ExtensionValidationFailure;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.ScanCheckResult;
+import org.eclipse.openvsx.entities.ScanStatus;
+import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.eclipse.openvsx.entities.Tier;
+import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.UsageStats;
+import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.util.ExtensionId;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.Invocation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
+
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
 /**
  * Run the DB queries and assert no DB error, just to ensure that the queries
@@ -189,7 +207,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findTargetPlatformVersions("version", "extensionName", "namespaceName"),
                 () -> repositories.findUserByLoginName("provider", "loginName"),
-                () -> repositories.findUsersByLoginNameStartingWith("loginNameStart", 1),
+                () -> repositories.searchUsers("search", "role", Pageable.ofSize(25)),
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findVersions(extension),

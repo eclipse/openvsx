@@ -8,97 +8,292 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useState, useContext, createContext, useEffect, useRef, useCallback, ReactNode } from 'react';
-import { Typography, Box } from '@mui/material';
+import { FunctionComponent, SyntheticEvent, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+    Alert,
+    Autocomplete,
+    Avatar,
+    Box,
+    Chip,
+    IconButton,
+    InputBase,
+    MenuItem,
+    Paper,
+    Select,
+    Stack,
+    Typography
+} from '@mui/material';
+import type { AutocompleteInputChangeReason, AutocompleteRenderInputParams } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PersonIcon from '@mui/icons-material/Person';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PublisherInfo } from '../../extension-registry-types';
+import { UserRelationships } from '../../extension-registry-types';
+import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
-import { StyledInput } from './namespace-input';
-import { SearchListContainer } from './search-list-container';
 import { PublisherDetails } from './publisher-details';
+import { SearchListContainer } from './search-list-container';
+import { handleError as formatError } from '../../utils';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
+import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
+import { useInfinitePublishers } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const UpdateContext = createContext({ handleUpdate: () => { } });
+export const UpdateContext = createContext({ handleUpdate: () => {} });
+
+const ROLE_FILTER_OPTIONS = [
+    { value: '', label: 'Any role' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'privileged', label: 'Privileged' },
+    { value: 'none', label: 'No role' }
+];
+
+// How close to the bottom of the dropdown (in px) the user must scroll before the next page loads.
+const LOAD_MORE_THRESHOLD = 200;
+
+const roleIcon = (role: string | undefined) =>
+    role ? <AdminPanelSettingsIcon fontSize='small' /> : <PersonIcon fontSize='small' />;
 
 export const PublisherAdmin: FunctionComponent = () => {
-    const { publisher: publisherParam } = useParams<{ publisher: string }>();
+    const { publisher: publisherParam } = useParams<{ publisher?: string }>();
     const navigate = useNavigate();
-    const { pageSettings, service, user, handleError } = useContext(MainContext);
+    const queryClient = useQueryClient();
+    const { pageSettings } = useContext(MainContext);
 
-    const abortController = useRef<AbortController>(new AbortController());
+    const [searchText, setSearchText] = useState(publisherParam ?? '');
+    const [inputValue, setInputValue] = useState(publisherParam ?? '');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [selected, setSelected] = useState<UserRelationships | null>(null);
+
+    const debouncedSetSearch = useDebouncedCallback(setSearchText);
+
+    const { data, isFetching, isFetchingNextPage, error, hasNextPage, fetchNextPage } = useInfinitePublishers(
+        searchText,
+        roleFilter
+    );
+
+    const publishers = useMemo(() => data?.pages.flatMap(page => page.content) ?? [], [data]);
+    const listLoading = isFetching && !isFetchingNextPage;
+
+    // Resolve a deep-linked publisher once the matching page has loaded.
     useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const [loading, setLoading] = useState(false);
-
-    const [publisher, setPublisher] = useState<PublisherInfo | undefined>();
-    const [notFound, setNotFound] = useState('');
-
-    const fetchPublisher = useCallback(async (publisherName: string) => {
-        try {
-            setLoading(true);
-            if (publisherName === '') {
-                setNotFound('');
-                setPublisher(undefined);
-            } else {
-                const pub = await service.admin.getPublisherInfo(abortController.current, 'github', publisherName);
-                setNotFound('');
-                setPublisher(pub);
+        if (publisherParam && !selected) {
+            const match = publishers.find(p => p.user.loginName === publisherParam);
+            if (match) {
+                setSelected(match);
             }
-            setLoading(false);
-        } catch (err) {
-            if (err?.status === 404) {
-                setNotFound(publisherName);
-                setPublisher(undefined);
-            } else {
-                handleError(err);
+        }
+    }, [publisherParam, selected, publishers]);
+
+    const updateContextValue = useMemo(
+        () => ({
+            handleUpdate: () => {
+                queryClient.invalidateQueries({ queryKey: ['admin', 'publisher'] });
+                queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
             }
-            setLoading(false);
-        }
-    }, [service, handleError]);
+        }),
+        [queryClient]
+    );
 
-    useEffect(() => {
-        if (publisherParam) {
-            fetchPublisher(publisherParam);
+    const clearSelection = () => {
+        if (selected || publisherParam) {
+            setSelected(null);
+            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
         }
-    }, [publisherParam, fetchPublisher]);
+    };
 
-    const handleSubmit = (inputValue: string) => {
-        if (inputValue) {
-            navigate(`${AdminDashboardRoutes.PUBLISHER_ADMIN}/${inputValue}`);
+    const handleSelect = (_event: SyntheticEvent, value: UserRelationships | null) => {
+        if (!value) {
+            clearSelection();
+            return;
+        }
+        setSelected(value);
+        setInputValue(value.user.loginName);
+        navigate(`${AdminDashboardRoutes.PUBLISHER_ADMIN}/${encodeURIComponent(value.user.loginName)}`, {
+            replace: true
+        });
+    };
+
+    const handleInputChange = (_event: SyntheticEvent, value: string, reason: AutocompleteInputChangeReason) => {
+        setInputValue(value);
+        // 'reset' fires when the input syncs to the selected option's label — nothing else to do.
+        if (reason === 'reset') {
+            return;
+        }
+        clearSelection();
+        if (reason === 'clear') {
+            setSearchText('');
         } else {
-            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN);
+            debouncedSetSearch(value);
         }
     };
 
-    const handleUpdate = () => {
-        if (publisherParam) {
-            fetchPublisher(publisherParam);
+    const handleClear = () => {
+        setInputValue('');
+        setSearchText('');
+        clearSelection();
+    };
+
+    const loadMoreOnScroll = (event: SyntheticEvent) => {
+        const listbox = event.currentTarget as HTMLElement;
+        const reachedBottom = listbox.scrollHeight - listbox.scrollTop - listbox.clientHeight < LOAD_MORE_THRESHOLD;
+        if (reachedBottom && hasNextPage && !isFetchingNextPage) {
+            void fetchNextPage();
         }
     };
 
-    let listContainer: ReactNode = '';
-    if (publisher && pageSettings && user) {
-        listContainer = <UpdateContext.Provider value={{ handleUpdate }}>
-            <PublisherDetails publisherInfo={publisher} />
-        </UpdateContext.Provider>;
-    } else if (notFound) {
-        listContainer = <Box display='flex' flexDirection='column'>
-            <Typography variant='body1' color='error'>
-                Publisher {notFound} not found.
-            </Typography>
-        </Box>;
-    }
+    const searchIconColor = pageSettings?.themeType === 'dark' ? '#111111' : '#ffffff';
 
-    return <SearchListContainer
-        searchContainer={
-            [<StyledInput placeholder='Publisher Name' key='pi' value={publisherParam || ''} onSubmit={handleSubmit} onChange={() => {}} />]
-        }
-        listContainer={listContainer}
-        loading={loading}
-    />;
+    const renderInput = (params: AutocompleteRenderInputParams) => (
+        <Paper ref={params.InputProps.ref} elevation={3} sx={{ display: 'flex', width: '100%', alignItems: 'stretch' }}>
+            <InputBase
+                sx={{ flex: 1, pl: 1 }}
+                placeholder='Search by login or display name...'
+                inputProps={params.inputProps}
+                endAdornment={
+                    <Stack direction='row' alignItems='center' spacing={0.5} sx={{ pr: 0.5 }}>
+                        {inputValue && (
+                            <IconButton size='small' onClick={handleClear} aria-label='Clear search'>
+                                <ClearIcon fontSize='small' />
+                            </IconButton>
+                        )}
+                    </Stack>
+                }
+            />
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: 'secondary.main',
+                    borderRadius: '0 4px 4px 0',
+                    p: 1
+                }}>
+                <SearchIcon sx={{ color: searchIconColor }} />
+            </Box>
+        </Paper>
+    );
+
+    return (
+        <UpdateContext.Provider value={updateContextValue}>
+            <Box>
+                <SearchListContainer
+                    searchContainer={[
+                        <Box
+                            key='publisher-admin-search'
+                            sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
+                            <Autocomplete
+                                sx={{ flex: 2, mr: { md: 1 }, mb: { xs: 2, md: 0 } }}
+                                options={publishers}
+                                value={selected}
+                                onChange={handleSelect}
+                                inputValue={inputValue}
+                                onInputChange={handleInputChange}
+                                getOptionLabel={option => option.user.loginName}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.user.loginName === value.user.loginName &&
+                                    option.user.provider === value.user.provider
+                                }
+                                filterOptions={x => x}
+                                autoHighlight
+                                clearOnBlur={false}
+                                handleHomeEndKeys
+                                forcePopupIcon={false}
+                                loading={listLoading}
+                                loadingText='Searching…'
+                                noOptionsText='No publishers matched the current filters.'
+                                ListboxProps={{ onScroll: loadMoreOnScroll }}
+                                renderInput={renderInput}
+                                renderOption={(props, option) => {
+                                    const { user } = option;
+                                    return (
+                                        <Box
+                                            component='li'
+                                            {...props}
+                                            key={`${user.provider}/${user.loginName}`}
+                                            sx={{ display: 'flex', gap: 0.6, alignItems: 'center' }}>
+                                            <Avatar
+                                                variant='rounded'
+                                                src={user.avatarUrl}
+                                                sx={{ width: 32, height: 32 }}
+                                            />
+                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                <Typography variant='body2' noWrap>
+                                                    {user.loginName}
+                                                </Typography>
+                                                <Typography variant='caption' color='text.secondary' noWrap>
+                                                    {user.fullName || '—'}
+                                                </Typography>
+                                            </Box>
+                                            {user.role ? (
+                                                <Chip
+                                                    icon={roleIcon(user.role)}
+                                                    label={user.role || 'none'}
+                                                    size='small'
+                                                    color='default'
+                                                    variant='outlined'
+                                                />
+                                            ) : null}
+                                        </Box>
+                                    );
+                                }}
+                            />
+                            <Paper elevation={3} sx={{ flex: 1, display: 'flex' }}>
+                                <Select
+                                    value={roleFilter}
+                                    onChange={e => setRoleFilter(e.target.value)}
+                                    displayEmpty
+                                    input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
+                                    {ROLE_FILTER_OPTIONS.map(o => (
+                                        <MenuItem key={o.value} value={o.value}>
+                                            {o.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </Paper>
+                        </Box>
+                    ]}
+                    listContainer={null}
+                    loading={listLoading}
+                />
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        minHeight: { xs: 360, md: 'calc(100vh - 220px)' }
+                    }}>
+                    {error && <Alert severity='error'>{formatError(error as Error | Partial<ErrorResponse>)}</Alert>}
+
+                    {selected ? (
+                        <PublisherDetails
+                            key={`${selected.user.provider}/${selected.user.loginName}`}
+                            entry={selected}
+                        />
+                    ) : publisherParam && !isFetching ? (
+                        <Alert severity='info'>No publisher found for “{publisherParam}”.</Alert>
+                    ) : (
+                        <Paper
+                            variant='outlined'
+                            sx={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                gap: 1,
+                                p: 4,
+                                color: 'text.secondary',
+                                borderStyle: 'dashed'
+                            }}>
+                            <PersonIcon sx={{ fontSize: 56, opacity: 0.3 }} />
+                            <Typography>Search for a user and select one to view their details.</Typography>
+                        </Paper>
+                    )}
+                </Box>
+            </Box>
+        </UpdateContext.Provider>
+    );
 };

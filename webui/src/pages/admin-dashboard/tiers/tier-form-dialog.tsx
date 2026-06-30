@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import type { ChangeEvent, FocusEvent } from "react";
+import type { ChangeEvent, FocusEvent } from 'react';
 import { FC, useEffect, useState } from 'react';
 import type { SelectChangeEvent } from '@mui/material';
 import {
@@ -30,8 +30,8 @@ import {
     Select,
     TextField
 } from '@mui/material';
-import { RefillStrategy, type Tier, TierType } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
+import { RefillStrategy, type Tier, TierType } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
 
 type DurationUnit = 'seconds' | 'minutes' | 'hours';
 
@@ -44,15 +44,15 @@ const DURATION_MULTIPLIERS: Record<DurationUnit, number> = {
 function formatDuration(duration: number): [number, DurationUnit] {
     const hours = Math.floor(duration / 3600);
     if (hours > 0) {
-        return [hours, "hours"];
+        return [hours, 'hours'];
     }
 
     const minutes = Math.floor(duration / 60);
     if (minutes > 0) {
-        return [minutes, "minutes"];
+        return [minutes, 'minutes'];
     }
 
-    return [duration, "seconds"];
+    return [duration, 'seconds'];
 }
 
 interface TierFormDialogProps {
@@ -82,14 +82,17 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
 
     useEffect(() => {
         if (tier) {
-            setFormData(_ => ({
-                name: tier.name,
-                description: tier.description || '',
-                tierType: tier.tierType,
-                capacity: tier.capacity,
-                duration: tier.duration,
-                refillStrategy: tier.refillStrategy
-            } as Tier));
+            setFormData(
+                _ =>
+                    ({
+                        name: tier.name,
+                        description: tier.description || '',
+                        tierType: tier.tierType,
+                        capacity: tier.capacity,
+                        duration: tier.duration,
+                        refillStrategy: tier.refillStrategy
+                    }) as Tier
+            );
             // Convert duration seconds to value/unit for display
             const [value, unit] = formatDuration(tier.duration);
             setDurationValue(value);
@@ -125,10 +128,13 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
         const { name, value } = e.target as any;
         clearFieldError(name);
 
-        setFormData((prev: Tier) => ({
-            ...prev,
-            [name]: name === 'capacity' || name === 'duration' ? Number.parseInt(value as string, 10) : value
-        } as Tier));
+        setFormData(
+            (prev: Tier) =>
+                ({
+                    ...prev,
+                    [name]: name === 'capacity' || name === 'duration' ? Number.parseInt(value as string, 10) : value
+                }) as Tier
+        );
     };
 
     const handleBlur = (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -140,17 +146,17 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
     const fieldValidators: Record<string, () => string | undefined> = {
         name: () => {
             if (formData.name === undefined) {
-                return "Tier name is required";
+                return 'Tier name is required';
             } else if (formData.name.trim() !== formData.name) {
-                return "Tier name must not contain trailing whitespace";
+                return 'Tier name must not contain trailing whitespace';
             } else {
                 return undefined;
             }
         },
-        tierType: () => formData.tierType ? undefined : 'Tier type is required',
-        capacity: () => formData.capacity <= 0 ? 'Capacity must be greater than 0' : undefined,
-        duration: () => durationValue <= 0 ? 'Duration must be greater than 0' : undefined,
-        refillStrategy: () => formData.refillStrategy ? undefined : 'Refill strategy is required',
+        tierType: () => (formData.tierType ? undefined : 'Tier type is required'),
+        capacity: () => (formData.capacity <= 0 ? 'Capacity must be greater than 0' : undefined),
+        duration: () => (durationValue <= 0 ? 'Duration must be greater than 0' : undefined),
+        refillStrategy: () => (formData.refillStrategy ? undefined : 'Refill strategy is required')
     };
 
     const validateField = (fieldName: string): string | undefined => {
@@ -170,7 +176,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
             tierType: true,
             capacity: true,
             duration: true,
-            refillStrategy: true,
+            refillStrategy: true
         });
 
         const newErrors: Record<string, string> = {};
@@ -213,146 +219,161 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
         <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
             <DialogTitle>{title}</DialogTitle>
             <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                {errors.submit && <Alert severity='error'>{errors.submit}</Alert>}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+                    {errors.submit && <Alert severity='error'>{errors.submit}</Alert>}
 
-                <TextField
-                    label='Tier Name'
-                    name='name'
-                    value={formData.name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    placeholder='e.g., Professional, Enterprise'
-                    required={true}
-                    disabled={loading}
-                    error={touched.name && !!errors.name}
-                    helperText={touched.name && errors.name}
-                />
-
-                <TextField
-                    label='Description'
-                    name='description'
-                    value={formData.description}
-                    onChange={handleChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder='Optional description for this tier'
-                    disabled={loading}
-                />
-
-                <FormControl fullWidth disabled={loading} required={true} error={touched.tierType && !!errors.tierType}>
-                  <InputLabel>Tier Type</InputLabel>
-                  <Select
-                      name='tierType'
-                      value={formData.tierType || ''}
-                      onChange={(e: SelectChangeEvent) => {
-                          const { name, value } = e.target;
-                          clearFieldError(name);
-                          setFormData((prev: Tier) => ({
-                              ...prev,
-                              [name]: value
-                          } as Tier));
-                      }}
-                      onBlur={() => {
-                          setTouched(prev => ({ ...prev, tierType: true }));
-                          validateField('tierType');
-                      }}
-                      label='Tier Type'
-                  >
-                      {Object.keys(TierType).map(tierType => (
-                          <MenuItem key={tierType} value={TierType[tierType as keyof typeof TierType]}>
-                              {tierType}
-                          </MenuItem>
-                      ))}
-                  </Select>
-                  {touched.tierType && errors.tierType && <FormHelperText>{errors.tierType}</FormHelperText>}
-                </FormControl>
-
-                <TextField
-                    label='Capacity'
-                    name='capacity'
-                    type='number'
-                    value={formData.capacity}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    fullWidth
-                    inputProps={{ min: '1' }}
-                    disabled={loading}
-                    required={true}
-                    error={touched.capacity && !!errors.capacity}
-                    helperText={(touched.capacity && errors.capacity) || 'Maximum number of requests allowed per interval'}
-                />
-
-                <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField
-                        label='Duration'
-                        name='duration'
+                        label='Tier Name'
+                        name='name'
+                        value={formData.name}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        fullWidth
+                        placeholder='e.g., Professional, Enterprise'
+                        required={true}
+                        disabled={loading}
+                        error={touched.name && !!errors.name}
+                        helperText={touched.name && errors.name}
+                    />
+
+                    <TextField
+                        label='Description'
+                        name='description'
+                        value={formData.description}
+                        onChange={handleChange}
+                        fullWidth
+                        multiline
+                        rows={3}
+                        placeholder='Optional description for this tier'
+                        disabled={loading}
+                    />
+
+                    <FormControl
+                        fullWidth
+                        disabled={loading}
+                        required={true}
+                        error={touched.tierType && !!errors.tierType}>
+                        <InputLabel>Tier Type</InputLabel>
+                        <Select
+                            name='tierType'
+                            value={formData.tierType || ''}
+                            onChange={(e: SelectChangeEvent) => {
+                                const { name, value } = e.target;
+                                clearFieldError(name);
+                                setFormData(
+                                    (prev: Tier) =>
+                                        ({
+                                            ...prev,
+                                            [name]: value
+                                        }) as Tier
+                                );
+                            }}
+                            onBlur={() => {
+                                setTouched(prev => ({ ...prev, tierType: true }));
+                                validateField('tierType');
+                            }}
+                            label='Tier Type'>
+                            {Object.keys(TierType).map(tierType => (
+                                <MenuItem key={tierType} value={TierType[tierType as keyof typeof TierType]}>
+                                    {tierType}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                        {touched.tierType && errors.tierType && <FormHelperText>{errors.tierType}</FormHelperText>}
+                    </FormControl>
+
+                    <TextField
+                        label='Capacity'
+                        name='capacity'
                         type='number'
-                        value={durationValue}
-                        onChange={(e) => {
-                            clearFieldError('duration');
-                            setDurationValue(Math.max(1, Number.parseInt(e.target.value, 10) || 0));
-                        }}
-                        onBlur={(e) => {
-                            setTouched(prev => ({ ...prev, duration: true }));
-                            validateField('duration');
-                        }}
+                        value={formData.capacity}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        fullWidth
                         inputProps={{ min: '1' }}
                         disabled={loading}
                         required={true}
-                        error={touched.duration && !!errors.duration}
-                        helperText={touched.duration && errors.duration}
-                        sx={{ flex: 1 }}
+                        error={touched.capacity && !!errors.capacity}
+                        helperText={
+                            (touched.capacity && errors.capacity) || 'Maximum number of requests allowed per interval'
+                        }
                     />
-                    <FormControl disabled={loading} required={true} sx={{ minWidth: 150 }}>
-                        <InputLabel>Unit</InputLabel>
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <TextField
+                            label='Duration'
+                            name='duration'
+                            type='number'
+                            value={durationValue}
+                            onChange={e => {
+                                clearFieldError('duration');
+                                setDurationValue(Math.max(1, Number.parseInt(e.target.value, 10) || 0));
+                            }}
+                            onBlur={e => {
+                                setTouched(prev => ({ ...prev, duration: true }));
+                                validateField('duration');
+                            }}
+                            inputProps={{ min: '1' }}
+                            disabled={loading}
+                            required={true}
+                            error={touched.duration && !!errors.duration}
+                            helperText={touched.duration && errors.duration}
+                            sx={{ flex: 1 }}
+                        />
+                        <FormControl disabled={loading} required={true} sx={{ minWidth: 150 }}>
+                            <InputLabel>Unit</InputLabel>
+                            <Select
+                                value={durationUnit}
+                                onChange={(e: SelectChangeEvent) => setDurationUnit(e.target.value as DurationUnit)}
+                                label='Unit'>
+                                <MenuItem value='seconds'>Seconds</MenuItem>
+                                <MenuItem value='minutes'>Minutes</MenuItem>
+                                <MenuItem value='hours'>Hours</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                        = {getDurationInSeconds().toLocaleString()} seconds
+                    </Box>
+
+                    <FormControl
+                        fullWidth
+                        disabled={loading}
+                        required={true}
+                        error={touched.refillStrategy && !!errors.refillStrategy}>
+                        <InputLabel>Refill Strategy</InputLabel>
                         <Select
-                            value={durationUnit}
-                            onChange={(e: SelectChangeEvent) => setDurationUnit(e.target.value as DurationUnit)}
-                            label='Unit'
-                        >
-                            <MenuItem value='seconds'>Seconds</MenuItem>
-                            <MenuItem value='minutes'>Minutes</MenuItem>
-                            <MenuItem value='hours'>Hours</MenuItem>
+                            name='refillStrategy'
+                            value={formData.refillStrategy || ''}
+                            onChange={(e: SelectChangeEvent) => {
+                                const { name, value } = e.target;
+                                clearFieldError(name);
+                                setFormData(
+                                    (prev: Tier) =>
+                                        ({
+                                            ...prev,
+                                            [name]: value
+                                        }) as Tier
+                                );
+                            }}
+                            onBlur={() => {
+                                setTouched(prev => ({ ...prev, refillStrategy: true }));
+                                validateField('refillStrategy');
+                            }}
+                            label='Refill Strategy'>
+                            {Object.keys(RefillStrategy).map(strategy => (
+                                <MenuItem
+                                    key={strategy}
+                                    value={RefillStrategy[strategy as keyof typeof RefillStrategy]}>
+                                    {strategy}
+                                </MenuItem>
+                            ))}
                         </Select>
+                        {touched.refillStrategy && errors.refillStrategy && (
+                            <FormHelperText>{errors.refillStrategy}</FormHelperText>
+                        )}
                     </FormControl>
                 </Box>
-                <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
-                    = {getDurationInSeconds().toLocaleString()} seconds
-                </Box>
-
-                <FormControl fullWidth disabled={loading} required={true} error={touched.refillStrategy && !!errors.refillStrategy}>
-                    <InputLabel>Refill Strategy</InputLabel>
-                    <Select
-                        name='refillStrategy'
-                        value={formData.refillStrategy || ''}
-                        onChange={(e: SelectChangeEvent) => {
-                            const { name, value } = e.target;
-                            clearFieldError(name);
-                            setFormData((prev: Tier) => ({
-                                ...prev,
-                                [name]: value
-                            } as Tier));
-                        }}
-                        onBlur={() => {
-                            setTouched(prev => ({ ...prev, refillStrategy: true }));
-                            validateField('refillStrategy');
-                        }}
-                        label='Refill Strategy'
-                    >
-                        {Object.keys(RefillStrategy).map(strategy => (
-                            <MenuItem key={strategy} value={RefillStrategy[strategy as keyof typeof RefillStrategy]}>
-                                {strategy}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    {touched.refillStrategy && errors.refillStrategy && <FormHelperText>{errors.refillStrategy}</FormHelperText>}
-                </FormControl>
-
-
-              </Box>
             </DialogContent>
 
             <DialogActions sx={{ p: 2 }}>
@@ -363,8 +384,7 @@ export const TierFormDialog: FC<TierFormDialogProps> = ({ open, tier, onClose, o
                     onClick={handleSubmit}
                     variant='contained'
                     disabled={loading || Object.keys(errors).length > 0}
-                    startIcon={loading ? <CircularProgress size={20} /> : undefined}
-                >
+                    startIcon={loading ? <CircularProgress size={20} /> : undefined}>
                     {isEditMode ? 'Update' : 'Create'}
                 </Button>
             </DialogActions>

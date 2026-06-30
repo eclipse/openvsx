@@ -12,25 +12,13 @@
  ********************************************************************************/
 
 // Common components
-export {
-    ConditionalTooltip,
-    FileTable,
-    AutoRefresh,
-    TabPanel,
-} from './common';
+export { ConditionalTooltip, FileTable, AutoRefresh, TabPanel } from './common';
 
 // Dialog components
-export {
-    QuarantineDialog,
-    FileDialog,
-} from './dialogs';
+export { QuarantineDialog, FileDialog } from './dialogs';
 
 // Toolbar components
-export {
-    TabToolbar,
-    SearchToolbar,
-    CountsToolbar,
-} from './toolbars';
+export { TabToolbar, SearchToolbar, CountsToolbar } from './toolbars';
 
 // Tab content components
 export {
@@ -38,15 +26,10 @@ export {
     QuarantinedTabContent,
     AutoRejectedTabContent,
     AllowListTabContent,
-    BlockListTabContent,
+    BlockListTabContent
 } from './tab-contents';
 
 // ScanCard components
 export { ScanCard } from './scan-card';
-export {
-    ScanCardHeader,
-    ScanCardContent,
-    ScanCardExpandStrip,
-    ScanCardExpandedContent,
-} from './scan-card';
+export { ScanCardHeader, ScanCardContent, ScanCardExpandStrip, ScanCardExpandedContent } from './scan-card';
 export * from './scan-card/utils';

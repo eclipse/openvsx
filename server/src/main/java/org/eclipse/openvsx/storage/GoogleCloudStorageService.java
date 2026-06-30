@@ -15,6 +15,7 @@ import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -94,14 +95,21 @@ public class GoogleCloudStorageService implements IStorageService {
     }
 
     protected void uploadFile(TempFile file, String fileName, String objectId) {
-        var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId))
-                .setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
-            blobInfoBuilder.setContentDisposition("attachment; filename=\"" + fileName + "\"");
-        } else {
-            var cacheControl = StorageUtil.getCacheControl(fileName);
-            blobInfoBuilder.setCacheControl(cacheControl.getHeaderValue());
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
+        var blobInfoBuilder = BlobInfo.newBuilder(BlobId.of(bucketId, objectId));
+
+        if (headers.getContentType() != null) {
+            blobInfoBuilder.setContentType(headers.getContentType().toString());
         }
+
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            blobInfoBuilder.setContentDisposition(headers.getContentDisposition().toString());
+        }
+
+        if (headers.getCacheControl() != null) {
+            blobInfoBuilder.setCacheControl(headers.getCacheControl());
+        }
+
         try (
                 var in = Files.newByteChannel(file.getPath());
                 var out = getStorage().writer(blobInfoBuilder.build())

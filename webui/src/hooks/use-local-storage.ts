@@ -59,7 +59,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<S
         return () => globalThis.removeEventListener('storage', onStorage);
     }, [key, initialValue]);
 
-    const setValue: Dispatch<SetStateAction<T>> = useCallback((action) => {
+    const setValue: Dispatch<SetStateAction<T>> = useCallback(action => {
         setState(prev => (typeof action === 'function' ? (action as (prev: T) => T)(prev) : action));
     }, []);
 

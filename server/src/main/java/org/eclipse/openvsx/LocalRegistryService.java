@@ -233,7 +233,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         return storageUtil.getFileResponse(resource);
     }
 
-    public boolean isType (String fileName){
+    public boolean isType(String fileName) {
         var expectedTypes = new ArrayList<>(List.of(MANIFEST, README, LICENSE, ICON, DOWNLOAD, DOWNLOAD_SHA256, CHANGELOG, VSIXMANIFEST));
         if(integrityService.isEnabled()) {
             expectedTypes.add(DOWNLOAD_SIG);
@@ -1110,7 +1110,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var user = extVersion.getPublishedWith().getUser();
-        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }
 
@@ -1124,7 +1124,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var user = extVersion.getPublishedWith().getUser();
-        if(UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+        if(UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }
 

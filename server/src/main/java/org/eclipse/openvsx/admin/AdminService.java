@@ -48,6 +48,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
+import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
@@ -65,6 +66,8 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -139,21 +142,20 @@ public class AdminService {
     }
 
     public void deleteExtensionAndDependencies(Extension extension, UserData admin, int depth) throws ErrorResultException {
-        if(depth > 5) {
+        if (depth > 5) {
             throw new ErrorResultException("Failed to delete extension and its dependencies. Exceeded maximum recursion depth.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        for(var bundledRef : bundledRefs) {
+        for (var bundledRef : bundledRefs) {
             deleteExtensionAndDependencies(bundledRef, admin, depth);
         }
 
         var dependRefs = repositories.findDependenciesReference(extension);
-        for(var dependRef : dependRefs) {
+        for (var dependRef : dependRefs) {
             deleteExtensionAndDependencies(dependRef, admin, depth);
         }
 
-        cache.evictExtensionJsons(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
@@ -162,12 +164,18 @@ public class AdminService {
         }
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for(var deprecatedExtension : deprecatedExtensions) {
+        for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
             cache.evictExtensionJsons(deprecatedExtension);
         }
 
         entityManager.remove(extension);
+
+        // evict the cache entries only after the changes have been commited
+        cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
+
         search.removeSearchEntry(extension);
         logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
     }
@@ -192,12 +200,12 @@ public class AdminService {
             String extensionName,
             List<TargetPlatformVersionJson> targetVersions
     ) {
-        if(targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
+        if (targetVersions == null || repositories.countVersions(namespaceName, extensionName) == targetVersions.size()) {
             return deleteExtension(namespaceName, extensionName, adminUser);
         }
 
         var results = new ArrayList<ResultJson>();
-        for(var targetVersion : targetVersions) {
+        for (var targetVersion : targetVersions) {
             results.add(deleteExtension(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version(), adminUser));
         }
 
@@ -248,21 +256,27 @@ public class AdminService {
                         .collect(Collectors.joining(", ")));
         }
 
-        cache.evictExtensionJsons(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
+
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for(var deprecatedExtension : deprecatedExtensions) {
+        for (var deprecatedExtension : deprecatedExtensions) {
             deprecatedExtension.setReplacement(null);
             cache.evictExtensionJsons(deprecatedExtension);
         }
 
         entityManager.remove(extension);
+
+        // evict the cache entries only after the changes have been commited
+        cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
+
         search.removeSearchEntry(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
@@ -434,7 +448,7 @@ public class AdminService {
             var duplicateExtensions = oldExtensions.keySet().stream()
                     .filter(newExtensions::containsKey)
                     .collect(Collectors.joining("','"));
-            if(!duplicateExtensions.isEmpty()) {
+            if (!duplicateExtensions.isEmpty()) {
                 var message = "Can't merge namespaces, because new namespace '" +
                         json.newNamespace() +
                         "' and old namespace '" +
@@ -461,7 +475,9 @@ public class AdminService {
         }
 
         var userPublishInfo = new UserPublishInfoJson();
-        userPublishInfo.setUser(user.toUserJson());
+        var userJson = user.toUserJson();
+        userJson.setRole(user.getRoleAsString());
+        userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
         userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
         var extVersions = repositories.findLatestVersions(user);
@@ -499,6 +515,43 @@ public class AdminService {
         return new BulkPublisherRevokeResponseJson(resultMap);
     }
 
+    @Transactional
+    public Page<UserRelationshipsJson> searchUsers(String search, String role, Pageable pageable) {
+        return repositories.searchUsers(search, role, pageable)
+                .map(user -> {
+                    var json = new UserRelationshipsJson();
+                    var userJson = user.toUserJson();
+                    userJson.setRole(user.getRoleAsString());
+                    json.setUser(userJson);
+                    json.setNamespaces(repositories.findMemberships(user).stream()
+                            .map(membership -> membership.getNamespace().toNamespaceDetailsJson())
+                            .toList());
+                    return json;
+                });
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson updateUserRole(String provider, String loginName, String role, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + loginName), HttpStatus.NOT_FOUND);
+        }
+
+        var updatedRole = "none".equalsIgnoreCase(role) ? null : parseRole(role);
+        if (Objects.equals(user.getRole(), updatedRole)) {
+            throw new ErrorResultException("User " + provider + "/" + loginName + " already has the role " + user.getRole() + ".");
+        }
+
+        user.setRole(updatedRole);
+        var message = updatedRole == null
+                ? "Removed role from user " + provider + "/" + loginName + "."
+                : "Updated role for user " + provider + "/" + loginName + " to " + updatedRole + ".";
+        var result = ResultJson.success(message);
+        logs.logAction(admin, result);
+        return result;
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
         return revokePublisherContributions(provider, loginName, admin, null);
     }
@@ -591,16 +644,24 @@ public class AdminService {
     }
 
     private UserData checkAdminUser(UserData user) {
-        if (user == null || !UserData.ROLE_ADMIN.equals(user.getRole())) {
+        if (user == null || !UserData.Role.ADMIN.equals(user.getRole())) {
             throw new ErrorResultException("Administration role is required.", HttpStatus.FORBIDDEN);
         }
         return user;
     }
 
+    private UserData.Role parseRole(String role) {
+        try {
+            return UserData.Role.valueOfIgnoreCase(role);
+        } catch (IllegalArgumentException ignored) {
+            throw new ErrorResultException("Invalid role: " + role, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     public AdminStatistics getAdminStatistics(int year, int month) throws ErrorResultException {
         validateYearAndMonth(year, month);
         var statistics = repositories.findAdminStatisticsByYearAndMonth(year, month);
-        if(statistics == null) {
+        if (statistics == null) {
             throw new NotFoundException();
         }
 
@@ -608,15 +669,15 @@ public class AdminService {
     }
 
     private void validateYearAndMonth(int year, int month) {
-        if(year < 0) {
+        if (year < 0) {
             throw new ErrorResultException("Year can't be negative", HttpStatus.BAD_REQUEST);
         }
-        if(month < 1 || month > 12) {
+        if (month < 1 || month > 12) {
             throw new ErrorResultException("Month must be a value between 1 and 12", HttpStatus.BAD_REQUEST);
         }
 
         var now = TimeUtil.getCurrentUTC();
-        if(year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
+        if (year > now.getYear() || (year == now.getYear() && month >= now.getMonthValue())) {
             throw new ErrorResultException("Combination of year and month lies in the future", HttpStatus.BAD_REQUEST);
         }
     }

@@ -9,17 +9,18 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.mirror;
 
+import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.XmlUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
@@ -28,14 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -58,9 +52,6 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     private final MirrorExtensionService mirrorExtensionService;
     private final DateTimeFormatter dateFormatter;
 
-    @Value("${ovsx.data.mirror.schedule:}")
-    String schedule;
-
     public DataMirrorJobRequestHandler(
             Optional<DataMirrorService> dataMirrorService,
             RepositoryService repositories,
@@ -79,7 +70,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     }
 
     @Override
-    @Job(name="Data Mirror")
+    @Job(name="Data Mirror", retries = 0)
     public void run(DataMirrorJobRequest jobRequest) throws Exception {
         if (data == null) {
             return;
@@ -87,7 +78,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
 
         logger.debug(">> Starting DataMirrorJob");
         var sitemap = getSitemap();
-        if(sitemap == null) {
+        if (sitemap == null) {
             logger.error("failed to fetch sitemap");
             return;
         }
@@ -99,7 +90,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
         } catch (Exception e) {
             logger.error("failed to mirror data", e);
             throw e;
-        }finally {
+        } finally {
             logger.debug("<< Completed DataMirrorJob");
         } 
     }
@@ -107,7 +98,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     private List<String> processUrls(NodeList urls, UserData mirrorUser) {
         var extensionIds = new ArrayList<String>();
         var progress = jobContext().progressBar(urls.getLength());
-        for(var i = 0; i < urls.getLength(); i++) {
+        for (var i = 0; i < urls.getLength(); i++) {
             var url = (Element) urls.item(i);
             var extensionId = getExtensionId(url);
             var id = NamingUtil.fromExtensionId(extensionId);
@@ -134,7 +125,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
 
     private void deleteOtherExtensions(List<String> extensionIds, UserData mirrorUser) {
         var notMatchingExtensions = repositories.findAllNotMatchingByExtensionId(extensionIds);
-        for(var extension : notMatchingExtensions) {
+        for (var extension : notMatchingExtensions) {
             var extensionId = NamingUtil.toExtensionId(extension);
             jobContext().logger().info("deleting " + extensionId);
             try {
@@ -150,21 +141,16 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
         }
     }
 
-    private Document getSitemap() throws IOException, SAXException, ParserConfigurationException {
+    private @Nullable Document getSitemap() {
         var requestUrl = URI.create(createApiUrl(urlConfigService.getMirrorServerUrl(), "sitemap.xml"));
         var request = new RequestEntity<Void>(HttpMethod.GET, requestUrl);
         var response = backgroundRestTemplate.exchange(request, String.class);
         var body = response.getStatusCode().is2xxSuccessful() ? response.getBody() : null;
-        if(body == null) {
+        if (body == null) {
             return null;
         }
 
-        try(var reader = new StringReader(body)) {
-            var factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            var builder = factory.newDocumentBuilder();
-            return builder.parse(new InputSource(reader));
-        }
+        return XmlUtil.safeParse(body);
     }
 
     private String getExtensionId(Element url) {

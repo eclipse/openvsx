@@ -23,7 +23,16 @@ repos:
   hooks:
   -   id: shellcheck
 - repo: https://github.com/woodruffw/zizmor-pre-commit
-  rev: v1.20.0
+  rev: v1.26.1
   hooks:
     - id: zizmor
       args: [ --min-severity, low ]
+- repo: local
+  hooks:
+    - id: lint
+      name: webui -> eslint & prettier
+      entry: bash -c 'cd webui && yarn lint' --
+      language: system
+      require_serial: true
+      files: ^webui/
+      types: [file]

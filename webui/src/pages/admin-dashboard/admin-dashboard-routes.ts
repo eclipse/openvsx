@@ -20,5 +20,6 @@ export namespace AdminDashboardRoutes {
     export const TIERS = createRoute([ROOT, 'tiers']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
     export const USAGE_STATS = createRoute([ROOT, 'usage']);
+    export const SETTINGS = createRoute([ROOT, 'settings']);
     export const LOGS = createRoute([ROOT, 'logs']);
 }

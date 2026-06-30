@@ -19,7 +19,7 @@ import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
 import io.github.bucket4j.distributed.proxy.ClientSideConfig;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
-import io.micrometer.common.util.StringUtils;
+import org.eclipse.openvsx.cache.jedis.JedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,12 +36,9 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.SpelCompilerMode;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.RedisClusterClient;
 
 import java.time.Duration;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.ratelimit.cache.RateLimitCacheService.*;
 
@@ -62,23 +59,14 @@ public class RateLimitConfig {
     }
 
     @Bean
-    public JedisCluster jedisCluster(RedisProperties properties) {
+    public RedisClusterClient redisClusterClient(RedisProperties properties) {
         logger.info("Configure jedis-cluster rate-limiting cache");
-        var configBuilder = DefaultJedisClientConfig.builder();
-        var username = properties.getUsername();
-        if(StringUtils.isNotEmpty(username)) {
-            configBuilder.user(username);
-        }
-        var password = properties.getPassword();
-        if(StringUtils.isNotEmpty(password)) {
-            configBuilder.password(password);
-        }
 
-        var nodes = properties.getCluster().getNodes().stream()
-                .map(HostAndPort::from)
-                .collect(Collectors.toSet());
+        var builder = RedisClusterClient.builder();
+        builder.nodes(JedisUtil.getNodes(properties));
+        builder.clientConfig(JedisUtil.getClientConfig(properties));
 
-        return new JedisCluster(nodes, configBuilder.build());
+        return builder.build();
     }
 
     @Bean
@@ -151,8 +139,8 @@ public class RateLimitConfig {
 
     @Bean
     @ConditionalOnMissingBean(ProxyManager.class)
-    public ProxyManager<byte[]> jedisBasedProxyManager(JedisCluster jedisCluster) {
-        return JedisBasedProxyManager.builderFor(jedisCluster)
+    public ProxyManager<byte[]> redisBasedProxyManager(RedisClusterClient redisClusterClient) {
+        return JedisBasedProxyManager.builderFor(redisClusterClient)
                 .withClientSideConfig(
                         ClientSideConfig
                                 .getDefault()

@@ -14,9 +14,9 @@ import { styled } from '@mui/material/styles';
 import { toLocalTime } from '../../utils';
 import { UserData } from '../../extension-registry-types';
 import { UserPublisherAgreement } from './user-publisher-agreement';
-import { MainContext } from "../../context";
+import { MainContext } from '../../context';
 
-const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
+const ProfileGrid = styled(Grid)(({ theme }: { theme: Theme }) => ({
     [theme.breakpoints.up('lg')]: {
         justifyContent: 'space-between'
     },
@@ -39,7 +39,6 @@ const ProfileGrid = styled(Grid)(({ theme }: {theme: Theme}) => ({
 }));
 
 export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = ({ user, isAdmin }) => {
-
     const { pageSettings } = useContext(MainContext);
 
     let publisherAgreementPanel: ReactNode = null;
@@ -54,40 +53,48 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
 
             const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
 
-            publisherAgreementPanel = <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
-                {user.loginName} {statusText} the {publisherAgreementName} Publisher Agreement.
-            </Typography>;
+            publisherAgreementPanel = (
+                <Typography variant='body1' title={toLocalTime(user.publisherAgreement.timestamp)}>
+                    {user.loginName} {statusText} the {publisherAgreementName} Publisher Agreement.
+                </Typography>
+            );
         } else {
-            publisherAgreementPanel = <Grid container>
-                <Grid item xs={12}>
-                    <UserPublisherAgreement user={user} />
+            publisherAgreementPanel = (
+                <Grid container>
+                    <Grid item xs={12}>
+                        <UserPublisherAgreement user={user} />
+                    </Grid>
                 </Grid>
-            </Grid>;
+            );
         }
     }
 
-    return <>
-        <ProfileGrid container>
-            <Grid item>
-                <Typography variant='h5' gutterBottom>Profile</Typography>
-                <Typography variant='body1'>Login name: {user.loginName}</Typography>
-                <Typography variant='body1'>Full name: {user.fullName}</Typography>
-            </Grid>
-            <Grid item>
-                <Avatar
-                    variant='rounded'
-                    src={user.avatarUrl}
-                    sx={{
-                        width: '150px',
-                        height: '150px',
-                        my: 0,
-                        mx: { xs: 'auto', sm: 'auto', md: 0, lg: 0, xl: 0 }
-                    }}
-                />
-            </Grid>
-        </ProfileGrid>
-        {publisherAgreementPanel}
-    </>;
+    return (
+        <>
+            <ProfileGrid container>
+                <Grid item>
+                    <Typography variant='h5' gutterBottom>
+                        Profile
+                    </Typography>
+                    <Typography variant='body1'>Login name: {user.loginName}</Typography>
+                    <Typography variant='body1'>Full name: {user.fullName}</Typography>
+                </Grid>
+                <Grid item>
+                    <Avatar
+                        variant='rounded'
+                        src={user.avatarUrl}
+                        sx={{
+                            width: '150px',
+                            height: '150px',
+                            my: 0,
+                            mx: { xs: 'auto', sm: 'auto', md: 0, lg: 0, xl: 0 }
+                        }}
+                    />
+                </Grid>
+            </ProfileGrid>
+            {publisherAgreementPanel}
+        </>
+    );
 };
 
 export interface UserSettingsProfileProps {

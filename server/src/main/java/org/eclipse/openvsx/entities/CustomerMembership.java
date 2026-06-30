@@ -14,7 +14,6 @@ package org.eclipse.openvsx.entities;
 
 import jakarta.persistence.*;
 import org.eclipse.openvsx.json.CustomerMembershipJson;
-import org.eclipse.openvsx.json.NamespaceMembershipJson;
 
 import java.io.Serial;
 import java.io.Serializable;

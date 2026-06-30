@@ -26,7 +26,9 @@ export const UserSettingsCustomerDetail: FC<UserSettingsCustomerDetailProps> = (
 
     return (
         <Box sx={{ flex: 5, pl: { xs: 0, lg: 2 } }}>
-            <Typography variant='h4' sx={{ mb: 2 }}>{customer.name}</Typography>
+            <Typography variant='h4' sx={{ mb: 2 }}>
+                {customer.name}
+            </Typography>
             <UsageStats
                 usageStats={usageStats}
                 dailyP95={dailyP95}

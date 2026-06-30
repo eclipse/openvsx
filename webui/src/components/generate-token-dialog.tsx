@@ -13,9 +13,20 @@
 
 import { ChangeEvent, FunctionComponent, useState } from 'react';
 import {
-    Button, Dialog, DialogTitle, DialogContent, DialogContentText,
-    Box, TextField, DialogActions, Typography, Paper, IconButton,
-    Tooltip, LinearProgress, styled
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    Box,
+    TextField,
+    DialogActions,
+    Typography,
+    Paper,
+    IconButton,
+    Tooltip,
+    LinearProgress,
+    styled
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import copy from 'clipboard-copy';
@@ -24,7 +35,7 @@ const TOKEN_DESCRIPTION_SIZE = 255;
 
 const StyledDialog = styled(Dialog)({
     '& .MuiDialog-paper': {
-        width: 480,
+        width: 480
     }
 });
 
@@ -36,9 +47,7 @@ const TokenDisplay = styled(Paper)(({ theme }) => ({
     wordBreak: 'break-all',
     fontFamily: 'monospace',
     fontSize: '0.85rem',
-    backgroundColor: theme.palette.mode === 'dark'
-        ? theme.palette.grey[900]
-        : theme.palette.grey[100],
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : theme.palette.grey[100]
 }));
 
 export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = props => {
@@ -89,73 +98,80 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
 
     const handleCopy = () => {
         if (tokenValue) {
-            copy(tokenValue)
-                .then(() => setCopied(true));
+            copy(tokenValue).then(() => setCopied(true));
             setTimeout(() => setCopied(false), 2000);
         }
     };
 
     const canGenerate = !descriptionError && !loading;
 
-    return <>
-      {open && <StyledDialog open={open} onClose={handleClose}>
-            <DialogTitle>{title}</DialogTitle>
-            {loading && <LinearProgress color='secondary'/>}
-            <DialogContent>
-                {tokenValue ? <>
-                    <DialogContentText sx={{ mb: 2 }}>
-                        Copy this token now. It will not be shown again.
-                    </DialogContentText>
-                    <TokenDisplay variant='outlined'>
-                        <Typography component='span' sx={{ flex: 1, fontFamily: 'inherit', fontSize: 'inherit' }}>
-                            {tokenValue}
-                        </Typography>
-                        <Tooltip title={copied ? 'Copied!' : 'Copy'} placement='top'>
-                            <IconButton size='small' onClick={handleCopy}>
-                                <ContentCopyIcon fontSize='small'/>
-                            </IconButton>
-                        </Tooltip>
-                    </TokenDisplay>
-                </> : <>
-                    <DialogContentText>
-                        You can add an optional description to help identify where this token is used.
-                    </DialogContentText>
-                    <Box mt={2}>
-                        <TextField
-                            autoFocus
-                            fullWidth
-                            label='Description (optional)'
-                            error={Boolean(descriptionError)}
-                            helperText={descriptionError}
-                            value={description}
-                            onChange={handleDescriptionChange}
-                            onKeyDown={e => {
-                                if (e.key === 'Enter' && canGenerate) {
-                                    handleGenerate();
-                                }
-                            }}
-                        />
-                    </Box>
-                </>}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={handleClose} color='secondary'>
-                    {tokenValue ? 'Close' : 'Cancel'}
-                </Button>
-                {!tokenValue &&
-                    <Button
-                        variant='contained'
-                        color='secondary'
-                        disabled={!canGenerate}
-                        onClick={handleGenerate}
-                    >
-                        Generate Token
-                    </Button>
-                }
-            </DialogActions>
-        </StyledDialog>
-    }
-    </>;
+    return (
+        <>
+            {open && (
+                <StyledDialog open={open} onClose={handleClose}>
+                    <DialogTitle>{title}</DialogTitle>
+                    {loading && <LinearProgress color='secondary' />}
+                    <DialogContent>
+                        {tokenValue ? (
+                            <>
+                                <DialogContentText sx={{ mb: 2 }}>
+                                    Copy this token now. It will not be shown again.
+                                </DialogContentText>
+                                <TokenDisplay variant='outlined'>
+                                    <Typography
+                                        component='span'
+                                        sx={{ flex: 1, fontFamily: 'inherit', fontSize: 'inherit' }}>
+                                        {tokenValue}
+                                    </Typography>
+                                    <Tooltip title={copied ? 'Copied!' : 'Copy'} placement='top'>
+                                        <IconButton size='small' onClick={handleCopy}>
+                                            <ContentCopyIcon fontSize='small' />
+                                        </IconButton>
+                                    </Tooltip>
+                                </TokenDisplay>
+                            </>
+                        ) : (
+                            <>
+                                <DialogContentText>
+                                    You can add an optional description to help identify where this token is used.
+                                </DialogContentText>
+                                <Box mt={2}>
+                                    <TextField
+                                        autoFocus
+                                        fullWidth
+                                        label='Description (optional)'
+                                        error={Boolean(descriptionError)}
+                                        helperText={descriptionError}
+                                        value={description}
+                                        onChange={handleDescriptionChange}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' && canGenerate) {
+                                                handleGenerate();
+                                            }
+                                        }}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleClose} color='secondary'>
+                            {tokenValue ? 'Close' : 'Cancel'}
+                        </Button>
+                        {!tokenValue && (
+                            <Button
+                                variant='contained'
+                                color='secondary'
+                                disabled={!canGenerate}
+                                onClick={handleGenerate}>
+                                Generate Token
+                            </Button>
+                        )}
+                    </DialogActions>
+                </StyledDialog>
+            )}
+        </>
+    );
 };
 
 export interface GenerateTokenDialogProps {

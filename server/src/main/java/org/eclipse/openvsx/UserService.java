@@ -92,7 +92,7 @@ public class UserService {
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {
-        if (UserData.ROLE_PRIVILEGED.equals(user.getRole())) {
+        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
             // Privileged users can publish to every namespace.
             return true;
         }

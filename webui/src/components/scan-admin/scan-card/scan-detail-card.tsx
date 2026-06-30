@@ -47,7 +47,7 @@ export const ScanDetailCard: FunctionComponent<ScanDetailCardProps> = ({
     description,
     descriptionColor,
     details,
-    children,
+    children
 }) => {
     const theme = useTheme();
 
@@ -66,30 +66,30 @@ export const ScanDetailCard: FunctionComponent<ScanDetailCardProps> = ({
                     top: 0,
                     bottom: 0,
                     width: '8px',
-                    background: isUnenforced
-                        ? `${theme.palette.unenforced.stripe}, ${accentColor}`
-                        : accentColor,
-                    zIndex: 0,
-                },
-            }}
-        >
+                    background: isUnenforced ? `${theme.palette.unenforced.stripe}, ${accentColor}` : accentColor,
+                    zIndex: 0
+                }
+            }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
                 {/* Chip and unenforced indicator */}
                 {(chip || isUnenforced) && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, mb: 1 }}>
                         {isUnenforced && (
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                                px: 1,
-                                py: 0.25,
-                                backgroundColor: theme.palette.info.dark + '20',
-                                borderRadius: 0.5,
-                                border: `1px solid ${theme.palette.info.dark}40`,
-                            }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    px: 1,
+                                    py: 0.25,
+                                    backgroundColor: theme.palette.info.dark + '20',
+                                    borderRadius: 0.5,
+                                    border: `1px solid ${theme.palette.info.dark}40`
+                                }}>
                                 <InfoIcon sx={{ fontSize: 14, color: theme.palette.info.main }} />
-                                <Typography variant='caption' sx={{ color: theme.palette.info.main, fontSize: '0.7rem' }}>
+                                <Typography
+                                    variant='caption'
+                                    sx={{ color: theme.palette.info.main, fontSize: '0.7rem' }}>
                                     Not enforced
                                 </Typography>
                             </Box>
@@ -104,7 +104,7 @@ export const ScanDetailCard: FunctionComponent<ScanDetailCardProps> = ({
                                     background: isUnenforced
                                         ? `${theme.palette.unenforced.stripe}, ${chip.color}`
                                         : chip.color,
-                                    color: chip.textColor,
+                                    color: chip.textColor
                                 }}
                             />
                         )}
@@ -113,28 +113,25 @@ export const ScanDetailCard: FunctionComponent<ScanDetailCardProps> = ({
 
                 {/* Description */}
                 {description && (
-                    <Typography
-                        variant='body2'
-                        sx={{ mb: 1, color: descriptionColor || 'text.primary' }}
-                    >
+                    <Typography variant='body2' sx={{ mb: 1, color: descriptionColor || 'text.primary' }}>
                         {description}
                     </Typography>
                 )}
 
                 {/* Detail fields */}
-                {details.map((detail, index) => (
-                    detail.value && (
-                        <Typography
-                            key={index}
-                            variant='caption'
-                            color='text.secondary'
-                            display='block'
-                            sx={{ mb: 0.5 }}
-                        >
-                            {detail.label}: {detail.value}
-                        </Typography>
-                    )
-                ))}
+                {details.map(
+                    (detail, index) =>
+                        detail.value && (
+                            <Typography
+                                key={index}
+                                variant='caption'
+                                color='text.secondary'
+                                display='block'
+                                sx={{ mb: 0.5 }}>
+                                {detail.label}: {detail.value}
+                            </Typography>
+                        )
+                )}
 
                 {/* Additional content */}
                 {children}

@@ -45,7 +45,7 @@ const WarningPaper = styled(Paper)(({ theme }: { theme: Theme }) => ({
     padding: theme.spacing(2),
     display: 'flex',
     [theme.breakpoints.down('sm')]: {
-        margin: `0 0 ${theme.spacing(2)} 0`,
+        margin: `0 0 ${theme.spacing(2)} 0`
     }
 }));
 
@@ -86,90 +86,88 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
         setDeleteDialogIsOpen(true);
     };
     const warningColor = props.theme === 'dark' ? '#fff' : '#151515';
-    return <>
-        <NamespaceDetailContainer container direction='column' spacing={4}>
-            {
-                !props.namespace.verified && props.namespaceAccessUrl
-                ? <Grid item>
-                    <WarningPaper
-                        sx={{
-                            backgroundColor: `warning.${props.theme}`,
-                            color: warningColor,
-                            '& a': {
+    return (
+        <>
+            <NamespaceDetailContainer container direction='column' spacing={4}>
+                {!props.namespace.verified && props.namespaceAccessUrl ? (
+                    <Grid item>
+                        <WarningPaper
+                            sx={{
+                                backgroundColor: `warning.${props.theme}`,
                                 color: warningColor,
-                                textDecoration: 'underline'
-                            }
-                        }}>
-                        <WarningIcon fontSize='large' />
-                        <Box ml={1}>
-                            This namespace is not verified. <Link
-                                href={props.namespaceAccessUrl}
-                                target='_blank' >
-                                See the documentation
-                            </Link> to learn about claiming namespaces.
-                        </Box>
-                    </WarningPaper>
-                </Grid>
-                : null
-            }
-            <Grid item>
-                <NamespaceHeader>
-                    <Typography variant='h4'>{props.namespace.name}</Typography>
-                    { pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN)
-                        ?
-                        <Box>
-                            <Button sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }} variant='outlined' onClick={handleOpenChangeDialog}>
-                                Change Namespace
-                            </Button>
-                            { Object.keys(props.namespace.extensions).length === 0 &&
+                                '& a': {
+                                    color: warningColor,
+                                    textDecoration: 'underline'
+                                }
+                            }}>
+                            <WarningIcon fontSize='large' />
+                            <Box ml={1}>
+                                This namespace is not verified.{' '}
+                                <Link href={props.namespaceAccessUrl} target='_blank'>
+                                    See the documentation
+                                </Link>{' '}
+                                to learn about claiming namespaces.
+                            </Box>
+                        </WarningPaper>
+                    </Grid>
+                ) : null}
+                <Grid item>
+                    <NamespaceHeader>
+                        <Typography variant='h4'>{props.namespace.name}</Typography>
+                        {pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN) ? (
+                            <Box>
                                 <Button
+                                    sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}
                                     variant='outlined'
-                                    sx={{ color: 'error.main', height: 36, ml: { xs: 2 } }}
-                                    onClick={handleOpenDeleteDialog}>
-                                    Delete
+                                    onClick={handleOpenChangeDialog}>
+                                    Change Namespace
                                 </Button>
-                            }
-                        </Box>
-                        : null
-                    }
-                </NamespaceHeader>
-            </Grid>
-            {
-                props.namespace.membersUrl
-                ? <Grid item>
-                    <UserNamespaceMemberList
-                        setLoadingState={props.setLoadingState}
-                        namespace={props.namespace}
-                        filterUsers={props.filterUsers}
-                        fixSelf={props.fixSelf} />
+                                {Object.keys(props.namespace.extensions).length === 0 && (
+                                    <Button
+                                        variant='outlined'
+                                        sx={{ color: 'error.main', height: 36, ml: { xs: 2 } }}
+                                        onClick={handleOpenDeleteDialog}>
+                                        Delete
+                                    </Button>
+                                )}
+                            </Box>
+                        ) : null}
+                    </NamespaceHeader>
                 </Grid>
-                : null
-            }
-            {
-                props.namespace.detailsUrl
-                ? <Grid item>
-                    <UserNamespaceDetails namespace={props.namespace}/>
+                {props.namespace.membersUrl ? (
+                    <Grid item>
+                        <UserNamespaceMemberList
+                            setLoadingState={props.setLoadingState}
+                            namespace={props.namespace}
+                            filterUsers={props.filterUsers}
+                            fixSelf={props.fixSelf}
+                        />
+                    </Grid>
+                ) : null}
+                {props.namespace.detailsUrl ? (
+                    <Grid item>
+                        <UserNamespaceDetails namespace={props.namespace} />
+                    </Grid>
+                ) : null}
+                <Grid item>
+                    <UserNamespaceExtensionListContainer namespace={props.namespace} />
                 </Grid>
-                : null
-            }
-            <Grid item>
-                <UserNamespaceExtensionListContainer
-                    namespace={props.namespace}
-                />
-            </Grid>
-        </NamespaceDetailContainer>
-        <NamespaceChangeDialog
-            open={changeDialogIsOpen}
-            onClose={handleCloseChangeDialog}
-            namespace={props.namespace}
-            setLoadingState={props.setLoadingState} />
-        <NamespaceDeleteDialog
-            open={deleteDialogIsOpen}
-            onClose={handleCloseDeleteDialog}
-            onDelete={handleDeletedNamespace}
-            namespace={props.namespace}
-            setLoadingState={props.setLoadingState} />
-    </>;
+            </NamespaceDetailContainer>
+            <NamespaceChangeDialog
+                open={changeDialogIsOpen}
+                onClose={handleCloseChangeDialog}
+                namespace={props.namespace}
+                setLoadingState={props.setLoadingState}
+            />
+            <NamespaceDeleteDialog
+                open={deleteDialogIsOpen}
+                onClose={handleCloseDeleteDialog}
+                onDelete={handleDeletedNamespace}
+                namespace={props.namespace}
+                setLoadingState={props.setLoadingState}
+            />
+        </>
+    );
 };
 
 export interface NamespaceDetailProps {

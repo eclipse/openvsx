@@ -62,6 +62,17 @@ public class LocalVSCodeService implements IVSCodeService {
     private final WebResourceService webResources;
     private final CacheService cache;
 
+    private final Map<String, String> assets = Map.of(
+            FILE_VSIX, DOWNLOAD,
+            FILE_MANIFEST, MANIFEST,
+            FILE_DETAILS, README,
+            FILE_CHANGELOG, CHANGELOG,
+            FILE_LICENSE, LICENSE,
+            FILE_ICON, ICON,
+            FILE_VSIXMANIFEST, VSIXMANIFEST,
+            FILE_SIGNATURE, DOWNLOAD_SIG
+    );
+
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
@@ -316,7 +327,7 @@ public class LocalVSCodeService implements IVSCodeService {
                 .max(Comparator.comparing(ExtensionVersion::isPreRelease).reversed().thenComparing(ExtensionVersion::getTimestamp));
 
         var queryVersions = versions.stream()
-                .sorted(ExtensionVersion.SORT_COMPARATOR.reversed())
+                .sorted(ExtensionVersion.SORT_COMPARATOR)
                 .map(ev -> toQueryVersion(ev, fileResources, FLAG_INCLUDE_ASSET_URI | FLAG_INCLUDE_VERSION_PROPERTIES))
                 .toList();
 
@@ -349,17 +360,6 @@ public class LocalVSCodeService implements IVSCodeService {
                         .build();
             }
         }
-
-        var assets = Map.of(
-                FILE_VSIX, DOWNLOAD,
-                FILE_MANIFEST, MANIFEST,
-                FILE_DETAILS, README,
-                FILE_CHANGELOG, CHANGELOG,
-                FILE_LICENSE, LICENSE,
-                FILE_ICON, ICON,
-                FILE_VSIXMANIFEST, VSIXMANIFEST,
-                FILE_SIGNATURE, DOWNLOAD_SIG
-        );
 
         var type = assets.get(assetType);
         if (type != null) {

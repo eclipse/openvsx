@@ -34,13 +34,12 @@ const NavCard: FunctionComponent<{ entry: RouteEntry }> = ({ entry }) => {
         <Card variant='outlined' sx={{ height: '100%' }}>
             <CardActionArea
                 onClick={() => navigate(entry.path)}
-                sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 2 }}
-            >
-                <Box sx={{ fontSize: 40, color: 'primary.main', mb: 1, display: 'flex' }}>
-                    {entry.icon}
-                </Box>
+                sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 2 }}>
+                <Box sx={{ fontSize: 40, color: 'primary.main', mb: 1, display: 'flex' }}>{entry.icon}</Box>
                 <CardContent sx={{ textAlign: 'center', p: 1 }}>
-                    <Typography variant='h6' gutterBottom>{entry.name}</Typography>
+                    <Typography variant='h6' gutterBottom>
+                        {entry.name}
+                    </Typography>
                     {entry.description && (
                         <Typography variant='body2' color='text.secondary'>
                             {entry.description}
@@ -73,7 +72,10 @@ export const Welcome: FunctionComponent<WelcomeProps> = ({ items }) => {
                         <Box key={section.groupName ?? '__root__'}>
                             {section.groupName && (
                                 <>
-                                    <Typography variant='overline' color='text.secondary' sx={{ mb: 1, display: 'block' }}>
+                                    <Typography
+                                        variant='overline'
+                                        color='text.secondary'
+                                        sx={{ mb: 1, display: 'block' }}>
                                         {section.groupName}
                                     </Typography>
                                     <Divider sx={{ mb: 2 }} />

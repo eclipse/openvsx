@@ -2,11 +2,30 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-### [next] (unreleased)
+### [v1.0.2] (23/06/2026)
+
+#### Dependencies
+
+- Bump tmp from `0.2.6` to `0.2.7` ([#1903](https://github.com/eclipse/openvsx/pull/1903))
+- Bump tar from `7.5.11` to `7.5.16` ([#1911](https://github.com/eclipse/openvsx/pull/1911))
+- Bump form-data from `4.0.4` to `4.0.6` ([#1910](https://github.com/eclipse/openvsx/pull/1910))
+- Bump js-yaml from `4.1.1` to `4.2.0` ([#1912](https://github.com/eclipse/openvsx/pull/1912))
+- Bump markdown-it from `14.1.1` to `14.2.0` ([#1913](https://github.com/eclipse/openvsx/pull/1913))
+
+### [v1.0.1] (11/06/2026)
+
+### Fixes
+
+- Properly encode path segments in `getUrl` method ([#1893](https://github.com/eclipse/openvsx/pull/1893))
+
+### [v1.0.0] (28/05/2026)
 
 #### Dependencies
 
 - Bump fast-uri from `3.1.0` to `3.1.2` ([#1829](https://github.com/eclipse/openvsx/pull/1829))
+- Bump brace-expansion from `5.0.5` to `5.0.6` ([#1846](https://github.com/eclipse/openvsx/pull/1846))
+- Bump qs from `6.15.0` to `6.15.2` ([#1869](https://github.com/eclipse/openvsx/pull/1869))
+- Bump tmp from `0.2.4` to `0.2.6` ([#1877](https://github.com/eclipse/openvsx/pull/1877))
 
 ### [v0.10.12] (08/05/2026)
 

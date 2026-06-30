@@ -24,39 +24,43 @@ export const ExtensionDetailDownloadsMenu: FunctionComponent<ExtensionDetailDown
         setAnchorEl(null);
     };
 
-    return <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Button
-            variant='contained'
-            color='secondary'
-            sx={{ mt: 2 }}
-            title='Download'
-            aria-label='Download'
-            onClick={handleClick}
-        >
-            Download
-        </Button>
-        <Menu
-            open={Boolean(anchorEl)}
-            anchorEl={anchorEl}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            sx={{ mt: 1 }}
-            onClose={handleClose}>
-                {
-                    Object.keys(props.downloads).map((targetPlatform) => {
-                        const downloadLink = props.downloads[targetPlatform];
-                        return <MenuItem key={targetPlatform} sx={{ cursor: 'auto' }}>
-                            <Link onClick={handleClose} href={downloadLink} sx={{ cursor: 'pointer', textDecoration: 'none' }}>
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+                variant='contained'
+                color='secondary'
+                sx={{ mt: 2 }}
+                title='Download'
+                aria-label='Download'
+                onClick={handleClick}>
+                Download
+            </Button>
+            <Menu
+                open={Boolean(anchorEl)}
+                anchorEl={anchorEl}
+                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                sx={{ mt: 1 }}
+                onClose={handleClose}>
+                {Object.keys(props.downloads).map(targetPlatform => {
+                    const downloadLink = props.downloads[targetPlatform];
+                    return (
+                        <MenuItem key={targetPlatform} sx={{ cursor: 'auto' }}>
+                            <Link
+                                onClick={handleClose}
+                                href={downloadLink}
+                                sx={{ cursor: 'pointer', textDecoration: 'none' }}>
                                 <Typography variant='body2' color='text.primary'>
                                     {getTargetPlatformDisplayName(targetPlatform)}
                                 </Typography>
                             </Link>
-                        </MenuItem>;
-                    })
-                }
-        </Menu>
-    </Box>;
+                        </MenuItem>
+                    );
+                })}
+            </Menu>
+        </Box>
+    );
 };
 
 export interface ExtensionDetailDownloadsMenuProps {
-    downloads: {[targetPlatform: string]: UrlString};
+    downloads: { [targetPlatform: string]: UrlString };
 }

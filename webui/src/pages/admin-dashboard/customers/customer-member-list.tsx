@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
+import { FunctionComponent, useEffect, useState, useContext } from 'react';
 import {
     Box,
     Typography,
@@ -21,40 +21,43 @@ import {
     ListItem,
     ListItemAvatar,
     Avatar,
-    ListItemText, IconButton, type PaperProps, Paper
+    ListItemText,
+    IconButton,
+    type PaperProps,
+    Paper
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
 import { MainContext } from '../../../context';
-import { CustomerMembership, Customer, UserData, isError } from '../../../extension-registry-types';
+import { Customer, UserData } from '../../../extension-registry-types';
 import { AddUserDialog } from '../../user/add-user-dialog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { createRoute } from '../../../utils';
+import { useAddCustomerMember, useCustomerMembers, useRemoveCustomerMember } from './use-customers';
 
 const sectionPaperProps: PaperProps = { elevation: 1, sx: { p: 3, mb: 3 } };
 
 export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = props => {
-    const { service, handleError } = useContext(MainContext);
-    const [members, setMembers] = useState<CustomerMembership[]>([]);
+    const { handleError } = useContext(MainContext);
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
-    const abortController = useRef<AbortController>(new AbortController());
 
+    const { data, error } = useCustomerMembers(props.customer.name);
+    const { mutateAsync: addMember } = useAddCustomerMember(props.customer.name);
+    const { mutateAsync: removeMember } = useRemoveCustomerMember(props.customer.name);
+
+    const members = data?.customerMemberships ?? [];
     const users = members.map(member => member.user);
 
+    // Preserve the previous behaviour of surfacing fetch failures via the global error dialog.
     useEffect(() => {
-        fetchMembers();
-    }, [props.customer]);
+        if (error) {
+            handleError(error);
+        }
+    }, [error, handleError]);
 
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const handleCloseAddDialog = async () => {
+    const handleCloseAddDialog = () => {
         setAddDialogIsOpen(false);
-        fetchMembers();
     };
 
     const handleOpenAddDialog = async () => {
@@ -63,11 +66,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleAddUser = async (user: UserData) => {
         try {
-            const result = await service.admin.addCustomerMember(abortController.current, props.customer.name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchMembers();
+            await addMember(user);
         } catch (err) {
             handleError(err);
         }
@@ -75,98 +74,88 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
 
     const handleRemoveUser = async (user: UserData) => {
         try {
-            const result = await service.admin.removeCustomerMember(abortController.current, props.customer.name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            await fetchMembers();
+            await removeMember(user);
         } catch (err) {
             handleError(err);
         }
     };
 
-    const fetchMembers = async () => {
-        try {
-            const membershipList = await service.admin.getCustomerMembers(abortController.current, props.customer.name);
-            const members = membershipList.customerMemberships;
-            setMembers(members);
-        } catch (err) {
-            handleError(err);
-        }
-    };
+    return (
+        <Paper {...sectionPaperProps}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 1,
+                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
+                }}>
+                <Typography variant='h6'>Members</Typography>
+                <Button size='small' startIcon={<PersonAddIcon />} onClick={handleOpenAddDialog}>
+                    Add Member
+                </Button>
+            </Box>
+            <Divider sx={{ mb: 1 }} />
+            {members.length === 0 ? (
+                <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
+                    No members assigned to this customer.
+                </Typography>
+            ) : (
+                <List dense disablePadding>
+                    {users.map(user => (
+                        <ListItem
+                            key={`${user.loginName}-${user.provider}`}
+                            secondaryAction={
+                                <IconButton
+                                    edge='end'
+                                    size='small'
+                                    color='error'
+                                    onClick={() => handleRemoveUser(user)}
+                                    title='Remove member'>
+                                    <DeleteIcon fontSize='small' />
+                                </IconButton>
+                            }>
+                            <ListItemAvatar>
+                                <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={
+                                    <RouterLink
+                                        style={{ color: 'inherit' }}
+                                        to={createRoute([AdminDashboardRoutes.PUBLISHER_ADMIN, user.loginName])}>
+                                        {user.loginName}
+                                    </RouterLink>
+                                }
+                                secondary={user.fullName}
+                            />
+                        </ListItem>
+                    ))}
+                </List>
+            )}
 
-    return <Paper {...sectionPaperProps}>
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 1,
-                flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-            }}
-        >
-            <Typography variant='h6'>Members</Typography>
-            <Button size='small' startIcon={<PersonAddIcon />} onClick={handleOpenAddDialog}>
-                Add Member
-            </Button>
-        </Box>
-        <Divider sx={{ mb: 1 }} />
-        {members.length === 0 ? (
-            <Typography variant='body2' color='text.secondary' sx={{ py: 1 }}>
-                No members assigned to this customer.
-            </Typography>
-        ) : (
-            <List dense disablePadding>
-                {users.map(user => (
-                    <ListItem
-                        key={`${user.loginName}-${user.provider}`}
-                        secondaryAction={
-                            <IconButton edge='end' size='small' color='error' onClick={() => handleRemoveUser(user)} title='Remove member'>
-                                <DeleteIcon fontSize='small' />
-                            </IconButton>
-                        }
-                    >
-                        <ListItemAvatar>
-                            <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32 }} />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={
-                                <RouterLink style={{ color: 'inherit' }} to={createRoute([AdminDashboardRoutes.PUBLISHER_ADMIN, user.loginName])}>
-                                    {user.loginName}
-                                </RouterLink>
-                            }
-                            secondary={user.fullName}
-                        />
-                    </ListItem>
-                ))}
-            </List>
-        )}
+            {/*{members.length ?*/}
+            {/*    <Paper elevation={3}>*/}
+            {/*        {members.map(member =>*/}
+            {/*            <UserNamespaceMember*/}
+            {/*                key={'nspcmbr-' + member.user.loginName + member.user.provider}*/}
+            {/*                namespace={props.namespace}*/}
+            {/*                member={member}*/}
+            {/*                fixSelf={props.fixSelf}*/}
+            {/*                onChangeRole={role => changeRole(member, role)}*/}
+            {/*                onRemoveUser={() => changeRole(member, 'remove')} />)}*/}
+            {/*    </Paper> :*/}
+            {/*    <Typography variant='body1'>There are no members assigned yet.</Typography>}*/}
 
-
-
-
-        {/*{members.length ?*/}
-        {/*    <Paper elevation={3}>*/}
-        {/*        {members.map(member =>*/}
-        {/*            <UserNamespaceMember*/}
-        {/*                key={'nspcmbr-' + member.user.loginName + member.user.provider}*/}
-        {/*                namespace={props.namespace}*/}
-        {/*                member={member}*/}
-        {/*                fixSelf={props.fixSelf}*/}
-        {/*                onChangeRole={role => changeRole(member, role)}*/}
-        {/*                onRemoveUser={() => changeRole(member, 'remove')} />)}*/}
-        {/*    </Paper> :*/}
-        {/*    <Typography variant='body1'>There are no members assigned yet.</Typography>}*/}
-
-        <AddUserDialog
-            open={addDialogIsOpen}
-            title='Add Member'
-            description='Search for a user by login name to add them to this customer.'
-            existingUsers={members.map(member => member.user)}
-            onClose={handleCloseAddDialog}
-            onAddUser={handleAddUser}
-        />
-    </Paper>;
+            <AddUserDialog
+                open={addDialogIsOpen}
+                title='Add Member'
+                description='Search for a user by login name to add them to this customer.'
+                existingUsers={members.map(member => member.user)}
+                onClose={handleCloseAddDialog}
+                onAddUser={handleAddUser}
+            />
+        </Paper>
+    );
 };
 
 export interface CustomerMemberListProps {

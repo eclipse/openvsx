@@ -253,4 +253,25 @@ class AwsStorageServiceTest {
         assertFalse((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasStaticCredentials"));
         assertFalse((Boolean) ReflectionTestUtils.invokeMethod(storageService, "hasSessionToken"));
     }
+
+    @Test
+    void testPresignerIsCachedAsSingleton() {
+        // Only region is needed to construct the presigner builder
+        ReflectionTestUtils.setField(storageService, "region", "us-east-1");
+        ReflectionTestUtils.setField(storageService, "serviceEndpoint", "");
+
+        var presigner1 = ReflectionTestUtils.invokeMethod(storageService, "getS3Presigner");
+        var presigner2 = ReflectionTestUtils.invokeMethod(storageService, "getS3Presigner");
+
+        assertNotNull(presigner1);
+        assertSame(presigner1, presigner2,
+                "S3Presigner must be cached as a singleton; recreating it on each call " +
+                "destroys the HTTP connection pool needed for IRSA credential refresh");
+    }
+
+    @Test
+    void testPresignerFieldInitiallyNull() {
+        assertNull(ReflectionTestUtils.getField(storageService, "s3Presigner"),
+                "S3Presigner should be lazily initialized");
+    }
 }

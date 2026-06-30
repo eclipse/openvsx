@@ -41,7 +41,7 @@ export const useScansTab = () => {
                 allowed: 0,
                 blocked: 0,
                 needsReview: 0,
-                total: 0,
+                total: 0
             };
         }
         return {
@@ -56,37 +56,45 @@ export const useScansTab = () => {
             blocked: state.scanCounts.BLOCKED,
             needsReview: state.scanCounts.NEEDS_REVIEW,
             // Total = sum of scan statuses only (ALLOWED/BLOCKED/NEEDS_REVIEW are admin decisions, not statuses)
-            total: state.scanCounts.STARTED + state.scanCounts.VALIDATING + state.scanCounts.SCANNING +
-                   state.scanCounts.PASSED + state.scanCounts.QUARANTINED + state.scanCounts.AUTO_REJECTED +
-                   state.scanCounts.ERROR,
+            total:
+                state.scanCounts.STARTED +
+                state.scanCounts.VALIDATING +
+                state.scanCounts.SCANNING +
+                state.scanCounts.PASSED +
+                state.scanCounts.QUARANTINED +
+                state.scanCounts.AUTO_REJECTED +
+                state.scanCounts.ERROR
         };
     }, [state.scanCounts]);
 
-    return useMemo(() => ({
-        tabIndex: 0,
-        tabName: 'Scans',
-        scans: state.scans,
-        isLoading: state.isLoadingScans,
-        lastRefreshed: state.lastRefreshed,
-        autoRefresh: state.autoRefresh,
-        onAutoRefreshChange: actions.setAutoRefresh,
-        counts,
-        search,
-        globalFilters,
-        statusFilters,
-        pagination,
-    }), [
-        state.scans,
-        state.isLoadingScans,
-        state.lastRefreshed,
-        state.autoRefresh,
-        actions.setAutoRefresh,
-        counts,
-        search,
-        globalFilters,
-        statusFilters,
-        pagination,
-    ]);
+    return useMemo(
+        () => ({
+            tabIndex: 0,
+            tabName: 'Scans',
+            scans: state.scans,
+            isLoading: state.isLoadingScans,
+            lastRefreshed: state.lastRefreshed,
+            autoRefresh: state.autoRefresh,
+            onAutoRefreshChange: actions.setAutoRefresh,
+            counts,
+            search,
+            globalFilters,
+            statusFilters,
+            pagination
+        }),
+        [
+            state.scans,
+            state.isLoadingScans,
+            state.lastRefreshed,
+            state.autoRefresh,
+            actions.setAutoRefresh,
+            counts,
+            search,
+            globalFilters,
+            statusFilters,
+            pagination
+        ]
+    );
 };
 
 export type UseScansTabReturn = ReturnType<typeof useScansTab>;

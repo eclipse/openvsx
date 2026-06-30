@@ -18,4 +18,8 @@ public class VersionAlias {
     public static final String PREVIEW = "preview"; // old version alias
 
     public static final List<String> ALIAS_NAMES = List.of(LATEST, PRE_RELEASE, PREVIEW);
+
+    public static boolean isAlias(String version) {
+        return LATEST.equalsIgnoreCase(version) || PRE_RELEASE.equalsIgnoreCase(version);
+    }
 }

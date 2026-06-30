@@ -14,7 +14,9 @@ import { MainContext } from '../../context';
 import { UserExtensionList } from './user-extension-list';
 import { Typography } from '@mui/material';
 
-export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespaceExtensionListContainerProps> = props => {
+export const UserNamespaceExtensionListContainer: FunctionComponent<
+    UserNamespaceExtensionListContainerProps
+> = props => {
     const [extensions, setExtensions] = useState<Extension[]>();
     const [loading, setLoading] = useState<boolean>(true);
     const context = useContext(MainContext);
@@ -32,7 +34,9 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
     }, [props.namespace.name]);
 
     const updateExtensions = async (): Promise<void> => {
-        const extensionsURLs: string[] = Object.keys(props.namespace.extensions).map((key: string) => props.namespace.extensions[key]);
+        const extensionsURLs: string[] = Object.keys(props.namespace.extensions).map(
+            (key: string) => props.namespace.extensions[key]
+        );
 
         const getExtension = async (url: string) => {
             let result: Extension | ErrorResult;
@@ -48,23 +52,23 @@ export const UserNamespaceExtensionListContainer: FunctionComponent<UserNamespac
             }
         };
 
-        const extensionUnfiltered = await Promise.all(
-            extensionsURLs.map((url: string) => getExtension(url))
-        );
+        const extensionUnfiltered = await Promise.all(extensionsURLs.map((url: string) => getExtension(url)));
         const extensions = extensionUnfiltered.filter(e => e != null) as Extension[];
 
         setExtensions(extensions);
         setLoading(false);
     };
 
-    return <>
-        <Typography variant='h5'>Extensions</Typography>
-        {
-            extensions && extensions.length > 0
-                ? <UserExtensionList extensions={extensions} loading={loading} canDelete />
-                : <Typography  variant='body1'>No extensions published under this namespace yet.</Typography>
-        }
-    </>;
+    return (
+        <>
+            <Typography variant='h5'>Extensions</Typography>
+            {extensions && extensions.length > 0 ? (
+                <UserExtensionList extensions={extensions} loading={loading} canDelete />
+            ) : (
+                <Typography variant='body1'>No extensions published under this namespace yet.</Typography>
+            )}
+        </>
+    );
 };
 
 export interface UserNamespaceExtensionListContainerProps {

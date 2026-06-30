@@ -10,7 +10,9 @@
 package org.eclipse.openvsx.admin;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.stereotype.Component;
@@ -21,14 +23,24 @@ import java.util.UUID;
 @Component
 public class MonthlyAdminStatisticsJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
+    private final SettingsService settings;
     private final JobRequestScheduler scheduler;
 
-    public MonthlyAdminStatisticsJobRequestHandler(JobRequestScheduler scheduler) {
+    public MonthlyAdminStatisticsJobRequestHandler(
+            SettingsService settings,
+            JobRequestScheduler scheduler
+    ) {
+        this.settings = settings;
         this.scheduler = scheduler;
     }
 
     @Override
+    @Job(name = "Monthly admin statistics update", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         var lastMonth = TimeUtil.getCurrentUTC().minusMonths(1);
         var year = lastMonth.getYear();
         var month = lastMonth.getMonthValue();

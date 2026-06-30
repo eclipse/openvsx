@@ -13,6 +13,7 @@
 
 import type { Dispatch, MutableRefObject } from 'react';
 import { useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { ScanState, ScanAction } from './scan-types';
 
 // ============================================================================
@@ -30,10 +31,8 @@ export const useConfirmAction = (
     dispatch: Dispatch<ScanAction>,
     handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
-    return useCallback(async () => {
-        const abortController = new AbortController();
-
-        try {
+    const { mutate } = useMutation({
+        mutationFn: async () => {
             // Get selected scan IDs
             const selectedScanIds: string[] = [];
             for (const id in state.quarantinedChecked) {
@@ -43,33 +42,40 @@ export const useConfirmAction = (
             }
 
             if (selectedScanIds.length === 0) {
-                dispatch({ type: 'CLOSE_CONFIRM_DIALOG' });
-                return;
+                return { skipped: true };
             }
 
             const decision = state.confirmAction === 'allow' ? 'allowed' : 'blocked';
 
             // Backend handles adding enforced threat files to allow/block list automatically
-            const scanResponse = await service.admin.makeScanDecision(abortController, {
+            const scanResponse = await service.admin.makeScanDecision({
                 scanIds: selectedScanIds,
-                decision,
+                decision
             });
 
             if (scanResponse.error) {
-                handleErrorRef.current(new Error(scanResponse.error));
-                return;
+                throw new Error(scanResponse.error);
             }
 
+            return { skipped: false };
+        },
+        onSuccess: result => {
+            if (result.skipped) {
+                dispatch({ type: 'CLOSE_CONFIRM_DIALOG' });
+                return;
+            }
             // Update local state and trigger refresh
             dispatch({ type: 'EXECUTE_CONFIRM_ACTION' });
             dispatch({ type: 'TRIGGER_REFRESH' });
-
-        } catch (err: any) {
-            if (!abortController.signal.aborted) {
-                handleErrorRef.current(err);
-            }
+        },
+        onError: err => {
+            handleErrorRef.current(err);
         }
-    }, [service, state.quarantinedChecked, state.confirmAction, dispatch, handleErrorRef]);
+    });
+
+    return useCallback(() => {
+        mutate();
+    }, [mutate]);
 };
 
 // ============================================================================
@@ -85,18 +91,26 @@ export const useRetryFailedScannerJobsAction = (
     dispatch: Dispatch<ScanAction>,
     handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
-    return useCallback(async (scanId: string): Promise<void> => {
-        const abortController = new AbortController();
-
-        try {
-            await service.admin.retryFailedScannerJobs(abortController, scanId);
+    const { mutateAsync } = useMutation({
+        mutationFn: (scanId: string) => service.admin.retryFailedScannerJobs(scanId),
+        onSuccess: () => {
             dispatch({ type: 'TRIGGER_REFRESH' });
-        } catch (err: any) {
-            if (!abortController.signal.aborted) {
-                handleErrorRef.current(err);
-            }
+        },
+        onError: err => {
+            handleErrorRef.current(err);
         }
-    }, [service, dispatch, handleErrorRef]);
+    });
+
+    return useCallback(
+        async (scanId: string): Promise<void> => {
+            try {
+                await mutateAsync(scanId);
+            } catch {
+                // Error is surfaced via the mutation's onError handler.
+            }
+        },
+        [mutateAsync]
+    );
 };
 
 // ============================================================================
@@ -113,25 +127,21 @@ export const useFileAction = (
     dispatch: Dispatch<ScanAction>,
     handleErrorRef: MutableRefObject<(error: any) => void>
 ) => {
-    return useCallback(async () => {
-        const abortController = new AbortController();
-
-        try {
+    const { mutate } = useMutation({
+        mutationFn: async () => {
             if (state.filesChecked.size === 0) {
-                dispatch({ type: 'CLOSE_FILE_DIALOG' });
-                return;
+                return { skipped: true };
             }
 
             const selectedFileIds = Array.from(state.filesChecked).map(id => parseInt(id, 10));
 
             if (state.fileActionType === 'delete') {
-                const response = await service.admin.deleteFileDecisions(abortController, {
-                    fileIds: selectedFileIds,
+                const response = await service.admin.deleteFileDecisions({
+                    fileIds: selectedFileIds
                 });
 
                 if (response.error) {
-                    handleErrorRef.current(new Error(response.error));
-                    return;
+                    throw new Error(response.error);
                 }
             } else {
                 const decision = state.fileActionType === 'allow' ? 'allowed' : 'blocked';
@@ -139,27 +149,35 @@ export const useFileAction = (
                 const selectedFiles = state.files.filter(file => state.filesChecked.has(file.id));
                 const fileHashes = selectedFiles.map(file => file.fileHash);
 
-                const response = await service.admin.makeFileDecision(abortController, {
+                const response = await service.admin.makeFileDecision({
                     fileHashes,
-                    decision,
+                    decision
                 });
 
                 if (response.error) {
-                    handleErrorRef.current(new Error(response.error));
-                    return;
+                    throw new Error(response.error);
                 }
             }
 
+            return { skipped: false };
+        },
+        onSuccess: result => {
+            if (result.skipped) {
+                dispatch({ type: 'CLOSE_FILE_DIALOG' });
+                return;
+            }
             // Update local state and trigger refresh
             dispatch({ type: 'SET_FILES_CHECKED', payload: new Set() });
             dispatch({ type: 'CLOSE_FILE_DIALOG' });
             dispatch({ type: 'RESET_PAGE' }); // Go back to first page after action
             dispatch({ type: 'TRIGGER_REFRESH' });
-
-        } catch (err: any) {
-            if (!abortController.signal.aborted) {
-                handleErrorRef.current(err);
-            }
+        },
+        onError: err => {
+            handleErrorRef.current(err);
         }
-    }, [service, state.filesChecked, state.fileActionType, state.files, dispatch, handleErrorRef]);
+    });
+
+    return useCallback(() => {
+        mutate();
+    }, [mutate]);
 };

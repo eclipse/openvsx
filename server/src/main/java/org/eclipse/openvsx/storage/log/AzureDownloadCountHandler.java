@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.TempFile;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -56,6 +57,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
 
     protected final Logger logger = LoggerFactory.getLogger(AzureDownloadCountHandler.class);
 
+    private final SettingsService settings;
     private final DownloadCountProcessor processor;
     private BlobContainerClient containerClient;
     private ObjectMapper objectMapper;
@@ -79,7 +81,8 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     @Value("${ovsx.logs.azure.cron:0 5 * * * *}")
     String cronSchedule;
 
-    public AzureDownloadCountHandler(DownloadCountProcessor processor) {
+    public AzureDownloadCountHandler(SettingsService settings, DownloadCountProcessor processor) {
+        this.settings = settings;
         this.processor = processor;
     }
 
@@ -113,7 +116,13 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
             return;
         }
 
+        if (settings.isReadOnly()) {
+            logger.info("[AzureDownloadCountService] registry is in read-only mode, skipping job");
+            return;
+        }
+
         logger.info("[AzureDownloadCountService] >> updateDownloadCounts");
+
         var maxExecutionTime = LocalDateTime.now().plusMinutes(50);
         var blobs = listBlobs();
         var iterableByPage = blobs.iterableByPage();
@@ -148,6 +157,11 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
                 return false;
             }
 
+            if (settings.isReadOnly()) {
+                logger.info("skip processing log files as registry is in read-only mode");
+                return false;
+            }
+
             var processedOn = LocalDateTime.now();
             var success = false;
             stopWatch.start();
@@ -168,7 +182,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
             stopWatch.stop();
             var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
             processor.persistProcessedItem(name, FileResource.STORAGE_AZURE, processedOn, executionTime, success);
-            if(success) {
+            if (success) {
                 deleteBlob(name);
             }
         }
@@ -180,7 +194,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
         try {
             getContainerClient().getBlobClient(blobName).delete();
         } catch(BlobStorageException e) {
-            if(e.getStatusCode() != HttpStatus.NOT_FOUND.value()) {
+            if (e.getStatusCode() != HttpStatus.NOT_FOUND.value()) {
                 // 404 indicates that the file is already deleted
                 // so only throw an exception for other status codes
                 throw e;
@@ -189,21 +203,20 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     }
 
     private Map<String, Integer> processBlobItem(String blobName) throws IOException {
-        try (
-                var downloadsTempFile = downloadBlobItem(blobName);
-                var reader = Files.newBufferedReader(downloadsTempFile.getPath())
+        try (var downloadsTempFile = downloadBlobItem(blobName);
+             var reader = Files.newBufferedReader(downloadsTempFile.getPath())
         ) {
             var fileCounts = new HashMap<String, Integer>();
             var lines = reader.lines().iterator();
-            while(lines.hasNext()) {
+            while (lines.hasNext()) {
                 var line = lines.next();
                 var node = getObjectMapper().readTree(line);
                 String[] pathParams = null;
-                if(isGetBlobOperation(node) && isStatusOk(node) && isExtensionPackageUri(node) && isNotOpenVSXUserAgent(node)) {
+                if (isGetBlobOperation(node) && isStatusOk(node) && isExtensionPackageUri(node) && isNotOpenVSXUserAgent(node)) {
                     var uri = node.get("uri").asText();
                     pathParams = uri.substring(storageServiceEndpoint.length()).split("/");
                 }
-                if(pathParams != null && storageBlobContainer.equals(pathParams[1])) {
+                if (pathParams != null && storageBlobContainer.equals(pathParams[1])) {
                     var fileName = UriUtils.decode(pathParams[pathParams.length - 1], StandardCharsets.UTF_8).toUpperCase();
                     fileCounts.merge(fileName, 1, Integer::sum);
                 }
@@ -275,7 +288,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     }
 
     private ObjectMapper getObjectMapper() {
-        if(objectMapper == null) {
+        if (objectMapper == null) {
             objectMapper = new ObjectMapper();
         }
 
@@ -287,7 +300,7 @@ public class AzureDownloadCountHandler implements JobRequestHandler<HandlerJobRe
     }
 
     private Pattern getBlobItemNamePattern() {
-        if(blobItemNamePattern == null) {
+        if (blobItemNamePattern == null) {
             var host = URI.create(storageServiceEndpoint).getHost();
             var storageAccount = host.substring(0, host.indexOf('.'));
 

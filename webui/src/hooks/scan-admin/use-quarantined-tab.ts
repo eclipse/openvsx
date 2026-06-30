@@ -46,14 +46,17 @@ export const useQuarantinedTab = () => {
         return {
             checked: state.quarantinedChecked,
             selectedCount,
-            selectedExtensions: derived.selectedExtensions,
+            selectedExtensions: derived.selectedExtensions
         };
     }, [state.quarantinedChecked, derived.selectedExtensions]);
 
     // Selection actions
-    const toggleCheck = useCallback((id: string, checked: boolean) => {
-        actions.toggleQuarantinedCheck(id, checked);
-    }, [actions]);
+    const toggleCheck = useCallback(
+        (id: string, checked: boolean) => {
+            actions.toggleQuarantinedCheck(id, checked);
+        },
+        [actions]
+    );
 
     const selectAll = useCallback(() => {
         // Only select scans that are selectable (need review)
@@ -66,72 +69,80 @@ export const useQuarantinedTab = () => {
 
     const isAllSelected = useMemo(() => {
         // Check if all selectable scans are selected
-        return selectableScans.length > 0 &&
-            selectableScans.every(scan => state.quarantinedChecked[scan.id]);
+        return selectableScans.length > 0 && selectableScans.every(scan => state.quarantinedChecked[scan.id]);
     }, [selectableScans, state.quarantinedChecked]);
 
     const isSomeSelected = useMemo(() => {
-        return selectableScans.some(scan => state.quarantinedChecked[scan.id]) &&
-            !isAllSelected;
+        return selectableScans.some(scan => state.quarantinedChecked[scan.id]) && !isAllSelected;
     }, [selectableScans, state.quarantinedChecked, isAllSelected]);
 
     // Bulk actions
-    const bulkActions = useMemo(() => ({
-        openAllowDialog: actions.openAllowDialog,
-        openBlockDialog: actions.openBlockDialog,
-        canPerformBulkAction: selection.selectedCount > 0,
-    }), [actions, selection.selectedCount]);
+    const bulkActions = useMemo(
+        () => ({
+            openAllowDialog: actions.openAllowDialog,
+            openBlockDialog: actions.openBlockDialog,
+            canPerformBulkAction: selection.selectedCount > 0
+        }),
+        [actions, selection.selectedCount]
+    );
 
     // Get total count from the counts API (unaffected by search filters and admin decision checkbox filters)
-    const totalCount = (state.scanCounts?.STARTED ?? 0) + (state.scanCounts?.VALIDATING ?? 0) +
-        (state.scanCounts?.SCANNING ?? 0) + (state.scanCounts?.PASSED ?? 0) +
-        (state.scanCounts?.QUARANTINED ?? 0) + (state.scanCounts?.AUTO_REJECTED ?? 0) +
+    const totalCount =
+        (state.scanCounts?.STARTED ?? 0) +
+        (state.scanCounts?.VALIDATING ?? 0) +
+        (state.scanCounts?.SCANNING ?? 0) +
+        (state.scanCounts?.PASSED ?? 0) +
+        (state.scanCounts?.QUARANTINED ?? 0) +
+        (state.scanCounts?.AUTO_REJECTED ?? 0) +
         (state.scanCounts?.ERROR ?? 0);
 
     // Check if there are any threat scanners available to filter by
     const hasThreatScanners = state.availableThreatScanners.length > 0;
 
-    return useMemo(() => ({
-        tabIndex: 1,
-        tabName: 'Quarantined',
-        scans: quarantinedScans,
-        isLoading: state.isLoadingScans,
-        lastRefreshed: state.lastRefreshed,
-        autoRefresh: state.autoRefresh,
-        onAutoRefreshChange: actions.setAutoRefresh,
-        totalCount,
-        hasThreatScanners,
-        search,
-        globalFilters,
-        quarantineFilters,
-        pagination,
-        selection,
-        toggleCheck,
-        selectAll,
-        deselectAll,
-        isAllSelected,
-        isSomeSelected,
-        bulkActions,
-    }), [
-        quarantinedScans,
-        state.isLoadingScans,
-        state.lastRefreshed,
-        state.autoRefresh,
-        actions.setAutoRefresh,
-        totalCount,
-        hasThreatScanners,
-        search,
-        globalFilters,
-        quarantineFilters,
-        pagination,
-        selection,
-        toggleCheck,
-        selectAll,
-        deselectAll,
-        isAllSelected,
-        isSomeSelected,
-        bulkActions,
-    ]);
+    return useMemo(
+        () => ({
+            tabIndex: 1,
+            tabName: 'Quarantined',
+            scans: quarantinedScans,
+            isLoading: state.isLoadingScans,
+            lastRefreshed: state.lastRefreshed,
+            autoRefresh: state.autoRefresh,
+            onAutoRefreshChange: actions.setAutoRefresh,
+            totalCount,
+            hasThreatScanners,
+            search,
+            globalFilters,
+            quarantineFilters,
+            pagination,
+            selection,
+            toggleCheck,
+            selectAll,
+            deselectAll,
+            isAllSelected,
+            isSomeSelected,
+            bulkActions
+        }),
+        [
+            quarantinedScans,
+            state.isLoadingScans,
+            state.lastRefreshed,
+            state.autoRefresh,
+            actions.setAutoRefresh,
+            totalCount,
+            hasThreatScanners,
+            search,
+            globalFilters,
+            quarantineFilters,
+            pagination,
+            selection,
+            toggleCheck,
+            selectAll,
+            deselectAll,
+            isAllSelected,
+            isSomeSelected,
+            bulkActions
+        ]
+    );
 };
 
 export type UseQuarantinedTabReturn = ReturnType<typeof useQuarantinedTab>;

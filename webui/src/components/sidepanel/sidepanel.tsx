@@ -23,35 +23,35 @@ const openedMixin = (theme: Theme): CSSObject => ({
     width: DRAWER_WIDTH,
     transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.enteringScreen,
+        duration: theme.transitions.duration.enteringScreen
     }),
-    overflowX: 'hidden',
+    overflowX: 'hidden'
 });
 
 const closedMixin = (theme: Theme): CSSObject => ({
     width: COLLAPSED_WIDTH,
     transition: theme.transitions.create('width', {
         easing: theme.transitions.easing.sharp,
-        duration: theme.transitions.duration.leavingScreen,
+        duration: theme.transitions.duration.leavingScreen
     }),
-    overflowX: 'hidden',
+    overflowX: 'hidden'
 });
 
-const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'open' })(
-    ({ theme, open }) => ({
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        whiteSpace: 'nowrap',
-        boxSizing: 'border-box',
-        ...(open ? {
-            ...openedMixin(theme),
-            '& .MuiDrawer-paper': openedMixin(theme),
-        } : {
-            ...closedMixin(theme),
-            '& .MuiDrawer-paper': closedMixin(theme),
-        }),
-    })
-);
+const StyledDrawer = styled(Drawer, { shouldForwardProp: prop => prop !== 'open' })(({ theme, open }) => ({
+    width: DRAWER_WIDTH,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    ...(open
+        ? {
+              ...openedMixin(theme),
+              '& .MuiDrawer-paper': openedMixin(theme)
+          }
+        : {
+              ...closedMixin(theme),
+              '& .MuiDrawer-paper': closedMixin(theme)
+          })
+}));
 
 export const Sidepanel: FunctionComponent<PropsWithChildren<SidepanelProps>> = ({ open, onToggle, children }) => {
     const contextValue = useMemo(() => ({ collapsed: !open }), [open]);
@@ -64,9 +64,7 @@ export const Sidepanel: FunctionComponent<PropsWithChildren<SidepanelProps>> = (
                     </IconButton>
                 </DrawerHeader>
                 <Divider />
-                <List disablePadding>
-                    {children}
-                </List>
+                <List disablePadding>{children}</List>
             </StyledDrawer>
         </SidebarContext.Provider>
     );

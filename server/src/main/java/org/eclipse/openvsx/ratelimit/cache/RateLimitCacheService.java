@@ -12,9 +12,9 @@
  *****************************************************************************/
 package org.eclipse.openvsx.ratelimit.cache;
 
-import io.micrometer.core.instrument.util.NamedThreadFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.eclipse.openvsx.cache.jedis.JedisClusterChannelListener;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +23,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import redis.clients.jedis.RedisClusterClient;
 
 @Service
 @ConditionalOnBean(RateLimitConfig.class)
@@ -45,19 +40,19 @@ public class RateLimitCacheService extends JedisPubSub {
 
     private final Logger logger = LoggerFactory.getLogger(RateLimitCacheService.class);
 
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
     private final CacheManager cacheManager;
     private final ConfigCacheUpdateListener configCacheListener;
     private final ApplicationEventPublisher eventPublisher;
 
     public RateLimitCacheService(
-            JedisCluster jedisCluster,
+            RedisClusterClient redisClusterClient,
             @Qualifier(CACHE_MANAGER) CacheManager cacheManager,
             ApplicationEventPublisher eventPublisher
     ) {
-        this.jedisCluster = jedisCluster;
+        this.redisClusterClient = redisClusterClient;
         this.cacheManager = cacheManager;
-        this.configCacheListener = new ConfigCacheUpdateListener(jedisCluster);
+        this.configCacheListener = new ConfigCacheUpdateListener(redisClusterClient);
         this.eventPublisher = eventPublisher;
     }
 
@@ -73,7 +68,7 @@ public class RateLimitCacheService extends JedisPubSub {
 
     public void publishConfigUpdate(String cacheName, String key) {
         logger.debug("Publish update rate-limit config {}: {}", cacheName, key);
-        jedisCluster.publish(CONFIG_UPDATE_CHANNEL, cacheName + ":" + key);
+        redisClusterClient.publish(CONFIG_UPDATE_CHANNEL, cacheName + ":" + key);
     }
 
     public void evictCustomerCache() {
@@ -124,59 +119,9 @@ public class RateLimitCacheService extends JedisPubSub {
         }
     }
 
-    private class ConfigCacheUpdateListener extends JedisPubSub {
-        private final JedisCluster jedisCluster;
-
-        // Redis subscriber state
-        private volatile Thread subscriberThread;
-        private volatile boolean running = true;
-
-        public ConfigCacheUpdateListener(JedisCluster jedisCluster) {
-            this.jedisCluster = jedisCluster;
-        }
-
-        void startSubscriber() {
-            subscriberThread = new Thread(this::subscribeLoop, "RateLimitConfigSubscriber");
-            subscriberThread.setDaemon(true);
-            subscriberThread.start();
-        }
-
-        void shutdown() {
-            running = false;
-            if (isSubscribed()) {
-                unsubscribe();
-            }
-            if (subscriberThread != null) {
-                subscriberThread.interrupt();
-            }
-        }
-
-        private void subscribeLoop() {
-            AtomicInteger backoffMs = new AtomicInteger(1000);
-            try (var executor = Executors.newSingleThreadScheduledExecutor(
-                    new NamedThreadFactory("rate-limit-config-subscriber-reconnect")
-            )) {
-                while (running && !Thread.currentThread().isInterrupted()) {
-                    ScheduledFuture<?> resetTask = null;
-                    try {
-                        resetTask = executor.schedule(() -> backoffMs.set(1000), 10, TimeUnit.SECONDS);
-                        logger.debug("Subscribing to rate-limit config update channel");
-                        jedisCluster.subscribe(this, CONFIG_UPDATE_CHANNEL);
-                    } catch (Exception e) {
-                        if (!running) break;
-                        logger.warn("Rate-limit config subscriber disconnected, reconnecting in {}s: {}",
-                                backoffMs.get() / 1000, e.getMessage());
-                        if (resetTask != null) resetTask.cancel(true);
-                        try {
-                            Thread.sleep(backoffMs.get());
-                            backoffMs.set(Math.min(backoffMs.get() * 2, 30000));
-                        } catch (InterruptedException ignored) {
-                            break;
-                        }
-                    }
-                }
-                executor.shutdownNow();
-            }
+    private class ConfigCacheUpdateListener extends JedisClusterChannelListener {
+        public ConfigCacheUpdateListener(RedisClusterClient redisClusterClient) {
+            super(redisClusterClient, CONFIG_UPDATE_CHANNEL, "RateLimitConfig");
         }
 
         @Override

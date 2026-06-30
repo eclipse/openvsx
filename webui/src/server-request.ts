@@ -7,10 +7,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import fetchBuilder from "fetch-retry";
+
+import fetchBuilder from 'fetch-retry';
 
 export interface ServerAPIRequest {
-    abortController: AbortController;
+    abortController?: AbortController;
+    abortSignal?: AbortSignal;
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
     headers?: Record<string, string>;
@@ -36,11 +38,18 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
     }
 
     const param: RequestInit = {
-        method: req.method,
-        signal: req.abortController.signal
+        method: req.method
     };
+
+    if (req.abortController) {
+        param.signal = req.abortController.signal;
+    } else if (req.abortSignal) {
+        param.signal = req.abortSignal;
+    }
+
     if (req.payload) {
-        param.body = (req.payload instanceof File || req.payload instanceof FormData) ? req.payload : JSON.stringify(req.payload);
+        param.body =
+            req.payload instanceof File || req.payload instanceof FormData ? req.payload : JSON.stringify(req.payload);
     }
     param.headers = req.headers;
     if (req.followRedirect) {
@@ -50,15 +59,17 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         param.credentials = 'include';
     }
 
-    const options: any = retry ? {
-        retries: 10,
-        retryDelay: (attempt: number, error: Error, response: Response) => {
-            return Math.pow(2, attempt) * 1000;
-        },
-        retryOn: (attempt: number, error: Error, response: Response) => {
-            return error !== null || response.status >= 500;
-        }
-    } : {};
+    const options: any = retry
+        ? {
+              retries: 10,
+              retryDelay: (attempt: number, error: Error, response: Response) => {
+                  return Math.pow(2, attempt) * 1000;
+              },
+              retryOn: (attempt: number, error: Error, response: Response) => {
+                  return error !== null || response.status >= 500;
+              }
+          }
+        : {};
 
     const response = await fetchBuilder(fetch, options)(req.endpoint, param);
     if (response.ok) {
@@ -79,9 +90,10 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         const retryAfter = response.headers.get('Retry-After');
         const retrySeconds = retryAfterSeconds ?? retryAfter ?? '0';
         const jitter = Math.floor(Math.random() * 100);
-        const timeoutMillis = ((Number(retrySeconds) + 1) * 1000) + jitter;
-        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req))
-            .then(request => sendRequest(request));
+        const timeoutMillis = (Number(retrySeconds) + 1) * 1000 + jitter;
+        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req)).then(request =>
+            sendRequest(request)
+        );
     } else {
         let err: ErrorResponse;
         try {
@@ -96,4 +108,16 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         }
         throw err;
     }
+}
+
+/**
+ * Sends a non-retriable HTTP request using the {@link sendRequest} function with retries disabled.
+ *
+ * @template Res - The expected response type.
+ * @param req - The {@link ServerAPIRequest} object containing the request configuration,
+ *              including the endpoint, method, headers, payload, and other options.
+ * @returns A promise that resolves to the response of type `Res`.
+ */
+export function sendNonRetriableRequest<Res>(req: ServerAPIRequest): Promise<Res> {
+    return sendRequest<Res>(req, false);
 }

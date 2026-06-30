@@ -9,6 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.observation.annotation.Observed;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,17 +31,14 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.eclipse.openvsx.adapter.ExtensionQueryParam.*;
 import static org.eclipse.openvsx.adapter.ExtensionQueryResult.ExtensionFile.*;
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -51,6 +51,7 @@ public class VSCodeAPI {
     private final UpstreamVSCodeService upstream;
     private final List<IVSCodeService> registries;
     private final IExtensionQueryRequestHandler extensionQueryRequestHandler;
+    private final ObjectMapper objectMapper;
 
     public VSCodeAPI(
             LocalVSCodeService local,
@@ -61,6 +62,7 @@ public class VSCodeAPI {
         this.upstream = upstream;
         this.registries = setupRegistries();
         this.extensionQueryRequestHandler = extensionQueryRequestHandler;
+        this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     private List<IVSCodeService> setupRegistries() {
@@ -88,14 +90,51 @@ public class VSCodeAPI {
     )
     public ExtensionQueryResult extensionQuery(@RequestBody @Parameter(description = "Parameters of the extension query") ExtensionQueryParam param) {
         var size = 0;
-        if(param.filters() != null && !param.filters().isEmpty()) {
+        if (param.filters() != null && !param.filters().isEmpty()) {
             size = param.filters().getFirst().pageSize();
         }
-        if(size <= 0) {
+        if (size <= 0) {
             size = DEFAULT_PAGE_SIZE;
         }
 
         return extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
+    }
+
+    @GetMapping(
+            path = "/vscode/gallery/extensionquery",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Provides metadata of extensions matching the given parameters")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Returns the query results"
+    )
+    public ResponseEntity<ExtensionQueryResult> extensionQueryAsGet(@RequestParam(value = "q") String query) {
+        ExtensionQueryParam param;
+
+        try {
+            param = objectMapper.readValue(query, ExtensionQueryParam.class);
+        } catch (JsonProcessingException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query");
+        }
+
+        var size = 0;
+        if (param.filters() != null && !param.filters().isEmpty()) {
+            size = param.filters().getFirst().pageSize();
+        }
+        if (size <= 0) {
+            size = DEFAULT_PAGE_SIZE;
+        }
+
+        var result = extensionQueryRequestHandler.getResult(param, size, DEFAULT_PAGE_SIZE);
+
+        return ResponseEntity.ok()
+                // support caching the result of extensionquery upto 5 min and force the client to revalidate
+                // this is a temporary measure to reduce load as extensionquery is really slow and we want to benefit
+                // from caching the same queries
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                .body(result);
     }
 
     @Observed
@@ -165,6 +204,7 @@ public class VSCodeAPI {
                     // Try the next registry
                 }
             }
+
             return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());
@@ -195,11 +235,10 @@ public class VSCodeAPI {
             description = "The specified item could not be found",
             content = @Content()
     )
-    public ModelAndView getItemUrl(
+    public ResponseEntity<String> getItemUrl(
             @RequestParam
             @Parameter(description = "Identifier in the format {publisher}.{name}", example = "foo.bar")
-            String itemName,
-            ModelMap model
+            String itemName
     ) {
         var dotIndex = itemName.indexOf('.');
         if (dotIndex < 0) {
@@ -211,13 +250,16 @@ public class VSCodeAPI {
         for (var service : getVSCodeServices()) {
             try {
                 var itemUrl = service.getItemUrl(namespace, extension);
-                return new ModelAndView("redirect:" + itemUrl, model);
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                        .location(URI.create(itemUrl))
+                        .build();
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
 
-        return new ModelAndView(null, HttpStatus.NOT_FOUND);
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/vscode/gallery/publishers/{namespaceName}/vsextensions/{extensionName}/{version}/vspackage")
@@ -243,7 +285,7 @@ public class VSCodeAPI {
             description = "The specified package could not be found",
             content = @Content()
     )
-    public ModelAndView download(
+    public ResponseEntity<String> download(
             @PathVariable @Parameter(description = "Extension namespace", example = "JFrog") String namespaceName,
             @PathVariable @Parameter(description = "Extension name", example = "jfrog-vscode-extension") String extensionName,
             @PathVariable @Parameter(description = "Extension version", example = "2.11.7") String version,
@@ -259,19 +301,21 @@ public class VSCodeAPI {
                             NAME_WEB, NAME_UNIVERSAL
                     })
             )
-            String targetPlatform,
-            ModelMap model
+            String targetPlatform
     ) {
         for (var service : getVSCodeServices()) {
             try {
                 var downloadUrl = service.download(namespaceName, extensionName, version, targetPlatform);
-                return new ModelAndView("redirect:" + downloadUrl, model);
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
+                        .location(URI.create(downloadUrl))
+                        .build();
             } catch (NotFoundException exc) {
                 // Try the next registry
             }
         }
 
-        return new ModelAndView(null, HttpStatus.NOT_FOUND);
+        return ResponseEntity.notFound().build();
     }
 
     @Observed
@@ -321,6 +365,7 @@ public class VSCodeAPI {
                     // Try the next registry
                 }
             }
+
             return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());
@@ -352,12 +397,14 @@ public class VSCodeAPI {
                 try {
                     var result = service.latest(namespaceName, extensionName);
                     return ResponseEntity.ok()
-                            .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic().mustRevalidate())
+                            // do not cache the response, avoid stale data
+                            .cacheControl(CacheControl.noCache().cachePublic())
                             .body(result);
                 } catch (NotFoundException exc) {
                     // Try the next registry
                 }
             }
+
             return ResponseEntity.notFound().build();
         } catch (ErrorResultException ex) {
             logger.error(ex.getMessage());

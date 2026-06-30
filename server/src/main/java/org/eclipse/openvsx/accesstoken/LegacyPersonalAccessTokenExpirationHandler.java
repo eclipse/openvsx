@@ -10,7 +10,9 @@
 package org.eclipse.openvsx.accesstoken;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +23,23 @@ public class LegacyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final Logger logger = LoggerFactory.getLogger(LegacyPersonalAccessTokenExpirationHandler.class);
 
+    private final SettingsService settings;
     private final AccessTokenConfig config;
     private final AccessTokenService tokens;
 
-    public LegacyPersonalAccessTokenExpirationHandler(AccessTokenConfig config, AccessTokenService tokens) {
+    public LegacyPersonalAccessTokenExpirationHandler(SettingsService settings, AccessTokenConfig config, AccessTokenService tokens) {
+        this.settings = settings;
         this.config = config;
         this.tokens = tokens;
     }
 
     @Override
+    @Job(name = "Legacy token expiration", retries = 0)
     public void run(HandlerJobRequest<?> handlerJobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         if (config.isTokenExpiryEnabled()) {
             var expirationTime = TimeUtil.getCurrentUTC().plus(config.getExpiration());
             var count = tokens.setExpirationTimeForLegacyAccessTokens(expirationTime);

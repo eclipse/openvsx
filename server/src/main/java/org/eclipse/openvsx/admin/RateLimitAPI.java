@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.admin;
 
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.ratelimit.CustomerService;
 import org.eclipse.openvsx.ratelimit.cache.RateLimitCacheService;
@@ -81,6 +82,7 @@ public class RateLimitAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<TierJson> createTier(@RequestBody TierJson tier) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -122,6 +124,7 @@ public class RateLimitAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<TierJson> updateTier(@PathVariable String name, @RequestBody TierJson tier) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -163,6 +166,7 @@ public class RateLimitAPI {
             path = "/tiers/{name}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteTier(@PathVariable String name) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -261,6 +265,7 @@ public class RateLimitAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<CustomerJson> createCustomer(@RequestBody CustomerJson customerJson) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -306,6 +311,7 @@ public class RateLimitAPI {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<CustomerJson> updateCustomer(@PathVariable String name, @RequestBody CustomerJson customer) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -373,6 +379,7 @@ public class RateLimitAPI {
             path = "/customers/{name}/add-member",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> addCustomerMember(
             @PathVariable String name,
             @RequestParam("user") String userName,
@@ -396,6 +403,7 @@ public class RateLimitAPI {
             path = "/customers/{name}/remove-member",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> removeCustomerMember(
             @PathVariable String name,
             @RequestParam("user") String userName,
@@ -419,6 +427,7 @@ public class RateLimitAPI {
             path = "/customers/{name}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deleteCustomer(@PathVariable String name) {
         try {
             var adminUser = admins.checkAdminUser();
@@ -511,6 +520,7 @@ public class RateLimitAPI {
             path = "/customers/{name}/tokens",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<RateLimitTokenJson> createRateLimitToken(
             @PathVariable String name,
             @RequestParam(required = false) String description
@@ -541,6 +551,7 @@ public class RateLimitAPI {
             path = "/customers/{name}/tokens/{id}",
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<ResultJson> deactivateRateLimitToken(@PathVariable String name, @PathVariable long id) {
         try {
             admins.checkAdminUser();

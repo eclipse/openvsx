@@ -11,16 +11,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import type { RefObject } from "react";
+import type { RefObject } from 'react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { ScanResult } from '../../context/scan-admin';
 import { formatDuration } from '../../components/scan-admin/common';
-import {
-    isRunning,
-    shouldShowExpandButton,
-    getDetailBadges,
-    DetailBadge,
-} from '../../components/scan-admin';
+import { isRunning, shouldShowExpandButton, getDetailBadges, DetailBadge } from '../../components/scan-admin';
 
 interface UseScanCardStateReturn {
     expanded: boolean;
@@ -69,6 +64,6 @@ export const useScanCardState = (scan: ScanResult): UseScanCardStateReturn => {
         showExpandButton,
         badges,
         liveDuration,
-        cardRef,
+        cardRef
     };
 };

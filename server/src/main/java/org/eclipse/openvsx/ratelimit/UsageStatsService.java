@@ -26,7 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.RedisClusterClient;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -50,18 +50,18 @@ public class UsageStatsService {
     private final RepositoryService repositories;
     private final CustomerService customerService;
     private final Cache<Object, Object> usageCache;
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
 
     public UsageStatsService(
             RepositoryService repositories,
             CustomerService customerService,
             Cache<Object, Object> usageCache,
-            JedisCluster jedisCluster
+            RedisClusterClient redisClusterClient
     ) {
         this.repositories = repositories;
         this.customerService = customerService;
         this.usageCache = usageCache;
-        this.jedisCluster = jedisCluster;
+        this.redisClusterClient = redisClusterClient;
     }
 
     public void incrementUsage(Customer customer) {
@@ -81,7 +81,7 @@ public class UsageStatsService {
                 if (v != null) {
                     var value = (Long) v;
                     if (value > 0) {
-                        jedisCluster.hincrBy(USAGE_DATA_KEY, key.toString(), value.intValue());
+                        redisClusterClient.hincrBy(USAGE_DATA_KEY, key.toString(), value.intValue());
                     }
                 }
                 return null;
@@ -96,7 +96,7 @@ public class UsageStatsService {
         ScanResult<Map.Entry<String, String>> results;
 
         do {
-            results = jedisCluster.hscan(USAGE_DATA_KEY, cursor);
+            results = redisClusterClient.hscan(USAGE_DATA_KEY, cursor);
 
             for (var result : results.getResult()) {
                 var key = result.getKey();
@@ -128,7 +128,7 @@ public class UsageStatsService {
                             }
                         }
                     } finally {
-                        jedisCluster.hdel(USAGE_DATA_KEY, key);
+                        redisClusterClient.hdel(USAGE_DATA_KEY, key);
                     }
                 }
             }

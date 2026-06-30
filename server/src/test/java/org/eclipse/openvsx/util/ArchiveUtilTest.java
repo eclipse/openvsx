@@ -10,7 +10,6 @@
 package org.eclipse.openvsx.util;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.InstanceOfAssertFactories.PATH;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,5 +55,23 @@ class ArchiveUtilTest {
                     .isExactlyInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Failed to read extension/package.json: File size exceeds limit of 0 bytes.");
         }
+    }
+
+    @Test
+    void testSafePath() {
+        // restricted path patterns
+        assertThat(ArchiveUtil.isSafePath("\0")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc\0")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("/test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("c:\\test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("..")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("../test.xt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc/../test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("abc/def/./../test.txt")).isEqualTo(false);
+        assertThat(ArchiveUtil.isSafePath("..\\test.xt")).isEqualTo(false);
+
+        // allowed path patterns
+        assertThat(ArchiveUtil.isSafePath(".test.txt")).isEqualTo(true);
+        assertThat(ArchiveUtil.isSafePath("..test.txt")).isEqualTo(true);
     }
 }

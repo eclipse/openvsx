@@ -336,7 +336,7 @@ class CacheServiceTest {
     private UserData insertAdmin() {
         var admin = new UserData();
         admin.setLoginName("super_user");
-        admin.setRole("admin");
+        admin.setRole(UserData.Role.ADMIN);
         entityManager.persist(admin);
 
         return admin;

@@ -1,13 +1,16 @@
-/** ******************************************************************************
- * Copyright (c) 2025 Precies. Software OU and others
+/******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
  *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- * ****************************************************************************** */
-package org.eclipse.openvsx.cache;
+ *****************************************************************************/
+package org.eclipse.openvsx.cache.bucket4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
@@ -17,8 +20,8 @@ import io.micrometer.core.instrument.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.RedisClusterClient;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,20 +33,20 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JedisClusterCacheListener.class);
 
-    private final JedisCluster jedisCluster;
+    private final RedisClusterClient redisClusterClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final String updateChannel;
     private final JavaType deserializeType;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * @param jedisCluster The cluster to use for listening/publishing events
+     * @param redisClusterClient The cluster to use for listening/publishing events
      * @param cacheName The name of the cache. This is used as prefix for the event channels
      * @param keyType The type of the key. This is required for parsing events and should match the K of this class.
      * @param valueType The type of the value. This is required for parsing events and should match the V of this class.
      */
-    public JedisClusterCacheListener(JedisCluster jedisCluster, String cacheName, Class<K> keyType, Class<V> valueType, ApplicationEventPublisher eventPublisher) {
-        this.jedisCluster = jedisCluster;
+    public JedisClusterCacheListener(RedisClusterClient redisClusterClient, String cacheName, Class<K> keyType, Class<V> valueType, ApplicationEventPublisher eventPublisher) {
+        this.redisClusterClient = redisClusterClient;
         this.updateChannel = cacheName.concat(":update");
         this.deserializeType = objectMapper.getTypeFactory().constructParametricType(CacheUpdateEvent.class, keyType, valueType);
         this.eventPublisher = eventPublisher;
@@ -63,7 +66,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
                     // This is done in a different thread since subscribe is a blocking call.
                     resetTask = executorService.schedule(()-> reconnectBackoffTimeMillis.set(1000), 10000, TimeUnit.MILLISECONDS);
 
-                    jedisCluster.subscribe(this, updateChannel);
+                    redisClusterClient.subscribe(this, updateChannel);
                 } catch (Exception e) {
                     LOGGER.error("Failed to connect the Jedis subscriber, attempting to reconnect in {} seconds. " +
                             "Exception was: {}", (reconnectBackoffTimeMillis.get() /1000), e.getMessage());
@@ -90,7 +93,7 @@ public class JedisClusterCacheListener<K, V> extends JedisPubSub {
     }
 
     private boolean isUp() {
-        return jedisCluster.ping().equals("PONG");
+        return redisClusterClient.ping().equals("PONG");
     }
 
     @Override

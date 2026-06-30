@@ -1,0 +1,14 @@
+# Package Managers
+yarn.lock
+
+# Build outputs
+lib
+dist
+playwright-report
+test-results
+
+# Vendored / generated
+node_modules
+.yarn
+
+stats.html

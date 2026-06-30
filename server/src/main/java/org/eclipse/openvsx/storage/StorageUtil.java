@@ -7,34 +7,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
-
 package org.eclipse.openvsx.storage;
 
-import org.springframework.http.CacheControl;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 
-import java.net.URLConnection;
 import java.util.concurrent.TimeUnit;
 
-class StorageUtil {
+public class StorageUtil {
 
-    private StorageUtil(){}
+    private StorageUtil() {}
 
-    static MediaType getFileType(String fileName) {
-        if (fileName.endsWith(".vsix"))
-            return MediaType.APPLICATION_OCTET_STREAM;
-        if (fileName.endsWith(".json"))
-            return MediaType.APPLICATION_JSON;
-        if (fileName.endsWith(".sigzip"))
-            return MediaType.valueOf("application/zip");
-        var contentType = URLConnection.guessContentTypeFromName(fileName);
-        if (contentType != null)
-            return MediaType.parseMediaType(contentType);
-        return MediaType.TEXT_PLAIN;
-    }
-
-    static CacheControl getCacheControl(String fileName) {
-        // Files are requested with a version string in the URL, so their content cannot change
-        return CacheControl.maxAge(30, TimeUnit.DAYS).cachePublic();
+    public static CacheControl getCacheControl(String fileName) {
+        // Files are requested with a version string in the URL, so their content does not change.
+        // As extension versions might get deleted, cache for max 1 day and force client to revalidate
+        // TODO: this is subject to change, it used to be 30 days, reduced to 1 day to prevent stale cache
+        //       entries if a CDN is configured in case extensions are deleted.
+        //       we need a mechanism to invalidate CDN caches
+        return CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic().mustRevalidate();
     }
 }

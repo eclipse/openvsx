@@ -9,13 +9,22 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.*;
-import org.eclipse.openvsx.json.UserJson;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import jakarta.annotation.Nullable;
+import org.eclipse.openvsx.json.UserJson;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 
 @Entity
 public class UserData implements Serializable {
@@ -23,8 +32,20 @@ public class UserData implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    public static final String ROLE_ADMIN = "admin";
-    public static final String ROLE_PRIVILEGED = "privileged";
+    public enum Role {
+        ADMIN,
+        PRIVILEGED;
+
+        public static Role valueOfIgnoreCase(String value) {
+            if (value == null) return null;
+            return Role.valueOf(value.trim().toUpperCase());
+        }
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
+    }
 
     @Id
     @GeneratedValue(generator = "userDataSeq")
@@ -32,7 +53,8 @@ public class UserData implements Serializable {
     private long id;
 
     @Column(length = 32)
-    private String role;
+    @Convert(converter = UserRoleConverter.class)
+    private Role role;
 
     private String loginName;
 
@@ -83,11 +105,15 @@ public class UserData implements Serializable {
 		this.id = id;
 	}
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public @Nullable String getRoleAsString() {
+        return Optional.ofNullable(this.getRole()).map(Role::toString).orElse(null);
+    }
+
+    public void setRole(Role role) {
         this.role = role;
     }
 

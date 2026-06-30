@@ -143,7 +143,6 @@ public class BlocklistCheckService implements PublishCheck {
 
             var hashableEntries = entries.stream()
                     .filter(entry -> !entry.isDirectory())
-                    .filter(entry -> ArchiveUtil.isSafePath(entry.getName()))
                     .toList();
 
             List<CompletableFuture<Void>> futures = new ArrayList<>(hashableEntries.size());

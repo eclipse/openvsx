@@ -53,17 +53,6 @@ class SecretDetectorServiceTest {
     }
 
     @Test
-    void isSafePath_rejectsTraversalAndAbsolute() {
-        assertFalse(ArchiveUtil.isSafePath("../evil"));
-        assertFalse(ArchiveUtil.isSafePath("/abs/path"));
-    }
-
-    @Test
-    void isSafePath_allowsNormalRelative() {
-        assertTrue(ArchiveUtil.isSafePath("folder/file.txt"));
-    }
-
-    @Test
     void recordFinding_respectsGlobalCap() throws Exception {
         SecretCheckService service = buildServiceWithLimits(10, 100, 1);
         List<SecretDetector.Finding> findings = new ArrayList<>();

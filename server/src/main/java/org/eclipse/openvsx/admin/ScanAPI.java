@@ -21,7 +21,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -32,6 +35,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -51,6 +55,7 @@ import org.springframework.data.domain.Sort;
  * Used by the admin dashboard to monitor extension validation and scanning.
  */
 @RestController
+@Validated
 @RequestMapping("/admin/scans")
 @ApiResponse(
     responseCode = "403",
@@ -205,11 +210,11 @@ public class ScanAPI {
 
     /**
      * Enforcement filter for Scan API /scans/counts.
-     *
+     * <p>
      * - ALL: no filtering
      * - ENFORCED: scans that have at least one enforced validation or threat
      * - NOT_ENFORCED: scans that have at least one non-enforced validation or threat
-     *
+     * <p>
      * Threat scanning enforcement will be added when threats are persisted.
      */
     private enum EnforcementFilter {
@@ -273,9 +278,12 @@ public class ScanAPI {
         @Parameter(description = "Filter by display name or extension name (partial matches supported)")
         String name,
         @RequestParam(defaultValue = "10")
-        @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "10"))
+        @Min(value = 0, message = "parameter must not be negative")
+        @Max(value = 100, message = "parameter must not be larger than 100")
+        @Parameter(description = "Maximal number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "10"))
         int size,
         @RequestParam(defaultValue = "0")
+        @Min(value = 0, message = "parameter must not be negative")
         @Parameter(description = "Number of entries to skip", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
         int offset,
         @RequestParam(defaultValue = "scanEndTime")
@@ -323,13 +331,6 @@ public class ScanAPI {
     ) {
         try {
             admins.checkAdminUser();
-
-            if (size < 0) {
-                throw new ErrorResultException("Parameter 'size' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
-            if (offset < 0) {
-                throw new ErrorResultException("Parameter 'offset' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
 
             var statusFilter = parseStatusFilter(status);
             var normalizedPublisher = normalizeSearch(publisher);
@@ -584,6 +585,7 @@ public class ScanAPI {
     )
     @CrossOrigin
     @Operation(summary = "Retry all failed scanner jobs for a scan")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Failed jobs re-queued; returns the updated scan in SCANNING state",
@@ -624,12 +626,12 @@ public class ScanAPI {
      * Make security decisions for one or more quarantined scans.
      * Only valid for scans with QUARANTINED status.
      * Pass a single scanId for individual decisions, or multiple scanIds for bulk operations.
-     *
+     * <p>
      * When a scan is allowed:
      * - The extension is automatically activated
      * - The scan status is updated to PASSED
      * - File decisions are created to add enforced threat files to allow list
-     *
+     * <p>
      * When a scan is blocked:
      * - The extension remains inactive
      * - File decisions are created to add enforced threat files to block list
@@ -641,6 +643,7 @@ public class ScanAPI {
     )
     @CrossOrigin
     @Operation(summary = "Make security decisions for quarantined scans")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Decisions processed successfully",
@@ -900,9 +903,7 @@ public class ScanAPI {
 
         var scannerJobs = scanJobRepository.findByScanId(String.valueOf(scan.getId()));
         if (!scannerJobs.isEmpty()) {
-            // include all non-terminal scanner jobs
             var scannerJobJsons = scannerJobs.stream()
-                    .filter(job -> !job.getStatus().isTerminal())
                     .map(this::toScannerJobJson)
                     .collect(Collectors.toList());
             json.setScannerJobs(scannerJobJsons);
@@ -1100,7 +1101,7 @@ public class ScanAPI {
 
     /**
      * Parses one or multiple status filter values into a set of ScanStatus values.
-     *
+     * <p>
      * Supports:
      * - one value: status=PASSED
      * - multiple values (comma-separated with explode=false): status=PASSED,ERROR

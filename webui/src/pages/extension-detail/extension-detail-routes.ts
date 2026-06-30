@@ -26,9 +26,27 @@ export namespace ExtensionDetailRoutes {
     export const LATEST = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME]);
     export const LATEST_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET]);
     export const PRE_RELEASE = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'pre-release']);
-    export const PRE_RELEASE_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'pre-release']);
+    export const PRE_RELEASE_TARGET = createRoute([
+        ROOT,
+        Parameters.NAMESPACE,
+        Parameters.NAME,
+        Parameters.TARGET,
+        'pre-release'
+    ]);
     export const REVIEWS = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'reviews']);
-    export const REVIEWS_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'reviews']);
+    export const REVIEWS_TARGET = createRoute([
+        ROOT,
+        Parameters.NAMESPACE,
+        Parameters.NAME,
+        Parameters.TARGET,
+        'reviews'
+    ]);
     export const CHANGES = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, 'changes']);
-    export const CHANGES_TARGET = createRoute([ROOT, Parameters.NAMESPACE, Parameters.NAME, Parameters.TARGET, 'changes']);
+    export const CHANGES_TARGET = createRoute([
+        ROOT,
+        Parameters.NAMESPACE,
+        Parameters.NAME,
+        Parameters.TARGET,
+        'changes'
+    ]);
 }

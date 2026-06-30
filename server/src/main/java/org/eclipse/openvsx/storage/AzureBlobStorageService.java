@@ -22,6 +22,7 @@ import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.FileUtil;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -106,18 +107,25 @@ public class AzureBlobStorageService implements IStorageService {
             throw new IllegalStateException(missingEndpointMessage("Cannot upload file", blobName));
         }
 
+        var headers = HttpHeadersUtil.createFileResponseHeaders(file.getPath(), fileName);
+
         var blobClient = getContainerClient().getBlobClient(blobName);
-        var headers = new BlobHttpHeaders();
-        headers.setContentType(StorageUtil.getFileType(fileName).toString());
-        if (fileName.endsWith(".vsix") || fileName.endsWith(".sigzip")) {
-            headers.setContentDisposition("attachment; filename=\"" + fileName + "\"");
-        } else {
-            var cacheControl = StorageUtil.getCacheControl(fileName);
-            headers.setCacheControl(cacheControl.getHeaderValue());
+        var blobHeaders = new BlobHttpHeaders();
+
+        if (headers.getContentType() != null) {
+            blobHeaders.setContentType(headers.getContentType().toString());
+        }
+
+        if (StringUtils.isNotBlank(headers.getContentDisposition().toString())) {
+            blobHeaders.setContentDisposition(headers.getContentDisposition().toString());
+        }
+
+        if (headers.getCacheControl() != null) {
+            blobHeaders.setCacheControl(headers.getCacheControl());
         }
 
         blobClient.uploadFromFile(file.getPath().toAbsolutePath().toString(), true);
-        blobClient.setHttpHeaders(headers);
+        blobClient.setHttpHeaders(blobHeaders);
     }
 
 	@Override

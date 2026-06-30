@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import type { SyntheticEvent } from "react";
+import type { SyntheticEvent } from 'react';
 import { FunctionComponent, useContext } from 'react';
 import { Box, Typography } from '@mui/material';
 import { ScanProvider } from '../../context/scan-admin';
@@ -25,7 +25,7 @@ import {
     AllowListTabContent,
     BlockListTabContent,
     QuarantineDialog,
-    FileDialog,
+    FileDialog
 } from '../../components/scan-admin';
 import { MainContext } from '../../context';
 
@@ -44,13 +44,14 @@ const ScanAdminContent: FunctionComponent = () => {
     };
 
     return (
-        <Box sx={{
-            width: '100%',
-            maxWidth: 'none',
-            mx: 'auto',
-            px: 2,
-            pb: 3,
-        }}>
+        <Box
+            sx={{
+                width: '100%',
+                maxWidth: 'none',
+                mx: 'auto',
+                px: 2,
+                pb: 3
+            }}>
             <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
                 Extension Scans
             </Typography>

@@ -13,8 +13,23 @@
 
 import type { ChangeEvent } from 'react';
 import { FunctionComponent } from 'react';
-import { Box, Typography, TextField, InputAdornment, Button, Checkbox, FormControlLabel, useTheme } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, RadioButtonUnchecked as RadioButtonUncheckedIcon, PersonOutlined as PersonIcon, AccountTreeOutlined as AccountTreeIcon, ExtensionOutlined as ExtensionIcon } from '@mui/icons-material';
+import {
+    Box,
+    Typography,
+    TextField,
+    InputAdornment,
+    Button,
+    Checkbox,
+    FormControlLabel,
+    useTheme
+} from '@mui/material';
+import {
+    CheckCircle as CheckCircleIcon,
+    RadioButtonUnchecked as RadioButtonUncheckedIcon,
+    PersonOutlined as PersonIcon,
+    AccountTreeOutlined as AccountTreeIcon,
+    ExtensionOutlined as ExtensionIcon
+} from '@mui/icons-material';
 
 interface FilterItem {
     label: string;
@@ -66,7 +81,7 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
     allSelected = false,
     onSelectAllChange,
     actionButtons = [],
-    selectedCount = 0,
+    selectedCount = 0
 }) => {
     const theme = useTheme();
 
@@ -82,7 +97,7 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                         <InputAdornment position='start'>
                             <PersonIcon sx={{ fontSize: 20 }} />
                         </InputAdornment>
-                    ),
+                    )
                 }}
                 sx={{
                     flex: 1,
@@ -91,9 +106,9 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: theme.palette.scanBackground.dark,
                         '&.Mui-focused fieldset': {
-                            borderColor: theme.palette.secondary.main,
-                        },
-                    },
+                            borderColor: theme.palette.secondary.main
+                        }
+                    }
                 }}
             />
             <TextField
@@ -106,7 +121,7 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                         <InputAdornment position='start'>
                             <AccountTreeIcon sx={{ fontSize: 20 }} />
                         </InputAdornment>
-                    ),
+                    )
                 }}
                 sx={{
                     flex: 1,
@@ -115,9 +130,9 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: theme.palette.scanBackground.dark,
                         '&.Mui-focused fieldset': {
-                            borderColor: theme.palette.secondary.main,
-                        },
-                    },
+                            borderColor: theme.palette.secondary.main
+                        }
+                    }
                 }}
             />
             <TextField
@@ -130,7 +145,7 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                         <InputAdornment position='start'>
                             <ExtensionIcon sx={{ fontSize: 20 }} />
                         </InputAdornment>
-                    ),
+                    )
                 }}
                 sx={{
                     flex: 1,
@@ -139,16 +154,24 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                     '& .MuiOutlinedInput-root': {
                         backgroundColor: theme.palette.scanBackground.dark,
                         '&.Mui-focused fieldset': {
-                            borderColor: theme.palette.secondary.main,
-                        },
-                    },
+                            borderColor: theme.palette.secondary.main
+                        }
+                    }
                 }}
             />
 
             {/* Inline Filter Checkboxes */}
             {filters.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'nowrap', justifyContent: 'flex-end', flex: 1 }}>
-                    {filters.map((filter) => (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 2,
+                        alignItems: 'center',
+                        flexWrap: 'nowrap',
+                        justifyContent: 'flex-end',
+                        flex: 1
+                    }}>
+                    {filters.map(filter => (
                         <FormControlLabel
                             key={filter.value}
                             control={
@@ -160,8 +183,8 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                                     sx={{
                                         color: theme.palette.checkboxUnchecked,
                                         '&.Mui-checked': {
-                                            color: theme.palette.secondary.main,
-                                        },
+                                            color: theme.palette.secondary.main
+                                        }
                                     }}
                                 />
                             }
@@ -189,9 +212,8 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                             textTransform: 'none',
                             whiteSpace: 'nowrap',
                             color: allSelected ? 'secondary.main' : 'text.secondary',
-                            borderColor: allSelected ? 'secondary.main' : 'divider',
-                        }}
-                    >
+                            borderColor: allSelected ? 'secondary.main' : 'divider'
+                        }}>
                         Select All
                     </Button>
                 )}
@@ -219,15 +241,14 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                                     '&:hover': {
                                         borderColor: button.color,
                                         backgroundColor: button.color,
-                                        color: theme.palette.primary.contrastText,
+                                        color: theme.palette.primary.contrastText
                                     },
                                     '&:disabled': {
                                         backgroundColor: 'transparent',
                                         color: theme.palette.text.disabled,
-                                        borderColor: theme.palette.divider,
-                                    },
-                                }}
-                            >
+                                        borderColor: theme.palette.divider
+                                    }
+                                }}>
                                 {button.label}
                             </Button>
                         ))}
@@ -242,9 +263,8 @@ export const SearchToolbar: FunctionComponent<SearchToolbarProps> = ({
                                 color: 'text.secondary',
                                 fontSize: '0.75rem',
                                 mt: 0.5,
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
+                                whiteSpace: 'nowrap'
+                            }}>
                             {selectedCount} selected
                         </Typography>
                     )}

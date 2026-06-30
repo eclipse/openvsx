@@ -15,6 +15,7 @@ package org.eclipse.openvsx.ratelimit.jobs;
 import jakarta.annotation.Nullable;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.ratelimit.UsageStatsService;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
@@ -27,15 +28,24 @@ public class CalculateDailyUsageStatsHandler implements JobRequestHandler<Handle
 
     private final Logger logger = LoggerFactory.getLogger(CalculateDailyUsageStatsHandler.class);
 
+    private final SettingsService settings;
     private final @Nullable UsageStatsService usageStatsService;
 
-    public CalculateDailyUsageStatsHandler(@Nullable UsageStatsService usageStatsService) {
+    public CalculateDailyUsageStatsHandler(
+            SettingsService settings,
+            @Nullable UsageStatsService usageStatsService
+    ) {
+        this.settings = settings;
         this.usageStatsService = usageStatsService;
     }
 
     @Override
     @Job(name = "Calculate daily usage stats", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
+        if (settings.isReadOnly()) {
+            return;
+        }
+
         if (usageStatsService != null) {
             logger.info(">> Start calculating daily usage data");
             usageStatsService.calculateDailyUsageStats();

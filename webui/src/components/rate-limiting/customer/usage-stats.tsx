@@ -12,12 +12,7 @@
  *****************************************************************************/
 
 import { FC } from 'react';
-import {
-    Typography,
-    Paper,
-    type PaperProps,
-    Divider,
-} from '@mui/material';
+import { Typography, Paper, type PaperProps, Divider } from '@mui/material';
 import type { Customer, UsageStats as UsageStatsType } from '../../../extension-registry-types';
 import type { DateTime } from 'luxon';
 import { UsageStatsChart } from '../usage-stats/usage-stats-chart';
@@ -33,7 +28,14 @@ export interface UsageStatsProps {
     compact?: boolean;
 }
 
-export const UsageStats: FC<UsageStatsProps> = ({ usageStats, dailyP95, customer, startDate, onStartDateChange, compact }) => (
+export const UsageStats: FC<UsageStatsProps> = ({
+    usageStats,
+    dailyP95,
+    customer,
+    startDate,
+    onStartDateChange,
+    compact
+}) => (
     <Paper {...sectionPaperProps}>
         <Typography variant='h6' gutterBottom>
             Usage Statistics

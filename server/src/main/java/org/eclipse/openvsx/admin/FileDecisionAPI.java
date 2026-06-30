@@ -17,7 +17,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -27,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -38,6 +42,7 @@ import java.util.stream.Collectors;
  * Provides endpoints for managing file-level security decisions.
  */
 @RestController
+@Validated
 @RequestMapping("/admin/scans")
 @ApiResponse(
     responseCode = "403",
@@ -82,9 +87,12 @@ public class FileDecisionAPI {
         @Parameter(description = "Filter by display name, extension name, or file name")
         String name,
         @RequestParam(defaultValue = "18")
-        @Parameter(description = "Maximum number of entries to return", schema = @Schema(type = "integer", minimum = "0", defaultValue = "18"))
+        @Min(value = 0, message = "parameter must not be negative")
+        @Max(value = 100, message = "parameter must not be larger than 100")
+        @Parameter(description = "Maximum number of entries to return", schema = @Schema(type = "integer", minimum = "0", maximum = "100", defaultValue = "18"))
         int size,
         @RequestParam(defaultValue = "0")
+        @Min(value = 0, message = "parameter must not be negative")
         @Parameter(description = "Number of entries to skip", schema = @Schema(type = "integer", minimum = "0", defaultValue = "0"))
         int offset,
         @RequestParam(defaultValue = "dateDecided")
@@ -102,13 +110,6 @@ public class FileDecisionAPI {
     ) {
         try {
             admins.checkAdminUser();
-
-            if (size < 0) {
-                throw new ErrorResultException("Parameter 'size' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
-            if (offset < 0) {
-                throw new ErrorResultException("Parameter 'offset' must be >= 0", HttpStatus.BAD_REQUEST);
-            }
 
             var decidedFrom = parseUtcDateTime(dateDecidedFrom, "dateDecidedFrom");
             var decidedTo = parseUtcDateTime(dateDecidedTo, "dateDecidedTo");
@@ -180,6 +181,7 @@ public class FileDecisionAPI {
     )
     @CrossOrigin
     @Operation(summary = "Create or update file decisions")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Decisions processed successfully",
@@ -263,6 +265,7 @@ public class FileDecisionAPI {
     )
     @CrossOrigin
     @Operation(summary = "Remove file decisions")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "Deletions processed successfully",

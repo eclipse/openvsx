@@ -11,51 +11,31 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, useContext, useState, useEffect, useRef, useMemo } from "react";
-import { Box, Alert } from "@mui/material";
-import { useParams, useNavigate } from "react-router-dom";
-import { MainContext } from "../../../context";
-import type { Customer } from "../../../extension-registry-types";
-import { handleError } from "../../../utils";
-import { AdminDashboardRoutes } from "../admin-dashboard-routes";
-import { SearchListContainer } from "../search-list-container";
-import { CustomerSearch } from "./usage-stats-search";
-import { UsageStatsChart } from "../../../components/rate-limiting/usage-stats/usage-stats-chart";
-import { useAdminUsageStats } from "./use-usage-stats";
+import { FC, useContext, useMemo } from 'react';
+import { Box, Alert } from '@mui/material';
+import { useParams, useNavigate } from 'react-router-dom';
+import { MainContext } from '../../../context';
+import type { Customer } from '../../../extension-registry-types';
+import { handleError } from '../../../utils';
+import { AdminDashboardRoutes } from '../admin-dashboard-routes';
+import { SearchListContainer } from '../search-list-container';
+import { CustomerSearch } from './usage-stats-search';
+import { UsageStatsChart } from '../../../components/rate-limiting/usage-stats/usage-stats-chart';
+import { useAdminUsageStats } from './use-usage-stats';
+import { useCustomers } from '../customers/use-customers';
 
 export const UsageStatsView: FC = () => {
     const { customer } = useParams<{ customer: string }>();
     const navigate = useNavigate();
-    const abortController = useRef(new AbortController());
-    const { service, pageSettings } = useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
 
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    const [customersLoading, setCustomersLoading] = useState(true);
-    const [customersError, setCustomersError] = useState<string | null>(null);
+    const { data: customersData, isFetching: customersLoading, error: customersErrorObj } = useCustomers();
+    const customers = customersData?.customers ?? [];
+    const customersError = customersErrorObj ? handleError(customersErrorObj as Error) : null;
 
     const { usageStats, dailyP95, loading, error: statsError, startDate, setStartDate } = useAdminUsageStats(customer);
 
-    // Load customers for autocomplete
-    useEffect(() => {
-        const loadCustomers = async () => {
-            try {
-                setCustomersLoading(true);
-                const data = await service.admin.getCustomers(abortController.current);
-                setCustomers(data.customers);
-            } catch (err) {
-                setCustomersError(handleError(err as Error));
-            } finally {
-                setCustomersLoading(false);
-            }
-        };
-        loadCustomers();
-        return () => abortController.current.abort();
-    }, [service]);
-
-    const selectedCustomer = useMemo(
-        () => customers.find(c => c.name === customer) || null,
-        [customers, customer]
-    );
+    const selectedCustomer = useMemo(() => customers.find(c => c.name === customer) || null, [customers, customer]);
 
     const handleCustomerChange = (_: unknown, value: Customer | null) => {
         if (value) {
@@ -87,13 +67,14 @@ export const UsageStatsView: FC = () => {
                 loading={loading || customersLoading}
             />
             {customer && (
-              <UsageStatsChart
-                usageStats={usageStats}
-                dailyP95={dailyP95}
-                customer={selectedCustomer}
-                startDate={startDate}
-                onStartDateChange={setStartDate}
-            />)}
+                <UsageStatsChart
+                    usageStats={usageStats}
+                    dailyP95={dailyP95}
+                    customer={selectedCustomer}
+                    startDate={startDate}
+                    onStartDateChange={setStartDate}
+                />
+            )}
         </Box>
     );
 };
