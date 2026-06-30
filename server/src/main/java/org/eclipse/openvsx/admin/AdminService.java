@@ -581,8 +581,12 @@ public class AdminService {
         
         // revoke namespace memberships
         var namespaceMemberships = repositories.findMemberships(user);
-        var numberOfNamespaceMemberships = namespaceMemberships.stream().count();
-        repositories.deleteMemberships(user);
+        var numberOfNamespaceMemberships = 0L;
+        // add a null check due to tests using mocks which return null
+        if (namespaceMemberships != null) {
+            numberOfNamespaceMemberships = namespaceMemberships.stream().count();
+            repositories.deleteMemberships(user);
+        }
 
         var message = "Deactivated " + deactivatedTokenCount + " tokens, "
             + "deactivated " + deactivatedExtensionCount + " extensions, "

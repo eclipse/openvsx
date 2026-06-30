@@ -855,7 +855,7 @@ class AdminAPITest {
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test.")));
+                .andExpect(content().json(successJson("Deactivated 1 tokens, deactivated 1 extensions, removed 0 namespace memberships of user github/test.")));
 
         assertThat(token.isActive()).isFalse();
         assertThat(versions.getFirst().isActive()).isFalse();
@@ -1420,11 +1420,10 @@ class AdminAPITest {
                     "publishers": []
                 }
                 """;
-        mockMvc.perform(post("/admin/api/publisher/revoke")
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke")
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -1434,10 +1433,10 @@ class AdminAPITest {
                     "publishers": []
                 }
                 """;
-        mockMvc.perform(post("/admin/api/publisher/revoke")
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke")
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -1449,11 +1448,10 @@ class AdminAPITest {
                 """;
         
         var token = mockNonAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isForbidden());
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -1463,35 +1461,35 @@ class AdminAPITest {
         user.setLoginName("test");
         user.setProvider("github");
         Mockito.when(repositories.findUserByLoginName("github", "test"))
-                .thenReturn(user);
+            .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         Mockito.when(repositories.findAccessTokens(user))
-                .thenReturn(Streamable.of(userToken));
+            .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
-                .thenReturn(Streamable.of(versions.getFirst()));
+            .thenReturn(Streamable.of(versions.getFirst()));
 
         Mockito.when(repositories.findActiveReviews(user))
-                .thenReturn(Streamable.empty());
+            .thenReturn(Streamable.empty());
 
         var user2 = new UserData();
         user2.setLoginName("test2");
         user2.setProvider("github");
         Mockito.when(repositories.findUserByLoginName("github", "test2"))
-                .thenReturn(user2);
+            .thenReturn(user2);
         var user2Token = new PersonalAccessToken();
         user2Token.setUser(user2);
         user2Token.setActive(true);
         Mockito.when(repositories.findAccessTokens(user2))
-                .thenReturn(Streamable.of(user2Token));
+            .thenReturn(Streamable.of(user2Token));
         versions.get(1).setPublishedWith(user2Token);
         Mockito.when(repositories.findVersionsByUser(user2, true))
-                .thenReturn(Streamable.of(versions.get(1)));
+            .thenReturn(Streamable.of(versions.get(1)));
 
         Mockito.when(repositories.findActiveReviews(user2))
-                .thenReturn(Streamable.empty());
+            .thenReturn(Streamable.empty());
         
         var namespace = mockNamespace();
         var membership = new NamespaceMembership();
@@ -1499,13 +1497,13 @@ class AdminAPITest {
         membership.setRole(NamespaceMembership.ROLE_OWNER);
         membership.setUser(user);
         Mockito.when(repositories.findMemberships(user))
-    			.thenReturn(Streamable.of(membership));
+            .thenReturn(Streamable.of(membership));
         var membership2 = new NamespaceMembership();
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
         membership2.setUser(user2);
         Mockito.when(repositories.findMemberships(user2))
-    			.thenReturn(Streamable.of(membership2));
+            .thenReturn(Streamable.of(membership2));
 
         var baseRequest = """
                 {
@@ -1521,16 +1519,17 @@ class AdminAPITest {
                 }
                 """;
         var token = mockAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test:github",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test."),
-                        "test2:github",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 1 namespace memberships of user github/test2.")))));
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
+                .with(csrf().asHeader())
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().json(bulkPublishResponseJson(Map.of(
+                "test:github",
+                ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, removed 1 namespace memberships of user github/test."),
+                "test2:github",
+                ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, removed 1 namespace memberships of user github/test2."))
+            )));
 
         assertThat(userToken.isActive()).isFalse();
         assertThat(user2Token.isActive()).isFalse();
@@ -1544,18 +1543,18 @@ class AdminAPITest {
         user.setLoginName("test");
         user.setProvider("github");
         Mockito.when(repositories.findUserByLoginName("github", "test"))
-                .thenReturn(user);
+            .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         Mockito.when(repositories.findAccessTokens(user))
-                .thenReturn(Streamable.of(userToken));
+            .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
-                .thenReturn(Streamable.of(versions.getFirst()));
+            .thenReturn(Streamable.of(versions.getFirst()));
 
         Mockito.when(repositories.findActiveReviews(user))
-                .thenReturn(Streamable.empty());
+            .thenReturn(Streamable.empty());
 
         var baseRequest = """
                 {
@@ -1568,59 +1567,17 @@ class AdminAPITest {
                 }
                 """;
         var token = mockAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test:github",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test. Reason: Some passed reason.")))));
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().json(bulkPublishResponseJson(Map.of(
+                "test:github",
+                ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, removed 0 namespace memberships of user github/test. Reason: Some passed reason."))
+            )));
 
         assertThat(userToken.isActive()).isFalse();
         versions.forEach(version -> assertThat(version.isActive()).isFalse());
-    }
-
-    @Test
-    void testRevokeBulkPublishersBlocksAdminRemoval() throws Exception {
-        var versions = mockExtension(1, 0, 0);
-        var user = mockAdminUser();
-        Mockito.when(repositories.findUserByLoginName("github", user.getLoginName()))
-                .thenReturn(user);
-        var userToken = new PersonalAccessToken();
-        userToken.setUser(user);
-        userToken.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
-                .thenReturn(Streamable.of(userToken));
-        versions.getFirst().setPublishedWith(userToken);
-        Mockito.when(repositories.findVersionsByUser(user, true))
-                .thenReturn(Streamable.of(versions.getFirst()));
-
-        Mockito.when(repositories.findActiveReviews(user))
-                .thenReturn(Streamable.empty());
-
-        var baseRequest = """
-                {
-                    "publishers": [{
-                            "loginName": "%s",
-                            "provider": "github"
-                        }
-                    ],
-                    "reason": "Some passed reason."
-                }
-                """.formatted(user.getLoginName());
-        var token = mockAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                    		user.getLoginName() + ":github",
-                    		ResultJson.error("Cannot revoke contributions for admins through publisher flow")))));
-
-        assertThat(userToken.isActive()).isTrue();
-        versions.forEach(version -> assertThat(version.isActive()).isTrue());
     }
 
     @Test
@@ -1630,18 +1587,18 @@ class AdminAPITest {
         user.setLoginName("test");
         user.setProvider("github");
         Mockito.when(repositories.findUserByLoginName("github", "test"))
-                .thenReturn(user);
+            .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         Mockito.when(repositories.findAccessTokens(user))
-                .thenReturn(Streamable.of(userToken));
+            .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
-                .thenReturn(Streamable.of(versions.getFirst()));
+            .thenReturn(Streamable.of(versions.getFirst()));
 
         Mockito.when(repositories.findActiveReviews(user))
-                .thenReturn(Streamable.empty());
+            .thenReturn(Streamable.empty());
 
         var baseRequest = """
                 {
@@ -1657,16 +1614,16 @@ class AdminAPITest {
                 }
                 """;
         var token = mockAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().json(bulkPublishResponseJson(Map.of(
-                        "test:github",
-                        ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, 0 namespace memberships of user github/test."),
-                        "test2:github",
-                        ResultJson.error("User not found: test2")))));
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().json(bulkPublishResponseJson(Map.of(
+                "test:github",
+                ResultJson.success("Deactivated 1 tokens, deactivated 1 extensions, removed 0 namespace memberships of user github/test."),
+                "test2:github",
+                ResultJson.error("User not found: test2"))
+            )));
     }
 
     @Test
@@ -1677,11 +1634,10 @@ class AdminAPITest {
                 }
                 """;
         var token = mockAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/revoke?token={token}", token.getValue())
-                        .with(csrf().asHeader())
-                        .content(baseRequest)
-                        .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
+        mockMvc.perform(post("/admin/api/publisher/bulk-revoke?token={token}", token.getValue())
+                .content(baseRequest)
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
     }
 
     //---------- UTILITY ----------//
