@@ -18,6 +18,7 @@ import { StyledInput } from './namespace-input';
 import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
 import { useAdminExtension, useDeleteExtension } from './use-extension-admin';
 import { ExtensionDetailView } from '../../components/extension/extension-detail-view';
+import { VersionDeleteTarget } from '../../components/extension/extension-version-delete-dialog';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { createRoute } from '../../utils';
 
@@ -76,6 +77,24 @@ export const ExtensionAdmin: FunctionComponent = () => {
         }
     };
 
+    const onRemove = async (targets?: VersionDeleteTarget[]) => {
+        if (extension == null) {
+            return;
+        }
+
+        try {
+            await deleteExtension({
+                namespace: extension.namespace,
+                extension: extension.name,
+                targetPlatformVersions: targets
+            });
+            await refetch();
+        } catch (err) {
+            const isConflict = (err as { status?: number }).status === 409;
+            handleError(err, isConflict ? { onClose: () => refetch() } : undefined);
+        }
+    };
+
     return (
         <SearchListContainer
             searchContainer={[
@@ -105,17 +124,7 @@ export const ExtensionAdmin: FunctionComponent = () => {
             ]}
             listContainer={
                 extension ? (
-                    <ExtensionDetailView
-                        extension={extension}
-                        onRemoveVersion={targets =>
-                            deleteExtension({
-                                namespace: extension.namespace,
-                                extension: extension.name,
-                                targetPlatformVersions: targets
-                            })
-                        }
-                        onVersionDeleted={refetch}
-                    />
+                    <ExtensionDetailView extension={extension} onRemoveVersion={onRemove} onVersionDeleted={refetch} />
                 ) : (
                     ''
                 )

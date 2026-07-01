@@ -17,7 +17,7 @@ import { ErrorResponse } from './server-request';
 export interface MainContext {
     service: ExtensionRegistryService;
     pageSettings: PageSettings;
-    handleError: (err: Error | Partial<ErrorResponse>) => void;
+    handleError: (err: Error | Partial<ErrorResponse>, options?: { onClose?: () => void }) => void;
     user?: UserData;
     updateUser: () => void;
     loginProviders?: Record<string, string>;

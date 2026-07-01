@@ -14,6 +14,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
 
+### Fixed
+
+- Refresh the extension version list in the delete views when a delete fails with a conflict
+
 ### Dependencies
 
 - Bump brace-expansion from `1.1.11` to `1.1.15` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))

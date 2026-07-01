@@ -163,7 +163,7 @@ public class AdminService {
 
         extensions.deleteExtension(admin, extVersion);
     }
-    
+
     public ResultJson deleteExtension(
             UserData adminUser,
             String namespaceName,

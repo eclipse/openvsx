@@ -255,7 +255,7 @@ public class ExtensionService {
     }
 
     /**
-     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}). 
+     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}).
      * this fails fast with {@code 409}
      */
     public Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
