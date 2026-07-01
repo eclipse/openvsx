@@ -11,6 +11,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState
 } from 'react';
@@ -131,7 +132,8 @@ export const KeyboardShortcutsProvider: FunctionComponent<PropsWithChildren> = (
     }, []);
 
     return (
-        <KeyboardShortcutsContext.Provider value={{ shortcuts, register, unregister }}>
+        <KeyboardShortcutsContext.Provider
+            value={useMemo(() => ({ shortcuts, register, unregister }), [shortcuts, register, unregister])}>
             {children}
         </KeyboardShortcutsContext.Provider>
     );

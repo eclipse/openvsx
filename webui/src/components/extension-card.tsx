@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
-import { flushSync } from 'react-dom';
-import { Link as RouteLink, useNavigate } from 'react-router-dom';
+import { memo, useContext, useEffect, useState } from 'react';
+import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Fade } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
@@ -14,10 +13,12 @@ import { MainContext } from '../context';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { SearchEntry } from '../extension-registry-types';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
-import { createRoute } from '../utils';
+import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
+import { cardHoverLift, cardSurface } from './layout';
 
 const CardRoot = styled(Paper)(({ theme }) => ({
+    ...cardSurface(theme),
     padding: '22px 16px',
     [theme.breakpoints.down('sm')]: { padding: '14px 10px' },
     display: 'flex',
@@ -26,76 +27,56 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     textAlign: 'center',
     height: '100%',
     minHeight: '206px',
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadiusCard,
-    backgroundColor: theme.palette.background.paper,
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    '&:hover': {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: 'var(--shadow)',
-        transform: 'translateY(-2px)'
-    },
-    // Keyboard focus ring — mirrors the search field's :focus-within style
+    '&:hover': cardHoverLift(theme),
+    // Keyboard focus ring mirrors the search field's :focus-within style.
     'a:focus-visible &': {
         borderColor: theme.palette.secondary.main,
         boxShadow: `0 0 0 3px ${alpha(theme.palette.secondary.main, 0.16)}`
     }
 }));
 
-export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
-    const [icon, setIcon] = useState<string>();
+export interface ExtensionCardProps {
+    extension: SearchEntry;
+    idx: number;
+    filterSize: number;
+}
+
+export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filterSize }: ExtensionCardProps) {
     const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
+    const [icon, setIcon] = useState<string>();
 
     useEffect(() => {
-        updateChanges();
+        const abortController = new AbortController();
+        let objectUrl: string | undefined;
+        context.service
+            .getExtensionIcon(abortController, extension)
+            .then(url => {
+                objectUrl = url;
+                setIcon(url);
+            })
+            .catch(err => {
+                if (!abortController.signal.aborted) context.handleError(err);
+            });
         return () => {
-            abortController.current.abort();
-            if (icon) URL.revokeObjectURL(icon);
+            abortController.abort();
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
         };
-    }, []);
+    }, [extension.namespace, extension.name, extension.version]);
 
-    useEffect(() => {
-        updateChanges();
-    }, [props.extension.namespace, props.extension.name, props.extension.version]);
-
-    const updateChanges = async (): Promise<void> => {
-        if (icon) URL.revokeObjectURL(icon);
-        try {
-            const icon = await context.service.getExtensionIcon(abortController.current, props.extension);
-            setIcon(icon);
-        } catch (err) {
-            context.handleError(err);
-        }
-    };
-
-    const { extension, filterSize, idx } = props;
-    const navigate = useNavigate();
     const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
-    const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
-    const downloadCountFormatted = numberFormat.format(extension.downloadCount ?? 0);
-    const vtName = `ext-${extension.namespace}-${extension.name}`.replace(/[^a-zA-Z0-9-]/g, '-');
-
-    const handleCardClick = (e: React.MouseEvent) => {
-        if (!('startViewTransition' in document)) return;
-        e.preventDefault();
-        const img = (e.currentTarget as HTMLElement).querySelector('img');
-        if (img) img.style.viewTransitionName = vtName;
-        (document as any).startViewTransition(() => {
-            flushSync(() => navigate(route));
-        });
-    };
+    const downloadCount = formatCompactNumber(extension.downloadCount ?? 0);
+    const title = extension.displayName ?? extension.name;
 
     return (
-        <Fade in={true} timeout={{ enter: ((filterSize + idx) % filterSize) * 200 }}>
-            <Box title={extension.displayName ?? extension.name} sx={{ height: '100%' }}>
+        <Fade in timeout={{ enter: ((filterSize + idx) % filterSize) * 200 }}>
+            <Box title={title} sx={{ height: '100%' }}>
                 <RouteLink
                     to={route}
                     data-ext-card
-                    aria-label={extension.displayName ?? extension.name}
-                    style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}
-                    onClick={handleCardClick}>
+                    aria-label={title}
+                    style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}>
                     <CardRoot
                         elevation={0}
                         sx={extension.deprecated ? { opacity: 0.5, filter: 'grayscale(100%)' } : undefined}>
@@ -105,15 +86,15 @@ export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
                             alignItems='center'
                             flexShrink={0}
                             sx={{
-                                width: { xs: 40, sm: 54 },
-                                height: { xs: 40, sm: 54 },
-                                mb: { xs: '10px', sm: '14px' }
+                                width: 54,
+                                height: 54,
+                                mb: '14px'
                             }}>
                             <Box
                                 component='img'
                                 src={icon ?? context.pageSettings.urls.extensionDefaultIcon}
-                                alt={extension.displayName ?? extension.name}
-                                sx={{ width: { xs: 40, sm: 54 }, maxHeight: { xs: 40, sm: 54 }, objectFit: 'contain' }}
+                                alt={title}
+                                sx={{ width: 54, maxHeight: 54, objectFit: 'contain' }}
                             />
                         </Box>
                         <Typography
@@ -128,7 +109,7 @@ export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
                                 WebkitBoxOrient: 'vertical',
                                 overflow: 'hidden'
                             }}>
-                            {extension.displayName ?? extension.name}
+                            {title}
                         </Typography>
                         <Box
                             sx={{
@@ -167,7 +148,7 @@ export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
                             <Box sx={{ display: 'flex', fontSize: { xs: '14px', sm: '20px' } }}>
                                 <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='inherit' />
                             </Box>
-                            {downloadCountFormatted !== '0' && (
+                            {downloadCount !== '0' && (
                                 <Box
                                     component='span'
                                     sx={{
@@ -179,7 +160,7 @@ export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
                                         color: 'text.disabled'
                                     }}>
                                     <SaveAltIcon sx={{ fontSize: '13px' }} />
-                                    {downloadCountFormatted}
+                                    {downloadCount}
                                 </Box>
                             )}
                         </Box>
@@ -188,10 +169,4 @@ export const ExtensionCard: FunctionComponent<ExtensionCardProps> = props => {
             </Box>
         </Fade>
     );
-};
-
-export interface ExtensionCardProps {
-    extension: SearchEntry;
-    idx: number;
-    filterSize: number;
-}
+});

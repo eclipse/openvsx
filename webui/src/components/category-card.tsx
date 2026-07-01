@@ -7,26 +7,21 @@
 import { FunctionComponent } from 'react';
 import { Box, ButtonBase, SvgIconProps, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { cardHoverLift, cardSurface } from './layout';
 
 const Root = styled(ButtonBase)(({ theme }) => ({
+    ...cardSurface(theme),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     textAlign: 'left',
     overflow: 'hidden',
-    backgroundColor: theme.palette.background.paper,
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadiusCard,
     padding: '18px',
     color: theme.palette.text.primary,
     width: '100%',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    '&:hover': {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: 'var(--shadow)',
-        transform: 'translateY(-2px)'
-    }
+    '&:hover': cardHoverLift(theme)
 }));
 
 export interface CategoryCardProps {

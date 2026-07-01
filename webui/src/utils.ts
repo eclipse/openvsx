@@ -40,6 +40,16 @@ export function debounce(task: () => void, token: { timeout?: number }, delay: n
     token.timeout = window.setTimeout(task, delay);
 }
 
+const compactNumberFormat = new Intl.NumberFormat(undefined, {
+    notation: 'compact',
+    compactDisplay: 'short'
+} as Intl.NumberFormatOptions);
+
+/** Formats large counts compactly, e.g. 12345 -> "12K". */
+export function formatCompactNumber(value: number): string {
+    return compactNumberFormat.format(value);
+}
+
 export function toLocalTime(timestamp?: string): string | undefined {
     if (!timestamp) {
         return undefined;

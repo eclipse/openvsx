@@ -23,10 +23,9 @@ export const HomePage: FunctionComponent = () => {
 
     const focusNavSearch = useCallback(() => {
         const input = document.getElementById('search-input') as HTMLInputElement | null;
-        if (input) {
-            input.focus();
-            input.select();
-        }
+        // preventScroll: a plain focus() scrolls the input into view, which on mobile
+        // fights the scroll-to-top and can leave the page sitting over the results.
+        input?.focus({ preventScroll: true });
     }, []);
 
     const handleSearch = useCallback(
@@ -35,21 +34,30 @@ export const HomePage: FunctionComponent = () => {
             const queries: { key: string; value: string }[] = [];
             if (query) queries.push({ key: 'q', value: query });
             if (cat) queries.push({ key: 'category', value: cat });
-            const url = addQuery(ExtensionListRoutes.BROWSE, queries);
+            const url = addQuery(ExtensionListRoutes.SEARCH, queries);
+
+            const run = () => {
+                setNavQuery(query);
+                setIsHeroPage(false);
+                navigate(url, { state: { _q: query, _cat: cat } });
+            };
+
+            // Only steal focus into the search bar for an actual text search — not when
+            // navigating to /search by browsing a category or "view all".
+            const shouldFocus = Boolean(query);
 
             if ('startViewTransition' in document) {
                 const transition = (document as any).startViewTransition(() => {
-                    flushSync(() => {
-                        setNavQuery(query);
-                        setIsHeroPage(false);
-                        navigate(url, { state: { _q: query, _cat: cat } });
-                    });
+                    flushSync(run);
+                    // Move focus to the nav search field synchronously, while the hero
+                    // input is still focused, so the mobile keyboard stays open. Waiting
+                    // for transition.finished leaves a gap that drops the keyboard.
+                    if (shouldFocus) focusNavSearch();
                 });
-                transition.finished.then(focusNavSearch);
+                if (shouldFocus) transition.finished.then(focusNavSearch);
             } else {
-                setNavQuery(query);
-                navigate(url, { state: { _q: query, _cat: cat } });
-                requestAnimationFrame(() => requestAnimationFrame(focusNavSearch));
+                flushSync(run);
+                if (shouldFocus) focusNavSearch();
             }
         },
         [navigate, setNavQuery, setIsHeroPage, focusNavSearch]

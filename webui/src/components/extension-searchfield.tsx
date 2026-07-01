@@ -37,7 +37,7 @@ const SearchWrap = styled(Box, {
     border: hasError ? '2px solid' : '1px solid',
     borderColor: hasError ? theme.palette.error.main : theme.palette.divider,
     borderRadius: '11px',
-    height: '52px',
+    height: '45px',
     padding: '0 13px',
     backgroundColor: theme.palette.surface2,
     transition: 'border-color 0.18s, box-shadow 0.18s',

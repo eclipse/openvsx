@@ -13,6 +13,6 @@ export * from './page-settings';
 export * from './extension-registry-service';
 export * from './extension-registry-types';
 export * from './pages/extension-detail/extension-detail';
-export * from './pages/extension-list/extension-list';
+export * from './components/extension-list';
 export * from './pages/namespace-detail/namespace-detail';
 export * from './pages/user/user-settings';

@@ -43,7 +43,7 @@ export const NavSearchField: FunctionComponent = () => {
             if (searchHandlerRef.current) {
                 searchHandlerRef.current(q);
             } else {
-                navigate(`/browse${q ? '?q=' + encodeURIComponent(q) : ''}`);
+                navigate(`/search${q ? '?q=' + encodeURIComponent(q) : ''}`);
             }
         },
         [navigate, setNavQuery]

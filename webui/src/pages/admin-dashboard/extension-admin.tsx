@@ -10,7 +10,7 @@
 
 import { FunctionComponent, useState, useContext, useEffect } from 'react';
 import { SearchListContainer } from './search-list-container';
-import { ExtensionListSearchfield } from '../extension-list/extension-list-searchfield';
+import { ExtensionSearchfield } from '../../components/extension-searchfield';
 import { Button, Typography } from '@mui/material';
 import { MainContext } from '../../context';
 import { TargetPlatformVersion } from '../../extension-registry-types';
@@ -105,7 +105,7 @@ export const ExtensionAdmin: FunctionComponent = () => {
                     hideIconButton={true}
                     autoFocus={true}
                 />,
-                <ExtensionListSearchfield
+                <ExtensionSearchfield
                     error={extensionFieldError}
                     key='ei'
                     onSearchChanged={handleExtensionChange}

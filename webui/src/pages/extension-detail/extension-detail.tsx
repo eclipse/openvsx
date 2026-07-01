@@ -30,7 +30,7 @@ import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import WarningIcon from '@mui/icons-material/Warning';
 import { MainContext } from '../../context';
-import { createRoute } from '../../utils';
+import { createRoute, formatCompactNumber } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData } from '../../extension-registry-types';
@@ -184,17 +184,12 @@ const LicenseLink: FunctionComponent<{
     return <>{extension.license || 'Unlicensed'}</>;
 };
 
-const compactNumber = new Intl.NumberFormat(undefined, {
-    notation: 'compact',
-    compactDisplay: 'short'
-} as Intl.NumberFormatOptions);
-
 const ExtensionHeaderInfo: FunctionComponent<{
     extension: Extension;
     headerTextColor: string;
 }> = ({ extension, headerTextColor }) => {
-    const downloadCountFormatted = compactNumber.format(extension.downloadCount || 0);
-    const reviewCountFormatted = compactNumber.format(extension.reviewCount || 0);
+    const downloadCountFormatted = formatCompactNumber(extension.downloadCount || 0);
+    const reviewCountFormatted = formatCompactNumber(extension.reviewCount || 0);
 
     return (
         <Box sx={{ pt: 0.5, overflow: 'visible', flex: 1, minWidth: 0 }}>
@@ -345,12 +340,6 @@ const ExtensionHeader: FunctionComponent<{
                             component='img'
                             src={icon ?? pageSettings.urls.extensionDefaultIcon}
                             alt={extension.displayName ?? extension.name}
-                            style={{
-                                viewTransitionName: `ext-${extension.namespace}-${extension.name}`.replace(
-                                    /[^a-zA-Z0-9-]/g,
-                                    '-'
-                                )
-                            }}
                             sx={{ width: '96px', height: '96px', flexShrink: 0, objectFit: 'contain' }}
                         />
                         <ExtensionHeaderInfo
@@ -394,37 +383,34 @@ export const ExtensionDetail: FunctionComponent = () => {
         [navigate, namespace, name, target]
     );
 
-    const _basePath = namespace && name ? buildExtensionPath(namespace, name, target) : '';
-    const _reviewsPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.REVIEWS) : '';
-    const _changesPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.CHANGES) : '';
+    // Computed before the early return so the shortcut hooks below run unconditionally.
+    const basePath = namespace && name ? buildExtensionPath(namespace, name, target) : '';
+    const changesPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.CHANGES) : '';
+    const reviewsPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.REVIEWS) : '';
 
     useShortcut({
         key: 'o',
         label: 'Extension overview',
         order: 40,
-        callback: () => navigate(_basePath),
-        enabled: !!_basePath
+        callback: () => navigate(basePath),
+        enabled: !!basePath
     });
     useShortcut({
         key: 'c',
         label: 'Extension changelog',
         order: 50,
-        callback: () => navigate(_changesPath),
-        enabled: !!_basePath
+        callback: () => navigate(changesPath),
+        enabled: !!basePath
     });
     useShortcut({
         key: 'r',
         label: 'Extension reviews',
         order: 60,
-        callback: () => navigate(_reviewsPath),
-        enabled: !!_basePath
+        callback: () => navigate(reviewsPath),
+        enabled: !!basePath
     });
 
     if (!namespace || !name) return null;
-
-    const basePath = buildExtensionPath(namespace, name, target);
-    const reviewsPath = buildExtensionPath(namespace, name, target, ExtensionTab.REVIEWS);
-    const changesPath = buildExtensionPath(namespace, name, target, ExtensionTab.CHANGES);
 
     let overviewPath = basePath;
     if (version && !isTabSegment(version)) {

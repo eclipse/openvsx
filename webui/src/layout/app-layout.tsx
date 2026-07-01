@@ -22,7 +22,7 @@ import { NamespaceDetailRoutes } from '../pages/namespace-detail/namespace-detai
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { ExtensionDetail } from '../pages/extension-detail/extension-detail';
 import { HomePage } from '../pages/home/home-page';
-import { BrowsePage } from '../pages/browse/browse-page';
+import { SearchPage } from '../pages/search/search-page';
 import { NamespaceDetail } from '../pages/namespace-detail/namespace-detail';
 import { NotFound } from '../not-found';
 import { AppNavbar } from './app-navbar';
@@ -98,7 +98,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                 <Suspense fallback={null}>
                     <Routes>
                         <Route path={ExtensionListRoutes.MAIN} element={<HomePage />} />
-                        <Route path={ExtensionListRoutes.BROWSE} element={<BrowsePage />} />
+                        <Route path={ExtensionListRoutes.SEARCH} element={<SearchPage />} />
                         <Route
                             path={UserSettingsRoutes.MAIN}
                             element={<UserSettings userLoading={props.userLoading} />}

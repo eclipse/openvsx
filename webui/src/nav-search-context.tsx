@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { createContext, FunctionComponent, ReactNode, useCallback, useContext, useState } from 'react';
+import { createContext, FunctionComponent, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 interface NavSearchContextValue {
     isHeroPage: boolean;
@@ -32,12 +32,11 @@ export const NavSearchProvider: FunctionComponent<{ children: ReactNode }> = ({ 
     const setSearchHandler = useCallback((fn: ((q: string) => void) | null) => {
         setSearchHandlerState(() => fn);
     }, []);
-    return (
-        <NavSearchContext.Provider
-            value={{ isHeroPage, setIsHeroPage, navQuery, setNavQuery, searchHandler, setSearchHandler }}>
-            {children}
-        </NavSearchContext.Provider>
+    const value = useMemo(
+        () => ({ isHeroPage, setIsHeroPage, navQuery, setNavQuery, searchHandler, setSearchHandler }),
+        [isHeroPage, navQuery, searchHandler, setSearchHandler]
     );
+    return <NavSearchContext.Provider value={value}>{children}</NavSearchContext.Provider>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components

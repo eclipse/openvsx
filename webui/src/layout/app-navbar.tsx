@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useCallback, useContext, useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { AppBar, Box, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
-import { Link as RouteLink, useNavigate } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router-dom';
 import { HeaderMenu } from '../header-menu';
 import { MainContext } from '../context';
 import { useNavSearch } from '../nav-search-context';
@@ -20,15 +19,18 @@ const ToolbarItem = styled(Box)({
     alignItems: 'center'
 });
 
+// Progressive ("gradient") blur: blur doubles each layer and every mask is an
+// equal-width window that overlaps its neighbours by a constant 12.5% step, so
+// the layers blend into one continuous ramp instead of visible bands.
 const BLUR_LAYERS = [
-    { blur: '22px', sat: 2.0, stops: 'transparent 87.5%, #000 100%' },
-    { blur: '14px', sat: 1.7, stops: 'transparent 75%, #000 87.5%, #000 100%' },
-    { blur: '8px', sat: 1.45, stops: 'transparent 62.5%, #000 75%, #000 87.5%, transparent 100%' },
-    { blur: '5px', sat: 1.4, stops: 'transparent 50%, #000 62.5%, #000 75%, transparent 87.5%' },
-    { blur: '3px', sat: 1.35, stops: 'transparent 37.5%, #000 50%, #000 62.5%, transparent 75%' },
-    { blur: '2px', sat: 1.3, stops: 'transparent 25%, #000 37.5%, #000 50%, transparent 62.5%' },
-    { blur: '1px', sat: 1, stops: 'transparent 12.5%, #000 25%, #000 37.5%, transparent 50%' },
-    { blur: '0.5px', sat: 1, stops: '#000 0%, #000 12.5%, #000 25%, transparent 37.5%' }
+    { blur: '64px', sat: 1.3, stops: 'transparent 75%, #000 87.5%, #000 100%' },
+    { blur: '32px', sat: 1.3, stops: 'transparent 62.5%, #000 75%, #000 87.5%, transparent 100%' },
+    { blur: '16px', sat: 1.3, stops: 'transparent 50%, #000 62.5%, #000 75%, transparent 87.5%' },
+    { blur: '8px', sat: 1.3, stops: 'transparent 37.5%, #000 50%, #000 62.5%, transparent 75%' },
+    { blur: '4px', sat: 1.3, stops: 'transparent 25%, #000 37.5%, #000 50%, transparent 62.5%' },
+    { blur: '2px', sat: 1, stops: 'transparent 12.5%, #000 25%, #000 37.5%, transparent 50%' },
+    { blur: '1px', sat: 1, stops: 'transparent 0%, #000 12.5%, #000 25%, transparent 37.5%' },
+    { blur: '0.5px', sat: 1, stops: '#000 0%, #000 12.5%, transparent 25%' }
 ];
 
 export const AppNavbar: FunctionComponent = () => {
@@ -36,23 +38,8 @@ export const AppNavbar: FunctionComponent = () => {
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
     const { isHeroPage } = useNavSearch();
     const theme = useTheme();
-    const navigate = useNavigate();
     const navbg = theme.palette.mode === 'dark' ? 'rgba(14, 14, 20, 0.74)' : 'rgba(255, 255, 255, 0.78)';
     const [scrolled, setScrolled] = useState(false);
-
-    // Trigger the reverse view-transition (nav search → hero) when navigating home
-    const handleHomeClick = useCallback(
-        (e: { preventDefault(): void; stopPropagation(): void }) => {
-            if (isHeroPage) return;
-            if (!('startViewTransition' in document)) return;
-            e.preventDefault();
-            e.stopPropagation();
-            (document as any).startViewTransition(() => {
-                flushSync(() => navigate('/'));
-            });
-        },
-        [isHeroPage, navigate]
-    );
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20);
@@ -92,7 +79,7 @@ export const AppNavbar: FunctionComponent = () => {
                         left: 0,
                         right: 0,
                         top: 0,
-                        bottom: '-100px',
+                        bottom: { xs: '-48px', sm: '-100px' },
                         pointerEvents: 'none',
                         zIndex: 0,
                         opacity: showFan ? 1 : 0,
@@ -111,7 +98,7 @@ export const AppNavbar: FunctionComponent = () => {
                     left: 0,
                     right: 0,
                     top: 0,
-                    bottom: '-100px',
+                    bottom: { xs: '-48px', sm: '-100px' },
                     pointerEvents: 'none',
                     zIndex: 0,
                     opacity: showFan ? 1 : 0,
@@ -123,26 +110,19 @@ export const AppNavbar: FunctionComponent = () => {
                 sx={{
                     justifyContent: 'space-between',
                     minHeight: '62px !important',
-                    px: '28px !important',
+                    px: { xs: '10px !important', sm: '28px !important' },
                     position: 'relative',
                     zIndex: 1
                 }}>
                 <ToolbarItem>
                     {/* Mobile compact icon — shown on non-home pages */}
                     <Box sx={{ display: { xs: isHeroPage ? 'none' : 'flex', md: 'none' }, alignItems: 'center' }}>
-                        <RouteLink
-                            to='/'
-                            aria-label='Home'
-                            onClick={handleHomeClick}
-                            style={{ display: 'flex', textDecoration: 'none' }}>
+                        <RouteLink to='/' aria-label='Home' style={{ display: 'flex', textDecoration: 'none' }}>
                             <OpenVsxMark />
                         </RouteLink>
                     </Box>
-                    {/* Full logo — desktop always, mobile only on home page.
-                        onClickCapture intercepts the inner RouteLink so we can wrap it in startViewTransition. */}
-                    <Box
-                        sx={{ display: { xs: isHeroPage ? 'flex' : 'none', md: 'flex' } }}
-                        onClickCapture={handleHomeClick}>
+                    {/* Full logo — desktop always, mobile only on home page. */}
+                    <Box sx={{ display: { xs: isHeroPage ? 'flex' : 'none', md: 'flex' } }}>
                         {ToolbarContent ? <ToolbarContent /> : null}
                     </Box>
                 </ToolbarItem>
