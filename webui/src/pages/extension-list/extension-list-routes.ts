@@ -15,4 +15,5 @@ import { createRoute } from '../../utils';
 
 export namespace ExtensionListRoutes {
     export const MAIN = createRoute([]);
+    export const BROWSE = createRoute(['browse']);
 }

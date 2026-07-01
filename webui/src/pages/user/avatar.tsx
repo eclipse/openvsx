@@ -9,87 +9,151 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useRef, useState } from 'react';
-import { Avatar, Menu, Typography, MenuItem, Link, Divider, IconButton } from '@mui/material';
+import { Avatar, Box, Divider, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { UserSettingsRoutes } from './user-settings-routes';
 import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard-routes';
 import { MainContext } from '../../context';
 import { LogoutForm } from './logout';
 
+const menuItemSx = {
+    borderRadius: '9px',
+    fontSize: '14px',
+    fontWeight: 500,
+    py: '8px',
+    px: '10px',
+    gap: '10px',
+    color: 'text.primary',
+    minHeight: '36px',
+    display: 'flex',
+    alignItems: 'center'
+} as const;
+
+const iconSx = { fontSize: 17, color: 'text.disabled', flexShrink: 0 };
+
 export const UserAvatar: FunctionComponent = () => {
-    const [open, setOpen] = useState<boolean>(false);
+    const [open, setOpen] = useState(false);
     const context = useContext(MainContext);
-    const avatarButton = useRef<any>();
+    const anchorRef = useRef<HTMLButtonElement>(null);
     const logoutFormRef = useRef<HTMLFormElement>(null);
 
-    const handleAvatarClick = () => {
-        setOpen(!open);
-    };
-
-    const handleClose = () => {
-        setOpen(false);
-    };
-
     const user = context.user;
-    if (!user) {
-        return null;
-    }
+    if (!user) return null;
+
+    const initials = user.loginName.slice(0, 2).toUpperCase();
+
     return (
         <>
             <IconButton
+                ref={anchorRef}
                 title={`Logged in as ${user.loginName}`}
-                aria-label='User Info'
-                onClick={handleAvatarClick}
-                ref={(ref: any) => (avatarButton.current = ref)}>
+                aria-label='User menu'
+                onClick={() => setOpen(true)}
+                sx={{ p: '5px' }}>
                 <Avatar
                     src={user.avatarUrl}
                     alt={user.loginName}
-                    variant='rounded'
-                    sx={{ width: '30px', height: '30px' }}
-                />
+                    sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: 'accentSoft',
+                        color: 'secondary.light',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        borderRadius: '8px'
+                    }}>
+                    {initials}
+                </Avatar>
             </IconButton>
             <Menu
                 open={open}
-                anchorEl={avatarButton.current}
+                anchorEl={anchorRef.current}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                onClose={handleClose}>
+                onClose={() => setOpen(false)}>
+                {/* User header */}
+                <Box sx={{ px: '14px', py: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Avatar
+                        src={user.avatarUrl}
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            bgcolor: 'accentSoft',
+                            color: 'secondary.light',
+                            fontSize: '15px',
+                            fontWeight: 700,
+                            borderRadius: '10px',
+                            flexShrink: 0
+                        }}>
+                        {initials}
+                    </Avatar>
+                    <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                            sx={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.07em',
+                                color: 'text.disabled',
+                                lineHeight: 1.3
+                            }}>
+                            Logged in as
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: '14.5px',
+                                fontWeight: 700,
+                                lineHeight: 1.3,
+                                color: 'text.primary',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }}>
+                            {user.loginName}
+                        </Typography>
+                    </Box>
+                </Box>
+                <Divider />
                 <MenuItem
                     component={Link}
                     href={user.homepage}
-                    sx={{
-                        display: 'block',
-                        '&:hover': {
-                            textDecoration: 'underline'
-                        }
-                    }}>
-                    <Typography variant='body2' color='text.primary' sx={{ mr: 1 }}>
-                        Logged in as
-                    </Typography>
-                    <Typography variant='overline' color='text.primary'>
-                        {user.loginName}
-                    </Typography>
+                    target='_blank'
+                    onClick={() => setOpen(false)}
+                    sx={{ ...menuItemSx, textDecoration: 'none' }}>
+                    <PersonIcon sx={iconSx} />
+                    Your profile
                 </MenuItem>
-                <Divider />
-                <MenuItem component={RouteLink} to={UserSettingsRoutes.PROFILE} onClick={handleClose}>
-                    <Typography variant='button' color='text.primary'>
-                        Settings
-                    </Typography>
+                <MenuItem
+                    component={RouteLink}
+                    to={UserSettingsRoutes.PROFILE}
+                    onClick={() => setOpen(false)}
+                    sx={{ ...menuItemSx, textDecoration: 'none' }}>
+                    <SettingsIcon sx={iconSx} />
+                    Settings
                 </MenuItem>
-                {user.role && user.role === 'admin' ? (
-                    <MenuItem component={RouteLink} to={AdminDashboardRoutes.MAIN} onClick={handleClose}>
-                        <Typography variant='button' color='text.primary'>
-                            Admin Dashboard
-                        </Typography>
+                {user.role === 'admin' && (
+                    <MenuItem
+                        component={RouteLink}
+                        to={AdminDashboardRoutes.MAIN}
+                        onClick={() => setOpen(false)}
+                        sx={{ ...menuItemSx, textDecoration: 'none' }}>
+                        <AdminPanelSettingsIcon sx={iconSx} />
+                        Admin Dashboard
                     </MenuItem>
-                ) : (
-                    ''
                 )}
-                <MenuItem onClick={() => logoutFormRef.current?.submit()}>
+                <Divider sx={{ my: '4px' }} />
+                <MenuItem onClick={() => logoutFormRef.current?.submit()} sx={menuItemSx}>
                     <LogoutForm ref={logoutFormRef}>
-                        <Typography variant='button' sx={{ color: 'primary.dark' }}>
-                            Log Out
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <LogoutIcon sx={iconSx} />
+                            <Typography sx={{ fontSize: '14px', fontWeight: 500, color: 'text.primary' }}>
+                                Log out
+                            </Typography>
+                        </Box>
                     </LogoutForm>
                 </MenuItem>
             </Menu>

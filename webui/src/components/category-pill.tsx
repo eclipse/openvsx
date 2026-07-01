@@ -1,0 +1,49 @@
+/******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *****************************************************************************/
+
+import { FunctionComponent } from 'react';
+import { ButtonBase, SvgIconProps } from '@mui/material';
+import { styled } from '@mui/material/styles';
+
+const Root = styled(ButtonBase, {
+    shouldForwardProp: prop => prop !== 'isSelected'
+})<{ isSelected?: boolean }>(({ theme, isSelected }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '7px',
+    flexShrink: 0,
+    overflow: 'hidden',
+    backgroundColor: isSelected ? theme.palette.accentSoft : theme.palette.surface2,
+    border: `1px solid ${isSelected ? theme.palette.secondary.main : theme.palette.divider}`,
+    color: isSelected ? theme.palette.secondary.light : theme.palette.text.secondary,
+    fontSize: '13px',
+    fontWeight: isSelected ? 600 : 500,
+    padding: '7px 13px',
+    borderRadius: '999px',
+    whiteSpace: 'nowrap',
+    fontFamily: 'inherit',
+    transition: 'border-color 0.14s, color 0.14s',
+    '&:hover': isSelected
+        ? {}
+        : {
+              borderColor: theme.palette.secondary.main,
+              color: theme.palette.secondary.light
+          }
+}));
+
+export interface CategoryPillProps {
+    label: string;
+    icon: FunctionComponent<SvgIconProps>;
+    isSelected?: boolean;
+    onClick: () => void;
+}
+
+export const CategoryPill: FunctionComponent<CategoryPillProps> = ({ label, icon: Icon, isSelected, onClick }) => (
+    <Root isSelected={isSelected} onClick={onClick}>
+        <Icon sx={{ fontSize: '16px', flexShrink: 0 }} />
+        {label}
+    </Root>
+);

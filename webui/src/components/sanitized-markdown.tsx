@@ -66,6 +66,8 @@ const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
     '& table': {
         borderCollapse: 'collapse',
         borderSpacing: 0,
+        display: 'block',
+        overflowX: 'auto',
         '& tr, & td, & th': {
             border: '1px solid #ddd'
         },

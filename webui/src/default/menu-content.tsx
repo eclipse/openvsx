@@ -30,8 +30,9 @@ import PublishIcon from '@mui/icons-material/Publish';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
-import { styled, Theme } from '@mui/material/styles';
+import { alpha, styled, Theme } from '@mui/material/styles';
 import { MainContext } from '../context';
+import { KbdKey } from '../components/kbd-key';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -67,7 +68,7 @@ export const MobileUserAvatar: FunctionComponent = () => {
     }
 
     return (
-        <Accordion sx={{ border: 0, borderRadius: 0, boxShadow: '0 0', background: 'transparent' }}>
+        <Accordion>
             <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls='user-actions' id='user-avatar'>
                 <MenuItemText>
                     <Avatar src={user.avatarUrl} alt={user.loginName} variant='rounded' sx={itemIcon} />
@@ -172,15 +173,19 @@ export const MobileMenuContent: FunctionComponent = () => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const headerItem = ({ theme }: { theme: Theme }) => ({
-    margin: theme.spacing(2.5),
-    color: theme.palette.text.primary,
+    margin: theme.spacing(0, 0.5),
+    padding: theme.spacing(1, 1.5),
+    color: theme.palette.text.secondary,
     textDecoration: 'none',
-    fontSize: '1.1rem',
+    fontSize: '14px',
     fontFamily: theme.typography.fontFamily,
-    fontWeight: theme.typography.fontWeightLight,
-    letterSpacing: 1,
+    fontWeight: 500,
+    letterSpacing: 0,
+    borderRadius: `${theme.shape.borderRadius}px`,
+    transition: 'background 0.14s, color 0.14s',
     '&:hover': {
-        color: theme.palette.secondary.main,
+        color: theme.palette.text.primary,
+        backgroundColor: theme.palette.surface3,
         textDecoration: 'none'
     }
 });
@@ -194,15 +199,37 @@ export const DefaultMenuContent: FunctionComponent = () => {
     const { user, loginProviders } = useContext(MainContext);
     return (
         <>
-            <MenuLink href='https://github.com/eclipse/openvsx/wiki'>Documentation</MenuLink>
+            <MenuLink
+                href='https://github.com/eclipse/openvsx/wiki'
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                Documentation
+                <KbdKey>d</KbdKey>
+            </MenuLink>
             <MenuLink href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
                 Slack Workspace
             </MenuLink>
             <MenuRouteLink to='/about'>About</MenuRouteLink>
             {loginProviders && (
                 <>
-                    <Button variant='contained' color='secondary' href='/user-settings/extensions' sx={{ mx: 2.5 }}>
+                    <Button
+                        variant='text'
+                        color='secondary'
+                        href='/user-settings/extensions'
+                        sx={theme => ({
+                            mx: 0.5,
+                            px: 2.25,
+                            py: 1,
+                            fontWeight: 600,
+                            fontSize: '13.5px',
+                            textTransform: 'none',
+                            borderRadius: `${theme.shape.borderRadius}px`,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '7px',
+                            '&:hover': { backgroundColor: alpha(theme.palette.secondary.main, 0.08) }
+                        })}>
                         Publish
+                        <KbdKey>p</KbdKey>
                     </Button>
                     {user ? (
                         <UserAvatar />

@@ -1,22 +1,19 @@
-/********************************************************************************
- * Copyright (c) 2019 TypeFox and others
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+/******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 
 import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
-import { Box, Grid, CircularProgress, Container } from '@mui/material';
-import { ExtensionListItem } from './extension-list-item';
-import { isError, SearchEntry, SearchResult } from '../../extension-registry-types';
-import { ExtensionFilter } from '../../extension-registry-service';
-import { debounce } from '../../utils';
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { MainContext } from '../../context';
+import { Box, CircularProgress } from '@mui/material';
+import { ExtensionCard } from './extension-card';
+import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
+import { ExtensionFilter } from '../extension-registry-service';
+import { debounce } from '../utils';
+import { DelayedLoadIndicator } from './delayed-load-indicator';
+import { useGridKeyboardNavigation } from './use-grid-keyboard-navigation';
+import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     const abortController = useRef<AbortController>(new AbortController());
@@ -31,6 +28,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     const [appliedFilter, setAppliedFilter] = useState<ExtensionFilter>();
     const [hasMore, setHasMore] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
+    const grid = useGridKeyboardNavigation<HTMLDivElement>();
 
     useEffect(() => {
         enableLoadMore.current = true;
@@ -96,7 +94,6 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             extensionKeys.forEach(key => newExtensionKeys.add(key));
             const searchResult = result as SearchResult;
             if (enableLoadMore.current && isSameFilter(props.filter, filter)) {
-                // Check for duplicate keys to avoid problems due to asynchronous user edit / loadMore call
                 for (const ext of searchResult.extensions) {
                     const key = `${ext.namespace}.${ext.name}`;
                     if (!extensionKeys.has(key)) {
@@ -137,12 +134,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     };
 
     const extensionList = extensions.map((ext, idx) => (
-        <ExtensionListItem
-            idx={idx}
-            extension={ext}
-            filterSize={filterSize.current}
-            key={`${ext.namespace}.${ext.name}`}
-        />
+        <ExtensionCard idx={idx} extension={ext} filterSize={filterSize.current} key={`${ext.namespace}.${ext.name}`} />
     ));
 
     const loader = (
@@ -155,11 +147,17 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         <>
             <DelayedLoadIndicator loading={loading} />
             <InfiniteScroll loadMore={loadMore} hasMore={hasMore} loader={loader} threshold={200}>
-                <Container maxWidth='xl'>
-                    <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
-                        {extensionList}
-                    </Grid>
-                </Container>
+                <Box
+                    ref={grid.containerRef}
+                    onKeyDown={grid.onKeyDown}
+                    onFocus={grid.onFocus}
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fill, minmax(190px, 1fr))' },
+                        gap: '16px'
+                    }}>
+                    {extensionList}
+                </Box>
             </InfiniteScroll>
         </>
     );

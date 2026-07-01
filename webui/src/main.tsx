@@ -22,7 +22,7 @@ import { UserData, isError, ReportedError, isSuccess, LoginProviders } from './e
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { ErrorResponse } from './server-request';
-import { OtherPages } from './other-pages';
+import { AppLayout } from './layout/app-layout';
 
 import '../src/main.css';
 
@@ -113,7 +113,7 @@ export const Main: FunctionComponent<MainProps> = props => {
                             </Suspense>
                         }
                     />
-                    <Route path='*' element={<OtherPages user={user} userLoading={userLoading} />} />
+                    <Route path='*' element={<AppLayout user={user} userLoading={userLoading} />} />
                 </Routes>
                 {error ? (
                     <ErrorDialog

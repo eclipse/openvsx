@@ -14,7 +14,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import { useParams } from 'react-router-dom';
-import { ExtensionListItem } from '../extension-list/extension-list-item';
+import { ExtensionCard } from '../../components/extension-card';
 import { MainContext } from '../../context';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { NamespaceDetails, isError, UrlString } from '../../extension-registry-types';
@@ -235,7 +235,7 @@ export const NamespaceDetail: FunctionComponent = () => {
                     <Container maxWidth='xl'>
                         <Grid container spacing={2} sx={{ justifyContent: 'center', pt: 6 }}>
                             {namespaceDetails.extensions.map((ext, idx) => (
-                                <ExtensionListItem
+                                <ExtensionCard
                                     idx={idx}
                                     extension={ext}
                                     filterSize={10}

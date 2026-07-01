@@ -43,6 +43,8 @@ import { ExtensionDetailReviews } from './extension-detail-reviews';
 
 import { ExtensionDetailRoutes } from './extension-detail-routes';
 import { useExtensionDetail } from './use-extension-details';
+import { KbdKey } from '../../components/kbd-key';
+import { useShortcut } from '../../use-shortcut';
 
 const inlineLinkStyle = {
     display: 'contents',
@@ -195,9 +197,17 @@ const ExtensionHeaderInfo: FunctionComponent<{
     const reviewCountFormatted = compactNumber.format(extension.reviewCount || 0);
 
     return (
-        <Box overflow='auto' sx={{ pt: 1, overflow: 'visible' }}>
+        <Box sx={{ pt: 0.5, overflow: 'visible', flex: 1, minWidth: 0 }}>
             <PreviewBadge color='secondary' badgeContent='Preview' invisible={!extension.preview}>
-                <Typography variant='h5' sx={{ fontWeight: 'bold', mb: 1 }}>
+                <Typography
+                    component='h1'
+                    sx={{
+                        fontSize: { xs: '1.7rem', md: '1.938rem' },
+                        fontWeight: 800,
+                        letterSpacing: '-0.025em',
+                        mb: 1,
+                        color: headerTextColor
+                    }}>
                     {extension.displayName ?? extension.name}
                 </Typography>
             </PreviewBadge>
@@ -304,32 +314,49 @@ const ExtensionHeader: FunctionComponent<{
     }
 
     const headerTextColor = theme.palette.getContrastText(headerColor);
+    const usesDefaultBg = !extension.galleryColor;
 
     return (
         <Box
             sx={{
-                bgcolor: headerColor,
-                color: headerTextColor,
+                bgcolor: usesDefaultBg ? 'bg2' : headerColor,
+                color: usesDefaultBg ? 'text.primary' : headerTextColor,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
                 filter: extension.deprecated ? 'grayscale(100%)' : undefined
             }}>
             <Container maxWidth='xl'>
-                <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
-                    <UnverifiedBanner extension={extension} headerTextColor={headerTextColor} themeType={themeType} />
+                <Box sx={{ pt: '18px', pb: '28px' }}>
+                    <UnverifiedBanner
+                        extension={extension}
+                        headerTextColor={usesDefaultBg ? theme.palette.text.primary : headerTextColor}
+                        themeType={themeType}
+                    />
                     <Box
                         sx={{
                             display: 'flex',
                             width: '100%',
                             flexDirection: { xs: 'column', md: 'row' },
                             textAlign: { xs: 'center', md: 'start' },
-                            alignItems: { xs: 'center', md: 'normal' }
+                            alignItems: { xs: 'center', md: 'flex-start' },
+                            gap: { xs: 2, md: '26px' }
                         }}>
                         <Box
                             component='img'
                             src={icon ?? pageSettings.urls.extensionDefaultIcon}
                             alt={extension.displayName ?? extension.name}
-                            sx={{ height: '7.5rem', maxWidth: '9rem', mr: { xs: 0, md: '2rem' }, pt: 1 }}
+                            style={{
+                                viewTransitionName: `ext-${extension.namespace}-${extension.name}`.replace(
+                                    /[^a-zA-Z0-9-]/g,
+                                    '-'
+                                )
+                            }}
+                            sx={{ width: '96px', height: '96px', flexShrink: 0, objectFit: 'contain' }}
                         />
-                        <ExtensionHeaderInfo extension={extension} headerTextColor={headerTextColor} />
+                        <ExtensionHeaderInfo
+                            extension={extension}
+                            headerTextColor={usesDefaultBg ? theme.palette.text.primary : headerTextColor}
+                        />
                     </Box>
                 </Box>
             </Container>
@@ -367,6 +394,32 @@ export const ExtensionDetail: FunctionComponent = () => {
         [navigate, namespace, name, target]
     );
 
+    const _basePath = namespace && name ? buildExtensionPath(namespace, name, target) : '';
+    const _reviewsPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.REVIEWS) : '';
+    const _changesPath = namespace && name ? buildExtensionPath(namespace, name, target, ExtensionTab.CHANGES) : '';
+
+    useShortcut({
+        key: 'o',
+        label: 'Extension overview',
+        order: 40,
+        callback: () => navigate(_basePath),
+        enabled: !!_basePath
+    });
+    useShortcut({
+        key: 'c',
+        label: 'Extension changelog',
+        order: 50,
+        callback: () => navigate(_changesPath),
+        enabled: !!_basePath
+    });
+    useShortcut({
+        key: 'r',
+        label: 'Extension reviews',
+        order: 60,
+        callback: () => navigate(_reviewsPath),
+        enabled: !!_basePath
+    });
+
     if (!namespace || !name) return null;
 
     const basePath = buildExtensionPath(namespace, name, target);
@@ -390,17 +443,37 @@ export const ExtensionDetail: FunctionComponent = () => {
                 <>
                     <ExtensionHeader extension={extension} icon={icon} />
                     <Container maxWidth='xl'>
-                        <Tabs value={activeTab} indicatorColor='secondary'>
+                        <Tabs
+                            value={activeTab}
+                            indicatorColor='secondary'
+                            sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                             <Tab
                                 value={ExtensionTab.OVERVIEW}
-                                label='Overview'
+                                label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                        Overview<KbdKey>o</KbdKey>
+                                    </Box>
+                                }
                                 component={RouteLink}
                                 to={overviewPath}
                             />
-                            <Tab value={ExtensionTab.CHANGES} label='Changes' component={RouteLink} to={changesPath} />
+                            <Tab
+                                value={ExtensionTab.CHANGES}
+                                label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                        Changes<KbdKey>c</KbdKey>
+                                    </Box>
+                                }
+                                component={RouteLink}
+                                to={changesPath}
+                            />
                             <Tab
                                 value={ExtensionTab.REVIEWS}
-                                label='Ratings &amp; Reviews'
+                                label={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                        Ratings &amp; Reviews<KbdKey>r</KbdKey>
+                                    </Box>
+                                }
                                 component={RouteLink}
                                 to={reviewsPath}
                             />

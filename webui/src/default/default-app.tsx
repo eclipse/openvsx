@@ -8,6 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import '@fontsource-variable/geist/index.css';
+import '@fontsource-variable/geist-mono/index.css';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+import '../main.css';
 import { createRoot } from 'react-dom/client';
 import { useMemo } from 'react';
 import { HelmetProvider } from 'react-helmet-async';

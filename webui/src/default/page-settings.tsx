@@ -84,9 +84,52 @@ export default function createPageSettings(
     );
 
     const searchHeader: FunctionComponent = () => (
-        <Typography variant='h4' sx={{ mb: 2, fontWeight: 'fontWeightLight', letterSpacing: 4, textAlign: 'center' }}>
-            Extensions for VS Code Compatible Editors
-        </Typography>
+        <Box textAlign='center' sx={{ mb: 3, maxWidth: '700px' }}>
+            <Box
+                sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    px: '13px',
+                    py: '6px',
+                    borderRadius: '999px',
+                    bgcolor: 'accentSoft',
+                    color: 'secondary.light',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    mb: 3
+                }}>
+                <Box
+                    component='span'
+                    sx={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        bgcolor: 'secondary.main',
+                        display: 'inline-block',
+                        flexShrink: 0
+                    }}
+                />
+                Open-source registry for VS Code–compatible editors
+            </Box>
+            <Typography
+                component='h1'
+                sx={{
+                    fontSize: { xs: '2.2rem', sm: '3rem', md: '3.375rem' },
+                    lineHeight: 1.04,
+                    letterSpacing: '-0.035em',
+                    fontWeight: 800,
+                    mb: 2
+                }}>
+                Find the right extension,
+                <br />
+                for any editor.
+            </Typography>
+            <Typography
+                sx={{ fontSize: '18px', color: 'text.secondary', maxWidth: '560px', mx: 'auto', lineHeight: 1.5 }}>
+                Browse community-published extensions. Free, open, and vendor-neutral.
+            </Typography>
+        </Box>
     );
 
     const additionalRoutes: ReactNode = <Route path='/about' element={<About />} />;

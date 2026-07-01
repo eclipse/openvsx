@@ -343,7 +343,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     xl: 'row'
                 }
             }}>
-            <Box flex={5} overflow='auto'>
+            <Box flex={5} sx={{ minWidth: 0, overflow: 'auto' }}>
                 <SanitizedMarkdown content={readme} />
             </Box>
             <Box
@@ -351,7 +351,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                     flex: 1,
                     display: 'flex',
                     width: '100%',
-                    minWidth: '290px',
+                    minWidth: { xs: 0, xl: '290px' },
                     mb: { xs: 2, sm: 2, md: 2, lg: 2, xl: 0 },
                     ml: { xs: 0, sm: 0, md: 0, lg: 0, xl: '4.8rem' },
                     flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'column' }
