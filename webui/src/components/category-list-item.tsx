@@ -48,7 +48,7 @@ export const CategoryListItem: FunctionComponent<CategoryListItemProps> = ({
     isSelected,
     onClick
 }) => (
-    <Root isSelected={isSelected} onClick={onClick}>
+    <Root isSelected={isSelected} aria-current={isSelected ? 'true' : undefined} onClick={onClick}>
         <Icon sx={{ fontSize: '0.9375rem', opacity: 0.75, flexShrink: 0 }} />
         {label}
     </Root>

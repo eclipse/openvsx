@@ -197,11 +197,12 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
                     </Box>
                     <HeroInput
                         ref={heroInputRef}
+                        aria-label='Search extensions'
                         value={query}
                         onChange={handleInputChange}
                         placeholder='search extensions…'
                     />
-                    <HeroSubmitButton type='submit'>
+                    <HeroSubmitButton type='submit' aria-label='Search'>
                         <svg
                             width='16'
                             height='16'

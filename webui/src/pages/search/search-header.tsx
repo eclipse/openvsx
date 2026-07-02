@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, KeyboardEvent } from 'react';
-import { Box, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
+import { FunctionComponent } from 'react';
+import { Box, IconButton, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
 import { SortBy, SortOrder } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -59,6 +59,7 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                     value={sortBy}
                     onChange={handleSortByChange}
                     size='small'
+                    inputProps={{ 'aria-label': 'Sort by' }}
                     sx={{
                         fontSize: '0.8125rem',
                         fontWeight: 500,
@@ -73,32 +74,23 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                     <MenuItem value='downloadCount'>Downloads</MenuItem>
                     <MenuItem value='rating'>Rating</MenuItem>
                 </Select>
-                <Box
+                <IconButton
+                    onClick={toggleSortOrder}
+                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                    aria-label={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
                     sx={{
-                        display: 'flex',
-                        alignItems: 'center',
                         color: 'text.disabled',
                         borderRadius: '6px',
                         p: '0.1875rem',
-                        cursor: 'pointer',
                         transition: 'color 0.14s',
-                        '&:hover': { color: 'secondary.light' }
-                    }}
-                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                    tabIndex={0}
-                    onKeyDown={(e: KeyboardEvent) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            toggleSortOrder();
-                        }
-                    }}
-                    onClick={toggleSortOrder}>
+                        '&:hover': { color: 'secondary.light', bgcolor: 'transparent' }
+                    }}>
                     {sortOrder === 'asc' ? (
                         <ArrowUpwardIcon fontSize='small' />
                     ) : (
                         <ArrowDownwardIcon fontSize='small' />
                     )}
-                </Box>
+                </IconButton>
             </Box>
         </Box>
     );

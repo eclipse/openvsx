@@ -38,7 +38,7 @@ export interface CategoryPillProps {
 }
 
 export const CategoryPill: FunctionComponent<CategoryPillProps> = ({ label, icon: Icon, isSelected, onClick }) => (
-    <Root isSelected={isSelected} onClick={onClick}>
+    <Root isSelected={isSelected} aria-pressed={!!isSelected} onClick={onClick}>
         <Icon sx={{ fontSize: '1rem', flexShrink: 0, color: 'secondary.main' }} />
         {label}
     </Root>
