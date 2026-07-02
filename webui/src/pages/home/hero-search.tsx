@@ -227,8 +227,8 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
                         flexWrap: { xs: 'nowrap', sm: 'wrap' },
                         overflowX: { xs: 'auto', sm: 'visible' },
                         mt: '18px',
-                        mx: { xs: '-28px', sm: 0 },
-                        px: { xs: '28px', sm: 0 },
+                        mx: { xs: '-16px', sm: 0 },
+                        px: { xs: '16px', sm: 0 },
                         pb: { xs: '4px', sm: 0 },
                         '&::-webkit-scrollbar': { display: 'none' },
                         scrollbarWidth: 'none'
