@@ -18,9 +18,9 @@ export type ResultsNavAction = 'down' | 'up' | 'left' | 'right' | 'open';
 
 export interface SearchFocusContextValue {
     // Ask the active search field (hero on the home page, nav bar elsewhere) to focus.
-    focusSearch: Signal;
+    searchFocusSignal: Signal;
     // Drive the results grid's cursor while focus stays in the search field.
-    resultsNav: Signal<ResultsNavAction>;
+    resultsNavigationSignal: Signal<ResultsNavAction>;
     // Whether the search field has focus — the grid only shows its cursor then.
     searchFocused: boolean;
     setSearchFocused: (focused: boolean) => void;
@@ -28,8 +28,8 @@ export interface SearchFocusContextValue {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const SearchFocusContext = createContext<SearchFocusContextValue>({
-    focusSearch: { signal: 0, emit: () => {} },
-    resultsNav: { signal: 0, emit: () => {} },
+    searchFocusSignal: { signal: 0, emit: () => {} },
+    resultsNavigationSignal: { signal: 0, emit: () => {} },
     searchFocused: false,
     setSearchFocused: () => {}
 });
@@ -40,12 +40,12 @@ export function useSearchFocus(): SearchFocusContextValue {
 }
 
 export const SearchFocusProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
-    const focusSearch = useSignal();
-    const resultsNav = useSignal<ResultsNavAction>();
+    const searchFocusSignal = useSignal();
+    const resultsNavigationSignal = useSignal<ResultsNavAction>();
     const [searchFocused, setSearchFocused] = useState(false);
     const value = useMemo(
-        () => ({ focusSearch, resultsNav, searchFocused, setSearchFocused }),
-        [focusSearch, resultsNav, searchFocused]
+        () => ({ searchFocusSignal, resultsNavigationSignal, searchFocused, setSearchFocused }),
+        [searchFocusSignal, resultsNavigationSignal, searchFocused]
     );
     return <SearchFocusContext.Provider value={value}>{children}</SearchFocusContext.Provider>;
 };

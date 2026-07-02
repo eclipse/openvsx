@@ -50,7 +50,7 @@ interface GridKeyboardNavigation<T extends HTMLElement> {
  */
 export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboardNavigation<T> {
     const containerRef = useRef<T>(null);
-    const { focusSearch, resultsNav, searchFocused } = useSearchFocus();
+    const { searchFocusSignal, resultsNavigationSignal, searchFocused } = useSearchFocus();
 
     // The cursor ring is only shown while the search field has focus (the card
     // styles key off this container attribute).
@@ -106,7 +106,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
     // Cursor commands from the search field: move the active item across both
     // grid axes, or open it (Enter).
     useSignalEffect(
-        resultsNav,
+        resultsNavigationSignal,
         useCallback(
             (action: ResultsNavAction) => {
                 const items = getItems();
@@ -147,7 +147,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
 
             if (event.key === 'ArrowUp' && currentIndex < cols) {
                 event.preventDefault();
-                focusSearch.emit();
+                searchFocusSignal.emit();
                 return;
             }
             if (event.key === 'Home') {
@@ -164,7 +164,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
                 items[nextIndex].focus();
             }
         },
-        [getItems, getColumnCount, setActiveItem, focusSearch.emit]
+        [getItems, getColumnCount, setActiveItem, searchFocusSignal.emit]
     );
 
     const onFocus = useCallback(

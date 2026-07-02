@@ -28,7 +28,7 @@ export const NavSearchField: FunctionComponent = () => {
     const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery } = useSearchQuery();
     const { search, filter } = useSearch();
-    const { focusSearch, resultsNav, setSearchFocused } = useSearchFocus();
+    const { searchFocusSignal, resultsNavigationSignal, setSearchFocused } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -53,7 +53,7 @@ export const NavSearchField: FunctionComponent = () => {
     // Take focus when requested — except on the hero page, where the hero search
     // field owns focus instead. The onFocus handler moves the cursor to the end.
     useSignalEffect(
-        focusSearch,
+        searchFocusSignal,
         useCallback(() => {
             if (isHeroPage) {
                 return;
@@ -63,7 +63,7 @@ export const NavSearchField: FunctionComponent = () => {
     );
 
     // The '/' shortcut asks whichever search field is active to take focus.
-    useShortcut({ key: '/', label: 'Focus search', order: 1, callback: focusSearch.emit });
+    useShortcut({ key: '/', label: 'Focus search', order: 1, callback: searchFocusSignal.emit });
 
     const handleNavSearch = useCallback(
         (q: string) => {
@@ -79,12 +79,12 @@ export const NavSearchField: FunctionComponent = () => {
             // On the search page, Enter on an already-applied query opens the card
             // under the cursor; on a fresh query it applies the search first.
             if (pathname === ExtensionListRoutes.SEARCH && q === filter.query) {
-                resultsNav.emit('open');
+                resultsNavigationSignal.emit('open');
                 return;
             }
             search({ query: q });
         },
-        [debouncedSearch, search, pathname, filter.query, resultsNav.emit]
+        [debouncedSearch, search, pathname, filter.query, resultsNavigationSignal.emit]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs
@@ -115,10 +115,10 @@ export const NavSearchField: FunctionComponent = () => {
             const action = ARROW_ACTIONS[e.key];
             if (action) {
                 e.preventDefault();
-                resultsNav.emit(action);
+                resultsNavigationSignal.emit(action);
             }
         },
-        [resultsNav.emit, pathname]
+        [resultsNavigationSignal.emit, pathname]
     );
 
     return (
