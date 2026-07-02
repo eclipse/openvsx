@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, KeyboardEvent, useCallback, useLayoutEffect, useRef } from 'react';
+import { FocusEvent, FunctionComponent, KeyboardEvent, useCallback, useLayoutEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
@@ -15,13 +15,21 @@ import { useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../hooks/use-shortcut';
+import { ResultsNavAction } from '../context/search/search-focus-context';
+
+const ARROW_ACTIONS: Record<string, ResultsNavAction | undefined> = {
+    ArrowDown: 'down',
+    ArrowUp: 'up',
+    ArrowLeft: 'left',
+    ArrowRight: 'right'
+};
 
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
     const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery } = useSearchQuery();
     const { search, filter } = useSearch();
-    const { focusSearchSignal, focusSearch, focusResults, openFirstResult } = useSearchFocus();
+    const { focusSearchSignal, focusSearch, navigateResults, setSearchFocused } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -69,39 +77,49 @@ export const NavSearchField: FunctionComponent = () => {
     const handleNavSubmit = useCallback(
         (q: string) => {
             debouncedSearch.cancel();
-            // On the search page, Enter on an already-applied query opens the first
-            // result; on a fresh query it applies the search (a second Enter opens).
+            // On the search page, Enter on an already-applied query opens the card
+            // under the cursor; on a fresh query it applies the search first.
             if (pathname === ExtensionListRoutes.SEARCH && q === filter.query) {
-                openFirstResult();
+                navigateResults('open');
                 return;
             }
             search({ query: q });
         },
-        [debouncedSearch, search, pathname, filter.query, openFirstResult]
+        [debouncedSearch, search, pathname, filter.query, navigateResults]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs
     // the hero search into this field — browsers select-all by default on programmatic focus)
-    const handleInputFocus = useCallback((e: { target: HTMLInputElement }) => {
-        const { target } = e;
-        requestAnimationFrame(() => target.setSelectionRange(target.value.length, target.value.length));
-    }, []);
+    const handleInputFocus = useCallback(
+        (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            setSearchFocused(true);
+            const { target } = e;
+            requestAnimationFrame(() => target.setSelectionRange(target.value.length, target.value.length));
+        },
+        [setSearchFocused]
+    );
 
-    // ArrowDown moves focus from the search field into the results grid (first card),
-    // where two-axis arrow navigation takes over. Escape blurs the field.
+    const handleInputBlur = useCallback(() => setSearchFocused(false), [setSearchFocused]);
+
+    // On the search page the input and the results share one cursor: arrow keys
+    // move it across the grid while focus stays in the field (so they no longer
+    // move the text caret there), and Enter opens it. Escape blurs the field.
     const handleInputKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 (e.target as HTMLInputElement).blur();
                 return;
             }
-            if (e.key !== 'ArrowDown') {
+            if (pathname !== ExtensionListRoutes.SEARCH) {
                 return;
             }
-            e.preventDefault();
-            focusResults();
+            const action = ARROW_ACTIONS[e.key];
+            if (action) {
+                e.preventDefault();
+                navigateResults(action);
+            }
         },
-        [focusResults]
+        [navigateResults, pathname]
     );
 
     return (
@@ -133,7 +151,7 @@ export const NavSearchField: FunctionComponent = () => {
                     hideIconButton
                     autoFocus={false}
                     viewTransitionName={isHeroPage ? undefined : 'vt-search'}
-                    inputProps={{ onFocus: handleInputFocus, onKeyDown: handleInputKeyDown }}
+                    inputProps={{ onFocus: handleInputFocus, onBlur: handleInputBlur, onKeyDown: handleInputKeyDown }}
                 />
             </Box>
         </Box>

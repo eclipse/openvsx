@@ -7,7 +7,7 @@
 import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useRef } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Close';
-import { IconButton, InputBase, Box } from '@mui/material';
+import { IconButton, InputBase, InputBaseComponentProps, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { MONO_FONT } from '../default/theme';
 import { focusRing } from './page-primitives';
@@ -21,7 +21,7 @@ interface ExtensionSearchfieldProps {
     error?: boolean;
     autoFocus?: boolean;
     viewTransitionName?: string;
-    inputProps?: object;
+    inputProps?: InputBaseComponentProps;
 }
 
 const SearchWrap = styled(Box, {
@@ -91,6 +91,15 @@ export const ExtensionSearchfield = forwardRef(
             inputRef.current?.focus();
         };
 
+        // Merged into inputProps because InputBase spreads inputProps after its own
+        // onKeyDown, so a caller-supplied handler would silently replace Enter-submit.
+        const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+            props.inputProps?.onKeyDown?.(event);
+            if (event.key === 'Enter' && props.onSearchSubmit && !event.defaultPrevented) {
+                props.onSearchSubmit(props.searchQuery ?? '');
+            }
+        };
+
         return (
             <SearchWrap
                 hasError={props.error}
@@ -105,12 +114,7 @@ export const ExtensionSearchfield = forwardRef(
                     id='search-input'
                     type='search'
                     inputMode='search'
-                    inputProps={props.inputProps}
-                    onKeyDown={(e: KeyboardEvent) => {
-                        if (e.key === 'Enter' && props.onSearchSubmit) {
-                            props.onSearchSubmit(props.searchQuery ?? '');
-                        }
-                    }}
+                    inputProps={{ ...props.inputProps, onKeyDown: handleKeyDown }}
                 />
                 <label htmlFor='search-input' className='visually-hidden'>
                     Search for Name, Tags or Description

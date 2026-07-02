@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { createContext, FunctionComponent, ReactNode, useContext, useMemo } from 'react';
+import { createContext, FunctionComponent, ReactNode, useContext, useMemo, useState } from 'react';
 import { useSignal } from '../../hooks/use-signal';
 
 /**
@@ -13,26 +13,30 @@ import { useSignal } from '../../hooks/use-signal';
  * useSignalEffect and focus their own element, so no entry point needs a global
  * DOM lookup.
  */
+// Move the results cursor from the search field, or open the card under it.
+export type ResultsNavAction = 'down' | 'up' | 'left' | 'right' | 'open';
+
 export interface SearchFocusContextValue {
     // Ask the active search field (hero on the home page, nav bar elsewhere) to focus.
     focusSearchSignal: number;
     focusSearch: () => void;
-    // Ask the results grid to focus its first item.
-    focusResultsSignal: number;
-    focusResults: () => void;
-    // Ask the results grid to open (navigate to) its first item.
-    openFirstResultSignal: number;
-    openFirstResult: () => void;
+    // Drive the results grid's cursor while focus stays in the search field.
+    resultsNavSignal: number;
+    resultsNavAction?: ResultsNavAction;
+    navigateResults: (action: ResultsNavAction) => void;
+    // Whether the search field has focus — the grid only shows its cursor then.
+    searchFocused: boolean;
+    setSearchFocused: (focused: boolean) => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const SearchFocusContext = createContext<SearchFocusContextValue>({
     focusSearchSignal: 0,
     focusSearch: () => {},
-    focusResultsSignal: 0,
-    focusResults: () => {},
-    openFirstResultSignal: 0,
-    openFirstResult: () => {}
+    resultsNavSignal: 0,
+    navigateResults: () => {},
+    searchFocused: false,
+    setSearchFocused: () => {}
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -42,18 +46,19 @@ export function useSearchFocus(): SearchFocusContextValue {
 
 export const SearchFocusProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const focusSearch = useSignal();
-    const focusResults = useSignal();
-    const openFirstResult = useSignal();
+    const resultsNav = useSignal<ResultsNavAction>();
+    const [searchFocused, setSearchFocused] = useState(false);
     const value = useMemo(
         () => ({
             focusSearchSignal: focusSearch.signal,
             focusSearch: focusSearch.emit,
-            focusResultsSignal: focusResults.signal,
-            focusResults: focusResults.emit,
-            openFirstResultSignal: openFirstResult.signal,
-            openFirstResult: openFirstResult.emit
+            resultsNavSignal: resultsNav.signal,
+            resultsNavAction: resultsNav.payload,
+            navigateResults: resultsNav.emit,
+            searchFocused,
+            setSearchFocused
         }),
-        [focusSearch, focusResults, openFirstResult]
+        [focusSearch, resultsNav, searchFocused]
     );
     return <SearchFocusContext.Provider value={value}>{children}</SearchFocusContext.Provider>;
 };

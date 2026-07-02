@@ -6,11 +6,13 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-export interface Signal {
+export interface Signal<T = void> {
     /** Monotonically increasing counter; bumped on every emit. */
     signal: number;
+    /** Value passed to the latest emit, if the signal carries one. */
+    payload?: T;
     /** Broadcast the signal to subscribers. */
-    emit: () => void;
+    emit: (payload: T) => void;
 }
 
 /**
@@ -20,8 +22,8 @@ export interface Signal {
  * imperative actions (e.g. moving focus) across components without global DOM
  * lookups. Share the returned value through context to reach other components.
  */
-export function useSignal(): Signal {
-    const [signal, setSignal] = useState(0);
-    const emit = useCallback(() => setSignal(n => n + 1), []);
-    return useMemo(() => ({ signal, emit }), [signal, emit]);
+export function useSignal<T = void>(): Signal<T> {
+    const [state, setState] = useState<{ signal: number; payload?: T }>({ signal: 0 });
+    const emit = useCallback((payload: T) => setState(s => ({ signal: s.signal + 1, payload })), []);
+    return useMemo(() => ({ signal: state.signal, payload: state.payload, emit }), [state, emit]);
 }

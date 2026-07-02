@@ -31,7 +31,9 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
     ...cardHoverLift(theme),
     // Keyboard focus ring mirrors the search field's :focus-within style.
-    'a:focus-visible &': focusRing(theme)
+    // Ring when the card link is keyboard-focused, or when it is the results
+    // cursor and the search field has focus (see useGridKeyboardNavigation).
+    'a:focus-visible &, [data-search-focus] a[data-active] &': focusRing(theme)
 }));
 
 export interface ExtensionCardProps {
