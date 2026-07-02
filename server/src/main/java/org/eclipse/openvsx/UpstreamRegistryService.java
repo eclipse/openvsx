@@ -427,12 +427,12 @@ public class UpstreamRegistryService implements IExtensionRegistry {
      * @return the version of the upstream registry
      */
     @Override
-    public RegistryVersionJson getRegistryVersion() {
+    public RegistryConfigJson getRegistryVersion() {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/version";
 
         try {
-            ResponseEntity<RegistryVersionJson> response = restTemplate.getForEntity(urlTemplate,
-                    RegistryVersionJson.class);
+            ResponseEntity<RegistryConfigJson> response = restTemplate.getForEntity(urlTemplate,
+                    RegistryConfigJson.class);
             return response.getBody();
         } catch (RestClientException exc) {
             logger.error("GET " + urlTemplate, exc);

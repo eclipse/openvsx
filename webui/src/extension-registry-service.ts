@@ -29,7 +29,7 @@ import {
     NamespaceMembershipList,
     PublisherInfo,
     SearchEntry,
-    RegistryVersion,
+    RegistryConfig,
     LoginProviders,
     ScanResultJson,
     ScanCounts,
@@ -603,8 +603,8 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getRegistryVersion(abortController: AbortController): Promise<Readonly<RegistryVersion>> {
-        const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'version']);
+    async getRegistryConfig(abortController: AbortController): Promise<Readonly<RegistryConfig>> {
+        const endpoint = createAbsoluteURL([this.serverUrl, 'api', 'config']);
         return sendRequest({ abortController, endpoint });
     }
 }

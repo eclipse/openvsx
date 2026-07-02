@@ -1392,24 +1392,32 @@ public class RegistryAPI {
         return ResponseEntity.notFound().build();
     }
 
-    @GetMapping(path = "/api/version", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/api/config", produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin
-    @Operation(summary = "Return the registry version")
+    @Operation(summary = "Return the registry configuration")
     @ApiResponse(
         responseCode = "200",
-        description = "The registry version is returned in JSON format"
+        description = "The registry configuration is returned in JSON format"
     )
     @ApiResponse(
         responseCode = "404",
-        description = "The registry version could not be determined"
+        description = "The registry configuration could not be determined"
     )
-    public ResponseEntity<RegistryVersionJson> getServerVersion() {
+    public ResponseEntity<RegistryConfigJson> getRegistryConfig() {
         try {
             return ResponseEntity.ok()
                         .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                         .body(local.getRegistryVersion());
         } catch (ErrorResultException exc) {
-            return exc.toResponseEntity(RegistryVersionJson.class);
+            return exc.toResponseEntity(RegistryConfigJson.class);
         }
+    }
+
+    @GetMapping(path = "/api/version")
+    @Operation(summary = "Redirects to /api/config", hidden = true)
+    public ResponseEntity<Void> getServerVersion() {
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                .location(URI.create("/api/config"))
+                .build();
     }
 }

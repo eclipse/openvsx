@@ -21,6 +21,7 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
+import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
@@ -104,7 +105,8 @@ class LocalRegistryServiceTest {
                 eclipse,
                 cacheService,
                 integrityService,
-                similarityCheckService
+                similarityCheckService,
+                new PublishingConfig()
         );
 
         doNothing().when(eclipse).checkPublisherAgreement(any());

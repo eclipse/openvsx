@@ -18,6 +18,7 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
+import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.ISearchService;
@@ -75,6 +76,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
+    private final PublishingConfig publishingConfig;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -89,7 +91,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             EclipseService eclipse,
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
-            @Nullable SimilarityCheckService similarityCheckService
+            @Nullable SimilarityCheckService similarityCheckService,
+            PublishingConfig publishingConfig
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -104,6 +107,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.cache = cache;
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
+        this.publishingConfig = publishingConfig;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -1151,13 +1155,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public RegistryVersionJson getRegistryVersion() {
+    public RegistryConfigJson getRegistryVersion() {
         if(StringUtils.isEmpty(registryVersion)) {
             throw new NotFoundException();
         }
 
-        var json = new RegistryVersionJson();
+        var json = new RegistryConfigJson();
         json.setVersion(registryVersion);
+        json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
         return json;
     }
 }

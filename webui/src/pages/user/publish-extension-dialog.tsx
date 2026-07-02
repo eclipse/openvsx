@@ -11,7 +11,7 @@
 import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Paper } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
-import Dropzone from 'react-dropzone';
+import Dropzone, { FileRejection } from 'react-dropzone';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { ErrorResult, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -49,8 +49,10 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
     const [publishing, setPublishing] = useState<boolean>(false);
     const [fileToPublish, setFileToPublish] = useState<File>();
     const [oldFileToPublish, setOldFileToPublish] = useState<File>();
+    const [rejectedFile, setRejectedFile] = useState<File>();
 
     const context = useContext(MainContext);
+    const effectiveMaxSize = context.config?.maxExtensionSize;
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
@@ -81,25 +83,37 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
         setPublishing(false);
         setFileToPublish(undefined);
         setOldFileToPublish(undefined);
+        setRejectedFile(undefined);
     };
 
     const handleUndo = () => {
         setFileToPublish(oldFileToPublish);
         setOldFileToPublish(undefined);
+        setRejectedFile(undefined);
     };
 
-    const handleDrop = <T extends File>(acceptedFiles: T[]) => {
+    const handleDrop = <T extends File>(acceptedFiles: T[], fileRejections: FileRejection[]) => {
+        const tooLarge = fileRejections.find(r => r.errors.some(e => e.code === 'file-too-large'));
+        if (tooLarge) {
+            if (fileToPublish) {
+                setOldFileToPublish(fileToPublish);
+                setFileToPublish(undefined);
+            }
+            setRejectedFile(tooLarge.file);
+            return;
+        }
+
+        setRejectedFile(undefined);
         if (fileToPublish) {
             setOldFileToPublish(fileToPublish);
         }
-
         setFileToPublish(acceptedFiles[0]);
     };
 
     const handleFileDialogOpen = () => setOldFileToPublish(undefined);
 
     const handlePublish = async () => {
-        if (!context.user || !fileToPublish) {
+        if (!context.user || !fileToPublish || !context.config?.maxExtensionSize) {
             return;
         }
 
@@ -205,7 +219,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                         onDrop={handleDrop}
                         onFileDialogOpen={handleFileDialogOpen}
                         maxFiles={1}
-                        maxSize={512 * 1024 * 1024}>
+                        maxSize={effectiveMaxSize}>
                         {({ getRootProps, getInputProps, isFocused, isDragAccept, isDragReject }) => (
                             <section>
                                 <DropzoneDiv
@@ -214,6 +228,11 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                                     <input {...getInputProps({ accept: 'application/vsix,.vsix', multiple: false })} />
                                     <p>Drag &amp; drop an extension here, or click to select an extension</p>
                                     <p>(Only 1 *.vsix package at a time is accepted)</p>
+                                    {effectiveMaxSize ? (
+                                        <Typography variant='caption' color='text.secondary'>
+                                            Max size: {toMegaBytes(effectiveMaxSize)} MB
+                                        </Typography>
+                                    ) : null}
                                 </DropzoneDiv>
                                 {fileToPublish ? (
                                     <Box mt={1}>
@@ -222,6 +241,14 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                                             variant='body2'
                                             sx={{ fontWeight: 'bold' }}>
                                             {fileToPublish.name} ({toMegaBytes(fileToPublish.size)} MB)
+                                        </Typography>
+                                    </Box>
+                                ) : null}
+                                {rejectedFile ? (
+                                    <Box mt={1}>
+                                        <Typography key={rejectedFile.name} variant='body2' color='error'>
+                                            {rejectedFile.name} ({toMegaBytes(rejectedFile.size)} MB) &mdash; exceeds
+                                            the {effectiveMaxSize ? toMegaBytes(effectiveMaxSize) : '?'}&nbsp;MB limit
                                         </Typography>
                                     </Box>
                                 ) : null}
@@ -237,7 +264,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                         autoFocus
                         sx={{ ml: 1 }}
                         title="After you click 'Publish', this extension will be available on the Marketplace"
-                        error={!fileToPublish}
+                        error={!fileToPublish || !context.config}
                         working={publishing}
                         onClick={handlePublish}>
                         Publish
