@@ -26,6 +26,7 @@ import { HomePage } from '../pages/home/home-page';
 import { SearchPage } from '../pages/search/search-page';
 import { NamespaceDetail } from '../pages/namespace-detail/namespace-detail';
 import { NotFound } from '../not-found';
+import { NAVBAR_HEIGHT } from '../default/theme';
 import { AppNavbar } from './app-navbar';
 import { AppFooter } from './app-footer';
 
@@ -107,8 +108,9 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                     <BannerComponent.content />
                 </Banner>
             ) : null}
-            {/* flexGrow keeps short pages from pulling the footer above the fold */}
-            <Box sx={{ flexGrow: 1 }}>
+            {/* Fill at least the viewport so short pages keep the footer below the fold,
+                even though the footer itself can be taller than a screen on mobile */}
+            <Box sx={{ flexGrow: 1, minHeight: `calc(100vh - ${NAVBAR_HEIGHT})` }}>
                 <Suspense fallback={null}>
                     <Routes>
                         <Route path={ExtensionListRoutes.MAIN} element={<HomePage />} />
