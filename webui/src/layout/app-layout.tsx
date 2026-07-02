@@ -107,7 +107,8 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                     <BannerComponent.content />
                 </Banner>
             ) : null}
-            <Box>
+            {/* flexGrow keeps short pages from pulling the footer above the fold */}
+            <Box sx={{ flexGrow: 1 }}>
                 <Suspense fallback={null}>
                     <Routes>
                         <Route path={ExtensionListRoutes.MAIN} element={<HomePage />} />
