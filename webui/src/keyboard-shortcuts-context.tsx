@@ -89,10 +89,16 @@ export const KeyboardShortcutsProvider: FunctionComponent<PropsWithChildren> = (
             dirty.clear();
         };
 
-        const isInput = (target: EventTarget | null) => {
+        // Ignore keys typed into inputs and keys pressed while a popup owns focus
+        // (MUI selects/menus/dialogs render as listbox/menu/dialog roles, not native elements).
+        const shouldIgnore = (target: EventTarget | null) => {
             const el = target as HTMLElement;
             return (
-                el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
+                el.tagName === 'INPUT' ||
+                el.tagName === 'TEXTAREA' ||
+                el.tagName === 'SELECT' ||
+                el.isContentEditable ||
+                Boolean(el.closest?.('[role="listbox"], [role="menu"], [role="dialog"]'))
             );
         };
 
@@ -101,7 +107,7 @@ export const KeyboardShortcutsProvider: FunctionComponent<PropsWithChildren> = (
             if (pressed.size > 0) {
                 pressed.forEach((_, code) => dirty.add(code));
                 dirty.add(e.code);
-            } else if (!isInput(e.target) && registryRef.current.has(e.key)) {
+            } else if (!shouldIgnore(e.target) && registryRef.current.has(e.key)) {
                 e.preventDefault();
             }
             pressed.set(e.code, e.key);
@@ -116,7 +122,7 @@ export const KeyboardShortcutsProvider: FunctionComponent<PropsWithChildren> = (
             const key = pressed.get(e.code) ?? e.key;
             pressed.delete(e.code);
             dirty.delete(e.code);
-            if (isDirty || isInput(e.target)) return;
+            if (isDirty || shouldIgnore(e.target)) return;
             const entry = registryRef.current.get(key);
             if (entry) entry.callback();
         };
