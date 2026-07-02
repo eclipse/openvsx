@@ -76,6 +76,9 @@ export const SearchPage: FunctionComponent = () => {
                         width: 210,
                         flexShrink: 0,
                         pr: '0.75rem',
+                        // Breathing room so focus outlines aren't clipped by the scroll container
+                        pl: '0.25rem',
+                        ml: '-0.25rem',
                         pt: '1.75rem',
                         pb: '2.5rem',
                         display: { xs: 'none', md: 'block' },
