@@ -19,14 +19,14 @@ import { cardHoverLift, cardSurface } from './layout';
 
 const CardRoot = styled(Paper)(({ theme }) => ({
     ...cardSurface(theme),
-    padding: '22px 16px',
-    [theme.breakpoints.down('sm')]: { padding: '14px 10px' },
+    padding: '1.375rem 1rem',
+    [theme.breakpoints.down('sm')]: { padding: '0.875rem 0.625rem' },
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
     height: '100%',
-    minHeight: '206px',
+    minHeight: '12.875rem',
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
     ...cardHoverLift(theme),
@@ -88,7 +88,7 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                             sx={{
                                 width: 54,
                                 height: 54,
-                                mb: '14px'
+                                mb: '0.875rem'
                             }}>
                             <Box
                                 component='img'
@@ -99,11 +99,11 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                         </Box>
                         <Typography
                             sx={{
-                                fontSize: { xs: '13px', sm: '14.5px' },
+                                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
                                 fontWeight: 700,
                                 lineHeight: 1.3,
                                 width: '100%',
-                                minHeight: { xs: '34px', sm: '38px' },
+                                minHeight: { xs: '2.125rem', sm: '2.375rem' },
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
@@ -114,7 +114,7 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                         <Box
                             sx={{
                                 width: '100%',
-                                mt: '14px',
+                                mt: '0.875rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
@@ -123,13 +123,18 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                             <Typography
                                 component='div'
                                 noWrap
-                                sx={{ fontSize: '12px', color: 'text.disabled', minWidth: 0, textAlign: 'left' }}>
+                                sx={{ fontSize: '0.75rem', color: 'text.disabled', minWidth: 0, textAlign: 'left' }}>
                                 {extension.namespace}
                             </Typography>
                             <Typography
                                 component='div'
                                 noWrap
-                                sx={{ fontSize: '11px', color: 'text.disabled', flexShrink: 0, fontFamily: MONO_FONT }}>
+                                sx={{
+                                    fontSize: '0.6875rem',
+                                    color: 'text.disabled',
+                                    flexShrink: 0,
+                                    fontFamily: MONO_FONT
+                                }}>
                                 {extension.version}
                             </Typography>
                         </Box>
@@ -137,15 +142,15 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                             sx={{
                                 width: '100%',
                                 mt: 'auto',
-                                pt: '11px',
+                                pt: '0.6875rem',
                                 borderTop: '1px solid',
                                 borderColor: 'border2',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                fontSize: '12.5px'
+                                fontSize: '0.75rem'
                             }}>
-                            <Box sx={{ display: 'flex', fontSize: { xs: '14px', sm: '20px' } }}>
+                            <Box sx={{ display: 'flex', fontSize: { xs: '0.875rem', sm: '1.25rem' } }}>
                                 <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='inherit' />
                             </Box>
                             {downloadCount !== '0' && (
@@ -154,12 +159,12 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '4px',
+                                        gap: '0.25rem',
                                         fontFamily: MONO_FONT,
-                                        fontSize: '11px',
+                                        fontSize: '0.6875rem',
                                         color: 'text.disabled'
                                     }}>
-                                    <SaveAltIcon sx={{ fontSize: '13px' }} />
+                                    <SaveAltIcon sx={{ fontSize: '0.8125rem' }} />
                                     {downloadCount}
                                 </Box>
                             )}

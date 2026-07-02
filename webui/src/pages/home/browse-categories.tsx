@@ -23,17 +23,17 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = ({ cat
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '22px', sm: '36px' } }}>
-            <Eyebrow sx={{ mb: { xs: '12px', sm: '18px' } }}>Browse by category</Eyebrow>
+        <Section component='section' sx={{ mt: { xs: '1.375rem', sm: '2.25rem' } }}>
+            <Eyebrow sx={{ mb: { xs: '0.75rem', sm: '1.125rem' } }}>Browse by category</Eyebrow>
             <Box
                 sx={{
                     display: { xs: 'flex', sm: 'none' },
                     flexWrap: 'nowrap',
                     overflowX: 'auto',
-                    gap: '8px',
-                    mx: '-16px',
-                    px: '16px',
-                    pb: '4px',
+                    gap: '0.5rem',
+                    mx: '-1rem',
+                    px: '1rem',
+                    pb: '0.25rem',
                     '&::-webkit-scrollbar': { display: 'none' },
                     scrollbarWidth: 'none'
                 }}>
@@ -50,7 +50,7 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = ({ cat
                 sx={{
                     display: { xs: 'none', sm: 'grid' },
                     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: '14px'
+                    gap: '0.875rem'
                 }}>
                 {categories.map(cat => (
                     <CategoryCard

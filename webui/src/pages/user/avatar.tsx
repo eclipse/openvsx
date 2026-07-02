@@ -22,18 +22,18 @@ import { LogoutForm } from './logout';
 
 const menuItemSx = {
     borderRadius: '9px',
-    fontSize: '14px',
+    fontSize: '0.875rem',
     fontWeight: 500,
-    py: '8px',
-    px: '10px',
-    gap: '10px',
+    py: '0.5rem',
+    px: '0.625rem',
+    gap: '0.625rem',
     color: 'text.primary',
-    minHeight: '36px',
+    minHeight: '2.25rem',
     display: 'flex',
     alignItems: 'center'
 } as const;
 
-const iconSx = { fontSize: 17, color: 'text.disabled', flexShrink: 0 };
+const iconSx = { fontSize: '1.0625rem', color: 'text.disabled', flexShrink: 0 };
 
 export const UserAvatar: FunctionComponent = () => {
     const [open, setOpen] = useState(false);
@@ -53,7 +53,7 @@ export const UserAvatar: FunctionComponent = () => {
                 title={`Logged in as ${user.loginName}`}
                 aria-label='User menu'
                 onClick={() => setOpen(true)}
-                sx={{ p: '5px' }}>
+                sx={{ p: '0.3125rem' }}>
                 <Avatar
                     src={user.avatarUrl}
                     alt={user.loginName}
@@ -62,7 +62,7 @@ export const UserAvatar: FunctionComponent = () => {
                         height: 32,
                         bgcolor: 'accentSoft',
                         color: 'secondary.light',
-                        fontSize: '12px',
+                        fontSize: '0.75rem',
                         fontWeight: 700,
                         borderRadius: '8px'
                     }}>
@@ -76,7 +76,7 @@ export const UserAvatar: FunctionComponent = () => {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 onClose={() => setOpen(false)}>
                 {/* User header */}
-                <Box sx={{ px: '14px', py: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Box sx={{ px: '0.875rem', py: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Avatar
                         src={user.avatarUrl}
                         sx={{
@@ -84,7 +84,7 @@ export const UserAvatar: FunctionComponent = () => {
                             height: 40,
                             bgcolor: 'accentSoft',
                             color: 'secondary.light',
-                            fontSize: '15px',
+                            fontSize: '0.9375rem',
                             fontWeight: 700,
                             borderRadius: '10px',
                             flexShrink: 0
@@ -94,7 +94,7 @@ export const UserAvatar: FunctionComponent = () => {
                     <Box sx={{ minWidth: 0 }}>
                         <Typography
                             sx={{
-                                fontSize: '11px',
+                                fontSize: '0.6875rem',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.07em',
@@ -105,7 +105,7 @@ export const UserAvatar: FunctionComponent = () => {
                         </Typography>
                         <Typography
                             sx={{
-                                fontSize: '14.5px',
+                                fontSize: '0.875rem',
                                 fontWeight: 700,
                                 lineHeight: 1.3,
                                 color: 'text.primary',

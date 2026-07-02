@@ -14,7 +14,7 @@ const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: '16px',
-    padding: '24px',
+    padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column'
 }));
@@ -29,23 +29,23 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ involvement }
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '48px', sm: '72px' }, mb: { xs: '40px', sm: '56px' } }}>
-            <Eyebrow sx={{ letterSpacing: '0.1em', mb: { xs: '14px', sm: '20px' } }}>
+        <Section component='section' sx={{ mt: { xs: '3rem', sm: '4.5rem' }, mb: { xs: '2.5rem', sm: '3.5rem' } }}>
+            <Eyebrow sx={{ letterSpacing: '0.1em', mb: { xs: '0.875rem', sm: '1.25rem' } }}>
                 {involvement.heading ?? 'Get Involved'}
             </Eyebrow>
             <Box
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
-                    gap: '16px'
+                    gap: '1rem'
                 }}>
                 {involvement.cards.map(card => (
                     <GetInvolvedCard key={card.title}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '11px', mb: '12px' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.6875rem', mb: '0.75rem' }}>
                             <Box
                                 sx={{
-                                    width: '34px',
-                                    height: '34px',
+                                    width: '2.125rem',
+                                    height: '2.125rem',
                                     borderRadius: '9px',
                                     bgcolor: 'accentSoft',
                                     color: 'secondary.light',
@@ -53,18 +53,18 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ involvement }
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     flexShrink: 0,
-                                    '& > svg': { fontSize: 18 }
+                                    '& > svg': { fontSize: '1.125rem' }
                                 }}>
                                 {card.icon}
                             </Box>
-                            <Typography sx={{ fontSize: '15.5px', fontWeight: 700 }}>{card.title}</Typography>
+                            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700 }}>{card.title}</Typography>
                         </Box>
                         <Typography
                             sx={{
-                                fontSize: '13.5px',
+                                fontSize: '0.8125rem',
                                 color: 'text.secondary',
                                 lineHeight: 1.55,
-                                mb: '18px',
+                                mb: '1.125rem',
                                 flex: 1
                             }}>
                             {card.description}
@@ -74,7 +74,7 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ involvement }
                             href={card.href}
                             target='_blank'
                             sx={{
-                                fontSize: '13.5px',
+                                fontSize: '0.8125rem',
                                 fontWeight: 600,
                                 color: 'secondary.light',
                                 textDecoration: 'none',

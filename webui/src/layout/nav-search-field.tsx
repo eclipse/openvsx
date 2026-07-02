@@ -103,7 +103,7 @@ export const NavSearchField: FunctionComponent = () => {
                 display: { xs: isHeroPage ? 'none' : 'flex', md: 'flex' },
                 alignItems: 'center',
                 justifyContent: 'center',
-                px: { xs: '8px', md: '20px' }
+                px: { xs: '0.5rem', md: '1.25rem' }
             }}>
             <Box
                 ref={fieldRef}

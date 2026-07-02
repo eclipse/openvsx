@@ -14,7 +14,7 @@ import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings
 import { MainContext } from '../context';
 
 const FooterLink = styled('a')(({ theme }) => ({
-    fontSize: '13.5px',
+    fontSize: '0.8125rem',
     color: theme.palette.text.secondary,
     textDecoration: 'none',
     display: 'block',
@@ -46,8 +46,8 @@ const ShortcutsButton = styled('button')(({ theme }) => ({
     padding: 0,
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    fontSize: '12.5px',
+    gap: '0.5rem',
+    fontSize: '0.75rem',
     color: theme.palette.text.disabled,
     '&:hover': { color: theme.palette.secondary.light }
 }));
@@ -113,32 +113,32 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
         {footer && (footer.brand || footer.columns) && (
             <Section
                 sx={{
-                    pt: '48px',
-                    pb: '30px',
+                    pt: '3rem',
+                    pb: '1.875rem',
                     display: 'grid',
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1.4fr 1fr 1fr 1fr' },
-                    gap: '34px'
+                    gap: '2.125rem'
                 }}>
                 {footer.brand && (
                     <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '9px', mb: '18px' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5625rem', mb: '1.125rem' }}>
                             {footer.brand.logo}
-                            <Typography sx={{ fontWeight: 700, fontSize: '15px' }}>{footer.brand.name}</Typography>
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.9375rem' }}>{footer.brand.name}</Typography>
                         </Box>
                         {footer.brand.description && (
                             <Typography
                                 sx={{
-                                    fontSize: '13px',
+                                    fontSize: '0.8125rem',
                                     color: 'text.disabled',
                                     lineHeight: 1.55,
-                                    mb: '18px',
-                                    maxWidth: '260px'
+                                    mb: '1.125rem',
+                                    maxWidth: '16.25rem'
                                 }}>
                                 {footer.brand.description}
                             </Typography>
                         )}
                         {footer.social && footer.social.length > 0 && (
-                            <Box sx={{ display: 'flex', gap: '8px' }}>
+                            <Box sx={{ display: 'flex', gap: '0.5rem' }}>
                                 {footer.social.map(s => (
                                     <SocialIconButton key={s.title} href={s.href} target='_blank' title={s.title}>
                                         {s.icon}
@@ -150,8 +150,8 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                 )}
                 {footer.columns?.map((column, ci) => (
                     <Box key={ci}>
-                        <Eyebrow sx={{ mb: '14px' }}>{column.heading}</Eyebrow>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <Eyebrow sx={{ mb: '0.875rem' }}>{column.heading}</Eyebrow>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                             {column.links.map((l, li) => (
                                 <FooterLink key={li} href={l.href} target={l.external ? '_blank' : undefined}>
                                     {l.label}
@@ -164,24 +164,24 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
         )}
         <Section
             sx={{
-                py: '20px',
+                py: '1.25rem',
                 borderTop: footer?.brand || footer?.columns ? '1px solid' : 'none',
                 borderColor: 'divider',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: '12px'
+                gap: '0.75rem'
             }}>
-            <Typography sx={{ fontSize: '12.5px', color: 'text.disabled' }}>{footer?.copyright}</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>{footer?.copyright}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                 {footer?.extra}
                 <ShortcutsButton type='button' onClick={onOpenShortcuts}>
                     Keyboard shortcuts
                     <KbdKey>?</KbdKey>
                 </ShortcutsButton>
                 {version && (
-                    <Typography sx={{ fontSize: '12.5px', color: 'text.disabled', fontFamily: MONO_FONT }}>
+                    <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontFamily: MONO_FONT }}>
                         v{version}
                     </Typography>
                 )}

@@ -22,18 +22,18 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = ({ rows,
             row =>
                 !row.loading &&
                 row.extensions.length > 0 && (
-                    <Section component='section' key={row.title} sx={{ mt: { xs: '36px', sm: '54px' } }}>
+                    <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                mb: '18px'
+                                mb: '1.125rem'
                             }}>
                             <Box>
                                 <Typography
                                     sx={{
-                                        fontSize: { xs: '16px', sm: '23px' },
+                                        fontSize: { xs: '1rem', sm: '1.4375rem' },
                                         fontWeight: 700,
                                         letterSpacing: '-0.02em'
                                     }}>
@@ -42,7 +42,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = ({ rows,
                                 <Typography
                                     component='span'
                                     sx={{
-                                        fontSize: '13.5px',
+                                        fontSize: '0.8125rem',
                                         color: 'text.disabled',
                                         display: { xs: 'none', sm: 'block' }
                                     }}>
@@ -56,7 +56,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = ({ rows,
                                     background: 'none',
                                     border: 'none',
                                     color: 'secondary.light',
-                                    fontSize: '14px',
+                                    fontSize: '0.875rem',
                                     fontWeight: 600,
                                     cursor: 'pointer'
                                 }}>
@@ -70,7 +70,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = ({ rows,
                                     xs: 'repeat(2, 1fr)',
                                     sm: 'repeat(auto-fill, minmax(190px, 1fr))'
                                 },
-                                gap: '16px'
+                                gap: '1rem'
                             }}>
                             {row.extensions.map((ext, idx) => (
                                 <ExtensionCard

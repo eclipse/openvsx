@@ -29,12 +29,12 @@ const SearchWrap = styled(Box, {
     flex: 2,
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '0.625rem',
     border: hasError ? '2px solid' : '1px solid',
     borderColor: hasError ? theme.palette.error.main : theme.palette.divider,
     borderRadius: '11px',
-    height: '45px',
-    padding: '0 13px',
+    height: '2.8125rem',
+    padding: '0 0.8125rem',
     backgroundColor: theme.palette.surface2,
     transition: 'border-color 0.18s, box-shadow 0.18s',
     '&:focus-within': {
@@ -46,7 +46,7 @@ const SearchWrap = styled(Box, {
 const MonoSlash = styled('span')(({ theme }) => ({
     fontFamily: MONO_FONT,
     color: theme.palette.secondary.light,
-    fontSize: '17px',
+    fontSize: '1.0625rem',
     lineHeight: 1,
     flexShrink: 0,
     userSelect: 'none'
@@ -55,7 +55,7 @@ const MonoSlash = styled('span')(({ theme }) => ({
 const SearchInput = styled(InputBase)(({ theme }) => ({
     flex: 1,
     fontFamily: MONO_FONT,
-    fontSize: '15px',
+    fontSize: '0.9375rem',
     color: theme.palette.text.primary,
     '& input::placeholder': { color: theme.palette.text.disabled, opacity: 1 },
     '& input::-webkit-search-cancel-button': { display: 'none' }
@@ -124,12 +124,12 @@ export const ExtensionSearchfield = forwardRef(
                         size='small'
                         sx={{
                             color: 'text.disabled',
-                            p: '4px',
+                            p: '0.25rem',
                             flexShrink: 0,
                             transition: 'color 0.14s',
                             '&:hover': { color: 'text.primary' }
                         }}>
-                        <ClearIcon sx={{ fontSize: '18px' }} />
+                        <ClearIcon sx={{ fontSize: '1.125rem' }} />
                     </IconButton>
                 )}
                 {!props.hideIconButton && (
@@ -141,7 +141,7 @@ export const ExtensionSearchfield = forwardRef(
                             bgcolor: 'secondary.main',
                             color: 'secondary.contrastText',
                             borderRadius: '8px',
-                            p: '8px',
+                            p: '0.5rem',
                             flexShrink: 0,
                             transition: 'background 0.14s',
                             '&:hover': { bgcolor: 'secondary.dark' }

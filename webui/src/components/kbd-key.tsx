@@ -13,11 +13,11 @@ export const KbdKey: FunctionComponent<PropsWithChildren> = ({ children }) => (
         component='kbd'
         sx={{
             fontFamily: MONO_FONT,
-            fontSize: '11px',
+            fontSize: '0.6875rem',
             fontWeight: 600,
             lineHeight: 1,
-            px: '6px',
-            py: '3px',
+            px: '0.375rem',
+            py: '0.1875rem',
             borderRadius: '5px',
             bgcolor: 'surface3',
             border: '1px solid',

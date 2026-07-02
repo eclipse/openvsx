@@ -27,12 +27,12 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
     return (
         <Box
             sx={{
-                pt: '28px',
-                pb: '16px',
+                pt: '1.75rem',
+                pb: '1rem',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                gap: '16px',
+                gap: '1rem',
                 flexWrap: 'wrap'
             }}>
             <Box>
@@ -47,12 +47,12 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                     }}>
                     {title}
                 </Typography>
-                <Typography sx={{ fontSize: '13px', color: 'text.disabled', mt: '5px' }}>
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.disabled', mt: '0.3125rem' }}>
                     {props.resultNumber.toLocaleString()} extensions found
                 </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, mt: '6px' }}>
-                <Box component='span' sx={{ fontSize: '13px', color: 'text.disabled' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0, mt: '0.375rem' }}>
+                <Box component='span' sx={{ fontSize: '0.8125rem', color: 'text.disabled' }}>
                     Sort by
                 </Box>
                 <Select
@@ -60,13 +60,13 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                     onChange={handleSortByChange}
                     size='small'
                     sx={{
-                        fontSize: '13px',
+                        fontSize: '0.8125rem',
                         fontWeight: 500,
                         color: 'text.primary',
-                        height: '30px',
+                        height: '1.875rem',
                         bgcolor: 'background.paper',
                         borderRadius: '8px',
-                        '& .MuiSelect-icon': { color: 'text.disabled', fontSize: '18px' }
+                        '& .MuiSelect-icon': { color: 'text.disabled', fontSize: '1.125rem' }
                     }}>
                     <MenuItem value='relevance'>Relevance</MenuItem>
                     <MenuItem value='timestamp'>Date</MenuItem>
@@ -79,7 +79,7 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                         alignItems: 'center',
                         color: 'text.disabled',
                         borderRadius: '6px',
-                        p: '3px',
+                        p: '0.1875rem',
                         cursor: 'pointer',
                         transition: 'color 0.14s',
                         '&:hover': { color: 'secondary.light' }

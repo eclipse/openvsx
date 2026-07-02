@@ -160,7 +160,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fill, minmax(175px, 1fr))' },
-                        gap: '16px'
+                        gap: '1rem'
                     }}>
                     {extensionList}
                 </Box>

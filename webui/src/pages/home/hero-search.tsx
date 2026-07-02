@@ -18,17 +18,17 @@ import { MONO_FONT } from '../../default/theme';
 const HeroSearchWrap = styled(Box)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: '13px',
+    gap: '0.8125rem',
     backgroundColor: theme.palette.surface2,
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: '15px',
-    height: '62px',
-    paddingLeft: '20px',
-    paddingRight: '8px',
+    height: '3.875rem',
+    paddingLeft: '1.25rem',
+    paddingRight: '0.5rem',
     [theme.breakpoints.down('sm')]: {
-        height: '54px',
-        paddingLeft: '14px',
-        gap: '10px'
+        height: '3.375rem',
+        paddingLeft: '0.875rem',
+        gap: '0.625rem'
     },
     boxShadow: 'var(--shadow)',
     transition: 'border-color 0.2s ease, box-shadow 0.3s ease',
@@ -45,7 +45,7 @@ const HeroInput = styled('input')(({ theme }) => ({
     outline: 'none',
     background: 'none',
     color: theme.palette.text.primary,
-    fontSize: '17px',
+    fontSize: '1.0625rem',
     fontFamily: MONO_FONT,
     '&::placeholder': { color: theme.palette.text.disabled }
 }));
@@ -53,21 +53,21 @@ const HeroInput = styled('input')(({ theme }) => ({
 const HeroSubmitButton = styled(ButtonBase)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    height: '46px',
-    padding: '0 22px',
+    gap: '0.5rem',
+    height: '2.875rem',
+    padding: '0 1.375rem',
     borderRadius: '11px',
     overflow: 'hidden',
     backgroundColor: theme.palette.secondary.main,
     color: theme.palette.secondary.contrastText,
-    fontSize: '15px',
+    fontSize: '0.9375rem',
     fontWeight: 600,
     flexShrink: 0,
     transition: 'background 0.14s',
     [theme.breakpoints.down('sm')]: {
-        height: '40px',
-        padding: '0 14px',
-        borderRadius: '9px'
+        height: '2.5rem',
+        padding: '0 0.875rem',
+        borderRadius: `${theme.shape.borderRadius}px`
     },
     '&:hover': { backgroundColor: theme.palette.secondary.dark }
 }));
@@ -76,9 +76,9 @@ const PopularChip = styled(ButtonBase)(({ theme }) => ({
     backgroundColor: theme.palette.surface2,
     border: `1px solid ${theme.palette.divider}`,
     color: theme.palette.text.secondary,
-    fontSize: '13px',
+    fontSize: '0.8125rem',
     fontWeight: 500,
-    padding: '6px 13px',
+    padding: '0.375rem 0.8125rem',
     borderRadius: '999px',
     overflow: 'hidden',
     fontFamily: MONO_FONT,
@@ -175,19 +175,19 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
         <Container
             component='section'
             sx={{
-                pt: { xs: '44px', sm: '78px' },
-                pb: { xs: '18px', sm: '30px' },
+                pt: { xs: '2.75rem', sm: '4.875rem' },
+                pb: { xs: '1.125rem', sm: '1.875rem' },
                 textAlign: 'center'
             }}>
             {SearchHeader && <SearchHeader />}
-            <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '660px', mx: 'auto' }}>
+            <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '41.25rem', mx: 'auto' }}>
                 <HeroSearchWrap style={{ viewTransitionName: 'vt-search' }}>
                     <Box
                         component='span'
                         sx={{
                             fontFamily: MONO_FONT,
                             color: 'secondary.light',
-                            fontSize: '20px',
+                            fontSize: '1.25rem',
                             flexShrink: 0,
                             userSelect: 'none'
                         }}>
@@ -220,20 +220,20 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
                 <Box
                     sx={{
                         display: 'flex',
-                        gap: '9px',
+                        gap: '0.5625rem',
                         justifyContent: { xs: 'flex-start', sm: 'center' },
                         flexWrap: { xs: 'nowrap', sm: 'wrap' },
                         overflowX: { xs: 'auto', sm: 'visible' },
-                        mt: '18px',
-                        mx: { xs: '-16px', sm: 0 },
-                        px: { xs: '16px', sm: 0 },
-                        pb: { xs: '4px', sm: 0 },
+                        mt: '1.125rem',
+                        mx: { xs: '-1rem', sm: 0 },
+                        px: { xs: '1rem', sm: 0 },
+                        pb: { xs: '0.25rem', sm: 0 },
                         '&::-webkit-scrollbar': { display: 'none' },
                         scrollbarWidth: 'none'
                     }}>
                     <Typography
                         component='span'
-                        sx={{ fontSize: '13px', color: 'text.disabled', alignSelf: 'center', flexShrink: 0 }}>
+                        sx={{ fontSize: '0.8125rem', color: 'text.disabled', alignSelf: 'center', flexShrink: 0 }}>
                         Popular:
                     </Typography>
                     {popularSearches.map(chip => (

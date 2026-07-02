@@ -14,13 +14,13 @@ const Root = styled(ButtonBase, {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: '8px',
+    gap: '0.5rem',
     width: '100%',
     textAlign: 'left',
-    padding: '7px 10px',
+    padding: '0.4375rem 0.625rem',
     borderRadius: theme.shape.borderRadius,
     overflow: 'hidden',
-    fontSize: '13.5px',
+    fontSize: '0.8125rem',
     fontWeight: isSelected ? 600 : 400,
     color: isSelected ? theme.palette.secondary.light : theme.palette.text.secondary,
     backgroundColor: isSelected ? theme.palette.accentSoft : 'transparent',
@@ -49,7 +49,7 @@ export const CategoryListItem: FunctionComponent<CategoryListItemProps> = ({
     onClick
 }) => (
     <Root isSelected={isSelected} onClick={onClick}>
-        <Icon sx={{ fontSize: '15px', opacity: 0.75, flexShrink: 0 }} />
+        <Icon sx={{ fontSize: '0.9375rem', opacity: 0.75, flexShrink: 0 }} />
         {label}
     </Root>
 );

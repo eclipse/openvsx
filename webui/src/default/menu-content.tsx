@@ -177,7 +177,7 @@ export const headerItem = ({ theme }: { theme: Theme }) => ({
     padding: theme.spacing(1, 1.5),
     color: theme.palette.text.secondary,
     textDecoration: 'none',
-    fontSize: '14px',
+    fontSize: '0.875rem',
     fontFamily: theme.typography.fontFamily,
     fontWeight: 500,
     letterSpacing: 0,
@@ -201,7 +201,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
         <>
             <MenuLink
                 href='https://github.com/eclipse/openvsx/wiki'
-                sx={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.4375rem' }}>
                 Documentation
                 <KbdKey>d</KbdKey>
             </MenuLink>
@@ -220,12 +220,12 @@ export const DefaultMenuContent: FunctionComponent = () => {
                             px: 2.25,
                             py: 1,
                             fontWeight: 600,
-                            fontSize: '13.5px',
+                            fontSize: '0.8125rem',
                             textTransform: 'none',
                             borderRadius: `${theme.shape.borderRadius}px`,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '7px',
+                            gap: '0.4375rem',
                             '&:hover': { backgroundColor: alpha(theme.palette.secondary.main, 0.08) }
                         })}>
                         Publish

@@ -26,12 +26,12 @@ export const ShortcutsModal: FunctionComponent<ShortcutsModalProps> = ({ open, o
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    py: '14px',
-                    px: '20px',
+                    py: '0.875rem',
+                    px: '1.25rem',
                     borderBottom: '1px solid',
                     borderColor: 'divider'
                 }}>
-                <Typography sx={{ fontSize: '16px', fontWeight: 700 }}>Keyboard shortcuts</Typography>
+                <Typography sx={{ fontSize: '1rem', fontWeight: 700 }}>Keyboard shortcuts</Typography>
                 <IconButton
                     onClick={onClose}
                     size='small'
@@ -49,12 +49,12 @@ export const ShortcutsModal: FunctionComponent<ShortcutsModalProps> = ({ open, o
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            px: '20px',
-                            py: '11px',
+                            px: '1.25rem',
+                            py: '0.6875rem',
                             borderBottom: i < shortcuts.length - 1 ? '1px solid' : 'none',
                             borderColor: 'border2'
                         }}>
-                        <Typography sx={{ fontSize: '14px', color: 'text.secondary' }}>{s.label}</Typography>
+                        <Typography sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{s.label}</Typography>
                         <KbdKey>{s.key}</KbdKey>
                     </Box>
                 ))}

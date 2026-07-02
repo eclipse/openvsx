@@ -34,7 +34,7 @@ export const SearchPage: FunctionComponent = () => {
     return (
         <Container
             sx={{
-                pb: { xs: '18px', sm: '30px' }
+                pb: { xs: '1.125rem', sm: '1.875rem' }
             }}
             maxWidth='xl'>
             {/* Mobile category pills — outside the flex row so negative-margin bleed isn't clipped */}
@@ -44,11 +44,11 @@ export const SearchPage: FunctionComponent = () => {
                         display: { xs: 'flex', md: 'none' },
                         flexWrap: 'nowrap',
                         overflowX: 'auto',
-                        gap: '8px',
-                        mx: { xs: '-16px', md: 0 },
-                        px: { xs: '16px', md: 0 },
-                        pt: '20px',
-                        pb: '4px',
+                        gap: '0.5rem',
+                        mx: { xs: '-1rem', md: 0 },
+                        px: { xs: '1rem', md: 0 },
+                        pt: '1.25rem',
+                        pb: '0.25rem',
                         '&::-webkit-scrollbar': { display: 'none' },
                         scrollbarWidth: 'none'
                     }}>
@@ -75,9 +75,9 @@ export const SearchPage: FunctionComponent = () => {
                     sx={{
                         width: 210,
                         flexShrink: 0,
-                        pr: '12px',
-                        pt: '28px',
-                        pb: '40px',
+                        pr: '0.75rem',
+                        pt: '1.75rem',
+                        pb: '2.5rem',
                         display: { xs: 'none', md: 'block' },
                         position: 'sticky',
                         top: NAVBAR_HEIGHT,
@@ -86,7 +86,7 @@ export const SearchPage: FunctionComponent = () => {
                         overflowY: 'auto',
                         zIndex: 50
                     }}>
-                    <Eyebrow sx={{ mb: '10px', px: '10px' }}>Categories</Eyebrow>
+                    <Eyebrow sx={{ mb: '0.625rem', px: '0.625rem' }}>Categories</Eyebrow>
                     {(['', ...categories] as Array<ExtensionCategory | ''>).map(cat => {
                         const Icon = CATEGORY_ICONS[cat] ?? DefaultCategoryIcon;
                         return (

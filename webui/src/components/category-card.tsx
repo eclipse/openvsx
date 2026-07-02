@@ -17,7 +17,7 @@ const Root = styled(ButtonBase)(({ theme }) => ({
     justifyContent: 'flex-start',
     textAlign: 'left',
     overflow: 'hidden',
-    padding: '18px',
+    padding: '1.125rem',
     color: theme.palette.text.primary,
     width: '100%',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
@@ -35,19 +35,19 @@ export const CategoryCard: FunctionComponent<CategoryCardProps> = ({ label, icon
     <Root onClick={onClick}>
         <Box
             sx={{
-                width: '38px',
-                height: '38px',
+                width: '2.375rem',
+                height: '2.375rem',
                 borderRadius: '10px',
                 bgcolor: 'accentSoft',
                 color: 'secondary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mb: '14px',
+                mb: '0.875rem',
                 flexShrink: 0
             }}>
-            <Icon sx={{ fontSize: '20px' }} />
+            <Icon sx={{ fontSize: '1.25rem' }} />
         </Box>
-        <Typography sx={{ fontSize: '15px', fontWeight: 600, mb: '3px' }}>{label}</Typography>
+        <Typography sx={{ fontSize: '0.9375rem', fontWeight: 600, mb: '0.1875rem' }}>{label}</Typography>
     </Root>
 );

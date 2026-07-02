@@ -321,7 +321,7 @@ const ExtensionHeader: FunctionComponent<{
                 filter: extension.deprecated ? 'grayscale(100%)' : undefined
             }}>
             <Container maxWidth='xl'>
-                <Box sx={{ pt: '18px', pb: '28px' }}>
+                <Box sx={{ pt: '1.125rem', pb: '1.75rem' }}>
                     <UnverifiedBanner
                         extension={extension}
                         headerTextColor={usesDefaultBg ? theme.palette.text.primary : headerTextColor}
@@ -334,7 +334,7 @@ const ExtensionHeader: FunctionComponent<{
                             flexDirection: { xs: 'column', md: 'row' },
                             textAlign: { xs: 'center', md: 'start' },
                             alignItems: { xs: 'center', md: 'flex-start' },
-                            gap: { xs: 2, md: '26px' }
+                            gap: { xs: 2, md: '1.625rem' }
                         }}>
                         <Box
                             component='img'
@@ -436,7 +436,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             <Tab
                                 value={ExtensionTab.OVERVIEW}
                                 label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
                                         Overview<KbdKey>o</KbdKey>
                                     </Box>
                                 }
@@ -446,7 +446,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             <Tab
                                 value={ExtensionTab.CHANGES}
                                 label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
                                         Changes<KbdKey>c</KbdKey>
                                     </Box>
                                 }
@@ -456,7 +456,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                             <Tab
                                 value={ExtensionTab.REVIEWS}
                                 label={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
                                         Ratings &amp; Reviews<KbdKey>r</KbdKey>
                                     </Box>
                                 }

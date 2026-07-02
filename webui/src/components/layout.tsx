@@ -17,15 +17,15 @@ export const CONTENT_MAX_WIDTH = 1320;
 export const Section = styled(Box)(({ theme }) => ({
     maxWidth: CONTENT_MAX_WIDTH,
     marginInline: 'auto',
-    paddingInline: '28px',
+    paddingInline: '1.75rem',
     [theme.breakpoints.down('sm')]: {
-        paddingInline: '16px'
+        paddingInline: '1rem'
     }
 }));
 
 /** Small uppercase label used to head sections, columns and sidebars. */
 export const Eyebrow = styled(Typography)(({ theme }) => ({
-    fontSize: '12px',
+    fontSize: '0.75rem',
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',

@@ -75,13 +75,17 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             }
         ],
         social: [
-            { title: 'GitHub', href: REPO_URL, icon: <GitHubIcon sx={{ fontSize: 16 }} /> },
+            { title: 'GitHub', href: REPO_URL, icon: <GitHubIcon sx={{ fontSize: '1rem' }} /> },
             {
                 title: 'LinkedIn',
                 href: 'https://www.linkedin.com/company/eclipse-foundation/',
-                icon: <LinkedInIcon sx={{ fontSize: 16 }} />
+                icon: <LinkedInIcon sx={{ fontSize: '1rem' }} />
             },
-            { title: 'X (Twitter)', href: 'https://twitter.com/EclipseFdn', icon: <XIcon sx={{ fontSize: 15 }} /> }
+            {
+                title: 'X (Twitter)',
+                href: 'https://twitter.com/EclipseFdn',
+                icon: <XIcon sx={{ fontSize: '0.9375rem' }} />
+            }
         ],
         copyright: 'Copyright © Eclipse Foundation, AISBL. All Rights Reserved.'
     };
@@ -117,18 +121,18 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     };
 
     const searchHeader: FunctionComponent = () => (
-        <Box textAlign='center' sx={{ mb: 3, maxWidth: '700px', mx: 'auto' }}>
+        <Box textAlign='center' sx={{ mb: 3, maxWidth: '43.75rem', mx: 'auto' }}>
             <Box
                 sx={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    px: '13px',
-                    py: '6px',
+                    gap: '0.5rem',
+                    px: '0.8125rem',
+                    py: '0.375rem',
                     borderRadius: '999px',
                     bgcolor: 'accentSoft',
                     color: 'secondary.light',
-                    fontSize: '12.5px',
+                    fontSize: '0.75rem',
                     fontWeight: 600,
                     mb: 3
                 }}>
@@ -159,7 +163,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
                 for any editor.
             </Typography>
             <Typography
-                sx={{ fontSize: '18px', color: 'text.secondary', maxWidth: '560px', mx: 'auto', lineHeight: 1.5 }}>
+                sx={{ fontSize: '1.125rem', color: 'text.secondary', maxWidth: '35rem', mx: 'auto', lineHeight: 1.5 }}>
                 Browse community-published extensions. <br />
                 Free, open, and vendor-neutral.
             </Typography>
