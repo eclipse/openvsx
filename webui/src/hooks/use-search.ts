@@ -5,11 +5,10 @@
  *****************************************************************************/
 
 import { useCallback, useContext, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { SearchContext } from '../context/search/search-context';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { ExtensionCategory, SortBy, SortOrder } from '../extension-registry-types';
-import { addQuery } from '../utils';
 
 export interface SearchFilter {
     query: string;
@@ -30,6 +29,7 @@ export function filterToParams({ query, category, sortBy, sortOrder }: SearchFil
 
 export function useSearch() {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
     const { query, setQuery } = useContext(SearchContext);
 
@@ -46,27 +46,20 @@ export function useSearch() {
     }, [filter.query, setQuery]);
 
     // On the search page: patch URL params in place (replace, no new history entry).
-    // From anywhere else: navigate to the search route.
+    // From anywhere else: push a navigation to the search route.
     const search = useCallback(
         (patch: Partial<SearchFilter>) => {
             const next = { ...filter, ...patch };
+            const params = filterToParams(next);
 
-            const { pathname } = window.location;
             if (pathname === ExtensionListRoutes.SEARCH) {
-                setSearchParams(filterToParams(next), { replace: true });
+                setSearchParams(params, { replace: true });
                 return;
             }
 
-            const fromHome = pathname === ExtensionListRoutes.MAIN;
-            const url = addQuery(ExtensionListRoutes.SEARCH, [
-                { key: 'q', value: next.query || undefined },
-                { key: 'category', value: next.category || undefined },
-                { key: 'sortBy', value: next.sortBy !== 'relevance' ? next.sortBy : undefined },
-                { key: 'sortOrder', value: next.sortOrder !== 'desc' ? next.sortOrder : undefined }
-            ]);
-            navigate(url, { replace: !fromHome });
+            navigate({ pathname: ExtensionListRoutes.SEARCH, search: new URLSearchParams(params).toString() });
         },
-        [navigate, filter, setSearchParams]
+        [navigate, pathname, filter, setSearchParams]
     );
 
     return { query, setQuery, search, filter };
