@@ -118,7 +118,8 @@ export const AppNavbar: FunctionComponent = () => {
                     {/* Mobile compact icon — shown on non-home pages */}
                     <Box sx={{ display: { xs: isHeroPage ? 'none' : 'flex', md: 'none' }, alignItems: 'center' }}>
                         <RouteLink to='/' aria-label='Home' style={{ display: 'flex', textDecoration: 'none' }}>
-                            <OpenVsxMark />
+                            {/* Same mark height and optical offset as the full toolbar logo */}
+                            <OpenVsxMark style={{ height: '2.5rem', marginTop: '0.5rem' }} />
                         </RouteLink>
                     </Box>
                     {/* Full logo — desktop always, mobile only on home page. */}
