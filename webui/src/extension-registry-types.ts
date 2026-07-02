@@ -201,6 +201,27 @@ export interface PersonalAccessToken {
     deleteTokenUrl: UrlString;
 }
 
+export const CATEGORIES = [
+    'AI',
+    'Programming Languages',
+    'Snippets',
+    'Linters',
+    'Themes',
+    'Debuggers',
+    'Formatters',
+    'Keymaps',
+    'SCM Providers',
+    'Other',
+    'Extension Packs',
+    'Language Packs',
+    'Data Science',
+    'Machine Learning',
+    'Visualization',
+    'Notebooks'
+] as const;
+
+export type ExtensionCategory = (typeof CATEGORIES)[number];
+
 export interface CsrfTokenJson {
     value: string;
     header: string;

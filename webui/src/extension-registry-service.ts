@@ -9,7 +9,9 @@
  ********************************************************************************/
 
 import {
+    CATEGORIES,
     Extension,
+    ExtensionCategory,
     UserData,
     ExtensionReviewList,
     PersonalAccessToken,
@@ -201,6 +203,11 @@ export class ExtensionRegistryService {
             const blob = value as Blob;
             return URL.createObjectURL(blob);
         });
+    }
+
+    /** @deprecated Use the CATEGORIES constant from extension-registry-types instead. */
+    getCategories(): ExtensionCategory[] {
+        return [...CATEGORIES];
     }
 
     async getExtensionReviews(

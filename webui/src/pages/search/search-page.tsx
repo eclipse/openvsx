@@ -7,7 +7,7 @@
 import { FunctionComponent, useLayoutEffect, useState } from 'react';
 import { Box, Container } from '@mui/material';
 import { SortBy, SortOrder } from '../../extension-registry-types';
-import { ExtensionCategory } from './use-categories';
+import { ExtensionCategory } from '../../extension-registry-types';
 import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';

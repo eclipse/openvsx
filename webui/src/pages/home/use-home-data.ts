@@ -7,7 +7,8 @@
 import { useContext, useEffect, useState } from 'react';
 import { MainContext } from '../../context';
 import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
-import { ExtensionCategory, useCategories } from '../search/use-categories';
+import { ExtensionCategory } from '../../extension-registry-types';
+import { useCategories } from '../search/use-categories';
 import { HomeCuratedSection } from '../../page-settings';
 
 /** Number of extensions fetched for each curated row. */
