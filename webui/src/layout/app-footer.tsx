@@ -8,7 +8,7 @@ import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { KbdKey } from '../components/kbd-key';
-import { Section, Eyebrow, accentHover } from '../components/page-primitives';
+import { Section, Eyebrow, accentHover, focusOutline } from '../components/page-primitives';
 import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
 import { MainContext } from '../context';
@@ -18,7 +18,8 @@ const FooterLink = styled('a')(({ theme }) => ({
     color: theme.palette.text.secondary,
     textDecoration: 'none',
     display: 'block',
-    '&:hover': { color: theme.palette.secondary.light }
+    '&:hover': { color: theme.palette.secondary.light },
+    ...focusOutline(theme)
 }));
 
 const SocialIconButton = styled('a')(({ theme }) => ({
@@ -33,7 +34,8 @@ const SocialIconButton = styled('a')(({ theme }) => ({
     justifyContent: 'center',
     textDecoration: 'none',
     transition: 'border-color 0.14s, color 0.14s',
-    ...accentHover(theme)
+    ...accentHover(theme),
+    ...focusOutline(theme)
 }));
 
 const ShortcutsButton = styled('button')(({ theme }) => ({
@@ -46,7 +48,8 @@ const ShortcutsButton = styled('button')(({ theme }) => ({
     gap: '0.5rem',
     fontSize: '0.75rem',
     color: theme.palette.text.disabled,
-    '&:hover': { color: theme.palette.secondary.light }
+    '&:hover': { color: theme.palette.secondary.light },
+    ...focusOutline(theme)
 }));
 
 /** Legacy footer chrome: renders a consumer-provided component, hover toggles `expanded`. */

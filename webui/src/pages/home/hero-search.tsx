@@ -8,7 +8,7 @@ import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, 
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
-import { accentHover, focusRing } from '../../components/page-primitives';
+import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
 import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';
@@ -67,7 +67,8 @@ const HeroSubmitButton = styled(ButtonBase)(({ theme }) => ({
         padding: '0 0.875rem',
         borderRadius: `${theme.shape.borderRadius}px`
     },
-    '&:hover': { backgroundColor: theme.palette.secondary.dark }
+    '&:hover': { backgroundColor: theme.palette.secondary.dark },
+    ...focusOutline(theme)
 }));
 
 const PopularChip = styled(ButtonBase)(({ theme }) => ({
@@ -81,7 +82,8 @@ const PopularChip = styled(ButtonBase)(({ theme }) => ({
     overflow: 'hidden',
     fontFamily: MONO_FONT,
     transition: 'border-color 0.14s, color 0.14s',
-    ...accentHover(theme)
+    ...accentHover(theme),
+    ...focusOutline(theme)
 }));
 
 interface HeroSearchProps {

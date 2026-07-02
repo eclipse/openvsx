@@ -7,6 +7,7 @@
 import { FunctionComponent } from 'react';
 import { ButtonBase, SvgIconProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { focusOutline } from './page-primitives';
 
 const Root = styled(ButtonBase, {
     shouldForwardProp: prop => prop !== 'isSelected'
@@ -32,7 +33,8 @@ const Root = styled(ButtonBase, {
         : {
               backgroundColor: theme.palette.surface3,
               color: theme.palette.text.primary
-          }
+          },
+    ...focusOutline(theme)
 }));
 
 export interface CategoryListItemProps {

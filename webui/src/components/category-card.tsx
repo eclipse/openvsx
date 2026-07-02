@@ -7,7 +7,7 @@
 import { FunctionComponent } from 'react';
 import { Box, ButtonBase, SvgIconProps, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { cardHoverLift, cardSurface } from './page-primitives';
+import { cardHoverLift, cardSurface, focusOutline } from './page-primitives';
 
 const Root = styled(ButtonBase)(({ theme }) => ({
     ...cardSurface(theme),
@@ -22,6 +22,7 @@ const Root = styled(ButtonBase)(({ theme }) => ({
     width: '100%',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
     ...cardHoverLift(theme),
+    ...focusOutline(theme),
     '& .MuiTouchRipple-root': { color: theme.palette.secondary.main }
 }));
 

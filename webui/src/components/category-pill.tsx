@@ -7,7 +7,7 @@
 import { FunctionComponent, useEffect, useRef } from 'react';
 import { ButtonBase, SvgIconProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { accentHover } from './page-primitives';
+import { accentHover, focusOutline } from './page-primitives';
 
 const Root = styled(ButtonBase, {
     shouldForwardProp: prop => prop !== 'isSelected'
@@ -27,7 +27,8 @@ const Root = styled(ButtonBase, {
     whiteSpace: 'nowrap',
     fontFamily: 'inherit',
     transition: 'border-color 0.14s, color 0.14s',
-    ...(isSelected ? {} : accentHover(theme))
+    ...(isSelected ? {} : accentHover(theme)),
+    ...focusOutline(theme)
 }));
 
 export interface CategoryPillProps {

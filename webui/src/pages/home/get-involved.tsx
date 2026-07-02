@@ -8,7 +8,7 @@ import { FunctionComponent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { HomeSettings } from '../../page-settings';
-import { Section, Eyebrow } from '../../components/page-primitives';
+import { Section, Eyebrow, focusOutline } from '../../components/page-primitives';
 
 const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -73,13 +73,14 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ involvement }
                             component='a'
                             href={card.href}
                             target='_blank'
-                            sx={{
+                            sx={theme => ({
                                 fontSize: '0.8125rem',
                                 fontWeight: 600,
                                 color: 'secondary.light',
                                 textDecoration: 'none',
-                                '&:hover': { textDecoration: 'underline' }
-                            }}>
+                                '&:hover': { textDecoration: 'underline' },
+                                ...focusOutline(theme)
+                            })}>
                             {card.label}
                         </Box>
                     </GetInvolvedCard>

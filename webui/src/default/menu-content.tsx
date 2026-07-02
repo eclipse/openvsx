@@ -33,6 +33,7 @@ import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { alpha, styled, Theme } from '@mui/material/styles';
 import { MainContext } from '../context';
 import { KbdKey } from '../components/kbd-key';
+import { focusOutline } from '../components/page-primitives';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -187,7 +188,8 @@ export const headerItem = ({ theme }: { theme: Theme }) => ({
         color: theme.palette.text.primary,
         backgroundColor: theme.palette.surface3,
         textDecoration: 'none'
-    }
+    },
+    ...focusOutline(theme)
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
