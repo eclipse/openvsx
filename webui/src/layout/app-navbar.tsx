@@ -115,8 +115,14 @@ export const AppNavbar: FunctionComponent = () => {
                     zIndex: 1
                 }}>
                 <ToolbarItem>
-                    {/* Mobile compact icon — shown on non-home pages */}
-                    <Box sx={{ display: { xs: isHeroPage ? 'none' : 'flex', md: 'none' }, alignItems: 'center' }}>
+                    {/* Mobile compact icon — shown on non-home pages. The right margin balances
+                        the burger button's own padding so the search field sits centered. */}
+                    <Box
+                        sx={{
+                            display: { xs: isHeroPage ? 'none' : 'flex', md: 'none' },
+                            alignItems: 'center',
+                            mr: '0.5rem'
+                        }}>
                         <RouteLink to='/' aria-label='Home' style={{ display: 'flex', textDecoration: 'none' }}>
                             {/* Same mark height as the full toolbar logo */}
                             <OpenVsxMark style={{ height: '2.5rem' }} />
