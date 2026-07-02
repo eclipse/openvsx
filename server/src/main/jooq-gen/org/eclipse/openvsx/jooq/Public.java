@@ -37,6 +37,7 @@ import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
 import org.eclipse.openvsx.jooq.tables.RateLimitToken;
 import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
 import org.eclipse.openvsx.jooq.tables.ScanJob;
+import org.eclipse.openvsx.jooq.tables.Setting;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -217,6 +218,11 @@ public class Public extends SchemaImpl {
     public final ScanJob SCAN_JOB = ScanJob.SCAN_JOB;
 
     /**
+     * The table <code>public.setting</code>.
+     */
+    public final Setting SETTING = Setting.SETTING;
+
+    /**
      * The table <code>public.signature_key_pair</code>.
      */
     public final SignatureKeyPair SIGNATURE_KEY_PAIR = SignatureKeyPair.SIGNATURE_KEY_PAIR;
@@ -285,6 +291,7 @@ public class Public extends SchemaImpl {
             Sequences.RATE_LIMIT_TOKEN_SEQ,
             Sequences.SCAN_CHECK_RESULT_SEQ,
             Sequences.SCAN_JOB_SEQ,
+            Sequences.SETTING_SEQ,
             Sequences.SIGNATURE_KEY_PAIR_SEQ,
             Sequences.TIER_SEQ,
             Sequences.USAGE_STATS_SEQ,
@@ -325,6 +332,7 @@ public class Public extends SchemaImpl {
             RateLimitToken.RATE_LIMIT_TOKEN,
             ScanCheckResult.SCAN_CHECK_RESULT,
             ScanJob.SCAN_JOB,
+            Setting.SETTING,
             SignatureKeyPair.SIGNATURE_KEY_PAIR,
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,

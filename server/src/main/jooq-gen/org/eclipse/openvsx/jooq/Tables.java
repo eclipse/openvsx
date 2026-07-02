@@ -34,6 +34,7 @@ import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
 import org.eclipse.openvsx.jooq.tables.RateLimitToken;
 import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
 import org.eclipse.openvsx.jooq.tables.ScanJob;
+import org.eclipse.openvsx.jooq.tables.Setting;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
@@ -201,6 +202,11 @@ public class Tables {
      * The table <code>public.scan_job</code>.
      */
     public static final ScanJob SCAN_JOB = ScanJob.SCAN_JOB;
+
+    /**
+     * The table <code>public.setting</code>.
+     */
+    public static final Setting SETTING = Setting.SETTING;
 
     /**
      * The table <code>public.signature_key_pair</code>.

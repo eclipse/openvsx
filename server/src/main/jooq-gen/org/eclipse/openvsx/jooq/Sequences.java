@@ -131,6 +131,11 @@ public class Sequences {
     public static final Sequence<Long> SCAN_JOB_SEQ = Internal.createSequence("scan_job_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
+     * The sequence <code>public.setting_seq</code>
+     */
+    public static final Sequence<Long> SETTING_SEQ = Internal.createSequence("setting_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.signature_key_pair_seq</code>
      */
     public static final Sequence<Long> SIGNATURE_KEY_PAIR_SEQ = Internal.createSequence("signature_key_pair_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
