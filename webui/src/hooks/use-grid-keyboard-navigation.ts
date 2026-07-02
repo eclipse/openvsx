@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 import { FocusEvent, KeyboardEvent, RefObject, useCallback, useEffect, useRef } from 'react';
-import { useSearchFocus } from '../context/search/search-focus-context';
+import { ResultsNavAction, useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from './use-signal-effect';
 
 const ITEM_SELECTOR = 'a[data-ext-card]';
@@ -50,7 +50,7 @@ interface GridKeyboardNavigation<T extends HTMLElement> {
  */
 export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboardNavigation<T> {
     const containerRef = useRef<T>(null);
-    const { focusSearch, resultsNavSignal, resultsNavAction, searchFocused } = useSearchFocus();
+    const { focusSearch, resultsNav, searchFocused } = useSearchFocus();
 
     // The cursor ring is only shown while the search field has focus (the card
     // styles key off this container attribute).
@@ -106,26 +106,29 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
     // Cursor commands from the search field: move the active item across both
     // grid axes, or open it (Enter).
     useSignalEffect(
-        resultsNavSignal,
-        useCallback(() => {
-            const items = getItems();
-            if (items.length === 0 || !resultsNavAction) {
-                return;
-            }
-            const current = Math.max(
-                items.findIndex(item => item.tabIndex === 0),
-                0
-            );
-            if (resultsNavAction === 'open') {
-                items[current].click();
-                return;
-            }
-            const next = getNextIndex(resultsNavAction, current, getColumnCount(items), items.length - 1);
-            if (next !== current) {
-                setActiveItem(items, next);
-                items[next].scrollIntoView({ block: 'nearest' });
-            }
-        }, [getItems, getColumnCount, setActiveItem, resultsNavAction])
+        resultsNav,
+        useCallback(
+            (action: ResultsNavAction) => {
+                const items = getItems();
+                if (items.length === 0) {
+                    return;
+                }
+                const current = Math.max(
+                    items.findIndex(item => item.tabIndex === 0),
+                    0
+                );
+                if (action === 'open') {
+                    items[current].click();
+                    return;
+                }
+                const next = getNextIndex(action, current, getColumnCount(items), items.length - 1);
+                if (next !== current) {
+                    setActiveItem(items, next);
+                    items[next].scrollIntoView({ block: 'nearest' });
+                }
+            },
+            [getItems, getColumnCount, setActiveItem]
+        )
     );
 
     const onKeyDown = useCallback(
@@ -144,7 +147,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
 
             if (event.key === 'ArrowUp' && currentIndex < cols) {
                 event.preventDefault();
-                focusSearch();
+                focusSearch.emit();
                 return;
             }
             if (event.key === 'Home') {
@@ -161,7 +164,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
                 items[nextIndex].focus();
             }
         },
-        [getItems, getColumnCount, setActiveItem, focusSearch]
+        [getItems, getColumnCount, setActiveItem, focusSearch.emit]
     );
 
     const onFocus = useCallback(

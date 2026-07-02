@@ -99,13 +99,13 @@ interface HeroSearchProps {
 export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: SearchHeader, popularSearches }) => {
     const { query: initialQuery, setQuery } = useSearchQuery();
     const { search } = useSearch();
-    const { focusSearchSignal, focusSearch } = useSearchFocus();
+    const { focusSearch } = useSearchFocus();
     const [query, setLocalQuery] = useState(() => initialQuery);
     const heroInputRef = useRef<HTMLInputElement>(null);
 
     // Focus the hero input when focus is requested (e.g. the '/' shortcut on the home page).
     useSignalEffect(
-        focusSearchSignal,
+        focusSearch,
         useCallback(() => {
             const el = heroInputRef.current;
             if (!el) {
@@ -134,7 +134,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
             const go = () => {
                 flushSync(() => {
                     search({ query: q });
-                    if (shouldFocus) focusSearch();
+                    if (shouldFocus) focusSearch.emit();
                 });
             };
             const doc = document as ViewTransitionDocument;
@@ -144,13 +144,13 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
                 // the synchronous focus above can be interrupted by the morph, and by now
                 // the nav field is fully mounted and interactive.
                 if (shouldFocus) {
-                    transition.finished.then(focusSearch).catch(() => undefined);
+                    transition.finished.then(focusSearch.emit).catch(() => undefined);
                 }
             } else {
                 go();
             }
         },
-        [search, setQuery, focusSearch]
+        [search, setQuery, focusSearch.emit]
     );
 
     const debouncedSearch = useDebouncedCallback(searchWithTransition);

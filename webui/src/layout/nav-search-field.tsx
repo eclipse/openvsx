@@ -11,11 +11,10 @@ import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { useSearch } from '../hooks/use-search';
 import { useSearchQuery } from '../context/search/search-context';
-import { useSearchFocus } from '../context/search/search-focus-context';
+import { ResultsNavAction, useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../hooks/use-shortcut';
-import { ResultsNavAction } from '../context/search/search-focus-context';
 
 const ARROW_ACTIONS: Record<string, ResultsNavAction | undefined> = {
     ArrowDown: 'down',
@@ -29,7 +28,7 @@ export const NavSearchField: FunctionComponent = () => {
     const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery } = useSearchQuery();
     const { search, filter } = useSearch();
-    const { focusSearchSignal, focusSearch, navigateResults, setSearchFocused } = useSearchFocus();
+    const { focusSearch, resultsNav, setSearchFocused } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -54,7 +53,7 @@ export const NavSearchField: FunctionComponent = () => {
     // Take focus when requested — except on the hero page, where the hero search
     // field owns focus instead. The onFocus handler moves the cursor to the end.
     useSignalEffect(
-        focusSearchSignal,
+        focusSearch,
         useCallback(() => {
             if (isHeroPage) {
                 return;
@@ -64,7 +63,7 @@ export const NavSearchField: FunctionComponent = () => {
     );
 
     // The '/' shortcut asks whichever search field is active to take focus.
-    useShortcut({ key: '/', label: 'Focus search', order: 1, callback: focusSearch });
+    useShortcut({ key: '/', label: 'Focus search', order: 1, callback: focusSearch.emit });
 
     const handleNavSearch = useCallback(
         (q: string) => {
@@ -80,12 +79,12 @@ export const NavSearchField: FunctionComponent = () => {
             // On the search page, Enter on an already-applied query opens the card
             // under the cursor; on a fresh query it applies the search first.
             if (pathname === ExtensionListRoutes.SEARCH && q === filter.query) {
-                navigateResults('open');
+                resultsNav.emit('open');
                 return;
             }
             search({ query: q });
         },
-        [debouncedSearch, search, pathname, filter.query, navigateResults]
+        [debouncedSearch, search, pathname, filter.query, resultsNav.emit]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs
@@ -116,10 +115,10 @@ export const NavSearchField: FunctionComponent = () => {
             const action = ARROW_ACTIONS[e.key];
             if (action) {
                 e.preventDefault();
-                navigateResults(action);
+                resultsNav.emit(action);
             }
         },
-        [navigateResults, pathname]
+        [resultsNav.emit, pathname]
     );
 
     return (
