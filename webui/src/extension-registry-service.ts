@@ -11,7 +11,6 @@
 import {
     Extension,
     UserData,
-    ExtensionCategory,
     ExtensionReviewList,
     PersonalAccessToken,
     SearchResult,
@@ -202,26 +201,6 @@ export class ExtensionRegistryService {
             const blob = value as Blob;
             return URL.createObjectURL(blob);
         });
-    }
-
-    getCategories(): ExtensionCategory[] {
-        return [
-            'Programming Languages',
-            'Snippets',
-            'Linters',
-            'Themes',
-            'Debuggers',
-            'Formatters',
-            'Keymaps',
-            'SCM Providers',
-            'Other',
-            'Extension Packs',
-            'Language Packs',
-            'Data Science',
-            'Machine Learning',
-            'Visualization',
-            'Notebooks'
-        ];
     }
 
     async getExtensionReviews(
@@ -1496,7 +1475,7 @@ export class AdminServiceImpl implements AdminService {
 
 export interface ExtensionFilter {
     query: string;
-    category: ExtensionCategory | '';
+    category: string;
     size: number;
     offset: number;
     sortBy: SortBy;

@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useRef, useState } from 'react';
-import { Avatar, Box, Divider, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
+import { Avatar, Box, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -117,7 +117,6 @@ export const UserAvatar: FunctionComponent = () => {
                         </Typography>
                     </Box>
                 </Box>
-                <Divider />
                 <MenuItem
                     component={Link}
                     href={user.homepage}
@@ -145,15 +144,10 @@ export const UserAvatar: FunctionComponent = () => {
                         Admin Dashboard
                     </MenuItem>
                 )}
-                <Divider sx={{ my: '4px' }} />
                 <MenuItem onClick={() => logoutFormRef.current?.submit()} sx={menuItemSx}>
                     <LogoutForm ref={logoutFormRef}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <LogoutIcon sx={iconSx} />
-                            <Typography sx={{ fontSize: '14px', fontWeight: 500, color: 'text.primary' }}>
-                                Log out
-                            </Typography>
-                        </Box>
+                        <LogoutIcon sx={iconSx} />
+                        Log out
                     </LogoutForm>
                 </MenuItem>
             </Menu>

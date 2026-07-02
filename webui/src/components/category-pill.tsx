@@ -7,6 +7,7 @@
 import { FunctionComponent } from 'react';
 import { ButtonBase, SvgIconProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { accentHover } from './layout';
 
 const Root = styled(ButtonBase, {
     shouldForwardProp: prop => prop !== 'isSelected'
@@ -26,12 +27,7 @@ const Root = styled(ButtonBase, {
     whiteSpace: 'nowrap',
     fontFamily: 'inherit',
     transition: 'border-color 0.14s, color 0.14s',
-    '&:hover': isSelected
-        ? {}
-        : {
-              borderColor: theme.palette.secondary.main,
-              color: theme.palette.secondary.light
-          }
+    ...(isSelected ? {} : accentHover(theme))
 }));
 
 export interface CategoryPillProps {
@@ -43,7 +39,7 @@ export interface CategoryPillProps {
 
 export const CategoryPill: FunctionComponent<CategoryPillProps> = ({ label, icon: Icon, isSelected, onClick }) => (
     <Root isSelected={isSelected} onClick={onClick}>
-        <Icon sx={{ fontSize: '16px', flexShrink: 0 }} />
+        <Icon sx={{ fontSize: '16px', flexShrink: 0, color: 'secondary.main' }} />
         {label}
     </Root>
 );

@@ -4,24 +4,33 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useContext, useEffect, useState } from 'react';
-import { MainContext } from '../../context';
-import { ExtensionCategory } from '../../extension-registry-types';
+export const CATEGORIES = [
+    'AI',
+    'Programming Languages',
+    'Snippets',
+    'Linters',
+    'Themes',
+    'Debuggers',
+    'Formatters',
+    'Keymaps',
+    'SCM Providers',
+    'Other',
+    'Extension Packs',
+    'Language Packs',
+    'Data Science',
+    'Machine Learning',
+    'Visualization',
+    'Notebooks'
+] as const;
+
+export type ExtensionCategory = (typeof CATEGORIES)[number];
+
+const SORTED_CATEGORIES: ExtensionCategory[] = [...CATEGORIES].sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    return a.localeCompare(b);
+});
 
 export function useCategories(): ExtensionCategory[] {
-    const context = useContext(MainContext);
-    const [categories, setCategories] = useState<ExtensionCategory[]>([]);
-
-    useEffect(() => {
-        const cats = Array.from(context.service.getCategories()) as ExtensionCategory[];
-        cats.sort((a, b) => {
-            if (a === b) return 0;
-            if (a === 'Other') return 1;
-            if (b === 'Other') return -1;
-            return a.localeCompare(b);
-        });
-        setCategories(cats);
-    }, []);
-
-    return categories;
+    return SORTED_CATEGORIES;
 }

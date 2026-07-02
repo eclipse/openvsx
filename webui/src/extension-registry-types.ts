@@ -201,23 +201,6 @@ export interface PersonalAccessToken {
     deleteTokenUrl: UrlString;
 }
 
-export type ExtensionCategory =
-    | 'Programming Languages'
-    | 'Snippets'
-    | 'Linters'
-    | 'Themes'
-    | 'Debuggers'
-    | 'Formatters'
-    | 'Keymaps'
-    | 'SCM Providers'
-    | 'Other'
-    | 'Extension Packs'
-    | 'Language Packs'
-    | 'Data Science'
-    | 'Machine Learning'
-    | 'Visualization'
-    | 'Notebooks';
-
 export interface CsrfTokenJson {
     value: string;
     header: string;

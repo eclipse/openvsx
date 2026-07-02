@@ -8,7 +8,8 @@ import { useCallback, useContext, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SearchContext } from '../context/search/search-context';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
-import { ExtensionCategory, SortBy, SortOrder } from '../extension-registry-types';
+import { SortBy, SortOrder } from '../extension-registry-types';
+import { ExtensionCategory } from '../pages/search/use-categories';
 import { addQuery } from '../utils';
 
 export interface SearchFilter {

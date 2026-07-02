@@ -9,18 +9,8 @@
  * ****************************************************************************** */
 
 import { PropsWithChildren, useContext, useEffect, useRef, useState, forwardRef } from 'react';
-import { Button } from '@mui/material';
-import { styled } from '@mui/material/styles';
 import { isError, CsrfTokenJson } from '../../extension-registry-types';
 import { MainContext } from '../../context';
-
-const LogoutButton = styled(Button)({
-    cursor: 'pointer',
-    textDecoration: 'none',
-    border: 'none',
-    background: 'none',
-    padding: 0
-});
 
 export const LogoutForm = forwardRef<HTMLFormElement, PropsWithChildren>(({ children }, ref) => {
     const [csrf, setCsrf] = useState<string>();
@@ -45,9 +35,9 @@ export const LogoutForm = forwardRef<HTMLFormElement, PropsWithChildren>(({ chil
     };
 
     return (
-        <form ref={ref} method='post' action={context.service.getLogoutUrl()}>
+        <form ref={ref} method='post' action={context.service.getLogoutUrl()} style={{ display: 'contents' }}>
             {csrf ? <input name='_csrf' type='hidden' value={csrf} /> : null}
-            <LogoutButton type='submit'>{children}</LogoutButton>
+            {children}
         </form>
     );
 });

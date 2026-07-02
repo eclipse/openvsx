@@ -6,14 +6,28 @@
 
 import { useContext, useEffect, useState } from 'react';
 import { MainContext } from '../../context';
-import { ExtensionCategory, SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
+import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
+import { ExtensionCategory, useCategories } from '../search/use-categories';
 import { HomeCuratedSection } from '../../page-settings';
 
 /** Number of extensions fetched for each curated row. */
 export const CURATED_SIZE = 6;
 
-/** Categories that add little value on the home page grid. */
-const EXCLUDED_CATEGORIES = new Set(['Other', 'SCM Providers', 'Extension Packs']);
+/** Categories shown in the home page grid. */
+const HOME_CATEGORIES = new Set<ExtensionCategory>([
+    'AI',
+    'Programming Languages',
+    'Snippets',
+    'Linters',
+    'Themes',
+    'Debuggers',
+    'Formatters',
+    'Keymaps',
+    'Language Packs',
+    'Data Science',
+    'Machine Learning',
+    'Notebooks'
+]);
 
 /** Curated rows shown when the consumer does not configure `home.curatedSections`. */
 export const DEFAULT_CURATED_SECTIONS: HomeCuratedSection[] = [
@@ -36,17 +50,14 @@ export function useHomeData(curatedSections: HomeCuratedSection[]): {
     rows: CuratedRow[];
 } {
     const { service } = useContext(MainContext);
+    const allCategories = useCategories();
     const [categories, setCategories] = useState<ExtensionCategory[]>([]);
     const [rows, setRows] = useState<CuratedRow[]>(() =>
         curatedSections.map(section => ({ ...section, extensions: [], loading: true }))
     );
 
     useEffect(() => {
-        setCategories(
-            Array.from(service.getCategories())
-                .filter(c => !EXCLUDED_CATEGORIES.has(c))
-                .sort((a, b) => a.localeCompare(b))
-        );
+        setCategories(allCategories.filter(c => HOME_CATEGORIES.has(c)));
 
         const abortController = new AbortController();
         curatedSections.forEach((section, idx) => {

@@ -6,7 +6,7 @@
 
 import { FunctionComponent } from 'react';
 import { Box } from '@mui/material';
-import { ExtensionCategory } from '../../extension-registry-types';
+import { ExtensionCategory } from '../search/use-categories';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryCard } from '../../components/category-card';

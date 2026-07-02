@@ -42,9 +42,23 @@ export const cardSurface = (theme: Theme) => ({
     borderRadius: theme.shape.borderRadiusCard
 });
 
-/** Hover treatment for interactive cards: accent border, shadow and lift. */
+/** Hover treatment for chips and pills: accent border and text color. Suppressed on touch devices. */
+export const accentHover = (theme: Theme) => ({
+    '@media (hover: hover)': {
+        '&:hover': {
+            borderColor: theme.palette.secondary.main,
+            color: theme.palette.secondary.light
+        }
+    }
+});
+
+/** Hover treatment for interactive cards: accent border, shadow and lift. Suppressed on touch devices. */
 export const cardHoverLift = (theme: Theme) => ({
-    borderColor: theme.palette.secondary.main,
-    boxShadow: 'var(--shadow)',
-    transform: 'translateY(-2px)'
+    '@media (hover: hover)': {
+        '&:hover': {
+            borderColor: theme.palette.secondary.main,
+            boxShadow: 'var(--shadow)',
+            transform: 'translateY(-2px)'
+        }
+    }
 });

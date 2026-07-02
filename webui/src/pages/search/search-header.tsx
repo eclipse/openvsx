@@ -6,7 +6,8 @@
 
 import { FunctionComponent, KeyboardEvent } from 'react';
 import { Box, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
-import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
+import { SortBy, SortOrder } from '../../extension-registry-types';
+import { ExtensionCategory } from './use-categories';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 

@@ -29,7 +29,7 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     minHeight: '206px',
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    '&:hover': cardHoverLift(theme),
+    ...cardHoverLift(theme),
     // Keyboard focus ring mirrors the search field's :focus-within style.
     'a:focus-visible &': {
         borderColor: theme.palette.secondary.main,

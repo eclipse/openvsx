@@ -21,7 +21,8 @@ const Root = styled(ButtonBase)(({ theme }) => ({
     color: theme.palette.text.primary,
     width: '100%',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    '&:hover': cardHoverLift(theme)
+    ...cardHoverLift(theme),
+    '& .MuiTouchRipple-root': { color: theme.palette.secondary.main }
 }));
 
 export interface CategoryCardProps {
@@ -37,8 +38,8 @@ export const CategoryCard: FunctionComponent<CategoryCardProps> = ({ label, icon
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                bgcolor: 'surface3',
-                color: 'text.secondary',
+                bgcolor: 'accentSoft',
+                color: 'secondary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

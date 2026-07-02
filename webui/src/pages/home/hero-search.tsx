@@ -8,6 +8,7 @@ import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, 
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
+import { accentHover } from '../../components/layout';
 import { useSearch } from '../../hooks/use-search';
 import { useSearchFocus } from '../../hooks/use-search-focus';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
@@ -82,10 +83,7 @@ const PopularChip = styled(ButtonBase)(({ theme }) => ({
     overflow: 'hidden',
     fontFamily: MONO_FONT,
     transition: 'border-color 0.14s, color 0.14s',
-    '&:hover': {
-        borderColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.light
-    }
+    ...accentHover(theme)
 }));
 
 interface HeroSearchProps {
