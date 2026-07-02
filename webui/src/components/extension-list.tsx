@@ -10,14 +10,12 @@ import { Box, CircularProgress } from '@mui/material';
 import { ExtensionCard } from './extension-card';
 import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
-import { debounce } from '../utils';
 import { DelayedLoadIndicator } from './delayed-load-indicator';
 import { useGridKeyboardNavigation } from './use-grid-keyboard-navigation';
 import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     const abortController = useRef<AbortController>(new AbortController());
-    const cancellationToken = useRef<{ timeout?: number }>({});
     const enableLoadMore = useRef(false);
     const lastRequestedPage = useRef(0);
     const pageOffset = useRef(0);
@@ -34,18 +32,23 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         enableLoadMore.current = true;
         return () => {
             abortController.current.abort();
-            clearTimeout(cancellationToken.current.timeout);
             enableLoadMore.current = false;
         };
     }, []);
 
     useEffect(() => {
         filterSize.current = props.filter.size ?? filterSize.current;
-        debounce(async () => {
+        // Inputs are already debounced upstream; fetch immediately and drop
+        // responses that arrive after the filter changed again.
+        let stale = false;
+        (async () => {
             try {
                 const result = await context.service.search(abortController.current, props.filter);
                 if (isError(result)) {
                     throw result;
+                }
+                if (stale) {
+                    return;
                 }
 
                 const searchResult = result as SearchResult;
@@ -62,11 +65,18 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                 setAppliedFilter(props.filter);
                 setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
             } catch (err) {
-                context.handleError(err);
+                if (!stale) {
+                    context.handleError(err);
+                }
             } finally {
-                setLoading(false);
+                if (!stale) {
+                    setLoading(false);
+                }
             }
-        }, cancellationToken.current);
+        })();
+        return () => {
+            stale = true;
+        };
     }, [props.filter.category, props.filter.query, props.filter.sortBy, props.filter.sortOrder]);
 
     const loadMore = async (p: number): Promise<void> => {
