@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent } from 'react';
+import { FunctionComponent, useEffect, useRef } from 'react';
 import { ButtonBase, SvgIconProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { accentHover } from './page-primitives';
@@ -37,9 +37,20 @@ export interface CategoryPillProps {
     onClick: () => void;
 }
 
-export const CategoryPill: FunctionComponent<CategoryPillProps> = ({ label, icon: Icon, isSelected, onClick }) => (
-    <Root isSelected={isSelected} aria-pressed={!!isSelected} onClick={onClick}>
-        <Icon sx={{ fontSize: '1rem', flexShrink: 0, color: 'secondary.main' }} />
-        {label}
-    </Root>
-);
+export const CategoryPill: FunctionComponent<CategoryPillProps> = ({ label, icon: Icon, isSelected, onClick }) => {
+    const ref = useRef<HTMLButtonElement>(null);
+
+    // Keep the selected pill visible when the row overflows (deep links, home tiles).
+    useEffect(() => {
+        if (isSelected) {
+            ref.current?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        }
+    }, [isSelected]);
+
+    return (
+        <Root ref={ref} isSelected={isSelected} aria-pressed={!!isSelected} onClick={onClick}>
+            <Icon sx={{ fontSize: '1rem', flexShrink: 0, color: 'secondary.main' }} />
+            {label}
+        </Root>
+    );
+};
