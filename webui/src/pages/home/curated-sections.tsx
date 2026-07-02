@@ -76,8 +76,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = ({ rows,
                                 <ExtensionCard
                                     key={`${ext.namespace}.${ext.name}`}
                                     extension={ext}
-                                    idx={idx}
-                                    filterSize={CURATED_SIZE}
+                                    fadeDelayMs={(idx % CURATED_SIZE) * 200}
                                 />
                             ))}
                         </Box>

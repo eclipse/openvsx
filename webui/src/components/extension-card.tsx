@@ -39,11 +39,11 @@ const CardRoot = styled(Paper)(({ theme }) => ({
 
 export interface ExtensionCardProps {
     extension: SearchEntry;
-    idx: number;
-    filterSize: number;
+    /** Delay before the card fades in, so grids can stagger their cards. */
+    fadeDelayMs?: number;
 }
 
-export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filterSize }: ExtensionCardProps) {
+export const ExtensionCard = memo(function ExtensionCard({ extension, fadeDelayMs = 0 }: ExtensionCardProps) {
     const context = useContext(MainContext);
     const [icon, setIcon] = useState<string>();
 
@@ -70,7 +70,7 @@ export const ExtensionCard = memo(function ExtensionCard({ extension, idx, filte
     const title = extension.displayName ?? extension.name;
 
     return (
-        <Fade in timeout={{ enter: ((filterSize + idx) % filterSize) * 200 }}>
+        <Fade in timeout={{ enter: fadeDelayMs }}>
             <Box title={title} sx={{ height: '100%' }}>
                 <RouteLink
                     to={route}

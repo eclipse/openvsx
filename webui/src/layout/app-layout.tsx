@@ -16,7 +16,6 @@ import { SearchFocusProvider } from '../context/search/search-focus-context';
 import { KeyboardShortcutsProvider } from '../context/keyboard-shortcuts-context';
 import { useShortcut } from '../hooks/use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
-import { UserData } from '../extension-registry-types';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { NamespaceDetailRoutes } from '../pages/namespace-detail/namespace-detail-routes';
@@ -148,6 +147,5 @@ export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
 );
 
 export interface AppLayoutProps {
-    user?: UserData;
     userLoading: boolean;
 }

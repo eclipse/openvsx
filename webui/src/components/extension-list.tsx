@@ -140,7 +140,11 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     };
 
     const extensionList = extensions.map((ext, idx) => (
-        <ExtensionCard idx={idx} extension={ext} filterSize={filterSize.current} key={`${ext.namespace}.${ext.name}`} />
+        <ExtensionCard
+            extension={ext}
+            fadeDelayMs={(idx % filterSize.current) * 200}
+            key={`${ext.namespace}.${ext.name}`}
+        />
     ));
 
     const loader = (

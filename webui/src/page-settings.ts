@@ -58,6 +58,7 @@ export interface StructuredFooterSettings {
 export interface CustomFooterSettings {
     content: ComponentType<{ expanded: boolean }>;
     props?: {
+        /** @deprecated Ignored — the footer is rendered in-flow since the redesign. */
         footerHeight?: number;
     };
 }

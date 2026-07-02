@@ -113,7 +113,7 @@ export const Main: FunctionComponent<MainProps> = props => {
                             </Suspense>
                         }
                     />
-                    <Route path='*' element={<AppLayout user={user} userLoading={userLoading} />} />
+                    <Route path='*' element={<AppLayout userLoading={userLoading} />} />
                 </Routes>
                 {error ? (
                     <ErrorDialog

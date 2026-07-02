@@ -17,7 +17,7 @@ export interface SearchFilter {
 }
 
 // Write only non-default values so shared links stay clean.
-export function filterToParams({ query, category, sortBy, sortOrder }: SearchFilter): Record<string, string> {
+function filterToParams({ query, category, sortBy, sortOrder }: SearchFilter): Record<string, string> {
     const params: Record<string, string> = {};
     if (query) params.q = query;
     if (category) params.category = category;
