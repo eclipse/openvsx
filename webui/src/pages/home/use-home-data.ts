@@ -9,7 +9,7 @@ import { useQueries } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
-import { useCategories } from '../search/use-categories';
+import { useCategories } from '../../components/categories';
 import { HomeCuratedSection } from '../../page-settings';
 import { controllerFromSignal } from '../../query-client';
 

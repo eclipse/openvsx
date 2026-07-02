@@ -13,43 +13,46 @@ import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PaletteIcon from '@mui/icons-material/Palette';
 import BugReportIcon from '@mui/icons-material/BugReport';
-import ScienceIcon from '@mui/icons-material/Science';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TranslateIcon from '@mui/icons-material/Translate';
-import SchoolIcon from '@mui/icons-material/School';
 import InsightsIcon from '@mui/icons-material/Insights';
+import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import GridViewIcon from '@mui/icons-material/GridView';
-
-export interface Category {
-    label: string;
-    icon: FunctionComponent<SvgIconProps>;
-}
-
-/** Edit this array to add, remove, or reorder categories. */
-export const CATEGORIES: Category[] = [
-    { label: 'Programming Languages', icon: DataObjectIcon },
-    { label: 'AI', icon: AutoAwesomeIcon },
-    { label: 'Linters', icon: SpellcheckIcon },
-    { label: 'Formatters', icon: FormatAlignLeftIcon },
-    { label: 'Snippets', icon: ContentCopyIcon },
-    { label: 'Themes', icon: PaletteIcon },
-    { label: 'Debuggers', icon: BugReportIcon },
-    { label: 'Testing', icon: ScienceIcon },
-    { label: 'SCM Providers', icon: AccountTreeIcon },
-    { label: 'Keymaps', icon: KeyboardIcon },
-    { label: 'Extension Packs', icon: ExtensionIcon },
-    { label: 'Visualization', icon: BarChartIcon },
-    { label: 'Language Packs', icon: TranslateIcon },
-    { label: 'Education', icon: SchoolIcon },
-    { label: 'Data Science', icon: InsightsIcon },
-    { label: 'Other', icon: GridViewIcon }
-];
+import { CATEGORIES, ExtensionCategory } from '../extension-registry-types';
 
 export const DefaultCategoryIcon: FunctionComponent<SvgIconProps> = GridViewIcon;
 
-export const CATEGORY_ICONS: Record<string, FunctionComponent<SvgIconProps>> = Object.fromEntries(
-    CATEGORIES.map(c => [c.label, c.icon])
-);
+// The category list itself lives in extension-registry-types; this record is
+// compile-checked to stay exhaustive when categories are added or removed.
+export const CATEGORY_ICONS: Record<ExtensionCategory, FunctionComponent<SvgIconProps>> = {
+    AI: AutoAwesomeIcon,
+    'Programming Languages': DataObjectIcon,
+    Snippets: ContentCopyIcon,
+    Linters: SpellcheckIcon,
+    Themes: PaletteIcon,
+    Debuggers: BugReportIcon,
+    Formatters: FormatAlignLeftIcon,
+    Keymaps: KeyboardIcon,
+    'SCM Providers': AccountTreeIcon,
+    Other: GridViewIcon,
+    'Extension Packs': ExtensionIcon,
+    'Language Packs': TranslateIcon,
+    'Data Science': InsightsIcon,
+    'Machine Learning': ModelTrainingIcon,
+    Visualization: BarChartIcon,
+    Notebooks: MenuBookIcon
+};
+
+const SORTED_CATEGORIES: ExtensionCategory[] = [...CATEGORIES].sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    return a.localeCompare(b);
+});
+
+export function useCategories(): ExtensionCategory[] {
+    return SORTED_CATEGORIES;
+}

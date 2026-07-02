@@ -15,7 +15,7 @@ import { CategoryListItem } from '../../components/category-list-item';
 import { Eyebrow } from '../../components/layout';
 import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
-import { useCategories } from './use-categories';
+import { useCategories } from '../../components/categories';
 import { SearchHeader } from './search-header';
 
 export const SearchPage: FunctionComponent = () => {
