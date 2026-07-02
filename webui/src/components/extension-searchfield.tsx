@@ -8,8 +8,9 @@ import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useR
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Close';
 import { IconButton, InputBase, Box } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import { MONO_FONT } from '../default/theme';
+import { focusRing } from './page-primitives';
 
 interface ExtensionSearchfieldProps {
     onSearchChanged: (s: string) => void;
@@ -37,10 +38,7 @@ const SearchWrap = styled(Box, {
     padding: '0 0.8125rem',
     backgroundColor: theme.palette.surface2,
     transition: 'border-color 0.18s, box-shadow 0.18s',
-    '&:focus-within': {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: `0 0 0 3px ${alpha(theme.palette.secondary.main, 0.16)}`
-    }
+    '&:focus-within': focusRing(theme)
 }));
 
 const MonoSlash = styled('span')(({ theme }) => ({

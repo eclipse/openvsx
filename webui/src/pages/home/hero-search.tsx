@@ -8,7 +8,7 @@ import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, 
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
-import { accentHover } from '../../components/page-primitives';
+import { accentHover, focusRing } from '../../components/page-primitives';
 import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';
@@ -33,10 +33,7 @@ const HeroSearchWrap = styled(Box)(({ theme }) => ({
     },
     boxShadow: 'var(--shadow)',
     transition: 'border-color 0.2s ease, box-shadow 0.3s ease',
-    '&:focus-within': {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: `0 0 0 3px ${alpha(theme.palette.secondary.main, 0.16)}, 0 18px 70px -10px ${alpha(theme.palette.secondary.main, 0.45)}`
-    }
+    '&:focus-within': focusRing(theme, `0 18px 70px -10px ${alpha(theme.palette.secondary.main, 0.45)}`)
 }));
 
 const HeroInput = styled('input')(({ theme }) => ({

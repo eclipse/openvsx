@@ -7,7 +7,7 @@
 import { memo, useContext, useEffect, useState } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Fade } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import { MainContext } from '../context';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
@@ -15,7 +15,7 @@ import { SearchEntry } from '../extension-registry-types';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
 import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
-import { cardHoverLift, cardSurface } from './page-primitives';
+import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
 
 const CardRoot = styled(Paper)(({ theme }) => ({
     ...cardSurface(theme),
@@ -31,10 +31,7 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
     ...cardHoverLift(theme),
     // Keyboard focus ring mirrors the search field's :focus-within style.
-    'a:focus-visible &': {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: `0 0 0 3px ${alpha(theme.palette.secondary.main, 0.16)}`
-    }
+    'a:focus-visible &': focusRing(theme)
 }));
 
 export interface ExtensionCardProps {

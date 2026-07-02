@@ -8,7 +8,7 @@ import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { KbdKey } from '../components/kbd-key';
-import { Section, Eyebrow } from '../components/page-primitives';
+import { Section, Eyebrow, accentHover } from '../components/page-primitives';
 import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
 import { MainContext } from '../context';
@@ -33,10 +33,7 @@ const SocialIconButton = styled('a')(({ theme }) => ({
     justifyContent: 'center',
     textDecoration: 'none',
     transition: 'border-color 0.14s, color 0.14s',
-    '&:hover': {
-        borderColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.light
-    }
+    ...accentHover(theme)
 }));
 
 const ShortcutsButton = styled('button')(({ theme }) => ({

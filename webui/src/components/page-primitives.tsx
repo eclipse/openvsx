@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 import { Box, Typography } from '@mui/material';
-import { styled, Theme } from '@mui/material/styles';
+import { alpha, styled, Theme } from '@mui/material/styles';
 
 /** Max width of the centered content column shared by every page section. */
 export const CONTENT_MAX_WIDTH = 1320;
@@ -40,6 +40,12 @@ export const cardSurface = (theme: Theme) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadiusCard
+});
+
+/** Accent focus ring shared by the search fields and card links. */
+export const focusRing = (theme: Theme, extraShadow?: string) => ({
+    borderColor: theme.palette.secondary.main,
+    boxShadow: `0 0 0 3px ${alpha(theme.palette.secondary.main, 0.16)}${extraShadow ? `, ${extraShadow}` : ''}`
 });
 
 /** Hover treatment for chips and pills: accent border and text color. Suppressed on touch devices. */

@@ -20,15 +20,12 @@ import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard-routes'
 import { MainContext } from '../../context';
 import { LogoutForm } from './logout';
 
+// Radius, font and min-height come from the MuiMenuItem theme override.
 const menuItemSx = {
-    borderRadius: '9px',
-    fontSize: '0.875rem',
-    fontWeight: 500,
     py: '0.5rem',
     px: '0.625rem',
     gap: '0.625rem',
     color: 'text.primary',
-    minHeight: '2.25rem',
     display: 'flex',
     alignItems: 'center'
 } as const;
