@@ -16,13 +16,16 @@ import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
-    const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
+    const { pathname } = useLocation();
+    const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery, search } = useSearch();
     const { focusSearchSignal, focusSearch, focusResults } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Typing debounces navigation; Enter/clear search immediately.
+    // Typing debounces navigation; Enter searches immediately. A route change
+    // drops any pending navigation (e.g. the user clicked a result mid-debounce).
     const debouncedSearch = useDebouncedCallback(search);
+    useLayoutEffect(() => debouncedSearch.cancel, [pathname, debouncedSearch]);
 
     // On the hero (home) page the field is only a visual placeholder rendered at
     // opacity 0 for the view-transition morph. Mark the subtree `inert` so it is

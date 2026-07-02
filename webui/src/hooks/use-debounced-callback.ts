@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 const DEFAULT_DELAY_MS = 300;
 
@@ -33,10 +33,10 @@ export function useDebouncedCallback<T extends (...args: any[]) => void>(
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
 
-    return useMemo(() => {
+    const debounced = useMemo(() => {
         let timer: ReturnType<typeof setTimeout> | undefined;
 
-        const debounced = ((...args: Parameters<T>) => {
+        const fn = ((...args: Parameters<T>) => {
             clearTimeout(timer);
             timer = setTimeout(() => {
                 timer = undefined;
@@ -44,11 +44,15 @@ export function useDebouncedCallback<T extends (...args: any[]) => void>(
             }, delay);
         }) as DebouncedCallback<T>;
 
-        debounced.cancel = () => {
+        fn.cancel = () => {
             clearTimeout(timer);
             timer = undefined;
         };
 
-        return debounced;
+        return fn;
     }, [delay]);
+
+    useEffect(() => debounced.cancel, [debounced]);
+
+    return debounced;
 }
