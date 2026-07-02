@@ -15,7 +15,7 @@ import { SearchEntry } from '../extension-registry-types';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
 import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
-import { cardHoverLift, cardSurface } from './layout';
+import { cardHoverLift, cardSurface } from './page-primitives';
 
 const CardRoot = styled(Paper)(({ theme }) => ({
     ...cardSurface(theme),

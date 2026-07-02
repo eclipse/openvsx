@@ -5,7 +5,7 @@
  ********************************************************************************/
 
 import { useEffect, useRef } from 'react';
-import { useKeyboardShortcuts } from './keyboard-shortcuts-context';
+import { useKeyboardShortcuts } from '../context/keyboard-shortcuts-context';
 
 interface UseShortcutOptions {
     key: string;

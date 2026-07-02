@@ -7,7 +7,7 @@
 import { FunctionComponent } from 'react';
 import { ButtonBase, SvgIconProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { accentHover } from './layout';
+import { accentHover } from './page-primitives';
 
 const Root = styled(ButtonBase, {
     shouldForwardProp: prop => prop !== 'isSelected'

@@ -12,7 +12,7 @@ import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
-import { Eyebrow } from '../../components/layout';
+import { Eyebrow } from '../../components/page-primitives';
 import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
 import { useCategories } from '../../components/categories';

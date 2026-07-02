@@ -8,7 +8,7 @@ import { FunctionComponent } from 'react';
 import { Dialog, DialogTitle, DialogContent, Box, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { KbdKey } from './kbd-key';
-import { useKeyboardShortcuts } from '../keyboard-shortcuts-context';
+import { useKeyboardShortcuts } from '../context/keyboard-shortcuts-context';
 
 interface ShortcutsModalProps {
     open: boolean;

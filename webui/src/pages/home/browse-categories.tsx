@@ -10,7 +10,7 @@ import { ExtensionCategory } from '../../extension-registry-types';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryCard } from '../../components/category-card';
-import { Section, Eyebrow } from '../../components/layout';
+import { Section, Eyebrow } from '../../components/page-primitives';
 
 interface BrowseCategoriesProps {
     categories: ExtensionCategory[];

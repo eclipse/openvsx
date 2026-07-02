@@ -7,7 +7,7 @@
 import { FunctionComponent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { ExtensionCard } from '../../components/extension-card';
-import { Section } from '../../components/layout';
+import { Section } from '../../components/page-primitives';
 import { CURATED_SIZE, CuratedRow } from './use-home-data';
 
 interface CuratedSectionsProps {

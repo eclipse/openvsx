@@ -7,7 +7,7 @@
 import { FunctionComponent } from 'react';
 import { Box, ButtonBase, SvgIconProps, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { cardHoverLift, cardSurface } from './layout';
+import { cardHoverLift, cardSurface } from './page-primitives';
 
 const Root = styled(ButtonBase)(({ theme }) => ({
     ...cardSurface(theme),

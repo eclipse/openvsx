@@ -8,7 +8,7 @@ import { FunctionComponent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { HomeSettings } from '../../page-settings';
-import { Section, Eyebrow } from '../../components/layout';
+import { Section, Eyebrow } from '../../components/page-primitives';
 
 const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,

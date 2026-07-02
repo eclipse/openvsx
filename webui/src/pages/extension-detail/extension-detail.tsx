@@ -44,7 +44,7 @@ import { ExtensionDetailReviews } from './extension-detail-reviews';
 import { ExtensionDetailRoutes } from './extension-detail-routes';
 import { useExtensionDetail } from './use-extension-details';
 import { KbdKey } from '../../components/kbd-key';
-import { useShortcut } from '../../use-shortcut';
+import { useShortcut } from '../../hooks/use-shortcut';
 
 const inlineLinkStyle = {
     display: 'contents',

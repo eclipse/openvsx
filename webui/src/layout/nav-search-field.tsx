@@ -14,7 +14,7 @@ import { useSearchQuery } from '../context/search/search-context';
 import { useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
-import { useShortcut } from '../use-shortcut';
+import { useShortcut } from '../hooks/use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();

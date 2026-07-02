@@ -6,7 +6,7 @@
 
 import { FocusEvent, KeyboardEvent, RefObject, useCallback, useEffect, useRef } from 'react';
 import { useSearchFocus } from '../context/search/search-focus-context';
-import { useSignalEffect } from '../hooks/use-signal-effect';
+import { useSignalEffect } from './use-signal-effect';
 
 const ITEM_SELECTOR = 'a[data-ext-card]';
 const NAV_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];

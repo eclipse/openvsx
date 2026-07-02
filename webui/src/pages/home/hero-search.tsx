@@ -8,7 +8,7 @@ import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, 
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
-import { accentHover } from '../../components/layout';
+import { accentHover } from '../../components/page-primitives';
 import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';

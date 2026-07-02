@@ -11,7 +11,7 @@ import { ExtensionCard } from './extension-card';
 import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
 import { DelayedLoadIndicator } from './delayed-load-indicator';
-import { useGridKeyboardNavigation } from './use-grid-keyboard-navigation';
+import { useGridKeyboardNavigation } from '../hooks/use-grid-keyboard-navigation';
 import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {

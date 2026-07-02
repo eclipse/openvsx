@@ -8,7 +8,7 @@ import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { KbdKey } from '../components/kbd-key';
-import { Section, Eyebrow } from '../components/layout';
+import { Section, Eyebrow } from '../components/page-primitives';
 import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
 import { MainContext } from '../context';
