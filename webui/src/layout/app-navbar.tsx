@@ -6,7 +6,7 @@
 
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { AppBar, Box, Toolbar } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
+import { alpha, styled, useTheme } from '@mui/material/styles';
 import { Link as RouteLink, useLocation } from 'react-router-dom';
 import { HeaderMenu } from '../header-menu';
 import { MainContext } from '../context';
@@ -38,7 +38,7 @@ export const AppNavbar: FunctionComponent = () => {
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
     const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
     const theme = useTheme();
-    const navbg = theme.palette.mode === 'dark' ? 'rgba(14, 14, 20, 0.74)' : 'rgba(255, 255, 255, 0.78)';
+    const navbg = alpha(theme.palette.background.default, theme.palette.mode === 'dark' ? 0.74 : 0.78);
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -51,7 +51,7 @@ export const AppNavbar: FunctionComponent = () => {
     const showFan = scrolled;
 
     return (
-        <AppBar position='sticky' color='transparent' elevation={0} sx={{ overflow: 'visible !important', zIndex: 50 }}>
+        <AppBar position='sticky' color='transparent' elevation={0} sx={{ overflow: 'visible', zIndex: 50 }}>
             {/* Solid frosted glass — visible when not scrolled */}
             <Box
                 aria-hidden='true'
@@ -107,10 +107,10 @@ export const AppNavbar: FunctionComponent = () => {
                 }}
             />
             <Toolbar
+                disableGutters
                 sx={{
                     justifyContent: 'space-between',
-                    minHeight: '62px !important',
-                    px: { xs: '10px !important', sm: '28px !important' },
+                    px: { xs: '0.625rem', sm: '1.75rem' },
                     position: 'relative',
                     zIndex: 1
                 }}>

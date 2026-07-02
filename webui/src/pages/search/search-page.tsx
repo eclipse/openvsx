@@ -13,6 +13,7 @@ import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
 import { Eyebrow } from '../../components/layout';
+import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
 import { useCategories } from './use-categories';
 import { SearchHeader } from './search-header';
@@ -79,9 +80,9 @@ export const SearchPage: FunctionComponent = () => {
                         pb: '40px',
                         display: { xs: 'none', md: 'block' },
                         position: 'sticky',
-                        top: '60px',
+                        top: NAVBAR_HEIGHT,
                         alignSelf: 'flex-start',
-                        maxHeight: 'calc(100vh - 80px)',
+                        maxHeight: `calc(100vh - ${NAVBAR_HEIGHT} - 1.125rem)`,
                         overflowY: 'auto',
                         zIndex: 50
                     }}>

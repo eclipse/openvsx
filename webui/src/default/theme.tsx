@@ -12,6 +12,17 @@ import { CSSProperties } from 'react';
 import { createTheme, Theme } from '@mui/material';
 
 export const MONO_FONT = "'Geist Mono', monospace";
+export const NAVBAR_HEIGHT = '3.875rem';
+
+// Shared look of floating surfaces (menus, popovers, dialogs). The nested selector
+// outranks MuiPaper's own rounded style, so no !important is needed.
+const floatingPaper = (theme: Theme) => ({
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: 'var(--shadow-lg)',
+    backgroundColor: theme.palette.background.paper,
+    backgroundImage: 'none',
+    '&.MuiPaper-rounded': { borderRadius: theme.shape.borderRadiusCard }
+});
 
 type Color = CSSProperties['color'];
 
@@ -96,6 +107,9 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
         shape: {
             borderRadius: 9,
             borderRadiusCard: 14
+        },
+        mixins: {
+            toolbar: { minHeight: NAVBAR_HEIGHT }
         },
         palette: {
             mode: themeType,
@@ -200,36 +214,31 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             MuiTab: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        fontSize: '14px',
+                        fontSize: '0.875rem',
                         fontWeight: 600,
                         textTransform: 'none',
                         color: theme.palette.text.disabled,
-                        minHeight: '52px',
-                        padding: '15px 16px',
+                        minHeight: '3.25rem',
+                        padding: '0.9375rem 1rem',
                         '&.Mui-selected': { color: theme.palette.text.primary }
                     })
                 }
             },
+            // Menu and Select popups inherit the floating look from MuiPopover.
             MuiMenu: {
                 styleOverrides: {
-                    paper: ({ theme }) => ({
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: '14px !important',
-                        boxShadow: 'var(--shadow-lg)',
-                        marginTop: '6px',
-                        backgroundColor: theme.palette.background.paper
-                    }),
-                    list: { padding: '6px' }
+                    paper: { marginTop: '0.375rem' },
+                    list: { padding: '0.375rem' }
                 }
             },
             MuiMenuItem: {
                 styleOverrides: {
-                    root: {
-                        borderRadius: '9px',
-                        fontSize: '14px',
+                    root: ({ theme }) => ({
+                        borderRadius: theme.shape.borderRadius,
+                        fontSize: '0.875rem',
                         fontWeight: 500,
-                        minHeight: '36px'
-                    }
+                        minHeight: '2.25rem'
+                    })
                 }
             },
             MuiTypography: {
@@ -248,12 +257,12 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             },
             MuiPopover: {
                 styleOverrides: {
-                    paper: ({ theme }) => ({
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: '14px !important',
-                        boxShadow: 'var(--shadow-lg)',
-                        backgroundColor: theme.palette.background.paper
-                    })
+                    paper: ({ theme }) => floatingPaper(theme)
+                }
+            },
+            MuiDialog: {
+                styleOverrides: {
+                    paper: ({ theme }) => floatingPaper(theme)
                 }
             },
             MuiDivider: {
@@ -262,26 +271,13 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                 }
             },
             MuiSelect: {
-                defaultProps: {
-                    MenuProps: {
-                        PaperProps: {
-                            sx: {
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: '14px !important',
-                                boxShadow: 'var(--shadow-lg)',
-                                mt: '4px'
-                            }
-                        }
-                    }
-                },
                 styleOverrides: {
                     select: {
                         '&.MuiInputBase-inputSizeSmall': {
-                            paddingTop: '4px',
-                            paddingBottom: '4px',
-                            paddingLeft: '10px',
-                            fontSize: '13px'
+                            paddingTop: '0.25rem',
+                            paddingBottom: '0.25rem',
+                            paddingLeft: '0.625rem',
+                            fontSize: '0.8125rem'
                         }
                     }
                 }

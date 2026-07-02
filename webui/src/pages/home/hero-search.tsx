@@ -59,7 +59,7 @@ const HeroSubmitButton = styled(ButtonBase)(({ theme }) => ({
     borderRadius: '11px',
     overflow: 'hidden',
     backgroundColor: theme.palette.secondary.main,
-    color: '#fff',
+    color: theme.palette.secondary.contrastText,
     fontSize: '15px',
     fontWeight: 600,
     flexShrink: 0,

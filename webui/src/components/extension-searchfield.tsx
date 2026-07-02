@@ -30,10 +30,6 @@ const SearchWrap = styled(Box, {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    marginRight: 0,
-    marginBottom: 0,
-    [theme.breakpoints.up('md')]: { marginRight: theme.spacing(1), marginBottom: 0 },
-    [theme.breakpoints.down('sm')]: { marginBottom: theme.spacing(2) },
     border: hasError ? '2px solid' : '1px solid',
     borderColor: hasError ? theme.palette.error.main : theme.palette.divider,
     borderRadius: '11px',
@@ -143,7 +139,7 @@ export const ExtensionSearchfield = forwardRef(
                         onClick={handleSearchButtonClick}
                         sx={{
                             bgcolor: 'secondary.main',
-                            color: '#fff',
+                            color: 'secondary.contrastText',
                             borderRadius: '8px',
                             p: '8px',
                             flexShrink: 0,

@@ -114,8 +114,7 @@ export const NavSearchField: FunctionComponent = () => {
                     mx: 'auto',
                     opacity: isHeroPage ? 0 : 1,
                     pointerEvents: isHeroPage ? 'none' : 'auto',
-                    transition: 'opacity 0.15s ease',
-                    '& > *': { mb: '0 !important' }
+                    transition: 'opacity 0.15s ease'
                 }}>
                 <ExtensionSearchfield
                     ref={inputRef}

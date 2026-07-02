@@ -19,21 +19,7 @@ export const ShortcutsModal: FunctionComponent<ShortcutsModalProps> = ({ open, o
     const { shortcuts } = useKeyboardShortcuts();
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth='xs'
-            fullWidth
-            PaperProps={{
-                elevation: 0,
-                sx: {
-                    borderRadius: '16px',
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: 'var(--shadow-lg)'
-                }
-            }}>
+        <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
             <DialogTitle
                 component='div'
                 sx={{
@@ -55,7 +41,7 @@ export const ShortcutsModal: FunctionComponent<ShortcutsModalProps> = ({ open, o
                     <CloseIcon fontSize='small' />
                 </IconButton>
             </DialogTitle>
-            <DialogContent sx={{ p: '0 !important' }}>
+            <DialogContent sx={{ p: 0 }}>
                 {shortcuts.map((s, i) => (
                     <Box
                         key={s.key}
