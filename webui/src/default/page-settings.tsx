@@ -33,8 +33,8 @@ const SLACK_URL = 'https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt
 
 export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarContent: FunctionComponent = () => (
-        <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
-            <OpenVSXLogo width='auto' height='40px' marginTop='8px' prefersDarkMode={prefersDarkMode} />
+        <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`} style={{ display: 'flex' }}>
+            <OpenVSXLogo width='auto' height='2.5rem' prefersDarkMode={prefersDarkMode} />
         </RouteLink>
     );
 
