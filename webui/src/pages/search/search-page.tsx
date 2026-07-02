@@ -7,7 +7,6 @@
 import { FunctionComponent, useLayoutEffect } from 'react';
 import { Box } from '@mui/material';
 import { ExtensionCategory } from '../../extension-registry-types';
-import { useNavSearch } from '../../nav-search-context';
 import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
@@ -17,7 +16,6 @@ import { useSearchFilter } from './use-search-filter';
 import { SearchHeader } from './search-header';
 
 export const SearchPage: FunctionComponent = () => {
-    const { setIsHeroPage } = useNavSearch();
     const {
         searchQuery,
         category,
@@ -33,11 +31,9 @@ export const SearchPage: FunctionComponent = () => {
     } = useSearchFilter();
 
     useLayoutEffect(() => {
-        setIsHeroPage(false);
         // Entering the results should always start at the top, not wherever the
         // hero/home page happened to be scrolled when the search was triggered.
         window.scrollTo({ top: 0, left: 0 });
-        return () => setIsHeroPage(false);
     }, []);
 
     return (
@@ -92,10 +88,11 @@ export const SearchPage: FunctionComponent = () => {
                         pb: '40px',
                         display: { xs: 'none', md: 'block' },
                         position: 'sticky',
-                        top: '72px',
+                        top: '60px',
                         alignSelf: 'flex-start',
                         maxHeight: 'calc(100vh - 80px)',
-                        overflowY: 'auto'
+                        overflowY: 'auto',
+                        zIndex: 50
                     }}>
                     <Eyebrow sx={{ mb: '10px', px: '10px' }}>Categories</Eyebrow>
                     {(['', ...categories] as Array<ExtensionCategory | ''>).map(cat => {

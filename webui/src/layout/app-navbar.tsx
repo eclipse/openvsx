@@ -7,10 +7,10 @@
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { AppBar, Box, Toolbar } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink, useLocation } from 'react-router-dom';
 import { HeaderMenu } from '../header-menu';
 import { MainContext } from '../context';
-import { useNavSearch } from '../nav-search-context';
+import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { OpenVsxMark } from '../components/openvsx-mark';
 import { NavSearchField } from './nav-search-field';
 
@@ -36,7 +36,7 @@ const BLUR_LAYERS = [
 export const AppNavbar: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
-    const { isHeroPage } = useNavSearch();
+    const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
     const theme = useTheme();
     const navbg = theme.palette.mode === 'dark' ? 'rgba(14, 14, 20, 0.74)' : 'rgba(255, 255, 255, 0.78)';
     const [scrolled, setScrolled] = useState(false);

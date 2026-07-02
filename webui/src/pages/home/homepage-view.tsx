@@ -8,7 +8,7 @@ import { ComponentType, FunctionComponent, useContext, useEffect, useRef, useSta
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { MainContext } from '../../context';
-import { useNavSearch } from '../../nav-search-context';
+import { useSearchSync } from '../../search-sync-context';
 import { ExtensionCard } from '../../components/extension-card';
 import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
 import { HomeCuratedSection } from '../../page-settings';
@@ -130,7 +130,7 @@ interface HeroSearchProps {
  * field, not the whole homepage (categories grid and curated rows).
  */
 const HeroSearch: FunctionComponent<HeroSearchProps> = ({ onSearch, searchHeader: SearchHeader, popularSearches }) => {
-    const { navQuery } = useNavSearch();
+    const { navQuery } = useSearchSync();
     const [query, setQuery] = useState(() => navQuery);
     const searchTimerRef = useRef<number>();
 

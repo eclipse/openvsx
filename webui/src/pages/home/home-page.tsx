@@ -4,22 +4,17 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useCallback, useLayoutEffect } from 'react';
+import { FunctionComponent, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useNavSearch } from '../../nav-search-context';
+import { useSearchSync } from '../../search-sync-context';
 import { ExtensionListRoutes } from '../extension-list/extension-list-routes';
 import { addQuery } from '../../utils';
 import { HomepageView } from './homepage-view';
 
 export const HomePage: FunctionComponent = () => {
-    const { setIsHeroPage, setNavQuery } = useNavSearch();
+    const { setNavQuery } = useSearchSync();
     const navigate = useNavigate();
-
-    useLayoutEffect(() => {
-        setIsHeroPage(true);
-        return () => setIsHeroPage(false);
-    }, []);
 
     const focusNavSearch = useCallback(() => {
         const input = document.getElementById('search-input') as HTMLInputElement | null;
@@ -38,7 +33,6 @@ export const HomePage: FunctionComponent = () => {
 
             const run = () => {
                 setNavQuery(query);
-                setIsHeroPage(false);
                 navigate(url, { state: { _q: query, _cat: cat } });
             };
 
@@ -60,7 +54,7 @@ export const HomePage: FunctionComponent = () => {
                 if (shouldFocus) focusNavSearch();
             }
         },
-        [navigate, setNavQuery, setIsHeroPage, focusNavSearch]
+        [navigate, setNavQuery, focusNavSearch]
     );
 
     return <HomepageView onSearch={handleSearch} />;

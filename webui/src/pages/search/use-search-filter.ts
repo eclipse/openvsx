@@ -8,7 +8,7 @@ import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom';
 import { MainContext } from '../../context';
 import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
-import { useNavSearch } from '../../nav-search-context';
+import { useSearchSync } from '../../search-sync-context';
 import { addQuery } from '../../utils';
 import { ExtensionListRoutes } from '../extension-list/extension-list-routes';
 
@@ -24,7 +24,7 @@ function buildSearchUrl(q: string, cat: ExtensionCategory | '', sb: SortBy, so: 
 export function useSearchFilter() {
     const { search, state: locationState } = useLocation();
     const context = useContext(MainContext);
-    const { navQuery, setNavQuery, setSearchHandler } = useNavSearch();
+    const { navQuery, setNavQuery, setSearchHandler } = useSearchSync();
 
     // Navigation state is the most reliable fallback for values passed from HomePage
     // (URL params may not yet be reflected in useLocation() during view transitions)

@@ -6,13 +6,15 @@
 
 import { FunctionComponent, KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
-import { useNavSearch } from '../nav-search-context';
+import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
+import { useSearchSync } from '../search-sync-context';
 import { useShortcut } from '../use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
-    const { isHeroPage, navQuery, setNavQuery, searchHandler } = useNavSearch();
+    const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
+    const { navQuery, setNavQuery, searchHandler } = useSearchSync();
     const navigate = useNavigate();
 
     // Keep a ref so handleNavSearch always calls the latest handler without needing

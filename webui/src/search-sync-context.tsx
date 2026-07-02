@@ -6,26 +6,21 @@
 
 import { createContext, FunctionComponent, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
-interface NavSearchContextValue {
-    isHeroPage: boolean;
-    setIsHeroPage: (b: boolean) => void;
+interface SearchSyncContextValue {
     navQuery: string;
     setNavQuery: (q: string) => void;
     searchHandler: ((q: string) => void) | null;
     setSearchHandler: (fn: ((q: string) => void) | null) => void;
 }
 
-const NavSearchContext = createContext<NavSearchContextValue>({
-    isHeroPage: false,
-    setIsHeroPage: () => {},
+const SearchSyncContext = createContext<SearchSyncContextValue>({
     navQuery: '',
     setNavQuery: () => {},
     searchHandler: null,
     setSearchHandler: () => {}
 });
 
-export const NavSearchProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
-    const [isHeroPage, setIsHeroPage] = useState(false);
+export const SearchSyncProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const [navQuery, setNavQuery] = useState('');
     // useState treats any function passed directly as a reducer — wrap with () => fn to store functions correctly
     const [searchHandler, setSearchHandlerState] = useState<((q: string) => void) | null>(null);
@@ -33,11 +28,11 @@ export const NavSearchProvider: FunctionComponent<{ children: ReactNode }> = ({ 
         setSearchHandlerState(() => fn);
     }, []);
     const value = useMemo(
-        () => ({ isHeroPage, setIsHeroPage, navQuery, setNavQuery, searchHandler, setSearchHandler }),
-        [isHeroPage, navQuery, searchHandler, setSearchHandler]
+        () => ({ navQuery, setNavQuery, searchHandler, setSearchHandler }),
+        [navQuery, searchHandler, setSearchHandler]
     );
-    return <NavSearchContext.Provider value={value}>{children}</NavSearchContext.Provider>;
+    return <SearchSyncContext.Provider value={value}>{children}</SearchSyncContext.Provider>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useNavSearch = () => useContext(NavSearchContext);
+export const useSearchSync = () => useContext(SearchSyncContext);
