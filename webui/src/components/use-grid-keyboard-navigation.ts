@@ -5,18 +5,11 @@
  *****************************************************************************/
 
 import { FocusEvent, KeyboardEvent, RefObject, useCallback, useEffect, useRef } from 'react';
+import { useSearchFocus } from '../hooks/use-search-focus';
+import { useSignalEffect } from '../hooks/use-signal-effect';
 
 const ITEM_SELECTOR = 'a[data-ext-card]';
 const NAV_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
-
-function focusSearchInput(): void {
-    const hero = document.getElementById('hero-search-input') as HTMLInputElement | null;
-    const nav = document.getElementById('search-input') as HTMLInputElement | null;
-    const target = hero ?? nav;
-    if (!target) return;
-    target.focus();
-    requestAnimationFrame(() => target.setSelectionRange(target.value.length, target.value.length));
-}
 
 interface GridKeyboardNavigation<T extends HTMLElement> {
     containerRef: RefObject<T>;
@@ -35,6 +28,7 @@ interface GridKeyboardNavigation<T extends HTMLElement> {
  */
 export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboardNavigation<T> {
     const containerRef = useRef<T>(null);
+    const { focusSearch, focusResultsSignal } = useSearchFocus();
 
     const getItems = useCallback((): HTMLElement[] => {
         const container = containerRef.current;
@@ -77,6 +71,19 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
         return () => observer.disconnect();
     }, [getItems, setRovingTabIndex]);
 
+    // Focus the first card when the search field asks to hand off (ArrowDown).
+    useSignalEffect(
+        focusResultsSignal,
+        useCallback(() => {
+            const items = getItems();
+            if (items.length === 0) {
+                return;
+            }
+            setRovingTabIndex(items, 0);
+            items[0].focus();
+        }, [getItems, setRovingTabIndex])
+    );
+
     const onKeyDown = useCallback(
         (event: KeyboardEvent<T>): void => {
             if (!NAV_KEYS.includes(event.key)) return;
@@ -104,7 +111,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
                 case 'ArrowUp':
                     if (currentIndex < cols) {
                         event.preventDefault();
-                        focusSearchInput();
+                        focusSearch();
                         return;
                     }
                     nextIndex = currentIndex - cols;
@@ -123,7 +130,7 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
                 items[nextIndex].focus();
             }
         },
-        [getItems, getColumnCount, setRovingTabIndex]
+        [getItems, getColumnCount, setRovingTabIndex, focusSearch]
     );
 
     const onFocus = useCallback(

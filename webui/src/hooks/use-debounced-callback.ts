@@ -15,22 +15,40 @@ import { useMemo, useRef } from 'react';
 
 const DEFAULT_DELAY_MS = 300;
 
+export interface DebouncedCallback<T extends (...args: any[]) => void> {
+    (...args: Parameters<T>): void;
+    // Drop any pending invocation.
+    cancel: () => void;
+}
+
 /**
  * Returns a stable function that delays invoking `callback` until `delay` ms
  * have elapsed since the last call. Always invokes the most recent `callback`.
+ * The returned function also exposes `cancel` to drop a pending invocation.
  */
 export function useDebouncedCallback<T extends (...args: any[]) => void>(
     callback: T,
     delay: number = DEFAULT_DELAY_MS
-): (...args: Parameters<T>) => void {
+): DebouncedCallback<T> {
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
 
     return useMemo(() => {
         let timer: ReturnType<typeof setTimeout> | undefined;
-        return (...args: Parameters<T>) => {
+
+        const debounced = ((...args: Parameters<T>) => {
             clearTimeout(timer);
-            timer = setTimeout(() => callbackRef.current(...args), delay);
+            timer = setTimeout(() => {
+                timer = undefined;
+                callbackRef.current(...args);
+            }, delay);
+        }) as DebouncedCallback<T>;
+
+        debounced.cancel = () => {
+            clearTimeout(timer);
+            timer = undefined;
         };
+
+        return debounced;
     }, [delay]);
 }

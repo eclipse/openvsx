@@ -4,62 +4,69 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, KeyboardEvent, useCallback, useEffect, useRef } from 'react';
+import { FunctionComponent, KeyboardEvent, useCallback, useLayoutEffect, useRef } from 'react';
 import { Box } from '@mui/material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
-import { useSearchSync } from '../search-sync-context';
+import { useSearch } from '../hooks/use-search';
+import { useSearchFocus } from '../hooks/use-search-focus';
+import { useSignalEffect } from '../hooks/use-signal-effect';
+import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
     const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
-    const { navQuery, setNavQuery, searchHandler } = useSearchSync();
-    const navigate = useNavigate();
+    const { query, setQuery, search } = useSearch();
+    const { focusSearchSignal, focusSearch, focusResults } = useSearchFocus();
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Keep a ref so handleNavSearch always calls the latest handler without needing
-    // to be recreated every time searchHandler changes (avoids stale-closure navigates)
-    const searchHandlerRef = useRef(searchHandler);
-    searchHandlerRef.current = searchHandler;
+    // Typing debounces navigation; Enter/clear search immediately.
+    const debouncedSearch = useDebouncedCallback(search);
 
     // On the hero (home) page the field is only a visual placeholder rendered at
     // opacity 0 for the view-transition morph. Mark the subtree `inert` so it is
     // removed from the tab order and the accessibility tree — otherwise keyboard
-    // users land on an invisible input.
+    // users land on an invisible input. This runs as a layout effect (before the
+    // focus signal effect below) so that when navigating away from the hero page
+    // the `inert` flag is cleared synchronously, before the focus request fires —
+    // otherwise focus would land on a still-inert element and be dropped.
     const fieldRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (fieldRef.current) {
             fieldRef.current.inert = isHeroPage;
         }
     }, [isHeroPage]);
 
-    const focusSearch = useCallback(() => {
-        const hero = document.getElementById('hero-search-input') as HTMLInputElement | null;
-        if (hero) {
-            hero.focus();
-            // Move cursor to end so the user can continue typing after transitioning back
-            requestAnimationFrame(() => hero.setSelectionRange(hero.value.length, hero.value.length));
-            return;
-        }
-        const nav = document.getElementById('search-input') as HTMLInputElement | null;
-        if (nav) {
-            nav.focus();
-            requestAnimationFrame(() => nav.setSelectionRange(nav.value.length, nav.value.length));
-        }
-    }, []);
+    // Take focus when requested — except on the hero page, where the hero search
+    // field owns focus instead. The onFocus handler moves the cursor to the end.
+    useSignalEffect(
+        focusSearchSignal,
+        useCallback(() => {
+            if (isHeroPage) {
+                return;
+            }
+            inputRef.current?.focus({ preventScroll: true });
+        }, [isHeroPage])
+    );
 
+    // The '/' shortcut asks whichever search field is active to take focus.
     useShortcut({ key: '/', label: 'Focus search', order: 1, callback: focusSearch });
 
     const handleNavSearch = useCallback(
         (q: string) => {
-            setNavQuery(q);
-            if (searchHandlerRef.current) {
-                searchHandlerRef.current(q);
-            } else {
-                navigate(`/search${q ? '?q=' + encodeURIComponent(q) : ''}`);
-            }
+            setQuery(q);
+            debouncedSearch({ query: q });
         },
-        [navigate, setNavQuery]
+        [setQuery, debouncedSearch]
+    );
+
+    const handleNavSubmit = useCallback(
+        (q: string) => {
+            debouncedSearch.cancel();
+            search({ query: q });
+        },
+        [debouncedSearch, search]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs
@@ -71,18 +78,20 @@ export const NavSearchField: FunctionComponent = () => {
 
     // ArrowDown moves focus from the search field into the results grid (first card),
     // where two-axis arrow navigation takes over. Escape blurs the field.
-    const handleInputKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            (e.target as HTMLInputElement).blur();
-            return;
-        }
-        if (e.key !== 'ArrowDown') return;
-        const firstCard = document.querySelector('[data-grid-item], a[data-ext-card]') as HTMLElement | null;
-        if (firstCard) {
+    const handleInputKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                (e.target as HTMLInputElement).blur();
+                return;
+            }
+            if (e.key !== 'ArrowDown') {
+                return;
+            }
             e.preventDefault();
-            firstCard.focus();
-        }
-    }, []);
+            focusResults();
+        },
+        [focusResults]
+    );
 
     return (
         <Box
@@ -106,8 +115,10 @@ export const NavSearchField: FunctionComponent = () => {
                     '& > *': { mb: '0 !important' }
                 }}>
                 <ExtensionSearchfield
+                    ref={inputRef}
                     onSearchChanged={handleNavSearch}
-                    searchQuery={navQuery}
+                    onSearchSubmit={handleNavSubmit}
+                    searchQuery={query}
                     placeholder='search extensions…'
                     hideIconButton
                     autoFocus={false}

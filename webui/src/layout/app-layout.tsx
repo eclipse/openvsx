@@ -11,7 +11,8 @@ import { styled } from '@mui/material/styles';
 import { Banner } from '../components/banner';
 import { ShortcutsModal } from '../components/shortcuts-modal';
 import { MainContext } from '../context';
-import { SearchSyncProvider } from '../search-sync-context';
+import { SearchProvider } from '../context/search/search-context';
+import { SearchFocusProvider } from '../context/search/search-focus-context';
 import { KeyboardShortcutsProvider } from '../keyboard-shortcuts-context';
 import { useShortcut } from '../use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
@@ -135,9 +136,11 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
 
 export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
     <KeyboardShortcutsProvider>
-        <SearchSyncProvider>
-            <AppLayoutContent {...props} />
-        </SearchSyncProvider>
+        <SearchProvider>
+            <SearchFocusProvider>
+                <AppLayoutContent {...props} />
+            </SearchFocusProvider>
+        </SearchProvider>
     </KeyboardShortcutsProvider>
 );
 

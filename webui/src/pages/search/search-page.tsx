@@ -4,31 +4,24 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useLayoutEffect } from 'react';
-import { Box } from '@mui/material';
-import { ExtensionCategory } from '../../extension-registry-types';
+import { FunctionComponent, useLayoutEffect, useState } from 'react';
+import { Box, Container } from '@mui/material';
+import { ExtensionCategory, SortBy, SortOrder } from '../../extension-registry-types';
 import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
 import { Eyebrow } from '../../components/layout';
-import { useSearchFilter } from './use-search-filter';
+import { useSearch } from '../../hooks/use-search';
+import { useCategories } from './use-categories';
 import { SearchHeader } from './search-header';
 
 export const SearchPage: FunctionComponent = () => {
-    const {
-        searchQuery,
-        category,
-        sortBy,
-        sortOrder,
-        debounceTime,
-        resultNumber,
-        categories,
-        onResultCount,
-        onCategoryChanged,
-        onSortByChanged,
-        onSortOrderChanged
-    } = useSearchFilter();
+    const { filter, search } = useSearch();
+    const { query: searchQuery, category, sortBy, sortOrder } = filter;
+    const categories = useCategories();
+
+    const [resultNumber, setResultNumber] = useState(0);
 
     useLayoutEffect(() => {
         // Entering the results should always start at the top, not wherever the
@@ -37,14 +30,11 @@ export const SearchPage: FunctionComponent = () => {
     }, []);
 
     return (
-        <Box
+        <Container
             sx={{
-                maxWidth: '1320px',
-                mx: 'auto',
-                px: { xs: '16px', md: '28px' },
-                pb: '64px',
-                animation: 'fadeIn .2s ease'
-            }}>
+                pb: { xs: '18px', sm: '30px' }
+            }}
+            maxWidth='xl'>
             {/* Mobile category pills — outside the flex row so negative-margin bleed isn't clipped */}
             {categories.length > 0 && (
                 <Box
@@ -68,7 +58,7 @@ export const SearchPage: FunctionComponent = () => {
                                 label={cat || 'All'}
                                 icon={Icon}
                                 isSelected={category === cat}
-                                onClick={() => onCategoryChanged(cat)}
+                                onClick={() => search({ category: cat })}
                             />
                         );
                     })}
@@ -103,7 +93,7 @@ export const SearchPage: FunctionComponent = () => {
                                 label={cat || 'All categories'}
                                 icon={Icon}
                                 isSelected={category === cat}
-                                onClick={() => onCategoryChanged(cat)}
+                                onClick={() => search({ category: cat })}
                             />
                         );
                     })}
@@ -117,16 +107,15 @@ export const SearchPage: FunctionComponent = () => {
                         sortOrder={sortOrder}
                         searchQuery={searchQuery}
                         category={category}
-                        onSortByChanged={onSortByChanged}
-                        onSortOrderChanged={onSortOrderChanged}
+                        onSortByChanged={(sortBy: SortBy) => search({ sortBy })}
+                        onSortOrderChanged={(sortOrder: SortOrder) => search({ sortOrder })}
                     />
                     <ExtensionList
                         filter={{ query: searchQuery, category, offset: 0, size: 10, sortBy, sortOrder }}
-                        debounceTime={debounceTime}
-                        onUpdate={onResultCount}
+                        onUpdate={setResultNumber}
                     />
                 </Box>
             </Box>
-        </Box>
+        </Container>
     );
 };

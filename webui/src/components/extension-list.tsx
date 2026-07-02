@@ -41,37 +41,33 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
 
     useEffect(() => {
         filterSize.current = props.filter.size ?? filterSize.current;
-        debounce(
-            async () => {
-                try {
-                    const result = await context.service.search(abortController.current, props.filter);
-                    if (isError(result)) {
-                        throw result;
-                    }
-
-                    const searchResult = result as SearchResult;
-                    props.onUpdate(searchResult.totalSize);
-                    const actualSize = searchResult.extensions.length;
-                    pageOffset.current = lastRequestedPage.current;
-                    const extensionKeys = new Set<string>();
-                    for (const ext of searchResult.extensions) {
-                        extensionKeys.add(`${ext.namespace}.${ext.name}`);
-                    }
-
-                    setExtensions(searchResult.extensions);
-                    setExtensionKeys(extensionKeys);
-                    setAppliedFilter(props.filter);
-                    setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
-                } catch (err) {
-                    context.handleError(err);
-                } finally {
-                    setLoading(false);
+        debounce(async () => {
+            try {
+                const result = await context.service.search(abortController.current, props.filter);
+                if (isError(result)) {
+                    throw result;
                 }
-            },
-            cancellationToken.current,
-            props.debounceTime
-        );
-    }, [props.filter.category, props.filter.query, props.filter.sortBy, props.filter.sortOrder, props.debounceTime]);
+
+                const searchResult = result as SearchResult;
+                props.onUpdate(searchResult.totalSize);
+                const actualSize = searchResult.extensions.length;
+                pageOffset.current = lastRequestedPage.current;
+                const extensionKeys = new Set<string>();
+                for (const ext of searchResult.extensions) {
+                    extensionKeys.add(`${ext.namespace}.${ext.name}`);
+                }
+
+                setExtensions(searchResult.extensions);
+                setExtensionKeys(extensionKeys);
+                setAppliedFilter(props.filter);
+                setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
+            } catch (err) {
+                context.handleError(err);
+            } finally {
+                setLoading(false);
+            }
+        }, cancellationToken.current);
+    }, [props.filter.category, props.filter.query, props.filter.sortBy, props.filter.sortOrder]);
 
     const loadMore = async (p: number): Promise<void> => {
         setLoading(true);
@@ -153,7 +149,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                     onFocus={grid.onFocus}
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fill, minmax(190px, 1fr))' },
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fill, minmax(175px, 1fr))' },
                         gap: '16px'
                     }}>
                     {extensionList}
@@ -165,6 +161,5 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
 
 export interface ExtensionListProps {
     filter: ExtensionFilter;
-    debounceTime: number;
     onUpdate: (resultNumber: number) => void;
 }

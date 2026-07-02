@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FunctionComponent, KeyboardEvent, useRef } from 'react';
+import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useRef } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Close';
 import { IconButton, InputBase, Box } from '@mui/material';
@@ -65,80 +65,97 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
     '& input::-webkit-search-cancel-button': { display: 'none' }
 }));
 
-export const ExtensionSearchfield: FunctionComponent<ExtensionSearchfieldProps> = props => {
-    const inputRef = useRef<HTMLInputElement>(null);
+export const ExtensionSearchfield = forwardRef(
+    (props: ExtensionSearchfieldProps, ref: ForwardedRef<HTMLInputElement>) => {
+        const inputRef = useRef<HTMLInputElement | null>(null);
 
-    const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-        props.onSearchChanged(event.target.value);
-    };
+        // Keep the forwarded ref and the internal ref (used by the clear button) in sync.
+        const setInputRef = useCallback(
+            (node: HTMLInputElement | null) => {
+                inputRef.current = node;
+                if (typeof ref === 'function') {
+                    ref(node);
+                } else if (ref) {
+                    ref.current = node;
+                }
+            },
+            [ref]
+        );
 
-    const handleSearchButtonClick = () => {
-        if (props.onSearchSubmit) {
-            props.onSearchSubmit(props.searchQuery ?? '');
-        }
-    };
+        const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+            props.onSearchChanged(event.target.value);
+        };
 
-    const handleClear = () => {
-        props.onSearchChanged('');
-        inputRef.current?.focus();
-    };
+        const handleSearchButtonClick = () => {
+            if (props.onSearchSubmit) {
+                props.onSearchSubmit(props.searchQuery ?? '');
+            }
+        };
 
-    return (
-        <SearchWrap
-            hasError={props.error}
-            style={props.viewTransitionName ? { viewTransitionName: props.viewTransitionName } : undefined}>
-            <MonoSlash>/</MonoSlash>
-            <SearchInput
-                inputRef={inputRef}
-                autoFocus={props.autoFocus ?? true}
-                value={props.searchQuery}
-                onChange={handleSearchChange}
-                placeholder={props.placeholder}
-                id='search-input'
-                type='search'
-                inputMode='search'
-                inputProps={props.inputProps}
-                onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === 'Enter' && props.onSearchSubmit) {
-                        props.onSearchSubmit(props.searchQuery ?? '');
-                    }
-                }}
-            />
-            <label htmlFor='search-input' className='visually-hidden'>
-                Search for Name, Tags or Description
-            </label>
-            {props.searchQuery && (
-                <IconButton
-                    aria-label='Clear search'
-                    onClick={handleClear}
-                    size='small'
-                    sx={{
-                        color: 'text.disabled',
-                        p: '4px',
-                        flexShrink: 0,
-                        transition: 'color 0.14s',
-                        '&:hover': { color: 'text.primary' }
-                    }}>
-                    <ClearIcon sx={{ fontSize: '18px' }} />
-                </IconButton>
-            )}
-            {!props.hideIconButton && (
-                <IconButton
-                    color='primary'
-                    aria-label='Search'
-                    onClick={handleSearchButtonClick}
-                    sx={{
-                        bgcolor: 'secondary.main',
-                        color: '#fff',
-                        borderRadius: '8px',
-                        p: '8px',
-                        flexShrink: 0,
-                        transition: 'background 0.14s',
-                        '&:hover': { bgcolor: 'secondary.dark' }
-                    }}>
-                    <SearchIcon fontSize='small' />
-                </IconButton>
-            )}
-        </SearchWrap>
-    );
-};
+        const handleClear = () => {
+            props.onSearchChanged('');
+            inputRef.current?.focus();
+        };
+
+        return (
+            <SearchWrap
+                hasError={props.error}
+                style={props.viewTransitionName ? { viewTransitionName: props.viewTransitionName } : undefined}>
+                <MonoSlash>/</MonoSlash>
+                <SearchInput
+                    inputRef={setInputRef}
+                    autoFocus={props.autoFocus ?? true}
+                    value={props.searchQuery}
+                    onChange={handleSearchChange}
+                    placeholder={props.placeholder}
+                    id='search-input'
+                    type='search'
+                    inputMode='search'
+                    inputProps={props.inputProps}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter' && props.onSearchSubmit) {
+                            props.onSearchSubmit(props.searchQuery ?? '');
+                        }
+                    }}
+                />
+                <label htmlFor='search-input' className='visually-hidden'>
+                    Search for Name, Tags or Description
+                </label>
+                {props.searchQuery && (
+                    <IconButton
+                        aria-label='Clear search'
+                        onClick={handleClear}
+                        size='small'
+                        sx={{
+                            color: 'text.disabled',
+                            p: '4px',
+                            flexShrink: 0,
+                            transition: 'color 0.14s',
+                            '&:hover': { color: 'text.primary' }
+                        }}>
+                        <ClearIcon sx={{ fontSize: '18px' }} />
+                    </IconButton>
+                )}
+                {!props.hideIconButton && (
+                    <IconButton
+                        color='primary'
+                        aria-label='Search'
+                        onClick={handleSearchButtonClick}
+                        sx={{
+                            bgcolor: 'secondary.main',
+                            color: '#fff',
+                            borderRadius: '8px',
+                            p: '8px',
+                            flexShrink: 0,
+                            transition: 'background 0.14s',
+                            '&:hover': { bgcolor: 'secondary.dark' }
+                        }}>
+                        <SearchIcon fontSize='small' />
+                    </IconButton>
+                )}
+            </SearchWrap>
+        );
+    }
+);
+
+ExtensionSearchfield.displayName = 'ExtensionSearchfield';
