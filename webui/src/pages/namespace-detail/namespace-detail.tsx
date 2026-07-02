@@ -236,9 +236,8 @@ export const NamespaceDetail: FunctionComponent = () => {
                         <Grid container spacing={2} sx={{ justifyContent: 'center', pt: 6 }}>
                             {namespaceDetails.extensions.map((ext, idx) => (
                                 <ExtensionCard
-                                    idx={idx}
                                     extension={ext}
-                                    filterSize={10}
+                                    fadeDelayMs={(idx % 10) * 200}
                                     key={`${ext.namespace}.${ext.name}`}
                                 />
                             ))}

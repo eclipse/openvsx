@@ -53,7 +53,7 @@ export const SearchPage: FunctionComponent = () => {
                         scrollbarWidth: 'none'
                     }}>
                     {(['', ...categories] as Array<ExtensionCategory | ''>).map(cat => {
-                        const Icon = CATEGORY_ICONS[cat] ?? DefaultCategoryIcon;
+                        const Icon = cat ? CATEGORY_ICONS[cat] : DefaultCategoryIcon;
                         return (
                             <CategoryPill
                                 key={cat || '_all'}
@@ -88,7 +88,7 @@ export const SearchPage: FunctionComponent = () => {
                     }}>
                     <Eyebrow sx={{ mb: '0.625rem', px: '0.625rem' }}>Categories</Eyebrow>
                     {(['', ...categories] as Array<ExtensionCategory | ''>).map(cat => {
-                        const Icon = CATEGORY_ICONS[cat] ?? DefaultCategoryIcon;
+                        const Icon = cat ? CATEGORY_ICONS[cat] : DefaultCategoryIcon;
                         return (
                             <CategoryListItem
                                 key={cat || '_all'}
