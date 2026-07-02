@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { createContext, FunctionComponent, ReactNode, useMemo, useState } from 'react';
+import { createContext, FunctionComponent, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export interface SearchContextValue {
     query: string;
@@ -17,11 +18,29 @@ export const SearchContext = createContext<SearchContextValue>({
     setQuery: () => {}
 });
 
+/**
+ * The draft query shared by the search fields. Only the fields themselves should
+ * read this (it changes per keystroke); pages read the applied filter from the
+ * URL via useSearch instead.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSearchQuery(): SearchContextValue {
+    return useContext(SearchContext);
+}
+
 // Holds the persisted search query so the search fields stay in sync as the user
 // navigates. The `search` action lives in useSearch; focus coordination lives in
 // SearchFocusContext.
 export const SearchProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const [query, setQuery] = useState('');
+    const [searchParams] = useSearchParams();
+    const urlQuery = searchParams.get('q') ?? '';
+
+    // Keep the fields in sync with URL query changes (back/forward, shared links, category tiles).
+    useEffect(() => {
+        setQuery(urlQuery);
+    }, [urlQuery]);
+
     const value = useMemo(() => ({ query, setQuery }), [query]);
     return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 };

@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useCallback, useContext, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { SearchContext } from '../context/search/search-context';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { ExtensionCategory, SortBy, SortOrder } from '../extension-registry-types';
 
@@ -27,11 +26,11 @@ export function filterToParams({ query, category, sortBy, sortOrder }: SearchFil
     return params;
 }
 
+/** The applied search filter (from the URL) and the `search` navigation action. */
 export function useSearch() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { query, setQuery } = useContext(SearchContext);
 
     const filter: SearchFilter = {
         query: searchParams.get('q') ?? '',
@@ -39,11 +38,6 @@ export function useSearch() {
         sortBy: (searchParams.get('sortBy') as SortBy) ?? 'relevance',
         sortOrder: (searchParams.get('sortOrder') as SortOrder) ?? 'desc'
     };
-
-    // Keep nav bar in sync with URL query param changes (back/forward, shared links, category tiles).
-    useEffect(() => {
-        setQuery(filter.query);
-    }, [filter.query, setQuery]);
 
     // On the search page: patch URL params in place (replace, no new history entry).
     // From anywhere else: push a navigation to the search route.
@@ -62,5 +56,5 @@ export function useSearch() {
         [navigate, pathname, filter, setSearchParams]
     );
 
-    return { query, setQuery, search, filter };
+    return { search, filter };
 }

@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 import { FocusEvent, KeyboardEvent, RefObject, useCallback, useEffect, useRef } from 'react';
-import { useSearchFocus } from '../hooks/use-search-focus';
+import { useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 
 const ITEM_SELECTOR = 'a[data-ext-card]';

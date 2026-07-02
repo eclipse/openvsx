@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { createContext, FunctionComponent, ReactNode, useMemo } from 'react';
+import { createContext, FunctionComponent, ReactNode, useContext, useMemo } from 'react';
 import { useSignal } from '../../hooks/use-signal';
 
 /**
@@ -29,6 +29,11 @@ export const SearchFocusContext = createContext<SearchFocusContextValue>({
     focusResultsSignal: 0,
     focusResults: () => {}
 });
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSearchFocus(): SearchFocusContextValue {
+    return useContext(SearchFocusContext);
+}
 
 export const SearchFocusProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const focusSearch = useSignal();

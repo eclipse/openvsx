@@ -10,7 +10,8 @@ import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover } from '../../components/layout';
 import { useSearch } from '../../hooks/use-search';
-import { useSearchFocus } from '../../hooks/use-search-focus';
+import { useSearchQuery } from '../../context/search/search-context';
+import { useSearchFocus } from '../../context/search/search-focus-context';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { MONO_FONT } from '../../default/theme';
@@ -97,7 +98,8 @@ interface HeroSearchProps {
  * chips search immediately.
  */
 export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: SearchHeader, popularSearches }) => {
-    const { query: initialQuery, setQuery, search } = useSearch();
+    const { query: initialQuery, setQuery } = useSearchQuery();
+    const { search } = useSearch();
     const { focusSearchSignal, focusSearch } = useSearchFocus();
     const [query, setLocalQuery] = useState(() => initialQuery);
     const heroInputRef = useRef<HTMLInputElement>(null);

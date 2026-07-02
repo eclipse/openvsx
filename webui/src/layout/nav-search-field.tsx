@@ -10,7 +10,8 @@ import { useLocation } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { useSearch } from '../hooks/use-search';
-import { useSearchFocus } from '../hooks/use-search-focus';
+import { useSearchQuery } from '../context/search/search-context';
+import { useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../use-shortcut';
@@ -18,7 +19,8 @@ import { useShortcut } from '../use-shortcut';
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
     const isHeroPage = pathname === ExtensionListRoutes.MAIN;
-    const { query, setQuery, search } = useSearch();
+    const { query, setQuery } = useSearchQuery();
+    const { search } = useSearch();
     const { focusSearchSignal, focusSearch, focusResults } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
