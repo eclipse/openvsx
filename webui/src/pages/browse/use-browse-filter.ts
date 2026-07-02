@@ -18,7 +18,7 @@ function buildBrowseUrl(q: string, cat: ExtensionCategory | '', sb: SortBy, so: 
     if (cat) queries.push({ key: 'category', value: cat });
     if (sb && sb !== 'relevance') queries.push({ key: 'sortBy', value: sb });
     if (so && so !== 'desc') queries.push({ key: 'sortOrder', value: so });
-    return addQuery(ExtensionListRoutes.BROWSE, queries);
+    return addQuery(ExtensionListRoutes.SEARCH, queries);
 }
 
 export function useBrowseFilter() {

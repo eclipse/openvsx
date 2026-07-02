@@ -61,15 +61,27 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     useShortcut({
         key: 'd',
         label: 'Go to documentation',
-        order: 20,
+        order: 2,
         callback: () => window.open('https://github.com/eclipse/openvsx/wiki', '_blank')
     });
     useShortcut({
         key: 'p',
         label: 'Publish extension',
-        order: 30,
+        order: 3,
         callback: () => navigate('/user-settings/extensions'),
         enabled: !!loginProviders
+    });
+    useShortcut({
+        key: 'h',
+        label: 'Go to home',
+        order: 4,
+        callback: () => navigate('/')
+    });
+    useShortcut({
+        key: 's',
+        label: 'Go to search',
+        order: 5,
+        callback: () => navigate('/search')
     });
 
     const onDismissBannerButtonClick = () => {

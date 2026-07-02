@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, KeyboardEvent, useCallback, useRef } from 'react';
+import { FunctionComponent, KeyboardEvent, useCallback, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
@@ -19,6 +19,17 @@ export const NavSearchField: FunctionComponent = () => {
     // to be recreated every time searchHandler changes (avoids stale-closure navigates)
     const searchHandlerRef = useRef(searchHandler);
     searchHandlerRef.current = searchHandler;
+
+    // On the hero (home) page the field is only a visual placeholder rendered at
+    // opacity 0 for the view-transition morph. Mark the subtree `inert` so it is
+    // removed from the tab order and the accessibility tree — otherwise keyboard
+    // users land on an invisible input.
+    const fieldRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (fieldRef.current) {
+            fieldRef.current.inert = isHeroPage;
+        }
+    }, [isHeroPage]);
 
     const focusSearch = useCallback(() => {
         const hero = document.getElementById('hero-search-input') as HTMLInputElement | null;
@@ -35,7 +46,7 @@ export const NavSearchField: FunctionComponent = () => {
         }
     }, []);
 
-    useShortcut({ key: '/', label: 'Focus search', order: 10, callback: focusSearch });
+    useShortcut({ key: '/', label: 'Focus search', order: 1, callback: focusSearch });
 
     const handleNavSearch = useCallback(
         (q: string) => {
@@ -57,10 +68,14 @@ export const NavSearchField: FunctionComponent = () => {
     }, []);
 
     // ArrowDown moves focus from the search field into the results grid (first card),
-    // where two-axis arrow navigation takes over.
+    // where two-axis arrow navigation takes over. Escape blurs the field.
     const handleInputKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            (e.target as HTMLInputElement).blur();
+            return;
+        }
         if (e.key !== 'ArrowDown') return;
-        const firstCard = document.querySelector('a[data-ext-card]') as HTMLElement | null;
+        const firstCard = document.querySelector('[data-grid-item], a[data-ext-card]') as HTMLElement | null;
         if (firstCard) {
             e.preventDefault();
             firstCard.focus();
@@ -77,6 +92,7 @@ export const NavSearchField: FunctionComponent = () => {
                 px: { xs: '8px', md: '20px' }
             }}>
             <Box
+                ref={fieldRef}
                 sx={{
                     display: 'flex',
                     width: '100%',
