@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useMemo } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
 import { useCategories } from '../search/use-categories';
 import { HomeCuratedSection } from '../../page-settings';
+import { controllerFromSignal } from '../../query-client';
 
 /** Number of extensions fetched for each curated row. */
 export const CURATED_SIZE = 6;
@@ -44,7 +46,8 @@ export interface CuratedRow extends HomeCuratedSection {
 /**
  * Loads the home page data: the browsable category list (excluding a few noisy
  * ones) and the curated extension rows, each fetched with its configured
- * ordering. Rows start in a loading state and fill in as requests resolve.
+ * ordering. Rows start in a loading state and fill in as requests resolve;
+ * failed rows end up empty and are hidden by the consumer.
  */
 export function useHomeData(curatedSections: HomeCuratedSection[]): {
     categories: ExtensionCategory[];
@@ -52,36 +55,35 @@ export function useHomeData(curatedSections: HomeCuratedSection[]): {
 } {
     const { service } = useContext(MainContext);
     const allCategories = useCategories();
-    const [categories, setCategories] = useState<ExtensionCategory[]>([]);
-    const [rows, setRows] = useState<CuratedRow[]>(() =>
-        curatedSections.map(section => ({ ...section, extensions: [], loading: true }))
-    );
+    const categories = useMemo(() => allCategories.filter(c => HOME_CATEGORIES.has(c)), [allCategories]);
 
-    useEffect(() => {
-        setCategories(allCategories.filter(c => HOME_CATEGORIES.has(c)));
-
-        const abortController = new AbortController();
-        curatedSections.forEach((section, idx) => {
-            service
-                .search(abortController, {
+    const results = useQueries({
+        queries: curatedSections.map(section => ({
+            queryKey: ['home-curated', section.sortBy],
+            queryFn: async ({ signal }: { signal: AbortSignal }): Promise<SearchEntry[]> => {
+                const result = await service.search(controllerFromSignal(signal), {
                     query: '',
                     category: '',
                     offset: 0,
                     size: CURATED_SIZE,
                     sortBy: section.sortBy,
                     sortOrder: 'desc' as SortOrder
-                })
-                .then(result => {
-                    if (isError(result)) {
-                        return;
-                    }
-                    const { extensions } = result as SearchResult;
-                    setRows(prev => prev.map((row, i) => (i === idx ? { ...row, extensions, loading: false } : row)));
-                })
-                .catch(() => setRows(prev => prev.map((row, i) => (i === idx ? { ...row, loading: false } : row))));
-        });
-        return () => abortController.abort();
-    }, [service, curatedSections]);
+                });
+                if (isError(result)) {
+                    throw result;
+                }
+                return (result as SearchResult).extensions;
+            },
+            // service.search already retries transient failures internally.
+            retry: false
+        }))
+    });
+
+    const rows: CuratedRow[] = curatedSections.map((section, idx) => ({
+        ...section,
+        extensions: results[idx].data ?? [],
+        loading: results[idx].isLoading
+    }));
 
     return { categories, rows };
 }
