@@ -28,7 +28,7 @@ interface GridKeyboardNavigation<T extends HTMLElement> {
  */
 export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboardNavigation<T> {
     const containerRef = useRef<T>(null);
-    const { focusSearch, focusResultsSignal } = useSearchFocus();
+    const { focusSearch, focusResultsSignal, openFirstResultSignal } = useSearchFocus();
 
     const getItems = useCallback((): HTMLElement[] => {
         const container = containerRef.current;
@@ -82,6 +82,14 @@ export function useGridKeyboardNavigation<T extends HTMLElement>(): GridKeyboard
             setRovingTabIndex(items, 0);
             items[0].focus();
         }, [getItems, setRovingTabIndex])
+    );
+
+    // Open the first card when the search field submits an already-applied query (Enter).
+    useSignalEffect(
+        openFirstResultSignal,
+        useCallback(() => {
+            getItems()[0]?.click();
+        }, [getItems])
     );
 
     const onKeyDown = useCallback(

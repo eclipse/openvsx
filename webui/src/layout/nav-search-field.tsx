@@ -20,8 +20,8 @@ export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
     const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery } = useSearchQuery();
-    const { search } = useSearch();
-    const { focusSearchSignal, focusSearch, focusResults } = useSearchFocus();
+    const { search, filter } = useSearch();
+    const { focusSearchSignal, focusSearch, focusResults, openFirstResult } = useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -69,9 +69,15 @@ export const NavSearchField: FunctionComponent = () => {
     const handleNavSubmit = useCallback(
         (q: string) => {
             debouncedSearch.cancel();
+            // On the search page, Enter on an already-applied query opens the first
+            // result; on a fresh query it applies the search (a second Enter opens).
+            if (pathname === ExtensionListRoutes.SEARCH && q === filter.query) {
+                openFirstResult();
+                return;
+            }
             search({ query: q });
         },
-        [debouncedSearch, search]
+        [debouncedSearch, search, pathname, filter.query, openFirstResult]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs

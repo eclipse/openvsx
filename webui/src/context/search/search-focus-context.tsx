@@ -20,6 +20,9 @@ export interface SearchFocusContextValue {
     // Ask the results grid to focus its first item.
     focusResultsSignal: number;
     focusResults: () => void;
+    // Ask the results grid to open (navigate to) its first item.
+    openFirstResultSignal: number;
+    openFirstResult: () => void;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -27,7 +30,9 @@ export const SearchFocusContext = createContext<SearchFocusContextValue>({
     focusSearchSignal: 0,
     focusSearch: () => {},
     focusResultsSignal: 0,
-    focusResults: () => {}
+    focusResults: () => {},
+    openFirstResultSignal: 0,
+    openFirstResult: () => {}
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -38,14 +43,17 @@ export function useSearchFocus(): SearchFocusContextValue {
 export const SearchFocusProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const focusSearch = useSignal();
     const focusResults = useSignal();
+    const openFirstResult = useSignal();
     const value = useMemo(
         () => ({
             focusSearchSignal: focusSearch.signal,
             focusSearch: focusSearch.emit,
             focusResultsSignal: focusResults.signal,
-            focusResults: focusResults.emit
+            focusResults: focusResults.emit,
+            openFirstResultSignal: openFirstResult.signal,
+            openFirstResult: openFirstResult.emit
         }),
-        [focusSearch, focusResults]
+        [focusSearch, focusResults, openFirstResult]
     );
     return <SearchFocusContext.Provider value={value}>{children}</SearchFocusContext.Provider>;
 };
