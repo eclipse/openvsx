@@ -11,17 +11,10 @@ import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { useSearch } from '../hooks/use-search';
 import { useSearchQuery } from '../context/search/search-context';
-import { ResultsNavAction, useSearchFocus } from '../context/search/search-focus-context';
+import { useSearchFocus } from '../context/search/search-focus-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../hooks/use-shortcut';
-
-const ARROW_ACTIONS: Record<string, ResultsNavAction | undefined> = {
-    ArrowDown: 'down',
-    ArrowUp: 'up',
-    ArrowLeft: 'left',
-    ArrowRight: 'right'
-};
 
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
@@ -100,9 +93,9 @@ export const NavSearchField: FunctionComponent = () => {
 
     const handleInputBlur = useCallback(() => setSearchFocused(false), [setSearchFocused]);
 
-    // On the search page the input and the results share one cursor: arrow keys
-    // move it across the grid while focus stays in the field (so they no longer
-    // move the text caret there), and Enter opens it. Escape blurs the field.
+    // On the search page the input and the results share one cursor: Up/Down
+    // step it through the results item by item while focus (and the text caret)
+    // stays in the field, and Enter opens it. Escape blurs the field.
     const handleInputKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -112,10 +105,9 @@ export const NavSearchField: FunctionComponent = () => {
             if (pathname !== ExtensionListRoutes.SEARCH) {
                 return;
             }
-            const action = ARROW_ACTIONS[e.key];
-            if (action) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
-                resultsNavigationSignal.emit(action);
+                resultsNavigationSignal.emit(e.key === 'ArrowDown' ? 'next' : 'previous');
             }
         },
         [resultsNavigationSignal.emit, pathname]

@@ -11,7 +11,7 @@ import { ExtensionCard } from './extension-card';
 import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
 import { DelayedLoadIndicator } from './delayed-load-indicator';
-import { useGridKeyboardNavigation } from '../hooks/use-grid-keyboard-navigation';
+import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
 import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
@@ -26,7 +26,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
     const [appliedFilter, setAppliedFilter] = useState<ExtensionFilter>();
     const [hasMore, setHasMore] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
-    const grid = useGridKeyboardNavigation<HTMLDivElement>();
+    const grid = useExtensionResultsCursor(extensions.length);
 
     useEffect(() => {
         enableLoadMore.current = true;
@@ -64,6 +64,9 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                 setExtensionKeys(extensionKeys);
                 setAppliedFilter(props.filter);
                 setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
+                // Fresh result set: cursor back to the first card, so Enter in
+                // the search field opens the first result of the new query.
+                grid.reset();
             } catch (err) {
                 if (!stale) {
                     context.handleError(err);
@@ -144,6 +147,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             extension={ext}
             fadeDelayMs={(idx % filterSize.current) * 200}
             key={`${ext.namespace}.${ext.name}`}
+            {...grid.itemProps(idx)}
         />
     ));
 
@@ -158,9 +162,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
             <DelayedLoadIndicator loading={loading} />
             <InfiniteScroll loadMore={loadMore} hasMore={hasMore} loader={loader} threshold={200}>
                 <Box
-                    ref={grid.containerRef}
-                    onKeyDown={grid.onKeyDown}
-                    onFocus={grid.onFocus}
+                    {...grid.containerProps}
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(auto-fill, minmax(175px, 1fr))' },

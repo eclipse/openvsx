@@ -5,6 +5,7 @@
  *****************************************************************************/
 
 import { createContext, FunctionComponent, ReactNode, useContext, useMemo, useState } from 'react';
+import { GridStep } from '../../hooks/use-grid-cursor';
 import { Signal, useSignal } from '../../hooks/use-signal';
 
 /**
@@ -13,8 +14,8 @@ import { Signal, useSignal } from '../../hooks/use-signal';
  * useSignalEffect and focus their own element, so no entry point needs a global
  * DOM lookup.
  */
-// Move the results cursor from the search field, or open the card under it.
-export type ResultsNavAction = 'down' | 'up' | 'left' | 'right' | 'open';
+// Step the results cursor from the search field, or open the card under it.
+export type ResultsNavAction = GridStep | 'open';
 
 export interface SearchFocusContextValue {
     // Ask the active search field (hero on the home page, nav bar elsewhere) to focus.
