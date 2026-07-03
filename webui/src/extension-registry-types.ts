@@ -132,9 +132,14 @@ export interface ExtensionReference {
     version?: string;
 }
 
+export interface TargetPlatformActive {
+    targetPlatform: string;
+    active: boolean;
+}
+
 export interface VersionTargetPlatforms {
     version: string;
-    targetPlatforms: string[];
+    targetPlatforms: TargetPlatformActive[];
 }
 
 export type StarRating = 1 | 2 | 3 | 4 | 5;

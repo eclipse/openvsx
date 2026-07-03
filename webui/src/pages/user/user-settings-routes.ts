@@ -20,6 +20,6 @@ export namespace UserSettingsRoutes {
     export const TOKENS = createRoute([ROOT, 'tokens']);
     export const NAMESPACES = createRoute([ROOT, 'namespaces']);
     export const EXTENSIONS = createRoute([ROOT, 'extensions']);
-    export const DELETE_EXTENSION = createRoute([ROOT, 'extensions', ':namespace', ':extension', 'delete']);
+    export const EXTENSION_SETTINGS = createRoute([ROOT, 'extensions', ':namespace', ':extension']);
     export const CUSTOMERS = createRoute([ROOT, 'customers']);
 }

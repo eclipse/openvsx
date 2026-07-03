@@ -20,7 +20,6 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
@@ -241,7 +240,17 @@ public class UserAPI {
         }
 
         var extVersions = repositories.findLatestVersions(user);
-        var types = new String[]{ DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
+
+//        var ownedNamespaces =
+//            repositories.findMemberships(user)
+//                .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
+//                .map(NamespaceMembership::getNamespace);
+//
+//        for (var namespace : ownedNamespaces) {
+//            extVersions.addAll(repositories.findLatestVersions(namespace));
+//        }
+
+        var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
         return extVersions.stream()
                 .map(latest -> {
@@ -260,7 +269,7 @@ public class UserAPI {
 
     /**
      * Add review/scan status information to the extension JSON.
-     *
+     * <p>
      * This shows users the current state of their extension in simple terms:
      * - "published" - Extension is active and publicly available
      * - "under_review" - Extension is being reviewed (validation, scanning, etc.)

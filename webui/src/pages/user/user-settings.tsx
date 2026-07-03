@@ -22,7 +22,7 @@ import { UserSettingsCustomers } from './user-settings-customers';
 import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
 import { LoginComponent } from '../../default/login';
-import { UserSettingsDeleteExtension } from './user-settings-delete-extension';
+import { UserSettingsExtensionSettings } from './user-settings-extension';
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
     const { pageSettings, user, loginProviders } = useContext(MainContext);
@@ -30,7 +30,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
     const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
         if (tab == null && namespace != null && extension != null) {
-            return <UserSettingsDeleteExtension namespace={namespace} extension={extension} />;
+            return <UserSettingsExtensionSettings namespace={namespace} extension={extension} />;
         }
 
         switch (tab) {

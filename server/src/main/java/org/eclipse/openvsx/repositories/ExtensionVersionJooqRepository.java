@@ -12,6 +12,7 @@ package org.eclipse.openvsx.repositories;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.json.TargetPlatformActiveJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -545,6 +546,11 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc()
                 );
+        var targetPlatformsActive = DSL.arrayAgg(EXTENSION_VERSION.ACTIVE)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
 
         return dsl.select(
                     EXTENSION_VERSION.SEMVER_MAJOR,
@@ -552,7 +558,8 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.SEMVER_PATCH,
                     EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                     EXTENSION_VERSION.VERSION,
-                    targetPlatforms
+                    targetPlatforms,
+                    targetPlatformsActive
                 )
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
@@ -571,14 +578,20 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.VERSION.asc()
                 )
                 .fetch()
-                .map(row -> new VersionTargetPlatformsJson(
+                .map(row -> toVersionTargetPlatformsJson(
                         row.get(EXTENSION_VERSION.VERSION),
-                        row.get(targetPlatforms)
+                        row.get(targetPlatforms),
+                        row.get(targetPlatformsActive)
                 ));
     }
 
     public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
         var targetPlatforms = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
+        var targetPlatformsActive = DSL.arrayAgg(EXTENSION_VERSION.ACTIVE)
                 .orderBy(
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc()
@@ -590,7 +603,8 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.SEMVER_PATCH,
                         EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                         EXTENSION_VERSION.VERSION,
-                        targetPlatforms
+                        targetPlatforms,
+                        targetPlatformsActive
                 )
                 .from(EXTENSION_VERSION)
                 .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
@@ -611,10 +625,20 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.VERSION.asc()
                 )
                 .fetch()
-                .map(row -> new VersionTargetPlatformsJson(
+                .map(row -> toVersionTargetPlatformsJson(
                         row.get(EXTENSION_VERSION.VERSION),
-                        row.get(targetPlatforms)
+                        row.get(targetPlatforms),
+                        row.get(targetPlatformsActive)
                 ));
+    }
+
+    private VersionTargetPlatformsJson toVersionTargetPlatformsJson(String version, String[] targetPlatforms, Boolean[] active) {
+        var platforms = new ArrayList<TargetPlatformActiveJson>(targetPlatforms.length);
+        for (int i = 0; i < targetPlatforms.length; i++) {
+            platforms.add(new TargetPlatformActiveJson(targetPlatforms[i], active[i]));
+        }
+
+        return new VersionTargetPlatformsJson(version, platforms);
     }
 
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
