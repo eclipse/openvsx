@@ -190,7 +190,7 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             }
         },
         breakpoints: {
-            values: { xs: 340, sm: 550, md: 800, lg: 1040, xl: 1240 }
+            values: { xs: 0, sm: 550, md: 800, lg: 1040, xl: 1240 }
         },
         components: {
             MuiAccordion: {
