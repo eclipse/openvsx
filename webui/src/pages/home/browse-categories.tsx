@@ -11,14 +11,22 @@ import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryCard } from '../../components/category-card';
 import { Section, Eyebrow } from '../../components/page-primitives';
+import { useSearch } from '../../hooks/use-search';
+import { useHomeCategories } from './use-home-data';
 
-interface BrowseCategoriesProps {
-    categories: ExtensionCategory[];
-    onSelect: (category: ExtensionCategory) => void;
+export interface BrowseCategoriesProps {
+    /** Categories to offer; defaults to the registry's browsable home list. */
+    categories?: ExtensionCategory[];
+    /** Category click handler; defaults to opening the search page filtered to it. */
+    onSelect?: (category: ExtensionCategory) => void;
 }
 
 /** "Browse by category" section: a horizontal pill row on mobile, a card grid on desktop. */
-export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = ({ categories, onSelect }) => {
+export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = props => {
+    const homeCategories = useHomeCategories();
+    const { search } = useSearch();
+    const categories = props.categories ?? homeCategories;
+    const onSelect = props.onSelect ?? ((category: ExtensionCategory) => search({ query: '', category }));
     if (categories.length === 0) {
         return null;
     }

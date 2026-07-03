@@ -5,13 +5,13 @@
  *****************************************************************************/
 
 import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, useRef, useState } from 'react';
-import { Box, ButtonBase, Container, Typography } from '@mui/material';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
-import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
+import { accentHover, focusOutline, focusRing, Section } from '../../components/page-primitives';
 import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
-import { useSearchFocus } from '../../context/search/search-focus-context';
+import { useRegisterPageSearchBar, useSearchFocus } from '../../context/search/search-focus-context';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { MONO_FONT } from '../../default/theme';
@@ -86,22 +86,29 @@ const PopularChip = styled(ButtonBase)(({ theme }) => ({
     ...focusOutline(theme)
 }));
 
-interface HeroSearchProps {
+export interface HeroSearchProps {
+    /** Rendered above the search field (headline, tagline, …). */
     searchHeader?: ComponentType;
-    popularSearches: string[];
+    /** Search terms offered as one-click chips below the field. */
+    popularSearches?: string[];
 }
 
 /**
- * Owns a local copy of the hero field's `query` so keystrokes only re-render the
- * field, not the whole homepage. Typing debounces `search`; submit and popular
- * chips search immediately.
+ * The hero search section. Registers itself as the page's search bar so the nav
+ * bar hides its own field. Owns a local copy of `query` so keystrokes only
+ * re-render the field, not the whole homepage; typing debounces `search`, submit
+ * and popular chips search immediately.
  */
-export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: SearchHeader, popularSearches }) => {
+export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
+    searchHeader: SearchHeader,
+    popularSearches = []
+}) => {
     const { query: initialQuery, setQuery } = useSearchQuery();
     const { search } = useSearch();
     const { searchFocusSignal } = useSearchFocus();
     const [query, setLocalQuery] = useState(() => initialQuery);
     const heroInputRef = useRef<HTMLInputElement>(null);
+    useRegisterPageSearchBar();
 
     // Focus the hero input when focus is requested (e.g. the '/' shortcut on the home page).
     useSignalEffect(
@@ -173,7 +180,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
     };
 
     return (
-        <Container
+        <Section
             component='section'
             sx={{
                 pt: { xs: '2.75rem', sm: '4.875rem' },
@@ -245,6 +252,6 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({ searchHeader: S
                     ))}
                 </Box>
             )}
-        </Container>
+        </Section>
     );
 };

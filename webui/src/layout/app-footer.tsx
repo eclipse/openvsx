@@ -52,9 +52,11 @@ const ShortcutsButton = styled('button')(({ theme }) => ({
     ...focusOutline(theme)
 }));
 
-/** Legacy footer chrome: renders a consumer-provided component, hover toggles `expanded`. */
+/** Legacy footer chrome: fixed to the viewport bottom as on pre-redesign layouts, hover toggles `expanded`. */
 const LegacyFooterRoot = styled('footer')(({ theme }) => ({
-    marginTop: 'auto',
+    position: 'fixed',
+    bottom: 0,
+    zIndex: 50,
     width: '100%',
     padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
     backgroundColor: theme.palette.background.paper,
@@ -93,6 +95,10 @@ export const AppFooter: FunctionComponent<AppFooterProps> = ({ onOpenShortcuts }
         return () => abortController.abort();
     }, [service]);
 
+    if (typeof footer === 'function') {
+        const CustomFooter = footer;
+        return <CustomFooter />;
+    }
     if (footer && 'content' in footer) {
         return <LegacyFooter footer={footer} />;
     }

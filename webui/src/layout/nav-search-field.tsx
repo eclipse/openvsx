@@ -18,10 +18,10 @@ import { useShortcut } from '../hooks/use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
-    const isHeroPage = pathname === ExtensionListRoutes.MAIN;
     const { query, setQuery } = useSearchQuery();
     const { search, filter } = useSearch();
-    const { searchFocusSignal, resultsNavigationSignal, setSearchFocused } = useSearchFocus();
+    const { searchFocusSignal, resultsNavigationSignal, setSearchFocused, hasPageSearchBar, isPageSearchBarMounted } =
+        useSearchFocus();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -29,30 +29,37 @@ export const NavSearchField: FunctionComponent = () => {
     const debouncedSearch = useDebouncedCallback(search);
     useLayoutEffect(() => debouncedSearch.cancel, [pathname, debouncedSearch]);
 
-    // On the hero (home) page the field is only a visual placeholder rendered at
-    // opacity 0 for the view-transition morph. Mark the subtree `inert` so it is
-    // removed from the tab order and the accessibility tree — otherwise keyboard
-    // users land on an invisible input. This runs as a layout effect (before the
-    // focus signal effect below) so that when navigating away from the hero page
-    // the `inert` flag is cleared synchronously, before the focus request fires —
-    // otherwise focus would land on a still-inert element and be dropped.
+    // While a page search bar is mounted, this field is only an opacity-0
+    // placeholder for the view-transition morph; `inert` removes it from the tab
+    // order and accessibility tree. `pendingFocus` holds a focus request that
+    // arrived in the commit that unmounted the page search bar (before this
+    // component re-rendered); it is honored here once the field is visible again.
     const fieldRef = useRef<HTMLDivElement>(null);
+    const pendingFocus = useRef(false);
     useLayoutEffect(() => {
         if (fieldRef.current) {
-            fieldRef.current.inert = isHeroPage;
+            fieldRef.current.inert = hasPageSearchBar;
         }
-    }, [isHeroPage]);
+        if (!hasPageSearchBar && pendingFocus.current) {
+            pendingFocus.current = false;
+            inputRef.current?.focus({ preventScroll: true });
+        }
+    }, [hasPageSearchBar]);
 
-    // Take focus when requested — except on the hero page, where the hero search
-    // field owns focus instead. The onFocus handler moves the cursor to the end.
+    // Take focus when requested — unless a page search bar is mounted and owns focus instead.
     useSignalEffect(
         searchFocusSignal,
         useCallback(() => {
-            if (isHeroPage) {
+            if (isPageSearchBarMounted()) {
+                return;
+            }
+            if (hasPageSearchBar) {
+                // Stale commit: the bar just unmounted; defer to the layout effect above.
+                pendingFocus.current = true;
                 return;
             }
             inputRef.current?.focus({ preventScroll: true });
-        }, [isHeroPage])
+        }, [isPageSearchBarMounted, hasPageSearchBar])
     );
 
     // The '/' shortcut asks whichever search field is active to take focus.
@@ -117,7 +124,7 @@ export const NavSearchField: FunctionComponent = () => {
         <Box
             sx={{
                 flex: 1,
-                display: { xs: isHeroPage ? 'none' : 'flex', md: 'flex' },
+                display: { xs: hasPageSearchBar ? 'none' : 'flex', md: 'flex' },
                 alignItems: 'center',
                 justifyContent: 'center',
                 px: { xs: '0.5rem', md: '1.25rem' }
@@ -129,8 +136,8 @@ export const NavSearchField: FunctionComponent = () => {
                     width: '100%',
                     maxWidth: '35rem',
                     mx: 'auto',
-                    opacity: isHeroPage ? 0 : 1,
-                    pointerEvents: isHeroPage ? 'none' : 'auto',
+                    opacity: hasPageSearchBar ? 0 : 1,
+                    pointerEvents: hasPageSearchBar ? 'none' : 'auto',
                     transition: 'opacity 0.15s ease'
                 }}>
                 <ExtensionSearchfield
@@ -141,7 +148,7 @@ export const NavSearchField: FunctionComponent = () => {
                     placeholder='search extensions…'
                     hideIconButton
                     autoFocus={false}
-                    viewTransitionName={isHeroPage ? undefined : 'vt-search'}
+                    viewTransitionName={hasPageSearchBar ? undefined : 'vt-search'}
                     inputProps={{ onFocus: handleInputFocus, onBlur: handleInputBlur, onKeyDown: handleInputKeyDown }}
                 />
             </Box>

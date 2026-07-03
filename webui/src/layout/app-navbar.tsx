@@ -7,10 +7,10 @@
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { AppBar, Box, Toolbar } from '@mui/material';
 import { alpha, styled, useTheme } from '@mui/material/styles';
-import { Link as RouteLink, useLocation } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router-dom';
 import { HeaderMenu } from '../header-menu';
 import { MainContext } from '../context';
-import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
+import { useSearchFocus } from '../context/search/search-focus-context';
 import { OpenVsxMark } from '../components/openvsx-mark';
 import { NavSearchField } from './nav-search-field';
 
@@ -36,7 +36,7 @@ const BLUR_LAYERS = [
 export const AppNavbar: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
-    const isHeroPage = useLocation().pathname === ExtensionListRoutes.MAIN;
+    const { hasPageSearchBar } = useSearchFocus();
     const theme = useTheme();
     const navbg = alpha(theme.palette.background.default, theme.palette.mode === 'dark' ? 0.74 : 0.78);
     const [scrolled, setScrolled] = useState(false);
@@ -115,11 +115,11 @@ export const AppNavbar: FunctionComponent = () => {
                     zIndex: 1
                 }}>
                 <ToolbarItem>
-                    {/* Mobile compact icon — shown on non-home pages. The right margin balances
-                        the burger button's own padding so the search field sits centered. */}
+                    {/* Mobile compact icon — shown while the nav search field is visible. The right
+                        margin balances the burger button's own padding so the search field sits centered. */}
                     <Box
                         sx={{
-                            display: { xs: isHeroPage ? 'none' : 'flex', md: 'none' },
+                            display: { xs: hasPageSearchBar ? 'none' : 'flex', md: 'none' },
                             alignItems: 'center',
                             mr: '0.5rem'
                         }}>
@@ -128,8 +128,8 @@ export const AppNavbar: FunctionComponent = () => {
                             <OpenVsxMark style={{ height: '2.5rem' }} />
                         </RouteLink>
                     </Box>
-                    {/* Full logo — desktop always, mobile only on home page. */}
-                    <Box sx={{ display: { xs: isHeroPage ? 'flex' : 'none', md: 'flex' } }}>
+                    {/* Full logo — desktop always, mobile only while the nav search field is hidden. */}
+                    <Box sx={{ display: { xs: hasPageSearchBar ? 'flex' : 'none', md: 'flex' } }}>
                         {ToolbarContent ? <ToolbarContent /> : null}
                     </Box>
                 </ToolbarItem>

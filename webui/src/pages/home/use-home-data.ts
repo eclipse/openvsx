@@ -43,19 +43,19 @@ export interface CuratedRow extends HomeCuratedSection {
     loading: boolean;
 }
 
-/**
- * Loads the home page data: the browsable category list (excluding a few noisy
- * ones) and the curated extension rows, each fetched with its configured
- * ordering. Rows start in a loading state and fill in as requests resolve;
- * failed rows end up empty and are hidden by the consumer.
- */
-export function useHomeData(curatedSections: HomeCuratedSection[]): {
-    categories: ExtensionCategory[];
-    rows: CuratedRow[];
-} {
-    const { service } = useContext(MainContext);
+/** The browsable home category list: the registry's categories minus a few noisy ones. */
+export function useHomeCategories(): ExtensionCategory[] {
     const allCategories = useCategories();
-    const categories = useMemo(() => allCategories.filter(c => HOME_CATEGORIES.has(c)), [allCategories]);
+    return useMemo(() => allCategories.filter(c => HOME_CATEGORIES.has(c)), [allCategories]);
+}
+
+/**
+ * Loads the curated extension rows, each fetched with its configured ordering.
+ * Rows start in a loading state and fill in as requests resolve; failed rows end
+ * up empty and are hidden by the consumer.
+ */
+export function useCuratedRows(curatedSections: HomeCuratedSection[]): CuratedRow[] {
+    const { service } = useContext(MainContext);
 
     const results = useQueries({
         queries: curatedSections.map(section => ({
@@ -79,11 +79,9 @@ export function useHomeData(curatedSections: HomeCuratedSection[]): {
         }))
     });
 
-    const rows: CuratedRow[] = curatedSections.map((section, idx) => ({
+    return curatedSections.map((section, idx) => ({
         ...section,
         extensions: results[idx].data ?? [],
         loading: results[idx].isLoading
     }));
-
-    return { categories, rows };
 }

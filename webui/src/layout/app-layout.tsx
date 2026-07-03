@@ -40,7 +40,9 @@ const Wrapper = styled(Box)({
 
 const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     const { pageSettings, loginProviders } = useContext(MainContext);
-    const { additionalRoutes: AdditionalRoutes, banner: BannerComponent } = pageSettings.elements;
+    const { additionalRoutes: AdditionalRoutes, banner: BannerComponent, footer } = pageSettings.elements;
+    // The legacy footer is fixed to the viewport bottom; pad the content to stay clear of it.
+    const legacyFooterHeight = typeof footer === 'object' && 'content' in footer ? footer.props?.footerHeight : 0;
 
     const navigate = useNavigate();
     const [isBannerOpen, setIsBannerOpen] = useState(false);
@@ -109,7 +111,12 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
             ) : null}
             {/* Fill at least the viewport so short pages keep the footer below the fold,
                 even though the footer itself can be taller than a screen on mobile */}
-            <Box sx={{ flexGrow: 1, minHeight: `calc(100vh - ${NAVBAR_HEIGHT})` }}>
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    minHeight: `calc(100vh - ${NAVBAR_HEIGHT})`,
+                    pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0
+                }}>
                 <Suspense fallback={null}>
                     <Routes>
                         <Route path={ExtensionListRoutes.MAIN} element={<HomePage />} />

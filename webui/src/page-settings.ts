@@ -51,24 +51,25 @@ export interface StructuredFooterSettings {
 }
 
 /**
- * Legacy footer: a fully custom component the layout renders at the bottom of
- * the page, receiving an `expanded` flag that is true while hovered. Kept for
- * backward compatibility with consumers written before {@link StructuredFooterSettings}.
+ * Legacy footer: a fully custom component fixed to the bottom of the viewport,
+ * receiving an `expanded` flag that is true while hovered. Kept for backward
+ * compatibility with consumers written before {@link StructuredFooterSettings}.
  */
 export interface CustomFooterSettings {
     content: ComponentType<{ expanded: boolean }>;
     props?: {
-        /** @deprecated Ignored — the footer is rendered in-flow since the redesign. */
+        /** Collapsed footer height; the page content is bottom-padded by it to stay clear of the fixed footer. */
         footerHeight?: number;
     };
 }
 
 /**
- * Footer configuration. Provide {@link CustomFooterSettings} (with `content`) to
- * render your own footer component, or {@link StructuredFooterSettings} to feed
- * the built-in footer chrome. The two are told apart by the presence of `content`.
+ * Footer configuration. Provide {@link StructuredFooterSettings} to feed the
+ * built-in footer chrome, a component to replace the footer entirely (rendered
+ * bare at the bottom of the page), or {@link CustomFooterSettings} (with
+ * `content`) for the legacy hover-expanding chrome.
  */
-export type FooterSettings = CustomFooterSettings | StructuredFooterSettings;
+export type FooterSettings = ComponentType | CustomFooterSettings | StructuredFooterSettings;
 
 /** A curated row of extensions on the home page, fetched with the given ordering. */
 export interface HomeCuratedSection {
@@ -85,7 +86,7 @@ export interface HomeInvolvementCard {
     label: string;
 }
 
-/** Consumer-provided content for the home page (branding and curated data). */
+/** Consumer-provided content for the built-in home page (branding and curated data). */
 export interface HomeSettings {
     popularSearches?: string[];
     curatedSections?: HomeCuratedSection[];
@@ -94,6 +95,14 @@ export interface HomeSettings {
         cards: HomeInvolvementCard[];
     };
 }
+
+/**
+ * Home route configuration. Provide {@link HomeSettings} to feed the built-in
+ * home page, or a component to replace it entirely. The built-in sections are
+ * exported so a replacement can be composed from them; each boxes itself, so
+ * don't wrap them in another width-constraining container.
+ */
+export type HomePageSettings = HomeSettings | ComponentType;
 
 export interface PageSettings {
     pageTitle: string;
@@ -107,7 +116,7 @@ export interface PageSettings {
         defaultMenuContent?: ComponentType;
         mobileMenuContent?: ComponentType;
         footer?: FooterSettings;
-        home?: HomeSettings;
+        home?: HomePageSettings;
         searchHeader?: ComponentType;
         reportAbuse?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
         claimNamespace?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
