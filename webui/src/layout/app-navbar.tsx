@@ -23,9 +23,9 @@ const ToolbarItem = styled(Box)({
 // equal-width window that overlaps its neighbours by a constant 12.5% step, so
 // the layers blend into one continuous ramp instead of visible bands.
 const BLUR_LAYERS = [
-    { blur: '64px', sat: 1.3, stops: 'transparent 75%, #000 87.5%, #000 100%' },
-    { blur: '32px', sat: 1.3, stops: 'transparent 62.5%, #000 75%, #000 87.5%, transparent 100%' },
-    { blur: '16px', sat: 1.3, stops: 'transparent 50%, #000 62.5%, #000 75%, transparent 87.5%' },
+    { blur: '20px', sat: 1.3, stops: 'transparent 75%, #000 87.5%, #000 100%' },
+    { blur: '15px', sat: 1.3, stops: 'transparent 62.5%, #000 75%, #000 87.5%, transparent 100%' },
+    { blur: '13px', sat: 1.3, stops: 'transparent 50%, #000 62.5%, #000 75%, transparent 87.5%' },
     { blur: '8px', sat: 1.3, stops: 'transparent 37.5%, #000 50%, #000 62.5%, transparent 75%' },
     { blur: '4px', sat: 1.3, stops: 'transparent 25%, #000 37.5%, #000 50%, transparent 62.5%' },
     { blur: '2px', sat: 1, stops: 'transparent 12.5%, #000 25%, #000 37.5%, transparent 50%' },
@@ -33,12 +33,22 @@ const BLUR_LAYERS = [
     { blur: '0.5px', sat: 1, stops: '#000 0%, #000 12.5%, transparent 25%' }
 ];
 
+// Alpha multipliers for the tint fade, sampled from smootherstep. A two-stop
+// linear fade changes slope abruptly at its endpoints and the eye amplifies
+// that into a visible line (Mach banding); these stops land on transparent
+// with zero slope so the fade has no perceivable end.
+const TINT_EASE = [1, 0.984, 0.897, 0.725, 0.5, 0.275, 0.103, 0.016, 0];
+
 export const AppNavbar: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
     const { hasPageSearchBar } = useSearchFocus();
     const theme = useTheme();
-    const navbg = alpha(theme.palette.background.default, theme.palette.mode === 'dark' ? 0.74 : 0.78);
+    const baseAlpha = theme.palette.mode === 'dark' ? 0.74 : 0.78;
+    const navbg = alpha(theme.palette.background.default, baseAlpha);
+    const tintGradient = `linear-gradient(to bottom, ${TINT_EASE.map(
+        (k, i) => `${alpha(theme.palette.background.default, baseAlpha * k)} ${(i * 100) / (TINT_EASE.length - 1)}%`
+    ).join(', ')})`;
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -79,7 +89,7 @@ export const AppNavbar: FunctionComponent = () => {
                         left: 0,
                         right: 0,
                         top: 0,
-                        bottom: { xs: '-48px', sm: '-100px' },
+                        bottom: { xs: '-48px', sm: '-80px' },
                         pointerEvents: 'none',
                         zIndex: 0,
                         opacity: showFan ? 1 : 0,
@@ -98,12 +108,12 @@ export const AppNavbar: FunctionComponent = () => {
                     left: 0,
                     right: 0,
                     top: 0,
-                    bottom: { xs: '-48px', sm: '-100px' },
+                    bottom: { xs: '-48px', sm: '-150px' },
                     pointerEvents: 'none',
                     zIndex: 0,
                     opacity: showFan ? 1 : 0,
                     transition: 'opacity 0.35s ease',
-                    background: `linear-gradient(to bottom, ${navbg} 0%, ${navbg} 38%, transparent 100%)`
+                    background: tintGradient
                 }}
             />
             <Toolbar
