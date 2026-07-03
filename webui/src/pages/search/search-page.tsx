@@ -12,14 +12,14 @@
  ********************************************************************************/
 
 import { FunctionComponent, useState } from 'react';
-import { Box, Container } from '@mui/material';
+import { Box } from '@mui/material';
 import { SortBy, SortOrder } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
 import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
-import { Eyebrow } from '../../components/page-primitives';
+import { Eyebrow, Section } from '../../components/page-primitives';
 import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
 import { useCategories } from '../../components/categories';
@@ -33,11 +33,10 @@ export const SearchPage: FunctionComponent = () => {
     const [resultNumber, setResultNumber] = useState(0);
 
     return (
-        <Container
+        <Section
             sx={{
                 pb: { xs: '1.125rem', sm: '1.875rem' }
-            }}
-            maxWidth='xl'>
+            }}>
             {/* Mobile category pills — outside the flex row so negative-margin bleed isn't clipped */}
             {categories.length > 0 && (
                 <Box
@@ -122,6 +121,6 @@ export const SearchPage: FunctionComponent = () => {
                     />
                 </Box>
             </Box>
-        </Container>
+        </Section>
     );
 };
