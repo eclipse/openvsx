@@ -30,7 +30,6 @@ export interface CuratedSectionsProps {
 export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props => {
     const rows = useCuratedRows(props.sections ?? DEFAULT_CURATED_SECTIONS);
     const { search } = useSearch();
-    const onSeeAll = props.onSeeAll ?? (() => search({ query: '' }));
     return (
         <>
             {rows.map(
@@ -66,7 +65,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                                 </Box>
                                 <Box
                                     component='button'
-                                    onClick={onSeeAll}
+                                    onClick={props.onSeeAll ?? (() => search({ query: '', sortBy: row.sortBy }))}
                                     sx={{
                                         background: 'none',
                                         border: 'none',
