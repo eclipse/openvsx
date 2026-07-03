@@ -7,6 +7,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Added
 
 - Support searching users and managing their roles in the admin dashboard ([#1847](https://github.com/eclipse-openvsx/openvsx/pull/1847))
+- Added an extension details page to admin dashboard and user settings ([#1939](https://github.com/eclipse-openvsx/openvsx/pull/1939))
 
 ### Changed
 
