@@ -794,6 +794,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource-variable/geist-mono@npm:^5.2.8":
+  version: 5.2.8
+  resolution: "@fontsource-variable/geist-mono@npm:5.2.8"
+  checksum: 10/82c5afc603c0a20f115115490c5b2853fc4fb43af793fef811e71011700fa952d4d4bb382983138352ebca5c1c8381b07902350cbd3f70adee53eac088f83776
+  languageName: node
+  linkType: hard
+
+"@fontsource-variable/geist@npm:^5.2.9":
+  version: 5.2.9
+  resolution: "@fontsource-variable/geist@npm:5.2.9"
+  checksum: 10/cd249dc1e60f96277b9b33f6c4626385d1337a6d3c40b659bdf49e95eabff8a38083d2c579446bdbf77a104906a9b2ba15ad98e2177accdad192dc97d06bb980
+  languageName: node
+  linkType: hard
+
+"@fontsource/roboto@npm:^5.2.10":
+  version: 5.2.10
+  resolution: "@fontsource/roboto@npm:5.2.10"
+  checksum: 10/2fc9e9db66cfab68ff45b573cc2bf20fe8d7e962f09b6edd32d53681fdcd7bdedd65440012683491785583383a585bdbfb67903171159bf4c3520f2f0d26d92a
+  languageName: node
+  linkType: hard
+
 "@humanfs/core@npm:^0.19.1":
   version: 0.19.1
   resolution: "@humanfs/core@npm:0.19.1"
@@ -5810,6 +5831,9 @@ __metadata:
     "@emotion/styled": "npm:^11.11.0"
     "@eslint/eslintrc": "npm:^3.3.3"
     "@eslint/js": "npm:^9.39.0"
+    "@fontsource-variable/geist": "npm:^5.2.9"
+    "@fontsource-variable/geist-mono": "npm:^5.2.8"
+    "@fontsource/roboto": "npm:^5.2.10"
     "@mdit/plugin-alert": "npm:^0.22.3"
     "@mui/base": "npm:^5.0.0-beta.9"
     "@mui/icons-material": "npm:^5.15.14"
