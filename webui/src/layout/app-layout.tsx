@@ -28,6 +28,7 @@ import { NotFound } from '../not-found';
 import { NAVBAR_HEIGHT } from '../default/theme';
 import { AppNavbar } from './app-navbar';
 import { AppFooter } from './app-footer';
+import { ScrollToTop } from './scroll-to-top';
 
 const UserSettings = lazy(() => import('../pages/user/user-settings').then(m => ({ default: m.UserSettings })));
 
@@ -97,6 +98,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
 
     return (
         <Wrapper>
+            <ScrollToTop />
             <AppNavbar />
             {BannerComponent ? (
                 <Banner

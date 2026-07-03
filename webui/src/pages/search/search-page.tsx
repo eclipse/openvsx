@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useLayoutEffect, useState } from 'react';
+import { FunctionComponent, useState } from 'react';
 import { Box, Container } from '@mui/material';
 import { SortBy, SortOrder } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
@@ -24,12 +24,6 @@ export const SearchPage: FunctionComponent = () => {
     const categories = useCategories();
 
     const [resultNumber, setResultNumber] = useState(0);
-
-    useLayoutEffect(() => {
-        // Entering the results should always start at the top, not wherever the
-        // hero/home page happened to be scrolled when the search was triggered.
-        window.scrollTo({ top: 0, left: 0 });
-    }, []);
 
     return (
         <Container
