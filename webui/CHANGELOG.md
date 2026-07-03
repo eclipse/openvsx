@@ -6,10 +6,19 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Added
 
+- Add a home page with hero search, popular searches, a category browser, curated extension rows and get-involved cards
+- Add a dedicated search page under `/search` with query, category, sort field and sort order synced to the URL
+- Add global keyboard shortcuts
+- Add keyboard navigation of search results: `↑`/`↓`
+- Add a structured footer
+- Add scroll-to-top on forward navigation
 - Support searching users and managing their roles in the admin dashboard ([#1847](https://github.com/eclipse-openvsx/openvsx/pull/1847))
 
 ### Changed
 
+- Redesign the web UI: new navbar with integrated search field, new theme, extension cards, category pills and page layout
+- Improve accessibility: visible focus outlines on interactive controls
+- Morph the hero search into the navbar search field using the View Transitions API
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
 
