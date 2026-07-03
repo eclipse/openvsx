@@ -8,7 +8,7 @@ import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useR
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Close';
 import { IconButton, InputBase, InputBaseComponentProps, Box } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import { MONO_FONT } from '../default/theme';
 import { focusRing } from './page-primitives';
 
@@ -36,7 +36,7 @@ const SearchWrap = styled(Box, {
     borderRadius: '11px',
     height: '2.8125rem',
     padding: '0 0.8125rem',
-    backgroundColor: theme.palette.surface2,
+    backgroundColor: alpha(theme.palette.surface2, 0.7),
     transition: 'border-color 0.18s, box-shadow 0.18s',
     '&:focus-within': focusRing(theme)
 }));
