@@ -15,6 +15,7 @@ import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { KbdKey } from '../components/kbd-key';
+import { useShortcut } from '../hooks/use-shortcut';
 import { Section, Eyebrow, accentHover, focusOutline } from '../components/page-primitives';
 import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
@@ -101,6 +102,17 @@ export const AppFooter: FunctionComponent<AppFooterProps> = ({ onOpenShortcuts }
             .catch(() => {});
         return () => abortController.abort();
     }, [service]);
+
+    // The shortcuts button (and its ? hint) only renders in the structured footer,
+    // so register the shortcut here and disable it for custom/legacy footers.
+    const isStructuredFooter = typeof footer !== 'function' && !(footer && 'content' in footer);
+    useShortcut({
+        key: '?',
+        label: 'Show keyboard shortcuts',
+        order: 0,
+        callback: onOpenShortcuts,
+        enabled: isStructuredFooter
+    });
 
     if (typeof footer === 'function') {
         const CustomFooter = footer;

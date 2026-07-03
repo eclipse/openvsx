@@ -30,5 +30,22 @@ export {
 } from './pages/home/use-home-data';
 export { ExtensionCard, type ExtensionCardProps } from './components/extension-card';
 export * from './components/page-primitives';
-export { useSearch } from './hooks/use-search';
+// Leaf hook modules keep their helpers private, so `export *` exposes only the
+// public hook plus its types (e.g. useSearch + SearchFilter).
+export * from './hooks/use-search';
 export { useRegisterPageSearchBar } from './context/search/search-focus-context';
+
+// Keyboard shortcuts: register shortcuts from custom pages/components. The hook
+// only takes effect below a KeyboardShortcutsProvider — the built-in AppLayout
+// mounts one, so custom layouts need to mount their own.
+export { useShortcut, type UseShortcutOptions } from './hooks/use-shortcut';
+export {
+    KeyboardShortcutsProvider,
+    useKeyboardShortcuts,
+    type ShortcutInfo
+} from './context/keyboard-shortcuts-context';
+
+// Signal: lightweight cross-component coordination primitive. Create one with
+// useSignal, subscribe with useSignalEffect.
+export * from './hooks/use-signal';
+export * from './hooks/use-signal-effect';

@@ -14,7 +14,7 @@
 import { useEffect, useRef } from 'react';
 import { useKeyboardShortcuts } from '../context/keyboard-shortcuts-context';
 
-interface UseShortcutOptions {
+export interface UseShortcutOptions {
     key: string;
     label: string;
     callback: () => void;

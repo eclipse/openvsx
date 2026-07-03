@@ -20,7 +20,7 @@ import {
     Avatar,
     AccordionDetails
 } from '@mui/material';
-import { useLocation, Link as RouteLink } from 'react-router-dom';
+import { useLocation, useNavigate, Link as RouteLink } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -33,6 +33,7 @@ import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { alpha, styled, Theme } from '@mui/material/styles';
 import { MainContext } from '../context';
 import { KbdKey } from '../components/kbd-key';
+import { useShortcut } from '../hooks/use-shortcut';
 import { focusOutline } from '../components/page-primitives';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
@@ -40,6 +41,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard-routes';
 import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
+
+// Shared destinations so a menu item's link, its keyboard shortcut, and its hint
+// can't drift apart. External docs open in the same tab, matching the link click.
+const DOCS_URL = 'https://github.com/eclipse/openvsx/wiki';
 
 //-------------------- Mobile View --------------------//
 // eslint-disable-next-line react-refresh/only-export-components
@@ -133,7 +138,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                     />
                 ))}
             {loginProviders && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
-                <MenuItem component={RouteLink} to='/user-settings/extensions'>
+                <MenuItem component={RouteLink} to={UserSettingsRoutes.EXTENSIONS}>
                     <MenuItemText>
                         <PublishIcon sx={itemIcon} />
                         Publish Extension
@@ -146,7 +151,7 @@ export const MobileMenuContent: FunctionComponent = () => {
                     Source Code
                 </MenuItemText>
             </MenuItem>
-            <MenuItem component={Link} href='https://github.com/eclipse/openvsx/wiki'>
+            <MenuItem component={Link} href={DOCS_URL}>
                 <MenuItemText>
                     <MenuBookIcon sx={itemIcon} />
                     Documentation
@@ -199,11 +204,22 @@ export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
     const { user, loginProviders } = useContext(MainContext);
+    const navigate = useNavigate();
+
+    // Register each shortcut next to the control it drives, sharing the same
+    // destination so the hint, the click, and the keypress stay in sync.
+    useShortcut({ key: 'd', label: 'Documentation', order: 2, callback: () => window.location.assign(DOCS_URL) });
+    useShortcut({
+        key: 'p',
+        label: 'Publish',
+        order: 3,
+        callback: () => navigate(UserSettingsRoutes.EXTENSIONS),
+        enabled: !!loginProviders
+    });
+
     return (
         <>
-            <MenuLink
-                href='https://github.com/eclipse/openvsx/wiki'
-                sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.4375rem' }}>
+            <MenuLink href={DOCS_URL} sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.4375rem' }}>
                 Documentation
                 <KbdKey>d</KbdKey>
             </MenuLink>
@@ -216,7 +232,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
                     <Button
                         variant='text'
                         color='secondary'
-                        href='/user-settings/extensions'
+                        href={UserSettingsRoutes.EXTENSIONS}
                         sx={theme => ({
                             mx: 0.5,
                             px: 2.25,

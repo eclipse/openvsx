@@ -47,7 +47,7 @@ const Wrapper = styled(Box)({
 });
 
 const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
-    const { pageSettings, loginProviders } = useContext(MainContext);
+    const { pageSettings } = useContext(MainContext);
     const { additionalRoutes: AdditionalRoutes, banner: BannerComponent, footer } = pageSettings.elements;
     // The legacy footer is fixed to the viewport bottom; pad the content to stay clear of it.
     const legacyFooterHeight = typeof footer === 'object' && 'content' in footer ? footer.props?.footerHeight : 0;
@@ -68,20 +68,9 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
         }
     }, []);
 
-    useShortcut({ key: '?', label: 'Show keyboard shortcuts', order: 0, callback: () => setShortcutsOpen(true) });
-    useShortcut({
-        key: 'd',
-        label: 'Go to documentation',
-        order: 2,
-        callback: () => window.open('https://github.com/eclipse/openvsx/wiki', '_blank')
-    });
-    useShortcut({
-        key: 'p',
-        label: 'Publish extension',
-        order: 3,
-        callback: () => navigate('/user-settings/extensions'),
-        enabled: !!loginProviders
-    });
+    // Global navigation shortcuts with no on-screen affordance. Shortcuts tied to a
+    // visible control (?, d, p) are registered where that control renders, so a
+    // customized footer/menu brings its own instead of inheriting ours.
     useShortcut({
         key: 'h',
         label: 'Go to home',
