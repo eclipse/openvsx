@@ -109,12 +109,12 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                     <BannerComponent.content />
                 </Banner>
             ) : null}
-            {/* Fill at least the viewport so short pages keep the footer below the fold,
-                even though the footer itself can be taller than a screen on mobile */}
+            {/* Mobile: fill the viewport so the (screen-tall) footer stays below the fold.
+                Desktop: flexGrow alone sticks the footer to the viewport bottom. */}
             <Box
                 sx={{
                     flexGrow: 1,
-                    minHeight: `calc(100vh - ${NAVBAR_HEIGHT})`,
+                    minHeight: { xs: `calc(100vh - ${NAVBAR_HEIGHT})`, sm: 0 },
                     pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0
                 }}>
                 <Suspense fallback={null}>
