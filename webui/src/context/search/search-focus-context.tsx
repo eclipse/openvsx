@@ -15,6 +15,7 @@ import {
     createContext,
     FunctionComponent,
     ReactNode,
+    RefObject,
     useCallback,
     useContext,
     useLayoutEffect,
@@ -42,10 +43,10 @@ export interface SearchFocusContextValue {
     // Whether the search field has focus — the grid only shows its cursor then.
     searchFocused: boolean;
     setSearchFocused: (focused: boolean) => void;
-    // A page-level search bar (e.g. the home hero) is mounted — the nav bar hides its own field.
+    // A page-level search bar (e.g. the home hero) is registered — the nav bar hides its own field.
     hasPageSearchBar: boolean;
     registerPageSearchBar: () => () => void;
-    // Synchronous read — `hasPageSearchBar` lags one render when a bar (un)mounts
+    // Synchronous read — `hasPageSearchBar` lags one render when a bar (un)registers
     // in the same commit that emits a focus signal.
     isPageSearchBarMounted: () => boolean;
 }
@@ -67,14 +68,43 @@ export function useSearchFocus(): SearchFocusContextValue {
 }
 
 /**
- * Marks the calling component as the page's search bar while mounted, so the nav
- * bar hides its own field and hands focus requests over.
+ * Marks the calling component as the page's search bar, so the nav bar hides its
+ * own field and hands focus requests over. Registered while mounted, or — when
+ * `visibilityRef` is given — only while that element is in the viewport. Returns
+ * whether the bar is currently registered; callers gate focus handling and their
+ * view-transition name on it.
  */
 // eslint-disable-next-line react-refresh/only-export-components
-export function useRegisterPageSearchBar(): void {
+export function useRegisterPageSearchBar(visibilityRef?: RefObject<Element>): boolean {
     const { registerPageSearchBar } = useSearchFocus();
+    const [registered, setRegistered] = useState(true);
     // Layout effect so the count is updated before other layout effects in the same commit.
-    useLayoutEffect(registerPageSearchBar, [registerPageSearchBar]);
+    useLayoutEffect(() => {
+        const el = visibilityRef?.current;
+        if (!el) {
+            return registerPageSearchBar();
+        }
+        let unregister: (() => void) | undefined;
+        const update = (visible: boolean) => {
+            if (visible && !unregister) {
+                unregister = registerPageSearchBar();
+            } else if (!visible && unregister) {
+                unregister();
+                unregister = undefined;
+            }
+            setRegistered(visible);
+        };
+        // Seed synchronously — the observer's first callback is async and the nav field would flash.
+        const rect = el.getBoundingClientRect();
+        update(rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth);
+        const observer = new IntersectionObserver(entries => update(entries[entries.length - 1].isIntersecting));
+        observer.observe(el);
+        return () => {
+            observer.disconnect();
+            unregister?.();
+        };
+    }, [registerPageSearchBar, visibilityRef]);
+    return registered;
 }
 
 export const SearchFocusProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {

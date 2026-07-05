@@ -11,8 +11,18 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, useRef, useState } from 'react';
+import {
+    ChangeEvent,
+    ComponentType,
+    FormEvent,
+    FunctionComponent,
+    useCallback,
+    useLayoutEffect,
+    useRef,
+    useState
+} from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing, Section } from '../../components/page-primitives';
@@ -101,10 +111,10 @@ export interface HeroSearchProps {
 }
 
 /**
- * The hero search section. Registers itself as the page's search bar so the nav
- * bar hides its own field. Owns a local copy of `query` so keystrokes only
- * re-render the field, not the whole homepage; typing debounces `search`, submit
- * and popular chips search immediately.
+ * The hero search section. Registers itself as the page's search bar while in
+ * view, so the nav bar hides its own field. Owns a local copy of `query` so
+ * keystrokes only re-render the field, not the whole homepage; typing debounces
+ * `search`, submit and popular chips search immediately.
  */
 export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     searchHeader: SearchHeader,
@@ -112,24 +122,43 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
 }) => {
     const { query: initialQuery, setQuery } = useSearchQuery();
     const { search } = useSearch();
-    const { searchFocusSignal } = useSearchFocus();
+    const { searchFocusSignal, searchFocused } = useSearchFocus();
     const [query, setLocalQuery] = useState(() => initialQuery);
     const heroInputRef = useRef<HTMLInputElement>(null);
-    useRegisterPageSearchBar();
+    const isActiveSearchBar = useRegisterPageSearchBar(heroInputRef);
 
-    // Focus the hero input when focus is requested (e.g. the '/' shortcut on the home page).
+    // Focus the hero input on request (e.g. the '/' shortcut) — the nav field owns focus while the hero is out of view.
     useSignalEffect(
         searchFocusSignal,
         useCallback(() => {
             const el = heroInputRef.current;
-            if (!el) {
+            if (!el || !isActiveSearchBar) {
                 return;
             }
             el.focus();
             // Move cursor to end so the user can keep typing.
             requestAnimationFrame(() => el.setSelectionRange(el.value.length, el.value.length));
-        }, [])
+        }, [isActiveSearchBar])
     );
+
+    // Focus follows the scroll swap: take it when the hero comes into view while the
+    // nav field is focused (`searchFocused`), hand it back when the hero scrolls away
+    // while its own input is focused. The signal routes to whichever bar is active.
+    useLayoutEffect(() => {
+        const takeFocus = isActiveSearchBar && searchFocused;
+        const handFocusBack = !isActiveSearchBar && document.activeElement === heroInputRef.current;
+        if (takeFocus || handFocusBack) {
+            searchFocusSignal.emit();
+        }
+    }, [isActiveSearchBar, searchFocused, searchFocusSignal.emit]);
+
+    // Focus the search by default when the hero page is the app's landing page.
+    const { key: locationKey } = useLocation();
+    useLayoutEffect(() => {
+        if (locationKey === 'default') {
+            searchFocusSignal.emit();
+        }
+    }, [locationKey, searchFocusSignal.emit]);
 
     // Wrap search calls with a view transition so the hero input morphs into the nav bar.
     type ViewTransitionDocument = Document & {
@@ -196,7 +225,8 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
             }}>
             {SearchHeader && <SearchHeader />}
             <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '41.25rem', mx: 'auto' }}>
-                <HeroSearchWrap style={{ viewTransitionName: 'vt-search' }}>
+                {/* The nav field claims 'vt-search' while the hero is unregistered — duplicate names abort transitions. */}
+                <HeroSearchWrap style={{ viewTransitionName: isActiveSearchBar ? 'vt-search' : undefined }}>
                     <Box
                         component='span'
                         sx={{
