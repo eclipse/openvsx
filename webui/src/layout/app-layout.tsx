@@ -19,7 +19,6 @@ import { Banner } from '../components/banner';
 import { ShortcutsModal } from '../components/shortcuts-modal';
 import { MainContext } from '../context';
 import { SearchProvider } from '../context/search/search-context';
-import { SearchFocusProvider } from '../context/search/search-focus-context';
 import { KeyboardShortcutsProvider } from '../context/keyboard-shortcuts-context';
 import { useShortcut } from '../hooks/use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
@@ -144,9 +143,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
 export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
     <KeyboardShortcutsProvider>
         <SearchProvider>
-            <SearchFocusProvider>
-                <AppLayoutContent {...props} />
-            </SearchFocusProvider>
+            <AppLayoutContent {...props} />
         </SearchProvider>
     </KeyboardShortcutsProvider>
 );

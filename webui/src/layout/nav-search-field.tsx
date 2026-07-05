@@ -19,6 +19,7 @@ import { ExtensionListRoutes } from '../pages/extension-list/extension-list-rout
 import { useSearch } from '../hooks/use-search';
 import { useSearchQuery } from '../context/search/search-context';
 import { useSearchFocus } from '../context/search/search-focus-context';
+import { usePageSearchBar } from '../context/search/page-search-bar-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
 import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../hooks/use-shortcut';
@@ -27,8 +28,8 @@ export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
     const { query, setQuery } = useSearchQuery();
     const { search, filter } = useSearch();
-    const { searchFocusSignal, resultsNavigationSignal, setSearchFocused, hasPageSearchBar, isPageSearchBarMounted } =
-        useSearchFocus();
+    const { searchFocusSignal, resultsNavigationSignal, setSearchFocused } = useSearchFocus();
+    const { hasPageSearchBar, isPageSearchBarActive } = usePageSearchBar();
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Typing debounces navigation; Enter searches immediately. A route change
@@ -36,10 +37,10 @@ export const NavSearchField: FunctionComponent = () => {
     const debouncedSearch = useDebouncedCallback(search);
     useLayoutEffect(() => debouncedSearch.cancel, [pathname, debouncedSearch]);
 
-    // While a page search bar is mounted, this field is only an opacity-0
+    // While a page search bar is registered, this field is only an opacity-0
     // placeholder for the view-transition morph; `inert` removes it from the tab
     // order and accessibility tree. `pendingFocus` holds a focus request that
-    // arrived in the commit that unmounted the page search bar (before this
+    // arrived in the commit that unregistered the page search bar (before this
     // component re-rendered); it is honored here once the field is visible again.
     const fieldRef = useRef<HTMLDivElement>(null);
     const pendingFocus = useRef(false);
@@ -53,20 +54,20 @@ export const NavSearchField: FunctionComponent = () => {
         }
     }, [hasPageSearchBar]);
 
-    // Take focus when requested — unless a page search bar is mounted and owns focus instead.
+    // Take focus when requested — unless a page search bar is registered and owns focus instead.
     useSignalEffect(
         searchFocusSignal,
         useCallback(() => {
-            if (isPageSearchBarMounted()) {
+            if (isPageSearchBarActive()) {
                 return;
             }
             if (hasPageSearchBar) {
-                // Stale commit: the bar just unmounted; defer to the layout effect above.
+                // Stale commit: the bar just unregistered; defer to the layout effect above.
                 pendingFocus.current = true;
                 return;
             }
             inputRef.current?.focus({ preventScroll: true });
-        }, [isPageSearchBarMounted, hasPageSearchBar])
+        }, [isPageSearchBarActive, hasPageSearchBar])
     );
 
     // The '/' shortcut asks whichever search field is active to take focus.

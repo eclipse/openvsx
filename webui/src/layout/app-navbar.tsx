@@ -17,7 +17,7 @@ import { alpha, styled, useTheme } from '@mui/material/styles';
 import { Link as RouteLink } from 'react-router-dom';
 import { HeaderMenu } from '../header-menu';
 import { MainContext } from '../context';
-import { useSearchFocus } from '../context/search/search-focus-context';
+import { usePageSearchBar } from '../context/search/page-search-bar-context';
 import { OpenVsxMark } from '../components/openvsx-mark';
 import { NavSearchField } from './nav-search-field';
 
@@ -51,7 +51,7 @@ const BLUR_LAYERS = ['4.25px', '3px', '2.15px', '1.5px', '1.1px', '0.65px', '0.5
 export const AppNavbar: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const { toolbarContent: ToolbarContent } = pageSettings.elements;
-    const { hasPageSearchBar } = useSearchFocus();
+    const { hasPageSearchBar } = usePageSearchBar();
     const theme = useTheme();
     const baseAlpha = theme.palette.mode === 'dark' ? 0.74 : 0.78;
     const navbg = alpha(theme.palette.background.default, baseAlpha);

@@ -13,6 +13,8 @@
 
 import { createContext, FunctionComponent, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { SearchFocusProvider } from './search-focus-context';
+import { PageSearchBarProvider } from './page-search-bar-context';
 
 export interface SearchContextValue {
     query: string;
@@ -35,9 +37,10 @@ export function useSearchQuery(): SearchContextValue {
     return useContext(SearchContext);
 }
 
-// Holds the persisted search query so the search fields stay in sync as the user
-// navigates. The `search` action lives in useSearch; focus coordination lives in
-// SearchFocusContext.
+// Mounts the whole search feature: the persisted query (so the search fields stay
+// in sync as the user navigates) plus the focus and page-bar contexts. Separate
+// contexts keep re-render scopes tight — the query changes per keystroke, the
+// others rarely. The `search` action lives in useSearch.
 export const SearchProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const [query, setQuery] = useState('');
     const [searchParams] = useSearchParams();
@@ -49,5 +52,11 @@ export const SearchProvider: FunctionComponent<{ children: ReactNode }> = ({ chi
     }, [urlQuery]);
 
     const value = useMemo(() => ({ query, setQuery }), [query]);
-    return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
+    return (
+        <SearchContext.Provider value={value}>
+            <SearchFocusProvider>
+                <PageSearchBarProvider>{children}</PageSearchBarProvider>
+            </SearchFocusProvider>
+        </SearchContext.Provider>
+    );
 };
