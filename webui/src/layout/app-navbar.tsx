@@ -26,25 +26,27 @@ const ToolbarItem = styled(Box)({
     alignItems: 'center'
 });
 
-// Progressive ("gradient") blur: blur doubles each layer and every mask is an
-// equal-width window that overlaps its neighbours by a constant 12.5% step, so
-// the layers blend into one continuous ramp instead of visible bands.
-const BLUR_LAYERS = [
-    { blur: '20px', sat: 1.3, stops: 'transparent 75%, #000 87.5%, #000 100%' },
-    { blur: '15px', sat: 1.3, stops: 'transparent 62.5%, #000 75%, #000 87.5%, transparent 100%' },
-    { blur: '13px', sat: 1.3, stops: 'transparent 50%, #000 62.5%, #000 75%, transparent 87.5%' },
-    { blur: '8px', sat: 1.3, stops: 'transparent 37.5%, #000 50%, #000 62.5%, transparent 75%' },
-    { blur: '4px', sat: 1.3, stops: 'transparent 25%, #000 37.5%, #000 50%, transparent 62.5%' },
-    { blur: '2px', sat: 1, stops: 'transparent 12.5%, #000 25%, #000 37.5%, transparent 50%' },
-    { blur: '1px', sat: 1, stops: 'transparent 0%, #000 12.5%, #000 25%, transparent 37.5%' },
-    { blur: '0.5px', sat: 1, stops: '#000 0%, #000 12.5%, transparent 25%' }
-];
-
-// Alpha multipliers for the tint fade, sampled from smootherstep. A two-stop
+// Alpha multipliers for the fades below, sampled from smootherstep. A two-stop
 // linear fade changes slope abruptly at its endpoints and the eye amplifies
 // that into a visible line (Mach banding); these stops land on transparent
 // with zero slope so the fade has no perceivable end.
-const TINT_EASE = [1, 0.984, 0.897, 0.725, 0.5, 0.275, 0.103, 0.016, 0];
+const FADE_EASE = [1, 0.984, 0.897, 0.725, 0.5, 0.275, 0.103, 0.016, 0];
+
+// Progressive ("gradient") blur, cumulative form: every layer is anchored to
+// the top edge and fades out at a progressively deeper point, so a row's blur
+// is the compound of all layers still active there (stacked Gaussian blurs
+// compose in quadrature — σ² adds). The strengths below are the quadrature
+// differences between consecutive steps of a ~√2 falloff ramp, compounding to
+// ~6px at the toolbar and ~0 at the fan's bottom edge. Unlike side-by-side
+// banded masks — whose shared boundaries put two blur levels in full contact
+// and read as lines — each mask here has a single smootherstep fade edge, and
+// the edges are staggered 12.5% apart, so blur strictly and smoothly decreases.
+const BLUR_LAYERS = ['4.25px', '3px', '2.15px', '1.5px', '1.1px', '0.65px', '0.55px', '0.5px'].map((blur, i) => ({
+    blur,
+    mask: `linear-gradient(to bottom, ${FADE_EASE.map(
+        (k, j) => `rgba(0, 0, 0, ${k}) ${12.5 * i + (25 * j) / (FADE_EASE.length - 1)}%`
+    ).join(', ')})`
+}));
 
 export const AppNavbar: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
@@ -53,8 +55,14 @@ export const AppNavbar: FunctionComponent = () => {
     const theme = useTheme();
     const baseAlpha = theme.palette.mode === 'dark' ? 0.74 : 0.78;
     const navbg = alpha(theme.palette.background.default, baseAlpha);
-    const tintGradient = `linear-gradient(to bottom, ${TINT_EASE.map(
-        (k, i) => `${alpha(theme.palette.background.default, baseAlpha * k)} ${(i * 100) / (TINT_EASE.length - 1)}%`
+    // The scrolled tint is deliberately lighter than the solid glass: the blur fan
+    // already provides legibility, so the tint only needs a faint wash of color.
+    const tintAlpha = theme.palette.mode === 'dark' ? 0.3 : 0.35;
+    const tintGradient = `linear-gradient(to bottom, ${FADE_EASE.map(
+        (k, i) => `${alpha(theme.palette.background.default, tintAlpha * k)} ${(i * 100) / (FADE_EASE.length - 1)}%`
+    ).join(', ')})`;
+    const saturationMask = `linear-gradient(to bottom, ${FADE_EASE.map(
+        (k, i) => `rgba(0, 0, 0, ${k}) ${(i * 100) / (FADE_EASE.length - 1)}%`
     ).join(', ')})`;
     const [scrolled, setScrolled] = useState(false);
 
@@ -101,13 +109,32 @@ export const AppNavbar: FunctionComponent = () => {
                         zIndex: 0,
                         opacity: showFan ? 1 : 0,
                         transition: 'opacity 0.35s ease',
-                        backdropFilter: `blur(${layer.blur}) saturate(${layer.sat})`,
-                        WebkitBackdropFilter: `blur(${layer.blur}) saturate(${layer.sat})`,
-                        WebkitMaskImage: `linear-gradient(to top, ${layer.stops})`,
-                        maskImage: `linear-gradient(to top, ${layer.stops})`
+                        backdropFilter: `blur(${layer.blur})`,
+                        WebkitBackdropFilter: `blur(${layer.blur})`,
+                        WebkitMaskImage: layer.mask,
+                        maskImage: layer.mask
                     }}
                 />
             ))}
+            {/* Saturation wash — one continuously-masked layer over the whole fan */}
+            <Box
+                aria-hidden='true'
+                sx={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: { xs: '-48px', sm: '-80px' },
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                    opacity: showFan ? 1 : 0,
+                    transition: 'opacity 0.35s ease',
+                    backdropFilter: 'saturate(2)',
+                    WebkitBackdropFilter: 'saturate(2)',
+                    WebkitMaskImage: saturationMask,
+                    maskImage: saturationMask
+                }}
+            />
             <Box
                 aria-hidden='true'
                 sx={{
