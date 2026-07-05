@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { ExtensionCategory, SortBy, SortOrder } from '../extension-registry-types';
@@ -39,18 +39,24 @@ export function useSearch() {
     const { pathname } = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const filter: SearchFilter = {
-        query: searchParams.get('q') ?? '',
-        category: (searchParams.get('category') as ExtensionCategory) ?? '',
-        sortBy: (searchParams.get('sortBy') as SortBy) ?? 'relevance',
-        sortOrder: (searchParams.get('sortOrder') as SortOrder) ?? 'desc'
-    };
+    // Memoized so `filter` and `search` keep their identity between renders of the same URL.
+    const filter: SearchFilter = useMemo(
+        () => ({
+            query: searchParams.get('q') ?? '',
+            category: (searchParams.get('category') as ExtensionCategory) ?? '',
+            sortBy: (searchParams.get('sortBy') as SortBy) ?? 'relevance',
+            sortOrder: (searchParams.get('sortOrder') as SortOrder) ?? 'desc'
+        }),
+        [searchParams]
+    );
 
     // On the search page: patch URL params in place (replace, no new history entry).
     // From anywhere else: push a navigation to the search route.
     const search = useCallback(
         (patch: Partial<SearchFilter>) => {
             const next = { ...filter, ...patch };
+            // Trim here so every entry point (nav field, hero, chips) searches the same way.
+            next.query = next.query.trim();
             const params = filterToParams(next);
 
             if (pathname === ExtensionListRoutes.SEARCH) {

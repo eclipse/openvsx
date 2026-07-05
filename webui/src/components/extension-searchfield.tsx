@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useRef } from 'react';
+import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useId, useRef } from 'react';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Close';
 import { IconButton, InputBase, InputBaseComponentProps, Box } from '@mui/material';
@@ -69,6 +69,7 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
 export const ExtensionSearchfield = forwardRef(
     (props: ExtensionSearchfieldProps, ref: ForwardedRef<HTMLInputElement>) => {
         const inputRef = useRef<HTMLInputElement | null>(null);
+        const inputId = useId();
 
         // Keep the forwarded ref and the internal ref (used by the clear button) in sync.
         const setInputRef = useCallback(
@@ -114,16 +115,16 @@ export const ExtensionSearchfield = forwardRef(
                 <MonoSlash>/</MonoSlash>
                 <SearchInput
                     inputRef={setInputRef}
-                    autoFocus={props.autoFocus ?? true}
+                    autoFocus={props.autoFocus ?? false}
                     value={props.searchQuery}
                     onChange={handleSearchChange}
                     placeholder={props.placeholder}
-                    id='search-input'
+                    id={inputId}
                     type='search'
                     inputMode='search'
                     inputProps={{ ...props.inputProps, onKeyDown: handleKeyDown }}
                 />
-                <label htmlFor='search-input' className='visually-hidden'>
+                <label htmlFor={inputId} className='visually-hidden'>
                     Search for Name, Tags or Description
                 </label>
                 {props.searchQuery && (

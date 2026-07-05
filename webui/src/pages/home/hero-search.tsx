@@ -121,10 +121,10 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     searchHeader: SearchHeader,
     popularSearches = []
 }) => {
-    const { query: initialQuery, setQuery } = useSearchQuery();
+    const { query: contextQuery, setQuery } = useSearchQuery();
     const { search } = useSearch();
     const { searchFocusSignal, searchFocused } = useSearchFocus();
-    const [query, setLocalQuery] = useState(() => initialQuery);
+    const [query, setLocalQuery] = useState(() => contextQuery);
     const heroInputRef = useRef<HTMLInputElement>(null);
     const isActiveSearchBar = useRegisterPageSearchBar(heroInputRef);
 
@@ -142,16 +142,22 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }, [isActiveSearchBar])
     );
 
-    // Focus follows the scroll swap: take it when the hero comes into view while the
-    // nav field is focused (`searchFocused`), hand it back when the hero scrolls away
-    // while its own input is focused. The signal routes to whichever bar is active.
+    // Reconcile the scroll swap: the field taking over adopts the shared draft and
+    // takes focus if its counterpart had it (the signal routes to the active bar).
+    const wasActiveSearchBar = useRef(isActiveSearchBar);
     useLayoutEffect(() => {
-        const takeFocus = isActiveSearchBar && searchFocused;
-        const handFocusBack = !isActiveSearchBar && document.activeElement === heroInputRef.current;
-        if (takeFocus || handFocusBack) {
-            searchFocusSignal.emit();
+        if (wasActiveSearchBar.current === isActiveSearchBar) {
+            return;
         }
-    }, [isActiveSearchBar, searchFocused, searchFocusSignal.emit]);
+        wasActiveSearchBar.current = isActiveSearchBar;
+        if (isActiveSearchBar) {
+            setLocalQuery(contextQuery);
+            if (searchFocused) searchFocusSignal.emit();
+        } else {
+            setQuery(query);
+            if (document.activeElement === heroInputRef.current) searchFocusSignal.emit();
+        }
+    }, [isActiveSearchBar, searchFocused, contextQuery, query, setQuery, searchFocusSignal.emit]);
 
     // Focus the search by default when the hero page is the app's landing page.
     const { key: locationKey } = useLocation();

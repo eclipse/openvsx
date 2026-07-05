@@ -76,9 +76,15 @@ export const NavSearchField: FunctionComponent = () => {
     const handleNavSearch = useCallback(
         (q: string) => {
             setQuery(q);
+            // Emptying the field only re-searches on the search page (where empty
+            // means "show all"); elsewhere it shouldn't navigate away.
+            if (!q.trim() && pathname !== ExtensionListRoutes.SEARCH) {
+                debouncedSearch.cancel();
+                return;
+            }
             debouncedSearch({ query: q });
         },
-        [setQuery, debouncedSearch]
+        [setQuery, debouncedSearch, pathname]
     );
 
     const handleNavSubmit = useCallback(
@@ -86,7 +92,7 @@ export const NavSearchField: FunctionComponent = () => {
             debouncedSearch.cancel();
             // On the search page, Enter on an already-applied query opens the card
             // under the cursor; on a fresh query it applies the search first.
-            if (pathname === ExtensionListRoutes.SEARCH && q === filter.query) {
+            if (pathname === ExtensionListRoutes.SEARCH && q.trim() === filter.query) {
                 resultsNavigationSignal.emit('open');
                 return;
             }
@@ -114,6 +120,8 @@ export const NavSearchField: FunctionComponent = () => {
     const handleInputKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                // preventDefault stops WebKit/Blink from also clearing the search input.
+                e.preventDefault();
                 (e.target as HTMLInputElement).blur();
                 return;
             }
