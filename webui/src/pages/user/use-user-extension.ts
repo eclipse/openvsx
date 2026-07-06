@@ -15,7 +15,6 @@ import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { isError } from '../../extension-registry-types';
-import { controllerFromSignal } from '../../query-client';
 
 interface UserExtensionTarget {
     namespace: string;
