@@ -17,6 +17,7 @@ import { ButtonWithProgress } from '../button-with-progress';
 import { MainContext } from '../../context';
 import { Extension, VersionTargetPlatforms } from '../../extension-registry-types';
 import { VersionDeleteTarget } from './extension-version-delete-dialog';
+import { isConflictError } from './extension-version-dialog-shared';
 
 export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogProps> = props => {
     const { handleError } = useContext(MainContext);
@@ -32,7 +33,18 @@ export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogP
             props.onDeleted();
             props.onClose();
         } catch (err) {
-            handleError(err);
+            if (isConflictError(err)) {
+                // The underlying data is stale; keep this dialog open behind the error
+                // dialog and only close/refresh once the user acknowledges it.
+                handleError(err, {
+                    onClose: () => {
+                        props.onDeleted();
+                        props.onClose();
+                    }
+                });
+            } else {
+                handleError(err);
+            }
         } finally {
             setWorking(false);
         }

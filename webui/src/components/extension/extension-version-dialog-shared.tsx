@@ -16,6 +16,10 @@ import { TargetPlatformVersion } from '../../extension-registry-types';
 
 export const VERSION_DIALOG_WILDCARD = '*';
 
+// A 409 means the extension changed server-side (e.g. a version was already
+// deleted elsewhere) while the dialog was open.
+export const isConflictError = (err: unknown): boolean => (err as { status?: number })?.status === 409;
+
 export const buildVersionDialogItems = (targetPlatforms: string[]): TargetPlatformVersion[] => [
     { targetPlatform: VERSION_DIALOG_WILDCARD, version: VERSION_DIALOG_WILDCARD, checked: true },
     ...targetPlatforms.map(tp => ({ targetPlatform: tp, version: VERSION_DIALOG_WILDCARD, checked: true }))
