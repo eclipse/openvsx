@@ -18,4 +18,3 @@
 --settings "comment.format_header=false"
 server/src/main/java
 server/src/test/java
-
