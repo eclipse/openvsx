@@ -569,20 +569,15 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getExtension(
-        abortController: AbortController,
-        namespace: string,
-        extension: string
-    ): Promise<Readonly<Extension>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
+    async getExtension(namespace: string, extension: string): Promise<Readonly<Extension>> {
+        const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest<Extension>({
-            abortController,
+        return sendNonRetriableRequest<Extension>({
             method: 'GET',
             credentials: true,
             headers: headers,
