@@ -90,6 +90,7 @@ dependencies {
     implementation libs.commons.lang3
     implementation libs.bouncycastle
     implementation libs.jedis
+    implementation libs.guava
 
     implementation libs.bucket4j.spring
     implementation libs.bucket4j.redis
