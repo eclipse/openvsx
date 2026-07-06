@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import com.google.common.io.CharStreams;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionService;
@@ -49,7 +48,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -358,35 +357,40 @@ class EclipseServiceTest {
 
     private ResponseEntity<String> mockProfileResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("profile-response.json")) {
-            var json = CharStreams.toString(new InputStreamReader(stream));
+            assert stream != null;
+            var json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
 
     private ResponseEntity<String> mockOutdatedProfileResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("profile-outdated-response.json")) {
-            var json = CharStreams.toString(new InputStreamReader(stream));
+            assert stream != null;
+            var json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
 
     private ResponseEntity<String> mockAllowedProfileResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("profile-allowed-response.json")) {
-            var json = CharStreams.toString(new InputStreamReader(stream));
+            assert stream != null;
+            var json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
 
     private ResponseEntity<String> mockAgreementResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("publisher-agreement-response.json")) {
-            var json = CharStreams.toString(new InputStreamReader(stream));
+            assert stream != null;
+            var json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
 
     private ResponseEntity<String> mockOutdatedAgreementResponse() throws IOException {
         try (var stream = getClass().getResourceAsStream("publisher-agreement-outdated-response.json")) {
-            var json = CharStreams.toString(new InputStreamReader(stream));
+            assert stream != null;
+            var json = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             return new ResponseEntity<>(json, HttpStatus.OK);
         }
     }
