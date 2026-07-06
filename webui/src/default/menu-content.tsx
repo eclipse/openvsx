@@ -24,7 +24,6 @@ import { useLocation, useNavigate, Link as RouteLink } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import ForumIcon from '@mui/icons-material/Forum';
 import InfoIcon from '@mui/icons-material/Info';
 import PublishIcon from '@mui/icons-material/Publish';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
@@ -157,14 +156,6 @@ export const MobileMenuContent: FunctionComponent = () => {
                     Documentation
                 </MenuItemText>
             </MenuItem>
-            <MenuItem
-                component={Link}
-                href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
-                <MenuItemText>
-                    <ForumIcon sx={itemIcon} />
-                    Slack Workspace
-                </MenuItemText>
-            </MenuItem>
             <MenuItem component={RouteLink} to='/about'>
                 <MenuItemText>
                     <InfoIcon sx={itemIcon} />
@@ -222,9 +213,6 @@ export const DefaultMenuContent: FunctionComponent = () => {
             <MenuLink href={DOCS_URL} sx={{ display: 'inline-flex', alignItems: 'center', gap: '0.4375rem' }}>
                 Documentation
                 <KbdKey>d</KbdKey>
-            </MenuLink>
-            <MenuLink href='https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A'>
-                Slack Workspace
             </MenuLink>
             <MenuRouteLink to='/about'>About</MenuRouteLink>
             {loginProviders && (

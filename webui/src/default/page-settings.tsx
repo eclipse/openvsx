@@ -29,7 +29,6 @@ import { createAbsoluteURL } from '../utils';
 
 const WIKI_URL = 'https://github.com/eclipse/openvsx/wiki';
 const REPO_URL = 'https://github.com/eclipse/openvsx';
-const SLACK_URL = 'https://join.slack.com/t/openvsxworkinggroup/shared_invite/zt-2y07y1ggy-ct3IfJljjGI6xWUQ9llv6A';
 
 export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarContent: FunctionComponent = () => (
@@ -47,30 +46,13 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
         columns: [
             {
                 heading: 'Resources',
-                links: [
-                    { label: 'Documentation', href: WIKI_URL },
-                    { label: 'API Reference', href: '/swagger-ui.html' },
-                    { label: 'Publishing Guide', href: `${WIKI_URL}/Publishing-Extensions` },
-                    { label: 'Status', href: 'https://status.eclipse.org/' },
-                    { label: 'Commercial Usage', href: 'https://www.eclipse.org/legal/open-vsx-registry.php' }
-                ]
+                links: [{ label: 'Documentation', href: WIKI_URL }]
             },
             {
                 heading: 'Community',
                 links: [
                     { label: 'GitHub', href: REPO_URL, external: true },
-                    { label: 'Working Group', href: 'https://openvsxworkinggroup.github.io/', external: true },
-                    { label: 'Report a Vulnerability', href: `${REPO_URL}/security`, external: true },
-                    { label: 'Slack Workspace', href: SLACK_URL, external: true }
-                ]
-            },
-            {
-                heading: 'Legal',
-                links: [
-                    { label: 'Privacy Policy', href: 'https://www.eclipse.org/legal/privacy.php', external: true },
-                    { label: 'Terms of Use', href: 'https://www.eclipse.org/legal/termsofuse.php', external: true },
-                    { label: 'Security Policy', href: `${REPO_URL}/security/policy`, external: true },
-                    { label: 'Eclipse Foundation', href: 'https://www.eclipse.org', external: true }
+                    { label: 'About This Service', href: '/about' }
                 ]
             }
         ],

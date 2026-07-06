@@ -141,7 +141,12 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                     pt: '3rem',
                     pb: '1.875rem',
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1.4fr 1fr 1fr 1fr' },
+                    // Brand cell takes the slack so the link columns stay narrow and flush right.
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: `1fr repeat(${footer?.columns?.length ?? 0}, minmax(0, 13rem))`
+                    },
                     gap: '2.125rem'
                 }}>
                 {footer.brand && (

@@ -112,7 +112,8 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                 sx={{
                     flexGrow: 1,
                     minHeight: { xs: `calc(100vh - ${NAVBAR_HEIGHT})`, sm: 0 },
-                    pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0
+                    // Legacy footer is fixed, so pad by its height; otherwise leave a gap above the footer divider.
+                    pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : { xs: '2.5rem', sm: '4rem' }
                 }}>
                 <Suspense fallback={null}>
                     <Routes>
