@@ -357,7 +357,7 @@ public class ExtensionVersionJooqRepository {
             return extVersion;
         });
         var total = totalQuery.fetchOne(totalCol, Integer.class);
-        return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total);
+        return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total != null ? total : 0);
     }
 
     public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
