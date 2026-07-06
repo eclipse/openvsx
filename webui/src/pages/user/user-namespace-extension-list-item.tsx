@@ -12,12 +12,11 @@ import type { ReactNode } from 'react';
 import { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
 import { Extension } from '../../extension-registry-types';
 import { Paper, Typography, Box, styled } from '@mui/material';
-import { Link as RouteLink, useLocation } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router-dom';
 import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
 import { Timestamp } from '../../components/timestamp';
 import { UserSettingsRoutes } from './user-settings-routes';
-import { AdminDashboardRoutes } from '../admin-dashboard/admin-dashboard-routes';
 
 const getOpacity = (extension: Extension) => {
     if (extension.deprecated) {
@@ -43,15 +42,9 @@ const Paragraph = styled(Box)({
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
     const { pageSettings, service } = useContext(MainContext);
-    const { pathname } = useLocation();
     const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
-    const isAdminContext = pathname.startsWith(AdminDashboardRoutes.NAMESPACE_ADMIN);
-    const route = extension
-        ? isAdminContext
-            ? createRoute([AdminDashboardRoutes.EXTENSION_ADMIN, extension.namespace, extension.name])
-            : createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name])
-        : '';
+    const route = createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name]);
     const inactive = extension.active === false;
     const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
