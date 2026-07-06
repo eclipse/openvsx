@@ -9,6 +9,7 @@ flyway          = "11.20.3"
 gatling         = "3.15.0"
 gcloud          = "2.62.1"
 ipaddress       = "5.5.1"
+jackson         = "3.2.0"
 java            = "25"
 jaxb-api        = "2.3.1"
 jaxb-impl       = "2.3.8"
@@ -48,9 +49,9 @@ gatling-app                  = { module = "io.gatling:gatling-app", version.ref 
 gatling-core                 = { module = "io.gatling:gatling-core", version.ref = "gatling" }
 google-cloud-storage         = { module = "com.google.cloud:google-cloud-storage", version.ref = "gcloud" }
 ipaddress                    = { module = "com.github.seancfoley:ipaddress", version.ref = "ipaddress" }
-jackson-dataformat-yaml      = { module = "tools.jackson.dataformat:jackson-dataformat-yaml" }
-jackson-dataformat-xml       = { module = "tools.jackson.dataformat:jackson-dataformat-xml" }
-jackson-dataformat-toml      = { module = "tools.jackson.dataformat:jackson-dataformat-toml" }
+jackson-dataformat-yaml      = { module = "tools.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-dataformat-xml       = { module = "tools.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
+jackson-dataformat-toml      = { module = "tools.jackson.dataformat:jackson-dataformat-toml", version.ref = "jackson" }
 jaxb-api                     = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl                    = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jedis                        = { module = "redis.clients:jedis", version.ref = "jedis" }
