@@ -15,6 +15,7 @@ import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { isError } from '../../extension-registry-types';
+import { controllerFromSignal } from '../../query-client';
 
 interface UserExtensionTarget {
     namespace: string;
@@ -35,7 +36,7 @@ export const useUserExtension = (target: UserExtensionTarget) => {
     return useQuery({
         queryKey: ['user', 'extension', target.namespace, target.extension],
         queryFn: async ({ signal }) => {
-            const result = await service.getExtension(target.namespace, target.extension);
+            const result = await service.getExtension(controllerFromSignal(signal), target.namespace, target.extension);
             if (isError(result)) {
                 throw result;
             }
