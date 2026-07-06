@@ -1,0 +1,21 @@
+# JBang-fmt arguments
+# To invoke:
+# * check only (fails with exit code 1 if code not properly formatted):
+#   `jbang jbang-fmt@jbangdev @jbang-fmt.args --check`
+# * apply
+#   `jbang jbang-fmt@jbangdev @jbang-fmt.args`
+#
+# Configuration:
+# * apply google style
+# * line length 120
+# * Java 25
+# * override: do not touch file headers (as we have various, even wrongly formatted ones)
+# * formats only server non-generated Java sources
+
+--style google
+--line-length 120
+--java 25
+--settings "comment.format_header=false"
+server/src/main/java
+server/src/test/java
+
