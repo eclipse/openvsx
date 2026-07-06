@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.collect.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -26,7 +25,15 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.ExtensionId;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.VersionAlias;
+import org.eclipse.openvsx.util.VersionService;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -881,7 +888,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatform);
         allVersions.addAll(repositories.findVersionStringsSorted(extension, targetPlatform, onlyActive));
         json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatform));
-        var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
+        var allVersionsJson = new LinkedHashMap<String, String>(allVersions.size());
         for (var version : allVersions) {
             allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
         }
@@ -950,14 +957,14 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.setAllVersionsUrl(UrlUtil.createAllVersionsUrl(json.getNamespace(), json.getName(), targetPlatformParam));
-        var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
+        var allVersionsJson = new LinkedHashMap<String, String>(allVersions.size());
         var versionBaseUrl = UrlUtil.createApiVersionBaseUrl(serverUrl, json.getNamespace(), json.getName(), targetPlatformParam);
         for(var version : allVersions) {
             allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
         }
 
         json.setAllVersions(allVersionsJson);
-        var files = Maps.<String, String>newLinkedHashMapWithExpectedSize(8);
+        var files = new LinkedHashMap<String, String>(8);
         var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, json.getNamespace(), json.getName(), json.getTargetPlatform(), json.getVersion());
         for (var resource : resources) {
             var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
@@ -1055,7 +1062,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             return null;
         }
 
-        var allVersionsJson = Maps.<String, String>newLinkedHashMapWithExpectedSize(allVersions.size());
+        var allVersionsJson = new LinkedHashMap<String, String>(allVersions.size());
         for(var version : allVersions) {
             allVersionsJson.put(version, createApiUrl(versionBaseUrl, version));
         }
@@ -1064,7 +1071,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private Map<String, String> toFilesJson(ExtensionVersion extVersion, List<FileResource> resources, String fileBaseUrl) {
-        var files = Maps.<String, String>newLinkedHashMapWithExpectedSize(8);
+        var files = new LinkedHashMap<String, String>(8);
         for (var resource : resources) {
             var fileUrl = UrlUtil.createApiFileUrl(fileBaseUrl, resource.getName());
             files.put(resource.getType(), fileUrl);

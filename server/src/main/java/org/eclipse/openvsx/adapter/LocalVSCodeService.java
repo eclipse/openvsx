@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.adapter;
 
-import com.google.common.collect.Lists;
 import io.micrometer.observation.annotation.Observed;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.cache.CacheService;
@@ -22,7 +21,14 @@ import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.BuiltInExtensionUtil;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.VersionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -530,7 +536,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
         List<ExtensionQueryResult.Property> properties = null;
         if (test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {
-            properties = Lists.newArrayList();
+            properties = new ArrayList<>();
             addQueryExtensionVersionProperty(properties, PROP_BRANDING_COLOR, extVer.getGalleryColor());
             addQueryExtensionVersionProperty(properties, PROP_BRANDING_THEME, extVer.getGalleryTheme());
             addQueryExtensionVersionProperty(properties, PROP_REPOSITORY, extVer.getRepository());
@@ -557,7 +563,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
             var fileBaseUrl = UrlUtil.createApiFileBaseUrl(serverUrl, namespaceName, extensionName, extVer.getTargetPlatform(), extVer.getVersion());
 
-            files = Lists.newArrayList();
+            files = new ArrayList<>();
             addQueryExtensionVersionFile(files, FILE_MANIFEST, createFileUrl(resourcesByType.get(MANIFEST), fileBaseUrl));
             addQueryExtensionVersionFile(files, FILE_DETAILS, createFileUrl(resourcesByType.get(README), fileBaseUrl));
             addQueryExtensionVersionFile(files, FILE_LICENSE, createFileUrl(resourcesByType.get(LICENSE), fileBaseUrl));

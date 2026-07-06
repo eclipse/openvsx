@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.base.Joiner;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.SerializationUtils;
@@ -167,7 +166,8 @@ public class UserService {
         if (!issues.isEmpty()) {
             var message = issues.size() == 1
                     ? issues.getFirst().toString()
-                    : "Multiple issues were found in the extension metadata:\n" + Joiner.on("\n").join(issues);
+                    : "Multiple issues were found in the extension metadata:\n"
+                      + issues.stream().map(Object::toString).collect(Collectors.joining("\n"));
 
             throw new ErrorResultException(message);
         }

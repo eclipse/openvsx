@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.google.common.collect.Maps;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -271,7 +270,7 @@ public class StorageUtilService implements IStorageService {
      */
     public Map<Long, Map<String, String>> getFileUrls(Collection<ExtensionVersion> extVersions, String serverUrl, String... types) {
         var type2Url = extVersions.stream()
-                .map(ev -> Map.<Long, Map<String, String>>entry(ev.getId(), Maps.newLinkedHashMapWithExpectedSize(types.length)))
+                .map(ev -> Map.<Long, Map<String, String>>entry(ev.getId(), new LinkedHashMap<>(types.length)))
                 .collect(Collectors.<Map.Entry<Long, Map<String, String>>, Long, Map<String, String>>toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));

@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
-import com.google.common.collect.Lists;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
@@ -239,7 +238,7 @@ public class EclipseService {
             eclipseLogin.setProvider("eclipse");
             eclipseLogin.setLoginName(personId);
             if (json.getAdditionalLogins() == null)
-                json.setAdditionalLogins(Lists.newArrayList(eclipseLogin));
+                json.setAdditionalLogins(List.of(eclipseLogin));
             else
                 json.getAdditionalLogins().add(eclipseLogin);
         }

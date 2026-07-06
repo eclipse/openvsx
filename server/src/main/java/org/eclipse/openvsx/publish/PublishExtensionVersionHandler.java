@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -44,8 +45,6 @@ import org.springframework.resilience.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerErrorException;
-
-import com.google.common.base.Joiner;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -289,7 +288,7 @@ public class PublishExtensionVersionHandler {
                 throw new ErrorResultException(metadataIssues.getFirst().toString());
             }
             throw new ErrorResultException("Multiple issues were found in the extension metadata:\n"
-                    + Joiner.on("\n").join(metadataIssues));
+                    + metadataIssues.stream().map(Object::toString).collect(Collectors.joining("\n")));
         }
     }
 
