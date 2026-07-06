@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
-import com.google.common.collect.ImmutableMap;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +36,7 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties("ovsx.storage.cdn")
 public class CdnServiceConfig {
-    private static final Map<String, String> STORAGE_TYPE_TO_SERVICE = ImmutableMap.of(
+    private static final Map<String, String> STORAGE_TYPE_TO_SERVICE = Map.of(
             "aws", "aws",
             "azure-blob", "azure",
             "google-cloud", "gcp"

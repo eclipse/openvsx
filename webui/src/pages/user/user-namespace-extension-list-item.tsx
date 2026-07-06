@@ -8,16 +8,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import type { MouseEvent, ReactNode } from 'react';
-import { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
+import { FunctionComponent } from 'react';
+import { Link as RouteLink } from 'react-router-dom';
+import { Paper, Typography, Box, styled } from '@mui/material';
 import { Extension } from '../../extension-registry-types';
-import { Paper, Typography, Box, styled, IconButton } from '@mui/material';
-import { Link as RouteLink, useNavigate } from 'react-router-dom';
-import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
+import { ExtensionIcon } from '../../components/extension/extension-icon';
 import { Timestamp } from '../../components/timestamp';
-import { ExtensionDetailRoutes } from '../extension-detail/extension-detail-routes';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { UserSettingsRoutes } from './user-settings-routes';
 
 const getOpacity = (extension: Extension) => {
@@ -43,28 +41,9 @@ const Paragraph = styled(Box)({
 });
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
-    const { pageSettings, service } = useContext(MainContext);
-    const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
-    const route = (extension && createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name])) || '';
-    const deleteRoute =
-        (extension && createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name, 'delete'])) ||
-        '';
+    const route = createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name]);
     const inactive = extension.active === false;
-    const abortController = useRef<AbortController>(new AbortController());
-    const navigate = useNavigate();
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-    useEffect(() => {
-        if (icon) {
-            URL.revokeObjectURL(icon);
-        }
-
-        service.getExtensionIcon(abortController.current, extension).then(setIcon);
-    }, [extension]);
 
     const renderStatus = (): ReactNode => {
         if (extension.reviewStatus === 'under_review') {
@@ -112,11 +91,6 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
 
     const status = renderStatus();
 
-    const gotoDeleteRoute = (e: MouseEvent) => {
-        e.preventDefault();
-        navigate(deleteRoute);
-    };
-
     return extension ? (
         <RouteLink to={route} style={{ textDecoration: 'none' }}>
             <Paper
@@ -129,10 +103,8 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     opacity: getOpacity(extension),
                     filter: extension.deprecated ? 'grayscale(100%)' : null
                 }}>
-                <Box
-                    component='img'
-                    src={icon ?? pageSettings?.urls.extensionDefaultIcon ?? ''}
-                    alt={extension.displayName ?? extension.name}
+                <ExtensionIcon
+                    extension={extension}
                     sx={{
                         flex: '0 0 15%',
                         display: 'block',
@@ -146,11 +118,6 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                         <Typography variant='h6' noWrap sx={{ fontSize: '1.15rem' }}>
                             {extension.displayName ?? extension.name}
                         </Typography>
-                        {props.canDelete && deleteRoute && (
-                            <IconButton onClick={gotoDeleteRoute}>
-                                <DeleteIcon color='error' sx={{ fontSize: '1.15rem' }} />
-                            </IconButton>
-                        )}
                     </Paragraph>
                     <Paragraph>
                         <span>Version:</span>

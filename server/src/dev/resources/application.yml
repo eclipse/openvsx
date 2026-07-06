@@ -133,6 +133,7 @@ ovsx:
     publisher-agreement:
       timezone: US/Eastern
   extension-control:
+    enabled: false
     update-on-start: false
   integrity:
     key-pair: create # create, renew, delete, 'undefined'

@@ -17,40 +17,31 @@ import { MainContext } from '../../context';
 import { isError } from '../../extension-registry-types';
 import { controllerFromSignal } from '../../query-client';
 
-interface ExtensionTarget {
+interface UserExtensionTarget {
     namespace: string;
     extension: string;
 }
 
-interface DeleteExtensionRequest {
+interface DeleteUserExtensionRequest {
     namespace: string;
     extension: string;
     targetPlatformVersions?: object[];
 }
 
 /**
- * Looks up an extension for the admin search view. `staleTime: 0` keeps each
- * lookup fresh and `retry: false` lets a 404 surface immediately as "not found".
- * Pass `null` until the user triggers a (validated) search.
+ * Loads one of the current user's extensions for the extension settings page.
  */
-export const useAdminExtension = (target: ExtensionTarget | null) => {
+export const useUserExtension = (target: UserExtensionTarget) => {
     const { service } = useContext(MainContext);
     return useQuery({
-        queryKey: ['admin', 'extension', target?.namespace ?? '', target?.extension ?? ''],
+        queryKey: ['user', 'extension', target.namespace, target.extension],
         queryFn: async ({ signal }) => {
-            const result = await service.admin.getExtension(
-                controllerFromSignal(signal),
-                target!.namespace,
-                target!.extension
-            );
+            const result = await service.getExtension(controllerFromSignal(signal), target.namespace, target.extension);
             if (isError(result)) {
                 throw result;
             }
             return result;
-        },
-        enabled: !!target,
-        retry: false,
-        staleTime: 0
+        }
     });
 };
 
@@ -59,9 +50,9 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
  * an error result; thrown (network/server) errors reject so the caller's catch
  * path runs.
  */
-export const useDeleteExtension = () => {
+export const useDeleteUserExtensionVersions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req)
+        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req)
     });
 };

@@ -9,8 +9,17 @@
  ********************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import com.google.common.collect.Maps;
-import jakarta.persistence.*;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
@@ -226,7 +235,7 @@ public class ExtensionVersion implements Serializable {
         var map = Optional.ofNullable(this.getEngines()).orElse(Collections.emptyList()).stream()
                 .map(engine -> engine.split("@"))
                 .filter(split -> split.length == 2)
-                .collect(Collectors.toMap(split -> split[0], split -> split[1], (a, b) -> a, Maps::newLinkedHashMap));
+                .collect(Collectors.toMap(split -> split[0], split -> split[1], (a, b) -> a, LinkedHashMap::new));
 
         return !map.isEmpty() ? map : null;
     }

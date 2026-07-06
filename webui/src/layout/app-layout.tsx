@@ -124,7 +124,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                             element={<UserSettings userLoading={props.userLoading} />}
                         />
                         <Route
-                            path={UserSettingsRoutes.DELETE_EXTENSION}
+                            path={UserSettingsRoutes.EXTENSION_SETTINGS}
                             element={<UserSettings userLoading={props.userLoading} />}
                         />
                         <Route path={NamespaceDetailRoutes.MAIN} element={<NamespaceDetail />} />

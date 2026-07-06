@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
 import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
@@ -39,13 +38,13 @@ public class NamespaceJooqRepository {
         var namespace = NAMESPACE.as("n");
         var rows = publicIds.entrySet().stream()
                 .map(e -> DSL.row(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
+                .toList();
 
         var updates = DSL.values(rows.toArray(Row2[]::new)).as("u", "id", "public_id");
         dsl.update(namespace)
                 .set(namespace.PUBLIC_ID, updates.field("public_id", String.class))
                 .from(updates)
-                .where(updates.field("id", Long.class).eq(namespace.ID))
+                .where(namespace.ID.eq(updates.field("id", Long.class)))
                 .execute();
     }
 

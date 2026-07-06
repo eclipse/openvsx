@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
 import static org.eclipse.openvsx.jooq.Tables.EXTENSION_VERSION;
@@ -188,7 +187,7 @@ public class ExtensionJooqRepository {
         var extension = EXTENSION.as("e");
         var rows = publicIds.entrySet().stream()
                 .map(e -> DSL.row(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
+                .toList();
 
         var updates = DSL.values(rows.toArray(Row2[]::new)).as("u", "id", "public_id");
         dsl.update(extension)

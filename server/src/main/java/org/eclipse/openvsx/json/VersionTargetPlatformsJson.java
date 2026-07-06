@@ -9,4 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.json;
 
-public record VersionTargetPlatformsJson(String version, String[] targetPlatforms) {}
+import java.util.List;
+
+public record VersionTargetPlatformsJson(String version, List<TargetPlatformActiveJson> targetPlatforms) {}

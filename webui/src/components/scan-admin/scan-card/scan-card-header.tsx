@@ -60,13 +60,7 @@ export const ScanCardHeader: FC<ScanCardHeaderProps> = ({ scan }) => {
 
     const hasValidIcon = scan.extensionIcon && !imageError;
     const extensionRoute = createRoute([ExtensionDetailRoutes.ROOT, scan.namespace, scan.extensionName]);
-    const adminRoute = createRoute(
-        [AdminDashboardRoutes.ROOT, 'extensions'],
-        [
-            { key: 'namespace', value: scan.namespace },
-            { key: 'extension', value: scan.extensionName }
-        ]
-    );
+    const adminRoute = createRoute([AdminDashboardRoutes.ROOT, 'extensions', scan.namespace, scan.extensionName]);
 
     return (
         <>

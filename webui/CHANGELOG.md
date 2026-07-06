@@ -13,6 +13,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Add a structured footer
 - Add scroll-to-top on forward navigation
 - Support searching users and managing their roles in the admin dashboard ([#1847](https://github.com/eclipse-openvsx/openvsx/pull/1847))
+- Added an extension details page to admin dashboard and user settings ([#1939](https://github.com/eclipse-openvsx/openvsx/pull/1939))
 
 ### Changed
 
@@ -21,6 +22,12 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Morph the hero search into the navbar search field using the View Transitions API
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
+
+### Dependencies
+
+- Bump brace-expansion from `1.1.11` to `1.1.15` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
+- Bump brace-expansion from `2.0.2` to `2.1.1` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
+- Bump brace-expansion from `5.0.3` to `5.0.7` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
 
 ## [v1.0.2] (23/06/2026)
 

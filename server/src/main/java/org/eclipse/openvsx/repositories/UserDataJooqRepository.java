@@ -9,10 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import static org.eclipse.openvsx.jooq.Tables.CUSTOMER;
-import static org.eclipse.openvsx.jooq.Tables.CUSTOMER_MEMBERSHIP;
-import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
-import static org.eclipse.openvsx.jooq.Tables.NAMESPACE_MEMBERSHIP;
 import static org.eclipse.openvsx.jooq.Tables.USER_DATA;
 
 import java.util.ArrayList;
@@ -55,7 +51,7 @@ public class UserDataJooqRepository {
         query.addLimit(pageable.getPageSize());
         var content = query.fetch(this::toUserData);
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(content, pageable, total != null ? total : 0);
     }
 
     private SelectQuery<Record> baseQuery() {
