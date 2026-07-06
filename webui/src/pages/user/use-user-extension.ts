@@ -53,6 +53,6 @@ export const useUserExtension = (target: UserExtensionTarget) => {
 export const useDeleteUserExtensionVersions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(new AbortController(), req)
+        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req)
     });
 };
