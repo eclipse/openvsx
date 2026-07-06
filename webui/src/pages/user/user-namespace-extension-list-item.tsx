@@ -9,12 +9,12 @@
  ********************************************************************************/
 
 import type { ReactNode } from 'react';
-import { useContext, FunctionComponent, useState, useEffect, useRef } from 'react';
-import { Extension } from '../../extension-registry-types';
-import { Paper, Typography, Box, styled } from '@mui/material';
+import { FunctionComponent } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
-import { MainContext } from '../../context';
+import { Paper, Typography, Box, styled } from '@mui/material';
+import { Extension } from '../../extension-registry-types';
 import { createRoute } from '../../utils';
+import { ExtensionIcon } from '../../components/extension/extension-icon';
 import { Timestamp } from '../../components/timestamp';
 import { UserSettingsRoutes } from './user-settings-routes';
 
@@ -41,24 +41,9 @@ const Paragraph = styled(Box)({
 });
 
 export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
-    const { pageSettings, service } = useContext(MainContext);
-    const [icon, setIcon] = useState<string | undefined>(undefined);
     const { extension } = props;
     const route = createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name]);
     const inactive = extension.active === false;
-    const abortController = useRef<AbortController>(new AbortController());
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-    useEffect(() => {
-        if (icon) {
-            URL.revokeObjectURL(icon);
-        }
-
-        service.getExtensionIcon(abortController.current, extension).then(setIcon);
-    }, [extension]);
 
     const renderStatus = (): ReactNode => {
         if (extension.reviewStatus === 'under_review') {
@@ -118,10 +103,8 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                     opacity: getOpacity(extension),
                     filter: extension.deprecated ? 'grayscale(100%)' : null
                 }}>
-                <Box
-                    component='img'
-                    src={icon ?? pageSettings?.urls.extensionDefaultIcon ?? ''}
-                    alt={extension.displayName ?? extension.name}
+                <ExtensionIcon
+                    extension={extension}
                     sx={{
                         flex: '0 0 15%',
                         display: 'block',

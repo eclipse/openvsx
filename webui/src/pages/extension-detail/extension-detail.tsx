@@ -32,6 +32,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { MainContext } from '../../context';
 import { createRoute } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
+import { ExtensionIcon } from '../../components/extension/extension-icon';
 import { HoverPopover } from '../../components/hover-popover';
 import { Extension, UserData } from '../../extension-registry-types';
 import { TextDivider } from '../../components/text-divider';
@@ -288,8 +289,7 @@ const ExtensionHeaderInfo: FunctionComponent<{
 
 const ExtensionHeader: FunctionComponent<{
     extension: Extension;
-    icon: string | undefined;
-}> = ({ extension, icon }) => {
+}> = ({ extension }) => {
     const theme = useTheme();
     const { pageSettings } = useContext(MainContext);
 
@@ -323,10 +323,8 @@ const ExtensionHeader: FunctionComponent<{
                             textAlign: { xs: 'center', md: 'start' },
                             alignItems: { xs: 'center', md: 'normal' }
                         }}>
-                        <Box
-                            component='img'
-                            src={icon ?? pageSettings.urls.extensionDefaultIcon}
-                            alt={extension.displayName ?? extension.name}
+                        <ExtensionIcon
+                            extension={extension}
                             sx={{ height: '7.5rem', maxWidth: '9rem', mr: { xs: 0, md: '2rem' }, pt: 1 }}
                         />
                         <ExtensionHeaderInfo extension={extension} headerTextColor={headerTextColor} />
@@ -348,12 +346,7 @@ export const ExtensionDetail: FunctionComponent = () => {
     const activeTab = parseTab(version);
 
     // React Router v6 returns a possibly undefined type for params, but our route configuration guarantees these will be defined.
-    const { loading, error, extension, icon, reload } = useExtensionDetail(
-        namespace!,
-        name!,
-        target!,
-        effectiveVersion!
-    );
+    const { loading, error, extension, reload } = useExtensionDetail(namespace!, name!, target!, effectiveVersion!);
 
     const navigateToVersion = useCallback(
         (selectedVersion: string) => {
@@ -388,7 +381,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             <DelayedLoadIndicator loading={loading} />
             {extension && (
                 <>
-                    <ExtensionHeader extension={extension} icon={icon} />
+                    <ExtensionHeader extension={extension} />
                     <Container maxWidth='xl'>
                         <Tabs value={activeTab} indicatorColor='secondary'>
                             <Tab

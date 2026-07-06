@@ -14,15 +14,11 @@
 import { FunctionComponent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Extension } from '../../extension-registry-types';
+import { ExtensionIcon } from './extension-icon';
 
-export const ExtensionHeader: FunctionComponent<ExtensionHeaderProps> = ({ extension, icon, defaultIcon }) => (
+export const ExtensionHeader: FunctionComponent<ExtensionHeaderProps> = ({ extension }) => (
     <Box display='flex' alignItems='center' gap={2} mb={2}>
-        <Box
-            component='img'
-            src={icon ?? defaultIcon ?? ''}
-            alt={extension.displayName ?? extension.name}
-            sx={{ width: '4rem', height: '4rem', objectFit: 'contain' }}
-        />
+        <ExtensionIcon extension={extension} sx={{ width: '4rem', height: '4rem', objectFit: 'contain' }} />
         <Box>
             <Typography variant='h5'>{extension.displayName ?? extension.name}</Typography>
             <Typography variant='body2' color='text.secondary'>
@@ -34,6 +30,4 @@ export const ExtensionHeader: FunctionComponent<ExtensionHeaderProps> = ({ exten
 
 export interface ExtensionHeaderProps {
     extension: Extension;
-    icon: string | undefined;
-    defaultIcon?: string;
 }

@@ -11,10 +11,9 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { FunctionComponent, ReactNode, useEffect, useState } from 'react';
 import { Box, Button, Divider, Stack, Typography } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
-import { MainContext } from '../../context';
 import { Extension, VERSION_ALIASES, VersionTargetPlatforms } from '../../extension-registry-types';
 import { ExtensionHeader } from './extension-header';
 import { ExtensionStatusChips } from './extension-status-chips';
@@ -26,25 +25,12 @@ import { createRoute } from '../../utils';
 
 export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = props => {
     const { extension, actions, onRemoveVersion, onVersionDeleted } = props;
-    const { pageSettings, service } = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
 
-    const [icon, setIcon] = useState<string | undefined>(undefined);
     const [page, setPage] = useState(0);
     const [deleteDialogVersion, setDeleteDialogVersion] = useState<VersionTargetPlatforms | null>(null);
     const [deleteAllOpen, setDeleteAllOpen] = useState(false);
 
     useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (icon) {
-            URL.revokeObjectURL(icon);
-        }
-        service.getExtensionIcon(abortController.current, extension).then(setIcon);
         setPage(0);
     }, [extension]);
 
@@ -53,7 +39,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
 
     return (
         <Box>
-            <ExtensionHeader extension={extension} icon={icon} defaultIcon={pageSettings?.urls.extensionDefaultIcon} />
+            <ExtensionHeader extension={extension} />
             {extension.description && (
                 <Typography variant='body1' mb={2}>
                     {extension.description}

@@ -20,7 +20,6 @@ interface UseExtensionDetailResult {
     loading: boolean;
     extension: Extension | undefined;
     error: Error | undefined;
-    icon: string | undefined;
     reload: () => void;
 }
 
@@ -36,15 +35,11 @@ export const useExtensionDetail = (
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error>();
     const [extension, setExtension] = useState<Extension>();
-    const [icon, setIcon] = useState<string>();
     const [reloadKey, setReloadKey] = useState(0);
 
     useEffect(() => {
         return () => {
             abortController.current.abort();
-            if (icon) {
-                URL.revokeObjectURL(icon);
-            }
         };
     }, []);
 
@@ -54,21 +49,13 @@ export const useExtensionDetail = (
         const fetchExtension = async () => {
             setExtension(undefined);
             setError(undefined);
-            setIcon(undefined);
 
             const extensionUrl = service.getExtensionApiUrl({ namespace, name, target, version });
             const response = await service.getExtensionDetail(abortController.current, extensionUrl);
             if (isError(response)) throw response;
 
-            const ext = response as Extension;
-            const iconUrl = await service.getExtensionIcon(abortController.current, ext);
-            if (abortController.current.signal.aborted) {
-                if (iconUrl) {
-                    URL.revokeObjectURL(iconUrl);
-                }
-            } else {
-                setExtension(ext);
-                setIcon(iconUrl);
+            if (!abortController.current.signal.aborted) {
+                setExtension(response as Extension);
             }
         };
 
@@ -97,5 +84,5 @@ export const useExtensionDetail = (
     // This function updates the reloadKey state to trigger a refetch of the extension details.
     const reload = useCallback(() => setReloadKey(k => k + 1), []);
 
-    return { loading, extension, error, icon, reload };
+    return { loading, extension, error, reload };
 };

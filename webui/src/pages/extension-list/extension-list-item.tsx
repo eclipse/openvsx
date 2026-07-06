@@ -8,47 +8,17 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext, useState, useEffect, useRef } from 'react';
+import { FunctionComponent } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Grid, Fade } from '@mui/material';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import { MainContext } from '../../context';
 import { ExtensionDetailRoutes } from '../extension-detail/extension-detail-routes';
 import { SearchEntry } from '../../extension-registry-types';
+import { ExtensionIcon } from '../../components/extension/extension-icon';
 import { ExtensionRatingStars } from '../extension-detail/extension-rating-stars';
 import { createRoute } from '../../utils';
 
 export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = props => {
-    const [icon, setIcon] = useState<string>();
-    const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        updateChanges();
-        return () => {
-            abortController.current.abort();
-            if (icon) {
-                URL.revokeObjectURL(icon);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        updateChanges();
-    }, [props.extension.namespace, props.extension.name, props.extension.version]);
-
-    const updateChanges = async (): Promise<void> => {
-        if (icon) {
-            URL.revokeObjectURL(icon);
-        }
-        try {
-            const icon = await context.service.getExtensionIcon(abortController.current, props.extension);
-            setIcon(icon);
-        } catch (err) {
-            context.handleError(err);
-        }
-    };
-
     const { extension, filterSize, idx } = props;
     const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
     const numberFormat = new Intl.NumberFormat(undefined, { notation: 'compact', compactDisplay: 'short' } as any);
@@ -77,12 +47,7 @@ export const ExtensionListItem: FunctionComponent<ExtensionListItemProps> = prop
                             filter: extension.deprecated ? 'grayscale(100%)' : undefined
                         }}>
                         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height={80}>
-                            <Box
-                                component='img'
-                                src={icon ?? context.pageSettings.urls.extensionDefaultIcon}
-                                alt={extension.displayName ?? extension.name}
-                                sx={{ width: '4.5rem', maxHeight: '5.4rem' }}
-                            />
+                            <ExtensionIcon extension={extension} sx={{ width: '4.5rem', maxHeight: '5.4rem' }} />
                         </Box>
                         <Box display='flex' justifyContent='center'>
                             <Typography variant='h6' noWrap style={{ fontSize: '1.15rem' }}>
