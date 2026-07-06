@@ -241,15 +241,6 @@ public class UserAPI {
 
         var extVersions = repositories.findLatestVersions(user);
 
-//        var ownedNamespaces =
-//            repositories.findMemberships(user)
-//                .filter(membership -> NamespaceMembership.ROLE_OWNER.equals(membership.getRole()))
-//                .map(NamespaceMembership::getNamespace);
-//
-//        for (var namespace : ownedNamespaces) {
-//            extVersions.addAll(repositories.findLatestVersions(namespace));
-//        }
-
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
         return extVersions.stream()
