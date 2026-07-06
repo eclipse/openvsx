@@ -80,7 +80,6 @@ public class RepositoryService {
     private final UserDataRepository userDataRepo;
     private final NamespaceMembershipRepository membershipRepo;
     private final PersonalAccessTokenRepository tokenRepo;
-    private final PersonalAccessTokenJooqRepository tokenJooqRepo;
     private final PersistedLogRepository persistedLogRepo;
     private final DownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
@@ -118,7 +117,6 @@ public class RepositoryService {
             UserDataRepository userDataRepo,
             NamespaceMembershipRepository membershipRepo,
             PersonalAccessTokenRepository tokenRepo,
-            PersonalAccessTokenJooqRepository tokenJooqRepo,
             PersistedLogRepository persistedLogRepo,
             DownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
@@ -155,7 +153,6 @@ public class RepositoryService {
         this.userDataRepo = userDataRepo;
         this.membershipRepo = membershipRepo;
         this.tokenRepo = tokenRepo;
-        this.tokenJooqRepo = tokenJooqRepo;
         this.persistedLogRepo = persistedLogRepo;
         this.downloadCountRepo = downloadCountRepo;
         this.extensionJooqRepo = extensionJooqRepo;
@@ -434,7 +431,7 @@ public class RepositoryService {
     }
 
     public PersonalAccessToken findAccessToken(String value) {
-        return  tokenRepo.findByValue(value);
+        return tokenRepo.findByValue(value);
     }
 
     public PersonalAccessToken findAccessToken(long id) {
@@ -739,7 +736,7 @@ public class RepositoryService {
     }
 
     public boolean hasAccessToken(String value) {
-        return tokenJooqRepo.hasToken(value);
+        return tokenRepo.findByValue(value) != null;
     }
 
     public boolean canPublishInNamespace(UserData user, Namespace namespace) {
