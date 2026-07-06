@@ -13,9 +13,9 @@
 
 import { useContext, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Extension, SearchEntry } from '../../../lib';
 import { MainContext } from '../../context';
 import { controllerFromSignal } from '../../query-client';
+import { Extension, SearchEntry } from '../../extension-registry-types';
 
 /**
  * Loads an extension's icon as an object URL. Caching is disabled (`gcTime`/

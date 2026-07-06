@@ -11,50 +11,36 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useState, useContext, useEffect, useRef, useCallback } from 'react';
+import { FunctionComponent, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainContext } from '../../context';
-import { isError, Extension } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ExtensionDetailView } from '../../components/extension/extension-detail-view';
 import { UserSettingsRoutes } from './user-settings-routes';
+import { useDeleteUserExtensionVersions, useUserExtension } from './use-user-extension';
 
 export const UserSettingsExtensionSettings: FunctionComponent<UserSettingsExtensionSettingsProps> = props => {
-    const { service, handleError } = useContext(MainContext);
+    const { handleError } = useContext(MainContext);
     const navigate = useNavigate();
-    const abortController = useRef<AbortController>(new AbortController());
 
-    const [loading, setLoading] = useState(false);
-    const [extension, setExtension] = useState<Extension | undefined>(undefined);
+    const {
+        data: extension,
+        isFetching: loading,
+        error,
+        refetch
+    } = useUserExtension({ namespace: props.namespace, extension: props.extension });
+    const { mutateAsync: deleteVersions } = useDeleteUserExtensionVersions();
 
     useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const loadExtension = useCallback(async () => {
-        try {
-            setLoading(true);
-            const result = await service.getExtension(abortController.current, props.namespace, props.extension);
-            if (isError(result)) {
-                throw result;
-            }
-            setExtension(result);
-        } catch (err) {
-            if (err && (err as { status?: number }).status === 404) {
-                navigate(UserSettingsRoutes.EXTENSIONS);
-            } else {
-                handleError(err);
-            }
-        } finally {
-            setLoading(false);
+        if (!error) {
+            return;
         }
-    }, [props.namespace, props.extension]);
-
-    useEffect(() => {
-        loadExtension();
-    }, [loadExtension]);
+        if ((error as { status?: number }).status === 404) {
+            navigate(UserSettingsRoutes.EXTENSIONS);
+        } else {
+            handleError(error);
+        }
+    }, [error, navigate, handleError]);
 
     if (loading) {
         return <DelayedLoadIndicator loading={true} />;
@@ -68,13 +54,13 @@ export const UserSettingsExtensionSettings: FunctionComponent<UserSettingsExtens
         <ExtensionDetailView
             extension={extension}
             onRemoveVersion={targets =>
-                service.deleteExtensions(abortController.current, {
+                deleteVersions({
                     namespace: extension.namespace,
                     extension: extension.name,
                     targetPlatformVersions: targets
                 })
             }
-            onVersionDeleted={loadExtension}
+            onVersionDeleted={refetch}
         />
     );
 };
