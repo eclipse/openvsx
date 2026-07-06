@@ -19,7 +19,6 @@ import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 
 import java.time.ZoneId;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -40,8 +39,6 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.BulkPublisherRevokeRequestJson;
-import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
@@ -162,14 +159,6 @@ public class AdminService {
         }
 
         extensions.deleteExtension(admin, extVersion);
-    }
-
-    public ResultJson deleteExtension(
-            UserData adminUser,
-            String namespaceName,
-            String extensionName
-    ) {
-        return this.deleteExtension(adminUser, namespaceName, extensionName, null);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
