@@ -74,6 +74,7 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                         height: '1.875rem',
                         bgcolor: 'background.paper',
                         borderRadius: '8px',
+                        '& .MuiSelect-select': { py: '0.25rem', pl: '0.625rem' },
                         '& .MuiSelect-icon': { color: 'text.disabled', fontSize: '1.125rem' }
                     }}>
                     <MenuItem value='relevance'>Relevance</MenuItem>

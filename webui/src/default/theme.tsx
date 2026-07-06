@@ -10,6 +10,7 @@
 
 import { CSSProperties } from 'react';
 import { createTheme, Theme } from '@mui/material';
+import type {} from '@mui/x-data-grid/themeAugmentation';
 
 export const MONO_FONT = "'Geist Mono', monospace";
 export const NAVBAR_HEIGHT = '3.875rem';
@@ -203,6 +204,34 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                     }
                 }
             },
+            // MUI X derives the grid's borders from `divider` via lighten/darken, which
+            // almost erases our already-light opaque divider. Feed the grid's design
+            // tokens directly; `&.MuiDataGrid-root` outranks the injected
+            // `.MuiDataGridVariables-*` class that carries the derived defaults.
+            MuiDataGrid: {
+                styleOverrides: {
+                    root: ({ theme }) => ({
+                        '&.MuiDataGrid-root': {
+                            '--DataGrid-t-color-border-base': theme.palette.divider,
+                            '--DataGrid-t-header-background-base': theme.palette.bg2,
+                            '--DataGrid-t-radius-base': `${theme.shape.borderRadiusCard}px`,
+                            '--DataGrid-t-color-interactive-focus': theme.palette.secondary.main,
+                            '--DataGrid-t-color-interactive-selected': theme.palette.secondary.main,
+                            '--DataGrid-t-color-foreground-accent': theme.palette.secondary.light
+                        }
+                    }),
+                    columnHeaderTitle: ({ theme }) => ({
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        color: theme.palette.text.secondary
+                    })
+                }
+            },
+            MuiTableCell: {
+                styleOverrides: {
+                    root: ({ theme }) => ({ borderBottomColor: theme.palette.divider })
+                }
+            },
             MuiTabs: {
                 styleOverrides: {
                     indicator: ({ theme }) => ({
@@ -268,18 +297,6 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             MuiDivider: {
                 styleOverrides: {
                     root: ({ theme }) => ({ borderColor: theme.palette.divider })
-                }
-            },
-            MuiSelect: {
-                styleOverrides: {
-                    select: {
-                        '&.MuiInputBase-inputSizeSmall': {
-                            paddingTop: '0.25rem',
-                            paddingBottom: '0.25rem',
-                            paddingLeft: '0.625rem',
-                            fontSize: '0.8125rem'
-                        }
-                    }
                 }
             },
             MuiOutlinedInput: {

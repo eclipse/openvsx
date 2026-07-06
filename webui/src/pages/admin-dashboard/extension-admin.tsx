@@ -15,7 +15,6 @@ import { Button, Typography } from '@mui/material';
 import { MainContext } from '../../context';
 import { SearchListContainer } from './search-list-container';
 import { StyledInput } from './namespace-input';
-import { ExtensionSearchfield } from '../../components/extension-searchfield';
 import { useAdminExtension, useDeleteExtension } from './use-extension-admin';
 import { ExtensionDetailView } from '../../components/extension/extension-detail-view';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
@@ -88,12 +87,12 @@ export const ExtensionAdmin: FunctionComponent = () => {
                     hideIconButton={true}
                     autoFocus={true}
                 />,
-                <ExtensionSearchfield
+                <StyledInput
                     error={extensionFieldError}
                     key='ei'
-                    onSearchChanged={setExtensionValue}
-                    searchQuery={extensionValue}
-                    onSearchSubmit={findExtension}
+                    onChange={setExtensionValue}
+                    value={extensionValue}
+                    onSubmit={findExtension}
                     placeholder='Extension'
                     hideIconButton={true}
                     autoFocus={false}
