@@ -124,7 +124,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     const { query: contextQuery, setQuery } = useSearchQuery();
     const { search } = useSearch();
     const { searchFocusSignal, searchFocused } = useSearchFocus();
-    const [query, setLocalQuery] = useState(() => contextQuery);
+    const [query, setLocalQuery] = useState('');
     const heroInputRef = useRef<HTMLInputElement>(null);
     const isActiveSearchBar = useRegisterPageSearchBar(heroInputRef);
 
