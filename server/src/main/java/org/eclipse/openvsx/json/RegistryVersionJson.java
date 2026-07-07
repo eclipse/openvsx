@@ -15,13 +15,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
 @Schema(
-    name = "RegistryConfig",
+    name = "RegistryVersion",
     description = "Configuration of the registry service"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RegistryConfigJson extends ResultJson {
-    public static RegistryConfigJson error(String message) {
-        var result = new RegistryConfigJson();
+public class RegistryVersionJson extends ResultJson {
+    public static RegistryVersionJson error(String message) {
+        var result = new RegistryVersionJson();
         result.setError(message);
         return result;
     }

@@ -45,5 +45,5 @@ public interface IExtensionRegistry {
 
     String getPublicKey(String publicId);
 
-    RegistryConfigJson getRegistryVersion();
+    RegistryVersionJson getRegistryVersion();
 }
