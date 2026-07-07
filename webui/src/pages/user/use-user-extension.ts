@@ -15,7 +15,7 @@ import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { isError } from '../../extension-registry-types';
-import { controllerFromSignal } from '../../query-client';
+import { controllerFromSignal, queryClient } from '../../query-client';
 
 interface UserExtensionTarget {
     namespace: string;
@@ -41,7 +41,11 @@ export const useUserExtension = (target: UserExtensionTarget) => {
                 throw result;
             }
             return result;
-        }
+        },
+        // Disable caching entirely: this data must always reflect the latest state
+        // (e.g. right after publishing/deleting), a stale/cached result here masks that.
+        staleTime: 0,
+        gcTime: 0
     });
 };
 
@@ -53,6 +57,9 @@ export const useUserExtension = (target: UserExtensionTarget) => {
 export const useDeleteUserExtensionVersions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req)
+        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req),
+        onSuccess: (_data, req) => {
+            queryClient.invalidateQueries({ queryKey: ['user', 'extension', req.namespace, req.extension] });
+        }
     });
 };
