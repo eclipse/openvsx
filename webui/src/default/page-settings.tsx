@@ -13,10 +13,8 @@ import { Helmet } from 'react-helmet-async';
 import { Typography, Box } from '@mui/material';
 import { Link as RouteLink, Route, useParams } from 'react-router-dom';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import XIcon from '@mui/icons-material/X';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
-import GroupsIcon from '@mui/icons-material/Groups';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Extension, NamespaceDetails } from '../extension-registry-types';
 import { PageSettings } from '../page-settings';
@@ -27,8 +25,9 @@ import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
 
-const WIKI_URL = 'https://github.com/eclipse/openvsx/wiki';
-const REPO_URL = 'https://github.com/eclipse/openvsx';
+const WIKI_URL = 'https://github.com/eclipse-openvsx/openvsx/wiki';
+const REPO_URL = 'https://github.com/eclipse-openvsx/openvsx';
+const ISSUES_URL = `${REPO_URL}/issues`;
 
 export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarContent: FunctionComponent = () => (
@@ -60,19 +59,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
                 ]
             }
         ],
-        social: [
-            { title: 'GitHub', href: REPO_URL, icon: <GitHubIcon sx={{ fontSize: '1rem' }} /> },
-            {
-                title: 'LinkedIn',
-                href: 'https://www.linkedin.com/company/eclipse-foundation/',
-                icon: <LinkedInIcon sx={{ fontSize: '1rem' }} />
-            },
-            {
-                title: 'X (Twitter)',
-                href: 'https://twitter.com/EclipseFdn',
-                icon: <XIcon sx={{ fontSize: '0.9375rem' }} />
-            }
-        ],
+        social: [{ title: 'GitHub', href: REPO_URL, icon: <GitHubIcon sx={{ fontSize: '1rem' }} /> }],
         copyright: 'Copyright © Eclipse Foundation, AISBL. All Rights Reserved.'
     };
 
@@ -89,18 +76,18 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
                     label: 'View on GitHub →'
                 },
                 {
-                    icon: <GroupsIcon />,
-                    title: 'Join the Working Group',
-                    description: 'Shape the future of an open, vendor-neutral marketplace for extensions.',
-                    href: 'https://openvsxworkinggroup.github.io/',
-                    label: 'Learn more →'
+                    icon: <BugReportIcon />,
+                    title: 'Report an issue',
+                    description: 'Found a bug or have a feature request? Open an issue and help improve the registry.',
+                    href: ISSUES_URL,
+                    label: 'Open an issue →'
                 },
                 {
                     icon: <MenuBookIcon />,
                     title: 'Read the docs',
                     description: 'Learn how to publish, claim namespaces, and consume extensions via the API.',
                     href: WIKI_URL,
-                    label: 'Open documentation →'
+                    label: 'View documentation →'
                 }
             ]
         }
