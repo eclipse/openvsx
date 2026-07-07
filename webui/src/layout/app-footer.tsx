@@ -212,7 +212,7 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                 </ShortcutsButton>
                 {version && (
                     <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontFamily: MONO_FONT }}>
-                        v{version}
+                        {version}
                     </Typography>
                 )}
             </Box>
