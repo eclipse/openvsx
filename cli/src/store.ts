@@ -16,15 +16,14 @@ interface StoreEntry {
     value: string
 }
 
-export interface Store extends Iterable<StoreEntry> {
-	readonly size: number;
-	get(name: string): string | undefined;
+export interface Store {
+	get(name: string): Promise<string | undefined>;
 	add(name: string, value: string): Promise<void>;
 	delete(name: string): Promise<void>;
 }
 
 export class FileStore implements Store {
-	private static readonly DefaultPath = path.join(homedir(), '.ovsx');
+	static readonly DefaultPath = path.join(homedir(), '.ovsx');
 
 	static async open(path: string = FileStore.DefaultPath): Promise<FileStore> {
 		try {
@@ -59,7 +58,7 @@ export class FileStore implements Store {
 		}
 	}
 
-	get(name: string): string | undefined {
+	async get(name: string): Promise<string | undefined> {
         return this.entries.find(p => p.name === name)?.value;
 	}
 
@@ -79,60 +78,44 @@ export class FileStore implements Store {
 	}
 }
 
-export class KeytarStore implements Store {
-	static async open(serviceName = 'ovsx'): Promise<KeytarStore> {
-		const keytar = await import('keytar');
-		const creds = await keytar.findCredentials(serviceName);
+export class KeychainStore implements Store {
+	static async open(serviceName = 'ovsx'): Promise<KeychainStore> {
+		const keychain = await import('cross-keychain');
+		// probe the credential store so we can fall back to the file store when it's unusable
+		await keychain.getPassword(serviceName, serviceName);
 
-		return new KeytarStore(
-			keytar,
-			serviceName,
-			creds.map(({ account, password }) => ({ name: account, value: password }))
-		);
-	}
-
-	get size(): number {
-		return this.entries.length;
+		return new KeychainStore(keychain, serviceName);
 	}
 
 	private constructor(
-		private readonly keytar: typeof import('keytar'),
-		private readonly serviceName: string,
-		private entries: StoreEntry[]
+		private readonly keychain: typeof import('cross-keychain'),
+		private readonly serviceName: string
 	) { }
 
-	get(name: string): string | undefined {
-        return this.entries.find(p => p.name === name)?.value;
+	async get(name: string): Promise<string | undefined> {
+		return await this.keychain.getPassword(this.serviceName, name) ?? undefined;
 	}
 
 	async add(name: string, value: string): Promise<void> {
-        const newEntry: StoreEntry = { name, value };
-		this.entries = [...this.entries.filter(p => p.name !== name), newEntry];
-		await this.keytar.setPassword(this.serviceName, name, value);
+		await this.keychain.setPassword(this.serviceName, name, value);
 	}
 
 	async delete(name: string): Promise<void> {
-		this.entries = this.entries.filter(p => p.name !== name);
-		await this.keytar.deletePassword(this.serviceName, name);
-	}
-
-	[Symbol.iterator](): Iterator<StoreEntry, any, undefined> {
-		return this.entries[Symbol.iterator]();
+		await this.keychain.deletePassword(this.serviceName, name);
 	}
 }
 
 export async function openDefaultStore(): Promise<Store> {
 	if (/^file$/i.test(process.env['OVSX_STORE'] ?? '')) {
+		console.warn(`!!  Storing secrets clear-text in '${FileStore.DefaultPath}'. Unset OVSX_STORE to use the system credential store.`);
 		return await FileStore.open();
 	}
 
-	let keytarStore: Store;
+	let keychainStore: Store;
 	try {
-		keytarStore = await KeytarStore.open();
+		keychainStore = await KeychainStore.open();
 	} catch (err) {
-		const store = await FileStore.open();
-		console.warn(`Failed to open credential store. Falling back to storing secrets clear-text in: ${store.path}.`);
-		return store;
+		throw new Error(`Failed to open the system credential store: ${err.message}\nAs a last resort, set the environment variable OVSX_STORE=file to store secrets clear-text in '${FileStore.DefaultPath}' (not recommended).`);
 	}
 
 	const fileStore = await FileStore.open();
@@ -140,12 +123,12 @@ export async function openDefaultStore(): Promise<Store> {
 	// migrate from file store
 	if (fileStore.size) {
 		for (const { name, value } of fileStore) {
-			await keytarStore.add(name, value);
+			await keychainStore.add(name, value);
 		}
 
 		await fileStore.deleteStore();
 		console.info(`Migrated ${fileStore.size} publishers to system credential manager. Deleted local store '${fileStore.path}'.`);
 	}
 
-	return keytarStore;
+	return keychainStore;
 }

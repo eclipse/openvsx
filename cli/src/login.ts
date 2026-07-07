@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import {  } from '@vscode/vsce';
 import { addEnvOptions, getUserInput } from './util';
 import { openDefaultStore } from './store';
 import { LoginOptions } from './login-options';
@@ -20,7 +19,7 @@ export default async function login(options: LoginOptions) {
     }
 
 	const store = await openDefaultStore();
-	let pat = store.get(options.namespace);
+	let pat = await store.get(options.namespace);
 	if (pat) {
 		console.log(`Namespace '${options.namespace}' is already known.`);
 		const answer = await getUserInput('Do you want to overwrite its PAT? [y/N] ');

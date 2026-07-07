@@ -40,7 +40,7 @@ export async function getPAT(namespace: string, options: CreateNamespaceOptions 
     }
 
     const store = await openDefaultStore();
-    let pat = store.get(namespace);
+    let pat = await store.get(namespace);
     if (pat) {
         return pat;
     }
