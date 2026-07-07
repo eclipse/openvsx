@@ -46,10 +46,12 @@ public class VSCodeIdUpdateService {
         var extension = repositories.findPublicId(namespaceName, extensionName);
         if (extension == null) {
             logger.warn(
-                    "failed to update VSCodeId for extension {}: does not exist anymore",
+                    "failed to update VSCodeId for extension {}: does not exist",
                     NamingUtil.toExtensionId(namespaceName, extensionName)
             );
+            return;
         }
+        
         var extensionUpdates = new HashMap<Long, String>();
         updateExtensionPublicId(extension, extensionUpdates, false);
         if (!extensionUpdates.isEmpty()) {
