@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Files;
 
 @Component
-public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class PotentiallyMaliciousJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(PotentiallyMaliciousJobRequestHandler.class));
 

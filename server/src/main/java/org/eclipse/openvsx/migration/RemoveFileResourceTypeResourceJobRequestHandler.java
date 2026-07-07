@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RemoveFileResourceTypeResourceJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class RemoveFileResourceTypeResourceJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(RemoveFileResourceTypeResourceJobRequestHandler.class));
 

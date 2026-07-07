@@ -13,8 +13,8 @@ import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -24,11 +24,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.util.List;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
 
@@ -84,7 +83,7 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
                 service.getUser(),
                 extension.getNamespace().getName(),
                 extension.getName(),
-                List.of(new TargetPlatformVersionJson(extVersion.getTargetPlatform(), extVersion.getVersion()))
+                TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion())
         );
     }
 }

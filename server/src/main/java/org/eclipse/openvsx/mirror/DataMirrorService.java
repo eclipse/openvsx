@@ -23,11 +23,11 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.ReviewJson;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "true")
@@ -138,12 +137,12 @@ public class DataMirrorService {
     @Transactional
     public UserData createMirrorUser() {
         var user = repositories.findUserByLoginName("system", userName);
-        if(user != null) {
+        if (user != null) {
             return user;
         }
 
         user = repositories.findUserByLoginName(null, userName);
-        if(user != null) {
+        if (user != null) {
             user.setProvider("system");
             return user;
         }
@@ -244,19 +243,19 @@ public class DataMirrorService {
                 user,
                 extension.getNamespace().getName(),
                 extension.getName(),
-                List.of(new TargetPlatformVersionJson(extVersion.getTargetPlatform(), extVersion.getVersion()))
+                TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion())
         );
     }
 
     public void mirrorNamespaceMetadata(String namespaceName) {
         var remoteVerified = upstream.getNamespace(namespaceName).getVerified();
         var localVerified = local.getNamespace(namespaceName).getVerified();
-        if(!localVerified && remoteVerified) {
+        if (!localVerified && remoteVerified) {
             // verify the namespace by adding an owner to it
             var membership = repositories.findFirstMembership(namespaceName);
             users.addNamespaceMember(membership.getNamespace(), membership.getUser(), NamespaceMembership.ROLE_OWNER);
         }
-        if(localVerified && !remoteVerified) {
+        if (localVerified && !remoteVerified) {
             // unverify namespace by changing owner(s) back to contributor
             var namespace = repositories.findNamespace(namespaceName);
             repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER)
@@ -271,7 +270,7 @@ public class DataMirrorService {
     }
 
     public void ensureNamespace(String namespaceName) {
-        if(!repositories.namespaceExists(namespaceName)) {
+        if (!repositories.namespaceExists(namespaceName)) {
             var json = new NamespaceJson();
             json.setName(namespaceName);
             admin.createNamespace(json);

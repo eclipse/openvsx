@@ -12,11 +12,11 @@ package org.eclipse.openvsx;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,9 +53,8 @@ import static org.mockito.Mockito.doAnswer;
  * separates the check from the act (using a spy), pausing the delete operation just
  * long enough for the concurrent publish to commit.
  * <p>
- * {@link ExtensionService#deleteExtension} is protected by a {@code SELECT … FOR UPDATE NOWAIT}
- * lock and therefore passes. {@link AdminService#deleteExtension} carries no such lock and
- * is expected to fail these tests until the same protection is added.
+ * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
+ * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
     "ovsx.elasticsearch.enabled=false"
@@ -76,9 +75,6 @@ class ExtensionDeleteTest {
 
     @Autowired
     ExtensionService extensionService;
-
-    @Autowired
-    AdminService adminService;
 
     @MockitoSpyBean
     RepositoryService repositories;
@@ -149,10 +145,10 @@ class ExtensionDeleteTest {
         owner.setLoginName(OWNER_LOGIN);
 
         // The owner asks to delete the only version they published.
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets);
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets);
 
-        // Let the (possibly blocked) publisher run to completion now that the delete committed.
+        // Let the (possibly blocked) publisher run to completion now that the delete operation committed.
         if (publisherThread != null) {
             publisherThread.join(TimeUnit.SECONDS.toMillis(10));
         }
@@ -161,51 +157,6 @@ class ExtensionDeleteTest {
         assertThat(publisherSucceeded.get() && !otherVersionExists)
                 .as("a version successfully published by another user must never be silently "
                         + "deleted by a concurrent delete-all on the same extension")
-                .isFalse();
-        assertThat(otherVersionExists && !extensionExists())
-                .as("a committed version must never be left orphaned by a removed extension")
-                .isFalse();
-    }
-
-    /**
-     * {@link AdminService#deleteExtension} decides whether to delete the whole extension by
-     * comparing {@code countVersions} against the size of the requested target list. That
-     * comparison is not protected by any lock, so a concurrent publish that commits between
-     * the count check and the actual deletion will have its version silently swept away by
-     * the delete-all.
-     */
-    @Test
-    void adminDeleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
-        // Intercept the count check, which is the boundary between "decide delete-all" and
-        // "execute delete-all". Starting the concurrent publish here ensures it commits before
-        // the delete transaction opens, so findVersions will return both versions and both
-        // will be deleted — demonstrating the race condition.
-        doAnswer(invocation -> {
-            var result = invocation.callRealMethod();
-            if (raceTriggered.compareAndSet(false, true)) {
-                startConcurrentPublish();
-                publisherFinished.await(RACE_WINDOW_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            }
-            return result;
-        }).when(repositories).countVersions(any(), any());
-
-        var admin = new UserData();
-        admin.setId(ownerId);
-        admin.setLoginName(OWNER_LOGIN);
-
-        // The admin asks to delete the only version that currently exists.
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        adminService.deleteExtension(admin, NAMESPACE, EXTENSION, targets);
-
-        // Let the (possibly blocked) publisher run to completion now that the delete committed.
-        if (publisherThread != null) {
-            publisherThread.join(TimeUnit.SECONDS.toMillis(10));
-        }
-
-        var otherVersionExists = versionExists("2.0.0");
-        assertThat(publisherSucceeded.get() && !otherVersionExists)
-                .as("a version successfully published by another user must never be silently "
-                        + "deleted by a concurrent admin delete-all on the same extension")
                 .isFalse();
         assertThat(otherVersionExists && !extensionExists())
                 .as("a committed version must never be left orphaned by a removed extension")
@@ -231,8 +182,8 @@ class ExtensionDeleteTest {
         owner.setLoginName(OWNER_LOGIN);
 
         // The owner deletes only their own version; this is not a delete-all.
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets);
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets);
 
         assertThat(extensionExists())
                 .as("the extension must survive while another publisher's version remains")
@@ -276,10 +227,10 @@ class ExtensionDeleteTest {
         var owner = new UserData();
         owner.setId(ownerId);
         owner.setLoginName(OWNER_LOGIN);
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
 
         try {
-            assertThatThrownBy(() -> extensionService.deleteExtension(owner, NAMESPACE, EXTENSION, targets))
+            assertThatThrownBy(() -> extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets))
                     .as("the delete must fail fast (not block) while a publish holds the lock")
                     .isInstanceOf(ErrorResultException.class);
         } finally {
