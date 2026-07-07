@@ -15,7 +15,7 @@ import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { isError } from '../../extension-registry-types';
-import { controllerFromSignal, queryClient } from '../../query-client';
+import { controllerFromSignal } from '../../query-client';
 
 interface UserExtensionTarget {
     namespace: string;
@@ -57,9 +57,6 @@ export const useUserExtension = (target: UserExtensionTarget) => {
 export const useDeleteUserExtensionVersions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req),
-        onSuccess: (_data, req) => {
-            queryClient.invalidateQueries({ queryKey: ['user', 'extension', req.namespace, req.extension] });
-        }
+        mutationFn: (req: DeleteUserExtensionRequest) => service.deleteExtensions(req)
     });
 };
