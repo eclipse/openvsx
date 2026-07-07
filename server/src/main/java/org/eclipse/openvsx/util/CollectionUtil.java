@@ -9,9 +9,12 @@
  ********************************************************************************/
 package org.eclipse.openvsx.util;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 public final class CollectionUtil {
 
@@ -33,6 +36,17 @@ public final class CollectionUtil {
             var t = function.apply(s);
             if (t != null)
                 result.add(t);
+        }
+        return result;
+    }
+
+    public static <S, T> T[] toArray(@Nullable List<S> source, Function<? super S, ? extends T> function, IntFunction<T[]> generator) {
+        if (source == null) {
+            return generator.apply(0);
+        }
+        var result = generator.apply(source.size());
+        for (var i = 0; i < source.size(); i++) {
+            result[i] = function.apply(source.get(i));
         }
         return result;
     }

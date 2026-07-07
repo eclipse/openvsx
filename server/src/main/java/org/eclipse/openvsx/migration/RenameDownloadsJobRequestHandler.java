@@ -20,7 +20,7 @@ import java.nio.file.Files;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<MigrationJobRequest> {
+public class RenameDownloadsJobRequestHandler  implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = LoggerFactory.getLogger(RenameDownloadsJobRequestHandler.class);
 

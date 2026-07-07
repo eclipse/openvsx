@@ -41,7 +41,11 @@ export const useUserExtension = (target: UserExtensionTarget) => {
                 throw result;
             }
             return result;
-        }
+        },
+        // Disable caching entirely: this data must always reflect the latest state
+        // (e.g. right after publishing/deleting), a stale/cached result here masks that.
+        staleTime: 0,
+        gcTime: 0
     });
 };
 

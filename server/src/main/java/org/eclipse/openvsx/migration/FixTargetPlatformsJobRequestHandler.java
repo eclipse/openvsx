@@ -14,6 +14,7 @@ import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -26,7 +27,7 @@ import java.nio.file.Files;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
 
@@ -79,11 +80,10 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     private void deleteExtension(ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         admins.deleteExtension(
+                service.getUser(),
                 extension.getNamespace().getName(),
                 extension.getName(),
-                extVersion.getTargetPlatform(),
-                extVersion.getVersion(),
-                service.getUser()
+                TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion())
         );
     }
 }

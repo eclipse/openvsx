@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @Component
-public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class GenerateSha256ChecksumJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(GenerateSha256ChecksumJobRequestHandler.class));
 

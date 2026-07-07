@@ -40,12 +40,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
-import org.eclipse.openvsx.util.ErrorResultException;
-import org.eclipse.openvsx.util.LogService;
-import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
@@ -87,12 +82,12 @@ public class AdminAPI {
     private final SearchUtilService search;
 
     public AdminAPI(
-        RepositoryService repositories,
-        AdminService admins,
-        SettingsService settings,
-        LogService logs,
-        LocalRegistryService local,
-        SearchUtilService search
+            RepositoryService repositories,
+            AdminService admins,
+            SettingsService settings,
+            LogService logs,
+            LocalRegistryService local,
+            SearchUtilService search
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -423,7 +418,8 @@ public class AdminAPI {
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
-            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var targets = CollectionUtil.toArray(targetVersions, TargetPlatformVersionJson::toTargetPlatformVersion, TargetPlatformVersion[]::new);
+            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -458,7 +454,8 @@ public class AdminAPI {
     ) {
         try {
             var adminUser = admins.checkAdminUser();
-            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targetVersions);
+            var targets = CollectionUtil.toArray(targetVersions, TargetPlatformVersionJson::toTargetPlatformVersion, TargetPlatformVersion[]::new);
+            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();

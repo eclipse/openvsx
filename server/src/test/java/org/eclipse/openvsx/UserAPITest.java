@@ -36,6 +36,7 @@ import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
@@ -512,7 +513,7 @@ class UserAPITest {
     @Test
     void testDeleteExtensionVersion() throws Exception {
         var userData = mockUserData();
-        mockExtension(userData,3, 0, 0);
+        mockExtension(userData, 3, 0, 0);
         mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -525,7 +526,7 @@ class UserAPITest {
     @Test
     void testDeleteLastExtensionVersion() throws Exception {
         var userData = mockUserData();
-        mockExtension(userData,1, 0, 0);
+        mockExtension(userData, 1, 0, 0);
         mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -538,7 +539,7 @@ class UserAPITest {
     @Test
     void testDeleteBundledExtension() throws Exception {
         var userData = mockUserData();
-        mockExtension(userData,2, 1, 0);
+        mockExtension(userData, 2, 1, 0);
         mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -551,7 +552,7 @@ class UserAPITest {
     @Test
     void testDeleteDependingExtension() throws Exception {
         var userData = mockUserData();
-        mockExtension(userData,2, 0, 1);
+        mockExtension(userData, 2, 0, 1);
         mockMvc.perform(post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -723,18 +724,18 @@ class UserAPITest {
             versions.add(extVersion);
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.findVersion(user, extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
+            Mockito.when(repositories.findVersionPublishedWithUser(user, extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
         }
 
         extension.getVersions().addAll(versions);
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
-        Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.get(versions.size() - 1)));
-        Mockito.when(repositories.isDeleteAllVersions(eq("foobar"), eq("baz"), any(List.class), eq(user))).then(new Answer<Boolean>() {
+        Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.getLast()));
+        Mockito.when(repositories.isDeleteAllVersions(any(), eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
             @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArgument(2, List.class).size() == numberOfVersions;
+            public Boolean answer(InvocationOnMock invocation) {
+                return ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length == numberOfVersions;
             }
         });
 

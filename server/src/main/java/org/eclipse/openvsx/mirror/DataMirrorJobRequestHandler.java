@@ -18,6 +18,7 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.XmlUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
+import org.jobrunr.server.runner.ThreadLocalJobContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,23 +97,30 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     }
 
     private List<String> processUrls(NodeList urls, UserData mirrorUser) {
+        var jobContext = ThreadLocalJobContext.getJobContext();
+        var jobLogger = jobContext.logger();
+
         var extensionIds = new ArrayList<String>();
-        var progress = jobContext().progressBar(urls.getLength());
+        var progress = jobContext.progressBar(urls.getLength());
         for (var i = 0; i < urls.getLength(); i++) {
             var url = (Element) urls.item(i);
             var extensionId = getExtensionId(url);
             var id = NamingUtil.fromExtensionId(extensionId);
+            if (id == null) {
+                logger.warn("failed to get id from extension {}", extensionId);
+                continue;
+            }
             var namespace = id.namespace();
             var extension = id.extension();
             if (!data.match(namespace, extension)) {
-                jobContext().logger().info("excluded, skipping " + extensionId + " (" + (i+1) + "/" +  urls.getLength() + ")");
+                jobLogger.info("excluded, skipping " + extensionId + " (" + (i+1) + "/" +  urls.getLength() + ")");
                 continue;
             }
 
-            jobContext().logger().info("mirroring " + extensionId + " (" + (i+1) + "/" +  urls.getLength() + ")");
+            jobLogger.info("mirroring " + extensionId + " (" + (i+1) + "/" +  urls.getLength() + ")");
             try {
                 LocalDate lastModified = getLastModified(url, extensionId);
-                mirrorExtensionService.mirrorExtension(namespace, extension, mirrorUser, lastModified, jobContext());
+                mirrorExtensionService.mirrorExtension(namespace, extension, mirrorUser, lastModified, jobContext);
             } catch (Exception e) {
                 logger.error("failed to mirror {}", extensionId, e);
             }
@@ -127,10 +135,10 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
         var notMatchingExtensions = repositories.findAllNotMatchingByExtensionId(extensionIds);
         for (var extension : notMatchingExtensions) {
             var extensionId = NamingUtil.toExtensionId(extension);
-            jobContext().logger().info("deleting " + extensionId);
+            ThreadLocalJobContext.getJobContext().logger().info("deleting " + extensionId);
             try {
                 var namespace = extension.getNamespace();
-                admin.deleteExtension(namespace.getName(), extension.getName(), mirrorUser);
+                admin.deleteExtension(mirrorUser, namespace.getName(), extension.getName());
             } catch (ErrorResultException e) {
                 if (e.getStatus() != HttpStatus.NOT_FOUND) {
                     logger.warn("mirror: failed to delete extension {}", extensionId, e);

@@ -47,9 +47,11 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.slf4j.Logger;
@@ -393,8 +395,12 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
-            var result = extensions.deleteExtension(namespaceName, extensionName, targetVersions, user);
+            var targets = CollectionUtil.toArray(targetVersions, TargetPlatformVersionJson::toTargetPlatformVersion, TargetPlatformVersion[]::new);
+            var result = extensions.deleteUserExtension(user, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
+        } catch (NotFoundException exc) {
+            var json = NamespaceDetailsJson.error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

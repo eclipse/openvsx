@@ -13,13 +13,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformActiveJson;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -1465,9 +1466,9 @@ public class ExtensionVersionJooqRepository {
                 .fetchOne("count", Integer.class);
     }
 
-    public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
-        if(targetVersions.isEmpty()) {
-            return false;
+    public boolean isDeleteAllVersions(@Nullable UserData user, String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
+        if (targetVersions.length == 0) {
+            return true;
         }
 
         var all = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("all"))
@@ -1478,20 +1479,29 @@ public class ExtensionVersionJooqRepository {
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
                 .fetchOne("all", Integer.class);
 
-        var rows = targetVersions.stream().map((tv) -> DSL.row(tv.version(), tv.targetPlatform())).toArray(Row2[]::new);
+        var rows = Arrays.stream(targetVersions).map((tv) -> DSL.row(tv.version(), tv.targetPlatform())).toArray(Row2[]::new);
         var versions = DSL.values(rows).as("v", "version", "target");
         var VERSION = versions.field("version", String.class);
         var TARGET = versions.field("target", String.class);
-        var actual = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("actual"))
+        var actualSelect = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("actual"))
                 .from(versions)
                 .join(EXTENSION_VERSION).on(EXTENSION_VERSION.VERSION.eq(VERSION).and(EXTENSION_VERSION.TARGET_PLATFORM.eq(TARGET)))
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .where(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
-                .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
-                .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
-                .fetchOne("actual", Integer.class);
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+
+        if (user != null) {
+            actualSelect = actualSelect.join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
+        }
+
+        var condition = actualSelect
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .and(EXTENSION.NAME.equalIgnoreCase(extensionName));
+
+        if (user != null) {
+            condition = condition.and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
+        }
+
+        var actual = condition.fetchOne("actual", Integer.class);
 
         return Objects.equals(actual, all);
     }

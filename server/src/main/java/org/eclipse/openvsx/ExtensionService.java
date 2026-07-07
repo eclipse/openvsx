@@ -19,7 +19,6 @@ import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -37,10 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -168,7 +164,9 @@ public class ExtensionService {
             if (size > maxContentSize) {
                 IOUtils.closeQuietly(extensionFile);
                 var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
-                throw new ErrorResultException("The extension package exceeds the size limit of " + maxSize + ".", HttpStatus.PAYLOAD_TOO_LARGE);
+                throw new ErrorResultException(
+                    "The extension package exceeds the size limit of " + maxSize + ".", HttpStatus.CONTENT_TOO_LARGE
+                );
             }
 
             return extensionFile;
@@ -216,16 +214,76 @@ public class ExtensionService {
         }
     }
 
+    /**
+     * Delete an extension version published by the given user.
+     * <p>
+     * If the resolved extension version has not been published by the given user,
+     * a {@code ErrorResultException} will be thrown.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteUserExtension(
+        UserData user,
+        String namespaceName,
+        String extensionName,
+        TargetPlatformVersion... targetVersions
+    ) throws ErrorResultException {
+        return deleteExtension(user, true, namespaceName, extensionName, targetVersions);
+    }
+
+    /**
+     * Deletes the given extension.
+     * <p>
+     * If {@code restrictedToUser} is {@code true}, the deletion operation is only successful if the user
+     * has published the respective extension version.
+     */
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(
+            UserData user,
+            boolean restrictedToUser,
             String namespaceName,
             String extensionName,
-            List<TargetPlatformVersionJson> targetVersions,
-            UserData user
+            TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
-        // Lock the extension row (NOWAIT) so a delete-all and a concurrent publish can't interleave.
-        // Publishing takes the same lock (waiting); if the lock can not be acquired, this fails fast,
-        // and we ask the user to retry.
+        var extension = lockExtension(namespaceName, extensionName);
+        if (repositories.isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
+            return deleteExtension(user, extension);
+        }
+
+        return deleteExtensionVersions(user, Arrays.stream(targetVersions)
+                .map(target -> {
+                    var extVersion = restrictedToUser ?
+                        repositories.findVersionPublishedWithUser(user, target.version(), target.targetPlatform(), extensionName, namespaceName) :
+                        repositories.findVersion(target.version(), target.targetPlatform(), extensionName, namespaceName);
+
+                    if (extVersion == null) {
+                        throw new ErrorResultException(
+                            "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, target.targetPlatform(), target.version()),
+                            HttpStatus.NOT_FOUND);
+                    }
+                    return extVersion;
+                })
+                .toList());
+    }
+
+    /**
+     * Deletes the given pre-resolved extension versions without any ownership check.
+     * Callers are responsible for authorisation (e.g. scoping the lookup to the owning user
+     * before calling this, or using an admin-level unscoped lookup).
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtensionVersions(UserData user, List<ExtensionVersion> versions) {
+        var results = new ArrayList<ResultJson>();
+        for (var version : versions) {
+            results.add(deleteExtensionVersion(user, version));
+        }
+        return combineResults(results);
+    }
+
+    /**
+     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}).
+     * this fails fast with {@code 409}
+     */
+    private Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
         Extension extension;
         try {
             extension = repositories.findExtensionForUpdateNoWait(extensionName, namespaceName);
@@ -235,34 +293,27 @@ public class ExtensionService {
                             + " can not be locked due to concurrent modification. Please try again.",
                     HttpStatus.CONFLICT);
         }
-
         if (extension == null) {
-            var message = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
-            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+            throw new ErrorResultException(
+                    "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName),
+                    HttpStatus.NOT_FOUND);
         }
+        return extension;
+    }
 
-        var results = new ArrayList<ResultJson>();
-        if (repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user)) {
-            results.add(deleteExtension(user, extension));
-        } else {
-            for (var targetVersion : targetVersions) {
-                var extVersion = repositories.findVersion(user, targetVersion.version(), targetVersion.targetPlatform(), extensionName, namespaceName);
-                if (extVersion == null) {
-                    var message = "Extension not found: " + NamingUtil.toLogFormat(namespaceName, extensionName, targetVersion.targetPlatform(), targetVersion.version());
-                    throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
-                }
-
-                results.add(deleteExtension(user, extVersion));
-            }
-        }
-
+    /**
+     * Merges the per-version delete outcomes into a single result, concatenating any success and
+     * error messages.
+     */
+    private ResultJson combineResults(List<ResultJson> results) {
         var result = new ResultJson();
         result.setError(results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
         result.setSuccess(results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull).collect(Collectors.joining("\n")));
         return result;
     }
 
-    protected ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         if (!bundledRefs.isEmpty()) {
             throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
@@ -279,10 +330,10 @@ public class ExtensionService {
                     .collect(Collectors.joining(", ")));
         }
 
-        cache.evictExtensionJsons(extension);
         for (var extVersion : repositories.findVersions(extension)) {
             removeExtensionVersion(extVersion);
         }
+
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
@@ -294,6 +345,12 @@ public class ExtensionService {
         }
 
         entityManager.remove(extension);
+
+        // evict the cache entries only after the changes have been committed
+        cache.evictExtensionJsons(extension);
+        cache.evictNamespaceDetails(extension);
+        cache.evictLatestExtensionVersion(extension);
+
         search.removeSearchEntry(extension);
 
         var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
@@ -301,7 +358,8 @@ public class ExtensionService {
         return result;
     }
 
-    protected ResultJson deleteExtension(UserData user, ExtensionVersion extVersion) {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtensionVersion(UserData user, ExtensionVersion extVersion) {
         var extension = extVersion.getExtension();
         removeExtensionVersion(extVersion);
         extension.getVersions().remove(extVersion);
@@ -312,7 +370,8 @@ public class ExtensionService {
         return result;
     }
 
-    private void removeExtensionVersion(ExtensionVersion extVersion) {
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public void removeExtensionVersion(ExtensionVersion extVersion) {
         // Clean up any pending scan jobs for this extension version
         // to prevent "file not found" errors after deletion
         scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());

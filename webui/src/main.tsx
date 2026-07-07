@@ -37,6 +37,8 @@ export const Main: FunctionComponent<MainProps> = props => {
     const [error, setError] = useState<{ message: string; code?: number | string }>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
     const abortController = useRef<AbortController>(new AbortController());
+    // Optional callback to run when the error dialog is dismissed (e.g. re-fetch stale data).
+    const errorDialogOnClose = useRef<(() => void) | undefined>(undefined);
 
     useEffect(() => {
         getLoginProviders();
@@ -83,7 +85,7 @@ export const Main: FunctionComponent<MainProps> = props => {
         }
     };
 
-    const onError = (err: Error | Partial<ErrorResponse> | ReportedError) => {
+    const onError = (err: Error | Partial<ErrorResponse> | ReportedError, options?: { onClose?: () => void }) => {
         if (err instanceof DOMException && err.message.trim() === 'The operation was aborted.') {
             // ignore error caused by AbortController.abort()
             return;
@@ -91,12 +93,16 @@ export const Main: FunctionComponent<MainProps> = props => {
 
         const message = handleError(err);
         const code = (err as ReportedError).code;
+        errorDialogOnClose.current = options?.onClose;
         setError({ message, code });
         setIsErrorDialogOpen(true);
     };
 
     const onErrorDialogClose = () => {
         setIsErrorDialogOpen(false);
+        const onClose = errorDialogOnClose.current;
+        errorDialogOnClose.current = undefined;
+        onClose?.();
     };
 
     const renderPageContent = (): ReactNode => {

@@ -18,8 +18,10 @@ import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -229,7 +231,7 @@ class CacheServiceTest {
 
             registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
 
-            admins.deleteExtension(namespace.getName(), extension.getName(), admin);
+            admins.deleteExtension(admin, namespace.getName(), extension.getName());
             assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
         }
     }
@@ -254,7 +256,7 @@ class CacheServiceTest {
                 assertTrue(json.getAllVersions().containsKey(newVersion));
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
 
-                admins.deleteExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), newVersion, admin);
+                admins.deleteExtension(admin, namespace.getName(), extension.getName(), TargetPlatformVersion.of(extVersion.getTargetPlatform(), newVersion));
                 assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
                 entityManager.flush();

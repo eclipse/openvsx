@@ -30,7 +30,8 @@ import { getTargetPlatformDisplayName } from '../../utils';
 import {
     VERSION_DIALOG_WILDCARD,
     buildVersionDialogItems,
-    handleVersionDialogChange
+    handleVersionDialogChange,
+    isConflictError
 } from './extension-version-dialog-shared';
 
 export interface VersionDeleteTarget {
@@ -62,7 +63,18 @@ export const DeleteVersionDialog: FunctionComponent<DeleteVersionDialogProps> = 
             props.onDeleted();
             props.onClose();
         } catch (err) {
-            handleError(err);
+            if (isConflictError(err)) {
+                // The underlying data is stale; keep this dialog open behind the error
+                // dialog and only close/refresh once the user acknowledges it.
+                handleError(err, {
+                    onClose: () => {
+                        props.onDeleted();
+                        props.onClose();
+                    }
+                });
+            } else {
+                handleError(err);
+            }
         } finally {
             setWorking(false);
         }

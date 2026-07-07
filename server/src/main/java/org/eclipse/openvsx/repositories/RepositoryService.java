@@ -51,6 +51,7 @@ import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -250,7 +251,7 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
-    public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+    public ExtensionVersion findVersionPublishedWithUser(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
     }
 
@@ -775,8 +776,8 @@ public class RepositoryService {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 
-    public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
-        return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
+    public boolean isDeleteAllVersions(@Nullable UserData user, String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
+        return extensionVersionJooqRepo.isDeleteAllVersions(user, namespaceName, extensionName, targetVersions);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(

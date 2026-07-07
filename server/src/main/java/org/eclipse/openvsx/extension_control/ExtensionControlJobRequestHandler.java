@@ -60,22 +60,22 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
     private void processMaliciousExtensions(JsonNode json) {
         logger.info("Process malicious extensions");
         var node = json.get("malicious");
-        if(!node.isArray()) {
+        if (!node.isArray()) {
             logger.error("field 'malicious' is not an array");
             return;
         }
 
-        var adminUser = service.createExtensionControlUser();
-        for(var item : node) {
+        var extensionControlUser = service.createExtensionControlUser();
+        for (var item : node) {
             logger.atInfo()
                     .setMessage("malicious: {}")
                     .addArgument(item::asString)
                     .log();
 
             var extensionId = NamingUtil.fromExtensionId(item.asString());
-            if(extensionId != null && repositories.hasExtension(extensionId.namespace(), extensionId.extension())) {
+            if (extensionId != null && repositories.hasExtension(extensionId.namespace(), extensionId.extension())) {
                 logger.info("delete malicious extension");
-                admin.deleteExtensionAndDependencies(extensionId.namespace(), extensionId.extension(), adminUser);
+                admin.deleteExtensionAndDependencies(extensionControlUser, extensionId.namespace(), extensionId.extension());
             }
         }
     }
@@ -83,7 +83,7 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
     private void processDeprecatedExtensions(JsonNode json) {
         logger.info("Process deprecated extensions");
         var node = json.get("deprecated");
-        if(!node.isObject()) {
+        if (!node.isObject()) {
             logger.error("field 'deprecated' is not an object");
             return;
         }
@@ -96,9 +96,9 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
             }
 
             var value = field.getValue();
-            if(value.isBoolean()) {
+            if (value.isBoolean()) {
                 service.updateExtension(extensionId, value.asBoolean(), null, true);
-            } else if(value.isObject()) {
+            } else if (value.isObject()) {
                 var replacement = value.get("extension");
                 var replacementId = replacement != null && replacement.isObject()
                         ? NamingUtil.fromExtensionId(replacement.get("id").asString())

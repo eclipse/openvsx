@@ -10,12 +10,13 @@
 package org.eclipse.openvsx;
 
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.*;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,25 +41,26 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * Concurrency test for {@link ExtensionService#deleteExtension}.
+ * Concurrency tests for delete-all operations in {@link ExtensionService} and
+ * {@link AdminService}.
  * <p>
- * This test simulates a race condition where an extension owner deletes all of their published
- * versions at the same time as a different publisher commits a brand-new version of the same
- * extension.
+ * Both services expose a delete-all path that first checks how many versions exist
+ * and then deletes them. Without an extension-row lock, a concurrent publish can slip
+ * in between the check and the actual deletion and have its newly committed version
+ * silently removed as a side effect.
  * <p>
- * Without an extension-row lock, the delete-all operation may accidentally remove the other
- * publisher's newly committed version, which is an unauthorized side effect. With the lock,
- * the publishing is forced to wait until the delete finishes, preventing any unintended data loss.
+ * The race condition is deliberately triggered by intercepting the boundary call that
+ * separates the check from the act (using a spy), pausing the delete operation just
+ * long enough for the concurrent publish to commit.
  * <p>
- * The race condition is deliberately triggered by intercepting the call to
- * {@link RepositoryService#isDeleteAllVersions} using a spy, which pauses the delete operation
- * just long enough for the concurrent publish to slip in.
+ * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
+ * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
     "ovsx.elasticsearch.enabled=false"
 })
 @ActiveProfiles("test_db")
-class ExtensionServiceDeleteTest {
+class ExtensionDeleteTest {
 
     private static final String NAMESPACE = "race-testns";
     private static final String EXTENSION = "race-testext";
@@ -127,7 +129,7 @@ class ExtensionServiceDeleteTest {
     }
 
     @Test
-    void deleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
+    void userDeleteExtension_doesNotDeleteAnotherPublishersConcurrentlyAddedVersion() throws Exception {
         // Force a concurrent publish into the window between the check and the actual deletion.
         doAnswer(invocation -> {
             var result = invocation.callRealMethod();
@@ -143,10 +145,10 @@ class ExtensionServiceDeleteTest {
         owner.setLoginName(OWNER_LOGIN);
 
         // The owner asks to delete the only version they published.
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner);
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets);
 
-        // Let the (possibly blocked) publisher run to completion now that the delete committed.
+        // Let the (possibly blocked) publisher run to completion now that the delete operation committed.
         if (publisherThread != null) {
             publisherThread.join(TimeUnit.SECONDS.toMillis(10));
         }
@@ -180,8 +182,8 @@ class ExtensionServiceDeleteTest {
         owner.setLoginName(OWNER_LOGIN);
 
         // The owner deletes only their own version; this is not a delete-all.
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
-        extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner);
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets);
 
         assertThat(extensionExists())
                 .as("the extension must survive while another publisher's version remains")
@@ -225,10 +227,10 @@ class ExtensionServiceDeleteTest {
         var owner = new UserData();
         owner.setId(ownerId);
         owner.setLoginName(OWNER_LOGIN);
-        var targets = List.of(new TargetPlatformVersionJson(TargetPlatform.NAME_UNIVERSAL, "1.0.0"));
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
 
         try {
-            assertThatThrownBy(() -> extensionService.deleteExtension(NAMESPACE, EXTENSION, targets, owner))
+            assertThatThrownBy(() -> extensionService.deleteExtension(owner, false, NAMESPACE, EXTENSION, targets))
                     .as("the delete must fail fast (not block) while a publish holds the lock")
                     .isInstanceOf(ErrorResultException.class);
         } finally {

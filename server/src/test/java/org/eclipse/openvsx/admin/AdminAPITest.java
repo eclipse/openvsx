@@ -89,10 +89,13 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.VersionService;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -1743,6 +1746,8 @@ class AdminAPITest {
         Mockito.when(entityManager.merge(extension)).thenReturn(extension);
         Mockito.when(repositories.findExtension("baz", "foobar"))
                 .thenReturn(extension);
+        Mockito.when(repositories.findExtensionForUpdateNoWait("baz", "foobar"))
+                .thenReturn(extension);
         Mockito.when(repositories.findExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
 
@@ -1765,6 +1770,13 @@ class AdminAPITest {
         }
 
         extension.getVersions().addAll(versions);
+        Mockito.when(repositories.isDeleteAllVersions(any(), eq(namespace.getName()), eq(extension.getName()), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) {
+                var len = ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length;
+                return len == 0 || len == numberOfVersions;
+            }
+        });
         Mockito.when(repositories.countVersions(namespace.getName(), extension.getName())).thenReturn(numberOfVersions);
         Mockito.when(repositories.findLatestVersion(namespace.getName(), extension.getName(), null, false, false))
                 .thenReturn(versions.get(numberOfVersions - 1));
@@ -1962,8 +1974,7 @@ class AdminAPITest {
                 CacheService cache,
                 JobRequestScheduler scheduler,
                 MailService mail,
-                LogService logs,
-                ExtensionScanPersistenceService scanPersistenceService
+                LogService logs
         ) {
             return new AdminService(
                     repositories,
@@ -1978,8 +1989,7 @@ class AdminAPITest {
                     cache,
                     scheduler,
                     mail,
-                    logs,
-                    scanPersistenceService
+                    logs
             );
         }
 
