@@ -20,6 +20,7 @@ import { ShortcutsModal } from '../components/shortcuts-modal';
 import { MainContext } from '../context';
 import { SearchProvider } from '../context/search/search-context';
 import { KeyboardShortcutsProvider } from '../context/keyboard-shortcuts-context';
+import { ExtensionTintProvider } from '../context/extension-tint-context';
 import { useShortcut } from '../hooks/use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
@@ -144,7 +145,9 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
 export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
     <KeyboardShortcutsProvider>
         <SearchProvider>
-            <AppLayoutContent {...props} />
+            <ExtensionTintProvider>
+                <AppLayoutContent {...props} />
+            </ExtensionTintProvider>
         </SearchProvider>
     </KeyboardShortcutsProvider>
 );

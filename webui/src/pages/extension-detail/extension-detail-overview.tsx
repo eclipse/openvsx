@@ -334,7 +334,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         <Box
             sx={{
                 display: 'flex',
-                mt: 2,
                 flexDirection: {
                     xs: 'column-reverse',
                     sm: 'column-reverse',

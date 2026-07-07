@@ -48,7 +48,8 @@ export const ShortcutsModal: FunctionComponent<ShortcutsModalProps> = ({ open, o
                     <CloseIcon fontSize='small' />
                 </IconButton>
             </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
+            {/* This dialog exists to display keys, so it re-shows the globally touch-hidden chips. */}
+            <DialogContent sx={{ p: 0, '& kbd': { display: 'inline-block' } }}>
                 {shortcuts.map((s, i) => (
                     <Box
                         key={s.key}

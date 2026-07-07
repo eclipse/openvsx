@@ -14,6 +14,8 @@ import type {} from '@mui/x-data-grid/themeAugmentation';
 
 export const MONO_FONT = "'Geist Mono', monospace";
 export const NAVBAR_HEIGHT = '3.875rem';
+// Pixel twin for scroll math (rem values assume the 16px root font size).
+export const NAVBAR_HEIGHT_PX = parseFloat(NAVBAR_HEIGHT) * 16;
 
 // Shared look of floating surfaces (menus, popovers, dialogs). The nested selector
 // outranks MuiPaper's own rounded style, so no !important is needed.

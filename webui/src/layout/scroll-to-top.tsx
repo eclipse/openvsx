@@ -19,12 +19,14 @@ import { useLocation, useNavigationType } from 'react-router-dom';
 // forward navigations only: POP (back/forward) keeps the browser's native
 // scroll restoration, and same-path param updates (e.g. search filters, which
 // replace in place) must not jump either — hence keying on pathname alone.
+// Links that swap content in place opt out via state `{ preserveScroll: true }`.
 export const ScrollToTop: FunctionComponent = () => {
-    const { pathname } = useLocation();
+    const { pathname, state } = useLocation();
     const navigationType = useNavigationType();
+    const preserveScroll = (state as { preserveScroll?: boolean } | null)?.preserveScroll;
 
     useLayoutEffect(() => {
-        if (navigationType !== 'POP') {
+        if (navigationType !== 'POP' && !preserveScroll) {
             window.scrollTo({ top: 0, left: 0 });
         }
     }, [pathname]);

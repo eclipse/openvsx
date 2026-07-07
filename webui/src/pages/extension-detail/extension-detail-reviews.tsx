@@ -252,7 +252,7 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         <>
             <Box
                 sx={{
-                    my: 2,
+                    mb: 2,
                     display: 'flex',
                     justifyContent: 'space-between',
                     ['@media(max-width: 360px)']: {

@@ -32,7 +32,11 @@ const REPO_URL = 'https://github.com/eclipse/openvsx';
 
 export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarContent: FunctionComponent = () => (
-        <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`} style={{ display: 'flex' }}>
+        <RouteLink
+            to={ExtensionListRoutes.MAIN}
+            aria-label={`Home - Open VSX Registry`}
+            // A bare anchor would leak the browser's link colors into the wordmark.
+            style={{ display: 'flex', color: 'inherit' }}>
             <OpenVSXLogo width='auto' height='2.5rem' prefersDarkMode={prefersDarkMode} />
         </RouteLink>
     );

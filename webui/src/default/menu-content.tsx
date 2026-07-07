@@ -172,17 +172,20 @@ export const MobileMenuContent: FunctionComponent = () => {
 export const headerItem = ({ theme }: { theme: Theme }) => ({
     margin: theme.spacing(0, 0.5),
     padding: theme.spacing(1, 1.5),
-    color: theme.palette.text.secondary,
+    // Inherited color so the items follow the nav's content color over page
+    // bands; opacity stands in for the secondary/primary text pair.
+    color: 'inherit',
+    opacity: 0.78,
     textDecoration: 'none',
     fontSize: '0.875rem',
     fontFamily: theme.typography.fontFamily,
     fontWeight: 500,
     letterSpacing: 0,
     borderRadius: `${theme.shape.borderRadius}px`,
-    transition: 'background 0.14s, color 0.14s',
+    transition: 'background 0.14s, opacity 0.14s',
     '&:hover': {
-        color: theme.palette.text.primary,
-        backgroundColor: theme.palette.surface3,
+        opacity: 1,
+        backgroundColor: 'color-mix(in srgb, currentcolor 8%, transparent)',
         textDecoration: 'none'
     },
     ...focusOutline(theme)
@@ -243,15 +246,20 @@ export const DefaultMenuContent: FunctionComponent = () => {
                         <LoginComponent
                             loginProviders={loginProviders}
                             renderButton={(href, onClick) => {
+                                // The default `action.active` gray disappears on tinted chromes.
                                 if (href) {
                                     return (
-                                        <IconButton href={href} title='Log In' aria-label='Log In'>
+                                        <IconButton href={href} color='inherit' title='Log In' aria-label='Log In'>
                                             <AccountBoxIcon />
                                         </IconButton>
                                     );
                                 } else {
                                     return (
-                                        <IconButton onClick={onClick} title='Log In' aria-label='Log In'>
+                                        <IconButton
+                                            onClick={onClick}
+                                            color='inherit'
+                                            title='Log In'
+                                            aria-label='Log In'>
                                             <AccountBoxIcon />
                                         </IconButton>
                                     );

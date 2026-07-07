@@ -51,7 +51,7 @@ export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesPro
             <>
                 <Box
                     sx={{
-                        my: 2,
+                        mb: 2,
                         display: 'flex',
                         justifyContent: 'space-between',
                         ['@media(max-width: 360px)']: {
@@ -77,7 +77,6 @@ export const ExtensionDetailChanges: FunctionComponent<ExtensionDetailChangesPro
         <Box
             sx={{
                 display: 'flex',
-                mt: 2,
                 flexDirection: {
                     xs: 'column-reverse',
                     sm: 'column-reverse',

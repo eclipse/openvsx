@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useCallback, useContext } from 'react';
+import { FunctionComponent, RefObject, useCallback, useContext, useEffect, useRef } from 'react';
 import {
     Typography,
     Box,
@@ -24,7 +24,7 @@ import {
     PaletteMode,
     decomposeColor
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -46,6 +46,33 @@ import { ExtensionDetailRoutes } from './extension-detail-routes';
 import { useExtensionDetail } from './use-extension-details';
 import { KbdKey } from '../../components/kbd-key';
 import { useShortcut } from '../../hooks/use-shortcut';
+import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_PX } from '../../default/theme';
+import { useSetExtensionTint } from '../../context/extension-tint-context';
+import { accentHover, focusOutline } from '../../components/page-primitives';
+
+// Category-pill look for the sticky tabs, floating over the nav bar's blur fan;
+// the translucent fill matches the nav search field's treatment.
+const PillTab = styled(Tab)(({ theme }) => ({
+    minHeight: 0,
+    minWidth: 0,
+    padding: '0.4375rem 0.8125rem',
+    borderRadius: '999px',
+    border: `1px solid ${theme.palette.divider}`,
+    backgroundColor: alpha(theme.palette.surface2, 0.7),
+    color: theme.palette.text.secondary,
+    fontSize: '0.8125rem',
+    fontWeight: 500,
+    transition: 'border-color 0.14s, color 0.14s, background 0.14s',
+    // Still translucent so the blur fan shows through; the border carries the emphasis.
+    '&.Mui-selected': {
+        backgroundColor: alpha(theme.palette.accentSoft, 0.7),
+        borderColor: theme.palette.secondary.main,
+        color: theme.palette.secondary.light,
+        fontWeight: 600
+    },
+    '&:not(.Mui-selected)': accentHover(theme),
+    ...focusOutline(theme)
+})) as typeof Tab;
 
 const inlineLinkStyle = {
     display: 'contents',
@@ -292,9 +319,37 @@ const ExtensionHeaderInfo: FunctionComponent<{
     );
 };
 
+// The luma CSS grayscale() resolves a color to; deprecated bands paint through that filter.
+const grayscaleOf = (color: string): string => {
+    const [r, g, b] = decomposeColor(color).values;
+    const y = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+    return `rgb(${y}, ${y}, ${y})`;
+};
+
+// Declares the header band as the nav's tint region: its gallery color (null
+// for default bands) and how deep it runs. The nav does the switching; the
+// resize observer keeps the depth fresh as the band's content reflows.
+const useNavTintFromBand = (color: string | null, bandRef: RefObject<HTMLDivElement>): void => {
+    const setTint = useSetExtensionTint();
+    useEffect(() => {
+        const band = bandRef.current;
+        if (!band) return;
+        // Fires once on observe, then on size changes.
+        const observer = new ResizeObserver(() =>
+            setTint({ color, depth: band.getBoundingClientRect().bottom + window.scrollY })
+        );
+        observer.observe(band);
+        return () => {
+            observer.disconnect();
+            setTint(null);
+        };
+    }, [color, bandRef, setTint]);
+};
+
 const ExtensionHeader: FunctionComponent<{
     extension: Extension;
-}> = ({ extension }) => {
+    bandRef: RefObject<HTMLDivElement>;
+}> = ({ extension, bandRef }) => {
     const theme = useTheme();
     const { pageSettings } = useContext(MainContext);
 
@@ -311,11 +366,19 @@ const ExtensionHeader: FunctionComponent<{
     const headerTextColor = theme.palette.getContrastText(headerColor);
     const usesDefaultBg = !extension.galleryColor;
 
+    // Only real gallery colors tint the nav; over default bands it keeps its
+    // theme glass, which is visually flush with bg2 already.
+    useNavTintFromBand(usesDefaultBg ? null : extension.deprecated ? grayscaleOf(headerColor) : headerColor, bandRef);
+
     return (
         <Box
+            ref={bandRef}
             sx={{
                 bgcolor: usesDefaultBg ? 'bg2' : headerColor,
                 color: usesDefaultBg ? 'text.primary' : headerTextColor,
+                // Extend the band under the sticky nav so its glass picks up the header color.
+                mt: `-${NAVBAR_HEIGHT}`,
+                pt: NAVBAR_HEIGHT,
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 filter: extension.deprecated ? 'grayscale(100%)' : undefined
@@ -361,8 +424,29 @@ export const ExtensionDetail: FunctionComponent = () => {
     const effectiveVersion = isTabSegment(version) ? undefined : version;
     const activeTab = parseTab(version);
 
+    // Tab switches preserve scroll (see ScrollToTop); when scrolled deep, glide
+    // up so the new panel starts under the pinned pills.
+    const bandRef = useRef<HTMLDivElement>(null);
+    const prevTab = useRef(activeTab);
+    useEffect(() => {
+        if (prevTab.current === activeTab) return;
+        prevTab.current = activeTab;
+        const band = bandRef.current;
+        if (!band) return;
+        const pin = band.getBoundingClientRect().bottom + window.scrollY - NAVBAR_HEIGHT_PX;
+        // Rest above the pin point: the nav's blur fan reaches past the pinned
+        // pills, and this keeps the incoming panel's title clear of it.
+        const target = Math.max(0, pin - 96);
+        if (window.scrollY > target) {
+            window.scrollTo({ top: target, behavior: 'smooth' });
+        }
+    }, [activeTab]);
+
     // React Router v6 returns a possibly undefined type for params, but our route configuration guarantees these will be defined.
     const { loading, error, extension, reload } = useExtensionDetail(namespace!, name!, target!, effectiveVersion!);
+
+    // Tab switches keep the scroll position (the effect above adjusts it).
+    const goToTab = useCallback((path: string) => navigate(path, { state: { preserveScroll: true } }), [navigate]);
 
     const navigateToVersion = useCallback(
         (selectedVersion: string) => {
@@ -385,21 +469,21 @@ export const ExtensionDetail: FunctionComponent = () => {
         key: 'o',
         label: 'Extension overview',
         order: 40,
-        callback: () => navigate(basePath),
+        callback: () => goToTab(basePath),
         enabled: !!basePath
     });
     useShortcut({
         key: 'c',
         label: 'Extension changelog',
         order: 50,
-        callback: () => navigate(changesPath),
+        callback: () => goToTab(changesPath),
         enabled: !!basePath
     });
     useShortcut({
         key: 'r',
         label: 'Extension reviews',
         order: 60,
-        callback: () => navigate(reviewsPath),
+        callback: () => goToTab(reviewsPath),
         enabled: !!basePath
     });
 
@@ -420,13 +504,36 @@ export const ExtensionDetail: FunctionComponent = () => {
             <DelayedLoadIndicator loading={loading} />
             {extension && (
                 <>
-                    <ExtensionHeader extension={extension} />
+                    <ExtensionHeader extension={extension} bandRef={bandRef} />
                     <Container maxWidth='xl'>
                         <Tabs
                             value={activeTab}
-                            indicatorColor='secondary'
-                            sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                            <Tab
+                            variant='scrollable'
+                            scrollButtons={false}
+                            sx={{
+                                // Pin under the navbar; the transparent row lets the blur fan
+                                // back the pills (same z as the AppBar, later in the DOM).
+                                position: 'sticky',
+                                top: NAVBAR_HEIGHT,
+                                zIndex: 50,
+                                minHeight: 0,
+                                // Bleed through the gutters so overflowing pills scroll to the
+                                // screen edge; from md up a sliver remains so the scroller
+                                // doesn't clip the end pills' focus outline.
+                                mx: { xs: '-1rem', sm: '-1.5rem', md: '-0.375rem' },
+                                '& .MuiTabs-indicator': { display: 'none' },
+                                '& .MuiTabs-flexContainer': {
+                                    gap: '0.5rem',
+                                    // Inside the scroller — its overflow clips the focus ring otherwise.
+                                    py: '0.625rem',
+                                    // Sized to the pills so the trailing padding lands after the
+                                    // last pill, not at the 100% mark.
+                                    width: 'max-content',
+                                    minWidth: '100%',
+                                    px: { xs: '1rem', sm: '1.5rem', md: '0.375rem' }
+                                }
+                            }}>
+                            <PillTab
                                 value={ExtensionTab.OVERVIEW}
                                 label={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
@@ -435,8 +542,9 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 }
                                 component={RouteLink}
                                 to={overviewPath}
+                                state={{ preserveScroll: true }}
                             />
-                            <Tab
+                            <PillTab
                                 value={ExtensionTab.CHANGES}
                                 label={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
@@ -445,8 +553,9 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 }
                                 component={RouteLink}
                                 to={changesPath}
+                                state={{ preserveScroll: true }}
                             />
-                            <Tab
+                            <PillTab
                                 value={ExtensionTab.REVIEWS}
                                 label={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4375rem' }}>
@@ -455,24 +564,33 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 }
                                 component={RouteLink}
                                 to={reviewsPath}
+                                state={{ preserveScroll: true }}
                             />
                         </Tabs>
-                        <Routes>
-                            <Route
-                                path={ExtensionTab.REVIEWS}
-                                element={<ExtensionDetailReviews extension={extension} reviewsDidUpdate={reload} />}
-                            />
-                            <Route
-                                path={ExtensionTab.CHANGES}
-                                element={<ExtensionDetailChanges extension={extension} />}
-                            />
-                            <Route
-                                path='*'
-                                element={
-                                    <ExtensionDetailOverview extension={extension} selectVersion={navigateToVersion} />
-                                }
-                            />
-                        </Routes>
+                        {/* Owns the space below the pinned pills for every tab, so the panels
+                            don't each set their own; min-height keeps the preserved scroll
+                            position valid while a panel loads. */}
+                        <Box sx={{ minHeight: '100vh', pt: 2 }}>
+                            <Routes>
+                                <Route
+                                    path={ExtensionTab.REVIEWS}
+                                    element={<ExtensionDetailReviews extension={extension} reviewsDidUpdate={reload} />}
+                                />
+                                <Route
+                                    path={ExtensionTab.CHANGES}
+                                    element={<ExtensionDetailChanges extension={extension} />}
+                                />
+                                <Route
+                                    path='*'
+                                    element={
+                                        <ExtensionDetailOverview
+                                            extension={extension}
+                                            selectVersion={navigateToVersion}
+                                        />
+                                    }
+                                />
+                            </Routes>
+                        </Box>
                     </Container>
                 </>
             )}

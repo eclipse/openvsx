@@ -44,6 +44,8 @@ export const MobileHeaderMenu: FunctionComponent<MobileHeaderMenuProps> = props 
             <IconButton
                 title='Menu'
                 aria-label='Menu'
+                // The default `action.active` gray disappears on tinted chromes.
+                color='inherit'
                 onClick={event => {
                     setAnchorEl(event.currentTarget);
                     setOpen(!open);
