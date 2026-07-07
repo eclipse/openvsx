@@ -245,7 +245,7 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtension(namespaceName, extensionName);
-        if (repositories.isDeleteAllVersions(namespaceName, extensionName, targetVersions)) {
+        if (repositories.isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
             return deleteExtension(user, extension);
         }
 

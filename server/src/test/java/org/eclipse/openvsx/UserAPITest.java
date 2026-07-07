@@ -732,10 +732,10 @@ class UserAPITest {
         Mockito.when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.getLast()));
-        Mockito.when(repositories.isDeleteAllVersions(eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
+        Mockito.when(repositories.isDeleteAllVersions(any(), eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
             @Override
             public Boolean answer(InvocationOnMock invocation) {
-                return ((TargetPlatformVersion[]) invocation.getRawArguments()[2]).length == numberOfVersions;
+                return ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length == numberOfVersions;
             }
         });
 

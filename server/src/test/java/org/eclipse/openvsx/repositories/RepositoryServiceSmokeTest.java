@@ -308,7 +308,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
                 () -> repositories.findVersionPublishedWithUser(userData, "version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
-                () -> repositories.isDeleteAllVersions("namespaceName", "extensionName"),
+                () -> repositories.isDeleteAllVersions(userData, "namespaceName", "extensionName"),
                 () -> repositories.deactivateAccessTokens(userData),
                 () -> repositories.expireAccessTokens(NOW),
                 () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),

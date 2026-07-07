@@ -776,8 +776,8 @@ public class RepositoryService {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 
-    public boolean isDeleteAllVersions(String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
-        return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions);
+    public boolean isDeleteAllVersions(@Nullable UserData user, String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
+        return extensionVersionJooqRepo.isDeleteAllVersions(user, namespaceName, extensionName, targetVersions);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(

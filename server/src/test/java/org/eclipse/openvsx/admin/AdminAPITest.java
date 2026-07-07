@@ -1770,10 +1770,10 @@ class AdminAPITest {
         }
 
         extension.getVersions().addAll(versions);
-        Mockito.when(repositories.isDeleteAllVersions(eq(namespace.getName()), eq(extension.getName()), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
+        Mockito.when(repositories.isDeleteAllVersions(any(), eq(namespace.getName()), eq(extension.getName()), any(TargetPlatformVersion[].class))).then(new Answer<Boolean>() {
             @Override
             public Boolean answer(InvocationOnMock invocation) {
-                var len = ((TargetPlatformVersion[]) invocation.getRawArguments()[2]).length;
+                var len = ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length;
                 return len == 0 || len == numberOfVersions;
             }
         });
