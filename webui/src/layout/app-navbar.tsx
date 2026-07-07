@@ -35,16 +35,21 @@ const FADE_EASE = [1, 0.984, 0.897, 0.725, 0.5, 0.275, 0.103, 0.016, 0];
 // Progressive ("gradient") blur, cumulative form: every layer is anchored to
 // the top edge and fades out at a progressively deeper point, so a row's blur
 // is the compound of all layers still active there (stacked Gaussian blurs
-// compose in quadrature — σ² adds). The strengths below are the quadrature
-// differences between consecutive steps of a ~√2 falloff ramp, compounding to
-// ~6px at the toolbar and ~0 at the fan's bottom edge. Unlike side-by-side
-// banded masks — whose shared boundaries put two blur levels in full contact
-// and read as lines — each mask here has a single smootherstep fade edge, and
-// the edges are staggered 12.5% apart, so blur strictly and smoothly decreases.
-const BLUR_LAYERS = ['4.25px', '3px', '2.15px', '1.5px', '1.1px', '0.65px', '0.55px', '0.5px'].map((blur, i) => ({
-    blur,
+// compose in quadrature — σ² adds), compounding to ~6px at the toolbar and ~0
+// at the fan's bottom edge. Three layers is the affordable ceiling: each
+// backdrop-filter re-snapshots the backdrop every scrolled frame. Saturation
+// rides along in the same filters (it compounds multiplicatively, ~2x at the
+// top) rather than paying for a layer of its own. Each mask has a single
+// smootherstep fade edge and the edges are staggered, so blur decreases
+// smoothly with no banding lines.
+const BLUR_LAYERS = [
+    { blur: '5.2px', saturate: 1.35, fadeStart: 0 },
+    { blur: '2.75px', saturate: 1.25, fadeStart: 30 },
+    { blur: '1.2px', saturate: 1.2, fadeStart: 60 }
+].map(({ blur, saturate, fadeStart }) => ({
+    filter: `blur(${blur}) saturate(${saturate})`,
     mask: `linear-gradient(to bottom, ${FADE_EASE.map(
-        (k, j) => `rgba(0, 0, 0, ${k}) ${12.5 * i + (25 * j) / (FADE_EASE.length - 1)}%`
+        (k, j) => `rgba(0, 0, 0, ${k}) ${fadeStart + (40 * j) / (FADE_EASE.length - 1)}%`
     ).join(', ')})`
 }));
 
@@ -60,9 +65,6 @@ export const AppNavbar: FunctionComponent = () => {
     const tintAlpha = theme.palette.mode === 'dark' ? 0.3 : 0.35;
     const tintGradient = `linear-gradient(to bottom, ${FADE_EASE.map(
         (k, i) => `${alpha(theme.palette.background.default, tintAlpha * k)} ${(i * 100) / (FADE_EASE.length - 1)}%`
-    ).join(', ')})`;
-    const saturationMask = `linear-gradient(to bottom, ${FADE_EASE.map(
-        (k, i) => `rgba(0, 0, 0, ${k}) ${(i * 100) / (FADE_EASE.length - 1)}%`
     ).join(', ')})`;
     const [scrolled, setScrolled] = useState(false);
 
@@ -91,7 +93,11 @@ export const AppNavbar: FunctionComponent = () => {
                     borderBottom: '1px solid',
                     borderColor: 'divider',
                     opacity: showSolid ? 1 : 0,
-                    transition: 'opacity 0.35s ease'
+                    // visibility keeps the browser from paying for the hidden layer's
+                    // backdrop-filter; it transitions discretely, flipping to hidden
+                    // only after the opacity fade finishes.
+                    visibility: showSolid ? 'visible' : 'hidden',
+                    transition: 'opacity 0.35s ease, visibility 0.35s'
                 }}
             />
             {/* Progressive gradient blur fan — fades in on scroll */}
@@ -108,33 +114,15 @@ export const AppNavbar: FunctionComponent = () => {
                         pointerEvents: 'none',
                         zIndex: 0,
                         opacity: showFan ? 1 : 0,
-                        transition: 'opacity 0.35s ease',
-                        backdropFilter: `blur(${layer.blur})`,
-                        WebkitBackdropFilter: `blur(${layer.blur})`,
+                        visibility: showFan ? 'visible' : 'hidden',
+                        transition: 'opacity 0.35s ease, visibility 0.35s',
+                        backdropFilter: layer.filter,
+                        WebkitBackdropFilter: layer.filter,
                         WebkitMaskImage: layer.mask,
                         maskImage: layer.mask
                     }}
                 />
             ))}
-            {/* Saturation wash — one continuously-masked layer over the whole fan */}
-            <Box
-                aria-hidden='true'
-                sx={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    bottom: { xs: '-48px', sm: '-80px' },
-                    pointerEvents: 'none',
-                    zIndex: 0,
-                    opacity: showFan ? 1 : 0,
-                    transition: 'opacity 0.35s ease',
-                    backdropFilter: 'saturate(2)',
-                    WebkitBackdropFilter: 'saturate(2)',
-                    WebkitMaskImage: saturationMask,
-                    maskImage: saturationMask
-                }}
-            />
             <Box
                 aria-hidden='true'
                 sx={{
