@@ -553,12 +553,7 @@ export class ExtensionRegistryService {
     }
 
     async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfResponse)) {
-            const csrfToken = csrfResponse as CsrfTokenJson;
-            headers[csrfToken.header] = csrfToken.value;
-        }
 
         return sendRequest<Extension[] | ErrorResult>({
             abortController,
@@ -574,12 +569,7 @@ export class ExtensionRegistryService {
         namespace: string,
         extension: string
     ): Promise<Readonly<Extension>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfResponse)) {
-            const csrfToken = csrfResponse as CsrfTokenJson;
-            headers[csrfToken.header] = csrfToken.value;
-        }
 
         return sendNonRetriableRequest<Extension>({
             abortController,
