@@ -52,7 +52,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
     const [rejectedFile, setRejectedFile] = useState<File>();
 
     const context = useContext(MainContext);
-    const effectiveMaxSize = context.config?.maxExtensionSize;
+    const effectiveMaxSize = context.version?.maxExtensionSize ?? 512 * 1024 * 1024;
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {
@@ -63,12 +63,20 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
         };
     }, []);
 
-    const toMegaBytes = (bytes: number): string => {
-        const megaBytes = bytes / (1024.0 * 1024.0);
-        return megaBytes.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+    const formatSize = (bytes: number): string => {
+        const units = ['B', 'kB', 'MB', 'GB', 'TB'];
+        let value = bytes;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        const formattedValue =
+            unitIndex === 0
+                ? value.toString()
+                : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return `${formattedValue} ${units[unitIndex]}`;
     };
 
     const handleOpenDialog = () => setOpen(true);
@@ -113,7 +121,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
     const handleFileDialogOpen = () => setOldFileToPublish(undefined);
 
     const handlePublish = async () => {
-        if (!context.user || !fileToPublish || !context.config?.maxExtensionSize) {
+        if (!context.user || !fileToPublish) {
             return;
         }
 
@@ -230,7 +238,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                                     <p>(Only 1 *.vsix package at a time is accepted)</p>
                                     {effectiveMaxSize ? (
                                         <Typography variant='caption' color='text.secondary'>
-                                            Max size: {toMegaBytes(effectiveMaxSize)} MB
+                                            Max size: {formatSize(effectiveMaxSize)}
                                         </Typography>
                                     ) : null}
                                 </DropzoneDiv>
@@ -240,15 +248,15 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                                             key={fileToPublish.name}
                                             variant='body2'
                                             sx={{ fontWeight: 'bold' }}>
-                                            {fileToPublish.name} ({toMegaBytes(fileToPublish.size)} MB)
+                                            {fileToPublish.name} ({formatSize(fileToPublish.size)})
                                         </Typography>
                                     </Box>
                                 ) : null}
                                 {rejectedFile ? (
                                     <Box mt={1}>
                                         <Typography key={rejectedFile.name} variant='body2' color='error'>
-                                            {rejectedFile.name} ({toMegaBytes(rejectedFile.size)} MB) &mdash; exceeds
-                                            the {effectiveMaxSize ? toMegaBytes(effectiveMaxSize) : '?'}&nbsp;MB limit
+                                            {rejectedFile.name} ({formatSize(rejectedFile.size)}) &mdash; exceeds the{' '}
+                                            {effectiveMaxSize ? formatSize(effectiveMaxSize) : '?'}&nbsp;limit
                                         </Typography>
                                     </Box>
                                 ) : null}
@@ -264,7 +272,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                         autoFocus
                         sx={{ ml: 1 }}
                         title="After you click 'Publish', this extension will be available on the Marketplace"
-                        error={!fileToPublish || !context.config}
+                        error={!fileToPublish}
                         working={publishing}
                         onClick={handlePublish}>
                         Publish

@@ -42,13 +42,13 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     const StyledRouteLink = styled(RouteLink)(link);
 
     const ServerVersion: FunctionComponent = () => {
-        const { config } = useContext(MainContext);
-        if (!config) {
+        const { version } = useContext(MainContext);
+        if (!version) {
             return <div>Loading version...</div>;
         }
         return (
             <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>
-                Server Version: {config.version}
+                Server Version: {version.version}
             </Typography>
         );
     };

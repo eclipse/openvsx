@@ -271,7 +271,7 @@ export interface TargetPlatformVersion {
     checked: boolean;
 }
 
-export interface RegistryConfig {
+export interface RegistryVersion {
     version: string;
     maxExtensionSize?: number;
 }
