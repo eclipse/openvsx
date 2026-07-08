@@ -27,6 +27,8 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExtensionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExtensionService.class);
+
     private final PublishingConfig publishingConfig;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
@@ -206,12 +211,42 @@ public class ExtensionService {
         var affectedExtensions = new LinkedHashSet<Extension>();
         var versions = repositories.findVersionsByUser(user, false);
         for (var version : versions) {
-            version.setActive(true);
-            affectedExtensions.add(version.getExtension());
+            if (canBeReactivated(version)) {
+                version.setActive(true);
+                affectedExtensions.add(version.getExtension());
+            } else {
+                logger.warn(
+                        "User {} tried to reactivate extension '{}' that has failed scans or was blocked by an admin.",
+                        user.getLoginName(),
+                        NamingUtil.toFileFormat(version)
+                );
+            }
         }
         for (var extension : affectedExtensions) {
             updateExtension(extension);
         }
+    }
+
+    private boolean canBeReactivated(ExtensionVersion extVersion) {
+        var scan = repositories.findLatestExtensionScan(extVersion);
+        // if no scan could be found, scanning is disabled to allow
+        if (scan == null) {
+            return true;
+        }
+
+        // check if the scan has passed
+        if (ScanStatus.PASSED.equals(scan.getStatus())) {
+            return true;
+        }
+
+        // if the extension was quarantined before, check if there is an admin decision
+        if (ScanStatus.QUARANTINED.equals(scan.getStatus())) {
+            var scanDecision = repositories.findAdminScanDecision(scan);
+            return scanDecision != null && scanDecision.isAllowed();
+        }
+
+        // otherwise do not allow reactivation
+        return false;
     }
 
     /**
