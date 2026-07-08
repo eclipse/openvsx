@@ -18,7 +18,14 @@ import { AdminDashboardRoutes } from './pages/admin-dashboard/admin-dashboard-ro
 import { ErrorDialog } from './components/error-dialog';
 import { handleError } from './utils';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData, isError, ReportedError, isSuccess, LoginProviders } from './extension-registry-types';
+import {
+    UserData,
+    isError,
+    ReportedError,
+    isSuccess,
+    LoginProviders,
+    RegistryVersion
+} from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { ErrorResponse } from './server-request';
@@ -36,6 +43,7 @@ export const Main: FunctionComponent<MainProps> = props => {
     const [loginProviders, setLoginProviders] = useState<Record<string, string> | undefined>(props.loginProviders);
     const [error, setError] = useState<{ message: string; code?: number | string }>();
     const [isErrorDialogOpen, setIsErrorDialogOpen] = useState<boolean>(false);
+    const [version, setVersion] = useState<RegistryVersion | undefined>(undefined);
     const abortController = useRef<AbortController>(new AbortController());
     // Optional callback to run when the error dialog is dismissed (e.g. re-fetch stale data).
     const errorDialogOnClose = useRef<(() => void) | undefined>(undefined);
@@ -51,6 +59,11 @@ export const Main: FunctionComponent<MainProps> = props => {
 
         // Get data of the currently logged in user
         updateUser();
+
+        props.service
+            .getRegistryVersion(abortController.current)
+            .then(setVersion)
+            .catch(() => {});
 
         return () => abortController.current.abort();
     }, []);
@@ -139,7 +152,8 @@ export const Main: FunctionComponent<MainProps> = props => {
         user,
         updateUser,
         loginProviders,
-        handleError: onError
+        handleError: onError,
+        version
     };
     return (
         <>

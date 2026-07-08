@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext, useEffect, useState } from 'react';
+import { FunctionComponent, useContext, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { KbdKey } from '../components/kbd-key';
@@ -90,18 +90,8 @@ export interface AppFooterProps {
 }
 
 export const AppFooter: FunctionComponent<AppFooterProps> = ({ onOpenShortcuts }) => {
-    const { service, pageSettings } = useContext(MainContext);
+    const { pageSettings, version } = useContext(MainContext);
     const footer = pageSettings.elements.footer;
-    const [version, setVersion] = useState<string | null>(null);
-
-    useEffect(() => {
-        const abortController = new AbortController();
-        service
-            .getRegistryVersion(abortController)
-            .then(r => setVersion(r.version))
-            .catch(() => {});
-        return () => abortController.abort();
-    }, [service]);
 
     // The shortcuts button (and its ? hint) only renders in the structured footer,
     // so register the shortcut here and disable it for custom/legacy footers.
@@ -122,7 +112,7 @@ export const AppFooter: FunctionComponent<AppFooterProps> = ({ onOpenShortcuts }
         return <LegacyFooter footer={footer} />;
     }
 
-    return <StructuredFooter footer={footer} version={version} onOpenShortcuts={onOpenShortcuts} />;
+    return <StructuredFooter footer={footer} version={version?.version ?? null} onOpenShortcuts={onOpenShortcuts} />;
 };
 
 interface StructuredFooterProps {

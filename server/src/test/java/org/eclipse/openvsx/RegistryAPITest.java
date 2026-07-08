@@ -2704,7 +2704,8 @@ class RegistryAPITest {
                 EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
-                SimilarityCheckService similarityCheckService
+                SimilarityCheckService similarityCheckService,
+                PublishingConfig publishingConfig
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2719,7 +2720,8 @@ class RegistryAPITest {
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService
+                    similarityCheckService,
+                    publishingConfig
             );
         }
 

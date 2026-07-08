@@ -11,7 +11,7 @@
 import { createContext } from 'react';
 import { PageSettings } from './page-settings';
 import { ExtensionRegistryService } from './extension-registry-service';
-import { UserData } from './extension-registry-types';
+import { UserData, RegistryVersion } from './extension-registry-types';
 import { ErrorResponse } from './server-request';
 
 export interface MainContext {
@@ -21,6 +21,7 @@ export interface MainContext {
     user?: UserData;
     updateUser: () => void;
     loginProviders?: Record<string, string>;
+    version?: RegistryVersion;
 }
 
 // We don't include `undefined` as context value to avoid checking the value in all components

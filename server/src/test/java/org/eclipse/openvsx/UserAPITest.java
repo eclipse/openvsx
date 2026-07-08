@@ -861,7 +861,8 @@ class UserAPITest {
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService
+                    similarityCheckService,
+                    new PublishingConfig()
             );
         }
 

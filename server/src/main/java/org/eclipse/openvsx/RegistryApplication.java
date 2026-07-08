@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.eclipse.openvsx.mirror.ReadOnlyRequestFilter;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.web.ShallowEtagHeaderFilter;
+import org.jobrunr.utils.mapper.jackson3.Jackson3JsonMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,6 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.security.web.firewall.HttpStatusRequestRejectedHandler;
 import org.springframework.security.web.firewall.RequestRejectedHandler;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import static org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO;
 
@@ -66,6 +68,16 @@ public class RegistryApplication {
     @Bean
     public TaskScheduler taskScheduler() {
         return new ThreadPoolTaskScheduler();
+    }
+
+    @Bean
+    public Jackson3JsonMapper jobRunrJsonMapper() {
+        // allow certain JDK classes as they are used in SendMailJobRequest
+        var typeValidator = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("java.util.")
+                .allowIfSubType("java.time.");
+
+        return new Jackson3JsonMapper(typeValidator);
     }
 
     @Bean

@@ -14,12 +14,21 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 
 import java.util.Map;
 
+/**
+ * A {@code JobRequest} to send templated emails.
+ */
 public class SendMailJobRequest implements JobRequest {
 
     private String from;
     private String to;
     private String subject;
     private String template;
+
+    // FIXME: since using jackson 3, serialization of JobRequest arguments
+    //        is restricted by default, more information at
+    //        <a href="https://www.jobrunr.io/en/documentation/serialization/jackson3/#exploring-alternatives-to-additional-polymorphic-type-validation">...</a>
+    //        RegistryApplication injects a custom Jackson3JsonMapper that also allows subtypes from java.util and java.time
+    //        but we should revisit the variables
     private Map<String,Object> variables;
 
     public SendMailJobRequest() {}
@@ -75,7 +84,7 @@ public class SendMailJobRequest implements JobRequest {
     }
 
     @Override
-    public Class<? extends JobRequestHandler> getJobRequestHandler() {
+    public Class<? extends JobRequestHandler<?>> getJobRequestHandler() {
         return SendMailJobRequestHandler.class;
     }
 }

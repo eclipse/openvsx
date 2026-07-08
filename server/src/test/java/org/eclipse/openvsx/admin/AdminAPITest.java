@@ -2022,7 +2022,8 @@ class AdminAPITest {
                     eclipse,
                     cache,
                     integrityService,
-                    similarityCheckService
+                    similarityCheckService,
+                    new PublishingConfig()
             );
         }
 

@@ -51,7 +51,7 @@ public class VSCodeIdUpdateService {
             );
             return;
         }
-        
+
         var extensionUpdates = new HashMap<Long, String>();
         updateExtensionPublicId(extension, extensionUpdates, false);
         if (!extensionUpdates.isEmpty()) {
