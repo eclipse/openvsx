@@ -217,6 +217,9 @@ public class ExtensionService {
     /**
      * Delete an extension version published by the given user.
      * <p>
+     * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
+     * is updated at the same time, the operation will fail.
+     * <p>
      * If the resolved extension version has not been published by the given user,
      * a {@code ErrorResultException} will be thrown.
      */
@@ -233,6 +236,9 @@ public class ExtensionService {
     /**
      * Deletes the given extension.
      * <p>
+     * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
+     * is updated at the same time, the operation will fail.
+     * <p>
      * If {@code restrictedToUser} is {@code true}, the deletion operation is only successful if the user
      * has published the respective extension version.
      */
@@ -246,7 +252,7 @@ public class ExtensionService {
     ) throws ErrorResultException {
         var extension = lockExtension(namespaceName, extensionName);
         if (repositories.isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
-            return deleteExtension(user, extension);
+            return deleteExtension(user, extension, true);
         }
 
         return deleteExtensionVersions(user, Arrays.stream(targetVersions)
@@ -280,8 +286,9 @@ public class ExtensionService {
     }
 
     /**
-     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}).
-     * this fails fast with {@code 409}
+     * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}) without waiting.
+     * <p>
+     * If the lock can not be acquired, throw an {@code ErrorResultException} with status code {@code 409}.
      */
     private Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
         Extension extension;
@@ -312,22 +319,34 @@ public class ExtensionService {
         return result;
     }
 
+    /**
+     * Delete the given extension and evict caches.
+     * <p>
+     * If {@code checkDependencies} is {@code true} and this extension is referenced by a bundle or used
+     * as a dependency, the delete operation will fail.
+     *
+     * @param user the user that will be used for logging the operation
+     * @param extension the extension to delete
+     * @param checkDependencies whether to check if this extension is still references by bundles or as a dependency
+     */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(UserData user, Extension extension) throws ErrorResultException {
-        var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        if (!bundledRefs.isEmpty()) {
-            throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
-                    + " is bundled by the following extension packs: "
-                    + bundledRefs.stream()
-                    .map(NamingUtil::toFileFormat)
-                    .collect(Collectors.joining(", ")));
-        }
-        var dependRefs = repositories.findDependenciesReference(extension);
-        if (!dependRefs.isEmpty()) {
-            throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
-                    + dependRefs.stream()
-                    .map(NamingUtil::toFileFormat)
-                    .collect(Collectors.joining(", ")));
+    public ResultJson deleteExtension(UserData user, Extension extension, boolean checkDependencies) throws ErrorResultException {
+        if (checkDependencies) {
+            var bundledRefs = repositories.findBundledExtensionsReference(extension);
+            if (!bundledRefs.isEmpty()) {
+                throw new ErrorResultException("Extension " + NamingUtil.toExtensionId(extension)
+                        + " is bundled by the following extension packs: "
+                        + bundledRefs.stream()
+                        .map(NamingUtil::toFileFormat)
+                        .collect(Collectors.joining(", ")));
+            }
+            var dependRefs = repositories.findDependenciesReference(extension);
+            if (!dependRefs.isEmpty()) {
+                throw new ErrorResultException("The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
+                        + dependRefs.stream()
+                        .map(NamingUtil::toFileFormat)
+                        .collect(Collectors.joining(", ")));
+            }
         }
 
         for (var extVersion : repositories.findVersions(extension)) {

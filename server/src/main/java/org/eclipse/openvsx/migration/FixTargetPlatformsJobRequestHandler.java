@@ -11,10 +11,7 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.admin.AdminService;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -32,18 +29,15 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
 
     private final ExtensionService extensions;
-    private final AdminService admins;
     private final MigrationService migrations;
     private final FixTargetPlatformsService service;
 
     public FixTargetPlatformsJobRequestHandler(
             ExtensionService extensions,
-            AdminService admins,
             MigrationService migrations,
             FixTargetPlatformsService service
     ) {
         this.extensions = extensions;
-        this.admins = admins;
         this.migrations = migrations;
         this.service = service;
     }
@@ -69,21 +63,11 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
                         .addArgument(() -> NamingUtil.toLogFormat(extVersion))
                         .log();
 
-                deleteExtension(extVersion);
+                extensions.deleteExtensionVersion(service.getUser(), extVersion);
                 try (var input = Files.newInputStream(extensionFile.getPath())) {
                     extensions.publishVersion(input, extVersion.getPublishedWith());
                 }
             }
         }
-    }
-
-    private void deleteExtension(ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        admins.deleteExtension(
-                service.getUser(),
-                extension.getNamespace().getName(),
-                extension.getName(),
-                TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion())
-        );
     }
 }

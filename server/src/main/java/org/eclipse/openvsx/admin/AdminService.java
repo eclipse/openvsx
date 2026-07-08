@@ -115,9 +115,14 @@ public class AdminService {
         scheduler.scheduleRecurrently("MonthlyAdminStatistics", Cron.monthly(1, 0, 3), ZoneId.of("UTC"), jobRequest);
     }
 
+    /**
+     * Locks and deletes the given extension together with all bundled or dependent extensions.
+     * <p>
+     * No further checks are made if the extension is referenced by bundles or as a dependency.
+     */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void deleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
-        var extension = repositories.findExtension(extensionName, namespaceName);
+    public void lockAndDeleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
+        var extension = repositories.findExtensionForUpdate(extensionName, namespaceName);
         if (extension == null) {
             var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
             throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
@@ -128,7 +133,10 @@ public class AdminService {
 
     private void deleteExtensionAndDependencies(UserData admin, Extension extension, int depth) throws ErrorResultException {
         if (depth > 5) {
-            throw new ErrorResultException("Failed to delete extension and its dependencies. Exceeded maximum recursion depth.", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ErrorResultException(
+                    "Failed to delete extension and its dependencies. Exceeded maximum recursion depth.",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
 
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
@@ -141,29 +149,9 @@ public class AdminService {
             deleteExtensionAndDependencies(admin, dependRef, depth);
         }
 
-        for (var extVersion : repositories.findVersions(extension)) {
-            extensions.removeExtensionVersion(extVersion);
-        }
-
-        for (var review : repositories.findAllReviews(extension)) {
-            entityManager.remove(review);
-        }
-
-        var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
-        for (var deprecatedExtension : deprecatedExtensions) {
-            deprecatedExtension.setReplacement(null);
-            cache.evictExtensionJsons(deprecatedExtension);
-        }
-
-        entityManager.remove(extension);
-
-        // evict the cache entries only after the changes have been commited
-        cache.evictExtensionJsons(extension);
-        cache.evictNamespaceDetails(extension);
-        cache.evictLatestExtensionVersion(extension);
-
-        search.removeSearchEntry(extension);
-        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension)));
+        // We unconditionally delete the extension,
+        // not checking if there are dependencies on this extension.
+        extensions.deleteExtension(admin, extension, false);
     }
 
     private void deleteExtensionAndDependencies(UserData admin, ExtensionVersion extVersion, int depth) {
@@ -180,10 +168,29 @@ public class AdminService {
     }
 
     /**
-     * Delete the provided versions of an extension.
+     * Locks and deletes the given extension unconditionally. No further checks are made if the extension
+     * is referenced by bundles or as a dependency.
      * <p>
-     * The extension version is deleted unconditionally if it exists, no further authorization checks
-     * are performed, i.e. if the given user does own the extension or is an admin user.
+     * This method is intended for non-user interaction as it will wait till the lock can be acquired.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public void lockAndDeleteExtension(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
+        var extension = repositories.findExtensionForUpdate(extensionName, namespaceName);
+        if (extension == null) {
+            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
+            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
+        }
+
+        extensions.deleteExtension(admin, extension, false);
+    }
+
+    /**
+     * Delete the provided versions of an extension. If all versions of the extension shall be deleted, the
+     * extension as a whole will be removed unless it is referenced by bundles or used as a dependency.
+     * <p>
+     * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
+     * <p>
+     * This method is intended to be used for user interaction as it can fail when the extension is concurrently updated.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(
