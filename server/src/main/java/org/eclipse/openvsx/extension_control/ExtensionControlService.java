@@ -79,13 +79,16 @@ public class ExtensionControlService {
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
         if (!enabled || mirrorEnabled) {
-            return;
-        }
-        if (updateOnStart) {
-            scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
-        }
+            scheduler.deleteRecurringJob("UpdateExtensionControl");
+        } else {
+            if (updateOnStart) {
+                scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+            }
 
-        scheduler.scheduleRecurrently("UpdateExtensionControl", Cron.daily(1, 8), ZoneId.of("UTC"), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+            var schedule = Cron.daily(1, 8);
+            logger.info("Scheduling update extension control job with schedule '{}'", schedule);
+            scheduler.scheduleRecurrently("UpdateExtensionControl", schedule, ZoneId.of("UTC"), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+        }
     }
 
     @Transactional
