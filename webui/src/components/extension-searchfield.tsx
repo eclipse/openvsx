@@ -44,6 +44,7 @@ const SearchWrap = styled(Box, {
     height: '2.8125rem',
     padding: '0 0.8125rem',
     backgroundColor: alpha(theme.palette.surface2, 0.7),
+    backdropFilter: 'blur(2px)',
     transition: 'border-color 0.18s, box-shadow 0.18s',
     '&:focus-within': focusRing(theme)
 }));
@@ -62,7 +63,7 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
     fontFamily: MONO_FONT,
     fontSize: '0.9375rem',
     color: theme.palette.text.primary,
-    '& input::placeholder': { color: theme.palette.text.disabled, opacity: 1 },
+    '& input::placeholder': { color: theme.palette.text.primary, opacity: 0.7 },
     '& input::-webkit-search-cancel-button': { display: 'none' }
 }));
 

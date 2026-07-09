@@ -57,9 +57,8 @@ const BLUR_LAYERS = [
 // Nav-side view of the page's tint region: `navTint` is the color the nav
 // currently wears — the region's color until its depth scrolls past the nav
 // midpoint, then null to return to theme colors. `washColor` lags one step so
-// the wash gradient (not transitionable) can still fade out in the last color,
-// and `hasTintRegion` marks a region-declaring page as mounted.
-const useNavTint = (): { navTint: string | null; washColor: string | null; hasTintRegion: boolean } => {
+// the wash gradient (not transitionable) can still fade out in the last color.
+const useNavTint = (): { navTint: string | null; washColor: string | null } => {
     const tint = useExtensionTint();
     const [pastTint, setPastTint] = useState(false);
     useEffect(() => {
@@ -77,7 +76,7 @@ const useNavTint = (): { navTint: string | null; washColor: string | null; hasTi
     useEffect(() => {
         if (navTint) lastTint.current = navTint;
     }, [navTint]);
-    return { navTint, washColor: navTint ?? lastTint.current, hasTintRegion: tint !== null };
+    return { navTint, washColor: navTint ?? lastTint.current };
 };
 
 export const AppNavbar: FunctionComponent = () => {
@@ -100,13 +99,10 @@ export const AppNavbar: FunctionComponent = () => {
     const showSolid = !scrolled;
     const showFan = scrolled;
 
-    const { navTint, washColor, hasTintRegion } = useNavTint();
+    const { navTint, washColor } = useNavTint();
 
-    // Region-declaring pages pin a tab bar under the nav; the fan must reach
-    // past it so sharp content doesn't show through the transparent row.
-    const fanDepth = hasTintRegion ? 64 : 0;
-    const fanBottom = { xs: `${-48 - fanDepth}px`, sm: `${-80 - fanDepth}px` };
-    const tintBottom = { xs: `${-48 - fanDepth}px`, sm: `${-150 - fanDepth}px` };
+    const fanBottom = { xs: '-48px', sm: '-80px' };
+    const tintBottom = { xs: '-48px', sm: '-150px' };
 
     // While a gallery band backs the nav, the chrome wears its color and the
     // content flips to the contrast color, so the two surfaces read as one.

@@ -11,7 +11,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FocusEvent, FunctionComponent, KeyboardEvent, useCallback, useLayoutEffect, useRef } from 'react';
+import {
+    FocusEvent,
+    FunctionComponent,
+    KeyboardEvent,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState
+} from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
@@ -31,6 +40,15 @@ export const NavSearchField: FunctionComponent = () => {
     const { searchFocusSignal, resultsNavigationSignal, setSearchFocused } = useSearchFocus();
     const { hasPageSearchBar, isPageSearchBarActive } = usePageSearchBar();
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Suppress the show/hide fade on first paint. The home hero registers its page
+    // search bar in a layout effect, so this field starts visible and is hidden in
+    // the same commit — without this it would fade out from opacity 1 on load.
+    const [fadeReady, setFadeReady] = useState(false);
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setFadeReady(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
 
     // Typing debounces navigation; Enter searches immediately. A route change
     // drops any pending navigation (e.g. the user clicked a result mid-debounce).
@@ -154,7 +172,7 @@ export const NavSearchField: FunctionComponent = () => {
                     mx: 'auto',
                     opacity: hasPageSearchBar ? 0 : 1,
                     pointerEvents: hasPageSearchBar ? 'none' : 'auto',
-                    transition: 'opacity 0.15s ease'
+                    transition: fadeReady ? 'opacity 0.15s ease' : 'none'
                 }}>
                 <ExtensionSearchfield
                     ref={inputRef}

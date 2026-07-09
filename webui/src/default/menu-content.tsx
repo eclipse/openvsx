@@ -230,7 +230,6 @@ export const DefaultMenuContent: FunctionComponent = () => {
                             py: 1,
                             fontWeight: 600,
                             fontSize: '0.8125rem',
-                            textTransform: 'none',
                             borderRadius: `${theme.shape.borderRadius}px`,
                             display: 'inline-flex',
                             alignItems: 'center',

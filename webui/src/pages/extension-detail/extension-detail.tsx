@@ -59,6 +59,7 @@ const PillTab = styled(Tab)(({ theme }) => ({
     borderRadius: '999px',
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: alpha(theme.palette.surface2, 0.7),
+    backdropFilter: 'blur(2px) saturate(1.8)',
     color: theme.palette.text.secondary,
     fontSize: '0.8125rem',
     fontWeight: 500,
