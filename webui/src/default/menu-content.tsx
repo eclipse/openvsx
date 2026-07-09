@@ -8,20 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, PropsWithChildren, useContext, useRef } from 'react';
-import {
-    Typography,
-    MenuItem,
-    Link,
-    Button,
-    IconButton,
-    Accordion,
-    AccordionSummary,
-    Avatar,
-    AccordionDetails
-} from '@mui/material';
+import { FunctionComponent, PropsWithChildren, useContext, useRef, useState } from 'react';
+import { Typography, MenuItem, Link, Button, IconButton, Avatar, Menu } from '@mui/material';
 import { useLocation, useNavigate, Link as RouteLink } from 'react-router-dom';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import InfoIcon from '@mui/icons-material/Info';
@@ -65,36 +55,44 @@ export const MenuItemText: FunctionComponent<PropsWithChildren> = ({ children })
 };
 
 export const MobileUserAvatar: FunctionComponent = () => {
-    const context = useContext(MainContext);
-    const user = context.user;
+    const { user } = useContext(MainContext);
     const logoutFormRef = useRef<HTMLFormElement>(null);
+    const anchorRef = useRef<HTMLLIElement | null>(null);
+    const [open, setOpen] = useState(false);
+    const close = () => setOpen(false);
     if (!user) {
         return null;
     }
 
     return (
-        <Accordion>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls='user-actions' id='user-avatar'>
+        <>
+            <MenuItem ref={anchorRef} onClick={() => setOpen(true)} aria-haspopup='menu' aria-expanded={open}>
                 <MenuItemText>
                     <Avatar src={user.avatarUrl} alt={user.loginName} variant='rounded' sx={itemIcon} />
                     {user.loginName}
                 </MenuItemText>
-            </AccordionSummary>
-            <AccordionDetails>
-                <MenuItem component={Link} href={user.homepage}>
+                <MoreVertIcon fontSize='small' sx={{ ml: 'auto', color: 'text.secondary' }} />
+            </MenuItem>
+            <Menu
+                open={open}
+                onClose={close}
+                anchorEl={anchorRef.current}
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                <MenuItem component={Link} href={user.homepage} onClick={close}>
                     <MenuItemText>
                         <GitHubIcon sx={itemIcon} />
                         {user.loginName}
                     </MenuItemText>
                 </MenuItem>
-                <MenuItem component={RouteLink} to={UserSettingsRoutes.PROFILE}>
+                <MenuItem component={RouteLink} to={UserSettingsRoutes.PROFILE} onClick={close}>
                     <MenuItemText>
                         <SettingsIcon sx={itemIcon} />
                         Settings
                     </MenuItemText>
                 </MenuItem>
                 {user.role === 'admin' ? (
-                    <MenuItem component={RouteLink} to={AdminDashboardRoutes.MAIN}>
+                    <MenuItem component={RouteLink} to={AdminDashboardRoutes.MAIN} onClick={close}>
                         <MenuItemText>
                             <AdminPanelSettingsIcon sx={itemIcon} />
                             Admin Dashboard
@@ -109,8 +107,8 @@ export const MobileUserAvatar: FunctionComponent = () => {
                         </MenuItemText>
                     </LogoutForm>
                 </MenuItem>
-            </AccordionDetails>
-        </Accordion>
+            </Menu>
+        </>
     );
 };
 
