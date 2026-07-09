@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Typography, Box, Container, Grid, Link, Divider } from '@mui/material';
+import { Typography, Box, Link, Divider } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
@@ -17,6 +17,7 @@ import { useParams } from 'react-router-dom';
 import { ExtensionCard } from '../../components/extension-card';
 import { MainContext } from '../../context';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
+import { Section } from '../../components/page-primitives';
 import { NamespaceDetails, isError, UrlString } from '../../extension-registry-types';
 
 export const NamespaceDetail: FunctionComponent = () => {
@@ -106,134 +107,117 @@ export const NamespaceDetail: FunctionComponent = () => {
     };
 
     const renderNamespaceDetails = (namespaceDetails: NamespaceDetails, truncateReadMore: boolean): ReactNode => {
+        const { website, supportLink, socialLinks } = namespaceDetails;
         return (
             <>
-                <Box sx={{ bgcolor: 'neutral.dark' }}>
-                    <Container maxWidth='xl'>
-                        <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', py: 4, px: 0 }}>
-                            <Grid container>
-                                <Grid item>
+                <Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Section sx={{ py: { xs: '2rem', sm: '3rem' } }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: '1.5rem', sm: '2rem' }
+                            }}>
+                            <Box
+                                component='img'
+                                src={namespaceDetails.logo ?? pageSettings.urls.extensionDefaultIcon}
+                                alt={namespaceDetails.displayName}
+                                sx={{ width: '7.5rem', height: '7.5rem', objectFit: 'contain', flexShrink: 0 }}
+                            />
+                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography variant='h5' sx={{ fontWeight: 700 }}>
+                                    {namespaceDetails.displayName}
+                                </Typography>
+                                {namespaceDetails.description ? (
+                                    <Box sx={{ mt: '0.5rem' }}>
+                                        <Typography
+                                            color='text.secondary'
+                                            ref={calculateShowReadMore}
+                                            sx={
+                                                truncateReadMore
+                                                    ? {
+                                                          overflow: 'hidden',
+                                                          textOverflow: 'ellipsis',
+                                                          display: '-webkit-box',
+                                                          WebkitLineClamp: '2',
+                                                          WebkitBoxOrient: 'vertical'
+                                                      }
+                                                    : {}
+                                            }>
+                                            {namespaceDetails.description}
+                                        </Typography>
+                                        {showReadMore ? (
+                                            <Link
+                                                color='secondary'
+                                                underline='hover'
+                                                component='button'
+                                                onClick={readMore}>
+                                                Read more
+                                            </Link>
+                                        ) : null}
+                                    </Box>
+                                ) : null}
+                                {website || supportLink ? (
                                     <Box
-                                        component='img'
-                                        src={namespaceDetails.logo ?? pageSettings.urls.extensionDefaultIcon}
                                         sx={{
-                                            height: '7.5rem',
-                                            maxWidth: '9rem',
-                                            mr: { xs: 0, sm: 0, md: '2rem', lg: '2rem', xl: '2rem' },
-                                            pt: 1
-                                        }}
-                                        alt={namespaceDetails.displayName}
-                                    />
-                                </Grid>
-                                <Grid item xs={7}>
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12}>
-                                            <Typography variant='h5'>{namespaceDetails.displayName}</Typography>
-                                        </Grid>
-                                        <Grid item xs={12} sx={{ pr: '0 !important' }}>
-                                            {namespaceDetails.description ? (
-                                                <Box>
-                                                    <Typography
-                                                        ref={calculateShowReadMore}
-                                                        sx={
-                                                            truncateReadMore
-                                                                ? {
-                                                                      overflow: 'hidden',
-                                                                      textOverflow: 'ellipsis',
-                                                                      display: '-webkit-box',
-                                                                      WebkitLineClamp: '2',
-                                                                      WebkitBoxOrient: 'vertical'
-                                                                  }
-                                                                : {}
-                                                        }>
-                                                        {namespaceDetails.description}
-                                                    </Typography>
-                                                    {showReadMore ? (
-                                                        <Link
-                                                            color='secondary'
-                                                            underline='hover'
-                                                            component='button'
-                                                            onClick={readMore}>
-                                                            Read more
-                                                        </Link>
-                                                    ) : null}
-                                                </Box>
-                                            ) : null}
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <Grid container spacing={2}>
-                                                {namespaceDetails.website ? (
-                                                    <Grid item>
-                                                        <Link
-                                                            color='secondary'
-                                                            underline='hover'
-                                                            target='_blank'
-                                                            href={namespaceDetails.website}>
-                                                            {displayLink(namespaceDetails.website)}
-                                                        </Link>
-                                                    </Grid>
-                                                ) : null}
-                                                {namespaceDetails.website && namespaceDetails.supportLink ? (
-                                                    <Grid item>
-                                                        <Divider orientation='vertical' sx={{ height: '100%' }} />
-                                                    </Grid>
-                                                ) : null}
-                                                {namespaceDetails.supportLink ? (
-                                                    <Grid item>
-                                                        <Link
-                                                            color='secondary'
-                                                            underline='hover'
-                                                            target='_blank'
-                                                            href={namespaceDetails.supportLink}>
-                                                            {displayLink(namespaceDetails.supportLink)}
-                                                        </Link>
-                                                    </Grid>
-                                                ) : null}
-                                            </Grid>
-                                        </Grid>
-                                        <Grid item xs={12}>
-                                            <Grid container spacing={2}>
-                                                {namespaceDetails.socialLinks.linkedin ? (
-                                                    <Grid item>
-                                                        <Link
-                                                            target='_blank'
-                                                            color='text.primary'
-                                                            href={namespaceDetails.socialLinks.linkedin}>
-                                                            <LinkedInIcon />
-                                                        </Link>
-                                                    </Grid>
-                                                ) : null}
-                                                {namespaceDetails.socialLinks.github ? (
-                                                    <Grid item>
-                                                        <Link
-                                                            target='_blank'
-                                                            color='text.primary'
-                                                            href={namespaceDetails.socialLinks.github}>
-                                                            <GitHubIcon />
-                                                        </Link>
-                                                    </Grid>
-                                                ) : null}
-                                                {namespaceDetails.socialLinks.twitter ? (
-                                                    <Grid item>
-                                                        <Link
-                                                            target='_blank'
-                                                            color='text.primary'
-                                                            href={namespaceDetails.socialLinks.twitter}>
-                                                            <TwitterIcon />
-                                                        </Link>
-                                                    </Grid>
-                                                ) : null}
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
-                            </Grid>
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            flexWrap: 'wrap',
+                                            gap: '0.75rem',
+                                            mt: '1rem'
+                                        }}>
+                                        {website ? (
+                                            <Link color='secondary' underline='hover' target='_blank' href={website}>
+                                                {displayLink(website)}
+                                            </Link>
+                                        ) : null}
+                                        {website && supportLink ? <Divider orientation='vertical' flexItem /> : null}
+                                        {supportLink ? (
+                                            <Link
+                                                color='secondary'
+                                                underline='hover'
+                                                target='_blank'
+                                                href={supportLink}>
+                                                {displayLink(supportLink)}
+                                            </Link>
+                                        ) : null}
+                                    </Box>
+                                ) : null}
+                                {socialLinks.linkedin || socialLinks.github || socialLinks.twitter ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem', mt: '1rem' }}>
+                                        {socialLinks.linkedin ? (
+                                            <Link target='_blank' color='text.primary' href={socialLinks.linkedin}>
+                                                <LinkedInIcon />
+                                            </Link>
+                                        ) : null}
+                                        {socialLinks.github ? (
+                                            <Link target='_blank' color='text.primary' href={socialLinks.github}>
+                                                <GitHubIcon />
+                                            </Link>
+                                        ) : null}
+                                        {socialLinks.twitter ? (
+                                            <Link target='_blank' color='text.primary' href={socialLinks.twitter}>
+                                                <TwitterIcon />
+                                            </Link>
+                                        ) : null}
+                                    </Box>
+                                ) : null}
+                            </Box>
                         </Box>
-                    </Container>
+                    </Section>
                 </Box>
                 {namespaceDetails.extensions ? (
-                    <Container maxWidth='xl'>
-                        <Grid container spacing={2} sx={{ justifyContent: 'center', pt: 6 }}>
+                    <Section sx={{ py: { xs: '2rem', sm: '3rem' } }}>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                    xs: 'repeat(2, minmax(0, 1fr))',
+                                    sm: 'repeat(auto-fill, minmax(190px, 1fr))'
+                                },
+                                gap: '1rem'
+                            }}>
                             {namespaceDetails.extensions.map((ext, idx) => (
                                 <ExtensionCard
                                     extension={ext}
@@ -241,8 +225,8 @@ export const NamespaceDetail: FunctionComponent = () => {
                                     key={`${ext.namespace}.${ext.name}`}
                                 />
                             ))}
-                        </Grid>
-                    </Container>
+                        </Box>
+                    </Section>
                 ) : null}
             </>
         );
