@@ -229,7 +229,7 @@ public class ExtensionService {
 
     private boolean canBeReactivated(ExtensionVersion extVersion) {
         var scan = repositories.findLatestExtensionScan(extVersion);
-        // if no scan could be found, scanning is disabled to allow
+        // if no scan could be found, scanning is disabled, so allow reactivation
         if (scan == null) {
             return true;
         }
