@@ -11,9 +11,10 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { Link as RouteLink } from 'react-router-dom';
 import { HomeInvolvementCard } from '../../page-settings';
 import { Section, Eyebrow, focusOutline } from '../../components/page-primitives';
@@ -26,6 +27,41 @@ const GetInvolvedCard = styled(Box)(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column'
 }));
+
+const getInvolvedLinkStyles = ({ theme }: { theme: Theme }) => ({
+    fontSize: '0.8125rem',
+    fontWeight: 600,
+    color: theme.palette.secondary.light,
+    textDecoration: 'none',
+    '&:hover': { textDecoration: 'underline' },
+    ...focusOutline(theme)
+});
+
+const GetInvolvedAnchorLink = styled('a')(getInvolvedLinkStyles);
+const GetInvolvedRouteLink = styled(RouteLink)(getInvolvedLinkStyles);
+
+interface GetInvolvedLinkProps {
+    href: string;
+    children: ReactNode;
+}
+
+const GetInvolvedLink: FunctionComponent<GetInvolvedLinkProps> = ({ href, children }) => {
+    const external = /^https?:\/\//.test(href);
+    const internalRoute = href.startsWith('/') && !href.startsWith('//');
+
+    if (internalRoute) {
+        return <GetInvolvedRouteLink to={href}>{children}</GetInvolvedRouteLink>;
+    }
+
+    return (
+        <GetInvolvedAnchorLink
+            href={href}
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}>
+            {children}
+        </GetInvolvedAnchorLink>
+    );
+};
 
 export interface GetInvolvedProps {
     heading?: string;
@@ -49,7 +85,6 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                     gap: '1rem'
                 }}>
                 {cards.map(card => {
-                    const external = /^https?:\/\//.test(card.href);
                     return (
                         <GetInvolvedCard key={card.title}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.6875rem', mb: '0.75rem' }}>
@@ -80,21 +115,7 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                                 }}>
                                 {card.description}
                             </Typography>
-                            <Box
-                                component={RouteLink}
-                                to={card.href}
-                                target={external ? '_blank' : undefined}
-                                rel={external ? 'noopener noreferrer' : undefined}
-                                sx={theme => ({
-                                    fontSize: '0.8125rem',
-                                    fontWeight: 600,
-                                    color: 'secondary.light',
-                                    textDecoration: 'none',
-                                    '&:hover': { textDecoration: 'underline' },
-                                    ...focusOutline(theme)
-                                })}>
-                                {card.label}
-                            </Box>
+                            <GetInvolvedLink href={card.href}>{card.label}</GetInvolvedLink>
                         </GetInvolvedCard>
                     );
                 })}

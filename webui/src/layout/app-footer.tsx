@@ -14,6 +14,8 @@
 import { FunctionComponent, useContext, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
+import { Link as RouteLink } from 'react-router-dom';
 import { KbdKey } from '../components/kbd-key';
 import { useShortcut } from '../hooks/use-shortcut';
 import { Section, Eyebrow, accentHover, focusOutline } from '../components/page-primitives';
@@ -21,14 +23,17 @@ import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
 import { MainContext } from '../context';
 
-const FooterLink = styled('a')(({ theme }) => ({
+const footerLinkStyles = ({ theme }: { theme: Theme }) => ({
     fontSize: '0.8125rem',
     color: theme.palette.text.secondary,
     textDecoration: 'none',
     display: 'block',
     '&:hover': { color: theme.palette.secondary.light },
     ...focusOutline(theme)
-}));
+});
+
+const FooterLink = styled('a')(footerLinkStyles);
+const FooterRouteLink = styled(RouteLink)(footerLinkStyles);
 
 const SocialIconButton = styled('a')(({ theme }) => ({
     width: 34,
@@ -172,11 +177,17 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                     <Box key={ci}>
                         <Eyebrow sx={{ mb: '0.875rem' }}>{column.heading}</Eyebrow>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                            {column.links.map((l, li) => (
-                                <FooterLink key={li} href={l.href} target={l.external ? '_blank' : undefined}>
-                                    {l.label}
-                                </FooterLink>
-                            ))}
+                            {column.links.map((l, li) =>
+                                !l.external && l.href.startsWith('/') && !l.href.startsWith('//') ? (
+                                    <FooterRouteLink key={li} to={l.href}>
+                                        {l.label}
+                                    </FooterRouteLink>
+                                ) : (
+                                    <FooterLink key={li} href={l.href} target={l.external ? '_blank' : undefined}>
+                                        {l.label}
+                                    </FooterLink>
+                                )
+                            )}
                         </Box>
                     </Box>
                 ))}
