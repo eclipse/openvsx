@@ -17,6 +17,9 @@ export * from './components/extension-list';
 export * from './pages/namespace-detail/namespace-detail';
 export * from './pages/user/user-settings';
 
+export * from './components/kbd-key';
+export * from './components/openvsx-mark';
+
 // Building blocks of the built-in home page, for composing custom home pages.
 export { HeroSearch, type HeroSearchProps } from './pages/home/hero-search';
 export { BrowseCategories, type BrowseCategoriesProps } from './pages/home/browse-categories';
