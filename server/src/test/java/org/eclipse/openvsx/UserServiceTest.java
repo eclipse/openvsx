@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Namespace;
@@ -91,7 +90,7 @@ class UserServiceTest {
         existing.setDisplayName("GitHub");
 
         Mockito.when(repositories.findNamespace("my-ns")).thenReturn(namespace);
-        Mockito.when(repositories.findNamespaceConflict("github", "my-ns")).thenReturn(Optional.of(existing));
+        Mockito.when(repositories.findConflictingNamespaces("github", namespace)).thenReturn(List.of(existing));
         Mockito.when(repositories.isNamespaceOwner(user, namespace)).thenReturn(true);
         Mockito.when(validator.validateNamespaceDetails(any())).thenReturn(List.of());
 
@@ -114,7 +113,7 @@ class UserServiceTest {
         namespace.setDisplayName("Old Display");
 
         Mockito.when(repositories.findNamespace("my-ns")).thenReturn(namespace);
-        Mockito.when(repositories.findNamespaceConflict("Brand New", "my-ns")).thenReturn(Optional.empty());
+        Mockito.when(repositories.findConflictingNamespaces("Brand New", namespace)).thenReturn(List.of());
         Mockito.when(repositories.isNamespaceOwner(user, namespace)).thenReturn(true);
         Mockito.when(validator.validateNamespaceDetails(any())).thenReturn(List.of());
 
@@ -124,7 +123,7 @@ class UserServiceTest {
 
         users.updateNamespaceDetails(details, user);
 
-        verify(repositories).findNamespaceConflict("Brand New", "my-ns");
+        verify(repositories).findConflictingNamespaces("Brand New", namespace);
         assertEquals("Brand New", namespace.getDisplayName());
     }
 
@@ -145,7 +144,7 @@ class UserServiceTest {
 
         users.updateNamespaceDetails(details, user);
 
-        verify(repositories, never()).findNamespaceConflict(anyString(), anyString());
+        verify(repositories, never()).findConflictingNamespaces(anyString(), any(Namespace.class));
     }
 
     private UserData mockUser(String authId) {

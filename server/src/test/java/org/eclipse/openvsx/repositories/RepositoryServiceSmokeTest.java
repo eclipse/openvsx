@@ -208,7 +208,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findMemberships(namespace, "role"),
                 () -> repositories.deleteMemberships(userData),
                 () -> repositories.findNamespace("name"),
-                () -> repositories.findNamespaceConflict("displayName", "name"),
+                () -> repositories.findConflictingNamespaces("displayName", namespace),
                 () -> repositories.findOrphanNamespaces(),
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findTargetPlatformVersions("version", "extensionName", "namespaceName"),

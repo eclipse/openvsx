@@ -37,56 +37,69 @@ class NamespaceRepositoryTest {
     @Autowired
     EntityManager em;
 
+    Namespace github;
+    Namespace other;
+
     @BeforeEach
     void persistNamespaces() {
-        persistNamespace("github", "The GitHub Org");
-        persistNamespace("other", "Other Org");
+        github = persistNamespace("github", "The GitHub Org");
+        other = persistNamespace("other", "Other Org");
+    }
+
+    @Test
+    void findMultipleConflictingNamespaceMatches() {
+        persistNamespace("github2", "github");
+        var conflicts = repo.findConflictingNamespaces("GITHUB", other);
+
+        assertThat(conflicts).isNotEmpty();
+        assertThat(conflicts.getFirst().getName()).isEqualTo("github");
     }
 
     @Test
     void findConflictingNamespaceMatchesNameIgnoringCase() {
-        var conflict = repo.findConflictingNamespace("GITHUB", "other");
+        var conflicts = repo.findConflictingNamespaces("GITHUB", other);
 
-        assertThat(conflict).isPresent();
-        assertThat(conflict.get().getName()).isEqualTo("github");
+        assertThat(conflicts).isNotEmpty();
+        assertThat(conflicts.getFirst().getName()).isEqualTo("github");
     }
 
     @Test
     void findConflictingNamespaceMatchesDisplayNameIgnoringCase() {
-        var conflict = repo.findConflictingNamespace("the github org", "other");
+        var conflicts = repo.findConflictingNamespaces("the github org", other);
 
-        assertThat(conflict).isPresent();
-        assertThat(conflict.get().getName()).isEqualTo("github");
+        assertThat(conflicts).isNotEmpty();
+        assertThat(conflicts.getFirst().getName()).isEqualTo("github");
     }
 
     @Test
     void findConflictingNamespaceExcludesOwnNamespaceIgnoringCase() {
-        var conflict = repo.findConflictingNamespace("The GitHub Org", "GitHub");
+        var conflicts = repo.findConflictingNamespaces("The GitHub Org", github);
 
-        assertThat(conflict).isEmpty();
+        assertThat(conflicts).isEmpty();
     }
 
     @Test
     void findConflictingNamespaceStillFindsOtherNamespaces() {
-        persistNamespace("dup", "The GitHub Org");
+        var dup = persistNamespace("dup", "The GitHub Org");
 
-        var conflict = repo.findConflictingNamespace("the github org", "github");
+        var conflicts = repo.findConflictingNamespaces("the github org", github);
 
-        assertThat(conflict).isPresent();
-        assertThat(conflict.get().getName()).isEqualTo("dup");
+        assertThat(conflicts).isNotEmpty();
+        assertThat(conflicts.getFirst().getName()).isEqualTo(dup.getName());
     }
 
     @Test
     void findConflictingNamespaceEmptyWhenNothingMatches() {
-        var conflict = repo.findConflictingNamespace("Brand New", "github");
+        var conflicts = repo.findConflictingNamespaces("Brand New", github);
 
-        assertThat(conflict).isEmpty();
+        assertThat(conflicts).isEmpty();
     }
 
-    private void persistNamespace(String name, String displayName) {
+    private Namespace persistNamespace(String name, String displayName) {
         var namespace = new Namespace();
         namespace.setName(name);
         namespace.setDisplayName(displayName);
         em.persist(namespace);
+        return namespace;
     }
 }
