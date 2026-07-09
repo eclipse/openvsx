@@ -58,14 +58,11 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
 
     useEffect(() => {
         const banner = pageSettings.elements.banner;
-        if (banner) {
-            let open = true;
-            if (banner.cookie) {
-                const bannerClosedCookie = getCookieValueByKey(banner.cookie.key);
-                if (bannerClosedCookie === banner.cookie.value) open = false;
-            }
-            setIsBannerOpen(open);
-        }
+        if (!banner) return;
+        if (banner.cookie && getCookieValueByKey(banner.cookie.key) === banner.cookie.value) return;
+        // Start collapsed on load, then slide open a beat later for a gentle entrance.
+        const timer = setTimeout(() => setIsBannerOpen(true), 600);
+        return () => clearTimeout(timer);
     }, []);
 
     // Global navigation shortcuts with no on-screen affordance. Shortcuts tied to a
@@ -95,18 +92,17 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     return (
         <Wrapper>
             <ScrollToTop />
-            <AppNavbar />
             {BannerComponent ? (
                 <Banner
                     open={isBannerOpen}
                     showDismissButton={BannerComponent.props?.dismissButton?.show}
                     dismissButtonLabel={BannerComponent.props?.dismissButton?.label}
                     dismissButtonOnClick={onDismissBannerButtonClick}
-                    color={BannerComponent.props?.color}
-                    theme={pageSettings.themeType}>
+                    color={BannerComponent.props?.color}>
                     <BannerComponent.content />
                 </Banner>
             ) : null}
+            <AppNavbar />
             {/* Mobile: fill the viewport so the (screen-tall) footer stays below the fold.
                 Desktop: flexGrow alone sticks the footer to the viewport bottom. */}
             <Box

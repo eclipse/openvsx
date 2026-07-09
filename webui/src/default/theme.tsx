@@ -83,6 +83,8 @@ interface CustomPaletteColors {
     surface3: string;
     border2: string;
     accentSoft: string;
+    warningSoft: string;
+    warningAccent: string;
     bg2: string;
 }
 
@@ -143,6 +145,8 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             surface3: dark ? '#20202b' : '#f2f2f5',
             border2: dark ? '#1d1d26' : '#f0f0f3',
             accentSoft: dark ? '#291a3d' : '#f4e9fd',
+            warningSoft: dark ? '#3a2c14' : '#fdf3e2',
+            warningAccent: dark ? '#fbbf24' : '#d97706',
             // Legacy admin palette
             neutral: {
                 light: dark ? '#000' : '#e6e6e6',
@@ -204,6 +208,11 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                         background: 'transparent',
                         '&:before': { display: 'none' }
                     }
+                }
+            },
+            MuiButton: {
+                styleOverrides: {
+                    root: { textTransform: 'none' }
                 }
             },
             // MUI X derives the grid's borders from `divider` via lighten/darken, which
