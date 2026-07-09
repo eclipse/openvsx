@@ -81,7 +81,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                                 sx={{
                                     display: 'grid',
                                     gridTemplateColumns: {
-                                        xs: 'repeat(2, 1fr)',
+                                        xs: 'repeat(2, minmax(0, 1fr))',
                                         sm: 'repeat(auto-fill, minmax(190px, 1fr))'
                                     },
                                     gap: '1rem'
