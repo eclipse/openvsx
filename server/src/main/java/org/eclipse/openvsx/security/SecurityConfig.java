@@ -53,7 +53,7 @@ public class SecurityConfig {
                             .authenticated()
                 )
                 .cors(configurer -> configurer.configure(http))
-                .csrf(configurer -> configurer.ignoringRequestMatchers(pathMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/vscode/**", "/admin/api/**")))
+                .csrf(configurer -> configurer.ignoringRequestMatchers(pathMatchers("/api/-/publish", "/api/-/namespace/create", "/api/-/query", "/api/-/trusted-publishing/token", "/vscode/**", "/admin/api/**")))
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));
 
         if (userServices.canLogin()) {

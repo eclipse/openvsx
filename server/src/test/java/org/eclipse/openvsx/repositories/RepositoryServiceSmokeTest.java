@@ -36,6 +36,7 @@ import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
@@ -145,10 +146,17 @@ class RepositoryServiceSmokeTest {
         dailyUsageStats.setTotalRequests(1L);
         dailyUsageStats.setP95Requests(1L);
 
+        var trustedPublisher = new TrustedPublisher();
+        trustedPublisher.setNamespace(namespace);
+        trustedPublisher.setProvider("provider");
+        trustedPublisher.setClaims(Collections.singletonMap("claim", "value"));
+        trustedPublisher.setCreatedBy(userData);
+        trustedPublisher.setCreatedTimestamp(NOW);
+
         // Persist all entities consistently using EntityManager
         Stream.of(namespace, extension, userData, extVersion, personalAccessToken, keyPair,
                   scan, validationFailure, adminDecision, fileDecision, threat, scanCheckResult,
-                  tier, customer, usageStats)
+                  tier, customer, usageStats, trustedPublisher)
               .forEach(em::persist);
         em.flush();
 
@@ -422,6 +430,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDailyUsageStats(customer, NOW.toLocalDate()),
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
+                () -> repositories.findTrustedPublishers(namespace),
+                () -> repositories.findTrustedPublisher(1L),
+                () -> repositories.deleteTrustedPublisher(trustedPublisher),
                 () -> repositories.deleteTier(tier),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails
