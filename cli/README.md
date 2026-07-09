@@ -59,4 +59,4 @@ The `logout` command lets you remove a stored access token.
  * `ovsx logout <name>`
    the name must correspond to the `publisher` of your extension.
 
-By default `ovsx` stores access tokens in the operating system's credential manager (via [`cross-keychain`](https://www.npmjs.com/package/cross-keychain)). Setting the environment variable `OVSX_STORE=file` switches to storing them as plaintext in the `~/.ovsx` file; this is strongly discouraged, as it leaves your tokens readable by anyone with access to your home directory.
+By default `ovsx` stores access tokens in the operating system's credential manager (via [`cross-keychain`](https://www.npmjs.com/package/cross-keychain)), falling back to storing them as plaintext in the `~/.ovsx` file if the credential manager can't be used. You can also set the environment variable `OVSX_STORE=file` to force plaintext storage; this is strongly discouraged, as it leaves your tokens readable by anyone with access to your home directory.

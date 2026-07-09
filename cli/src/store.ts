@@ -107,7 +107,7 @@ export class KeychainStore implements Store {
 
 export async function openDefaultStore(): Promise<Store> {
 	if (/^file$/i.test(process.env['OVSX_STORE'] ?? '')) {
-		console.warn(`!!  Storing secrets clear-text in '${FileStore.DefaultPath}'. Unset OVSX_STORE to use the system credential store.`);
+		console.warn(`!!  Storing secrets clear-text in '${FileStore.DefaultPath}' (not recommended). Unset OVSX_STORE to use the system credential store instead.`);
 		return await FileStore.open();
 	}
 
@@ -115,7 +115,9 @@ export async function openDefaultStore(): Promise<Store> {
 	try {
 		keychainStore = await KeychainStore.open();
 	} catch (err) {
-		throw new Error(`Failed to open the system credential store: ${err.message}\nAs a last resort, set the environment variable OVSX_STORE=file to store secrets clear-text in '${FileStore.DefaultPath}' (not recommended).`);
+		console.warn(`Failed to open the system credential store: ${err.message}`);
+		console.warn(`!!  Falling back to storing secrets clear-text in '${FileStore.DefaultPath}' (not recommended).`);
+		return await FileStore.open();
 	}
 
 	const fileStore = await FileStore.open();
