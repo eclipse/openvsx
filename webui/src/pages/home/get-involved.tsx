@@ -14,6 +14,7 @@
 import { FunctionComponent } from 'react';
 import { Box, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { Link as RouteLink } from 'react-router-dom';
 import { HomeInvolvementCard } from '../../page-settings';
 import { Section, Eyebrow, focusOutline } from '../../components/page-primitives';
 
@@ -47,52 +48,56 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
                     gap: '1rem'
                 }}>
-                {cards.map(card => (
-                    <GetInvolvedCard key={card.title}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.6875rem', mb: '0.75rem' }}>
-                            <Box
-                                sx={{
-                                    width: '2.125rem',
-                                    height: '2.125rem',
-                                    borderRadius: '9px',
-                                    bgcolor: 'accentSoft',
-                                    color: 'secondary.light',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    '& > svg': { fontSize: '1.125rem' }
-                                }}>
-                                {card.icon}
+                {cards.map(card => {
+                    const external = /^https?:\/\//.test(card.href);
+                    return (
+                        <GetInvolvedCard key={card.title}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.6875rem', mb: '0.75rem' }}>
+                                <Box
+                                    sx={{
+                                        width: '2.125rem',
+                                        height: '2.125rem',
+                                        borderRadius: '9px',
+                                        bgcolor: 'accentSoft',
+                                        color: 'secondary.light',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        '& > svg': { fontSize: '1.125rem' }
+                                    }}>
+                                    {card.icon}
+                                </Box>
+                                <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700 }}>{card.title}</Typography>
                             </Box>
-                            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 700 }}>{card.title}</Typography>
-                        </Box>
-                        <Typography
-                            sx={{
-                                fontSize: '0.8125rem',
-                                color: 'text.secondary',
-                                lineHeight: 1.55,
-                                mb: '1.125rem',
-                                flex: 1
-                            }}>
-                            {card.description}
-                        </Typography>
-                        <Box
-                            component='a'
-                            href={card.href}
-                            target='_blank'
-                            sx={theme => ({
-                                fontSize: '0.8125rem',
-                                fontWeight: 600,
-                                color: 'secondary.light',
-                                textDecoration: 'none',
-                                '&:hover': { textDecoration: 'underline' },
-                                ...focusOutline(theme)
-                            })}>
-                            {card.label}
-                        </Box>
-                    </GetInvolvedCard>
-                ))}
+                            <Typography
+                                sx={{
+                                    fontSize: '0.8125rem',
+                                    color: 'text.secondary',
+                                    lineHeight: 1.55,
+                                    mb: '1.125rem',
+                                    flex: 1
+                                }}>
+                                {card.description}
+                            </Typography>
+                            <Box
+                                component={RouteLink}
+                                to={card.href}
+                                target={external ? '_blank' : undefined}
+                                rel={external ? 'noopener noreferrer' : undefined}
+                                sx={theme => ({
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: 'secondary.light',
+                                    textDecoration: 'none',
+                                    '&:hover': { textDecoration: 'underline' },
+                                    ...focusOutline(theme)
+                                })}>
+                                {card.label}
+                            </Box>
+                        </GetInvolvedCard>
+                    );
+                })}
             </Box>
         </Section>
     );
