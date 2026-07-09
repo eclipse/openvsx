@@ -63,6 +63,9 @@ const SearchInput = styled(InputBase)(({ theme }) => ({
     fontFamily: MONO_FONT,
     fontSize: '0.9375rem',
     color: theme.palette.text.primary,
+    // iOS Safari zooms the viewport on focus when the field's font-size is < 16px;
+    // keep it at 16px on mobile to suppress that (desktop stays compact at 15px).
+    [theme.breakpoints.down('sm')]: { fontSize: '1rem' },
     '& input::placeholder': { color: theme.palette.text.primary, opacity: 0.7 },
     '& input::-webkit-search-cancel-button': { display: 'none' }
 }));
