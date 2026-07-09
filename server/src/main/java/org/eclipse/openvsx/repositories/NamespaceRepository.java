@@ -14,9 +14,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
+import java.util.Optional;
+
 public interface NamespaceRepository extends Repository<Namespace, Long> {
 
     Namespace findByNameIgnoreCase(String name);
+
+    @Query("from Namespace n where (upper(n.displayName) = upper(?1) or upper(n.name) = upper(?1)) and upper(n.name) <> upper(?2)")
+    Optional<Namespace> findConflictingNamespace(String displayName, String excludedName);
 
     Namespace findByPublicId(String publicId);
 

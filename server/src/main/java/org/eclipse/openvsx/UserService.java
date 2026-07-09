@@ -173,6 +173,16 @@ public class UserService {
         }
 
         if (!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
+            if (StringUtils.isNotEmpty(details.getDisplayName())) {
+                repositories.findNamespaceConflict(details.getDisplayName(), namespace.getName())
+                .ifPresent(conflict -> {
+                    throw new ErrorResultException(
+                            "Display name '" + details.getDisplayName()
+                                    + "' collides with the name of existing namespace '" + conflict.getName()
+                                    + " (" + conflict.getDisplayName() + ")"
+                                    + "'. Please choose a different display name.");
+                });
+            }
             namespace.setDisplayName(details.getDisplayName());
         }
         if (!Objects.equals(details.getDescription(), namespace.getDescription())) {

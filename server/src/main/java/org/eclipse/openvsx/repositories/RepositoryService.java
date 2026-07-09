@@ -186,6 +186,10 @@ public class RepositoryService {
         return namespaceRepo.findByNameIgnoreCase(name);
     }
 
+    public Optional<Namespace> findNamespaceConflict(String displayName, String excludedName) {
+        return namespaceRepo.findConflictingNamespace(displayName, excludedName);
+    }
+
     public String findNamespaceName(String name) {
         return namespaceJooqRepo.findNameByNameIgnoreCase(name);
     }

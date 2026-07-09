@@ -56,7 +56,7 @@ import static org.mockito.Mockito.doAnswer;
  * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
  * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+@SpringBootTest(properties = {
     "ovsx.elasticsearch.enabled=false"
 })
 @ActiveProfiles("test_db")

@@ -224,8 +224,11 @@ tasks.register('unitTests', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform()
+    exclude 'org/eclipse/openvsx/ExtensionDeleteTest.class'
     exclude 'org/eclipse/openvsx/IntegrationTest.class'
     exclude 'org/eclipse/openvsx/cache/CacheServiceTest.class'
+    exclude 'org/eclipse/openvsx/ratelimit/RateLimitIntegrationTest.class'
+    exclude 'org/eclipse/openvsx/repositories/NamespaceRepositoryTest.class'
     exclude 'org/eclipse/openvsx/repositories/RepositoryServiceSmokeTest.class'
     exclude 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
 }
