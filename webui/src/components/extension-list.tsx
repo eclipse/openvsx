@@ -14,11 +14,10 @@
 
 import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
-import { Box, CircularProgress } from '@mui/material';
-import { ExtensionCard } from './extension-card';
+import { Box } from '@mui/material';
+import { ExtensionCard, ExtensionCardSkeleton } from './extension-card';
 import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
-import { DelayedLoadIndicator } from './delayed-load-indicator';
 import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
 import { MainContext } from '../context';
 
@@ -159,30 +158,29 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         />
     ));
 
-    const loader = (
-        <Box component='div' key='extension-list-loader' sx={{ display: 'flex', justifyContent: 'center', m: 3 }}>
-            <CircularProgress size='3rem' color='secondary' />
-        </Box>
-    );
+    // Placeholders for the page being fetched reserve its space up front, so the
+    // grid reaches its final height at once and the footer doesn't jump when the
+    // real cards swap in (they share the skeleton's footprint).
+    const skeletons = loading
+        ? Array.from({ length: filterSize.current }, (_, idx) => <ExtensionCardSkeleton key={`skeleton-${idx}`} />)
+        : null;
 
     return (
-        <>
-            <DelayedLoadIndicator loading={loading} />
-            <InfiniteScroll loadMore={loadMore} hasMore={hasMore} loader={loader} threshold={200}>
-                <Box
-                    {...grid.containerProps}
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: {
-                            xs: 'repeat(2, minmax(0, 1fr))',
-                            sm: 'repeat(auto-fill, minmax(175px, 1fr))'
-                        },
-                        gap: '1rem'
-                    }}>
-                    {extensionList}
-                </Box>
-            </InfiniteScroll>
-        </>
+        <InfiniteScroll loadMore={loadMore} hasMore={hasMore} threshold={200}>
+            <Box
+                {...grid.containerProps}
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                        xs: 'repeat(2, minmax(0, 1fr))',
+                        sm: 'repeat(auto-fill, minmax(175px, 1fr))'
+                    },
+                    gap: '1rem'
+                }}>
+                {extensionList}
+                {skeletons}
+            </Box>
+        </InfiniteScroll>
     );
 };
 

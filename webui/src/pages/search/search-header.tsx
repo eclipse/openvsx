@@ -39,14 +39,14 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                gap: '1rem',
-                flexWrap: 'wrap'
+                gap: '1rem'
             }}>
-            <Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
                     component='h1'
+                    noWrap
                     sx={{
-                        fontSize: '1.6rem',
+                        fontSize: { xs: '1.25rem', sm: '1.6rem' },
                         fontWeight: 700,
                         letterSpacing: '-0.025em',
                         lineHeight: 1.2,
