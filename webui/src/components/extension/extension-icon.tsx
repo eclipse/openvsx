@@ -12,18 +12,26 @@
  *****************************************************************************/
 
 import { FunctionComponent, useContext } from 'react';
-import { Box, SxProps, Theme } from '@mui/material';
+import { Box, Skeleton, SxProps, Theme } from '@mui/material';
 import { MainContext } from '../../context';
 import { Extension, SearchEntry } from '../../extension-registry-types';
 import { useExtensionIcon } from './use-extension-icon';
 
-/**
- * Renders an extension's icon, falling back to the configured default icon
- * while the real one loads or when the extension has none.
- */
+/** Renders an extension's icon: a skeleton while loading, then the icon or the configured default. */
 export const ExtensionIcon: FunctionComponent<ExtensionIconProps> = ({ extension, alt, sx }) => {
     const { pageSettings } = useContext(MainContext);
-    const icon = useExtensionIcon(extension);
+    const { data: icon, isLoading } = useExtensionIcon(extension);
+
+    if (isLoading) {
+        // Reset the Skeleton's default height so `aspectRatio` squares it from
+        // the width; an explicit height in `sx` still wins.
+        return (
+            <Skeleton
+                variant='rounded'
+                sx={[{ height: 'auto', aspectRatio: '1 / 1' }, ...(Array.isArray(sx) ? sx : [sx])]}
+            />
+        );
+    }
 
     return (
         <Box

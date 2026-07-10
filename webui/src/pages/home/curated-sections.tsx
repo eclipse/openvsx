@@ -32,71 +32,74 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
     const { search } = useSearch();
     return (
         <>
-            {rows.map(
-                row =>
-                    !row.loading &&
-                    row.extensions.length > 0 && (
-                        <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    mb: '1.125rem'
-                                }}>
-                                <Box>
-                                    <Typography
-                                        sx={{
-                                            fontSize: { xs: '1rem', sm: '1.4375rem' },
-                                            fontWeight: 700,
-                                            letterSpacing: '-0.02em'
-                                        }}>
-                                        {row.title}
-                                    </Typography>
-                                    <Typography
-                                        component='span'
-                                        sx={{
-                                            fontSize: '0.8125rem',
-                                            color: 'text.disabled',
-                                            display: { xs: 'none', sm: 'block' }
-                                        }}>
-                                        {row.subtitle}
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    component='button'
-                                    onClick={props.onSeeAll ?? (() => search({ query: '', sortBy: row.sortBy }))}
+            {rows.map(row => {
+                // Hide rows that loaded empty (e.g. a failed request).
+                if (!row.loading && row.extensions.length === 0) {
+                    return null;
+                }
+                return (
+                    <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                mb: '1.125rem'
+                            }}>
+                            <Box>
+                                <Typography
                                     sx={{
-                                        background: 'none',
-                                        border: 'none',
-                                        color: 'secondary.light',
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        cursor: 'pointer'
+                                        fontSize: { xs: '1rem', sm: '1.4375rem' },
+                                        fontWeight: 700,
+                                        letterSpacing: '-0.02em'
                                     }}>
-                                    See all →
-                                </Box>
+                                    {row.title}
+                                </Typography>
+                                <Typography
+                                    component='span'
+                                    sx={{
+                                        fontSize: '0.8125rem',
+                                        color: 'text.disabled',
+                                        display: { xs: 'none', sm: 'block' }
+                                    }}>
+                                    {row.subtitle}
+                                </Typography>
                             </Box>
                             <Box
+                                component='button'
+                                onClick={props.onSeeAll ?? (() => search({ query: '', sortBy: row.sortBy }))}
                                 sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: {
-                                        xs: 'repeat(2, minmax(0, 1fr))',
-                                        sm: 'repeat(auto-fill, minmax(190px, 1fr))'
-                                    },
-                                    gap: '1rem'
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'secondary.light',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
                                 }}>
-                                {row.extensions.map((ext, idx) => (
-                                    <ExtensionCard
-                                        key={`${ext.namespace}.${ext.name}`}
-                                        extension={ext}
-                                        fadeDelayMs={(idx % CURATED_SIZE) * 200}
-                                    />
-                                ))}
+                                See all →
                             </Box>
-                        </Section>
-                    )
-            )}
+                        </Box>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                    xs: 'repeat(2, minmax(0, 1fr))',
+                                    sm: 'repeat(auto-fill, minmax(190px, 1fr))'
+                                },
+                                gap: '1rem'
+                            }}>
+                            {/* Fixed index-keyed slots so cards stay mounted across the swap and don't re-fade. */}
+                            {Array.from({ length: row.loading ? CURATED_SIZE : row.extensions.length }, (_, idx) => (
+                                <ExtensionCard
+                                    key={idx}
+                                    extension={row.extensions[idx]}
+                                    fadeDelayMs={(idx % CURATED_SIZE) * 200}
+                                />
+                            ))}
+                        </Box>
+                    </Section>
+                );
+            })}
         </>
     );
 };

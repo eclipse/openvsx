@@ -18,16 +18,15 @@ import { controllerFromSignal } from '../../query-client';
 import { Extension, SearchEntry } from '../../extension-registry-types';
 
 /**
- * Loads an extension's icon as an object URL. Caching is disabled (`gcTime`/
- * `staleTime` 0) so a fresh URL is fetched per extension and never reused
- * across mounts, which would risk serving an already-revoked object URL.
- * The previously created object URL is revoked whenever it is replaced by a
- * new one and on unmount.
+ * Loads an extension's icon as an object URL, returned as the react-query result
+ * (`data` is `null` when the extension has no icon). Caching is disabled
+ * (`gcTime`/`staleTime` 0) so each mount fetches a fresh URL and never reuses an
+ * already-revoked one; the previous URL is revoked when replaced and on unmount.
  */
-export const useExtensionIcon = (extension: Extension | SearchEntry): string | undefined => {
+export const useExtensionIcon = (extension: Extension | SearchEntry) => {
     const { service } = useContext(MainContext);
     const targetPlatform = 'targetPlatform' in extension ? extension.targetPlatform : undefined;
-    const { data } = useQuery({
+    const query = useQuery({
         queryKey: [
             'extension-icon',
             extension.namespace,
@@ -47,11 +46,11 @@ export const useExtensionIcon = (extension: Extension | SearchEntry): string | u
 
     const previousUrl = useRef<string | null>(null);
     useEffect(() => {
-        if (previousUrl.current && previousUrl.current !== data) {
+        if (previousUrl.current && previousUrl.current !== query.data) {
             URL.revokeObjectURL(previousUrl.current);
         }
-        previousUrl.current = data ?? null;
-    }, [data]);
+        previousUrl.current = query.data ?? null;
+    }, [query.data]);
 
     useEffect(
         () => () => {
@@ -62,5 +61,5 @@ export const useExtensionIcon = (extension: Extension | SearchEntry): string | u
         []
     );
 
-    return data ?? undefined;
+    return query;
 };

@@ -11,30 +11,35 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { forwardRef, memo, useContext, useEffect, useState } from 'react';
+import { forwardRef, FunctionComponent, memo } from 'react';
 import { Link as RouteLink } from 'react-router-dom';
-import { Paper, Typography, Box, Fade } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
+import { CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import { MainContext } from '../context';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { SearchEntry } from '../extension-registry-types';
+import { ExtensionIcon } from './extension/extension-icon';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
 import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
 import { GridItemProps } from '../hooks/use-grid-cursor';
 import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
 
-const CardRoot = styled(Paper)(({ theme }) => ({
+// Shared surface + footprint so the card and its skeleton occupy identical space.
+const cardLayout = (theme: Theme): CSSObject => ({
     ...cardSurface(theme),
     padding: '1.375rem 1rem',
     [theme.breakpoints.down('sm')]: { padding: '0.875rem 0.625rem' },
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    textAlign: 'center',
     height: '100%',
-    minHeight: '12.875rem',
+    minHeight: '12.875rem'
+});
+
+const CardRoot = styled(Paper)(({ theme }) => ({
+    ...cardLayout(theme),
+    textAlign: 'center',
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
     ...cardHoverLift(theme),
@@ -44,10 +49,51 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     'a:focus-visible &, [data-cursor-visible] a[data-active] &': focusRing(theme)
 }));
 
+const SkeletonRoot = styled(Paper)(({ theme }) => cardLayout(theme));
+
+// Only the unknown parts are skeletons; the stars' empty state looks the same loaded or not.
+const SkeletonContent: FunctionComponent = () => (
+    <>
+        <Skeleton variant='rounded' width={54} height={54} sx={{ flexShrink: 0, mb: '0.875rem' }} />
+        <Box sx={{ width: '100%', height: { xs: '2.125rem', sm: '2.375rem' }, overflow: 'hidden' }}>
+            <Skeleton variant='text' sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }} />
+            <Skeleton variant='text' width='60%' sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mx: 'auto' }} />
+        </Box>
+        <Box sx={{ width: '100%', mt: '0.875rem', display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+            <Skeleton variant='text' width='45%' sx={{ fontSize: '0.75rem' }} />
+            <Skeleton variant='text' width='25%' sx={{ fontSize: '0.6875rem' }} />
+        </Box>
+        <Box
+            sx={{
+                width: '100%',
+                mt: 'auto',
+                pt: '0.6875rem',
+                borderTop: '1px solid',
+                borderColor: 'border2',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: { xs: '0.875rem', sm: '1.25rem' }
+            }}>
+            <ExtensionRatingStars number={0} fontSize='inherit' />
+        </Box>
+    </>
+);
+
+/** Loading placeholder matching {@link ExtensionCard}'s footprint. */
+export const ExtensionCardSkeleton: FunctionComponent = () => (
+    <SkeletonRoot elevation={0}>
+        <SkeletonContent />
+    </SkeletonRoot>
+);
+
 // The grid cursor props are optional: cards also render outside a cursor grid
 // (curated sections, namespace detail).
 export interface ExtensionCardProps extends Partial<Omit<GridItemProps, 'ref'>> {
-    extension: SearchEntry;
+    /**
+     * The extension, or `undefined` for a loading skeleton. Keep a stable key
+     * across the swap so the fade plays once instead of restarting.
+     */
+    extension?: SearchEntry;
     /** Delay before the card fades in, so grids can stagger their cards. */
     fadeDelayMs?: number;
 }
@@ -57,139 +103,126 @@ export const ExtensionCard = memo(
         { extension, fadeDelayMs = 0, ...linkProps },
         ref
     ) {
-        const context = useContext(MainContext);
-        const [icon, setIcon] = useState<string>();
+        const title = extension?.displayName ?? extension?.name;
+        const downloadCount = extension ? formatCompactNumber(extension.downloadCount ?? 0) : undefined;
 
-        useEffect(() => {
-            const abortController = new AbortController();
-            let objectUrl: string | undefined;
-            context.service
-                .getExtensionIcon(abortController, extension)
-                .then(url => {
-                    objectUrl = url;
-                    setIcon(url);
-                })
-                .catch(err => {
-                    if (!abortController.signal.aborted) context.handleError(err);
-                });
-            return () => {
-                abortController.abort();
-                if (objectUrl) URL.revokeObjectURL(objectUrl);
-            };
-        }, [extension.namespace, extension.name, extension.version]);
-
-        const route = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
-        const downloadCount = formatCompactNumber(extension.downloadCount ?? 0);
-        const title = extension.displayName ?? extension.name;
-
+        // One Fade over both states so it runs once and carries through the skeleton → card swap.
         return (
             <Fade in timeout={{ enter: fadeDelayMs }}>
                 <Box title={title} sx={{ height: '100%' }}>
-                    <RouteLink
-                        ref={ref}
-                        {...linkProps}
-                        to={route}
-                        aria-label={title}
-                        style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}>
-                        <CardRoot
-                            elevation={0}
-                            sx={extension.deprecated ? { opacity: 0.5, filter: 'grayscale(100%)' } : undefined}>
-                            <Box
-                                display='flex'
-                                justifyContent='center'
-                                alignItems='center'
-                                flexShrink={0}
-                                sx={{
-                                    width: 54,
-                                    height: 54,
-                                    mb: '0.875rem'
-                                }}>
+                    {extension ? (
+                        <RouteLink
+                            ref={ref}
+                            {...linkProps}
+                            to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name])}
+                            aria-label={title}
+                            style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}>
+                            <CardRoot
+                                elevation={0}
+                                sx={extension.deprecated ? { opacity: 0.5, filter: 'grayscale(100%)' } : undefined}>
                                 <Box
-                                    component='img'
-                                    src={icon ?? context.pageSettings.urls.extensionDefaultIcon}
-                                    alt={title}
-                                    sx={{ width: 54, maxHeight: 54, objectFit: 'contain' }}
-                                />
-                            </Box>
-                            <Typography
-                                sx={{
-                                    fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                                    fontWeight: 700,
-                                    lineHeight: 1.3,
-                                    width: '100%',
-                                    minHeight: { xs: '2.125rem', sm: '2.375rem' },
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                }}>
-                                {title}
-                            </Typography>
-                            <Box
-                                sx={{
-                                    width: '100%',
-                                    mt: '0.875rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: 1
-                                }}>
-                                <Typography
-                                    component='div'
-                                    noWrap
+                                    display='flex'
+                                    justifyContent='center'
+                                    alignItems='center'
+                                    flexShrink={0}
                                     sx={{
-                                        fontSize: '0.75rem',
-                                        color: 'text.disabled',
-                                        minWidth: 0,
-                                        textAlign: 'left'
+                                        width: 54,
+                                        height: 54,
+                                        mb: '0.875rem'
                                     }}>
-                                    {extension.namespace}
-                                </Typography>
-                                <Typography
-                                    component='div'
-                                    noWrap
-                                    sx={{
-                                        fontSize: '0.6875rem',
-                                        color: 'text.disabled',
-                                        flexShrink: 0,
-                                        fontFamily: MONO_FONT
-                                    }}>
-                                    {extension.version}
-                                </Typography>
-                            </Box>
-                            <Box
-                                sx={{
-                                    width: '100%',
-                                    mt: 'auto',
-                                    pt: '0.6875rem',
-                                    borderTop: '1px solid',
-                                    borderColor: 'border2',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    fontSize: '0.75rem'
-                                }}>
-                                <Box sx={{ display: 'flex', fontSize: { xs: '0.875rem', sm: '1.25rem' } }}>
-                                    <ExtensionRatingStars number={extension.averageRating ?? 0} fontSize='inherit' />
+                                    <ExtensionIcon
+                                        extension={extension}
+                                        alt={title}
+                                        sx={{ width: 54, maxHeight: 54, objectFit: 'contain' }}
+                                    />
                                 </Box>
-                                {downloadCount !== '0' && (
-                                    <Box
-                                        component='span'
+                                <Typography
+                                    sx={{
+                                        fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                                        fontWeight: 700,
+                                        lineHeight: 1.3,
+                                        width: '100%',
+                                        minHeight: { xs: '2.125rem', sm: '2.375rem' },
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden'
+                                    }}>
+                                    {title}
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        mt: '0.875rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 1
+                                    }}>
+                                    <Typography
+                                        component='div'
+                                        noWrap
                                         sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.25rem',
-                                            fontFamily: MONO_FONT,
-                                            fontSize: '0.6875rem',
-                                            color: 'text.disabled'
+                                            fontSize: '0.75rem',
+                                            color: 'text.disabled',
+                                            minWidth: 0,
+                                            textAlign: 'left'
                                         }}>
-                                        <SaveAltIcon sx={{ fontSize: '0.8125rem' }} />
-                                        {downloadCount}
+                                        {extension.namespace}
+                                    </Typography>
+                                    <Typography
+                                        component='div'
+                                        noWrap
+                                        sx={{
+                                            fontSize: '0.6875rem',
+                                            color: 'text.disabled',
+                                            flexShrink: 0,
+                                            fontFamily: MONO_FONT
+                                        }}>
+                                        {extension.version}
+                                    </Typography>
+                                </Box>
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        mt: 'auto',
+                                        pt: '0.6875rem',
+                                        borderTop: '1px solid',
+                                        borderColor: 'border2',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        fontSize: '0.75rem'
+                                    }}>
+                                    <Box sx={{ display: 'flex', fontSize: { xs: '0.875rem', sm: '1.25rem' } }}>
+                                        <ExtensionRatingStars
+                                            number={extension.averageRating ?? 0}
+                                            fontSize='inherit'
+                                        />
                                     </Box>
-                                )}
-                            </Box>
-                        </CardRoot>
-                    </RouteLink>
+                                    {downloadCount !== '0' && (
+                                        <Box
+                                            component='span'
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                fontFamily: MONO_FONT,
+                                                fontSize: '0.6875rem',
+                                                color: 'text.disabled'
+                                            }}>
+                                            <SaveAltIcon sx={{ fontSize: '0.8125rem' }} />
+                                            {downloadCount}
+                                        </Box>
+                                    )}
+                                </Box>
+                            </CardRoot>
+                        </RouteLink>
+                    ) : (
+                        <SkeletonRoot elevation={0}>
+                            <SkeletonContent />
+                        </SkeletonRoot>
+                    )}
                 </Box>
             </Fade>
         );
