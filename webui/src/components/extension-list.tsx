@@ -15,7 +15,7 @@
 import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
 import { Box } from '@mui/material';
-import { ExtensionCard, ExtensionCardSkeleton } from './extension-card';
+import { ExtensionCard } from './extension-card';
 import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
 import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
@@ -149,21 +149,20 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
         };
     };
 
-    const extensionList = extensions.map((ext, idx) => (
-        <ExtensionCard
-            extension={ext}
-            fadeDelayMs={(idx % filterSize.current) * 200}
-            key={`${ext.namespace}.${ext.name}`}
-            {...grid.itemProps(idx)}
-        />
-    ));
-
-    // Placeholders for the page being fetched reserve its space up front, so the
-    // grid reaches its final height at once and the footer doesn't jump when the
-    // real cards swap in (they share the skeleton's footprint).
-    const skeletons = loading
-        ? Array.from({ length: filterSize.current }, (_, idx) => <ExtensionCardSkeleton key={`skeleton-${idx}`} />)
-        : null;
+    // Index-keyed slots (the list only appends): loading slots render as
+    // skeletons that become cards in place, so the fade isn't restarted.
+    const slotCount = extensions.length + (loading ? filterSize.current : 0);
+    const cards = Array.from({ length: slotCount }, (_, idx) => {
+        const extension = extensions[idx];
+        return (
+            <ExtensionCard
+                key={idx}
+                extension={extension}
+                fadeDelayMs={Math.min(idx % filterSize.current, 5) * 200}
+                {...(extension ? grid.itemProps(idx) : {})}
+            />
+        );
+    });
 
     return (
         <InfiniteScroll loadMore={loadMore} hasMore={hasMore} threshold={200}>
@@ -177,8 +176,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
                     },
                     gap: '1rem'
                 }}>
-                {extensionList}
-                {skeletons}
+                {cards}
             </Box>
         </InfiniteScroll>
     );
