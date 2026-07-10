@@ -238,7 +238,7 @@ class CacheServiceTest {
 
             registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
 
-            admins.deleteExtension(admin, namespace.getName(), extension.getName());
+            admins.deleteExtensionNoWait(admin, namespace.getName(), extension.getName());
             assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
         }
     }
@@ -263,7 +263,12 @@ class CacheServiceTest {
                 assertTrue(json.getAllVersions().containsKey(newVersion));
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
 
-                admins.deleteExtension(admin, namespace.getName(), extension.getName(), TargetPlatformVersion.of(extVersion.getTargetPlatform(), newVersion));
+                admins.deleteExtensionNoWait(
+                        admin,
+                        namespace.getName(),
+                        extension.getName(),
+                        TargetPlatformVersion.of(extVersion.getTargetPlatform(), newVersion)
+                );
                 assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
                 entityManager.flush();

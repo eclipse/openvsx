@@ -239,7 +239,7 @@ public class DataMirrorService {
 
     public void deleteExtensionVersion(ExtensionVersion extVersion, UserData user) {
         var extension = extVersion.getExtension();
-        admin.deleteExtension(
+        admin.deleteExtensionNoWait(
                 user,
                 extension.getNamespace().getName(),
                 extension.getName(),

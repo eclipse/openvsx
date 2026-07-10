@@ -116,12 +116,12 @@ public class AdminService {
     }
 
     /**
-     * Locks and deletes the given extension together with all bundled or dependent extensions.
+     * Deletes the given extension together with all bundled or dependent extensions.
      * <p>
      * No further checks are made if the extension is referenced by bundles or as a dependency.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void lockAndDeleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
+    public void deleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
         deleteExtensionAndDependencies(admin, extension, 0);
     }
@@ -163,13 +163,13 @@ public class AdminService {
     }
 
     /**
-     * Locks and deletes the given extension unconditionally. No further checks are made if the extension
+     * Deletes the given extension unconditionally. No further checks are made if the extension
      * is referenced by bundles or as a dependency.
      * <p>
      * This method is intended for non-user interaction as it will wait till the lock can be acquired.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void lockAndDeleteExtension(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
+    public void deleteExtension(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
         extensions.deleteExtension(admin, extension, false);
     }
@@ -183,7 +183,7 @@ public class AdminService {
      * This method is intended to be used for user interaction as it can fail when the extension is concurrently updated.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(
+    public ResultJson deleteExtensionNoWait(
         UserData user,
         String namespaceName,
         String extensionName,

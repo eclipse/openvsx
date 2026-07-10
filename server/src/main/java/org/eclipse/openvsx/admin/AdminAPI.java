@@ -419,7 +419,7 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
             var targets = CollectionUtil.toArray(targetVersions, TargetPlatformVersionJson::toTargetPlatformVersion, TargetPlatformVersion[]::new);
-            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targets);
+            var result = admins.deleteExtensionNoWait(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -455,7 +455,7 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkAdminUser();
             var targets = CollectionUtil.toArray(targetVersions, TargetPlatformVersionJson::toTargetPlatformVersion, TargetPlatformVersion[]::new);
-            var result = admins.deleteExtension(adminUser, namespaceName, extensionName, targets);
+            var result = admins.deleteExtensionNoWait(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
