@@ -153,6 +153,7 @@ dependencies {
 configurations.configureEach {
     resolutionStrategy {
         force 'org.apache.commons:commons-compress:1.26.0+'
+        force 'org.eclipse.parsson:parsson:1.1.8'
     }
 }
 
