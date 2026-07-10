@@ -116,7 +116,7 @@ export const SearchPage: FunctionComponent = () => {
                         onSortOrderChanged={(sortOrder: SortOrder) => search({ sortOrder })}
                     />
                     <ExtensionList
-                        filter={{ query: searchQuery, category, offset: 0, size: 10, sortBy, sortOrder }}
+                        filter={{ query: searchQuery, category, offset: 0, size: 25, sortBy, sortOrder }}
                         onUpdate={setResultNumber}
                     />
                 </Box>
