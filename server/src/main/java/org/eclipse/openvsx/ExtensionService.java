@@ -27,6 +27,7 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jspecify.annotations.NonNull;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -250,7 +251,7 @@ public class ExtensionService {
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
-        var extension = lockExtension(namespaceName, extensionName);
+        var extension = lockExtensionNoWait(namespaceName, extensionName);
         if (repositories.isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
             return deleteExtension(user, extension, true);
         }
@@ -286,11 +287,25 @@ public class ExtensionService {
     }
 
     /**
+     * Locks and return the {@code Extension} identified by {@code namespaceName} and {@code extensionName}.
+     *
+     * @throws ErrorResultException if no extension exists with the given namespace and extension name
+     */
+    public @NonNull Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
+        var extension = repositories.findExtensionForUpdate(extensionName, namespaceName);
+        if (extension == null) {
+            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
+            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
+        }
+        return extension;
+    }
+
+    /**
      * Locks the extension row ({@code SELECT … FOR UPDATE NOWAIT}) without waiting.
      * <p>
      * If the lock can not be acquired, throw an {@code ErrorResultException} with status code {@code 409}.
      */
-    private Extension lockExtension(String namespaceName, String extensionName) throws ErrorResultException {
+    private Extension lockExtensionNoWait(String namespaceName, String extensionName) throws ErrorResultException {
         Extension extension;
         try {
             extension = repositories.findExtensionForUpdateNoWait(extensionName, namespaceName);

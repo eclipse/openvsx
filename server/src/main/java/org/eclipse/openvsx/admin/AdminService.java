@@ -122,12 +122,7 @@ public class AdminService {
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public void lockAndDeleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
-        var extension = repositories.findExtensionForUpdate(extensionName, namespaceName);
-        if (extension == null) {
-            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
-            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
-        }
-
+        var extension = extensions.lockExtension(namespaceName, extensionName);
         deleteExtensionAndDependencies(admin, extension, 0);
     }
 
@@ -175,12 +170,7 @@ public class AdminService {
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public void lockAndDeleteExtension(UserData admin, String namespaceName, String extensionName) throws ErrorResultException {
-        var extension = repositories.findExtensionForUpdate(extensionName, namespaceName);
-        if (extension == null) {
-            var extensionId = NamingUtil.toExtensionId(namespaceName, extensionName);
-            throw new ErrorResultException("Extension not found: " + extensionId, HttpStatus.NOT_FOUND);
-        }
-
+        var extension = extensions.lockExtension(namespaceName, extensionName);
         extensions.deleteExtension(admin, extension, false);
     }
 
