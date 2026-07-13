@@ -80,9 +80,7 @@ export function useCuratedRows(curatedSections: HomeCuratedSection[]): CuratedRo
                     throw result;
                 }
                 return (result as SearchResult).extensions;
-            },
-            // service.search already retries transient failures internally.
-            retry: false
+            }
         }))
     });
 

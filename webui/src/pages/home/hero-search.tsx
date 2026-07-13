@@ -26,7 +26,7 @@ import { useLocation } from 'react-router-dom';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing, Section } from '../../components/page-primitives';
-import { useSearch } from '../../hooks/use-search';
+import { useSearch, SEARCH_DEBOUNCE_MS } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';
 import { useRegisterPageSearchBar } from '../../context/search/page-search-bar-context';
@@ -203,7 +203,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         [search, setQuery, searchFocusSignal.emit]
     );
 
-    const debouncedSearch = useDebouncedCallback(searchWithTransition);
+    const debouncedSearch = useDebouncedCallback(searchWithTransition, SEARCH_DEBOUNCE_MS);
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;

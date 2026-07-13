@@ -23,6 +23,9 @@ export interface SearchFilter {
     sortOrder: SortOrder;
 }
 
+/** Debounce for the extension search field — short enough to feel instant while still batching fast typing. */
+export const SEARCH_DEBOUNCE_MS = 150;
+
 // Write only non-default values so shared links stay clean.
 function filterToParams({ query, category, sortBy, sortOrder }: SearchFilter): Record<string, string> {
     const params: Record<string, string> = {};

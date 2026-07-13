@@ -12,160 +12,67 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import { FunctionComponent, useContext, useEffect, useMemo } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
 import { Box } from '@mui/material';
 import { ExtensionCard } from './extension-card';
-import { isError, SearchEntry, SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
 import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
+import { useInfiniteSearch } from '../hooks/use-infinite-search';
 import { MainContext } from '../context';
 
-export const ExtensionList: FunctionComponent<ExtensionListProps> = props => {
-    const abortController = useRef<AbortController>(new AbortController());
-    const enableLoadMore = useRef(false);
-    const lastRequestedPage = useRef(0);
-    const pageOffset = useRef(0);
-    const filterSize = useRef(props.filter.size ?? 10);
-    const context = useContext(MainContext);
-    const [extensions, setExtensions] = useState<SearchEntry[]>([]);
-    const [extensionKeys, setExtensionKeys] = useState<Set<string>>(new Set<string>());
-    const [appliedFilter, setAppliedFilter] = useState<ExtensionFilter>();
-    const [hasMore, setHasMore] = useState<boolean>(false);
-    const [loading, setLoading] = useState<boolean>(true);
+export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, onUpdate }) => {
+    const { handleError } = useContext(MainContext);
+    const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteSearch(filter);
+
+    const extensions = useMemo(() => data?.pages.flatMap(page => page.extensions) ?? [], [data]);
+    const totalSize = data?.pages[0]?.totalSize ?? 0;
     const grid = useExtensionResultsCursor(extensions.length);
 
+    // Report the result count to the parent (shown in the search header).
     useEffect(() => {
-        enableLoadMore.current = true;
-        return () => {
-            abortController.current.abort();
-            enableLoadMore.current = false;
-        };
-    }, []);
+        onUpdate(totalSize);
+    }, [totalSize, onUpdate]);
 
+    // Surface fetch failures through the app's error handler.
     useEffect(() => {
-        filterSize.current = props.filter.size ?? filterSize.current;
-        // Inputs are already debounced upstream; fetch immediately and drop
-        // responses that arrive after the filter changed again.
-        let stale = false;
-        (async () => {
-            try {
-                const result = await context.service.search(abortController.current, props.filter);
-                if (isError(result)) {
-                    throw result;
-                }
-                if (stale) {
-                    return;
-                }
-
-                const searchResult = result as SearchResult;
-                props.onUpdate(searchResult.totalSize);
-                const actualSize = searchResult.extensions.length;
-                pageOffset.current = lastRequestedPage.current;
-                const extensionKeys = new Set<string>();
-                for (const ext of searchResult.extensions) {
-                    extensionKeys.add(`${ext.namespace}.${ext.name}`);
-                }
-
-                setExtensions(searchResult.extensions);
-                setExtensionKeys(extensionKeys);
-                setAppliedFilter(props.filter);
-                setHasMore(actualSize < searchResult.totalSize && actualSize > 0);
-                // Fresh result set: cursor back to the first card, so Enter in
-                // the search field opens the first result of the new query.
-                grid.reset();
-            } catch (err) {
-                if (!stale) {
-                    context.handleError(err);
-                }
-            } finally {
-                if (!stale) {
-                    setLoading(false);
-                }
-            }
-        })();
-        return () => {
-            stale = true;
-        };
-    }, [props.filter.category, props.filter.query, props.filter.sortBy, props.filter.sortOrder]);
-
-    const loadMore = async (p: number): Promise<void> => {
-        setLoading(true);
-        setHasMore(false);
-        lastRequestedPage.current = p;
-        const filter = copyFilter(appliedFilter as ExtensionFilter);
-        if (!isSameFilter(props.filter, filter)) {
-            return;
+        if (error) {
+            handleError(error);
         }
-        try {
-            filter.offset = (p - pageOffset.current) * filterSize.current;
-            const result = await context.service.search(abortController.current, filter);
-            if (isError(result)) {
-                throw result;
-            }
+    }, [error, handleError]);
 
-            const newExtensions: SearchEntry[] = [];
-            const newExtensionKeys = new Set<string>();
-            newExtensions.push(...extensions);
-            extensionKeys.forEach(key => newExtensionKeys.add(key));
-            const searchResult = result as SearchResult;
-            if (enableLoadMore.current && isSameFilter(props.filter, filter)) {
-                for (const ext of searchResult.extensions) {
-                    const key = `${ext.namespace}.${ext.name}`;
-                    if (!extensionKeys.has(key)) {
-                        newExtensions.push(ext);
-                        newExtensionKeys.add(key);
-                    }
-                }
+    // Fresh filter: put the cursor back on the first card so Enter opens it.
+    useEffect(() => {
+        grid.reset();
+    }, [filter.query, filter.category, filter.sortBy, filter.sortOrder, grid.reset]);
 
-                setExtensions(newExtensions);
-                setExtensionKeys(newExtensionKeys);
-                setHasMore(extensions.length < searchResult.totalSize && searchResult.extensions.length > 0);
-            }
-        } catch (err) {
-            context.handleError(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const isSameFilter = (f1: ExtensionFilter, f2: ExtensionFilter): boolean => {
-        return (
-            f1.category === f2.category &&
-            f1.query === f2.query &&
-            f1.sortBy === f2.sortBy &&
-            f1.sortOrder === f2.sortOrder
-        );
-    };
-
-    const copyFilter = (f: ExtensionFilter): ExtensionFilter => {
-        return {
-            query: f.query,
-            category: f.category || '',
-            size: f.size,
-            offset: f.offset,
-            sortBy: f.sortBy,
-            sortOrder: f.sortOrder
-        };
-    };
+    const pageSize = filter.size;
+    const loading = isLoading || isFetchingNextPage;
 
     // Index-keyed slots (the list only appends): loading slots render as
     // skeletons that become cards in place, so the fade isn't restarted.
-    const slotCount = extensions.length + (loading ? filterSize.current : 0);
+    const slotCount = extensions.length + (loading ? pageSize : 0);
     const cards = Array.from({ length: slotCount }, (_, idx) => {
         const extension = extensions[idx];
         return (
             <ExtensionCard
                 key={idx}
                 extension={extension}
-                fadeDelayMs={Math.min(idx % filterSize.current, 5) * 200}
+                fadeDelayMs={Math.min(idx % pageSize, 5) * 200}
                 {...(extension ? grid.itemProps(idx) : {})}
             />
         );
     });
 
     return (
-        <InfiniteScroll loadMore={loadMore} hasMore={hasMore} threshold={200}>
+        <InfiniteScroll
+            loadMore={() => {
+                if (hasNextPage && !isFetchingNextPage) {
+                    void fetchNextPage();
+                }
+            }}
+            hasMore={hasNextPage && !isFetchingNextPage}
+            threshold={200}>
             <Box
                 {...grid.containerProps}
                 sx={{

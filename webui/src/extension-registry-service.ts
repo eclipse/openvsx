@@ -158,7 +158,8 @@ export class ExtensionRegistryService {
             if (filter.sortOrder) query.push({ key: 'sortOrder', value: filter.sortOrder });
         }
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', '-', 'search'], query);
-        return sendRequest({ abortController, endpoint });
+        // Non-retriable: retries are owned by the TanStack query that calls this.
+        return sendNonRetriableRequest({ abortController, endpoint });
     }
 
     async getExtensionDetail(

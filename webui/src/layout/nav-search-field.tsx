@@ -25,7 +25,7 @@ import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
-import { useSearch } from '../hooks/use-search';
+import { useSearch, SEARCH_DEBOUNCE_MS } from '../hooks/use-search';
 import { useSearchQuery } from '../context/search/search-context';
 import { useSearchFocus } from '../context/search/search-focus-context';
 import { usePageSearchBar } from '../context/search/page-search-bar-context';
@@ -52,7 +52,7 @@ export const NavSearchField: FunctionComponent = () => {
 
     // Typing debounces navigation; Enter searches immediately. A route change
     // drops any pending navigation (e.g. the user clicked a result mid-debounce).
-    const debouncedSearch = useDebouncedCallback(search);
+    const debouncedSearch = useDebouncedCallback(search, SEARCH_DEBOUNCE_MS);
     useLayoutEffect(() => debouncedSearch.cancel, [pathname, debouncedSearch]);
 
     // While a page search bar is registered, this field is only an opacity-0
