@@ -2,6 +2,16 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [next] (unreleased)
+
+#### Additions
+
+- Add an encrypted filestore as fallback to the system keychain if it cant be accessed ([#1950](https://github.com/eclipse/openvsx/pull/1950))
+
+#### Changes
+
+- Replace `keytar` with `cross-keychain` to store credentials in the system keychain ([#1950](https://github.com/eclipse/openvsx/pull/1950))
+
 ### [v1.0.2] (23/06/2026)
 
 #### Dependencies
