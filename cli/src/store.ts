@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
@@ -88,7 +89,7 @@ async function verifyBackend(keychain: typeof import('cross-keychain'), serviceN
 	}
 }
 
-/** Shared behaviour for stores backed by the cross-keychain library. */
+/** Shared behavior for stores backed by the cross-keychain library. */
 abstract class CrossKeychainStore implements Store {
 	protected constructor(
 		protected readonly keychain: typeof import('cross-keychain'),
@@ -124,7 +125,7 @@ export class KeychainStore extends CrossKeychainStore {
 }
 
 export class EncryptedFileStore extends CrossKeychainStore {
-	static async open(serviceName = 'ovsx'): Promise<EncryptedFileStore> {
+    static async open(serviceName = 'ovsx'): Promise<EncryptedFileStore> {
 		const keychain = await import('cross-keychain');
 
 		await keychain.useBackend('file');
@@ -144,7 +145,7 @@ export async function openDefaultStore(): Promise<Store> {
 		try {
 			store = await KeychainStore.open();
 		} catch (err) {
-			console.warn(err.message);
+			console.warn(`WARN: ${err.message}`);
 		}
 	}
 
@@ -153,20 +154,25 @@ export async function openDefaultStore(): Promise<Store> {
 		try {
 			store = await EncryptedFileStore.open();
 			if (!forceFile) {
-				console.warn(`Storing secrets in cross-keychain's encrypted file store instead.`);
+				console.warn(`WARN: Storing secrets in cross-keychain's encrypted file store as system keychain is not available..`);
 			}
 		} catch (err) {
-			console.warn(err.message);
+            console.warn(`WARN: ${err.message}`);
 		}
 	}
 
 	// Last resort: if no cross-keychain store works, keep publishing usable by storing secrets clear-text.
 	if (!store) {
-		console.warn(`!!  Falling back to storing secrets clear-text in '${FileStore.DefaultPath}' (not recommended).`);
+		console.warn(`WARN: Falling back to storing secrets clear-text at '${FileStore.DefaultPath}' (not recommended).`);
 		return await FileStore.open();
 	}
 
-	await migrateLegacyStore(store);
+    try {
+        await migrateLegacyStore(store);
+    } catch (err) {
+        console.warn(`WARN: Failed to read legacy file store at '${FileStore.DefaultPath}': ${err.message}`);
+        console.warn(`WARN: Skipping migration of Legacy file store.`);
+    }
 
 	return store;
 }
@@ -184,5 +190,5 @@ async function migrateLegacyStore(target: Store): Promise<void> {
 	}
 
 	await fileStore.deleteStore();
-	console.info(`Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
+	console.info(`INFO: Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
 }
