@@ -78,18 +78,21 @@ export class FileStore implements Store {
 	}
 }
 
-export class KeychainStore implements Store {
-	static async open(serviceName = 'ovsx'): Promise<KeychainStore> {
-		const keychain = await import('cross-keychain');
-		// probe the credential store so we can fall back to the file store when it's unusable
+async function verifyBackend(keychain: typeof import('cross-keychain'), serviceName: string, description: string): Promise<void> {
+	// Probe the active backend so we fail fast when it's present but unusable (e.g.
+	// `security`/`secret-tool` exists but the keychain is locked or the daemon is down).
+	try {
 		await keychain.getPassword(serviceName, serviceName);
-
-		return new KeychainStore(keychain, serviceName);
+	} catch (err) {
+		throw new Error(`${description} is unavailable: ${err.message}`);
 	}
+}
 
-	private constructor(
-		private readonly keychain: typeof import('cross-keychain'),
-		private readonly serviceName: string
+/** Shared behaviour for stores backed by the cross-keychain library. */
+abstract class CrossKeychainStore implements Store {
+	protected constructor(
+		protected readonly keychain: typeof import('cross-keychain'),
+		protected readonly serviceName: string
 	) { }
 
 	async get(name: string): Promise<string | undefined> {
@@ -105,32 +108,81 @@ export class KeychainStore implements Store {
 	}
 }
 
+export class KeychainStore extends CrossKeychainStore {
+	static async open(serviceName = 'ovsx'): Promise<KeychainStore> {
+		const keychain = await import('cross-keychain');
+
+		// cross-keychain auto-detects the highest-priority backend for this platform.
+		const { id, name } = await keychain.diagnose();
+		if (id === 'file' || id === 'null') {
+			throw new Error('No OS credential store detected on this platform.');
+		}
+
+		await verifyBackend(keychain, serviceName, `System credential store '${name}'`);
+		return new KeychainStore(keychain, serviceName);
+	}
+}
+
+export class EncryptedFileStore extends CrossKeychainStore {
+	static async open(serviceName = 'ovsx'): Promise<EncryptedFileStore> {
+		const keychain = await import('cross-keychain');
+
+		await keychain.useBackend('file');
+		await verifyBackend(keychain, serviceName, 'Encrypted file store');
+		return new EncryptedFileStore(keychain, serviceName);
+	}
+}
+
 export async function openDefaultStore(): Promise<Store> {
-	if (/^file$/i.test(process.env['OVSX_STORE'] ?? '')) {
-		console.warn(`!!  Storing secrets clear-text in '${FileStore.DefaultPath}' (not recommended). Unset OVSX_STORE to use the system credential store instead.`);
-		return await FileStore.open();
+	// OVSX_STORE=file forces the encrypted file store and skips the OS credential store.
+	const forceFile = /^file$/i.test(process.env['OVSX_STORE'] ?? '');
+
+	let store: KeychainStore | EncryptedFileStore | undefined;
+
+	// Prefer the operating system's credential store.
+	if (!forceFile) {
+		try {
+			store = await KeychainStore.open();
+		} catch (err) {
+			console.warn(err.message);
+		}
 	}
 
-	let keychainStore: Store;
-	try {
-		keychainStore = await KeychainStore.open();
-	} catch (err) {
-		console.warn(`Failed to open the system credential store: ${err.message}`);
+	// Otherwise fall back to cross-keychain's encrypted file store.
+	if (!store) {
+		try {
+			store = await EncryptedFileStore.open();
+			if (!forceFile) {
+				console.warn(`Storing secrets in cross-keychain's encrypted file store instead.`);
+			}
+		} catch (err) {
+			console.warn(err.message);
+		}
+	}
+
+	// Last resort: if no cross-keychain store works, keep publishing usable by storing secrets clear-text.
+	if (!store) {
 		console.warn(`!!  Falling back to storing secrets clear-text in '${FileStore.DefaultPath}' (not recommended).`);
 		return await FileStore.open();
 	}
 
+	await migrateLegacyStore(store);
+
+	return store;
+}
+
+// Migrate secrets from the legacy clear-text file store into the given store, then delete it.
+async function migrateLegacyStore(target: Store): Promise<void> {
 	const fileStore = await FileStore.open();
-
-	// migrate from file store
-	if (fileStore.size) {
-		for (const { name, value } of fileStore) {
-			await keychainStore.add(name, value);
-		}
-
-		await fileStore.deleteStore();
-		console.info(`Migrated ${fileStore.size} publishers to system credential manager. Deleted local store '${fileStore.path}'.`);
+	if (!fileStore.size) {
+		return;
 	}
 
-	return keychainStore;
+	const migrated = fileStore.size;
+	for (const { name, value } of fileStore) {
+		await target.add(name, value);
+	}
+
+	await fileStore.deleteStore();
+	console.info(`Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
 }
