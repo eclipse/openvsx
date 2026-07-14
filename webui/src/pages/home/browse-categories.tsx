@@ -64,8 +64,8 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = props 
             <Box
                 sx={{
                     display: { xs: 'none', sm: 'grid' },
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: '0.875rem'
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: '0.625rem'
                 }}>
                 {categories.map(cat => (
                     <CategoryCard
