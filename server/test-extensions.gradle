@@ -1,5 +1,5 @@
-// Test extensions downloaded into build/test-extensions-builtin (vscode built-ins)
-// and build/test-extensions (regular extensions), keyed dest file name -> source URL.
+// Test extensions downloaded into build-local/test-extensions-builtin (vscode built-ins)
+// and build-local/test-extensions (regular extensions), keyed dest file name -> source URL.
 def builtinExtensions = [
     'vscode.sql-1.54.1.vsix'       : 'https://open-vsx.org/api/vscode/sql/1.54.1/file/vscode.sql-1.54.1.vsix',
     'vscode.powershell-1.54.1.vsix': 'https://open-vsx.org/api/vscode/powershell/1.54.1/file/vscode.powershell-1.54.1.vsix',
@@ -48,19 +48,19 @@ def testExtensions = [
 ]
 
 tasks.register('downloadTestExtensions') {
-    def buildDir = rootProject.layout.buildDirectory.get().toString()
+    def buildLocalDir = rootProject.file('build-local').toString()
 
     doLast {
         builtinExtensions.each { name, url ->
             download.run {
                 src url
-                dest "${buildDir}/test-extensions-builtin/${name}"
+                dest "${buildLocalDir}/test-extensions-builtin/${name}"
             }
         }
         testExtensions.each { name, url ->
             download.run {
                 src url
-                dest "${buildDir}/test-extensions/${name}"
+                dest "${buildLocalDir}/test-extensions/${name}"
             }
         }
     }
