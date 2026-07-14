@@ -12,11 +12,6 @@ pluginManagement {
             if (requested.id.id == 'org.hibernate.orm') {
                 useVersion(gradle.ext.hibernateOrmVersion)
             }
-            // Supply the jOOQ codegen plugin version from Spring Boot's BOM so it is
-            // always kept in sync with the managed jOOQ dependency.
-            if (requested.id.id == 'org.jooq.jooq-codegen-gradle') {
-                useVersion(gradle.ext.jooqVersion)
-            }
         }
     }
 }
@@ -41,4 +36,3 @@ def bomPomFile = buildscript.configurations.detachedConfiguration(
 ).singleFile
 def bomPom = new XmlSlurper().parse(bomPomFile)
 gradle.ext.hibernateOrmVersion = bomPom.properties['hibernate.version'].text()
-gradle.ext.jooqVersion = bomPom.properties['jooq.version'].text()

@@ -15,6 +15,7 @@ jaxb-api        = "2.3.1"
 jaxb-impl       = "2.3.8"
 jedis           = "7.4.1"
 jobrunr         = "8.6.1"
+jooq            = "3.19.34"
 loki4j          = "1.4.2"
 re2j            = "1.7"
 rewrite-java    = "3.38.0"
@@ -27,7 +28,7 @@ woodstox        = "6.4.0"
 download                     = { id = "de.undercouch.download", version = "5.7.0" }
 gatling                      = { id = "io.gatling.gradle", version.ref = "gatling" }
 hibernate-orm                = { id = "org.hibernate.orm" }
-jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle" }
+jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
 spring-boot                  = { id = "org.springframework.boot", version.ref = "spring-boot"}
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 test-logger                  = { id = "com.adarshr.test-logger", version = "4.0.0" }
