@@ -7,7 +7,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import { addEnvOptions, getUserInput } from './util';
+import { confirm } from '@inquirer/prompts';
+import { addEnvOptions } from './util';
 import { openDefaultStore } from './store';
 import { LoginOptions } from './login-options';
 import { requestPAT } from './pat';
@@ -22,9 +23,12 @@ export default async function login(options: LoginOptions) {
 	let pat = await store.get(options.namespace);
 	if (pat) {
 		console.log(`Namespace '${options.namespace}' is already known.`);
-		const answer = await getUserInput('Do you want to overwrite its PAT? [y/N] ');
+		const overwrite = await confirm({
+			message: 'Do you want to overwrite its PAT?',
+			default: false
+		});
 
-		if (!/^y$/i.test(answer)) {
+		if (!overwrite) {
 			throw new Error('Aborted.');
 		}
 	}

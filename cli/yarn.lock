@@ -506,7 +506,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@inquirer/prompts@npm:^7.8.6":
+"@inquirer/prompts@npm:^7.10.1, @inquirer/prompts@npm:^7.8.6":
   version: 7.10.1
   resolution: "@inquirer/prompts@npm:7.10.1"
   dependencies:
@@ -3845,6 +3845,7 @@ __metadata:
   dependencies:
     "@eslint/eslintrc": "npm:^3.2.0"
     "@eslint/js": "npm:^9.15.0"
+    "@inquirer/prompts": "npm:^7.10.1"
     "@stylistic/eslint-plugin": "npm:^2.11.0"
     "@types/follow-redirects": "npm:^1.13.1"
     "@types/is-ci": "npm:^2.0.0"

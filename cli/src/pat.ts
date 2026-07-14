@@ -7,11 +7,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
+import { password } from '@inquirer/prompts';
 import { CreateNamespaceOptions } from './create-namespace-options';
 import { PublishOptions } from './publish-options';
 import { VerifyPatOptions } from './verify-pat-options';
 import { Registry } from './registry';
-import { getUserInput } from './util';
 import { openDefaultStore } from './store';
 
 export async function doVerifyPat(options: VerifyPatOptions) {
@@ -26,7 +26,11 @@ export async function doVerifyPat(options: VerifyPatOptions) {
 }
 
 export async function requestPAT(namespace: string, options: CreateNamespaceOptions | PublishOptions | VerifyPatOptions, verify: boolean = true): Promise<string> {
-    const pat = await getUserInput(`Personal Access Token for namespace '${namespace}':`);
+    const pat = await password({
+        message: `Personal Access Token for namespace '${namespace}':`,
+        mask: true,
+        validate: value => value.trim().length > 0 || 'A personal access token is required.'
+    });
     if (verify) {
         await doVerifyPat({ ...options, namespace, pat });
     }

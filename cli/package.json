@@ -34,6 +34,7 @@
         "node": ">= 20"
     },
     "dependencies": {
+        "@inquirer/prompts": "^7.10.1",
         "@vscode/vsce": "^3.7.1",
         "commander": "^6.2.1",
         "cross-keychain": "^1.1.0",

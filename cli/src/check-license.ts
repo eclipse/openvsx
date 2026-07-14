@@ -10,8 +10,9 @@
 
 import * as fs from 'fs';
 import * as isCI from 'is-ci';
+import { input, select } from '@inquirer/prompts';
 import {
-    readManifest, writeManifest, Manifest, getUserInput, getUserChoice, writeFile, validateManifest, promisify
+    readManifest, writeManifest, Manifest, writeFile, validateManifest, promisify
 } from './util';
 
 async function addLicense(packagePath: string, manifest: Manifest): Promise<void> {
@@ -22,11 +23,17 @@ async function addLicense(packagePath: string, manifest: Manifest): Promise<void
         + 'the MIT license and for compliance with that license.');
     let answer: 'yes' | 'help' | 'no';
     do {
-        console.log();
-        answer = await getUserChoice('Would you like to publish your extension '
-            + manifest.publisher + '.' + manifest.name
-            + ' under the MIT license?',
-            ['yes', 'help', 'no'], 'no');
+        answer = await select({
+            message: 'Would you like to publish your extension '
+                + manifest.publisher + '.' + manifest.name
+                + ' under the MIT license?',
+            choices: [
+                { name: 'Yes', value: 'yes' },
+                { name: 'Help', value: 'help' },
+                { name: 'No', value: 'no' }
+            ],
+            default: 'no'
+        });
         switch (answer) {
             case 'yes':
                 await useMITLicense(manifest, packagePath);
@@ -73,10 +80,10 @@ export async function checkLicense(packagePath: string): Promise<void> {
 async function useMITLicense(manifest: Manifest, packagePath?: string) {
     console.log('Please enter a value for Copyright Year and Copyright Holder.\n'
         + 'Example: "Copyright 2020 John Doe"\n');
-    const copyright = await getUserInput('Copyright ');
-    if (!copyright) {
-        throw new Error('A copyright declaration is necessary for the MIT license.');
-    }
+    const copyright = await input({
+        message: 'Copyright',
+        validate: value => value.trim().length > 0 || 'A copyright declaration is necessary for the MIT license.'
+    });
     manifest.license = 'MIT';
     await writeManifest(manifest, packagePath);
     const license = MIT_LICENSE_TEXT.replace('<YEAR> <COPYRIGHT HOLDER>', copyright);

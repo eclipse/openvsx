@@ -12,7 +12,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
-import * as readline from 'readline';
 import { RegistryOptions } from './registry-options';
 
 export { promisify } from 'util';
@@ -153,30 +152,4 @@ export interface Manifest {
     name: string;
     version: string;
     license?: string;
-}
-
-export function getUserInput(text: string): Promise<string> {
-    return new Promise(resolve => {
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        rl.question(text, answer => {
-            resolve(answer);
-            rl.close();
-        });
-    });
-}
-
-export async function getUserChoice<R extends string>(text: string, values: R[],
-        defaultValue: R, lowerCase = true): Promise<R> {
-    const prompt = text + '\n' + values.map(v => v === defaultValue ? `[${v}]` : v).join('/') + ': ';
-    const answer = await getUserInput(prompt);
-    if (!answer) {
-        return defaultValue;
-    }
-    const lcAnswer = lowerCase ? answer.toLowerCase() : answer;
-    for (const value of values) {
-        if (value.startsWith(lcAnswer)) {
-            return value;
-        }
-    }
-    return defaultValue;
 }
