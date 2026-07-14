@@ -20,6 +20,9 @@ def jooqSrcDir = 'src/main/jooq-gen'
 // example:
 // ext['netty.version'] = '4.1.132.Final'
 
+// Note: these versions below "deviate" from Spring Boot's managed versions because we want to use newer versions
+// This means that on Spring Boot update, we need to re-check the versions here and update or remove them if needed.
+
 ext['flyway.version'] = libs.versions.flyway.get()
 ext['jackson-2-bom.version'] = libs.versions.jackson2.get()
 ext['jackson-bom.version'] = libs.versions.jackson.get()
