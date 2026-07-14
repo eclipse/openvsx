@@ -96,11 +96,13 @@ export interface ExtensionCardProps extends Partial<Omit<GridItemProps, 'ref'>> 
     extension?: SearchEntry;
     /** Delay before the card fades in, so grids can stagger their cards. */
     fadeDelayMs?: number;
+    /** When false, the card shows immediately without its entrance fade (e.g. restored from cache on back-nav). */
+    appear?: boolean;
 }
 
 export const ExtensionCard = memo(
     forwardRef<HTMLAnchorElement, ExtensionCardProps>(function ExtensionCard(
-        { extension, fadeDelayMs = 0, ...linkProps },
+        { extension, fadeDelayMs = 0, appear = true, ...linkProps },
         ref
     ) {
         const title = extension?.displayName ?? extension?.name;
@@ -108,7 +110,7 @@ export const ExtensionCard = memo(
 
         // One Fade over both states so it runs once and carries through the skeleton → card swap.
         return (
-            <Fade in timeout={{ enter: fadeDelayMs }}>
+            <Fade in appear={appear} timeout={{ enter: fadeDelayMs }}>
                 <Box title={title} sx={{ height: '100%' }}>
                     {extension ? (
                         <RouteLink

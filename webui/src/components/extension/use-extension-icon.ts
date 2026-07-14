@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { useContext, useEffect, useRef } from 'react';
+import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
 import { controllerFromSignal } from '../../query-client';
@@ -19,14 +19,14 @@ import { Extension, SearchEntry } from '../../extension-registry-types';
 
 /**
  * Loads an extension's icon as an object URL, returned as the react-query result
- * (`data` is `null` when the extension has no icon). Caching is disabled
- * (`gcTime`/`staleTime` 0) so each mount fetches a fresh URL and never reuses an
- * already-revoked one; the previous URL is revoked when replaced and on unmount.
+ * (`data` is `null` when the extension has no icon). The icon of a given version
+ * is immutable, so it's cached and reused across remounts (no flash on back-nav);
+ * the object URL is revoked when its query is evicted from the cache (see query-client).
  */
 export const useExtensionIcon = (extension: Extension | SearchEntry) => {
     const { service } = useContext(MainContext);
     const targetPlatform = 'targetPlatform' in extension ? extension.targetPlatform : undefined;
-    const query = useQuery({
+    return useQuery({
         queryKey: [
             'extension-icon',
             extension.namespace,
@@ -39,27 +39,6 @@ export const useExtensionIcon = (extension: Extension | SearchEntry) => {
             const icon = await service.getExtensionIcon(controllerFromSignal(signal), extension);
             // useQuery forbids `undefined`; normalise the "no icon" case to null.
             return icon ?? null;
-        },
-        gcTime: 0,
-        staleTime: 0
-    });
-
-    const previousUrl = useRef<string | null>(null);
-    useEffect(() => {
-        if (previousUrl.current && previousUrl.current !== query.data) {
-            URL.revokeObjectURL(previousUrl.current);
         }
-        previousUrl.current = query.data ?? null;
-    }, [query.data]);
-
-    useEffect(
-        () => () => {
-            if (previousUrl.current) {
-                URL.revokeObjectURL(previousUrl.current);
-            }
-        },
-        []
-    );
-
-    return query;
+    });
 };

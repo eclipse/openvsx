@@ -44,6 +44,17 @@ export const queryClient = new QueryClient({
     }
 });
 
+// Extension icons are cached as object URLs; revoke them when their query is
+// evicted from the cache so the underlying blobs are freed.
+queryClient.getQueryCache().subscribe(event => {
+    if (event.type === 'removed' && event.query.queryKey[0] === 'extension-icon') {
+        const url = event.query.state.data;
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+        }
+    }
+});
+
 /**
  * Bridge between TanStack Query's `AbortSignal` and the `AbortController` that
  * `ExtensionRegistryService` methods expect. Inside a `queryFn` we get a

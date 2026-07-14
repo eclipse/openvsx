@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext, useEffect, useMemo } from 'react';
+import { FunctionComponent, useContext, useEffect, useMemo, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
 import { Box } from '@mui/material';
 import { ExtensionCard } from './extension-card';
@@ -49,6 +49,11 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, o
     const pageSize = filter.size;
     const loading = isLoading || isFetchingNextPage;
 
+    // Cards already in the query cache when this list mounts (e.g. returning via
+    // browser back) render in place without replaying the entrance fade, so the
+    // page looks as if it was never unmounted. Cards that load afterwards still fade.
+    const restoredCount = useRef(loading ? 0 : extensions.length).current;
+
     // Index-keyed slots (the list only appends): loading slots render as
     // skeletons that become cards in place, so the fade isn't restarted.
     const slotCount = extensions.length + (loading ? pageSize : 0);
@@ -58,6 +63,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, o
             <ExtensionCard
                 key={idx}
                 extension={extension}
+                appear={idx >= restoredCount}
                 fadeDelayMs={Math.min(idx % pageSize, 5) * 200}
                 {...(extension ? grid.itemProps(idx) : {})}
             />
