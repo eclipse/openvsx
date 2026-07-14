@@ -23,6 +23,12 @@ def jooqSrcDir = 'src/main/jooq-gen'
 // Note: these versions below "deviate" from Spring Boot's managed versions because we want to use newer versions
 // This means that on Spring Boot update, we need to re-check the versions here and update or remove them if needed.
 
+// Steps for checking
+// - ./gradlew listDependencies
+// - jbang toolbox@maveniverse versions build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date
+// OR
+// - mvn eu.maveniverse.maven.plugins:toolbox:gav-versions -Dgav=build/dependencies/list.txt -DartifactVersionSelectorSpec="minor()" | grep -v "up to date"
+
 ext['flyway.version'] = libs.versions.flyway.get()
 ext['jackson-2-bom.version'] = libs.versions.jackson2.get()
 ext['jackson-bom.version'] = libs.versions.jackson.get()
