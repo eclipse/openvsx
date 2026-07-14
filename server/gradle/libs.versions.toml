@@ -15,8 +15,6 @@ jaxb-api        = "2.3.1"
 jaxb-impl       = "2.3.8"
 jedis           = "7.4.1"
 jobrunr         = "8.6.1"
-jooq            = "3.19.34"
-jsonpath        = "2.9.0"
 loki4j          = "1.4.2"
 re2j            = "1.7"
 rewrite-java    = "3.38.0"
@@ -29,7 +27,7 @@ woodstox        = "6.4.0"
 download                     = { id = "de.undercouch.download", version = "5.7.0" }
 gatling                      = { id = "io.gatling.gradle", version.ref = "gatling" }
 hibernate-orm                = { id = "org.hibernate.orm" }
-jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+jooq-codegen                 = { id = "org.jooq.jooq-codegen-gradle" }
 spring-boot                  = { id = "org.springframework.boot", version.ref = "spring-boot"}
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 test-logger                  = { id = "com.adarshr.test-logger", version = "4.0.0" }
@@ -57,7 +55,6 @@ jaxb-api                     = { module = "javax.xml.bind:jaxb-api", version.ref
 jaxb-impl                    = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jedis                        = { module = "redis.clients:jedis", version.ref = "jedis" }
 jobrunr-spring               = { module = "org.jobrunr:jobrunr-spring-boot-4-starter", version.ref = "jobrunr" }
-json-path                    = { module = "com.jayway.jsonpath:json-path", version.ref = "jsonpath" }
 loki-logback-appender        = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
 re2j                         = { module = "com.google.re2j:re2j", version.ref = "re2j" }
 rewrite-java                 = { module = "org.openrewrite.recipe:rewrite-migrate-java", version.ref = "rewrite-java"}

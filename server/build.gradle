@@ -120,7 +120,6 @@ dependencies {
 
     implementation libs.tika.core
     implementation libs.re2j
-    implementation libs.json.path
     implementation libs.loki.logback.appender
 
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
