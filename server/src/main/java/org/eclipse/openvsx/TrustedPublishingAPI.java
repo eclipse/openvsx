@@ -17,6 +17,8 @@ import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TrustedPublisherJson;
 import org.eclipse.openvsx.json.TrustedPublisherListJson;
+import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
+import org.eclipse.openvsx.json.TrustedPublisherProviderListJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.trustedpublishing.TrustRequest;
@@ -33,6 +35,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Objects;
 
 @RestController
 public class TrustedPublishingAPI {
@@ -61,6 +65,10 @@ public class TrustedPublishingAPI {
         if (!StringUtils.hasText(request.getProvider()) || !StringUtils.hasText(request.getOwner())
                 || !StringUtils.hasText(request.getRepo()) || !StringUtils.hasText(request.getWorkflow())) {
             var json = TrustedPublisherJson.error("The fields provider, owner, repo and workflow are mandatory.");
+            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+        if (!Objects.equals(namespace, request.getNamespace())) {
+            var json = TrustedPublisherJson.error("The namespace in the path and in the request body must match.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 
@@ -123,6 +131,36 @@ public class TrustedPublishingAPI {
             return new ResponseEntity<>(ResultJson.error("Trusted publisher does not exist."), HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
+        }
+    }
+
+    @GetMapping(
+            path = "/user/namespace/{namespace}/trusted-publishing/providers",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<TrustedPublisherProviderListJson> getTrustedPublisherProviders(@PathVariable String namespace) {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            var json = new TrustedPublisherProviderListJson();
+            json.setTrustedPublisherProviders(trustedPublishing.getTrustedPublisherProviders(user, namespace).values().stream()
+                            .map(p -> {
+                                var providerJson = new TrustedPublisherProviderJson();
+                                providerJson.setId(p.getProviderId());
+                                providerJson.setName(p.getProviderName());
+                                providerJson.setUrl(p.getProviderUrl());
+                                return providerJson;
+                            })
+                            .toList());
+            return ResponseEntity.ok(json);
+        } catch (NotFoundException exc) {
+            var json = TrustedPublisherProviderListJson.error("Namespace not found: " + namespace);
+            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(TrustedPublisherProviderListJson.class);
         }
     }
 

@@ -12,7 +12,14 @@
  *****************************************************************************/
 package org.eclipse.openvsx.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import org.eclipse.openvsx.json.TrustedPublisherJson;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -26,8 +33,8 @@ import java.util.Objects;
 
 /**
  * A trusted publisher registration: claims resolved from a trust request, pinned to a namespace
- * (and optionally a single extension within it). Presented OIDC ID tokens whose claims satisfy
- * a registration are exchanged for a short-lived access token of {@link #getCreatedBy()}.
+ * and extension. The {@code claims} contains claims (extended with provider specific information), and
+ * are kept within boundaries of application, they should not leave it.
  */
 @Entity
 @Table(name = "trusted_publisher")
@@ -45,13 +52,17 @@ public class TrustedPublisher implements Serializable {
     @JoinColumn(name = "namespace", nullable = false)
     private Namespace namespace;
 
-    /** Optional: when {@code null} the registration covers the whole namespace. */
-    @Column(name = "extension_name")
-    private String extensionName;
+    @ManyToOne
+    @JoinColumn(name = "extension", nullable = false)
+    private Extension extension;
 
     @Column(nullable = false, length = 32)
     private String provider;
 
+    /**
+     * Claims are internal only; should not leave the boundaries of application.
+     * Hence, {@link #toJson()} omits it.
+     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     private Map<String, String> claims;
@@ -71,8 +82,7 @@ public class TrustedPublisher implements Serializable {
         json.setId(this.getId());
         json.setProvider(this.getProvider());
         json.setNamespace(this.getNamespace().getName());
-        json.setExtension(this.getExtensionName());
-        json.setClaims(this.getClaims());
+        json.setExtension(this.getExtension().getName());
         if (this.getCreatedTimestamp() != null) {
             json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
         }
@@ -95,12 +105,12 @@ public class TrustedPublisher implements Serializable {
         this.namespace = namespace;
     }
 
-    public String getExtensionName() {
-        return extensionName;
+    public Extension getExtension() {
+        return extension;
     }
 
-    public void setExtensionName(String extensionName) {
-        this.extensionName = extensionName;
+    public void setExtension(Extension extension) {
+        this.extension = extension;
     }
 
     public String getProvider() {
@@ -142,7 +152,7 @@ public class TrustedPublisher implements Serializable {
         TrustedPublisher that = (TrustedPublisher) o;
         return id == that.id
                 && Objects.equals(namespace, that.namespace)
-                && Objects.equals(extensionName, that.extensionName)
+                && Objects.equals(extension, that.extension)
                 && Objects.equals(provider, that.provider)
                 && Objects.equals(claims, that.claims)
                 && Objects.equals(createdBy, that.createdBy)
@@ -151,6 +161,6 @@ public class TrustedPublisher implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, namespace, extensionName, provider, claims, createdBy, createdTimestamp);
+        return Objects.hash(id, namespace, extension, provider, claims, createdBy, createdTimestamp);
     }
 }

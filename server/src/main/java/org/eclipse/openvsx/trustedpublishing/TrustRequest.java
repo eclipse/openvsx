@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
 public final class TrustRequest {
     @NonNull
     private final String namespaceName;
-    @Nullable
+    @NonNull
     private final String extensionName;
     @NonNull
     private final String providerId;
@@ -39,14 +39,14 @@ public final class TrustRequest {
     private final String environment;
 
     public TrustRequest(@NonNull String namespaceName,
-                        @Nullable String extensionName,
+                        @NonNull String extensionName,
                         @NonNull String providerId,
                         @NonNull String owner,
                         @NonNull String repo,
                         @NonNull String workflow,
                         @Nullable String environment) {
         this.namespaceName = requireNonNull(namespaceName);
-        this.extensionName = extensionName;
+        this.extensionName = requireNonNull(extensionName);
         this.providerId = requireNonNull(providerId);
         this.owner = requireNonNull(owner);
         this.repo = requireNonNull(repo);
@@ -63,11 +63,11 @@ public final class TrustRequest {
     }
 
     /**
-     * Optionally, the Open VSX extension name within {@link #getNamespaceName()} this trust is requested to.
+     * The Open VSX extension name within {@link #getNamespaceName()} this trust is requested to.
      */
     @NonNull
-    public Optional<String> getExtensionName() {
-        return Optional.ofNullable(extensionName);
+    public String getExtensionName() {
+        return extensionName;
     }
 
     /**

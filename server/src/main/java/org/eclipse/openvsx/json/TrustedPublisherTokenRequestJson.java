@@ -17,14 +17,15 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Request body for exchanging an OIDC ID token for a short-lived publishing access token.
+ * Request body for exchanging an OIDC ID token for a short-lived publishing access token. Here, publisher states
+ * to which {@code namespace} and {@code extension} publishing is about to happen, and provides a "proof" in form
+ * of an {@code token} that is OIDC ID token.
  */
 @JsonInclude(Include.NON_NULL)
 public class TrustedPublisherTokenRequestJson {
 
     private String namespace;
 
-    @Nullable
     private String extension;
 
     private String token;
@@ -37,12 +38,11 @@ public class TrustedPublisherTokenRequestJson {
         this.namespace = namespace;
     }
 
-    @Nullable
     public String getExtension() {
         return extension;
     }
 
-    public void setExtension(@Nullable String extension) {
+    public void setExtension(String extension) {
         this.extension = extension;
     }
 

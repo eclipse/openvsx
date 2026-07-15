@@ -16,6 +16,7 @@ import com.nimbusds.jwt.JWTParser;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
@@ -96,6 +97,10 @@ public class TrustedPublishingService {
             throw new ErrorResultException("Unknown trusted publishing provider: " + request.getProviderId());
         }
         Namespace namespace = requireOwnedNamespace(user, request.getNamespaceName());
+        Extension extension = repositories.findExtension(request.getExtensionName(), namespace);
+        if (extension == null) {
+            throw new ErrorResultException("Unknown extension in namespace: " + namespace.getName());
+        }
 
         Map<String, String> claims;
         try {
@@ -106,8 +111,8 @@ public class TrustedPublishingService {
         }
 
         boolean duplicate = repositories.findTrustedPublishers(namespace).stream()
-                .anyMatch(tp -> tp.getProvider().equals(provider.getProviderId())
-                        && Objects.equals(tp.getExtensionName(), request.getExtensionName().orElse(null))
+                .anyMatch(tp -> extension.equals(tp.getExtension())
+                        && tp.getProvider().equals(provider.getProviderId())
                         && tp.getClaims().equals(claims));
         if (duplicate) {
             throw new ErrorResultException("An equivalent trusted publisher is already registered.");
@@ -115,7 +120,7 @@ public class TrustedPublishingService {
 
         TrustedPublisher publisher = new TrustedPublisher();
         publisher.setNamespace(namespace);
-        publisher.setExtensionName(request.getExtensionName().orElse(null));
+        publisher.setExtension(extension);
         publisher.setProvider(provider.getProviderId());
         publisher.setClaims(claims);
         publisher.setCreatedBy(entityManager.merge(user));
@@ -153,17 +158,30 @@ public class TrustedPublishingService {
     }
 
     /**
+     * Lists trusted publisher providers supported on a namespace. The user must be an owner of the namespace.
+     * For now, we do not use any of the provided information to filter providers, just enforce required conditions.
+     */
+    public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders(UserData user, String namespaceName) {
+        requireNonNull(user);
+        requireNonNull(namespaceName);
+        ensureEnabled();
+        requireOwnedNamespace(user, namespaceName);
+        return providers;
+    }
+
+    /**
      * Client signaled publishing intent, by submitting OIDC ID token. If publishing intent is approved,
-     * manager will issue an access token that is returned to client, and client should publish using received
+     * service will issue an access token that is returned to client, and client should publish using received
      * token.
      */
     @Transactional
     public AccessTokenJson requestPublishToken(String namespaceName, String extensionName, String token) {
         requireNonNull(namespaceName);
+        requireNonNull(extensionName);
         requireNonNull(token);
         ensureEnabled();
 
-        // just blindly parse token to get "iss" from it
+        // just blindly parse token to get "iss" claim from it; to identify provider to use
         String issuer;
         try {
             Object iss = JWTParser.parse(token).getJWTClaimsSet().getClaim(JwtClaimNames.ISS);
@@ -179,7 +197,7 @@ public class TrustedPublishingService {
         TrustedPublishingProviderSupport provider = providers.values().stream()
                 .filter(p -> Objects.equals(issuer, p.getOidcIssuer()))
                 .findFirst()
-                .orElseThrow(() -> new ErrorResultException("Unsupported token issuer."));
+                .orElseThrow(() -> new ErrorResultException("Unsupported token issuer.", HttpStatus.BAD_REQUEST));
 
         // using provider validate token and extract claims of interest
         Map<String, String> claims = provider.extract(token)
@@ -189,11 +207,14 @@ public class TrustedPublishingService {
         if (namespace == null) {
             throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
         }
+        Extension extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null) {
+            throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
+        }
 
         TrustedPublisher match = repositories.findTrustedPublishers(namespace).stream()
+                .filter(tp -> tp.getExtension().equals(extension))
                 .filter(tp -> tp.getProvider().equals(provider.getProviderId()))
-                .filter(tp -> tp.getExtensionName() == null
-                        || tp.getExtensionName().equalsIgnoreCase(extensionName))
                 .filter(tp -> provider.matches(tp.getClaims(), claims))
                 .findFirst()
                 .orElseThrow(() -> new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN));

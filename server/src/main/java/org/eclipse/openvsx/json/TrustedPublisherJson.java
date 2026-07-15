@@ -16,11 +16,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Map;
-
 /**
  * A trusted publisher registration. On registration requests the {@code provider}, {@code owner},
- * {@code repo}, {@code workflow} and optionally {@code extension} and {@code environment} fields
+ * {@code repo}, {@code workflow}, {@code namespace}, {@code extension} and optionally {@code environment} field
  * are filled in by the client; the remaining fields are filled in by the server on responses.
  */
 @JsonInclude(Include.NON_NULL)
@@ -38,7 +36,6 @@ public class TrustedPublisherJson extends ResultJson {
 
     private String namespace;
 
-    @Nullable
     private String extension;
 
     @Nullable
@@ -52,9 +49,6 @@ public class TrustedPublisherJson extends ResultJson {
 
     @Nullable
     private String environment;
-
-    @Nullable
-    private Map<String, String> claims;
 
     @Nullable
     private String createdTimestamp;
@@ -83,12 +77,11 @@ public class TrustedPublisherJson extends ResultJson {
         this.namespace = namespace;
     }
 
-    @Nullable
     public String getExtension() {
         return extension;
     }
 
-    public void setExtension(@Nullable String extension) {
+    public void setExtension(String extension) {
         this.extension = extension;
     }
 
@@ -126,15 +119,6 @@ public class TrustedPublisherJson extends ResultJson {
 
     public void setEnvironment(@Nullable String environment) {
         this.environment = environment;
-    }
-
-    @Nullable
-    public Map<String, String> getClaims() {
-        return claims;
-    }
-
-    public void setClaims(@Nullable Map<String, String> claims) {
-        this.claims = claims;
     }
 
     @Nullable
