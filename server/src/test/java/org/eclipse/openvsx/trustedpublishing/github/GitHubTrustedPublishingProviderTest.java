@@ -56,9 +56,21 @@ class GitHubTrustedPublishingProviderTest {
         return claims;
     }
 
+    private static GitHubTrustedPublishingProvider newProvider(TrustedPublishingConfig config) {
+        return new GitHubTrustedPublishingProvider(config) {
+            @Override
+            protected Map<String, Object> resolve(TrustRequest trustRequest) {
+                return Map.of(
+                        "id", 226955212,
+                        "owner", Map.of("id", 163524810)
+                );
+            }
+        };
+    }
+
     @Test
     void trustRequestWithoutEnv() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         Map<String, String> data = gh.extractRequest(
                 new TrustRequest("irrelevant",
                         "irrelevant",
@@ -77,7 +89,7 @@ class GitHubTrustedPublishingProviderTest {
 
     @Test
     void trustRequestWithEnv() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         Map<String, String> data = gh.extractRequest(
                 new TrustRequest("irrelevant",
                         "irrelevant",
@@ -97,7 +109,7 @@ class GitHubTrustedPublishingProviderTest {
 
     @Test
     void matchesRegardlessOfRef() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         var token = tokenClaims();
         assertTrue(gh.matches(registeredClaims(), token));
         token.put("workflow_ref", "eclipse-openvsx/openvsx/.github/workflows/release.yml@refs/tags/v1.0.0");
@@ -106,7 +118,7 @@ class GitHubTrustedPublishingProviderTest {
 
     @Test
     void mismatchOnDifferentRepositoryId() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         var token = tokenClaims();
         token.put("repository_id", "1"); // resurrection attack: same name, different repository
         assertFalse(gh.matches(registeredClaims(), token));
@@ -114,7 +126,7 @@ class GitHubTrustedPublishingProviderTest {
 
     @Test
     void mismatchOnDifferentWorkflow() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         var token = tokenClaims();
         token.put("workflow_ref", "eclipse-openvsx/openvsx/.github/workflows/other.yml@refs/heads/main");
         assertFalse(gh.matches(registeredClaims(), token));
@@ -122,7 +134,7 @@ class GitHubTrustedPublishingProviderTest {
 
     @Test
     void pinnedEnvironment() {
-        GitHubTrustedPublishingProvider gh = new GitHubTrustedPublishingProvider(config);
+        GitHubTrustedPublishingProvider gh = newProvider(config);
         var registered = registeredClaims();
         registered.put("environment", "prod");
 

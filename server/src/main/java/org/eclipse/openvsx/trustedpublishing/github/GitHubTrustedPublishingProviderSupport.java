@@ -74,18 +74,7 @@ public abstract class GitHubTrustedPublishingProviderSupport extends TrustedPubl
     @Override
     protected Map<String, String> extractRequest(TrustRequest trustRequest) throws UnresolvableTrusteeException {
         requireNonNull(trustRequest);
-        Map<String, Object> response;
-        try {
-            response = restClient.get()
-                    .uri(apiResolveRequest, trustRequest.getOwner(), trustRequest.getRepo())
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
-        } catch (RestClientException e) {
-            throw new UnresolvableTrusteeException("Could not resolve GitHub repository "
-                    + trustRequest.getOwner() + "/" + trustRequest.getRepo(), e);
-        }
+        Map<String, Object> response = resolve(trustRequest);
         if (response == null || !(response.get("id") instanceof Number repositoryId)
                 || !(response.get("owner") instanceof Map<?, ?> owner)
                 || !(owner.get("id") instanceof Number ownerId)) {
@@ -103,6 +92,23 @@ public abstract class GitHubTrustedPublishingProviderSupport extends TrustedPubl
                 + "/.github/workflows/" + trustRequest.getWorkflow());
         trustRequest.getEnvironment().ifPresent(env -> result.put(CLAIM_ENVIRONMENT, env));
         return result;
+    }
+
+    /**
+     * Pulled out for testability; is mocked in UT to prevent real remote access.
+     */
+    protected Map<String, Object> resolve(TrustRequest trustRequest) {
+        try {
+            return restClient.get()
+                    .uri(apiResolveRequest, trustRequest.getOwner(), trustRequest.getRepo())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+        } catch (RestClientException e) {
+            throw new UnresolvableTrusteeException("Could not resolve GitHub repository "
+                    + trustRequest.getOwner() + "/" + trustRequest.getRepo(), e);
+        }
     }
 
     @Override

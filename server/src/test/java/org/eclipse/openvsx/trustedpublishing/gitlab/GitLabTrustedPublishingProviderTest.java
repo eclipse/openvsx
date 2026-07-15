@@ -56,9 +56,21 @@ class GitLabTrustedPublishingProviderTest {
         return claims;
     }
 
+    private static GitLabTrustedPublishingProvider newProvider(TrustedPublishingConfig config) {
+        return new GitLabTrustedPublishingProvider(config) {
+            @Override
+            protected Map<String, Object> resolve(TrustRequest trustRequest) {
+                return Map.of(
+                        "id", 278964,
+                        "namespace", Map.of("id", 9970)
+                );
+            }
+        };
+    }
+
     @Test
     void trustRequestWithoutEnv() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         Map<String, String> data = gl.extractRequest(
                 new TrustRequest("irrelevant",
                         "irrelevant",
@@ -77,7 +89,7 @@ class GitLabTrustedPublishingProviderTest {
 
     @Test
     void trustRequestWithEnv() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         Map<String, String> data = gl.extractRequest(
                 new TrustRequest("irrelevant",
                         "irrelevant",
@@ -97,7 +109,7 @@ class GitLabTrustedPublishingProviderTest {
 
     @Test
     void matchesRegardlessOfRef() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         var token = tokenClaims();
         assertTrue(gl.matches(registeredClaims(), token));
         token.put("ci_config_ref_uri", "gitlab.com/gitlab-org/gitlab//.gitlab-ci.yml@refs/tags/v1.0.0");
@@ -106,7 +118,7 @@ class GitLabTrustedPublishingProviderTest {
 
     @Test
     void mismatchOnDifferentProjectId() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         var token = tokenClaims();
         token.put("project_id", "1"); // resurrection attack: same path, different project
         assertFalse(gl.matches(registeredClaims(), token));
@@ -114,7 +126,7 @@ class GitLabTrustedPublishingProviderTest {
 
     @Test
     void mismatchOnDifferentCiConfig() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         var token = tokenClaims();
         token.put("ci_config_ref_uri", "gitlab.com/gitlab-org/gitlab//other-ci.yml@refs/heads/master");
         assertFalse(gl.matches(registeredClaims(), token));
@@ -122,7 +134,7 @@ class GitLabTrustedPublishingProviderTest {
 
     @Test
     void pinnedEnvironment() {
-        GitLabTrustedPublishingProvider gl = new GitLabTrustedPublishingProvider(config);
+        GitLabTrustedPublishingProvider gl = newProvider(config);
         var registered = registeredClaims();
         registered.put("environment", "prod");
 

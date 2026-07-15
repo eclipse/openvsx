@@ -74,18 +74,7 @@ public abstract class GitLabTrustedPublishingProviderSupport extends TrustedPubl
     protected Map<String, String> extractRequest(TrustRequest trustRequest) throws UnresolvableTrusteeException {
         requireNonNull(trustRequest);
         String projectPath = trustRequest.getOwner() + "/" + trustRequest.getRepo();
-        Map<String, Object> response;
-        try {
-            // the {path} template variable is URL-encoded by RestClient, turning "/" into "%2F" as GitLab expects
-            response = restClient.get()
-                    .uri(providerUrl + API_RESOLVE_REQUEST, projectPath)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
-        } catch (RestClientException e) {
-            throw new UnresolvableTrusteeException("Could not resolve GitLab project " + projectPath, e);
-        }
+        Map<String, Object> response = resolve(trustRequest);
         if (response == null || !(response.get("id") instanceof Number projectId)
                 || !(response.get("namespace") instanceof Map<?, ?> namespace)
                 || !(namespace.get("id") instanceof Number namespaceId)) {
@@ -102,6 +91,24 @@ public abstract class GitLabTrustedPublishingProviderSupport extends TrustedPubl
                 + "//" + trustRequest.getWorkflow());
         trustRequest.getEnvironment().ifPresent(env -> result.put(CLAIM_ENVIRONMENT, env));
         return result;
+    }
+
+    /**
+     * Pulled out for testability; is mocked in UT to prevent real remote access.
+     */
+    protected Map<String, Object> resolve(TrustRequest trustRequest) {
+        String projectPath = trustRequest.getOwner() + "/" + trustRequest.getRepo();
+        try {
+            // the {path} template variable is URL-encoded by RestClient, turning "/" into "%2F" as GitLab expects
+            return restClient.get()
+                    .uri(providerUrl + API_RESOLVE_REQUEST, projectPath)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+        } catch (RestClientException e) {
+            throw new UnresolvableTrusteeException("Could not resolve GitLab project " + projectPath, e);
+        }
     }
 
     @Override
