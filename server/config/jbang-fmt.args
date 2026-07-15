@@ -6,10 +6,8 @@
 #   `jbang jbang-fmt@jbangdev @jbang-fmt.args`
 #
 # Configuration:
-# * apply google style
-# * line length 120
+# * apply custom eclipse style
 # * Java 25
-# * override: do not touch file headers (as we have various, even wrongly formatted ones)
 # * formats only server non-generated Java sources
 
 --style config/eclipse-java-formatter.xml
