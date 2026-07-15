@@ -39,6 +39,7 @@
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression" value="48"/>
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant" value="48"/>
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_array_initializer" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_record_components" value="48"/>
 
         <!-- annotation arguments default to WRAP_NO_SPLIT (never wrap), unlike the other argument
              lists above, which is why long annotations were ignoring the line length.
@@ -56,6 +57,7 @@
         <!-- covers both method and constructor declarations (JDT uses one AST node for both);
              note the "delcaration" typo in the option id is intentional/required by JDT itself -->
         <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_delcaration" value="separate_lines_if_wrapped"/>
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_record_declaration" value="separate_lines_if_wrapped"/>
 
         <!-- 49 = M_FORCE | M_ONE_PER_LINE_SPLIT: when a parameter/local variable has more than
              one annotation, always put each on its own line. Local variables already default to
