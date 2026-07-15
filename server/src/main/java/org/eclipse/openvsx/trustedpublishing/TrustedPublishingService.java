@@ -97,10 +97,6 @@ public class TrustedPublishingService {
             throw new ErrorResultException("Unknown trusted publishing provider: " + request.getProviderId());
         }
         Namespace namespace = requireOwnedNamespace(user, request.getNamespaceName());
-        Extension extension = repositories.findExtension(request.getExtensionName(), namespace);
-        if (extension == null) {
-            throw new ErrorResultException("Unknown extension in namespace: " + namespace.getName());
-        }
 
         Map<String, String> claims;
         try {
@@ -111,7 +107,7 @@ public class TrustedPublishingService {
         }
 
         boolean duplicate = repositories.findTrustedPublishers(namespace).stream()
-                .anyMatch(tp -> extension.equals(tp.getExtension())
+                .anyMatch(tp -> Objects.equals(request.getExtensionName(), tp.getExtensionName())
                         && tp.getProvider().equals(provider.getProviderId())
                         && tp.getClaims().equals(claims));
         if (duplicate) {
@@ -120,7 +116,7 @@ public class TrustedPublishingService {
 
         TrustedPublisher publisher = new TrustedPublisher();
         publisher.setNamespace(namespace);
-        publisher.setExtension(extension);
+        publisher.setExtensionName(request.getExtensionName());
         publisher.setProvider(provider.getProviderId());
         publisher.setClaims(claims);
         publisher.setCreatedBy(entityManager.merge(user));
@@ -207,13 +203,9 @@ public class TrustedPublishingService {
         if (namespace == null) {
             throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
         }
-        Extension extension = repositories.findExtension(extensionName, namespace);
-        if (extension == null) {
-            throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
-        }
 
         TrustedPublisher match = repositories.findTrustedPublishers(namespace).stream()
-                .filter(tp -> tp.getExtension().equals(extension))
+                .filter(tp -> Objects.equals(extensionName, tp.getExtensionName()))
                 .filter(tp -> tp.getProvider().equals(provider.getProviderId()))
                 .filter(tp -> provider.matches(tp.getClaims(), claims))
                 .findFirst()

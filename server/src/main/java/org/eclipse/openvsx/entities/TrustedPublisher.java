@@ -52,9 +52,8 @@ public class TrustedPublisher implements Serializable {
     @JoinColumn(name = "namespace", nullable = false)
     private Namespace namespace;
 
-    @ManyToOne
-    @JoinColumn(name = "extension", nullable = false)
-    private Extension extension;
+    @Column(name = "extension_name", nullable = false)
+    private String extensionName;
 
     @Column(nullable = false, length = 32)
     private String provider;
@@ -82,7 +81,7 @@ public class TrustedPublisher implements Serializable {
         json.setId(this.getId());
         json.setProvider(this.getProvider());
         json.setNamespace(this.getNamespace().getName());
-        json.setExtension(this.getExtension().getName());
+        json.setExtension(this.getExtensionName());
         if (this.getCreatedTimestamp() != null) {
             json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
         }
@@ -105,12 +104,12 @@ public class TrustedPublisher implements Serializable {
         this.namespace = namespace;
     }
 
-    public Extension getExtension() {
-        return extension;
+    public String getExtensionName() {
+        return extensionName;
     }
 
-    public void setExtension(Extension extension) {
-        this.extension = extension;
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
     }
 
     public String getProvider() {
@@ -152,7 +151,7 @@ public class TrustedPublisher implements Serializable {
         TrustedPublisher that = (TrustedPublisher) o;
         return id == that.id
                 && Objects.equals(namespace, that.namespace)
-                && Objects.equals(extension, that.extension)
+                && Objects.equals(extensionName, that.extensionName)
                 && Objects.equals(provider, that.provider)
                 && Objects.equals(claims, that.claims)
                 && Objects.equals(createdBy, that.createdBy)
@@ -161,6 +160,6 @@ public class TrustedPublisher implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, namespace, extension, provider, claims, createdBy, createdTimestamp);
+        return Objects.hash(id, namespace, extensionName, provider, claims, createdBy, createdTimestamp);
     }
 }
