@@ -89,6 +89,7 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
 
+    implementation "org.springframework.boot:spring-boot-session-jdbc"
     implementation "org.springframework.session:spring-session-jdbc"
 
     implementation "org.springframework.boot:spring-boot-thymeleaf"

@@ -36,7 +36,6 @@ spring:
     hibernate:
       ddl-auto: none
   session:
-    store-type: jdbc
     jdbc:
       initialize-schema: never
   thymeleaf:
