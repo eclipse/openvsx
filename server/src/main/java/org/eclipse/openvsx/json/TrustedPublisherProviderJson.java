@@ -15,8 +15,10 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import java.util.Map;
+
 /**
- * A trusted publisher provider. Listed to users only.
+ * A trusted publisher provider description for client. This is one way, is listed to users only from server.
  */
 @JsonInclude(Include.NON_NULL)
 public class TrustedPublisherProviderJson extends ResultJson {
@@ -33,6 +35,8 @@ public class TrustedPublisherProviderJson extends ResultJson {
 
     private String url;
 
+    private Map<String, String> registrationKeys;
+
     public String getId() {
         return id;
     }
@@ -45,6 +49,10 @@ public class TrustedPublisherProviderJson extends ResultJson {
         return url;
     }
 
+    public Map<String, String> getRegistrationKeys() {
+        return registrationKeys;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -55,5 +63,9 @@ public class TrustedPublisherProviderJson extends ResultJson {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public void setRegistrationKeys(Map<String, String> registrationKeys) {
+        this.registrationKeys = registrationKeys;
     }
 }

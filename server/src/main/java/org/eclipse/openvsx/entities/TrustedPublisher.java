@@ -59,7 +59,15 @@ public class TrustedPublisher implements Serializable {
     private String provider;
 
     /**
-     * Claims are internal only; should not leave the boundaries of application.
+     * Registration are public data; it may be shown to end user, and is in same format as user originally provided.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, String> registration;
+
+    /**
+     * Claims are internal only; should not leave the boundaries of application and is in provider specific format.
+     * For example, workflow file is put into a "path"-like construct, that is provider specific.
      * Hence, {@link #toJson()} omits it.
      */
     @JdbcTypeCode(SqlTypes.JSON)
@@ -82,6 +90,7 @@ public class TrustedPublisher implements Serializable {
         json.setProvider(this.getProvider());
         json.setNamespace(this.getNamespace().getName());
         json.setExtension(this.getExtensionName());
+        json.setRegistration(this.getRegistration());
         if (this.getCreatedTimestamp() != null) {
             json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
         }
@@ -118,6 +127,14 @@ public class TrustedPublisher implements Serializable {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public Map<String, String> getRegistration() {
+        return registration;
+    }
+
+    public void setRegistration(Map<String, String> registration) {
+        this.registration = registration;
     }
 
     public Map<String, String> getClaims() {

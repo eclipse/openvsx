@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.eclipse.openvsx.entities.AdminScanDecision;
@@ -149,7 +149,8 @@ class RepositoryServiceSmokeTest {
         var trustedPublisher = new TrustedPublisher();
         trustedPublisher.setNamespace(namespace);
         trustedPublisher.setProvider("provider");
-        trustedPublisher.setClaims(Collections.singletonMap("claim", "value"));
+        trustedPublisher.setRegistration(Map.of("foo", "bar"));
+        trustedPublisher.setClaims(Map.of("claim", "value"));
         trustedPublisher.setCreatedBy(userData);
         trustedPublisher.setCreatedTimestamp(NOW);
 
@@ -266,8 +267,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findPublicId("namespaceName", "extensionName"),
                 () -> repositories.findPublicId("namespaceName.extensionName"),
                 () -> repositories.findNamespacePublicId("namespaceName.extensionName"),
-                () -> repositories.updateExtensionPublicIds(Collections.emptyMap()),
-                () -> repositories.updateNamespacePublicIds(Collections.emptyMap()),
+                () -> repositories.updateExtensionPublicIds(Map.of()),
+                () -> repositories.updateNamespacePublicIds(Map.of()),
                 () -> repositories.extensionPublicIdExists("namespaceName.extensionName"),
                 () -> repositories.namespacePublicIdExists("namespaceName.extensionName"),
                 () -> repositories.fetchSitemapRows(),
@@ -322,8 +323,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.expireAccessTokens(NOW),
                 () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),
                 () -> repositories.updateExpiresTimeForLegacyAccessTokens(NOW),
-                () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", Collections.emptyList(), 0.5, false, 10),
-                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10),
+                () -> repositories.findSimilarExtensionsByLevenshtein("extensionName", "namespaceName", "displayName", List.of(), 0.5, false, 10),
+                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", List.of(), 0.5, false, 10),
                 () -> repositories.findExtensionScans(extVersion),
                 () -> repositories.findLatestExtensionScan(extVersion),
                 () -> repositories.findExtensionScans(extension),

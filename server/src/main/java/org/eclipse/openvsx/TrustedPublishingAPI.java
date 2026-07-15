@@ -21,7 +21,6 @@ import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
 import org.eclipse.openvsx.json.TrustedPublisherProviderListJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
-import org.eclipse.openvsx.trustedpublishing.TrustRequest;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
@@ -62,9 +61,10 @@ public class TrustedPublishingAPI {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        if (!StringUtils.hasText(request.getProvider()) || !StringUtils.hasText(request.getOwner())
-                || !StringUtils.hasText(request.getRepo()) || !StringUtils.hasText(request.getWorkflow())) {
-            var json = TrustedPublisherJson.error("The fields provider, owner, repo and workflow are mandatory.");
+        if (!StringUtils.hasText(request.getProvider())
+                || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
+                || request.getRegistration() == null || request.getRegistration().isEmpty()) {
+            var json = TrustedPublisherJson.error("The fields provider, namespace, extension and registration are mandatory.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
         if (!Objects.equals(namespace, request.getNamespace())) {
@@ -73,14 +73,11 @@ public class TrustedPublishingAPI {
         }
 
         try {
-            var publisher = trustedPublishing.registerTrustedPublisher(user, new TrustRequest(
-                    namespace,
+            var publisher = trustedPublishing.registerTrustedPublisher(user,
+                    request.getNamespace(),
                     request.getExtension(),
                     request.getProvider(),
-                    request.getOwner(),
-                    request.getRepo(),
-                    request.getWorkflow(),
-                    request.getEnvironment()));
+                    request.getRegistration());
             return new ResponseEntity<>(publisher.toJson(), HttpStatus.CREATED);
         } catch (NotFoundException exc) {
             var json = TrustedPublisherJson.error("Namespace not found: " + namespace);
@@ -152,6 +149,7 @@ public class TrustedPublishingAPI {
                                 providerJson.setId(p.getProviderId());
                                 providerJson.setName(p.getProviderName());
                                 providerJson.setUrl(p.getProviderUrl());
+                                providerJson.setRegistrationKeys(p.getRegistrationKeys());
                                 return providerJson;
                             })
                             .toList());

@@ -12,7 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing.gitlab;
 
-import org.eclipse.openvsx.trustedpublishing.TrustRequest;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +58,7 @@ class GitLabTrustedPublishingProviderTest {
     private static GitLabTrustedPublishingProvider newProvider(TrustedPublishingConfig config) {
         return new GitLabTrustedPublishingProvider(config) {
             @Override
-            protected Map<String, Object> resolve(TrustRequest trustRequest) {
+            protected Map<String, Object> resolve(String projectPath) {
                 return Map.of(
                         "id", 278964,
                         "namespace", Map.of("id", 9970)
@@ -69,16 +68,12 @@ class GitLabTrustedPublishingProviderTest {
     }
 
     @Test
-    void trustRequestWithoutEnv() {
+    void trustRequestWithoutEnv() throws Exception {
         GitLabTrustedPublishingProvider gl = newProvider(config);
         Map<String, String> data = gl.extractRequest(
-                new TrustRequest("irrelevant",
-                        "irrelevant",
-                        GitLabTrustedPublishingProvider.PROVIDER_ID,
-                        "gitlab-org",
-                        "gitlab",
-                        ".gitlab-ci.yml",
-                        null));
+                Map.of("namespace", "gitlab-org",
+                        "project", "gitlab",
+                        "workflow", ".gitlab-ci.yml"));
         assertEquals("9970", data.get("namespace_id"));
         assertEquals("gitlab-org", data.get("namespace_path"));
         assertEquals("278964", data.get("project_id"));
@@ -88,16 +83,13 @@ class GitLabTrustedPublishingProviderTest {
     }
 
     @Test
-    void trustRequestWithEnv() {
+    void trustRequestWithEnv() throws Exception {
         GitLabTrustedPublishingProvider gl = newProvider(config);
         Map<String, String> data = gl.extractRequest(
-                new TrustRequest("irrelevant",
-                        "irrelevant",
-                        GitLabTrustedPublishingProvider.PROVIDER_ID,
-                        "gitlab-org",
-                        "gitlab",
-                        ".gitlab-ci.yml",
-                        "prod"));
+                Map.of("namespace", "gitlab-org",
+                        "project", "gitlab",
+                        "workflow", ".gitlab-ci.yml",
+                        "environment", "prod"));
         assertEquals("9970", data.get("namespace_id"));
         assertEquals("gitlab-org", data.get("namespace_path"));
         assertEquals("278964", data.get("project_id"));

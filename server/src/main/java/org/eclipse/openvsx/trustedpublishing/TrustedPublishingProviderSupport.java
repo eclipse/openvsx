@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ public abstract class TrustedPublishingProviderSupport {
     protected final String providerName;
     protected final String providerUrl;
     protected final String oidcIssuer;
+    protected final Map<String, String> registrationKeys;
     protected final RestClient restClient;
 
     private volatile JwtDecoder decoder;
@@ -57,12 +59,14 @@ public abstract class TrustedPublishingProviderSupport {
                                                String providerId,
                                                String providerName,
                                                String providerUrl,
-                                               String oidcIssuer) {
+                                               String oidcIssuer,
+                                               Map<String, String> registrationKeys) {
         this.config = requireNonNull(config);
         this.providerId = requireNonNull(providerId);
         this.providerName = requireNonNull(providerName);
         this.providerUrl = requireNonNull(providerUrl);
         this.oidcIssuer = requireNonNull(oidcIssuer);
+        this.registrationKeys = requireNonNull(registrationKeys);
         this.restClient = RestClient.create();
     }
 
@@ -130,6 +134,13 @@ public abstract class TrustedPublishingProviderSupport {
     }
 
     /**
+     * The provider registration keys, it requires.
+     */
+    public Map<String, String> getRegistrationKeys() {
+        return registrationKeys;
+    }
+
+    /**
      * Parses the raw OIDC ID token in form of JWT. If validation and parsing passed, and token is found valid,
      * the contained "claims of interest" are returned as {@link Map}. Otherwise, the optional is empty.
      */
@@ -163,10 +174,18 @@ public abstract class TrustedPublishingProviderSupport {
         return Optional.empty();
     }
 
+    protected static String mustRegister(Map<String, String> registration, String key) throws ErrorResultException {
+        String value = registration.get(key);
+        if (value == null || value.isBlank()) {
+            throw new ErrorResultException("Malformed registration request");
+        }
+        return value;
+    }
+
     /**
      * Helper to require a claim from the JWT, throwing {@link MissingRequiredClaimException} if not present or blank.
      */
-    protected static void mustClaim(Jwt jwt, String claim, Map<String, String> claims) {
+    protected static void mustClaim(Jwt jwt, String claim, Map<String, String> claims) throws MissingRequiredClaimException {
         String value = jwt.getClaimAsString(claim);
         if (value == null || value.isBlank()) {
             throw new MissingRequiredClaimException(claim);
@@ -215,23 +234,25 @@ public abstract class TrustedPublishingProviderSupport {
 
     /**
      * Extracts issuer specific claims from the passed in JWT token, never returns {@code null}.
+     *
+     * @throws JwtException if extraction (including validation) fails in some way.
      */
     @NonNull
-    protected abstract Map<String, String> extractClaims(Jwt jwt);
+    protected abstract Map<String, String> extractClaims(Jwt jwt) throws JwtException;
 
     /**
-     * Creates issuer specific claims from the passed in {@link TrustRequest}. This is provider specific, and
+     * Creates issuer specific claims from the passed in {@code registration}. This is provider specific, and
      * involves remote access, to resolve usernames and repository names to more stable, provider specific IDs.
      *
-     * @throws UnresolvableTrusteeException if the request cannot be resolved to a valid trustee.
+     * @throws ErrorResultException if the request processing fails in some way.
      */
     @NonNull
-    protected abstract Map<String, String> extractRequest(TrustRequest trustRequest) throws UnresolvableTrusteeException;
+    protected abstract Map<String, String> extractRequest(Map<String, String> registration) throws ErrorResultException;
 
     /**
      * Decides whether the claims extracted from a presented OIDC ID token ({@code token}, produced by
      * {@link #extractClaims(Jwt)}) satisfy a registered trust ({@code registered}, produced by
-     * {@link #extractRequest(TrustRequest)}).
+     * {@link #extractRequest(Map)}).
      */
     public abstract boolean matches(@NonNull Map<String, String> registered, @NonNull Map<String, String> token);
 }

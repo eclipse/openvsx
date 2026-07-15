@@ -16,10 +16,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Map;
+
 /**
- * A trusted publisher registration. On registration requests the {@code provider}, {@code owner},
- * {@code repo}, {@code workflow}, {@code namespace}, {@code extension} and optionally {@code environment} field
- * are filled in by the client; the remaining fields are filled in by the server on responses.
+ * A trusted publisher registration. On registration requests the {@code namespace}, {@code extension}, {@code provider}
+ * and {@code registration} field are filled in by the client; the remaining fields are filled in by the server on responses.
  */
 @JsonInclude(Include.NON_NULL)
 public class TrustedPublisherJson extends ResultJson {
@@ -32,23 +33,13 @@ public class TrustedPublisherJson extends ResultJson {
 
     private Long id;
 
-    private String provider;
-
     private String namespace;
 
     private String extension;
 
-    @Nullable
-    private String owner;
+    private String provider;
 
-    @Nullable
-    private String repo;
-
-    @Nullable
-    private String workflow;
-
-    @Nullable
-    private String environment;
+    private Map<String, String> registration;
 
     @Nullable
     private String createdTimestamp;
@@ -85,40 +76,12 @@ public class TrustedPublisherJson extends ResultJson {
         this.extension = extension;
     }
 
-    @Nullable
-    public String getOwner() {
-        return owner;
+    public Map<String, String> getRegistration() {
+        return registration;
     }
 
-    public void setOwner(@Nullable String owner) {
-        this.owner = owner;
-    }
-
-    @Nullable
-    public String getRepo() {
-        return repo;
-    }
-
-    public void setRepo(@Nullable String repo) {
-        this.repo = repo;
-    }
-
-    @Nullable
-    public String getWorkflow() {
-        return workflow;
-    }
-
-    public void setWorkflow(@Nullable String workflow) {
-        this.workflow = workflow;
-    }
-
-    @Nullable
-    public String getEnvironment() {
-        return environment;
-    }
-
-    public void setEnvironment(@Nullable String environment) {
-        this.environment = environment;
+    public void setRegistration(Map<String, String> registration) {
+        this.registration = registration;
     }
 
     @Nullable

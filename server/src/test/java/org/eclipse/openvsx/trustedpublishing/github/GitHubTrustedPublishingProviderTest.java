@@ -12,7 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing.github;
 
-import org.eclipse.openvsx.trustedpublishing.TrustRequest;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -59,7 +58,7 @@ class GitHubTrustedPublishingProviderTest {
     private static GitHubTrustedPublishingProvider newProvider(TrustedPublishingConfig config) {
         return new GitHubTrustedPublishingProvider(config) {
             @Override
-            protected Map<String, Object> resolve(TrustRequest trustRequest) {
+            protected Map<String, Object> resolve(String owner, String repo) {
                 return Map.of(
                         "id", 226955212,
                         "owner", Map.of("id", 163524810)
@@ -69,16 +68,12 @@ class GitHubTrustedPublishingProviderTest {
     }
 
     @Test
-    void trustRequestWithoutEnv() {
+    void trustRequestWithoutEnv() throws Exception {
         GitHubTrustedPublishingProvider gh = newProvider(config);
         Map<String, String> data = gh.extractRequest(
-                new TrustRequest("irrelevant",
-                        "irrelevant",
-                        GitHubTrustedPublishingProvider.PROVIDER_ID,
-                        "eclipse-openvsx",
-                        "openvsx",
-                        "release.yml",
-                        null));
+                Map.of("owner", "eclipse-openvsx",
+                        "repo", "openvsx",
+                        "workflow", "release.yml"));
         assertEquals("eclipse-openvsx", data.get("repository_owner"));
         assertEquals("163524810", data.get("repository_owner_id"));
         assertEquals("eclipse-openvsx/openvsx", data.get("repository"));
@@ -88,16 +83,13 @@ class GitHubTrustedPublishingProviderTest {
     }
 
     @Test
-    void trustRequestWithEnv() {
+    void trustRequestWithEnv() throws Exception {
         GitHubTrustedPublishingProvider gh = newProvider(config);
         Map<String, String> data = gh.extractRequest(
-                new TrustRequest("irrelevant",
-                        "irrelevant",
-                        GitHubTrustedPublishingProvider.PROVIDER_ID,
-                        "eclipse-openvsx",
-                        "openvsx",
-                        "release.yml",
-                        "prod"));
+                Map.of("owner", "eclipse-openvsx",
+                        "repo", "openvsx",
+                        "workflow", "release.yml",
+                        "environment", "prod"));
         assertEquals("eclipse-openvsx", data.get("repository_owner"));
         assertEquals("163524810", data.get("repository_owner_id"));
         assertEquals("eclipse-openvsx/openvsx", data.get("repository"));

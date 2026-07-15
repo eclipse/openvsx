@@ -16,7 +16,6 @@ import com.nimbusds.jwt.JWTParser;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
-import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
@@ -88,26 +87,23 @@ public class TrustedPublishingService {
      * Client initiated registration of trusted publishing. The user must be an owner of the namespace.
      */
     @Transactional
-    public TrustedPublisher registerTrustedPublisher(UserData user, TrustRequest request) {
+    public TrustedPublisher registerTrustedPublisher(UserData user, String namespaceName, String extensionName, String providerId, Map<String, String> registration) {
         requireNonNull(user);
-        requireNonNull(request);
+        requireNonNull(namespaceName);
+        requireNonNull(extensionName);
+        requireNonNull(providerId);
+        requireNonNull(registration);
         ensureEnabled();
-        TrustedPublishingProviderSupport provider = providers.get(request.getProviderId());
+        TrustedPublishingProviderSupport provider = providers.get(providerId);
         if (provider == null) {
-            throw new ErrorResultException("Unknown trusted publishing provider: " + request.getProviderId());
+            throw new ErrorResultException("Unknown trusted publishing provider: " + providerId);
         }
-        Namespace namespace = requireOwnedNamespace(user, request.getNamespaceName());
+        Namespace namespace = requireOwnedNamespace(user, namespaceName);
 
-        Map<String, String> claims;
-        try {
-            claims = provider.extractRequest(request);
-        } catch (UnresolvableTrusteeException e) {
-            logger.warn("Failed trusted publisher registration", e);
-            throw new ErrorResultException(e.getMessage());
-        }
+        Map<String, String> claims = provider.extractRequest(registration);
 
         boolean duplicate = repositories.findTrustedPublishers(namespace).stream()
-                .anyMatch(tp -> Objects.equals(request.getExtensionName(), tp.getExtensionName())
+                .anyMatch(tp -> Objects.equals(extensionName, tp.getExtensionName())
                         && tp.getProvider().equals(provider.getProviderId())
                         && tp.getClaims().equals(claims));
         if (duplicate) {
@@ -116,8 +112,9 @@ public class TrustedPublishingService {
 
         TrustedPublisher publisher = new TrustedPublisher();
         publisher.setNamespace(namespace);
-        publisher.setExtensionName(request.getExtensionName());
+        publisher.setExtensionName(extensionName);
         publisher.setProvider(provider.getProviderId());
+        publisher.setRegistration(registration);
         publisher.setClaims(claims);
         publisher.setCreatedBy(entityManager.merge(user));
         publisher.setCreatedTimestamp(TimeUtil.getCurrentUTC());
@@ -193,7 +190,7 @@ public class TrustedPublishingService {
         TrustedPublishingProviderSupport provider = providers.values().stream()
                 .filter(p -> Objects.equals(issuer, p.getOidcIssuer()))
                 .findFirst()
-                .orElseThrow(() -> new ErrorResultException("Unsupported token issuer.", HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ErrorResultException("Unsupported token issuer."));
 
         // using provider validate token and extract claims of interest
         Map<String, String> claims = provider.extract(token)

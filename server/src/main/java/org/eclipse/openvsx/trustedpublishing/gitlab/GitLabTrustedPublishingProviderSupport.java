@@ -12,10 +12,9 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing.gitlab;
 
-import org.eclipse.openvsx.trustedpublishing.TrustRequest;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProviderSupport;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
-import org.eclipse.openvsx.trustedpublishing.UnresolvableTrusteeException;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.jspecify.annotations.NonNull;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -45,12 +44,23 @@ public abstract class GitLabTrustedPublishingProviderSupport extends TrustedPubl
 
     private static final String API_RESOLVE_REQUEST = "/api/v4/projects/{path}";
 
+    private static final String REG_NAMESPACE = "namespace";
+    private static final String REG_PROJECT = "project";
+    private static final String REG_WORKFLOW = "workflow";
+    private static final String REG_ENVIRONMENT = "environment";
+    private static final Map<String, String> REGISTRATION_KEYS = Map.of(
+            REG_NAMESPACE, "Namespace",
+            REG_PROJECT, "Project name",
+            REG_WORKFLOW, "Top-level CI filename",
+            REG_ENVIRONMENT, "Environment name (optional)"
+    );
+
     protected GitLabTrustedPublishingProviderSupport(TrustedPublishingConfig config,
                                                      String providerId,
                                                      String providerName,
                                                      String providerUrl,
                                                      String oidcIssuer) {
-        super(config, providerId, providerName, providerUrl, oidcIssuer);
+        super(config, providerId, providerName, providerUrl, oidcIssuer, REGISTRATION_KEYS);
     }
 
     @NonNull
@@ -71,33 +81,40 @@ public abstract class GitLabTrustedPublishingProviderSupport extends TrustedPubl
 
     @NonNull
     @Override
-    protected Map<String, String> extractRequest(TrustRequest trustRequest) throws UnresolvableTrusteeException {
-        requireNonNull(trustRequest);
-        String projectPath = trustRequest.getOwner() + "/" + trustRequest.getRepo();
-        Map<String, Object> response = resolve(trustRequest);
+    protected Map<String, String> extractRequest(Map<String, String> registration) throws ErrorResultException {
+        requireNonNull(registration);
+
+        final String namespace = mustRegister(registration, REG_NAMESPACE);
+        final String project = mustRegister(registration, REG_PROJECT);
+        final String workflow = mustRegister(registration, REG_WORKFLOW);
+        final String environment = registration.get(REG_ENVIRONMENT);
+        final String projectPath = namespace + "/" + project;
+
+        Map<String, Object> response = resolve(projectPath);
         if (response == null || !(response.get("id") instanceof Number projectId)
-                || !(response.get("namespace") instanceof Map<?, ?> namespace)
-                || !(namespace.get("id") instanceof Number namespaceId)) {
-            throw new UnresolvableTrusteeException("Unexpected GitLab response for project " + projectPath);
+                || !(response.get("namespace") instanceof Map<?, ?> namespaceMap)
+                || !(namespaceMap.get("id") instanceof Number namespaceId)) {
+            throw new ErrorResultException("Unexpected GitLab response for project " + projectPath);
         }
 
         HashMap<String, String> result = new HashMap<>();
         result.put(CLAIM_NAMESPACE_ID, String.valueOf(namespaceId.longValue()));
-        result.put(CLAIM_NAMESPACE_PATH, trustRequest.getOwner());
+        result.put(CLAIM_NAMESPACE_PATH, namespace);
         result.put(CLAIM_PROJECT_ID, String.valueOf(projectId.longValue()));
         result.put(CLAIM_PROJECT_PATH, projectPath);
         // registered without the "@<ref>" part: publishing is trusted regardless of branch or tag
         result.put(CLAIM_CI_CONFIG_REF_URI, URI.create(providerUrl).getHost() + "/" + projectPath
-                + "//" + trustRequest.getWorkflow());
-        trustRequest.getEnvironment().ifPresent(env -> result.put(CLAIM_ENVIRONMENT, env));
+                + "//" + workflow);
+        if (environment != null) {
+            result.put(CLAIM_ENVIRONMENT, environment);
+        }
         return result;
     }
 
     /**
      * Pulled out for testability; is mocked in UT to prevent real remote access.
      */
-    protected Map<String, Object> resolve(TrustRequest trustRequest) {
-        String projectPath = trustRequest.getOwner() + "/" + trustRequest.getRepo();
+    protected Map<String, Object> resolve(String projectPath) throws ErrorResultException {
         try {
             // the {path} template variable is URL-encoded by RestClient, turning "/" into "%2F" as GitLab expects
             return restClient.get()
@@ -107,7 +124,7 @@ public abstract class GitLabTrustedPublishingProviderSupport extends TrustedPubl
                     .body(new ParameterizedTypeReference<>() {
                     });
         } catch (RestClientException e) {
-            throw new UnresolvableTrusteeException("Could not resolve GitLab project " + projectPath, e);
+            throw new ErrorResultException("Could not resolve GitLab project " + projectPath, e);
         }
     }
 
