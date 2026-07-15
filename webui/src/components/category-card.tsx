@@ -16,39 +16,23 @@ import { Box, ButtonBase, SvgIconProps, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { cardHoverLift, cardSurface, focusOutline } from './page-primitives';
 
-const Root = styled(ButtonBase)(({ theme }) => {
-    const hoverLift = cardHoverLift(theme);
-    return {
-        ...cardSurface(theme),
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        textAlign: 'left',
-        overflow: 'hidden',
-        gap: '0.625rem',
-        padding: '0.625rem 0.75rem',
-        color: theme.palette.text.primary,
-        width: '100%',
-        transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-        ...hoverLift,
-        ...focusOutline(theme),
-        '& .MuiTouchRipple-root': { color: theme.palette.secondary.main },
-        '& .MuiTypography-root': {
-            display: '-webkit-box',
-            WebkitBoxOrient: 'vertical',
-            WebkitLineClamp: 1,
-            overflow: 'hidden'
-        },
-        '@media (hover: hover)': {
-            ...hoverLift['@media (hover: hover)'],
-            '&:hover .MuiTypography-root': {
-                WebkitLineClamp: 'unset',
-                overflow: 'visible'
-            }
-        }
-    };
-});
+const Root = styled(ButtonBase)(({ theme }) => ({
+    ...cardSurface(theme),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    textAlign: 'left',
+    overflow: 'hidden',
+    flexGrow: 1,
+    maxWidth: '16rem',
+    gap: '0.625rem',
+    padding: '0.625rem 0.875rem 0.625rem 0.75rem',
+    color: theme.palette.text.primary,
+    transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
+    ...cardHoverLift(theme),
+    ...focusOutline(theme),
+    '& .MuiTouchRipple-root': { color: theme.palette.secondary.main }
+}));
 
 export interface CategoryCardProps {
     label: string;
@@ -72,6 +56,8 @@ export const CategoryCard: FunctionComponent<CategoryCardProps> = ({ label, icon
             }}>
             <Icon sx={{ fontSize: '1.0625rem' }} />
         </Box>
-        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, pt: '0.28125rem' }}>{label}</Typography>
+        <Typography noWrap sx={{ fontSize: '0.875rem', fontWeight: 600, minWidth: 0 }}>
+            {label}
+        </Typography>
     </Root>
 );

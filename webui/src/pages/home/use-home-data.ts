@@ -34,6 +34,7 @@ const HOME_CATEGORIES = new Set<ExtensionCategory>([
     'Formatters',
     'Keymaps',
     'SCM Providers',
+    'Extension Packs',
     'Language Packs',
     'Data Science',
     'Machine Learning',
