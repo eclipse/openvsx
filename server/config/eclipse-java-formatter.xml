@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<profiles version="13">
+    <profile kind="CodeFormatterProfile" name="OpenVSX" version="13">
+        <setting id="org.eclipse.jdt.core.formatter.tabulation.char" value="space"/>
+        <setting id="org.eclipse.jdt.core.formatter.tabulation.size" value="4"/>
+        <setting id="org.eclipse.jdt.core.formatter.indentation.size" value="4"/>
+        <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
+        <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="120"/>
+        <setting id="org.eclipse.jdt.core.formatter.use_tabs_only_for_leading_indentations" value="false"/>
+        <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="true"/>
+        <setting id="org.eclipse.jdt.core.formatter.insert_new_line_at_end_of_file_if_missing" value="insert"/>
+
+        <!-- default Eclipse profile puts a space before the colon in switch labels, e.g.
+             "case FOO :"; this removes it to get "case FOO:" instead -->
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_before_colon_in_case" value="do not insert"/>
+
+        <!-- value is in indentation units (indentation.size=4), not spaces directly;
+             default is 2 units (8 spaces) -->
+        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation" value="2"/>
+        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation_for_array_initializer" value="1"/>
+
+        <!-- spaces inside array initializer braces, e.g. new int[] { 1, 2, 3 } -->
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_after_opening_brace_in_array_initializer" value="insert"/>
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_before_closing_brace_in_array_initializer" value="insert"/>
+
+        <!-- space between the array type and the initializer brace, e.g. new String[] { ... }
+             instead of new String[]{ ... }; does not affect nested initializers ({{1,2},{3,4}})
+             or annotation array values (@Foo({1,2})), which stay tight -->
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_brace_in_array_initializer" value="insert"/>
+
+        <!-- 48 = WRAP_ONE_PER_LINE, not forced, default indent: wrap only once the line
+             exceeds lineSplit, then put every parameter/argument on its own line at the
+             same indentation level. -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_method_declaration" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_constructor_declaration" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_constructor_invocation" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_allocation_expression" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_enum_constant" value="48"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_array_initializer" value="48"/>
+
+        <!-- annotation arguments default to WRAP_NO_SPLIT (never wrap), unlike the other argument
+             lists above, which is why long annotations were ignoring the line length.
+             52 = 48 (WRAP_ONE_PER_LINE, not forced) + 4 (M_INDENT_BY_ONE): there is no dedicated
+             continuation_indentation_for_annotation setting, so the only way to get a plain
+             one-level (4 space) indent here instead of the global continuation_indentation
+             (2 units = 8 spaces) is this alignment modifier bit. -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_annotation" value="52"/>
+
+        <!-- when arguments wrap onto multiple lines, put the opening/closing parens on their
+             own lines too (covers method invocations, "new X(...)", this()/super() calls);
+             stays on one line ("common_lines" behavior) when everything fits -->
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_invocation" value="separate_lines_if_wrapped"/>
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_annotation" value="separate_lines_if_wrapped"/>
+        <!-- covers both method and constructor declarations (JDT uses one AST node for both);
+             note the "delcaration" typo in the option id is intentional/required by JDT itself -->
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_delcaration" value="separate_lines_if_wrapped"/>
+
+        <!-- 49 = M_FORCE | M_ONE_PER_LINE_SPLIT: when a parameter/local variable has more than
+             one annotation, always put each on its own line. Local variables already default to
+             this (49); parameters default to "never split" (0), so only that one needs overriding. -->
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_annotations_on_parameter" value="49"/>
+        <setting id="org.eclipse.jdt.core.formatter.alignment_for_annotations_on_local_variable" value="49"/>
+    </profile>
+</profiles>
