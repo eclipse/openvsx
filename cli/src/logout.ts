@@ -15,7 +15,7 @@ export default async function logout(namespaceName: string) {
     }
 
 	const store = await openDefaultStore();
-	if (!store.get(namespaceName)) {
+	if (!await store.get(namespaceName)) {
 		throw new Error(`Unknown namespace '${namespaceName}'.`);
 	}
 

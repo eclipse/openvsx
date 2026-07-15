@@ -20,6 +20,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Redesign the web UI: new navbar with integrated search field, new theme, extension cards, category pills and page layout
 - Improve accessibility: visible focus outlines on interactive controls
 - Morph the hero search into the navbar search field using the View Transitions API
+- Token display in generate-token dialog now uses a masked input with show/hide toggle and copy button ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
 
@@ -32,6 +33,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump brace-expansion from `1.1.11` to `1.1.15` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
 - Bump brace-expansion from `2.0.2` to `2.1.1` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
 - Bump brace-expansion from `5.0.3` to `5.0.7` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
+- Bump tar from `7.5.16` to `7.5.19` ([#1959](https://github.com/eclipse-openvsx/openvsx/pull/1959))
 
 ## [v1.0.2] (23/06/2026)
 

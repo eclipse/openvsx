@@ -12,14 +12,23 @@
  *****************************************************************************/
 package org.eclipse.openvsx;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import java.util.List;
 
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -35,12 +44,15 @@ import jakarta.persistence.EntityManager;
 
 @ExtendWith(SpringExtension.class)
 @MockitoBean(types = {
-    EntityManager.class, StorageUtilService.class, CacheService.class, ExtensionValidator.class, OAuth2AttributesConfig.class
+    EntityManager.class, StorageUtilService.class, CacheService.class, OAuth2AttributesConfig.class
 })
 class UserServiceTest {
 
     @MockitoBean
     RepositoryService repositories;
+
+    @MockitoBean
+    ExtensionValidator validator;
 
     @Autowired
     UserService users;
@@ -64,6 +76,75 @@ class UserServiceTest {
                 "Should succeed as there were no changes to the entity");
         assertTrue(exception.getMessage().startsWith("Could not login due to an existing"),
                 "Exception should pertain to mismatch of GitHub ID");
+    }
+
+    @Test
+    void shouldRejectDisplayNameMatchingAnotherNamespaceName() {
+        var user = mockUser("auth");
+        var namespace = new Namespace();
+        namespace.setName("my-ns");
+        namespace.setDisplayName("Old Display");
+
+        var existing = new Namespace();
+        existing.setName("github");
+        existing.setDisplayName("GitHub");
+
+        Mockito.when(repositories.findNamespace("my-ns")).thenReturn(namespace);
+        Mockito.when(repositories.findConflictingNamespaces("github", namespace)).thenReturn(List.of(existing));
+        Mockito.when(repositories.isNamespaceOwner(user, namespace)).thenReturn(true);
+        Mockito.when(validator.validateNamespaceDetails(any())).thenReturn(List.of());
+
+        var details = new NamespaceDetailsJson();
+        details.setName("my-ns");
+        details.setDisplayName("github");
+
+        assertThatThrownBy(() -> users.updateNamespaceDetails(details, user))
+                .isInstanceOf(ErrorResultException.class)
+                .hasMessageContaining("collides with the name of existing namespace 'github (GitHub)'");
+
+        assertEquals("Old Display", namespace.getDisplayName(), "Display name should remain unchanged on rejection");
+    }
+
+    @Test
+    void shouldAllowDisplayNameWhenNoCollisionExists() {
+        var user = mockUser("auth");
+        var namespace = new Namespace();
+        namespace.setName("my-ns");
+        namespace.setDisplayName("Old Display");
+
+        Mockito.when(repositories.findNamespace("my-ns")).thenReturn(namespace);
+        Mockito.when(repositories.findConflictingNamespaces("Brand New", namespace)).thenReturn(List.of());
+        Mockito.when(repositories.isNamespaceOwner(user, namespace)).thenReturn(true);
+        Mockito.when(validator.validateNamespaceDetails(any())).thenReturn(List.of());
+
+        var details = new NamespaceDetailsJson();
+        details.setName("my-ns");
+        details.setDisplayName("Brand New");
+
+        users.updateNamespaceDetails(details, user);
+
+        verify(repositories).findConflictingNamespaces("Brand New", namespace);
+        assertEquals("Brand New", namespace.getDisplayName());
+    }
+
+    @Test
+    void shouldSkipCollisionCheckWhenDisplayNameUnchanged() {
+        var user = mockUser("auth");
+        var namespace = new Namespace();
+        namespace.setName("my-ns");
+        namespace.setDisplayName("Same");
+
+        Mockito.when(repositories.findNamespace("my-ns")).thenReturn(namespace);
+        Mockito.when(repositories.isNamespaceOwner(user, namespace)).thenReturn(true);
+        Mockito.when(validator.validateNamespaceDetails(any())).thenReturn(List.of());
+
+        var details = new NamespaceDetailsJson();
+        details.setName("my-ns");
+        details.setDisplayName("Same");
+
+        users.updateNamespaceDetails(details, user);
+
+        verify(repositories, never()).findConflictingNamespaces(anyString(), any(Namespace.class));
     }
 
     private UserData mockUser(String authId) {

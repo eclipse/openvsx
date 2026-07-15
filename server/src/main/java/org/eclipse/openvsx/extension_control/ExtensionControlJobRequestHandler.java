@@ -75,7 +75,11 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
             var extensionId = NamingUtil.fromExtensionId(item.asString());
             if (extensionId != null && repositories.hasExtension(extensionId.namespace(), extensionId.extension())) {
                 logger.info("delete malicious extension");
-                admin.deleteExtensionAndDependencies(extensionControlUser, extensionId.namespace(), extensionId.extension());
+                if (service.deleteTransitively) {
+                    admin.deleteExtensionAndDependencies(extensionControlUser, extensionId.namespace(), extensionId.extension());
+                } else {
+                    admin.deleteExtension(extensionControlUser, extensionId.namespace(), extensionId.extension());
+                }
             }
         }
     }

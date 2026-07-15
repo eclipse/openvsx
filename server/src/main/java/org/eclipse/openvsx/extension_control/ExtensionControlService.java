@@ -56,6 +56,9 @@ public class ExtensionControlService {
     @Value("${ovsx.extension-control.enabled:true}")
     boolean enabled;
 
+    @Value("${ovsx.extension-control.delete-transitively:false}")
+    boolean deleteTransitively;
+
     @Value("${ovsx.extension-control.update-on-start:false}")
     boolean updateOnStart;
 
@@ -79,20 +82,23 @@ public class ExtensionControlService {
     @EventListener
     public void applicationStarted(ApplicationStartedEvent event) {
         if (!enabled || mirrorEnabled) {
-            return;
-        }
-        if (updateOnStart) {
-            scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
-        }
+            scheduler.deleteRecurringJob("UpdateExtensionControl");
+        } else {
+            if (updateOnStart) {
+                scheduler.schedule(TimeUtil.getCurrentUTC().plusSeconds(delay), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+            }
 
-        scheduler.scheduleRecurrently("UpdateExtensionControl", Cron.daily(1, 8), ZoneId.of("UTC"), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+            var schedule = Cron.daily(1, 8);
+            logger.info("Scheduling update extension control job with schedule '{}'", schedule);
+            scheduler.scheduleRecurrently("UpdateExtensionControl", schedule, ZoneId.of("UTC"), new HandlerJobRequest<>(ExtensionControlJobRequestHandler.class));
+        }
     }
 
     @Transactional
     public UserData createExtensionControlUser() {
         var userName = "ExtensionControlUser";
         var user = repositories.findUserByLoginName("system", userName);
-        if(user == null) {
+        if (user == null) {
             user = new UserData();
             user.setProvider("system");
             user.setLoginName(userName);
@@ -132,13 +138,13 @@ public class ExtensionControlService {
 
     @Cacheable(CACHE_MALICIOUS_EXTENSIONS)
     public List<String> getMaliciousExtensionIds() throws IOException {
-        if(!enabled) {
+        if (!enabled) {
             return Collections.emptyList();
         }
 
         var json = getExtensionControlJson();
         var malicious = json.get("malicious");
-        if(!malicious.isArray()) {
+        if (!malicious.isArray()) {
             logger.error("field 'malicious' is not an array");
             return Collections.emptyList();
         }

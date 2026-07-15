@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
@@ -16,15 +17,14 @@ interface StoreEntry {
     value: string
 }
 
-export interface Store extends Iterable<StoreEntry> {
-	readonly size: number;
-	get(name: string): string | undefined;
+export interface Store {
+	get(name: string): Promise<string | undefined>;
 	add(name: string, value: string): Promise<void>;
 	delete(name: string): Promise<void>;
 }
 
 export class FileStore implements Store {
-	private static readonly DefaultPath = path.join(homedir(), '.ovsx');
+	static readonly DefaultPath = path.join(homedir(), '.ovsx');
 
 	static async open(path: string = FileStore.DefaultPath): Promise<FileStore> {
 		try {
@@ -59,7 +59,7 @@ export class FileStore implements Store {
 		}
 	}
 
-	get(name: string): string | undefined {
+	async get(name: string): Promise<string | undefined> {
         return this.entries.find(p => p.name === name)?.value;
 	}
 
@@ -79,73 +79,116 @@ export class FileStore implements Store {
 	}
 }
 
-export class KeytarStore implements Store {
-	static async open(serviceName = 'ovsx'): Promise<KeytarStore> {
-		const keytar = await import('keytar');
-		const creds = await keytar.findCredentials(serviceName);
-
-		return new KeytarStore(
-			keytar,
-			serviceName,
-			creds.map(({ account, password }) => ({ name: account, value: password }))
-		);
+async function verifyBackend(keychain: typeof import('cross-keychain'), serviceName: string, description: string): Promise<void> {
+	// Probe the active backend so we fail fast when it's present but unusable (e.g.
+	// `security`/`secret-tool` exists but the keychain is locked or the daemon is down).
+	try {
+		await keychain.getPassword(serviceName, serviceName);
+	} catch (err) {
+		throw new Error(`${description} is unavailable: ${err.message}`);
 	}
+}
 
-	get size(): number {
-		return this.entries.length;
-	}
-
-	private constructor(
-		private readonly keytar: typeof import('keytar'),
-		private readonly serviceName: string,
-		private entries: StoreEntry[]
+/** Shared behavior for stores backed by the cross-keychain library. */
+abstract class CrossKeychainStore implements Store {
+	protected constructor(
+		protected readonly keychain: typeof import('cross-keychain'),
+		protected readonly serviceName: string
 	) { }
 
-	get(name: string): string | undefined {
-        return this.entries.find(p => p.name === name)?.value;
+	async get(name: string): Promise<string | undefined> {
+		return await this.keychain.getPassword(this.serviceName, name) ?? undefined;
 	}
 
 	async add(name: string, value: string): Promise<void> {
-        const newEntry: StoreEntry = { name, value };
-		this.entries = [...this.entries.filter(p => p.name !== name), newEntry];
-		await this.keytar.setPassword(this.serviceName, name, value);
+		await this.keychain.setPassword(this.serviceName, name, value);
 	}
 
 	async delete(name: string): Promise<void> {
-		this.entries = this.entries.filter(p => p.name !== name);
-		await this.keytar.deletePassword(this.serviceName, name);
+		await this.keychain.deletePassword(this.serviceName, name);
 	}
+}
 
-	[Symbol.iterator](): Iterator<StoreEntry, any, undefined> {
-		return this.entries[Symbol.iterator]();
+export class KeychainStore extends CrossKeychainStore {
+	static async open(serviceName = 'ovsx'): Promise<KeychainStore> {
+		const keychain = await import('cross-keychain');
+
+		// cross-keychain auto-detects the highest-priority backend for this platform.
+		const { id, name } = await keychain.diagnose();
+		if (id === 'file' || id === 'null') {
+			throw new Error('No OS credential store detected on this platform.');
+		}
+
+		await verifyBackend(keychain, serviceName, `System credential store '${name}'`);
+		return new KeychainStore(keychain, serviceName);
+	}
+}
+
+export class EncryptedFileStore extends CrossKeychainStore {
+    static async open(serviceName = 'ovsx'): Promise<EncryptedFileStore> {
+		const keychain = await import('cross-keychain');
+
+		await keychain.useBackend('file');
+		await verifyBackend(keychain, serviceName, 'Encrypted file store');
+		return new EncryptedFileStore(keychain, serviceName);
 	}
 }
 
 export async function openDefaultStore(): Promise<Store> {
-	if (/^file$/i.test(process.env['OVSX_STORE'] ?? '')) {
+	// OVSX_STORE=file forces the encrypted file store and skips the OS credential store.
+	const forceFile = /^file$/i.test(process.env['OVSX_STORE'] ?? '');
+
+	let store: KeychainStore | EncryptedFileStore | undefined;
+
+	// Prefer the operating system's credential store.
+	if (!forceFile) {
+		try {
+			store = await KeychainStore.open();
+		} catch (err) {
+			console.warn(`WARN: ${err.message}`);
+		}
+	}
+
+	// Otherwise fall back to cross-keychain's encrypted file store.
+	if (!store) {
+		try {
+			store = await EncryptedFileStore.open();
+			if (!forceFile) {
+				console.warn(`WARN: Storing secrets in cross-keychain's encrypted file store as system keychain is not available..`);
+			}
+		} catch (err) {
+            console.warn(`WARN: ${err.message}`);
+		}
+	}
+
+	// Last resort: if no cross-keychain store works, keep publishing usable by storing secrets clear-text.
+	if (!store) {
+		console.warn(`WARN: Falling back to storing secrets clear-text at '${FileStore.DefaultPath}' (not recommended).`);
 		return await FileStore.open();
 	}
 
-	let keytarStore: Store;
-	try {
-		keytarStore = await KeytarStore.open();
-	} catch (err) {
-		const store = await FileStore.open();
-		console.warn(`Failed to open credential store. Falling back to storing secrets clear-text in: ${store.path}.`);
-		return store;
-	}
+    try {
+        await migrateLegacyStore(store);
+    } catch (err) {
+        console.warn(`WARN: Failed to read legacy file store at '${FileStore.DefaultPath}': ${err.message}`);
+        console.warn(`WARN: Skipping migration of Legacy file store.`);
+    }
 
+	return store;
+}
+
+// Migrate secrets from the legacy clear-text file store into the given store, then delete it.
+async function migrateLegacyStore(target: Store): Promise<void> {
 	const fileStore = await FileStore.open();
-
-	// migrate from file store
-	if (fileStore.size) {
-		for (const { name, value } of fileStore) {
-			await keytarStore.add(name, value);
-		}
-
-		await fileStore.deleteStore();
-		console.info(`Migrated ${fileStore.size} publishers to system credential manager. Deleted local store '${fileStore.path}'.`);
+	if (!fileStore.size) {
+		return;
 	}
 
-	return keytarStore;
+	const migrated = fileStore.size;
+	for (const { name, value } of fileStore) {
+		await target.add(name, value);
+	}
+
+	await fileStore.deleteStore();
+	console.info(`INFO: Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
 }

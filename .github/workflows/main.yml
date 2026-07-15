@@ -70,7 +70,7 @@ jobs:
 
     - name: Log in to the Container registry
       if: steps.changed_webui_files.outputs.any_changed == 'true'
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -79,7 +79,7 @@ jobs:
     - name: Extract metadata (tags, labels) for Docker
       if: steps.changed_webui_files.outputs.any_changed == 'true'
       id: meta
-      uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
       with:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.WEBUI_IMAGE }}
@@ -91,7 +91,7 @@ jobs:
 
     - name: Build and push Web UI Image
       if: steps.changed_webui_files.outputs.any_changed == 'true'
-      uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
       with:
         context: webui
         push: ${{ github.repository_owner == 'eclipse-openvsx' &&
@@ -135,7 +135,7 @@ jobs:
 
     - name: Log in to the Container registry
       if: steps.changed_server_files.outputs.any_changed == 'true'
-      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -144,7 +144,7 @@ jobs:
     - name: Extract metadata (tags, labels) for Docker
       if: steps.changed_server_files.outputs.any_changed == 'true'
       id: meta
-      uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+      uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
       with:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.SERVER_IMAGE }}
@@ -156,7 +156,7 @@ jobs:
 
     - name: Build and push Server Image
       if: steps.changed_server_files.outputs.any_changed == 'true'
-      uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+      uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
       with:
         context: server
         push: ${{ github.repository_owner == 'eclipse-openvsx' &&
@@ -192,4 +192,4 @@ jobs:
           corepack prepare yarn@stable --activate
           yarn install --immutable
 
-      - uses: j178/prek-action@bdca6f102f98e2b4c7029491a53dfd366469e33d # v2.0.4
+      - uses: j178/prek-action@e98a699c41eb69ab013a45817a0406469a748f8d # v2.0.5

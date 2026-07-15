@@ -47,7 +47,6 @@ import org.eclipse.openvsx.entities.TierType;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -184,6 +183,10 @@ public class RepositoryService {
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
+    }
+
+    public List<Namespace> findConflictingNamespaces(String displayName, Namespace excludedNamespace) {
+        return namespaceRepo.findConflictingNamespaces(displayName, excludedNamespace);
     }
 
     public String findNamespaceName(String name) {

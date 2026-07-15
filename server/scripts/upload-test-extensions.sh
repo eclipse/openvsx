@@ -5,7 +5,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SERVER_ROOT=$( dirname "${SCRIPT_DIR}" )
 PROJECT_ROOT=$( dirname "${SERVER_ROOT}" )
 
-TEST_EXTENSIONS_DIRECTORY="${SERVER_ROOT}/build/test-extensions"
+TEST_EXTENSIONS_DIRECTORY="${SERVER_ROOT}/build-local/test-extensions"
 
 if [ ! -d "${TEST_EXTENSIONS_DIRECTORY}" ]; then
   echo "'${TEST_EXTENSIONS_DIRECTORY}' does not exist."
@@ -23,5 +23,5 @@ echo "Creating namespaces..."
 for pub in $PUBLISHERS; do "${PROJECT_ROOT}/cli/bin/ovsx" create-namespace "${pub}"; done
 
 echo "Publishing extensions..."
-find "${SERVER_ROOT}/build/test-extensions-builtin" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
-find "${SERVER_ROOT}/build/test-extensions" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
+find "${SERVER_ROOT}/build-local/test-extensions-builtin" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
+find "${SERVER_ROOT}/build-local/test-extensions" -name '*.vsix' -exec "${PROJECT_ROOT}/cli/bin/ovsx" publish '{}' \;
