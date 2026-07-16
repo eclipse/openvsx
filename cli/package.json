@@ -62,6 +62,9 @@
         "rimraf": "^6.0.1",
         "typescript": "^5.6.3"
     },
+    "resolutions": {
+        "js-yaml": "^5.2.1"
+    },
     "scripts": {
         "clean": "rimraf lib",
         "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
