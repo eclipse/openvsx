@@ -11,7 +11,6 @@
 import { FunctionComponent, useContext, useRef, useState } from 'react';
 import { Avatar, Box, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
 import { Link as RouteLink } from 'react-router-dom';
-import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -110,19 +109,12 @@ export const UserAvatar: FunctionComponent = () => {
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap'
                             }}>
-                            {user.loginName}
+                            <Link href={user.homepage} target='_blank' onClick={() => setOpen(false)}>
+                                {user.loginName}
+                            </Link>
                         </Typography>
                     </Box>
                 </Box>
-                <MenuItem
-                    component={Link}
-                    href={user.homepage}
-                    target='_blank'
-                    onClick={() => setOpen(false)}
-                    sx={{ ...menuItemSx, textDecoration: 'none' }}>
-                    <PersonIcon sx={iconSx} />
-                    Your profile
-                </MenuItem>
                 <MenuItem
                     component={RouteLink}
                     to={UserSettingsRoutes.PROFILE}
