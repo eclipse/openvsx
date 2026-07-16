@@ -221,8 +221,11 @@ publishing {
 }
 
 spotless {
+    // keep spotlessCheck/spotlessApply opt-in only - do not gate check/build/test on formatting
+    enforceCheck = false
+
     // optional: limit format enforcement to just the files changed by this feature branch
-//    ratchetFrom 'origin/main'
+    // ratchetFrom 'origin/main'
 
     java {
         // matches jbang-fmt.args: only server non-generated sources, excludes jooq-gen
