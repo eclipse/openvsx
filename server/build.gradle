@@ -234,6 +234,11 @@ spotless {
         // shared with scripts/ImportSort.java (the jbang path) so both stay in sync
         importOrderFile('config/import-order.importorder')
 
+        // shared with scripts/AddBracesFix.java (the jbang path) via buildSrc, see
+        // buildSrc/src/main/java/AddBracesFixStep.java - runs before the Eclipse
+        // formatter step below so the braces it adds get properly indented/positioned
+        addStep(AddBracesFixStep.create())
+
         eclipse('4.40').configFile('config/eclipse-java-formatter.xml')
 
         // shared with scripts/ClosingBraceFix.java (the jbang path) via buildSrc,
