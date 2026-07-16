@@ -9,7 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
-import com.google.common.base.Joiner;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.SerializationUtils;
@@ -167,12 +166,25 @@ public class UserService {
         if (!issues.isEmpty()) {
             var message = issues.size() == 1
                     ? issues.getFirst().toString()
-                    : "Multiple issues were found in the extension metadata:\n" + Joiner.on("\n").join(issues);
+                    : "Multiple issues were found in the extension metadata:\n"
+                      + issues.stream().map(Object::toString).collect(Collectors.joining("\n"));
 
             throw new ErrorResultException(message);
         }
 
         if (!Objects.equals(details.getDisplayName(), namespace.getDisplayName())) {
+            if (StringUtils.isNotEmpty(details.getDisplayName())) {
+                var conflictingNamespaces = repositories.findConflictingNamespaces(details.getDisplayName(), namespace);
+                if (!conflictingNamespaces.isEmpty()) {
+                    // pick the first conflicting namespace
+                    var conflictingNamespace = conflictingNamespaces.getFirst();
+                    throw new ErrorResultException(
+                            "Display name '" + details.getDisplayName()
+                                    + "' collides with the name of existing namespace '" + conflictingNamespace.getName()
+                                    + " (" + conflictingNamespace.getDisplayName() + ")"
+                                    + "'. Please choose a different display name.");
+                }
+            }
             namespace.setDisplayName(details.getDisplayName());
         }
         if (!Objects.equals(details.getDescription(), namespace.getDescription())) {

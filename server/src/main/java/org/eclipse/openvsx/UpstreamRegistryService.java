@@ -78,7 +78,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -127,7 +127,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -161,7 +161,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -188,7 +188,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -215,7 +215,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -270,7 +270,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch(RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("HEAD " + url, exc);
+                logger.error("HEAD {}", url, exc);
             }
 
             throw new NotFoundException();
@@ -289,7 +289,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
 
             throw new NotFoundException();
@@ -324,7 +324,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -360,7 +360,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(queryParams);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -395,7 +395,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(queryParams);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
             throw new NotFoundException();
         }
@@ -411,7 +411,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         } catch (RestClientException exc) {
             if(!isNotFound(exc)) {
                 var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
-                logger.error("GET " + url, exc);
+                logger.error("GET {}", url, exc);
             }
 
             throw new NotFoundException();
@@ -420,7 +420,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
 
     /**
      * Returns the version of the upstream registry.
-     *
+     * <p>
      * This functionality is currently not used, but could be called when
      * the need to show or check the version of the upstream registry arises.
      *
@@ -435,7 +435,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
                     RegistryVersionJson.class);
             return response.getBody();
         } catch (RestClientException exc) {
-            logger.error("GET " + urlTemplate, exc);
+            logger.error("GET {}", urlTemplate, exc);
             throw new NotFoundException();
         }
     }

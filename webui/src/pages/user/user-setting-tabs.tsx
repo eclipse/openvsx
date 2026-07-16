@@ -8,11 +8,19 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ChangeEvent, ReactElement } from 'react';
+import { ReactElement } from 'react';
 import { Tabs, Tab, useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings-routes';
+
+const TABS = [
+    { value: 'profile', label: 'Profile' },
+    { value: 'tokens', label: 'Access Tokens' },
+    { value: 'namespaces', label: 'Namespaces' },
+    { value: 'extensions', label: 'Extensions' },
+    { value: 'customers', label: 'Rate Limiting' }
+];
 
 export const UserSettingTabs = (): ReactElement => {
     const theme = useTheme();
@@ -22,10 +30,6 @@ export const UserSettingTabs = (): ReactElement => {
 
     const navigate = useNavigate();
 
-    const handleChange = (event: ChangeEvent, newTab: string) => {
-        navigate(generateRoute(newTab));
-    };
-
     const generateRoute = (tab: string) => {
         return createRoute([UserSettingsRoutes.ROOT, tab]);
     };
@@ -33,15 +37,15 @@ export const UserSettingTabs = (): ReactElement => {
     return (
         <Tabs
             value={tab ?? 'extensions'}
-            onChange={handleChange}
             orientation={isATablet ? 'horizontal' : 'vertical'}
             centered={isAMobile}
             indicatorColor='secondary'>
-            <Tab value='profile' label='Profile' />
-            <Tab value='tokens' label='Access Tokens' />
-            <Tab value='namespaces' label='Namespaces' />
-            <Tab value='extensions' label='Extensions' />
-            <Tab value='customers' label='Rate Limiting' />
+            {TABS.map(({ value, label }) => (
+                // MUI's Tabs only fires `onChange` when the clicked tab differs from the
+                // currently selected one, so a per-Tab `onClick` is used instead to also
+                // navigate when the already-active tab is clicked.
+                <Tab key={value} value={value} label={label} onClick={() => navigate(generateRoute(value))} />
+            ))}
         </Tabs>
     );
 };

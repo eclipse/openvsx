@@ -1,6 +1,7 @@
 /bin/
 /build/
 /buildSrc/build
+/build-local/
 
 .gradle/
 .idea/

@@ -14,7 +14,7 @@
 import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../context';
-import { Extension, isError } from '../../extension-registry-types';
+import { isError } from '../../extension-registry-types';
 import { controllerFromSignal } from '../../query-client';
 
 interface ExtensionTarget {
@@ -63,24 +63,5 @@ export const useDeleteExtension = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req)
-    });
-};
-
-/**
- * Loads an extension icon as an object URL. Caching is disabled so a fresh URL
- * is created per mount and the consumer can revoke the previous one without
- * risking reuse of a revoked URL from the cache.
- */
-export const useExtensionIcon = (extension: Extension) => {
-    const { service } = useContext(MainContext);
-    return useQuery({
-        queryKey: ['extension-icon', extension.namespace, extension.name, extension.version, extension.targetPlatform],
-        queryFn: async ({ signal }) => {
-            const icon = await service.getExtensionIcon(controllerFromSignal(signal), extension);
-            // useQuery forbids `undefined`; normalise the "no icon" case to null.
-            return icon ?? null;
-        },
-        gcTime: 0,
-        staleTime: 0
     });
 };

@@ -1,6 +1,6 @@
 {
     "name": "ovsx",
-    "version": "1.0.2",
+    "version": "1.1.0-dev.0",
     "description": "Command line interface for Eclipse Open VSX",
     "keywords": [
         "cli",
@@ -34,8 +34,10 @@
         "node": ">= 20"
     },
     "dependencies": {
+        "@inquirer/prompts": "^7.10.1",
         "@vscode/vsce": "^3.7.1",
         "commander": "^6.2.1",
+        "cross-keychain": "^1.1.0",
         "follow-redirects": "^1.16.0",
         "is-ci": "^2.0.0",
         "leven": "^3.1.0",

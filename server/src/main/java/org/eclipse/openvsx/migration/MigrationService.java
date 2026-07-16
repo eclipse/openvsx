@@ -33,7 +33,7 @@ import java.util.UUID;
 @Component
 public class MigrationService {
 
-    private static final Map<String, Class<? extends JobRequestHandler<MigrationJobRequest>>> JOB_HANDLERS = Map.of(
+    private static final Map<String, Class<? extends JobRequestHandler<MigrationJobRequest<?>>>> JOB_HANDLERS = Map.of(
             "SetPreReleaseMigration", SetPreReleaseJobRequestHandler.class,
             "RenameDownloadsMigration", RenameDownloadsJobRequestHandler.class,
             "ExtractVsixManifestMigration", ExtractVsixManifestsJobRequestHandler.class,

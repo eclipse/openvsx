@@ -20,12 +20,14 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ReviewJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -41,6 +43,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static org.eclipse.openvsx.cache.CacheService.CACHE_AVERAGE_REVIEW_RATING;
 import static org.eclipse.openvsx.cache.CacheService.CACHE_EXTENSION_JSON;
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
 import static org.eclipse.openvsx.entities.FileResource.STORAGE_LOCAL;
@@ -76,8 +79,14 @@ class CacheServiceTest {
     @BeforeEach
     public void clearCaches() {
         for (var name : cache.getCacheNames()) {
-            cache.getCache(name).clear();
+            getCache(name).clear();
         }
+    }
+
+    private Cache getCache(String name) {
+        var c = cache.getCache(name);
+        assert c != null;
+        return c;
     }
 
     @Test
@@ -92,7 +101,7 @@ class CacheServiceTest {
                     extVersion.getTargetPlatform(), extVersion.getVersion());
 
             var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
-            var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+            var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
             assertEquals(json, cachedJson);
         }
     }
@@ -119,7 +128,7 @@ class CacheServiceTest {
             updatedUser.setAvatarUrl("https://github.com/user2/avatar");
 
             users.upsertUser(updatedUser);
-            assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+            assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
             var json = registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
             assertEquals("user", json.getPublishedBy().getLoginName());
@@ -128,7 +137,7 @@ class CacheServiceTest {
             assertEquals("github", json.getPublishedBy().getProvider());
             assertEquals("https://github.com/user2/avatar", json.getPublishedBy().getAvatarUrl());
 
-            var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+            var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
             assertEquals(json, cachedJson);
         }
     }
@@ -159,7 +168,7 @@ class CacheServiceTest {
             review.setTimestamp("2000-01-01T10:00Z");
 
             registry.postReview(review, namespace.getName(), extension.getName());
-            assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+            assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
             entityManager.flush();
 
@@ -167,7 +176,7 @@ class CacheServiceTest {
             assertEquals(Long.valueOf(1), json.getReviewCount());
             assertEquals(Double.valueOf(3), json.getAverageRating());
 
-            var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+            var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
             assertEquals(json, cachedJson);
         }
     }
@@ -202,7 +211,7 @@ class CacheServiceTest {
             assertEquals(Double.valueOf(3), json.getAverageRating());
 
             registry.deleteReview(namespace.getName(), extension.getName());
-            assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+            assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
             entityManager.flush();
 
@@ -210,7 +219,7 @@ class CacheServiceTest {
             assertEquals(Long.valueOf(0), json.getReviewCount());
             assertNull(json.getAverageRating());
 
-            var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+            var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
             assertEquals(json, cachedJson);
         }
     }
@@ -229,8 +238,8 @@ class CacheServiceTest {
 
             registry.getExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), extVersion.getVersion());
 
-            admins.deleteExtension(namespace.getName(), extension.getName(), admin);
-            assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+            admins.deleteExtensionNoWait(admin, namespace.getName(), extension.getName());
+            assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
         }
     }
 
@@ -254,8 +263,13 @@ class CacheServiceTest {
                 assertTrue(json.getAllVersions().containsKey(newVersion));
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
 
-                admins.deleteExtension(namespace.getName(), extension.getName(), extVersion.getTargetPlatform(), newVersion, admin);
-                assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+                admins.deleteExtensionNoWait(
+                        admin,
+                        namespace.getName(),
+                        extension.getName(),
+                        TargetPlatformVersion.of(extVersion.getTargetPlatform(), newVersion)
+                );
+                assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
                 entityManager.flush();
 
@@ -263,7 +277,7 @@ class CacheServiceTest {
                 assertFalse(json.getAllVersions().containsKey(newVersion));
                 assertTrue(json.getAllVersions().containsKey(oldVersion));
 
-                var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+                var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
                 assertEquals(json, cachedJson);
             }
         }
@@ -287,7 +301,7 @@ class CacheServiceTest {
             try (var newTempFile = insertNewVersion(extension, extVersion.getPublishedWith(), newVersion)) {
                 newTempFile.getResource().getExtension().setPreRelease(true);
                 extensions.updateExtension(extension);
-                assertNull(cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
+                assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
 
                 entityManager.flush();
 
@@ -297,7 +311,7 @@ class CacheServiceTest {
                 assertTrue(json.getAllVersions().containsKey("latest"));
                 assertTrue(json.getAllVersions().containsKey("pre-release"));
 
-                var cachedJson = cache.getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
+                var cachedJson = getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class);
                 assertEquals(json, cachedJson);
             }
         }
@@ -323,7 +337,7 @@ class CacheServiceTest {
             // returns cached value
             assertEquals(0L, repositories.getAverageReviewRating());
 
-            cache.getCache(CacheService.CACHE_AVERAGE_REVIEW_RATING).clear();
+            getCache(CACHE_AVERAGE_REVIEW_RATING).clear();
 
             // returns new value from database
             assertEquals(3L, repositories.getAverageReviewRating());

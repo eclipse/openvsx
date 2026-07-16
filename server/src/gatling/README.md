@@ -17,7 +17,7 @@
 - make sure to keep the `access_token` header at the top of the file.
 
 ### scala/org/eclipse/openvsx/RegistryAPIPublishExtensionSimulation.scala:
-- Defaults to `build/test-extensions/`. Either populate it with `.vsix` files (e.g. `./gradlew downloadTestExtensions`) or change `extensionDir` in `resources/application.properties` to a directory that **only** contains extensions.
+- Defaults to `build-local/test-extensions/`. Either populate it with `.vsix` files (e.g. `./gradlew downloadTestExtensions`) or change `extensionDir` in `resources/application.properties` to a directory that **only** contains extensions.
 
 # Running Gatling
 

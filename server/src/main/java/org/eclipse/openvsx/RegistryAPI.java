@@ -1403,7 +1403,7 @@ public class RegistryAPI {
         responseCode = "404",
         description = "The registry version could not be determined"
     )
-    public ResponseEntity<RegistryVersionJson> getServerVersion() {
+    public ResponseEntity<RegistryVersionJson> getRegistryVersion() {
         try {
             return ResponseEntity.ok()
                         .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())

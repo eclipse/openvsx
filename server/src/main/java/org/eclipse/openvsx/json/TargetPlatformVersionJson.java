@@ -11,6 +11,7 @@ package org.eclipse.openvsx.json;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 import static org.eclipse.openvsx.util.TargetPlatform.NAME_ALPINE_ARM64;
@@ -44,4 +45,8 @@ public record TargetPlatformVersionJson(
         @NotNull
         @Schema(description = "Version of the extension")
         String version
-) {}
+) {
+    public TargetPlatformVersion toTargetPlatformVersion() {
+        return new TargetPlatformVersion(targetPlatform, version);
+    }
+}

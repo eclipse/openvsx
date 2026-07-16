@@ -56,7 +56,7 @@ import jakarta.transaction.Transactional;
  * Run the DB queries and assert no DB error, just to ensure that the queries
  * are consistent with the schema.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+@SpringBootTest(properties = {
         "ovsx.elasticsearch.enabled=false"
 })
 @ActiveProfiles("test_db")
@@ -208,6 +208,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findMemberships(namespace, "role"),
                 () -> repositories.deleteMemberships(userData),
                 () -> repositories.findNamespace("name"),
+                () -> repositories.findConflictingNamespaces("displayName", namespace),
                 () -> repositories.findOrphanNamespaces(),
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findTargetPlatformVersions("version", "extensionName", "namespaceName"),
@@ -306,9 +307,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findNotMigratedItems(page),
                 () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1),
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
-                () -> repositories.findVersion(userData,"version", "targetPlatform", "extensionName", "namespace"),
+                () -> repositories.findVersionPublishedWithUser(userData, "version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
-                () -> repositories.isDeleteAllVersions("namespaceName", "extensionName", Collections.emptyList(), userData),
+                () -> repositories.isDeleteAllVersions(userData, "namespaceName", "extensionName"),
                 () -> repositories.deactivateAccessTokens(userData),
                 () -> repositories.expireAccessTokens(NOW),
                 () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),

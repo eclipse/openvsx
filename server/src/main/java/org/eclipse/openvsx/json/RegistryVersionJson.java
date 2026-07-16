@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2024 STMicroelectronics and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,7 +16,7 @@ import jakarta.validation.constraints.NotNull;
 
 @Schema(
     name = "RegistryVersion",
-    description = "Version of the registry service"
+    description = "Configuration of the registry service"
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RegistryVersionJson extends ResultJson {
@@ -30,11 +30,22 @@ public class RegistryVersionJson extends ResultJson {
     @NotNull
     private String version;
 
+    @Schema(description = "Maximum allowed extension package size in bytes")
+    private long maxExtensionSize;
+
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public long getMaxExtensionSize() {
+        return maxExtensionSize;
+    }
+
+    public void setMaxExtensionSize(long maxExtensionSize) {
+        this.maxExtensionSize = maxExtensionSize;
     }
 }

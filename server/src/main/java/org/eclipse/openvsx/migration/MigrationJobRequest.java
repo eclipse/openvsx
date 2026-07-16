@@ -12,7 +12,7 @@ package org.eclipse.openvsx.migration;
 import org.jobrunr.jobs.lambdas.JobRequest;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 
-public class MigrationJobRequest<T extends JobRequestHandler<MigrationJobRequest>> implements JobRequest {
+public class MigrationJobRequest<T extends JobRequestHandler<MigrationJobRequest<?>>> implements JobRequest {
 
     private Class<T> handler;
     private long entityId;

@@ -12,13 +12,15 @@ package org.eclipse.openvsx.repositories;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.QueryRequest;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
+import org.eclipse.openvsx.json.TargetPlatformActiveJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.impl.DSL;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -356,7 +358,7 @@ public class ExtensionVersionJooqRepository {
             return extVersion;
         });
         var total = totalQuery.fetchOne(totalCol, Integer.class);
-        return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total);
+        return new PageImpl<>(content, PageRequest.of(request.offset() / request.size(), request.size()), total != null ? total : 0);
     }
 
     public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
@@ -545,6 +547,11 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc()
                 );
+        var targetPlatformsActive = DSL.arrayAgg(EXTENSION_VERSION.ACTIVE)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
 
         return dsl.select(
                     EXTENSION_VERSION.SEMVER_MAJOR,
@@ -552,7 +559,8 @@ public class ExtensionVersionJooqRepository {
                     EXTENSION_VERSION.SEMVER_PATCH,
                     EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                     EXTENSION_VERSION.VERSION,
-                    targetPlatforms
+                    targetPlatforms,
+                    targetPlatformsActive
                 )
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
@@ -571,14 +579,20 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.VERSION.asc()
                 )
                 .fetch()
-                .map(row -> new VersionTargetPlatformsJson(
+                .map(row -> toVersionTargetPlatformsJson(
                         row.get(EXTENSION_VERSION.VERSION),
-                        row.get(targetPlatforms)
+                        row.get(targetPlatforms),
+                        row.get(targetPlatformsActive)
                 ));
     }
 
     public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
         var targetPlatforms = DSL.arrayAgg(EXTENSION_VERSION.TARGET_PLATFORM)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc()
+                );
+        var targetPlatformsActive = DSL.arrayAgg(EXTENSION_VERSION.ACTIVE)
                 .orderBy(
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc()
@@ -590,7 +604,8 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.SEMVER_PATCH,
                         EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                         EXTENSION_VERSION.VERSION,
-                        targetPlatforms
+                        targetPlatforms,
+                        targetPlatformsActive
                 )
                 .from(EXTENSION_VERSION)
                 .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
@@ -611,10 +626,20 @@ public class ExtensionVersionJooqRepository {
                         EXTENSION_VERSION.VERSION.asc()
                 )
                 .fetch()
-                .map(row -> new VersionTargetPlatformsJson(
+                .map(row -> toVersionTargetPlatformsJson(
                         row.get(EXTENSION_VERSION.VERSION),
-                        row.get(targetPlatforms)
+                        row.get(targetPlatforms),
+                        row.get(targetPlatformsActive)
                 ));
+    }
+
+    private VersionTargetPlatformsJson toVersionTargetPlatformsJson(String version, String[] targetPlatforms, Boolean[] active) {
+        var platforms = new ArrayList<TargetPlatformActiveJson>(targetPlatforms.length);
+        for (int i = 0; i < targetPlatforms.length; i++) {
+            platforms.add(new TargetPlatformActiveJson(targetPlatforms[i], active[i]));
+        }
+
+        return new VersionTargetPlatformsJson(version, platforms);
     }
 
     public List<ExtensionVersion> findVersionsForUrls(Extension extension, String targetPlatform, String version) {
@@ -1441,9 +1466,9 @@ public class ExtensionVersionJooqRepository {
                 .fetchOne("count", Integer.class);
     }
 
-    public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
-        if(targetVersions.isEmpty()) {
-            return false;
+    public boolean isDeleteAllVersions(@Nullable UserData user, String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
+        if (targetVersions.length == 0) {
+            return true;
         }
 
         var all = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("all"))
@@ -1454,20 +1479,29 @@ public class ExtensionVersionJooqRepository {
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
                 .fetchOne("all", Integer.class);
 
-        var rows = targetVersions.stream().map((tv) -> DSL.row(tv.version(), tv.targetPlatform())).toArray(Row2[]::new);
+        var rows = Arrays.stream(targetVersions).map((tv) -> DSL.row(tv.version(), tv.targetPlatform())).toArray(Row2[]::new);
         var versions = DSL.values(rows).as("v", "version", "target");
         var VERSION = versions.field("version", String.class);
         var TARGET = versions.field("target", String.class);
-        var actual = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("actual"))
+        var actualSelect = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("actual"))
                 .from(versions)
                 .join(EXTENSION_VERSION).on(EXTENSION_VERSION.VERSION.eq(VERSION).and(EXTENSION_VERSION.TARGET_PLATFORM.eq(TARGET)))
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .where(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
-                .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
-                .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
-                .fetchOne("actual", Integer.class);
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
+
+        if (user != null) {
+            actualSelect = actualSelect.join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
+        }
+
+        var condition = actualSelect
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .and(EXTENSION.NAME.equalIgnoreCase(extensionName));
+
+        if (user != null) {
+            condition = condition.and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
+        }
+
+        var actual = condition.fetchOne("actual", Integer.class);
 
         return Objects.equals(actual, all);
     }

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, ReactNode, Suspense, lazy } from 'react';
+import { FunctionComponent, ReactNode, useContext } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { styled, Theme } from '@mui/material/styles';
 import { Link, Typography, Box } from '@mui/material';
@@ -21,12 +21,9 @@ import { DefaultMenuContent, MobileMenuContent } from './menu-content';
 import OpenVSXLogo from './openvsx-registry-logo';
 import About from './about';
 import { createAbsoluteURL } from '../utils';
+import { MainContext } from '../context';
 
-export default function createPageSettings(
-    prefersDarkMode: boolean,
-    serverUrl: string,
-    serverVersionPromise: Promise<string>
-): PageSettings {
+export default function createPageSettings(prefersDarkMode: boolean, serverUrl: string): PageSettings {
     const toolbarContent: FunctionComponent = () => (
         <RouteLink to={ExtensionListRoutes.MAIN} aria-label={`Home - Open VSX Registry`}>
             <OpenVSXLogo width='auto' height='40px' marginTop='8px' prefersDarkMode={prefersDarkMode} />
@@ -44,16 +41,17 @@ export default function createPageSettings(
 
     const StyledRouteLink = styled(RouteLink)(link);
 
-    const ServerVersion = lazy(async () => {
-        const version = await serverVersionPromise;
-        return {
-            default: () => (
-                <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>
-                    Server Version: {version}
-                </Typography>
-            )
-        };
-    });
+    const ServerVersion: FunctionComponent = () => {
+        const { version } = useContext(MainContext);
+        if (!version) {
+            return <div>Loading version...</div>;
+        }
+        return (
+            <Typography variant='body2' sx={{ fontSize: '0.8rem' }}>
+                Server Version: {version.version}
+            </Typography>
+        );
+    };
 
     const footerContent: FunctionComponent<{ expanded: boolean }> = () => (
         <Box
@@ -76,9 +74,7 @@ export default function createPageSettings(
                 <GitHubIcon />
                 &nbsp;eclipse/openvsx
             </Link>
-            <Suspense fallback={<div>Loading version...</div>}>
-                <ServerVersion />
-            </Suspense>
+            <ServerVersion />
             <StyledRouteLink to='/about'>About This Service</StyledRouteLink>
         </Box>
     );

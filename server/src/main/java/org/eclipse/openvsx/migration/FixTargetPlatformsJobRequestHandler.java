@@ -11,8 +11,6 @@ package org.eclipse.openvsx.migration;
 
 import org.eclipse.openvsx.ExtensionProcessor;
 import org.eclipse.openvsx.ExtensionService;
-import org.eclipse.openvsx.admin.AdminService;
-import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
@@ -26,23 +24,20 @@ import java.nio.file.Files;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixTargetPlatformsJobRequestHandler.class));
 
     private final ExtensionService extensions;
-    private final AdminService admins;
     private final MigrationService migrations;
     private final FixTargetPlatformsService service;
 
     public FixTargetPlatformsJobRequestHandler(
             ExtensionService extensions,
-            AdminService admins,
             MigrationService migrations,
             FixTargetPlatformsService service
     ) {
         this.extensions = extensions;
-        this.admins = admins;
         this.migrations = migrations;
         this.service = service;
     }
@@ -68,22 +63,11 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
                         .addArgument(() -> NamingUtil.toLogFormat(extVersion))
                         .log();
 
-                deleteExtension(extVersion);
+                extensions.deleteExtensionVersion(service.getUser(), extVersion);
                 try (var input = Files.newInputStream(extensionFile.getPath())) {
                     extensions.publishVersion(input, extVersion.getPublishedWith());
                 }
             }
         }
-    }
-
-    private void deleteExtension(ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        admins.deleteExtension(
-                extension.getNamespace().getName(),
-                extension.getName(),
-                extVersion.getTargetPlatform(),
-                extVersion.getVersion(),
-                service.getUser()
-        );
     }
 }

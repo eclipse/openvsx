@@ -47,10 +47,10 @@ import org.eclipse.openvsx.entities.TierType;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
-import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.web.SitemapRow;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -80,7 +80,6 @@ public class RepositoryService {
     private final UserDataRepository userDataRepo;
     private final NamespaceMembershipRepository membershipRepo;
     private final PersonalAccessTokenRepository tokenRepo;
-    private final PersonalAccessTokenJooqRepository tokenJooqRepo;
     private final PersistedLogRepository persistedLogRepo;
     private final DownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
@@ -118,7 +117,6 @@ public class RepositoryService {
             UserDataRepository userDataRepo,
             NamespaceMembershipRepository membershipRepo,
             PersonalAccessTokenRepository tokenRepo,
-            PersonalAccessTokenJooqRepository tokenJooqRepo,
             PersistedLogRepository persistedLogRepo,
             DownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
@@ -155,7 +153,6 @@ public class RepositoryService {
         this.userDataRepo = userDataRepo;
         this.membershipRepo = membershipRepo;
         this.tokenRepo = tokenRepo;
-        this.tokenJooqRepo = tokenJooqRepo;
         this.persistedLogRepo = persistedLogRepo;
         this.downloadCountRepo = downloadCountRepo;
         this.extensionJooqRepo = extensionJooqRepo;
@@ -186,6 +183,10 @@ public class RepositoryService {
 
     public Namespace findNamespace(String name) {
         return namespaceRepo.findByNameIgnoreCase(name);
+    }
+
+    public List<Namespace> findConflictingNamespaces(String displayName, Namespace excludedNamespace) {
+        return namespaceRepo.findConflictingNamespaces(displayName, excludedNamespace);
     }
 
     public String findNamespaceName(String name) {
@@ -253,7 +254,7 @@ public class RepositoryService {
         return extensionVersionRepo.findByVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(version, targetPlatform, extensionName, namespace);
     }
 
-    public ExtensionVersion findVersion(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
+    public ExtensionVersion findVersionPublishedWithUser(UserData user, String version, String targetPlatform, String extensionName, String namespace) {
         return extensionVersionRepo.findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(user, version, targetPlatform, extensionName, namespace);
     }
 
@@ -434,7 +435,7 @@ public class RepositoryService {
     }
 
     public PersonalAccessToken findAccessToken(String value) {
-        return  tokenRepo.findByValue(value);
+        return tokenRepo.findByValue(value);
     }
 
     public PersonalAccessToken findAccessToken(long id) {
@@ -739,7 +740,7 @@ public class RepositoryService {
     }
 
     public boolean hasAccessToken(String value) {
-        return tokenJooqRepo.hasToken(value);
+        return tokenRepo.findByValue(value) != null;
     }
 
     public boolean canPublishInNamespace(UserData user, Namespace namespace) {
@@ -778,8 +779,8 @@ public class RepositoryService {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 
-    public boolean isDeleteAllVersions(String namespaceName, String extensionName, List<TargetPlatformVersionJson> targetVersions, UserData user) {
-        return extensionVersionJooqRepo.isDeleteAllVersions(namespaceName, extensionName, targetVersions, user);
+    public boolean isDeleteAllVersions(@Nullable UserData user, String namespaceName, String extensionName, TargetPlatformVersion... targetVersions) {
+        return extensionVersionJooqRepo.isDeleteAllVersions(user, namespaceName, extensionName, targetVersions);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(

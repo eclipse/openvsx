@@ -31,7 +31,7 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class FixMissingFilesJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class FixMissingFilesJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(FixMissingFilesJobRequestHandler.class));
 
     private final EntityManager entityManager;

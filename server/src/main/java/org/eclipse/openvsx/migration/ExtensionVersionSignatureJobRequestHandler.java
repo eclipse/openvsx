@@ -29,7 +29,7 @@ import java.nio.file.Files;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
-public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHandler<MigrationJobRequest> {
+public class ExtensionVersionSignatureJobRequestHandler implements JobRequestHandler<MigrationJobRequest<?>> {
 
     protected final Logger logger = new JobRunrDashboardLogger(LoggerFactory.getLogger(ExtensionVersionSignatureJobRequestHandler.class));
 

@@ -28,8 +28,8 @@ import {
     UrlString,
     NamespaceMembershipList,
     PublisherInfo,
-    SearchEntry,
     RegistryVersion,
+    SearchEntry,
     LoginProviders,
     ScanResultJson,
     ScanCounts,
@@ -553,12 +553,7 @@ export class ExtensionRegistryService {
     }
 
     async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfResponse)) {
-            const csrfToken = csrfResponse as CsrfTokenJson;
-            headers[csrfToken.header] = csrfToken.value;
-        }
 
         return sendRequest<Extension[] | ErrorResult>({
             abortController,
@@ -574,14 +569,9 @@ export class ExtensionRegistryService {
         namespace: string,
         extension: string
     ): Promise<Readonly<Extension>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
-        if (!isError(csrfResponse)) {
-            const csrfToken = csrfResponse as CsrfTokenJson;
-            headers[csrfToken.header] = csrfToken.value;
-        }
 
-        return sendRequest<Extension>({
+        return sendNonRetriableRequest<Extension>({
             abortController,
             method: 'GET',
             credentials: true,
@@ -590,11 +580,12 @@ export class ExtensionRegistryService {
         });
     }
 
-    async deleteExtensions(
-        abortController: AbortController,
-        req: { namespace: string; extension: string; targetPlatformVersions?: object[] }
-    ): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
+    async deleteExtensions(req: {
+        namespace: string;
+        extension: string;
+        targetPlatformVersions?: object[];
+    }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -603,8 +594,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
-            abortController,
+        return sendNonRetriableRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extension', req.namespace, req.extension, 'delete']),

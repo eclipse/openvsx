@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.adapter;
 
-import com.google.common.collect.Lists;
-import com.google.common.io.CharStreams;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.eclipse.openvsx.ExtensionValidator;
@@ -51,7 +49,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -872,9 +869,9 @@ class VSCodeAPITest {
         extVersion.setDisplayName("YAML");
         extVersion.setDescription("YAML Language Support");
         extVersion.setRepository("https://github.com/redhat-developer/vscode-yaml");
-        extVersion.setEngines(Lists.newArrayList("vscode@^1.31.0"));
-        extVersion.setDependencies(Lists.newArrayList());
-        extVersion.setBundledExtensions(Lists.newArrayList());
+        extVersion.setEngines(List.of("vscode@^1.31.0"));
+        extVersion.setDependencies(List.of());
+        extVersion.setBundledExtensions(List.of());
         Mockito.when(repositories.findExtension("vscode-yaml", "redhat"))
                 .thenReturn(extension);
         Mockito.when(repositories.findVersion("0.5.2", targetPlatform, "vscode-yaml", "redhat"))
@@ -962,7 +959,8 @@ class VSCodeAPITest {
 
     private String file(String name) throws IOException {
         try (var stream = getClass().getResourceAsStream(name)) {
-            return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            assert stream != null;
+            return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 
