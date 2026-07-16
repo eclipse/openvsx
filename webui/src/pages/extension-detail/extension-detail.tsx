@@ -435,11 +435,10 @@ export const ExtensionDetail: FunctionComponent = () => {
         const band = bandRef.current;
         if (!band) return;
         const pin = band.getBoundingClientRect().bottom + window.scrollY - NAVBAR_HEIGHT_PX;
-        // Rest above the pin point: the nav's blur fan reaches past the pinned
-        // pills, and this keeps the incoming panel's title clear of it.
-        const target = Math.max(0, pin - 96);
+        // Rest above the pin point
+        const target = Math.max(0, pin);
         if (window.scrollY > target) {
-            window.scrollTo({ top: target, behavior: 'smooth' });
+            window.scrollTo({ top: target });
         }
     }, [activeTab]);
 
