@@ -37,3 +37,8 @@ repos:
       require_serial: true
       files: ^webui/
       types: [file]
+    - id: server-format
+      name: server -> jbang format (import order, braces, eclipse formatter)
+      entry: server/scripts/format.sh
+      language: system
+      files: ^server/src/(main|test)/java/.*\.java$
