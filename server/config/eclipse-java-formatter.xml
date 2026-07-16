@@ -44,6 +44,12 @@
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_array_initializer" value="48"/>
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_record_components" value="48"/>
 
+        <!-- default puts a bodyless record's "{}" on two lines ("... ) {" then "}" below);
+             this collapses it onto the closing paren's line instead, e.g. "record Foo(...) {}".
+             Only affects empty bodies - a record with a compact constructor or other members
+             still gets its normal multi-line body. -->
+        <setting id="org.eclipse.jdt.core.formatter.keep_record_declaration_on_one_line" value="one_line_if_empty"/>
+
         <!-- annotation arguments default to WRAP_NO_SPLIT (never wrap), unlike the other argument
              lists above, which is why long annotations were ignoring the line length.
              52 = 48 (WRAP_ONE_PER_LINE, not forced) + 4 (M_INDENT_BY_ONE): there is no dedicated
@@ -52,15 +58,26 @@
              (2 units = 8 spaces) is this alignment modifier bit. -->
         <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_annotation" value="52"/>
 
-        <!-- when arguments wrap onto multiple lines, put the opening/closing parens on their
-             own lines too (covers method invocations, "new X(...)", this()/super() calls);
-             stays on one line ("common_lines" behavior) when everything fits -->
-        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_invocation" value="separate_lines_if_wrapped"/>
+        <!-- common_lines (the default) keeps the closing paren attached to the last argument's
+             line even when the argument list wraps (covers method invocations, "new X(...)",
+             this()/super() calls). Explicit here (rather than left as JDT default) as a
+             deliberate choice: separate_lines_if_wrapped was tried and reverted because it
+             makes fluent call chains like "mockMvc.perform(...).andExpect(...)" look worse -
+             the closing paren lands alone at the base indent, then the next chain link
+             (".andExpect(...)") jumps back out to a deeper indent right below it. -->
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_invocation" value="common_lines"/>
         <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_annotation" value="separate_lines_if_wrapped"/>
         <!-- covers both method and constructor declarations (JDT uses one AST node for both);
              note the "delcaration" typo in the option id is intentional/required by JDT itself -->
         <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_method_delcaration" value="separate_lines_if_wrapped"/>
         <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_record_declaration" value="separate_lines_if_wrapped"/>
+        <!-- same for try-with-resources: once the resource list wraps, its closing paren
+             gets its own line too instead of trailing the last resource. Note: unlike the
+             contexts above, the resource list itself has no "stays on one line if it fits"
+             option - alignment_for_resources_in_try forces one resource per line as soon as
+             there's more than one, regardless of wrap style; this only affects where the
+             closing paren lands once that has already happened. -->
+        <setting id="org.eclipse.jdt.core.formatter.parentheses_positions_in_try_clause" value="separate_lines_if_wrapped"/>
 
         <!-- 49 = M_FORCE | M_ONE_PER_LINE_SPLIT: when a parameter/local variable has more than
              one annotation, always put each on its own line. Local variables already default to
