@@ -13,6 +13,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - Replace `keytar` with `cross-keychain` to store credentials in the system keychain ([#1950](https://github.com/eclipse/openvsx/pull/1950))
 - Mask token input when using `login` command ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)
 
+#### Dependencies
+
+- Bump js-yaml from `4.2.0` to `4.3.0` ([#1976](https://github.com/eclipse/openvsx/pull/1976))
+
 ### [v1.0.2] (23/06/2026)
 
 #### Dependencies
