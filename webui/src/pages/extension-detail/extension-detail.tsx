@@ -66,9 +66,9 @@ const PillTab = styled(Tab)(({ theme }) => ({
     transition: 'border-color 0.14s, color 0.14s, background 0.14s',
     // Still translucent so the blur fan shows through; the border carries the emphasis.
     '&.Mui-selected': {
-        backgroundColor: alpha(theme.palette.accentSoft, 0.7),
+        backgroundColor: alpha(theme.palette.secondary.main, 0.7),
         borderColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.light,
+        color: theme.palette.secondary.contrastText,
         fontWeight: 600
     },
     '&:not(.Mui-selected)': accentHover(theme),
