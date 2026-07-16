@@ -41,4 +41,5 @@ repos:
       name: server -> jbang format (import order, braces, eclipse formatter)
       entry: server/scripts/format.sh
       language: system
+      require_serial: true
       files: ^server/src/(main|test)/java/.*\.java$
