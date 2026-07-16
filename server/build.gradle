@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.test.logger)
     alias(libs.plugins.gatling)
     alias(libs.plugins.rewrite)
+    alias(libs.plugins.spotless)
     id 'maven-publish'
 }
 
@@ -199,6 +200,25 @@ publishing {
             artifact ('scripts/run-server.sh')
             artifact bootJar
         }
+    }
+}
+
+spotless {
+    // optional: limit format enforcement to just the files changed by this feature branch
+//    ratchetFrom 'origin/main'
+
+    java {
+        // matches jbang-fmt.args: only server non-generated sources, excludes jooq-gen
+        target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
+
+        // shared with scripts/ImportSort.java (the jbang path) so both stay in sync
+        importOrderFile('config/import-order.importorder')
+
+        eclipse('4.40').configFile('config/eclipse-java-formatter.xml')
+
+        // shared with scripts/ClosingBraceFix.java (the jbang path) via buildSrc,
+        // see buildSrc/src/main/java/ClosingBraceFixStep.java
+        addStep(ClosingBraceFixStep.create())
     }
 }
 

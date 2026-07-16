@@ -7,7 +7,10 @@
         <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
         <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="120"/>
         <setting id="org.eclipse.jdt.core.formatter.use_tabs_only_for_leading_indentations" value="false"/>
-        <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="true"/>
+        <!-- false so a pre-existing line break before a wrapped array initializer's
+             closing brace is preserved rather than collapsed back - otherwise
+             ClosingBraceFix's edits get undone the next time the formatter runs -->
+        <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="false"/>
         <setting id="org.eclipse.jdt.core.formatter.insert_new_line_at_end_of_file_if_missing" value="insert"/>
 
         <!-- default Eclipse profile puts a space before the colon in switch labels, e.g.

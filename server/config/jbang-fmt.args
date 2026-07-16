@@ -12,5 +12,3 @@
 
 --style config/eclipse-java-formatter.xml
 --java 25
-src/main/java
-src/test/java

@@ -1,7 +1,3 @@
-///usr/bin/env jbang "$0" "$@" ; exit $?
-//JAVA 21+
-//DEPS org.eclipse.jdt:org.eclipse.jdt.core:3.43.0
-
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -9,41 +5,22 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-// jbang-fmt (Eclipse formatter) always leaves the closing brace of a wrapped
-// array initializer attached to the last element, e.g. "...class }". This
-// pass inserts the missing line break before "}" only when the initializer
-// actually spans multiple lines; single-line initializers are left untouched.
-public class ClosingBraceFix {
+// Shared between ClosingBraceFix.java (jbang) and the Gradle "closingBraceFix" Spotless
+// step (server/buildSrc) - edit this one file, both paths pick it up automatically.
+//
+// jbang-fmt (Eclipse formatter) always leaves the closing brace of a wrapped array
+// initializer attached to the last element, e.g. "...class }". This inserts the missing
+// line break before "}" only when the initializer actually spans multiple lines;
+// single-line initializers are left untouched.
+public class ClosingBraceFixCore {
 
-    record Edit(int contentEnd, int closeBraceOffset, String indent) {}
+    private record Edit(int contentEnd, int closeBraceOffset, String indent) {}
 
-    public static void main(String[] args) throws Exception {
-        int changed = 0;
-        for (String arg : args) {
-            try (Stream<Path> paths = Files.walk(Path.of(arg))) {
-                List<Path> javaFiles = paths.filter(p -> p.toString().endsWith(".java")).toList();
-                for (Path path : javaFiles) {
-                    if (fixFile(path)) {
-                        System.out.println("fixed closing braces: " + path);
-                        changed++;
-                    }
-                }
-            }
-        }
-        System.out.println(changed + " file(s) updated");
-    }
-
-    private static boolean fixFile(Path path) throws Exception {
-        String source = Files.readString(path, StandardCharsets.UTF_8);
-
+    public static String fix(String source) {
         ASTParser parser = ASTParser.newParser(AST.getJLSLatest());
         parser.setKind(ASTParser.K_COMPILATION_UNIT);
         parser.setSource(source.toCharArray());
@@ -83,7 +60,7 @@ public class ClosingBraceFix {
         });
 
         if (edits.isEmpty()) {
-            return false;
+            return source;
         }
 
         edits.sort((a, b) -> b.closeBraceOffset() - a.closeBraceOffset());
@@ -91,9 +68,7 @@ public class ClosingBraceFix {
         for (Edit edit : edits) {
             result.replace(edit.contentEnd(), edit.closeBraceOffset(), "\n" + edit.indent());
         }
-
-        Files.writeString(path, result.toString(), StandardCharsets.UTF_8);
-        return true;
+        return result.toString();
     }
 
     private static String indentOfLine(CompilationUnit cu, String source, int line) {

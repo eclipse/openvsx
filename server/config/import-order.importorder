@@ -1,0 +1,7 @@
+#Organize Import Order
+#Shared between ImportSort.java (jbang) and the Gradle Spotless "importOrderFile" step -
+#edit this one file, both paths pick it up automatically.
+0=java|javax
+1=
+2=org.eclipse.openvsx
+3=\#
