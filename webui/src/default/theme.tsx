@@ -17,6 +17,26 @@ export const NAVBAR_HEIGHT = '3.875rem';
 // Pixel twin for scroll math (rem values assume the 16px root font size).
 export const NAVBAR_HEIGHT_PX = parseFloat(NAVBAR_HEIGHT) * 16;
 
+// Shared look of alerts (see also components/banner.tsx): soft tinted surface
+// with accent icon and links.
+const alertTone = (theme: Theme, accent: string, background?: string) => ({
+    padding: theme.spacing(1, 2),
+    backgroundColor: background ?? alpha(accent, 0.1),
+    color: theme.palette.text.primary,
+    border: `1px solid ${alpha(accent, 0.25)}`,
+    borderRadius: theme.shape.borderRadiusCard,
+    '& .MuiAlert-icon': { color: accent },
+    '& a': {
+        color: accent,
+        fontWeight: 700,
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: theme.spacing(0.75),
+        '&:hover': { textDecoration: 'underline' }
+    }
+});
+
 // Shared look of floating surfaces (menus, popovers, dialogs). The nested selector
 // outranks MuiPaper's own rounded style, so no !important is needed.
 const floatingPaper = (theme: Theme) => ({
@@ -218,27 +238,14 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                     }
                 }
             },
-            // Info alerts follow the app's info tone (see components/banner.tsx):
-            // soft accent surface, accent icon, and accent links.
             MuiAlert: {
                 styleOverrides: {
-                    standardInfo: ({ theme }) => ({
-                        padding: theme.spacing(1, 2),
-                        backgroundColor: theme.palette.accentSoft,
-                        color: theme.palette.text.primary,
-                        border: `1px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-                        borderRadius: theme.shape.borderRadiusCard,
-                        '& .MuiAlert-icon': { color: theme.palette.secondary.light },
-                        '& a': {
-                            color: theme.palette.secondary.light,
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: theme.spacing(0.75),
-                            '&:hover': { textDecoration: 'underline' }
-                        }
-                    })
+                    standardInfo: ({ theme }) =>
+                        alertTone(theme, theme.palette.secondary.light, theme.palette.accentSoft),
+                    standardWarning: ({ theme }) =>
+                        alertTone(theme, theme.palette.warningAccent, theme.palette.warningSoft),
+                    standardError: ({ theme }) => alertTone(theme, theme.palette.error.main),
+                    standardSuccess: ({ theme }) => alertTone(theme, theme.palette.success.main)
                 }
             },
             // VS Code buttons are flat and compact (~24px page actions), with corners
