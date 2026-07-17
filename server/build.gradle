@@ -30,15 +30,16 @@ def jooqSrcDir = 'src/main/jooq-gen'
 // - mvn eu.maveniverse.maven.plugins:toolbox:gav-versions -Dgav=build/dependencies/list.txt -DartifactVersionSelectorSpec="minor()" | grep -v "up to date"
 
 ext['flyway.version'] = libs.versions.flyway.get()
+ext['httpclient5.version'] = libs.versions.httpclient5.get()
+ext['httpcore5.version'] = libs.versions.httpcore5.get()
 ext['jackson-2-bom.version'] = libs.versions.jackson2.get()
 ext['jackson-bom.version'] = libs.versions.jackson.get()
 ext['jetty.version'] = libs.versions.jetty.get()
 ext['jooq.version'] = libs.versions.jooq.get()
+ext['log4j2.version'] = libs.versions.log4j2.get()
+ext['logback.version'] = libs.versions.logback.get()
 ext['netty.version'] = libs.versions.netty.get()
 ext['opentelemetry.version'] = libs.versions.opentelemetry.get()
-ext['logback.version'] = libs.versions.logback.get()
-ext['httpcore5.version'] = libs.versions.httpcore5.get()
-ext['log4j2.version'] = libs.versions.log4j2.get()
 
 java {
     sourceCompatibility = libs.versions.java.get()
