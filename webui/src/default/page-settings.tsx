@@ -10,7 +10,7 @@
 
 import { FunctionComponent, ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, Link } from '@mui/material';
 import { Link as RouteLink, Route, useParams } from 'react-router-dom';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
@@ -60,7 +60,15 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             }
         ],
         social: [{ title: 'GitHub', href: REPO_URL, icon: <GitHubIcon sx={{ fontSize: '1rem' }} /> }],
-        copyright: 'Copyright © Eclipse Foundation, AISBL. All Rights Reserved.'
+        copyright: (
+            <>
+                Copyright &copy; 2026 by{' '}
+                <Link href='https://www.eclipse.org' target='_blank' underline='hover'>
+                    Eclipse Foundation
+                </Link>
+            </>
+        ),
+        showVersion: true
     };
 
     const home: PageSettings['elements']['home'] = {

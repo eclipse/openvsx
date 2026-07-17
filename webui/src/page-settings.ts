@@ -46,6 +46,7 @@ export interface StructuredFooterSettings {
     columns?: FooterColumn[];
     social?: FooterSocialLink[];
     copyright?: ReactNode;
+    showVersion?: boolean;
     /** Extra node appended to the footer's bottom bar, next to the built-in controls. */
     extra?: ReactNode;
 }

@@ -211,7 +211,7 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                     Keyboard shortcuts
                     <KbdKey>?</KbdKey>
                 </ShortcutsButton>
-                {version && (
+                {footer?.showVersion && version && (
                     <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', fontFamily: MONO_FONT }}>
                         {version}
                     </Typography>
