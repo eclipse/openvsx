@@ -37,6 +37,7 @@ ext['jooq.version'] = libs.versions.jooq.get()
 ext['netty.version'] = libs.versions.netty.get()
 ext['opentelemetry.version'] = libs.versions.opentelemetry.get()
 ext['logback.version'] = libs.versions.logback.get()
+ext['httpcore5.version'] = libs.versions.httpcore5.get()
 ext['log4j2.version'] = libs.versions.log4j2.get()
 
 java {
