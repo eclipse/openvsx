@@ -1046,15 +1046,16 @@ class AdminAPITest {
     @Test
     void testForgetUserWithInvalidToken() throws Exception {
         var token = mockNonAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={username}", "github", "12345", token.getValue()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void testForgetUserNotFound() throws Exception {
         var token = mockAdminToken();
-        Mockito.when(repositories.findUserByProviderAndAuthId("github", "12345")).thenReturn(null);
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+        var loginName = "test_admin";
+        Mockito.when(repositories.findUserByLoginName("github", loginName)).thenReturn(null);
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{username}/delete?token={token}", "github", loginName, token.getValue()))
                 .andExpect(status().isNotFound());
     }
 
@@ -1096,7 +1097,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
         Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
 
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "janedoe", token.getValue()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
 
@@ -1155,7 +1156,7 @@ class AdminAPITest {
         Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
 
-        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "janedoe")
                 .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                 .with(csrf().asHeader()))
                 .andExpect(status().isOk())
@@ -1184,7 +1185,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(referenced));
         Mockito.when(repositories.countVersionsByAccessToken(referenced)).thenReturn(2L);
 
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "12345", token.getValue()))
+        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "janedoe", token.getValue()))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 1 tokens.")));
 
@@ -1205,7 +1206,7 @@ class AdminAPITest {
         user.setAvatarUrl("https://example.com/avatar.png");
         user.setProviderUrl("https://github.com/janedoe");
         user.setRole(UserData.Role.PRIVILEGED);
-        Mockito.when(repositories.findUserByProviderAndAuthId("github", "12345")).thenReturn(user);
+        Mockito.when(repositories.findUserByLoginName("github", "janedoe")).thenReturn(user);
         return user;
     }
 

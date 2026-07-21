@@ -580,14 +580,14 @@ public class AdminService {
      * installed them are unaffected.
      *
      * @param provider the authentication provider the user belongs to
-     * @param authId the provider-specific identifier of the user to forget
+     * @param username the provider-specific username of the user to forget
      * @param admin the administrator performing the erasure
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson forgetUser(String provider, String authId, UserData admin) {
-        var user = repositories.findUserByProviderAndAuthId(provider, authId);
+    public ResultJson forgetUser(String provider, String username, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, username);
         if (user == null) {
-            throw new ErrorResultException(userNotFoundMessage(provider + "/" + authId), HttpStatus.NOT_FOUND);
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + username), HttpStatus.NOT_FOUND);
         }
 
         // Send a DELETE request to the Eclipse publisher agreement API. Guarded so that

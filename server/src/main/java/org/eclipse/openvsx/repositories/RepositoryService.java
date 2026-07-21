@@ -445,10 +445,6 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
-    public UserData findUserByProviderAndAuthId(String provider, String authId) {
-        return userDataRepo.findByProviderAndAuthId(provider, authId);
-    }
-
     public long countUsers() {
         return userDataRepo.count();
     }

@@ -1119,7 +1119,7 @@ public class AdminAPI {
     }
 
     @PostMapping(
-        path = "/api/publisher/{provider}/{authId}/delete",
+        path = "/api/publisher/{provider}/{username}/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
@@ -1142,12 +1142,12 @@ public class AdminAPI {
     )
     public ResponseEntity<ResultJson> forgetUser(
             @PathVariable @Parameter(description = "Authentication provider", example = "github") String provider,
-            @PathVariable @Parameter(description = "Provider-specific user id") String authId,
+            @PathVariable @Parameter(description = "Provider-specific username") String username,
             @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
-            var result = admins.forgetUser(provider, authId, adminUser);
+            var result = admins.forgetUser(provider, username, adminUser);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
