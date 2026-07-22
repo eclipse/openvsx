@@ -403,6 +403,10 @@ public class AdminService {
                             var json = latest.toExtensionJson();
                             json.setPreview(latest.isPreview());
                             json.setActive(latest.getExtension().isActive());
+                            // findLatestVersions(user) includes inactive versions, which may be soft-deleted
+                            // tombstones; surface that so the admin UI can distinguish removed from merely
+                            // deactivated (mirrors UserAPI.getOwnExtensions and AdminAPI.getExtension).
+                            json.setRemoved(latest.isRemoved());
                             json.setFiles(fileUrls.get(latest.getId()));
 
                             return json;

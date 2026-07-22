@@ -108,6 +108,12 @@ public class GenerateKeyPairJobRequestHandler implements JobRequestHandler<Handl
     }
 
     private void enqueueCreateSignatureJob(ExtensionVersion extVersion) {
+        // Soft-deleted versions are tombstones whose files have been stripped from storage, so there is
+        // nothing to sign. Skip them here rather than enqueuing a job that would find no download and no-op.
+        if (extVersion.isRemoved()) {
+            return;
+        }
+
         var handler = ExtensionVersionSignatureJobRequestHandler.class;
         scheduler.enqueue(new MigrationJobRequest<>(handler, extVersion.getId()));
     }

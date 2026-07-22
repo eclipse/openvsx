@@ -286,7 +286,7 @@ public class RepositoryService {
     }
 
     public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, PageRequest page) {
-        return extensionVersionRepo.findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+        return extensionVersionRepo.findByActiveTrueAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
                 extension,
                 namespace,
                 page.withSort(VERSIONS_SORT));
@@ -298,11 +298,12 @@ public class RepositoryService {
             String targetPlatform,
             PageRequest page
     ) {
-        return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
-                targetPlatform,
-                extension,
-                namespace,
-                page.withSort(VERSIONS_SORT));
+        return extensionVersionRepo
+                .findByActiveTrueAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+                        targetPlatform,
+                        extension,
+                        namespace,
+                        page.withSort(VERSIONS_SORT));
     }
 
     public Page<String> findActiveVersionStringsSorted(
