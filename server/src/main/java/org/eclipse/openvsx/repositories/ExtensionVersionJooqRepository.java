@@ -695,7 +695,11 @@ public class ExtensionVersionJooqRepository {
         query.addFrom(EXTENSION_VERSION);
         query.addConditions(
                 EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()),
-                EXTENSION_VERSION.VERSION.eq(version));
+                EXTENSION_VERSION.VERSION.eq(version),
+                // Only active versions may be offered for download. A soft-deleted (removed) version is always
+                // inactive and has had its files stripped from storage, so it must never appear in the public
+                // download URL map (this also avoids spurious "Could not find download" warnings for tombstones).
+                EXTENSION_VERSION.ACTIVE.eq(true));
         if (targetPlatform != null) {
             query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
