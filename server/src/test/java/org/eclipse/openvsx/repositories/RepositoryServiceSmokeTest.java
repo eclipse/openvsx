@@ -202,6 +202,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveVersions(extension),
                 () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensions(),
+                () -> repositories.findAllExtensionNames(namespace),
                 () -> repositories.findAllPersistedLogs(),
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findPersistedLogsPaginated(page),
