@@ -196,8 +196,11 @@ class ExtensionDeleteTest {
                 .as("another publisher's version must not be removed or orphaned")
                 .isTrue();
         assertThat(versionExists("1.0.0"))
-                .as("the owner's deleted version must be gone")
-                .isFalse();
+                .as("the owner's deleted version row must be kept as an immutable tombstone")
+                .isTrue();
+        assertThat(versionRemoved("1.0.0"))
+                .as("the owner's deleted version must be marked removed and inactive")
+                .isTrue();
     }
 
     /**
@@ -279,6 +282,20 @@ class ExtensionDeleteTest {
                                 "select ev.id from ExtensionVersion ev "
                                         + "where ev.version = :version "
                                         + "and ev.extension.namespace.name = :namespace")
+                                .setParameter("version", version)
+                                .setParameter("namespace", NAMESPACE)
+                                .getResultList()
+                                .isEmpty()));
+    }
+
+    private boolean versionRemoved(String version) {
+        return Boolean.TRUE.equals(
+                new TransactionTemplate(txManager).execute(
+                        status -> !em.createQuery(
+                                "select ev.id from ExtensionVersion ev "
+                                        + "where ev.version = :version "
+                                        + "and ev.extension.namespace.name = :namespace "
+                                        + "and ev.removed = true and ev.active = false")
                                 .setParameter("version", version)
                                 .setParameter("namespace", NAMESPACE)
                                 .getResultList()

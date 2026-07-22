@@ -12,7 +12,8 @@ import { FunctionComponent, useContext, useEffect, useState, useRef } from 'reac
 import { Extension } from '../../extension-registry-types';
 import { Box, Typography } from '@mui/material';
 import { PublishExtensionDialog } from './publish-extension-dialog';
-import { UserExtensionList } from './user-extension-list';
+import { ExtensionCardList } from '../../components/extension/extension-card-list';
+import { UserSettingsRoutes } from './user-settings-routes';
 import { isError } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
@@ -82,7 +83,12 @@ export const UserSettingsExtensions: FunctionComponent = () => {
             <Box mt={2}>
                 <DelayedLoadIndicator loading={loading} />
                 {extensions && extensions.length > 0 ? (
-                    <UserExtensionList extensions={extensions} loading={loading} canDelete />
+                    <ExtensionCardList
+                        extensions={extensions}
+                        loading={loading}
+                        canDelete
+                        routePrefix={UserSettingsRoutes.EXTENSIONS}
+                    />
                 ) : (
                     <Typography variant='body1'>You haven&apos;t published any extensions yet.</Typography>
                 )}

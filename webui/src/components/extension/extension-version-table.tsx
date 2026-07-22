@@ -13,8 +13,10 @@
 
 import { FunctionComponent } from 'react';
 import {
+    Chip,
     IconButton,
     Paper,
+    Stack,
     Table,
     TableBody,
     TableCell,
@@ -22,11 +24,12 @@ import {
     TableFooter,
     TableHead,
     TablePagination,
-    TableRow,
-    Typography
+    TableRow
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { VersionTargetPlatforms } from '../../extension-registry-types';
+import { getTargetPlatformDisplayName } from '../../utils';
 
 const PAGE_SIZE = 20;
 
@@ -34,9 +37,11 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
     versions,
     page,
     onPageChange,
-    onDeleteVersion
+    onDeleteVersion,
+    onPurgeVersion
 }) => {
     const pagedVersions = versions.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+    const columnCount = onPurgeVersion ? 4 : 3;
 
     return (
         <TableContainer component={Paper} variant='outlined'>
@@ -51,31 +56,60 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {pagedVersions.map(v => (
-                        <TableRow key={v.version}>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>{v.version}</TableCell>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                {v.targetPlatforms.map((tp, index) => (
-                                    <Typography key={tp.targetPlatform} component='span'>
-                                        <Typography
-                                            component='span'
-                                            sx={{ textDecoration: tp.active ? 'none' : 'line-through' }}>
-                                            {tp.targetPlatform}
-                                        </Typography>
-                                        {index < v.targetPlatforms.length - 1 ? ', ' : ''}
-                                    </Typography>
-                                ))}
-                            </TableCell>
-                            <TableCell align='right' padding='checkbox' sx={{ whiteSpace: 'nowrap' }}>
-                                <IconButton size='small' title='Delete version' onClick={() => onDeleteVersion(v)}>
-                                    <DeleteIcon fontSize='small' color='error' />
-                                </IconButton>
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                    {pagedVersions.map(v => {
+                        const allRemoved = v.targetPlatforms.length > 0 && v.targetPlatforms.every(tp => tp.removed);
+                        return (
+                            <TableRow key={v.version}>
+                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                    <Stack direction='row' spacing={1} alignItems='center'>
+                                        <span>{v.version}</span>
+                                        {allRemoved && (
+                                            <Chip label='Removed' size='small' color='default' variant='outlined' />
+                                        )}
+                                    </Stack>
+                                </TableCell>
+                                <TableCell>
+                                    <Stack direction='row' spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                                        {v.targetPlatforms.map(tp => (
+                                            <Chip
+                                                key={tp.targetPlatform}
+                                                size='small'
+                                                variant='outlined'
+                                                color={tp.removed ? 'warning' : tp.active ? 'primary' : 'default'}
+                                                title={tp.removed ? 'Removed' : tp.active ? undefined : 'Inactive'}
+                                                label={
+                                                    getTargetPlatformDisplayName(tp.targetPlatform) || tp.targetPlatform
+                                                }
+                                                sx={{ textDecoration: tp.active ? 'none' : 'line-through' }}
+                                            />
+                                        ))}
+                                    </Stack>
+                                </TableCell>
+                                <TableCell align='right' padding='checkbox' sx={{ whiteSpace: 'nowrap' }}>
+                                    <IconButton
+                                        size='small'
+                                        title={allRemoved ? 'Version already removed' : 'Delete version'}
+                                        disabled={allRemoved}
+                                        onClick={() => onDeleteVersion(v)}>
+                                        <DeleteIcon fontSize='small' color={allRemoved ? 'disabled' : 'error'} />
+                                    </IconButton>
+                                </TableCell>
+                                {onPurgeVersion && (
+                                    <TableCell align='right' padding='checkbox' sx={{ whiteSpace: 'nowrap' }}>
+                                        <IconButton
+                                            size='small'
+                                            title='Purge version permanently'
+                                            onClick={() => onPurgeVersion(v)}>
+                                            <DeleteForeverIcon fontSize='small' color='error' />
+                                        </IconButton>
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        );
+                    })}
                     {versions.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={3} align='center'>
+                            <TableCell colSpan={columnCount} align='center'>
                                 No version information available.
                             </TableCell>
                         </TableRow>
@@ -102,4 +136,6 @@ export interface ExtensionVersionTableProps {
     page: number;
     onPageChange: (page: number) => void;
     onDeleteVersion: (version: VersionTargetPlatforms) => void;
+    // When provided (admin only), each row shows a permanent-purge action.
+    onPurgeVersion?: (version: VersionTargetPlatforms) => void;
 }

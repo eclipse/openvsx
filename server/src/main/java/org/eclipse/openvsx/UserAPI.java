@@ -146,9 +146,9 @@ public class UserAPI {
     }
 
     /**
-     * This endpoint is used to check whether there is a logged-in user. For this reason, it
-     * does not return a 403 status, but an OK status with JSON body when no user data is
-     * available. This is to avoid unnecessary network error logging in the browser console.
+     * This endpoint is used to check whether there is a logged-in user. For this reason, it does not return a 403
+     * status, but an OK status with JSON body when no user data is available. This is to avoid unnecessary network
+     * error logging in the browser console.
      */
     @GetMapping(
         path = "/user",
@@ -255,6 +255,7 @@ public class UserAPI {
                     var json = latest.toExtensionJson();
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
+                    json.setRemoved(latest.isRemoved());
                     json.setFiles(fileUrls.get(latest.getId()));
 
                     // Add scan/review status information
@@ -269,9 +270,11 @@ public class UserAPI {
      * Add review/scan status information to the extension JSON.
      * <p>
      * This shows users the current state of their extension in simple terms:
-     * - "published" - Extension is active and publicly available
-     * - "under_review" - Extension is being reviewed (validation, scanning, etc.)
-     * - "rejected" - Extension was blocked (quarantined or rejected)
+     * <ul>
+     *   <li>"published" - Extension is active and publicly available</li>
+     *   <li>"under_review" - Extension is being reviewed (validation, scanning, etc.)</li>
+     *   <li>"rejected" - Extension was blocked (quarantined or rejected)</li>
+     * </ul>
      */
     private void enrichWithReviewStatus(ExtensionJson json, ExtensionVersion extVersion) {
         // Look up scan by extension metadata (namespace, name, version, platform)
@@ -284,11 +287,16 @@ public class UserAPI {
                         extVersion.getTargetPlatform());
 
         if (Boolean.TRUE.equals(json.getActive())) {
-            // Only mark published if scan result indicates PASSED or no scan result exists (scanning disabled / manual activation)
+            // Only mark published if scan result indicates PASSED or no scan result exists (scanning disabled / manual
+            // activation)
             if (scanResult == null || scanResult.getStatus() == ScanStatus.PASSED) {
                 json.setReviewStatus("published");
                 return;
             }
+        }
+
+        if (extVersion.isRemoved()) {
+            return;
         }
 
         if (scanResult == null) {

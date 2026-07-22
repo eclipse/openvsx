@@ -822,6 +822,10 @@ public class RepositoryService {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }
 
+    public List<String> findAllExtensionNames(Namespace namespace) {
+        return extensionJooqRepo.findAllExtensionNames(namespace);
+    }
+
     public List<NamespaceMembership> findMembershipsForOwner(UserData user, String namespaceName) {
         return membershipJooqRepo.findMembershipsForOwner(user, namespaceName);
     }

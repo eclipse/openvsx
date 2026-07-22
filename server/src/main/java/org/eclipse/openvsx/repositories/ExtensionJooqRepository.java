@@ -228,6 +228,14 @@ public class ExtensionJooqRepository {
                 .fetch(EXTENSION.NAME);
     }
 
+    public List<String> findAllExtensionNames(Namespace namespace) {
+        return dsl.select(EXTENSION.NAME)
+                .from(EXTENSION)
+                .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
+                .orderBy(EXTENSION.NAME.asc())
+                .fetch(EXTENSION.NAME);
+    }
+
     public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         if (dependencies.isEmpty()) {
             return null;

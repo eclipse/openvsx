@@ -145,9 +145,9 @@ public class AdminService {
             deleteExtensionAndDependencies(admin, dependRef, depth);
         }
 
-        // We unconditionally delete the extension,
+        // We unconditionally purge the extension,
         // not checking if there are dependencies on this extension.
-        extensions.deleteExtension(admin, extension, false);
+        extensions.purgeExtension(admin, extension, false);
     }
 
     private void deleteExtensionAndDependencies(UserData admin, ExtensionVersion extVersion, int depth) {
@@ -173,7 +173,7 @@ public class AdminService {
     public void deleteExtension(UserData admin, String namespaceName, String extensionName)
             throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
-        extensions.deleteExtension(admin, extension, false);
+        extensions.purgeExtension(admin, extension, false);
     }
 
     /**
@@ -192,6 +192,25 @@ public class AdminService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         return extensions.deleteExtension(user, false, namespaceName, extensionName, targetVersions);
+    }
+
+    /**
+     * Purge (permanently delete) the provided versions of an extension. If all versions shall be purged, the
+     * extension as a whole will be removed unless it is referenced by bundles or used as a dependency.
+     * <p>
+     * Unlike {@link #deleteExtensionNoWait}, this physically removes the rows from the database and storage,
+     * freeing the version identity for republishing. Intended for administrative purge and automated cleanup.
+     * <p>
+     * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson purgeExtensionNoWait(
+            UserData user,
+            String namespaceName,
+            String extensionName,
+            TargetPlatformVersion... targetVersions
+    ) throws ErrorResultException {
+        return extensions.purgeExtension(user, false, namespaceName, extensionName, targetVersions);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)

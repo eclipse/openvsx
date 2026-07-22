@@ -13,8 +13,9 @@ import { Box, Typography, Tabs, Tab, useTheme, useMediaQuery, Link } from '@mui/
 import { Namespace, UserData } from '../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { MainContext } from '../../context';
-import { NamespaceDetail } from './user-settings-namespace-detail';
+import { NamespaceDetailView } from '../../components/namespace/namespace-detail-view';
 import { CreateNamespaceDialog } from './create-namespace-dialog';
+import { UserSettingsRoutes } from './user-settings-routes';
 
 interface NamespaceTabProps {
     chosenNamespace: Namespace;
@@ -111,7 +112,7 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
                     namespaces={namespaces}
                     onChange={handleChangeNamespace}
                 />
-                <NamespaceDetail
+                <NamespaceDetailView
                     namespace={chosenNamespace}
                     setLoadingState={(loading: boolean) => setLoading(loading)}
                     filterUsers={(foundUser: UserData) =>
@@ -120,6 +121,7 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
                     fixSelf={true}
                     namespaceAccessUrl={namespaceAccessUrl}
                     theme={pageSettings.themeType}
+                    extensionRoutePrefix={UserSettingsRoutes.EXTENSIONS}
                 />
             </Box>
         );

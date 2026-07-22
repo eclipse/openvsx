@@ -18,6 +18,7 @@ import { Extension } from '../../extension-registry-types';
 export const ExtensionStatusChips: FunctionComponent<ExtensionStatusChipsProps> = ({ extension }) => (
     <Stack direction='row' spacing={1} mb={2}>
         {extension.deprecated && <Chip label='Deprecated' color='warning' size='small' />}
+        {extension?.removed && <Chip label='Deleted' color='error' size='small' />}
         {extension.active === false && <Chip label='Deactivated' size='small' />}
         {extension.reviewStatus === 'under_review' && <Chip label='Under Review' color='info' size='small' />}
         {extension.reviewStatus === 'rejected' && <Chip label='Rejected' color='error' size='small' />}

@@ -9,18 +9,20 @@
  ********************************************************************************/
 
 import { FunctionComponent, useState, useContext, useEffect, ReactNode } from 'react';
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, Button } from '@mui/material';
 import { useParams, useNavigate } from 'react-router';
-import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
+import { NamespaceDetailView, NamespaceDetailConfigContext } from '../../components/namespace/namespace-detail-view';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
 import { SearchListContainer } from './search-list-container';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
+import { NamespaceChangeDialog } from './namespace-change-dialog';
+import { NamespaceDeleteDialog } from './namespace-delete-dialog';
 import { useAdminNamespace, useClearAdminNamespace, useCreateNamespace } from './use-namespace-admin';
 
 export const NamespaceAdmin: FunctionComponent = () => {
-    const { pageSettings, user, handleError } = useContext(MainContext);
+    const { service, pageSettings, user, handleError } = useContext(MainContext);
     const { namespace: nsParam } = useParams<{ namespace?: string }>();
     const navigate = useNavigate();
 
@@ -28,6 +30,8 @@ export const NamespaceAdmin: FunctionComponent = () => {
     const [inputValue, setInputValue] = useState(nsParam ?? '');
     // The namespace detail view can drive the loading indicator while it performs its own work.
     const [detailLoading, setDetailLoading] = useState(false);
+    const [changeDialogIsOpen, setChangeDialogIsOpen] = useState(false);
+    const [deleteDialogIsOpen, setDeleteDialogIsOpen] = useState(false);
 
     const { data: currentNamespace, isFetching, error, refetch } = useAdminNamespace(searchName);
     const { mutateAsync: createNamespace, isPending: isCreatingNamespace } = useCreateNamespace();
@@ -82,14 +86,52 @@ export const NamespaceAdmin: FunctionComponent = () => {
 
     let listContainer: ReactNode = '';
     if (currentNamespace && pageSettings && user) {
+        const headerActions = (
+            <Box>
+                <Button
+                    sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}
+                    variant='outlined'
+                    onClick={() => setChangeDialogIsOpen(true)}>
+                    Change Namespace
+                </Button>
+                {Object.keys(currentNamespace.extensions).length === 0 && (
+                    <Button
+                        variant='outlined'
+                        sx={{ color: 'error.main', height: 36, ml: { xs: 2 } }}
+                        onClick={() => setDeleteDialogIsOpen(true)}>
+                        Delete
+                    </Button>
+                )}
+            </Box>
+        );
         listContainer = (
             <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
-                <NamespaceDetail
+                <NamespaceDetailView
                     setLoadingState={setDetailLoading}
-                    onDelete={handleDeleteNamespace}
                     namespace={currentNamespace}
                     filterUsers={() => true}
                     fixSelf={false}
+                    headerActions={headerActions}
+                    extensionRoutePrefix={AdminDashboardRoutes.EXTENSION_ADMIN}
+                    fetchExtension={(abortController, extension) =>
+                        service.admin.getExtension(abortController, currentNamespace.name, extension.name)
+                    }
+                />
+                <NamespaceChangeDialog
+                    open={changeDialogIsOpen}
+                    onClose={() => setChangeDialogIsOpen(false)}
+                    namespace={currentNamespace}
+                    setLoadingState={setDetailLoading}
+                />
+                <NamespaceDeleteDialog
+                    open={deleteDialogIsOpen}
+                    onClose={() => setDeleteDialogIsOpen(false)}
+                    onDelete={() => {
+                        setDeleteDialogIsOpen(false);
+                        handleDeleteNamespace();
+                    }}
+                    namespace={currentNamespace}
+                    setLoadingState={setDetailLoading}
                 />
             </NamespaceDetailConfigContext.Provider>
         );

@@ -139,7 +139,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             ThreadLocalJobContext.getJobContext().logger().info("deleting " + extensionId);
             try {
                 var namespace = extension.getNamespace();
-                admin.deleteExtensionNoWait(mirrorUser, namespace.getName(), extension.getName());
+                admin.purgeExtensionNoWait(mirrorUser, namespace.getName(), extension.getName());
             } catch (ErrorResultException e) {
                 if (e.getStatus() != HttpStatus.NOT_FOUND) {
                     logger.warn("mirror: failed to delete extension {}", extensionId, e);

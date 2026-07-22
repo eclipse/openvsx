@@ -79,6 +79,7 @@ export interface Extension {
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
     active?: boolean;
+    removed?: boolean;
     reviewStatus?: 'published' | 'under_review' | 'rejected';
     reviewMessage?: string;
 
@@ -136,6 +137,9 @@ export interface ExtensionReference {
 export interface TargetPlatformActive {
     targetPlatform: string;
     active: boolean;
+    // Whether this target platform version has been removed (soft-deleted). A removed version is a
+    // permanent tombstone: hidden and non-republishable. Only an admin purge frees it.
+    removed: boolean;
 }
 
 export interface VersionTargetPlatforms {

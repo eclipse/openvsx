@@ -87,6 +87,20 @@ public class ExtensionVersion implements Serializable {
 
     private boolean potentiallyMalicious;
 
+    /**
+     * Sticky tombstone marker. A removed version has been soft-deleted: it is hidden
+     * (also {@code active == false}) and its files have been stripped from storage, but the row is
+     * kept so its identity stays permanently reserved and can never be republished. Only an admin
+     * purge physically removes the row. Unlike {@code active}, this flag is never cleared by
+     * reactivation or scan processing.
+     */
+    private boolean removed;
+
+    private LocalDateTime removedTimestamp;
+
+    @ManyToOne
+    private UserData removedBy;
+
     private String displayName;
 
     @Column(length = 2048)
@@ -338,6 +352,30 @@ public class ExtensionVersion implements Serializable {
         this.potentiallyMalicious = potentiallyMalicious;
     }
 
+    public boolean isRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
+    }
+
+    public LocalDateTime getRemovedTimestamp() {
+        return removedTimestamp;
+    }
+
+    public void setRemovedTimestamp(LocalDateTime removedTimestamp) {
+        this.removedTimestamp = removedTimestamp;
+    }
+
+    public UserData getRemovedBy() {
+        return removedBy;
+    }
+
+    public void setRemovedBy(UserData removedBy) {
+        this.removedBy = removedBy;
+    }
+
     public String getDisplayName() {
         return displayName;
     }
@@ -512,6 +550,9 @@ public class ExtensionVersion implements Serializable {
                 && preview == that.preview
                 && active == that.active
                 && potentiallyMalicious == that.potentiallyMalicious
+                && removed == that.removed
+                && Objects.equals(removedTimestamp, that.removedTimestamp)
+                && Objects.equals(getId(removedBy), getId(that.removedBy)) // use id to prevent infinite recursion
                 && Objects.equals(getId(extension), getId(that.extension)) // use id to prevent infinite recursion
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
@@ -552,6 +593,9 @@ public class ExtensionVersion implements Serializable {
                 getId(publishedWith),
                 active,
                 potentiallyMalicious,
+                removed,
+                removedTimestamp,
+                getId(removedBy),
                 displayName,
                 description,
                 engines,
@@ -580,5 +624,9 @@ public class ExtensionVersion implements Serializable {
 
     private Long getId(PersonalAccessToken token) {
         return Optional.ofNullable(token).map(PersonalAccessToken::getId).orElse(null);
+    }
+
+    private Long getId(UserData user) {
+        return Optional.ofNullable(user).map(UserData::getId).orElse(null);
     }
 }

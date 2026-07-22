@@ -235,6 +235,21 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, Boolean> POTENTIALLY_MALICIOUS = createField(DSL.name("potentially_malicious"), SQLDataType.BOOLEAN, this, "");
 
+    /**
+     * The column <code>public.extension_version.removed</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Boolean> REMOVED = createField(DSL.name("removed"), SQLDataType.BOOLEAN.nullable(false), this, "");
+
+    /**
+     * The column <code>public.extension_version.removed_timestamp</code>.
+     */
+    public final TableField<ExtensionVersionRecord, LocalDateTime> REMOVED_TIMESTAMP = createField(DSL.name("removed_timestamp"), SQLDataType.LOCALDATETIME(6), this, "");
+
+    /**
+     * The column <code>public.extension_version.removed_by_id</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Long> REMOVED_BY_ID = createField(DSL.name("removed_by_id"), SQLDataType.BIGINT, this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -286,7 +301,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<ForeignKey<ExtensionVersionRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
+        return Arrays.asList(Keys.EXTENSION_VERSION__EXTENSION_VERSION_REMOVED_BY_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY, Keys.EXTENSION_VERSION__FK70KHJ8PM0VACASUIIAQ0W0R80, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
     }
 
     @Override
