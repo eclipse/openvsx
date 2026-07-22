@@ -36,12 +36,7 @@ export default defineConfig(() => ({
             output: {
                 entryFileNames: 'bundle-[hash].js',
                 assetFileNames: '[name]-[hash][extname]',
-                chunkFileNames: 'chunk-[name]-[hash].js',
-                manualChunks: {
-                    lodash: ['lodash'],
-                    material: ['@mui/material'],
-                    'mui-x': ['@mui/x-charts', '@mui/x-data-grid', '@mui/x-date-pickers']
-                }
+                chunkFileNames: 'chunk-[name]-[hash].js'
             }
         }
     }

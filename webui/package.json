@@ -98,7 +98,7 @@
         "@types/react-transition-group": "^4.4.0",
         "@typescript-eslint/eslint-plugin": "^8.56.0",
         "@typescript-eslint/parser": "^8.56.0",
-        "@vitejs/plugin-react": "^5.1.0",
+        "@vitejs/plugin-react": "^6.0.4",
         "eslint": "^9.39.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-parser-plain": "^0.1.1",
@@ -112,8 +112,8 @@
         "rollup-plugin-visualizer": "^7.0.1",
         "ts-node": "^10.9.2",
         "typescript": "^5.9.0",
-        "vite": "^7.3.0",
-        "vitest": "^3.0.0"
+        "vite": "^8.1.5",
+        "vitest": "^4.1.10"
     },
     "scripts": {
         "clean": "rimraf lib && rimraf dist",
