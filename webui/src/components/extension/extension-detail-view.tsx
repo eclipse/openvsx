@@ -53,7 +53,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
             <ExtensionStatusChips extension={extension} />
             <Divider sx={{ my: 2 }} />
             <Stack direction='row' spacing={2} mb={3}>
-                {extension.active ?? (
+                {extension.active && (
                     <Button variant='outlined' component={RouteLink} to={publicRoute}>
                         View in Marketplace
                     </Button>
