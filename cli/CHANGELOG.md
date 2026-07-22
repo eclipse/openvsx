@@ -16,6 +16,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Dependencies
 
 - Bump js-yaml from `4.2.0` to `4.3.0` ([#1976](https://github.com/eclipse/openvsx/pull/1976))
+- Bump tar from `7.5.16` to `7.5.21` ([#1987](https://github.com/eclipse/openvsx/pull/1987))
 
 ### [v1.0.2] (23/06/2026)
 
