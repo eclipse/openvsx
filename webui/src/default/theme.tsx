@@ -252,7 +252,40 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             // a touch softer than inputs; outlined trims 1px per side so the border
             // doesn't add height.
             MuiButton: {
-                defaultProps: { disableElevation: true }
+                defaultProps: { disableElevation: true },
+                styleOverrides: {
+                    // Neutral outlined buttons use the hairline divider instead of MUI's
+                    // half-opacity primary border, darkening on hover like the card borders.
+                    outlined: ({ theme }) => ({
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.text.secondary,
+                        '&:hover': {
+                            backgroundColor: 'transparent',
+                            borderColor: theme.palette.text.secondary,
+                            color: theme.palette.text.primary
+                        }
+                    }),
+                    outlinedSecondary: ({ theme }) => ({
+                        color: theme.palette.secondary.main,
+                        borderColor: alpha(theme.palette.secondary.main, 0.5),
+                        '&:hover': {
+                            borderColor: theme.palette.secondary.main,
+                            color: theme.palette.secondary.main
+                        }
+                    }),
+                    outlinedError: ({ theme }) => ({
+                        backgroundColor: theme.palette.surface2,
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.error.main,
+                        // Background only: transitioning color/border makes the disabled→enabled swap look like a fade.
+                        transition: 'background-color 0.15s',
+                        '&:hover': {
+                            backgroundColor: theme.palette.error.main,
+                            borderColor: theme.palette.error.main,
+                            color: theme.palette.common.white
+                        }
+                    })
+                }
             },
             // MUI X derives the grid's borders from `divider` via lighten/darken, which
             // almost erases our already-light opaque divider. Feed the grid's design

@@ -13,9 +13,9 @@
 
 import { FC } from 'react';
 import { Box, Typography } from '@mui/material';
-import type { Customer } from '../../extension-registry-types';
-import { useUsageStats } from '../../components/rate-limiting/usage-stats/use-usage-stats';
-import { UsageStats } from '../../components/rate-limiting/customer';
+import type { Customer } from '../../../extension-registry-types';
+import { useUsageStats } from '../../../components/rate-limiting/usage-stats/use-usage-stats';
+import { UsageStats } from '../../../components/rate-limiting/customer';
 
 export interface UserSettingsCustomerDetailProps {
     customer: Customer;
@@ -25,8 +25,10 @@ export const UserSettingsCustomerDetail: FC<UserSettingsCustomerDetailProps> = (
     const { usageStats, dailyP95, startDate, setStartDate } = useUsageStats(customer.name);
 
     return (
-        <Box sx={{ flex: 5, pl: { xs: 0, lg: 2 } }}>
-            <Typography variant='h4' sx={{ mb: 2 }}>
+        <Box sx={{ minWidth: 0 }}>
+            <Typography
+                component='h2'
+                sx={{ fontSize: '1.1875rem', fontWeight: 700, letterSpacing: '-0.01em', mb: '1rem' }}>
                 {customer.name}
             </Typography>
             <UsageStats

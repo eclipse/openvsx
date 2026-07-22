@@ -131,9 +131,7 @@ export const AddUserDialog: FC<AddUserDialogProps> = ({
                 />
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} color='secondary'>
-                    Cancel
-                </Button>
+                <Button onClick={handleClose}>Cancel</Button>
             </DialogActions>
         </Dialog>
     );

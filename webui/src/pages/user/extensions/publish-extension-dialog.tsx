@@ -12,10 +12,10 @@ import { FunctionComponent, useContext, useEffect, useState, useRef } from 'reac
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Paper } from '@mui/material';
 import { CheckCircleOutline } from '@mui/icons-material';
 import Dropzone, { FileRejection } from 'react-dropzone';
-import { ButtonWithProgress } from '../../components/button-with-progress';
-import { ErrorResult, isError } from '../../extension-registry-types';
-import { MainContext } from '../../context';
-import { useRegistryValue } from '../../hooks/use-registry-value';
+import { ButtonWithProgress } from '../../../components/button-with-progress';
+import { ErrorResult, isError } from '../../../extension-registry-types';
+import { MainContext } from '../../../context';
+import { useRegistryValue } from '../../../hooks/use-registry-value';
 import { styled, Theme } from '@mui/material/styles';
 
 const getColor = (isFocused: boolean, isDragAccept: boolean, isDragReject: boolean) => {
@@ -266,9 +266,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
                     </Dropzone>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCancel} color='secondary'>
-                        Cancel
-                    </Button>
+                    <Button onClick={handleCancel}>Cancel</Button>
                     <ButtonWithProgress
                         autoFocus
                         sx={{ ml: 1 }}

@@ -13,9 +13,9 @@
 
 import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { MainContext } from '../../context';
-import { isError } from '../../extension-registry-types';
-import { controllerFromSignal } from '../../query-client';
+import { MainContext } from '../../../context';
+import { isError } from '../../../extension-registry-types';
+import { controllerFromSignal, NO_CACHE } from '../../../query-client';
 
 interface UserExtensionTarget {
     namespace: string;
@@ -42,10 +42,7 @@ export const useUserExtension = (target: UserExtensionTarget) => {
             }
             return result;
         },
-        // Disable caching entirely: this data must always reflect the latest state
-        // (e.g. right after publishing/deleting), a stale/cached result here masks that.
-        staleTime: 0,
-        gcTime: 0
+        ...NO_CACHE
     });
 };
 

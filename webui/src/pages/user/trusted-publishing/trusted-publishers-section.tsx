@@ -12,10 +12,12 @@
  *****************************************************************************/
 
 import { FunctionComponent, useContext, useState } from 'react';
-import { Box, Button, Divider, Grid, IconButton, Stack, Typography } from '@mui/material';
+import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import { Eyebrow } from '../../../components/page-primitives';
+import { SettingsSectionTitle } from '../settings/settings-primitives';
 import { useReportedQuery } from '../../../hooks/use-reported-query';
 import { MainContext } from '../../../context';
 import { Namespace, TrustedPublisher, TrustedPublisherProvider, UrlString } from '../../../extension-registry-types';
@@ -183,10 +185,8 @@ export const UserNamespaceTrustedPublishers: FunctionComponent<{ namespace: Name
         return null;
     }
     return (
-        <Grid item>
-            <Typography variant='h5' gutterBottom>
-                Trusted Publishers
-            </Typography>
+        <Box sx={{ mb: '2.375rem' }}>
+            <SettingsSectionTitle component='h3'>Trusted Publishers</SettingsSectionTitle>
             <TrustedPublishersSection
                 namespace={namespace.name}
                 trustedPublishingUrl={trustedPublishingUrl}
@@ -194,7 +194,7 @@ export const UserNamespaceTrustedPublishers: FunctionComponent<{ namespace: Name
                 intro="Let a CI/CD workflow publish this namespace's extensions without a long-lived access token."
                 emptyText='No trusted publishers registered yet.'
             />
-        </Grid>
+        </Box>
     );
 };
 
@@ -215,11 +215,8 @@ export const ExtensionTrustedPublishers: FunctionComponent<{ namespace: string; 
         return null;
     }
     return (
-        <Box sx={{ mt: 2 }}>
-            <Divider sx={{ mb: 2 }} />
-            <Typography variant='h6' gutterBottom>
-                Trusted Publishers
-            </Typography>
+        <Box sx={{ mb: '1.75rem' }}>
+            <Eyebrow sx={{ mb: '0.25rem' }}>Trusted Publishers</Eyebrow>
             <TrustedPublishersSection
                 namespace={namespace}
                 trustedPublishingUrl={trustedPublishingUrl}

@@ -315,9 +315,7 @@ export const RegisterTrustedPublisherDialog: FunctionComponent<RegisterTrustedPu
                 </Box>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} color='secondary'>
-                    Cancel
-                </Button>
+                <Button onClick={handleClose}>Cancel</Button>
                 <Button type='submit' variant='contained' color='secondary' disabled={!canRegister}>
                     Register
                 </Button>

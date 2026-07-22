@@ -56,6 +56,12 @@ queryClient.getQueryCache().subscribe(event => {
 });
 
 /**
+ * Query options disabling caching entirely, for data that must always reflect
+ * the latest server state (e.g. right after publishing or deleting).
+ */
+export const NO_CACHE = { staleTime: 0, gcTime: 0 } as const;
+
+/**
  * Bridge between TanStack Query's `AbortSignal` and the `AbortController` that
  * `ExtensionRegistryService` methods expect. Inside a `queryFn` we get a
  * `signal`; this wraps it in a controller that aborts when the signal does, so

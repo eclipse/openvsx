@@ -13,19 +13,20 @@
 
 import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MainContext } from '../../context';
-import { controllerFromSignal } from '../../query-client';
+import { MainContext } from '../../../context';
+import { controllerFromSignal, NO_CACHE } from '../../../query-client';
 
-/** The namespaces the current user is a member of. */
-export const useUserNamespaces = () => {
+/**
+ * Loads the rate-limiting customer groups the current user is a member of.
+ * Shared by the settings navigation (which hides the tab when there are none)
+ * and the Rate Limiting tab itself.
+ */
+export const useUserCustomers = () => {
     const { service, user } = useContext(MainContext);
     return useQuery({
-        queryKey: ['user', 'namespaces'],
-        queryFn: ({ signal }) => service.getNamespaces(controllerFromSignal(signal)),
+        queryKey: ['user', 'customers'],
+        queryFn: ({ signal }) => service.getCustomers(controllerFromSignal(signal)),
         enabled: user != null,
-        // TODO: getNamespaces still goes through the retriable sendRequest (shared with an imperative
-        // caller), so disable TanStack retries to avoid double-retrying until it's migrated to
-        // sendNonRetriableRequest.
-        retry: false
+        ...NO_CACHE
     });
 };

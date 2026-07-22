@@ -10,9 +10,9 @@
 
 import { FunctionComponent, useContext, useRef, useState } from 'react';
 import { Button } from '@mui/material';
-import { GenerateTokenDialog } from '../../components/generate-token-dialog';
-import { isError } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { GenerateTokenDialog } from '../../../components/generate-token-dialog';
+import { isError } from '../../../extension-registry-types';
+import { MainContext } from '../../../context';
 
 export const GenerateAccessTokenDialog: FunctionComponent<GenerateTokenDialogProps> = props => {
     const context = useContext(MainContext);

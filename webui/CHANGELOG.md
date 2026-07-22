@@ -8,6 +8,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Add a "Data Consistency" page to the admin dashboard (#1622): a live overview of every registered consistency check's finding count, with actions to refresh it and to fix findings one at a time or all at once
 
+### Changed
+
+- Redesign the user settings: sidebar navigation with namespace list, deep-linkable namespace pages under `/user-settings/namespaces/:namespace`, and refreshed profile, access tokens, namespace and extensions views
+
 ### Fixed
 
 - Fix a React warning ("Received `true` for a non-boolean attribute `notched`") from the admin dashboard's publisher role filter, whose custom `InputBase` doesn't consume the `notched` prop MUI's `Select` injects for the (unused) outlined variant

@@ -18,7 +18,9 @@ import { Namespace, TrustedPublisher } from '../../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
 import { MainContext } from '../../../context';
 import { useReportedQuery } from '../../../hooks/use-reported-query';
-import { useUserNamespaces } from '../use-user-namespaces';
+import { useUserNamespaces } from '../namespaces/use-user-namespaces';
+import { EmptyPlaceholder } from '../settings/settings-primitives';
+import { SettingsHeader } from '../settings/settings-header';
 import { PublisherList } from './publisher-list';
 import { RegisterTrustedPublisherDialog, TrustedPublishingDocsLink } from './register-trusted-publisher-dialog';
 import {
@@ -80,34 +82,24 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
     };
 
     return (
-        <>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
-                    alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-                }}>
-                <Box>
-                    <Typography variant='h5' gutterBottom>
-                        Trusted Publishers
-                    </Typography>
-                </Box>
-                {canRegister ? (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
-                        <Box sx={{ mr: 1, mb: 1 }}>
-                            <Button variant='outlined' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-                                Add a trusted publisher
-                            </Button>
-                        </Box>
-                    </Box>
-                ) : null}
-            </Box>
-            <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-                Let CI/CD workflows publish your extensions without long-lived access tokens. The workflow authenticates
-                with a short-lived OIDC token at publish time, accepted only when its repository, workflow and (if set)
-                environment match a registration. <TrustedPublishingDocsLink />
-            </Typography>
+        <Box>
+            <SettingsHeader
+                title='Trusted Publishers'
+                description={
+                    <>
+                        Let CI/CD workflows publish your extensions without long-lived access tokens. The workflow
+                        authenticates with a short-lived OIDC token at publish time, accepted only when its repository,
+                        workflow and (if set) environment match a registration. <TrustedPublishingDocsLink />
+                    </>
+                }
+                actions={
+                    canRegister ? (
+                        <Button variant='outlined' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+                            Add a trusted publisher
+                        </Button>
+                    ) : undefined
+                }
+            />
             <DelayedLoadIndicator loading={loading} />
             {publishers.length > 0 ? (
                 <>
@@ -126,11 +118,11 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
                     ) : null}
                 </>
             ) : !loading ? (
-                <Typography variant='body1'>
+                <EmptyPlaceholder>
                     {manageableNamespaces.length === 0
                         ? 'Trusted publishers are registered per namespace — create or join a namespace first.'
                         : 'No trusted publishers registered yet.'}
-                </Typography>
+                </EmptyPlaceholder>
             ) : null}
             <RegisterTrustedPublisherDialog
                 open={dialogOpen}
@@ -138,6 +130,6 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
                 namespaces={selectableNamespaces}
                 providers={providers}
             />
-        </>
+        </Box>
     );
 };

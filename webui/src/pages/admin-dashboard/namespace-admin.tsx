@@ -11,7 +11,8 @@
 import { FunctionComponent, useState, useContext, useEffect, ReactNode } from 'react';
 import { Typography, Box, Button } from '@mui/material';
 import { useParams, useNavigate } from 'react-router';
-import { NamespaceDetailView, NamespaceDetailConfigContext } from '../../components/namespace/namespace-detail-view';
+import { NamespaceDetailView } from '../../components/namespace/namespace-detail-view';
+import { NamespaceDetailConfigContext } from '../../components/namespace/namespace-detail-config';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { MainContext } from '../../context';
 import { StyledInput } from './namespace-input';
@@ -86,31 +87,24 @@ export const NamespaceAdmin: FunctionComponent = () => {
 
     let listContainer: ReactNode = '';
     if (currentNamespace && pageSettings && user) {
+        // The detail view lays the header out as a flex row, so these only need to be siblings.
         const headerActions = (
-            <Box>
-                <Button
-                    sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}
-                    variant='outlined'
-                    onClick={() => setChangeDialogIsOpen(true)}>
+            <>
+                <Button variant='outlined' onClick={() => setChangeDialogIsOpen(true)}>
                     Change Namespace
                 </Button>
                 {Object.keys(currentNamespace.extensions).length === 0 && (
-                    <Button
-                        variant='outlined'
-                        sx={{ color: 'error.main', height: 36, ml: { xs: 2 } }}
-                        onClick={() => setDeleteDialogIsOpen(true)}>
+                    <Button variant='outlined' color='error' onClick={() => setDeleteDialogIsOpen(true)}>
                         Delete
                     </Button>
                 )}
-            </Box>
+            </>
         );
         listContainer = (
             <NamespaceDetailConfigContext.Provider value={{ defaultMemberRole: 'owner' }}>
                 <NamespaceDetailView
                     setLoadingState={setDetailLoading}
                     namespace={currentNamespace}
-                    filterUsers={() => true}
-                    fixSelf={false}
                     headerActions={headerActions}
                     extensionRoutePrefix={AdminDashboardRoutes.EXTENSION_ADMIN}
                     fetchExtension={(abortController, extension) =>

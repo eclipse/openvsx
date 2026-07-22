@@ -1,21 +1,25 @@
-/******************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
+/********************************************************************************
+ * Copyright (c) 2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- *****************************************************************************/
+ ********************************************************************************/
 
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
-import { Typography } from '@mui/material';
+import { useLocation } from 'react-router';
+import { Box } from '@mui/material';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
-import { ExtensionCardList } from '../extension/extension-card-list';
+import { DelayedLoadIndicator } from '../delayed-load-indicator';
+import { ManageExtensionCard } from '../extension/manage-extension-card';
+import {
+    EmptyPlaceholder,
+    ManageExtensionGrid,
+    SettingsSectionTitle
+} from '../../pages/user/settings/settings-primitives';
 
 /**
  * Retrieves the full detail for a single extension of a namespace. The caller decides which endpoint
@@ -28,16 +32,12 @@ export type FetchNamespaceExtension = (
     extension: { name: string; url: string }
 ) => Promise<Readonly<Extension | ErrorResult>>;
 
-/**
- * Generic list of the extensions published under a namespace. It renders each extension as a card
- * (inactive extensions are rendered greyed out by the card itself). The extension detail lookup is
- * injected via {@link FetchNamespaceExtension} so the same component can be reused with different
- * endpoints on the user and admin surfaces.
- */
 export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListProps> = props => {
     const [extensions, setExtensions] = useState<Extension[]>();
     const [loading, setLoading] = useState<boolean>(true);
     const context = useContext(MainContext);
+    // The card links back to wherever the namespace is being viewed, user settings or admin alike.
+    const { pathname } = useLocation();
 
     const fetchExtension: FetchNamespaceExtension =
         props.fetchExtension ??
@@ -82,27 +82,34 @@ export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListPro
     };
 
     return (
-        <>
-            <Typography variant='h5'>Extensions</Typography>
+        <Box>
+            <SettingsSectionTitle component='h3'>Extensions</SettingsSectionTitle>
+            <DelayedLoadIndicator loading={loading} />
             {extensions && extensions.length > 0 ? (
-                <ExtensionCardList
-                    extensions={extensions}
-                    loading={loading}
-                    canDelete={props.canDelete ?? true}
-                    routePrefix={props.routePrefix}
-                />
-            ) : (
-                <Typography variant='body1'>No extensions published under this namespace yet.</Typography>
-            )}
-        </>
+                <ManageExtensionGrid>
+                    {extensions.map(extension => (
+                        <ManageExtensionCard
+                            key={`${extension.namespace}.${extension.name}-${extension.version}`}
+                            extension={extension}
+                            routePrefix={props.routePrefix}
+                            linkState={{
+                                backTo: pathname,
+                                backLabel: `Back to ${props.namespace.name}`
+                            }}
+                        />
+                    ))}
+                </ManageExtensionGrid>
+            ) : !loading ? (
+                <EmptyPlaceholder>No extensions published under this namespace yet.</EmptyPlaceholder>
+            ) : null}
+        </Box>
     );
 };
 
 export interface NamespaceExtensionListProps {
     namespace: Namespace;
-    // Endpoint used to retrieve each extension's detail. Defaults to the public registry API.
-    fetchExtension?: FetchNamespaceExtension;
-    canDelete?: boolean;
     // Base route each extension card links to. Supplied by the caller.
     routePrefix: string;
+    // Endpoint used to retrieve each extension's detail. Defaults to the public registry API.
+    fetchExtension?: FetchNamespaceExtension;
 }

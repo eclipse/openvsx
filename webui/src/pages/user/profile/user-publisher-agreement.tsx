@@ -9,13 +9,17 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { Box, Typography, Paper, Button, Dialog, DialogContent, DialogContentText, Link } from '@mui/material';
-import { UserData, isError, ReportedError } from '../../extension-registry-types';
-import { SanitizedMarkdown } from '../../components/sanitized-markdown';
-import { Timestamp } from '../../components/timestamp';
-import { ButtonWithProgress } from '../../components/button-with-progress';
-import { createAbsoluteURL } from '../../utils';
-import { MainContext } from '../../context';
+import { Box, Typography, Button, Dialog, DialogContent, DialogContentText, Link } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import { UserData, isError, ReportedError } from '../../../extension-registry-types';
+import { SanitizedMarkdown } from '../../../components/sanitized-markdown';
+import { Timestamp } from '../../../components/timestamp';
+import { ButtonWithProgress } from '../../../components/button-with-progress';
+import { createAbsoluteURL } from '../../../utils';
+import { MainContext } from '../../../context';
+import { cardSurface } from '../../../components/page-primitives';
+import { IconTile } from '../settings/settings-primitives';
 import CircularProgress from '@mui/material/CircularProgress';
 
 export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
@@ -94,70 +98,86 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
     const publisherAgreementSigned = user.publisherAgreement.status == 'signed';
 
-    let content: ReactNode;
+    let title: string;
+    let description: ReactNode;
+    let action: ReactNode;
     if (publisherAgreementSigned) {
-        content = (
-            <Box display='flex' justifyContent='space-between' alignItems='start'>
-                <Typography variant='body1'>
-                    {user.publisherAgreement.timestamp ? (
-                        <>
-                            You signed the {publisherAgreementName} Publisher Agreement{' '}
-                            <Timestamp value={user.publisherAgreement.timestamp} />.
-                        </>
-                    ) : (
-                        <>You signed the {publisherAgreementName} Publisher Agreement.</>
-                    )}
-                </Typography>
-                <Box display='flex' justifyContent='flex-end'>
-                    <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                        Show Publisher Agreement
-                    </Button>
-                </Box>
-            </Box>
+        title = 'Publisher Agreement signed';
+        description = user.publisherAgreement.timestamp ? (
+            <>
+                You signed the {publisherAgreementName} Publisher Agreement{' '}
+                <Timestamp value={user.publisherAgreement.timestamp} />.
+            </>
+        ) : (
+            <>You signed the {publisherAgreementName} Publisher Agreement.</>
+        );
+        action = (
+            <Button onClick={openPublisherAgreement} variant='outlined'>
+                View
+            </Button>
         );
     } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
-        content = (
+        title = 'Publisher Agreement required';
+        description = (
             <>
-                <Typography variant='body1'>
-                    You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any
-                    extension to this registry.
-                </Typography>
-                <Box mt={2} display='flex' justifyContent='flex-end'>
-                    <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
-                        Show Publisher Agreement
-                    </Button>
-                </Box>
+                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any extension
+                to this registry.
             </>
         );
+        action = (
+            <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
+                Review &amp; sign
+            </Button>
+        );
     } else {
-        content = (
+        title = 'Publisher Agreement required';
+        description = (
             <>
-                <Typography variant='body1'>
-                    You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any
-                    extension to this registry. To start the signing process, please log in with an Eclipse Foundation
-                    account.
-                </Typography>
-                <Box mt={2} display='flex' justifyContent='flex-end'>
-                    <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
-                        <Button variant='outlined' color='secondary'>
-                            Log in with Eclipse
-                        </Button>
-                    </Link>
-                </Box>
+                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any extension
+                to this registry. To start the signing process, please log in with an Eclipse Foundation account.
             </>
+        );
+        action = (
+            <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+                <Button variant='outlined' color='secondary'>
+                    Log in with Eclipse
+                </Button>
+            </Link>
         );
     }
 
     return (
         <>
-            <Paper sx={{ p: 2 }} elevation={3}>
-                {content}
-            </Paper>
+            <Box
+                sx={theme => ({
+                    ...cardSurface(theme),
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.875rem',
+                    p: '1rem 1.125rem',
+                    mt: '1.125rem'
+                })}>
+                <IconTile sx={{ width: '2.125rem', height: '2.125rem' }}>
+                    {publisherAgreementSigned ? (
+                        <CheckIcon sx={{ fontSize: '1.0625rem' }} />
+                    ) : (
+                        <DescriptionOutlinedIcon sx={{ fontSize: '1.0625rem' }} />
+                    )}
+                </IconTile>
+                <Box sx={{ flex: 1, minWidth: '12.5rem' }}>
+                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>{title}</Typography>
+                    <Typography sx={{ fontSize: '0.78125rem', color: 'text.disabled', mt: '0.125rem' }}>
+                        {description}
+                    </Typography>
+                </Box>
+                {action}
+            </Box>
             <Dialog
                 open={dialogOpen}
                 onClose={onClose}
                 maxWidth='xl'
-                sx={{ paperScrollPaper: { height: '75%', width: '100%' } }}>
+                sx={{ '& .MuiDialog-paperScrollPaper': { height: '75%', width: '100%' } }}>
                 <DialogContent>
                     {agreementText ? (
                         <DialogContentText component='div'>

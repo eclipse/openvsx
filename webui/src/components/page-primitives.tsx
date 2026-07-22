@@ -58,7 +58,8 @@ export const Eyebrow = styled(Typography)(({ theme }) => ({
 export const cardSurface = (theme: Theme) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadiusCard
+    // px string: the sx system scales bare numbers by the theme's base radius
+    borderRadius: `${theme.shape.borderRadiusCard}px`
 });
 
 /** Accent focus ring shared by the search fields and card links. */
@@ -77,6 +78,34 @@ export const focusOutline = (theme: Theme) => ({
         outlineOffset: '2px'
     }
 });
+
+/** Pill anatomy shared by the tab strips and pill buttons; callers add their own fill and active state. */
+export const pillSurface = (theme: Theme) => ({
+    padding: '0.4375rem 0.8125rem',
+    borderRadius: theme.shape.borderRadiusPill,
+    border: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.secondary,
+    fontSize: '0.8125rem',
+    fontWeight: 500,
+    transition: 'border-color 0.14s, color 0.14s, background 0.14s'
+});
+
+/** Tiny uppercase tag (member roles, version states); sized by `fontSize`, tinted with the accent when `accent`. */
+export const TagChip = styled('span', { shouldForwardProp: prop => prop !== 'accent' })<{ accent?: boolean }>(
+    ({ theme, accent }) => ({
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '0.38em 1.05em',
+        borderRadius: '999px',
+        fontSize: '0.65625rem',
+        fontWeight: 700,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        backgroundColor: accent ? theme.palette.accentSoft : theme.palette.surface3,
+        color: accent ? theme.palette.secondary.light : theme.palette.text.disabled
+    })
+);
 
 /** Hover treatment for chips and pills: accent border and text color. Suppressed on touch devices. */
 export const accentHover = (theme: Theme) => ({

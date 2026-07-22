@@ -10,10 +10,8 @@
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import {
-    Theme,
     Typography,
     Box,
-    Paper,
     Button,
     Link,
     Dialog,
@@ -23,36 +21,25 @@ import {
     DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import { Link as RouteLink } from 'react-router';
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Timestamp } from '../../components/timestamp';
-import { PersonalAccessToken } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
+import { Timestamp } from '../../../components/timestamp';
+import { PersonalAccessToken } from '../../../extension-registry-types';
+import { MainContext } from '../../../context';
+import { DetailsCard } from '../../../components/details-card';
 import { GenerateAccessTokenDialog } from './generate-access-token-dialog';
-import { TrustedPublishingPromo } from './trusted-publishing/trusted-publishing-promo';
-import { UserSettingsRoutes } from './user-settings-routes';
+import { TrustedPublishingPromo } from '../trusted-publishing/trusted-publishing-promo';
+import { EmptyPlaceholder, IconTile } from '../settings/settings-primitives';
+import { SettingsHeader } from '../settings/settings-header';
+import { UserSettingsRoutes } from '../user-settings-routes';
 
-const link = ({ theme }: { theme: Theme }) => ({
-    color: theme.palette.secondary.main,
-    textDecoration: 'none',
-    '&:hover': {
-        textDecoration: 'underline'
-    }
+const TokenRow = styled(Box)({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '1.125rem 1.25rem'
 });
-
-const StyledLink = styled(Link)(link);
-const StyledRouteLink = styled(RouteLink)(link);
-
-const EmptyTypography = styled(Typography)(({ theme }: { theme: Theme }) => ({
-    [theme.breakpoints.down('sm')]: {
-        textAlign: 'center'
-    }
-}));
-
-const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
-    color: theme.palette.error.main,
-    height: 36
-}));
 
 export const UserSettingsTokens: FunctionComponent = () => {
     const { service, user, handleError, pageSettings } = useContext(MainContext);
@@ -114,32 +101,47 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
     const renderToken = (token: PersonalAccessToken): ReactNode => {
         return (
-            <Box key={'token:' + token.id} p={2} display='flex' justifyContent='space-between'>
-                <Box alignItems='center' overflow='auto'>
-                    <Typography sx={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <TokenRow key={'token:' + token.id}>
+                <IconTile sx={{ width: '2.25rem', height: '2.25rem' }}>
+                    <KeyOutlinedIcon sx={{ fontSize: '1.0625rem' }} />
+                </IconTile>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                        noWrap
+                        sx={{
+                            fontSize: '0.90625rem',
+                            fontWeight: 600
+                        }}>
                         {token.description}
                     </Typography>
-                    <Typography variant='body2'>
-                        Created: <Timestamp value={token.createdTimestamp} />
-                    </Typography>
-                    <Typography variant='body2'>
-                        Expires:{' '}
+                    <Typography sx={{ fontSize: '0.78125rem', color: 'text.disabled', mt: '0.125rem' }}>
+                        Expires{' '}
                         {token.expiresTimestamp ? (
                             <Timestamp value={token.expiresTimestamp} isFutureTime={true} />
                         ) : (
                             'never'
                         )}
                     </Typography>
-                    <Typography variant='body2'>
-                        Accessed: {token.accessedTimestamp ? <Timestamp value={token.accessedTimestamp} /> : 'never'}
+                    <Typography sx={{ fontSize: '0.75rem', color: 'text.disabled', mt: '0.125rem' }}>
+                        Created <Timestamp value={token.createdTimestamp} />
+                        {/* Only stamped by the server once the token has been used to publish. */}
+                        {token.accessedTimestamp ? (
+                            <>
+                                {' '}
+                                &middot; Last used <Timestamp value={token.accessedTimestamp} />
+                            </>
+                        ) : null}
                     </Typography>
                 </Box>
-                <Box display='flex' alignItems='center'>
-                    <DeleteButton variant='outlined' onClick={() => handleDelete(token)} disabled={loading}>
-                        Delete
-                    </DeleteButton>
-                </Box>
-            </Box>
+                <Button
+                    variant='outlined'
+                    size='small'
+                    sx={{ flexShrink: 0 }}
+                    onClick={() => handleDelete(token)}
+                    disabled={loading}>
+                    Revoke
+                </Button>
+            </TokenRow>
         );
     };
 
@@ -150,69 +152,56 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
         return (
             <Box>
-                <EmptyTypography variant='body1'>
+                <SettingsHeader title='Access Tokens' />
+                <Typography variant='body1'>
                     Access tokens cannot be created as you currently do not have an {publisherAgreementName} Publisher
                     Agreement signed. Please return to your{' '}
-                    <StyledRouteLink to={UserSettingsRoutes.PROFILE}>Profile</StyledRouteLink> page to sign the
-                    Publisher Agreement.
+                    <Link color='secondary' underline='hover' component={RouteLink} to={UserSettingsRoutes.PROFILE}>
+                        Profile
+                    </Link>{' '}
+                    page to sign the Publisher Agreement.
                     {publisherAgreementContact !== undefined && (
                         <>
                             {' '}
                             Should you believe this is in error, please contact{' '}
-                            <StyledLink href='mailto:{publisherAgreementContact}'>
+                            <Link color='secondary' underline='hover' href={`mailto:${publisherAgreementContact}`}>
                                 {publisherAgreementContact}
-                            </StyledLink>
+                            </Link>
                             .
                         </>
                     )}
-                </EmptyTypography>
+                </Typography>
             </Box>
         );
     }
 
     return (
-        <>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' },
-                    alignItems: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-                }}>
-                <Box>
-                    <Typography variant='h5' gutterBottom>
-                        Access Tokens
-                    </Typography>
-                </Box>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: { xs: 'center', sm: 'center', md: 'normal', lg: 'normal', xl: 'normal' }
-                    }}>
-                    <Box mr={1} mb={1}>
-                        <GenerateAccessTokenDialog handleTokenGenerated={handleTokenGenerated} />
-                    </Box>
-                    <Box>
-                        <DeleteButton
+        <Box>
+            <SettingsHeader
+                title='Access Tokens'
+                description='Personal access tokens let you publish extensions from the command line. Treat them like passwords.'
+                actions={
+                    <>
+                        <Button
                             variant='outlined'
+                            color='error'
                             onClick={onShowDeleteAll}
                             disabled={loading || tokens.length === 0}>
                             Delete all
-                        </DeleteButton>
-                    </Box>
-                </Box>
+                        </Button>
+                        <GenerateAccessTokenDialog handleTokenGenerated={handleTokenGenerated} />
+                    </>
+                }
+            />
+            <Box mb='1.375rem'>
+                <TrustedPublishingPromo />
             </Box>
-            <TrustedPublishingPromo />
-            <Box mt={2}>
-                {tokens.length === 0 && !loading ? (
-                    <EmptyTypography variant='body1'>You currently have no tokens.</EmptyTypography>
-                ) : null}
-            </Box>
-            <Box mt={2}>
-                <DelayedLoadIndicator loading={loading} />
-                <Paper elevation={3}>{tokens.map(token => renderToken(token))}</Paper>
-            </Box>
+            <DelayedLoadIndicator loading={loading} />
+            {tokens.length > 0 ? (
+                <DetailsCard>{tokens.map(token => renderToken(token))}</DetailsCard>
+            ) : !loading ? (
+                <EmptyPlaceholder>You currently have no tokens.</EmptyPlaceholder>
+            ) : null}
             <Dialog open={showDeleteAll} onClose={onHideDeleteAll}>
                 <DialogTitle>Delete all access tokens</DialogTitle>
                 <DialogContent>
@@ -221,14 +210,12 @@ export const UserSettingsTokens: FunctionComponent = () => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button variant='contained' color='primary' onClick={onHideDeleteAll}>
-                        Cancel
-                    </Button>
-                    <Button variant='contained' color='secondary' autoFocus onClick={handleDeleteAll}>
+                    <Button onClick={onHideDeleteAll}>Cancel</Button>
+                    <Button variant='contained' color='error' autoFocus onClick={handleDeleteAll}>
                         Delete
                     </Button>
                 </DialogActions>
             </Dialog>
-        </>
+        </Box>
     );
 };
