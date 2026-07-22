@@ -27,9 +27,10 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import redis.clients.jedis.RedisClusterClient;
+
+import org.eclipse.openvsx.AbstractPostgresContainerTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,13 +39,11 @@ import static org.mockito.ArgumentMatchers.any;
     webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = {
         "ovsx.rate-limit.enabled=true",
-        "ovsx.rate-limit.filters[0].url=/(api|vscode)/.*",
-        "ovsx.elasticsearch.enabled=false"
+        "ovsx.rate-limit.filters[0].url=/(api|vscode)/.*"
     }
 )
 @AutoConfigureTestRestTemplate
-@ActiveProfiles("test_db")
-class RateLimitIntegrationTest {
+class RateLimitIntegrationTest extends AbstractPostgresContainerTest {
 
     @LocalServerPort
     int port;

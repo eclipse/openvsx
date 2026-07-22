@@ -10,7 +10,6 @@
 package org.eclipse.openvsx;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -46,13 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These tests exercise the end-to-end behaviour against a real database, as well as the query paths that
  * must exclude tombstones from public surfaces.
  */
-@SpringBootTest(
-    properties = {
-        "ovsx.elasticsearch.enabled=false"
-    }
-)
-@ActiveProfiles("test_db")
-class ExtensionSoftDeleteTest {
+@SpringBootTest
+class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
 
     private static final String NAMESPACE = "soft-delete-testns";
     private static final String EXTENSION = "soft-delete-testext";

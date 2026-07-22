@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +29,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -50,6 +51,8 @@ import org.eclipse.openvsx.util.TempFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("integration")
+@Tag("s3")
 @Testcontainers
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AwsStorageServiceIntegrationTest.TestConfig.class)
@@ -60,7 +63,7 @@ class AwsStorageServiceIntegrationTest {
 
     @Container
     static LocalStackContainer localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:4.7"))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.IAM)
+            .withServices("s3", "iam")
             .withReuse(true);
 
     @Autowired
@@ -78,7 +81,7 @@ class AwsStorageServiceIntegrationTest {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add(
                 "ovsx.storage.aws.service-endpoint",
-                () -> localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                () -> localstack.getEndpoint().toString());
         registry.add("ovsx.storage.aws.access-key-id", () -> "test");
         registry.add("ovsx.storage.aws.secret-access-key", () -> "test");
         registry.add("ovsx.storage.aws.region", () -> TEST_REGION);
@@ -99,11 +102,11 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 storageService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(storageService, "pathStyleAccess", true);
 
         testS3Client = S3Client.builder()
-                .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
+                .endpointOverride(localstack.getEndpoint())
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
                                 AwsBasicCredentials.create("test", "test")))
@@ -516,7 +519,7 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 restrictedBucketService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(restrictedBucketService, "pathStyleAccess", true);
 
         ReflectionTestUtils.setField(restrictedBucketService, "s3Client", null);
@@ -553,7 +556,7 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 awsStorageService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(awsStorageService, "pathStyleAccess", true);
 
         return awsStorageService;

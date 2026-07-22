@@ -18,20 +18,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
+import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.entities.Namespace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(
-    properties = {
-        "ovsx.elasticsearch.enabled=false"
-    }
-)
-@ActiveProfiles("test_db")
+@SpringBootTest
 @Transactional
-class NamespaceRepositoryTest {
+class NamespaceRepositoryTest extends AbstractPostgresContainerTest {
 
     @Autowired
     NamespaceRepository repo;

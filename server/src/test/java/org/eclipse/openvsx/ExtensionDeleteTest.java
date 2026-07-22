@@ -22,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -57,13 +56,8 @@ import static org.mockito.Mockito.doAnswer;
  * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
  * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
-@SpringBootTest(
-    properties = {
-        "ovsx.elasticsearch.enabled=false"
-    }
-)
-@ActiveProfiles("test_db")
-class ExtensionDeleteTest {
+@SpringBootTest
+class ExtensionDeleteTest extends AbstractPostgresContainerTest {
 
     private static final String NAMESPACE = "race-testns";
     private static final String EXTENSION = "race-testext";

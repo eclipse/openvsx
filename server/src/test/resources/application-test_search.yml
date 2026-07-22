@@ -1,0 +1,5 @@
+# Activated together with the "test_search" profile, which also provisions the Elasticsearch
+# test container (see TestSearchConfig). Tests that need search enable it by activating that profile.
+ovsx:
+  elasticsearch:
+    enabled: true
