@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
+import { FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Typography } from '@mui/material';
 import { Namespace, isError, Extension, ErrorResult } from '../../extension-registry-types';
 import { MainContext } from '../../context';
@@ -43,19 +43,19 @@ export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListPro
         props.fetchExtension ??
         ((abortController, extension) => context.service.getExtensionDetail(abortController, extension.url));
 
-    const abortController = useRef<AbortController>(new AbortController());
+    // A single effect keyed on the namespace name owns the fetch lifecycle: it resets state, loads the
+    // extensions, and creates a fresh AbortController each run so that switching namespaces (or unmounting)
+    // aborts the previous namespace's in-flight requests instead of letting a stale response overwrite the
+    // current one. (Aborts are ignored by the error handler, so this never surfaces a spurious error.)
     useEffect(() => {
-        updateExtensions();
-        return () => abortController.current.abort();
-    }, []);
-
-    useEffect(() => {
+        const abortController = new AbortController();
         setExtensions(undefined);
         setLoading(true);
-        updateExtensions();
+        updateExtensions(abortController);
+        return () => abortController.abort();
     }, [props.namespace.name]);
 
-    const updateExtensions = async (): Promise<void> => {
+    const updateExtensions = async (abortController: AbortController): Promise<void> => {
         const entries = Object.keys(props.namespace.extensions).map((name: string) => ({
             name,
             url: props.namespace.extensions[name]
@@ -63,7 +63,7 @@ export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListPro
 
         const getExtension = async (entry: { name: string; url: string }) => {
             try {
-                const result = await fetchExtension(abortController.current, entry);
+                const result = await fetchExtension(abortController, entry);
                 if (isError(result)) {
                     throw result;
                 }
