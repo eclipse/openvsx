@@ -30,6 +30,26 @@ export const Section = styled(Box)(({ theme }) => ({
     }
 }));
 
+/**
+ * Vertical stack of page `Section`s that owns all vertical rhythm: a top offset
+ * below the nav plus a single, normalized gap between sections. Sections carry no
+ * spacing of their own, so a custom home can cherry-pick and reorder them — and
+ * whichever lands first always gets the top offset, never a leading gap. The owl
+ * selector skips the first (and any null) child.
+ */
+export const SectionStack = styled(Box)(({ theme }) => ({
+    paddingTop: '4.875rem',
+    [theme.breakpoints.down('sm')]: {
+        paddingTop: '2.75rem'
+    },
+    '& > * + *': {
+        marginTop: '4.5rem',
+        [theme.breakpoints.down('sm')]: {
+            marginTop: '3rem'
+        }
+    }
+}));
+
 /** Small uppercase label used to head sections, columns and sidebars. */
 export const Eyebrow = styled(Typography)(({ theme }) => ({
     fontSize: '0.75rem',

@@ -38,7 +38,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                     return null;
                 }
                 return (
-                    <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
+                    <Section component='section' key={row.title}>
                         <Box
                             sx={{
                                 display: 'flex',

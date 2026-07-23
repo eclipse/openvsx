@@ -74,7 +74,7 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '3rem', sm: '4.5rem' } }}>
+        <Section component='section'>
             <Eyebrow sx={{ letterSpacing: '0.1em', mb: { xs: '0.875rem', sm: '1.25rem' } }}>
                 {heading ?? 'Get Involved'}
             </Eyebrow>

@@ -223,13 +223,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     };
 
     return (
-        <Section
-            component='section'
-            sx={{
-                pt: { xs: '2.75rem', sm: '4.875rem' },
-                pb: { xs: '1.125rem', sm: '1.875rem' },
-                textAlign: 'center'
-            }}>
+        <Section component='section' sx={{ textAlign: 'center' }}>
             {SearchHeader && <SearchHeader />}
             <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '41.25rem', mx: 'auto' }}>
                 {/* The nav field claims 'vt-search' while the hero is unregistered — duplicate names abort transitions. */}

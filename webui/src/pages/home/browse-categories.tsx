@@ -38,7 +38,7 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = props 
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '1.375rem', sm: '2.25rem' } }}>
+        <Section component='section'>
             <Eyebrow sx={{ mb: { xs: '0.75rem', sm: '1.125rem' } }}>Browse by category</Eyebrow>
             <Box
                 sx={{
