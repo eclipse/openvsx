@@ -321,11 +321,12 @@ public class ExtensionService {
      * Unlike {@link #deleteExtension(UserData, boolean, String, String, TargetPlatformVersion...)}, which
      * soft-deletes versions (keeping the row so the version identity stays reserved), this physically removes
      * the rows and frees the version identity for republishing. It is intended for administrative purge and
-     * automated cleanup (mirror, extension control) and performs no user-ownership check beyond the optional
-     * {@code restrictedToUser} version lookup.
+     * automated cleanup (mirror, extension control) and performs no user-ownership check.
+     * <p>
+     * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson purgeExtension(
+    public ResultJson purgeExtensionNoWait(
             UserData user,
             String namespaceName,
             String extensionName,

@@ -14,7 +14,7 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 
 public class DataMirrorJobRequest implements JobRequest {
     @Override
-    public Class<? extends JobRequestHandler> getJobRequestHandler() {
+    public Class<? extends JobRequestHandler<?>> getJobRequestHandler() {
         return DataMirrorJobRequestHandler.class;
     }
 }

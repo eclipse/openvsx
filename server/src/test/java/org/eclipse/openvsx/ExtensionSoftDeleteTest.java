@@ -171,7 +171,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
         persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
 
         var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
-        extensionService.purgeExtension(owner(), NAMESPACE, EXTENSION, targets);
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, targets);
 
         assertThat(versionExists("1.0.0"))
                 .as("a purged version's row must be physically removed")
@@ -193,7 +193,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
         extensionService.deleteExtension(owner(), false, NAMESPACE, EXTENSION, targets);
         assertThat(versionRemoved("1.0.0")).isTrue();
 
-        extensionService.purgeExtension(owner(), NAMESPACE, EXTENSION, targets);
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, targets);
         assertThat(versionExists("1.0.0"))
                 .as("purging a tombstone must physically remove its row")
                 .isFalse();

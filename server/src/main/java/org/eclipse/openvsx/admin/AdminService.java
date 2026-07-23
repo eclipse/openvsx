@@ -194,25 +194,6 @@ public class AdminService {
         return extensions.deleteExtension(user, false, namespaceName, extensionName, targetVersions);
     }
 
-    /**
-     * Purge (permanently delete) the provided versions of an extension. If all versions shall be purged, the
-     * extension as a whole will be removed unless it is referenced by bundles or used as a dependency.
-     * <p>
-     * Unlike {@link #deleteExtensionNoWait}, this physically removes the rows from the database and storage,
-     * freeing the version identity for republishing. Intended for administrative purge and automated cleanup.
-     * <p>
-     * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
-     */
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson purgeExtensionNoWait(
-            UserData user,
-            String namespaceName,
-            String extensionName,
-            TargetPlatformVersion... targetVersions
-    ) throws ErrorResultException {
-        return extensions.purgeExtension(user, namespaceName, extensionName, targetVersions);
-    }
-
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteNamespace(String namespaceName, UserData admin) throws ErrorResultException {
         var namespace = repositories.findNamespace(namespaceName);

@@ -31,8 +31,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.UrlConfigService;
-import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -50,7 +50,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
     private final RepositoryService repositories;
     private final RestTemplate backgroundRestTemplate;
     private final UrlConfigService urlConfigService;
-    private final AdminService admin;
+    private final ExtensionService extensions;
     private final MirrorExtensionService mirrorExtensionService;
     private final DateTimeFormatter dateFormatter;
 
@@ -59,14 +59,14 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             RepositoryService repositories,
             RestTemplate backgroundRestTemplate,
             UrlConfigService urlConfigService,
-            AdminService admin,
+            ExtensionService extensions,
             MirrorExtensionService mirrorExtensionService
     ) {
         dataMirrorService.ifPresent(service -> this.data = service);
         this.repositories = repositories;
         this.backgroundRestTemplate = backgroundRestTemplate;
         this.urlConfigService = urlConfigService;
-        this.admin = admin;
+        this.extensions = extensions;
         this.mirrorExtensionService = mirrorExtensionService;
         this.dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     }
@@ -139,7 +139,7 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             ThreadLocalJobContext.getJobContext().logger().info("deleting " + extensionId);
             try {
                 var namespace = extension.getNamespace();
-                admin.purgeExtensionNoWait(mirrorUser, namespace.getName(), extension.getName());
+                extensions.purgeExtensionNoWait(mirrorUser, namespace.getName(), extension.getName());
             } catch (ErrorResultException e) {
                 if (e.getStatus() != HttpStatus.NOT_FOUND) {
                     logger.warn("mirror: failed to delete extension {}", extensionId, e);

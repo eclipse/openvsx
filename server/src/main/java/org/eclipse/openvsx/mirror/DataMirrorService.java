@@ -247,7 +247,7 @@ public class DataMirrorService {
         var extension = extVersion.getExtension();
         // The mirror must not keep tombstones: versions dropped upstream are purged so the mirror can
         // re-track upstream state (and re-publish a version that later reappears upstream).
-        admin.purgeExtensionNoWait(
+        extensions.purgeExtensionNoWait(
                 user,
                 extension.getNamespace().getName(),
                 extension.getName(),
