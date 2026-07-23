@@ -17,9 +17,9 @@ import { alpha, styled, Theme } from '@mui/material/styles';
 /** Normalized gap between stacked sections; the owl selector skips the first (and any null) child. */
 export const SectionStack = styled(Box)(({ theme }) => ({
     '& > * + *': {
-        marginTop: '4.5rem',
+        marginTop: '2.5rem',
         [theme.breakpoints.down('sm')]: {
-            marginTop: '3rem'
+            marginTop: '1.5rem'
         }
     }
 }));
