@@ -121,13 +121,13 @@ public class AdminService {
      * No further checks are made if the extension is referenced by bundles or as a dependency.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void deleteExtensionAndDependencies(UserData admin, String namespaceName, String extensionName)
+    public void purgeExtensionAndDependencies(UserData admin, String namespaceName, String extensionName)
             throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
-        deleteExtensionAndDependencies(admin, extension, 0);
+        purgeExtensionAndDependencies(admin, extension, 0);
     }
 
-    private void deleteExtensionAndDependencies(UserData admin, Extension extension, int depth)
+    private void purgeExtensionAndDependencies(UserData admin, Extension extension, int depth)
             throws ErrorResultException {
         if (depth > 5) {
             throw new ErrorResultException(
@@ -137,12 +137,12 @@ public class AdminService {
 
         var bundledRefs = repositories.findBundledExtensionsReference(extension);
         for (var bundledRef : bundledRefs) {
-            deleteExtensionAndDependencies(admin, bundledRef, depth);
+            purgeExtensionAndDependencies(admin, bundledRef, depth);
         }
 
         var dependRefs = repositories.findDependenciesReference(extension);
         for (var dependRef : dependRefs) {
-            deleteExtensionAndDependencies(admin, dependRef, depth);
+            purgeExtensionAndDependencies(admin, dependRef, depth);
         }
 
         // We unconditionally purge the extension,
@@ -150,10 +150,10 @@ public class AdminService {
         extensions.purgeExtension(admin, extension, false);
     }
 
-    private void deleteExtensionAndDependencies(UserData admin, ExtensionVersion extVersion, int depth) {
+    private void purgeExtensionAndDependencies(UserData admin, ExtensionVersion extVersion, int depth) {
         var extension = extVersion.getExtension();
         if (repositories.countVersions(extension.getNamespace().getName(), extension.getName()) == 1) {
-            deleteExtensionAndDependencies(admin, extension, depth + 1);
+            purgeExtensionAndDependencies(admin, extension, depth + 1);
             return;
         }
 
@@ -170,7 +170,7 @@ public class AdminService {
      * This method is intended for non-user interaction as it will wait till the lock can be acquired.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void deleteExtension(UserData admin, String namespaceName, String extensionName)
+    public void purgeExtension(UserData admin, String namespaceName, String extensionName)
             throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
         extensions.purgeExtension(admin, extension, false);
