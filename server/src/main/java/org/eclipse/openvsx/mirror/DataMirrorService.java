@@ -37,7 +37,6 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
-import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Component
@@ -244,14 +243,9 @@ public class DataMirrorService {
     }
 
     public void deleteExtensionVersion(ExtensionVersion extVersion, UserData user) {
-        var extension = extVersion.getExtension();
         // The mirror must not keep tombstones: versions dropped upstream are purged so the mirror can
         // re-track upstream state (and re-publish a version that later reappears upstream).
-        extensions.purgeExtensionNoWait(
-                user,
-                extension.getNamespace().getName(),
-                extension.getName(),
-                TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion()));
+        extensions.purgeExtensionVersion(user, extVersion);
     }
 
     public void mirrorNamespaceMetadata(String namespaceName) {
