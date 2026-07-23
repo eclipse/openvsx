@@ -21,11 +21,11 @@ import {
     useRef,
     useState
 } from 'react';
-import { Box, ButtonBase, Typography } from '@mui/material';
+import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
-import { accentHover, focusOutline, focusRing, Section } from '../../components/page-primitives';
+import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
 import { useSearch, SEARCH_DEBOUNCE_MS } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';
@@ -223,7 +223,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     };
 
     return (
-        <Section component='section' sx={{ textAlign: 'center' }}>
+        <Container maxWidth='xl' component='section' sx={{ textAlign: 'center' }}>
             {SearchHeader && <SearchHeader />}
             <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '41.25rem', mx: 'auto' }}>
                 {/* The nav field claims 'vt-search' while the hero is unregistered — duplicate names abort transitions. */}
@@ -290,6 +290,6 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
                     ))}
                 </Box>
             )}
-        </Section>
+        </Container>
     );
 };

@@ -49,6 +49,7 @@ import { useShortcut } from '../../hooks/use-shortcut';
 import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_PX } from '../../default/theme';
 import { useSetExtensionTint } from '../../context/extension-tint-context';
 import { accentHover, focusOutline } from '../../components/page-primitives';
+import { PageContainer } from '../../components/page-container';
 
 // Category-pill look for the sticky tabs, floating over the nav bar's blur fan;
 // the translucent fill matches the nav search field's treatment.
@@ -505,7 +506,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             {extension && (
                 <>
                     <ExtensionHeader extension={extension} bandRef={bandRef} />
-                    <Container maxWidth='xl'>
+                    <PageContainer flushTop>
                         <Tabs
                             value={activeTab}
                             variant='scrollable'
@@ -567,10 +568,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 state={{ preserveScroll: true }}
                             />
                         </Tabs>
-                        {/* Owns the space below the pinned pills for every tab, so the panels
-                            don't each set their own; min-height keeps the preserved scroll
-                            position valid while a panel loads. */}
-                        <Box sx={{ minHeight: '100vh', pt: 2 }}>
+                        <Box sx={{ pt: 2 }}>
                             <Routes>
                                 <Route
                                     path={ExtensionTab.REVIEWS}
@@ -591,7 +589,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 />
                             </Routes>
                         </Box>
-                    </Container>
+                    </PageContainer>
                 </>
             )}
             {error && (

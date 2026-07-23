@@ -33,6 +33,7 @@ export {
 } from './pages/home/use-home-data';
 export { ExtensionCard, type ExtensionCardProps } from './components/extension-card';
 export * from './components/page-primitives';
+export * from './components/page-container';
 // Leaf hook modules keep their helpers private, so `export *` exposes only the
 // public hook plus its types (e.g. useSearch + SearchFilter).
 export * from './hooks/use-search';

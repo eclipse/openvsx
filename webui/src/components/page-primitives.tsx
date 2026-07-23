@@ -14,34 +14,8 @@
 import { Box, Typography } from '@mui/material';
 import { alpha, styled, Theme } from '@mui/material/styles';
 
-/** Max width of the centered content column shared by every page section. */
-export const CONTENT_MAX_WIDTH = 1320;
-
-/**
- * Horizontally-centered content column with responsive gutters. The single
- * source of truth for page width so sections stay aligned across the app.
- */
-export const Section = styled(Box)(({ theme }) => ({
-    maxWidth: CONTENT_MAX_WIDTH,
-    marginInline: 'auto',
-    paddingInline: '1.75rem',
-    [theme.breakpoints.down('sm')]: {
-        paddingInline: '1rem'
-    }
-}));
-
-/**
- * Vertical stack of page `Section`s that owns all vertical rhythm: a top offset
- * below the nav plus a single, normalized gap between sections. Sections carry no
- * spacing of their own, so a custom home can cherry-pick and reorder them — and
- * whichever lands first always gets the top offset, never a leading gap. The owl
- * selector skips the first (and any null) child.
- */
+/** Normalized gap between stacked sections; the owl selector skips the first (and any null) child. */
 export const SectionStack = styled(Box)(({ theme }) => ({
-    paddingTop: '4.875rem',
-    [theme.breakpoints.down('sm')]: {
-        paddingTop: '2.75rem'
-    },
     '& > * + *': {
         marginTop: '4.5rem',
         [theme.breakpoints.down('sm')]: {

@@ -12,12 +12,12 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { Link as RouteLink } from 'react-router-dom';
 import { HomeInvolvementCard } from '../../page-settings';
-import { Section, Eyebrow, focusOutline } from '../../components/page-primitives';
+import { Eyebrow, focusOutline } from '../../components/page-primitives';
 
 const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
@@ -74,7 +74,7 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
         return null;
     }
     return (
-        <Section component='section'>
+        <Container maxWidth='xl' component='section'>
             <Eyebrow sx={{ letterSpacing: '0.1em', mb: { xs: '0.875rem', sm: '1.25rem' } }}>
                 {heading ?? 'Get Involved'}
             </Eyebrow>
@@ -120,6 +120,6 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                     );
                 })}
             </Box>
-        </Section>
+        </Container>
     );
 };

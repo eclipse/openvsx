@@ -13,6 +13,7 @@
 
 import { FunctionComponent, useContext } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
+import { PageContainer } from '../../components/page-container';
 import { SectionStack } from '../../components/page-primitives';
 import { MainContext } from '../../context';
 import { HomeSettings } from '../../page-settings';
@@ -48,11 +49,13 @@ export const HomePage: FunctionComponent = () => {
 const HomeContent: FunctionComponent<{ home?: HomeSettings }> = ({ home }) => {
     const { pageSettings } = useContext(MainContext);
     return (
-        <SectionStack component='main' sx={{ animation: 'fadeIn .25s ease' }}>
-            <HeroSearch searchHeader={pageSettings.elements.searchHeader} popularSearches={home?.popularSearches} />
-            <CuratedSections sections={home?.curatedSections} />
-            <BrowseCategories />
-            <GetInvolved heading={home?.involvement?.heading} cards={home?.involvement?.cards} />
-        </SectionStack>
+        <PageContainer fluid component='main' sx={{ animation: 'fadeIn .25s ease' }}>
+            <SectionStack>
+                <HeroSearch searchHeader={pageSettings.elements.searchHeader} popularSearches={home?.popularSearches} />
+                <BrowseCategories />
+                <CuratedSections sections={home?.curatedSections} />
+                <GetInvolved heading={home?.involvement?.heading} cards={home?.involvement?.cards} />
+            </SectionStack>
+        </PageContainer>
     );
 };
