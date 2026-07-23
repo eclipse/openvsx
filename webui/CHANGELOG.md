@@ -23,6 +23,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Token display in generate-token dialog now uses a masked input with show/hide toggle and copy button ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
+- Upgrade to vite 8+ and disable manual chunks for bundling ([#1989](https://github.com/eclipse-openvsx/openvsx/pull/1989))
 
 ### Fixed
 
