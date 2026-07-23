@@ -327,20 +327,19 @@ public class ExtensionService {
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson purgeExtension(
             UserData user,
-            boolean restrictedToUser,
             String namespaceName,
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
         if (repositories
-                .isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
+                .isDeleteAllVersions(null, namespaceName, extensionName, targetVersions)) {
             return purgeExtension(user, extension, true);
         }
 
         return purgeExtensionVersions(
                 user,
-                resolveVersions(user, restrictedToUser, namespaceName, extensionName, targetVersions));
+                resolveVersions(user, false, namespaceName, extensionName, targetVersions));
     }
 
     private List<ExtensionVersion> resolveVersions(

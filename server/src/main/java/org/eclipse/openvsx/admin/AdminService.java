@@ -210,7 +210,7 @@ public class AdminService {
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
-        return extensions.purgeExtension(user, false, namespaceName, extensionName, targetVersions);
+        return extensions.purgeExtension(user, namespaceName, extensionName, targetVersions);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
