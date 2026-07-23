@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -76,6 +77,7 @@ public class AdminAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private final ExtensionService extensions;
     private final SettingsService settings;
     private final LogService logs;
     private final LocalRegistryService local;
@@ -84,6 +86,7 @@ public class AdminAPI {
     public AdminAPI(
             RepositoryService repositories,
             AdminService admins,
+            ExtensionService extensions,
             SettingsService settings,
             LogService logs,
             LocalRegistryService local,
@@ -91,6 +94,7 @@ public class AdminAPI {
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        this.extensions = extensions;
         this.settings = settings;
         this.logs = logs;
         this.local = local;
@@ -540,7 +544,7 @@ public class AdminAPI {
                     targetVersions,
                     TargetPlatformVersionJson::toTargetPlatformVersion,
                     TargetPlatformVersion[]::new);
-            var result = admins.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
+            var result = extensions.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
@@ -584,7 +588,7 @@ public class AdminAPI {
                     targetVersions,
                     TargetPlatformVersionJson::toTargetPlatformVersion,
                     TargetPlatformVersion[]::new);
-            var result = admins.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
+            var result = extensions.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
