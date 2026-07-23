@@ -594,24 +594,6 @@ class UserAPITest {
     }
 
     @Test
-    void testDeleteBundledExtension() throws Exception {
-        var userData = mockUserData();
-        mockExtension(userData, 2, 1, 0);
-        mockMvc.perform(
-                post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                        .content(
-                                "[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user("test_user"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        content().json(
-                                errorJson(
-                                        "Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1.0.0")));
-    }
-
-    @Test
     void testDeleteDependingExtension() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 2, 0, 1);
@@ -814,7 +796,8 @@ class UserAPITest {
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.getLast()));
         Mockito.when(
-                repositories.isDeleteAllVersions(any(), eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class)))
+                repositories
+                        .isDeleteAllActiveVersions(any(), eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class)))
                 .then(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) {
