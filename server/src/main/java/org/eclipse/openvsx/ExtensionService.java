@@ -581,15 +581,6 @@ public class ExtensionService {
     }
 
     private void checkNoDependencies(Extension extension) throws ErrorResultException {
-        var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        if (!bundledRefs.isEmpty()) {
-            throw new ErrorResultException(
-                    "Extension " + NamingUtil.toExtensionId(extension)
-                            + " is bundled by the following extension packs: "
-                            + bundledRefs.stream()
-                                    .map(NamingUtil::toFileFormat)
-                                    .collect(Collectors.joining(", ")));
-        }
         var dependRefs = repositories.findDependenciesReference(extension);
         if (!dependRefs.isEmpty()) {
             throw new ErrorResultException(
