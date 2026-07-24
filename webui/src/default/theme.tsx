@@ -12,7 +12,7 @@ import { CSSProperties } from 'react';
 import { createTheme, Theme } from '@mui/material';
 import type {} from '@mui/x-data-grid/themeAugmentation';
 
-export const MONO_FONT = "Menlo, Monaco, Consolas, 'Droid Sans Mono', 'Courier New', monospace";
+export const MONO_FONT = "'Geist Mono', monospace";
 export const NAVBAR_HEIGHT = '3.875rem';
 // Pixel twin for scroll math (rem values assume the 16px root font size).
 export const NAVBAR_HEIGHT_PX = parseFloat(NAVBAR_HEIGHT) * 16;
@@ -108,9 +108,7 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
     const dark = themeType === 'dark';
     return createTheme({
         typography: {
-            // VS Code's workbench look: the platform system font at a 13px base.
-            fontFamily: "system-ui, -apple-system, 'Segoe UI', Ubuntu, 'Droid Sans', sans-serif",
-            fontSize: 13,
+            fontFamily: "'Geist', 'Roboto', system-ui, -apple-system, sans-serif",
             button: {
                 textTransform: 'none',
                 fontWeight: 400,

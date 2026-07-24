@@ -26,9 +26,12 @@ export const ExtensionRatingStars: FunctionComponent<ExtensionRatingStarsProps> 
             return <StarIcon key={i} fontSize={fontSize} />;
         }
         if (i > starsNumber && i - 1 < starsNumber) {
+            // inline-flex + explicit inset pin the half star exactly over the gray
+            // one; an absolute box without offsets sits at its baseline-relative
+            // static position and drifts as line-height changes.
             return (
-                <Box key={i} component='span' sx={{ position: 'relative', display: 'inline-block' }}>
-                    <StarHalfIcon fontSize={fontSize} sx={{ position: 'absolute' }} />
+                <Box key={i} component='span' sx={{ position: 'relative', display: 'inline-flex' }}>
+                    <StarHalfIcon fontSize={fontSize} sx={{ position: 'absolute', top: 0, left: 0 }} />
                     <StarIcon fontSize={fontSize} sx={{ display: 'block', color: '#bcbcbc' }} />
                 </Box>
             );

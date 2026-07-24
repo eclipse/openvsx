@@ -21,14 +21,16 @@ import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detai
 import { SearchEntry } from '../extension-registry-types';
 import { ExtensionIcon } from './extension/extension-icon';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
-import { createRoute, formatCompactNumber, toCompactRelativeTime, toLocalTime } from '../utils';
+import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
 import { GridItemProps } from '../hooks/use-grid-cursor';
 import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
 
 // Shared surface + footprint so the card and its skeleton occupy identical space.
+// A size container so tight cards can shed the footer's review count.
 const cardLayout = (theme: Theme): CSSObject => ({
     ...cardSurface(theme),
+    containerType: 'inline-size',
     padding: '1rem 0.875rem',
     [theme.breakpoints.down('sm')]: { padding: '0.75rem 0.625rem' },
     display: 'flex',
@@ -75,7 +77,7 @@ const SkeletonContent: FunctionComponent = () => (
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.0625rem',
-                fontSize: { xs: '0.875rem', sm: '1rem' }
+                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
             }}>
             <ExtensionRatingStars number={0} fontSize='inherit' />
         </Box>
@@ -111,7 +113,6 @@ export const ExtensionCard = memo(
         const title = extension?.displayName ?? extension?.name;
         const downloadCount = extension ? formatCompactNumber(extension.downloadCount ?? 0) : undefined;
         const reviewCount = extension?.reviewCount ?? 0;
-        const updatedCompact = toCompactRelativeTime(extension?.timestamp);
 
         // One Fade over both states so it runs once and carries through the skeleton → card swap.
         return (
@@ -179,10 +180,9 @@ export const ExtensionCard = memo(
                                         gap: '0.375rem',
                                         overflow: 'hidden',
                                         // Hovering a truncated side unfolds it; its neighbor yields instead.
-                                        '& > :first-of-type:hover': { maxWidth: 'none' },
+                                        '& > :first-of-type:hover': { flexShrink: 0, maxWidth: 'none' },
                                         '& > :first-of-type:hover + *': { minWidth: 0, flexShrink: 1 },
-                                        '& > :last-of-type:hover': { flexShrink: 0 },
-                                        '& > :last-of-type:hover > :first-of-type': { maxWidth: 'none' },
+                                        '& > :last-of-type:hover': { flexShrink: 0, maxWidth: 'none' },
                                         '&:has(> :last-of-type:hover) > :first-of-type': {
                                             flexShrink: 1,
                                             minWidth: 0
@@ -194,10 +194,13 @@ export const ExtensionCard = memo(
                                             alignItems: 'center',
                                             gap: '0.25rem',
                                             minWidth: 0,
-                                            // The namespace wins at rest: it never shrinks (capped so
-                                            // extreme names can't evict the version side entirely).
-                                            flexShrink: 0,
-                                            maxWidth: '70%'
+                                            // Both sides trim under pressure, but the namespace keeps
+                                            // priority: it shrinks at a third of the version's rate.
+                                            flexShrink: 1,
+                                            maxWidth: '70%',
+                                            // When the version unfolds and this side collapses, clip
+                                            // the badge instead of letting it paint over the version.
+                                            overflow: 'hidden'
                                         }}>
                                         <Typography
                                             component='div'
@@ -228,38 +231,21 @@ export const ExtensionCard = memo(
                                     </Box>
                                     <Typography
                                         component='div'
+                                        title={extension.version}
                                         sx={{
                                             fontSize: '0.6875rem',
                                             color: 'text.disabled',
-                                            // Yields before the namespace. minWidth 0 beats the
-                                            // min-content floor, else the row clips the timestamp.
-                                            flexShrink: 1,
-                                            minWidth: 0,
+                                            // Yields faster than the namespace, down to one glyph
+                                            // plus the ellipsis; long calendar versions cap at 10ch.
+                                            flexShrink: 3,
+                                            minWidth: '2ch',
+                                            maxWidth: '10ch',
                                             fontFamily: MONO_FONT,
-                                            display: 'flex',
-                                            alignItems: 'baseline'
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
                                         }}>
-                                        {/* Cap long calendar versions so the namespace keeps its room. */}
-                                        <Box
-                                            component='span'
-                                            title={extension.version}
-                                            sx={{
-                                                maxWidth: '10ch',
-                                                minWidth: 0,
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis'
-                                            }}>
-                                            {extension.version}
-                                        </Box>
-                                        {updatedCompact && (
-                                            <Box
-                                                component='span'
-                                                title={`updated ${toLocalTime(extension.timestamp)}`}
-                                                sx={{ whiteSpace: 'nowrap', flexShrink: 0, ml: '0.1875rem' }}>
-                                                {`·\u2009${updatedCompact}`}
-                                            </Box>
-                                        )}
+                                        {extension.version}
                                     </Typography>
                                 </Box>
                                 {extension.deprecated && (
@@ -292,7 +278,7 @@ export const ExtensionCard = memo(
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '0.0625rem',
-                                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                                            fontSize: { xs: '0.8125rem', sm: '0.875rem' }
                                         }}>
                                         <ExtensionRatingStars
                                             number={extension.averageRating ?? 0}
@@ -304,7 +290,10 @@ export const ExtensionCard = memo(
                                                 sx={{
                                                     fontSize: '0.6875rem',
                                                     color: 'text.disabled',
-                                                    ml: '0.25rem'
+                                                    ml: '0.1875rem',
+                                                    // Sheds first on tight cards; the query measures
+                                                    // the card's content box, i.e. this row's width.
+                                                    '@container (max-width: 134px)': { display: 'none' }
                                                 }}>
                                                 ({formatCompactNumber(reviewCount)})
                                             </Box>
@@ -316,7 +305,8 @@ export const ExtensionCard = memo(
                                             sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '0.25rem',
+                                                gap: '0.1875rem',
+                                                flexShrink: 0,
                                                 fontFamily: MONO_FONT,
                                                 fontSize: '0.6875rem',
                                                 color: 'text.disabled'

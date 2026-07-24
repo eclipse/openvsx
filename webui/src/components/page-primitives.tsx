@@ -37,7 +37,7 @@ export const ExtensionGrid = styled(Box)({
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(145px, 1fr))',
     gap: '0.75rem',
-    '&:has(> :nth-child(7))': {
+    '&:has(> :nth-of-type(7))': {
         gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))'
     }
 });
