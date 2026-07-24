@@ -319,7 +319,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
-                () -> repositories.findActiveExtensionsForUrls(namespace),
+                () -> repositories.findExtensionsForUrls(namespace),
                 () -> repositories.deactivateKeyPairs(),
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),

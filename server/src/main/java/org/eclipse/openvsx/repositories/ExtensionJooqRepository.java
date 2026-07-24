@@ -255,11 +255,10 @@ public class ExtensionJooqRepository {
                 .fetchOne(unresolvedDependency);
     }
 
-    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
+    public List<Extension> findExtensionsForUrls(Namespace namespace) {
         return dsl.select(EXTENSION.ID, EXTENSION.NAME)
                 .from(EXTENSION)
                 .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
-                .and(EXTENSION.ACTIVE.eq(true))
                 .fetch(row -> {
                     var extension = new Extension();
                     extension.setId(row.get(EXTENSION.ID));

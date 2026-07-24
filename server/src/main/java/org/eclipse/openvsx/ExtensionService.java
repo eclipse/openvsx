@@ -288,10 +288,12 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
-        var versions = resolveVersions(user, restrictedToUser, namespaceName, extensionName, targetVersions);
+        var uniqueVersions = distinctVersions(targetVersions);
+        var versions = resolveVersions(user, restrictedToUser, namespaceName, extensionName, uniqueVersions);
+
         // if all active versions of the extension would get deactivated, check for dependencies
         if (extension.isActive() &&
-                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions)) {
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, uniqueVersions)) {
             checkNoDependencies(extension);
         }
 
@@ -299,12 +301,15 @@ public class ExtensionService {
     }
 
     /**
-     * Purges (permanently deletes) the given extension or extension versions from the database and storage.
+     * Purges (permanently deletes) the given extension versions from the database and storage.
      * <p>
      * Unlike {@link #deleteExtension(UserData, boolean, String, String, TargetPlatformVersion...)}, which
      * soft-deletes versions (keeping the row so the version identity stays reserved), this physically removes
      * the rows and frees the version identity for republishing. It is intended for administrative purge and
      * automated cleanup (mirror, extension control) and performs no user-ownership check.
+     * <p>
+     * The versions to purge must be named explicitly; an empty {@code targetVersions} purges nothing. Use
+     * {@link #purgeExtension(UserData, Extension, boolean)} to purge an extension as a whole.
      * <p>
      * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
      */
@@ -316,18 +321,30 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
-        if (targetVersions.length == 0) {
-            return purgeExtension(user, extension, true);
+        var uniqueVersions = distinctVersions(targetVersions);
+        var versions = resolveVersions(user, false, namespaceName, extensionName, uniqueVersions);
+
+        // if every version of the extension is purged, purge the extension as a whole so that its
+        // record, reviews and search entry are removed too and nothing is left orphaned
+        if (!versions.isEmpty() && versions.size() == repositories.countVersions(namespaceName, extensionName)) {
+            return purgeExtension(user, extension, extension.isActive());
         }
 
-        var versions = resolveVersions(user, false, namespaceName, extensionName, targetVersions);
         // if all active versions of the extension would get deactivated, check for dependencies
         if (extension.isActive() &&
-                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions)) {
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, uniqueVersions)) {
             checkNoDependencies(extension);
         }
 
         return purgeExtensionVersions(user, versions);
+    }
+
+    /**
+     * Returns the given target versions with duplicates removed, so that callers can reason about the
+     * exact set of versions to delete/purge without a repeated entry inflating any count-based check.
+     */
+    private static TargetPlatformVersion[] distinctVersions(TargetPlatformVersion... targetVersions) {
+        return Arrays.stream(targetVersions).distinct().toArray(TargetPlatformVersion[]::new);
     }
 
     private List<ExtensionVersion> resolveVersions(
@@ -337,7 +354,7 @@ public class ExtensionService {
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) {
-        return Arrays.stream(targetVersions)
+        var versions = Arrays.stream(targetVersions)
                 .map(target -> {
                     var extVersion = restrictedToUser
                             ? repositories.findVersionPublishedWithUser(
@@ -364,6 +381,23 @@ public class ExtensionService {
                     return extVersion;
                 })
                 .toList();
+
+        // Guard against a mismatch between the requested versions and what was actually resolved: the
+        // resolved versions must correspond exactly to the requested (target platform, version) pairs.
+        // Otherwise, the count-based "delete/purge all versions" checks could be driven to a wrong
+        // conclusion (e.g. by duplicate or unexpectedly-resolving entries).
+        var requested = Arrays.stream(targetVersions).collect(Collectors.toSet());
+        var resolved = versions.stream()
+                .map(v -> new TargetPlatformVersion(v.getTargetPlatform(), v.getVersion()))
+                .collect(Collectors.toSet());
+        if (!resolved.equals(requested)) {
+            throw new ErrorResultException(
+                    "The requested versions of " + NamingUtil.toExtensionId(namespaceName, extensionName)
+                            + " could not be resolved.",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        return versions;
     }
 
     /**

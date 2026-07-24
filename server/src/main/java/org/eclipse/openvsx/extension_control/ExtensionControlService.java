@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -36,6 +37,7 @@ import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.ExtensionId;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_MALICIOUS_EXTENSIONS;
@@ -127,13 +129,32 @@ public class ExtensionControlService {
         }
 
         var wasDeprecated = extension.isDeprecated();
+        var oldReplacement = extension.getReplacement();
         extension.setDeprecated(deprecated);
         extension.setDownloadable(downloadable);
         if (replacementId != null) {
             var replacement = repositories.findExtension(replacementId.extension(), replacementId.namespace());
-            extension.setReplacement(replacement);
+            if (replacement == null || !replacement.isActive()) {
+                // Never point at a replacement that does not exist or has no active version; such a
+                // pointer would surface a dead replacement link on the extension.
+                if (replacement != null) {
+                    logger.info(
+                            "Ignoring inactive replacement {} configured for {}",
+                            NamingUtil.toExtensionId(replacement),
+                            NamingUtil.toExtensionId(extension));
+                }
+                extension.setReplacement(null);
+            } else {
+                extension.setReplacement(replacement);
+            }
         }
-        if (deprecated != wasDeprecated) {
+
+        // The replacement is part of the (cached) extension JSON, so evict when it changes too, not
+        // only when the deprecated flag flips. Compare by id, as the entity equals() is identity-based.
+        var replacementChanged = !Objects.equals(
+                oldReplacement != null ? oldReplacement.getId() : null,
+                extension.getReplacement() != null ? extension.getReplacement().getId() : null);
+        if (deprecated != wasDeprecated || replacementChanged) {
             cache.evictNamespaceDetails(extension);
             cache.evictLatestExtensionVersion(extension);
             cache.evictExtensionJsons(extension);

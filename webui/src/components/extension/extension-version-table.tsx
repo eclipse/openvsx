@@ -58,6 +58,14 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                 <TableBody>
                     {pagedVersions.map(v => {
                         const allRemoved = v.targetPlatforms.length > 0 && v.targetPlatforms.every(tp => tp.removed);
+                        // canDelete is only populated in the user settings view; undefined means unrestricted.
+                        const notPublisher = v.canDelete === false;
+                        const deleteDisabled = allRemoved || notPublisher;
+                        const deleteTitle = notPublisher
+                            ? 'Only the publisher or a namespace owner can delete this version'
+                            : allRemoved
+                              ? 'Version already removed'
+                              : 'Delete version';
                         return (
                             <TableRow key={v.version}>
                                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
@@ -88,10 +96,10 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                                 <TableCell align='right' padding='checkbox' sx={{ whiteSpace: 'nowrap' }}>
                                     <IconButton
                                         size='small'
-                                        title={allRemoved ? 'Version already removed' : 'Delete version'}
-                                        disabled={allRemoved}
+                                        title={deleteTitle}
+                                        disabled={deleteDisabled}
                                         onClick={() => onDeleteVersion(v)}>
-                                        <DeleteIcon fontSize='small' color={allRemoved ? 'disabled' : 'error'} />
+                                        <DeleteIcon fontSize='small' color={deleteDisabled ? 'disabled' : 'error'} />
                                     </IconButton>
                                 </TableCell>
                                 {onPurgeVersion && (

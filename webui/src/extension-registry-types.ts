@@ -145,6 +145,10 @@ export interface TargetPlatformActive {
 export interface VersionTargetPlatforms {
     version: string;
     targetPlatforms: TargetPlatformActive[];
+    // Whether the current user may delete this version. Omitted (undefined) in contexts where deletion
+    // is unrestricted (admin) or not applicable (public); explicitly false for namespace members who
+    // did not publish this version and therefore may only delete their own versions.
+    canDelete?: boolean;
 }
 
 export type StarRating = 1 | 2 | 3 | 4 | 5;

@@ -39,8 +39,12 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
 
     const publicRoute = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
     const allVersions = (extension.allTargetPlatformVersions ?? []).filter(v => !VERSION_ALIASES.includes(v.version));
+    // Versions the current user is allowed to delete. canDelete is only populated in the user settings
+    // view (undefined means unrestricted, e.g. admin/purge); a non-owner member may only delete the
+    // versions they published themselves. "Delete All Versions" therefore operates on this subset.
+    const deletableVersions = canPurge ? allVersions : allVersions.filter(v => v.canDelete !== false);
     // A version can still be (soft-)deleted while it has at least one target platform that is not removed.
-    const hasDeletableVersions = allVersions.some(v => v.targetPlatforms.some(tp => !tp.removed));
+    const hasDeletableVersions = deletableVersions.some(v => v.targetPlatforms.some(tp => !tp.removed));
 
     return (
         <Box>
@@ -112,7 +116,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                     open={true}
                     onClose={() => setDeleteAllOpen(false)}
                     extension={extension}
-                    versions={allVersions}
+                    versions={deletableVersions}
                     onRemove={onRemoveVersion}
                     onDeleted={onVersionDeleted}
                 />

@@ -11,9 +11,11 @@ package org.eclipse.openvsx.admin;
 
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
@@ -116,51 +118,69 @@ public class AdminService {
     }
 
     /**
-     * Deletes the given extension together with all bundled or dependent extensions.
+     * Purges the given extension together with every extension that <em>references</em> it — i.e. the
+     * extension packs that bundle it and the extensions that declare a dependency on it — applied
+     * recursively, so that nothing is left referencing a purged extension. Note that this walks the
+     * reverse direction: it does <em>not</em> purge the extensions that the given extension itself
+     * bundles or depends on.
      * <p>
-     * No further checks are made if the extension is referenced by bundles or as a dependency.
+     * No dependency check is performed: referencing extensions are purged rather than blocking the
+     * operation.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public void purgeExtensionAndDependencies(UserData admin, String namespaceName, String extensionName)
+    public void purgeExtensionAndReferencingExtensions(UserData admin, String namespaceName, String extensionName)
             throws ErrorResultException {
         var extension = extensions.lockExtension(namespaceName, extensionName);
-        purgeExtensionAndDependencies(admin, extension, 0);
+        purgeExtensionAndReferencingExtensions(admin, extension, new LinkedHashSet<>());
     }
 
-    private void purgeExtensionAndDependencies(UserData admin, Extension extension, int depth)
-            throws ErrorResultException {
-        if (depth > 5) {
-            throw new ErrorResultException(
-                    "Failed to delete extension and its dependencies. Exceeded maximum recursion depth.",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-        var bundledRefs = repositories.findBundledExtensionsReference(extension);
-        for (var bundledRef : bundledRefs) {
-            purgeExtensionAndDependencies(admin, bundledRef, depth);
-        }
-
-        var dependRefs = repositories.findDependenciesReference(extension);
-        for (var dependRef : dependRefs) {
-            purgeExtensionAndDependencies(admin, dependRef, depth);
-        }
-
-        // We unconditionally purge the extension,
-        // not checking if there are dependencies on this extension.
-        extensions.purgeExtension(admin, extension, false);
-    }
-
-    private void purgeExtensionAndDependencies(UserData admin, ExtensionVersion extVersion, int depth) {
-        var extension = extVersion.getExtension();
-        if (repositories.countVersions(extension.getNamespace().getName(), extension.getName()) == 1) {
-            purgeExtensionAndDependencies(admin, extension, depth + 1);
+    private void purgeExtensionAndReferencingExtensions(
+            UserData admin,
+            Extension extension,
+            Set<Long> purgedExtensionIds
+    ) throws ErrorResultException {
+        // Break reference cycles (e.g. two extensions bundling each other) and avoid purging the same
+        // extension twice: skip if we already started purging it in this recursion. Tracking visited
+        // extensions (rather than a fixed recursion depth) also lets arbitrarily long reference chains
+        // be purged without a spurious depth-limit failure.
+        if (!purgedExtensionIds.add(extension.getId())) {
             return;
         }
 
-        extensions.removeExtensionVersion(extVersion);
-        extension.getVersions().remove(extVersion);
-        extensions.updateExtension(extension);
-        logs.logAction(admin, ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion)));
+        // Versions that reference this extension would break once it is purged: extension packs that
+        // bundle it and extensions that depend on it. A single version can do both, so de-duplicate by
+        // version id to avoid double-counting (which could skew the per-extension check below).
+        var referencingVersions = new LinkedHashMap<Long, ExtensionVersion>();
+        repositories.findBundledExtensionsReference(extension)
+                .forEach(version -> referencingVersions.putIfAbsent(version.getId(), version));
+        repositories.findDependenciesReference(extension)
+                .forEach(version -> referencingVersions.putIfAbsent(version.getId(), version));
+
+        // Group the referencing versions by their extension so we can decide, per extension, whether to
+        // purge it as a whole (all of its versions reference this one) or only the referencing versions.
+        var referencingByExtensionId = referencingVersions.values().stream()
+                .collect(Collectors.groupingBy(version -> version.getExtension().getId()));
+
+        for (var versions : referencingByExtensionId.values()) {
+            var referencingExtension = versions.getFirst().getExtension();
+            var totalVersions = repositories.countVersions(
+                    referencingExtension.getNamespace().getName(),
+                    referencingExtension.getName());
+            if (versions.size() >= totalVersions) {
+                // every version of the referencing extension references this one: purge it as a whole
+                // so that no empty extension record (or its reviews/search entry) is left orphaned.
+                purgeExtensionAndReferencingExtensions(admin, referencingExtension, purgedExtensionIds);
+            } else {
+                // only some versions reference this one: purge just those, keeping the extension.
+                for (var version : versions) {
+                    extensions.purgeExtensionVersion(admin, version);
+                }
+            }
+        }
+
+        // Finally purge this extension itself. We unconditionally purge it, not checking whether other
+        // extensions reference it, because those referencing extensions have just been purged above.
+        extensions.purgeExtension(admin, extension, false);
     }
 
     /**

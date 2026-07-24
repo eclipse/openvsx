@@ -716,8 +716,8 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
 
-    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
-        return extensionJooqRepo.findActiveExtensionsForUrls(namespace);
+    public List<Extension> findExtensionsForUrls(Namespace namespace) {
+        return extensionJooqRepo.findExtensionsForUrls(namespace);
     }
 
     public ExtensionVersion findExtensionVersion(

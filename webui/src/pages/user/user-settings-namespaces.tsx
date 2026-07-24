@@ -118,6 +118,9 @@ export const UserSettingsNamespaces: FunctionComponent = () => {
                     filterUsers={(foundUser: UserData) =>
                         foundUser.provider !== user?.provider || foundUser.loginName !== user?.loginName
                     }
+                    fetchExtension={(abortController, extension) =>
+                        service.getExtension(abortController, chosenNamespace.name, extension.name)
+                    }
                     fixSelf={true}
                     namespaceAccessUrl={namespaceAccessUrl}
                     theme={pageSettings.themeType}

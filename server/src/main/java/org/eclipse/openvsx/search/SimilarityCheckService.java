@@ -83,6 +83,8 @@ public class SimilarityCheckService implements PublishCheck {
         var extensionName = scan.getExtensionName();
         var displayName = scan.getExtensionDisplayName();
 
+        // if at least a version exists for that extension (regardless of active state),
+        // do not consider it as a new extension anymore
         if (config.isOnlyCheckNewExtensions() && repositories.countVersions(namespaceName, extensionName) > 0) {
             return PublishCheck.Result.pass();
         }

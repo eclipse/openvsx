@@ -314,11 +314,11 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
     }
 
     /**
-     * Purging all the active versions by naming them explicitly must still only remove those versions;
-     * the (now inactive) extension record must remain. Only an unscoped purge removes the extension.
+     * Purging every version of an extension by naming them all removes the extension as a whole,
+     * so its record is not left orphaned.
      */
     @Test
-    void purgeExtension_purgingAllActiveVersionsKeepsExtensionEntity() {
+    void purgeExtension_purgingAllVersionsRemovesExtension() {
         persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
         persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
 
@@ -331,8 +331,8 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
         assertThat(versionExists("1.0.0")).isFalse();
         assertThat(versionExists("2.0.0")).isFalse();
         assertThat(extensionExists())
-                .as("purging named versions must not remove the extension record, even when they are all active")
-                .isTrue();
+                .as("purging all versions of an extension must remove the extension record too")
+                .isFalse();
     }
 
     /**
@@ -360,22 +360,58 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
     }
 
     /**
-     * An unscoped purge (no target versions) removes the whole extension, tombstones and all.
+     * Duplicate target versions must not inflate the "all active versions" check: purging the same
+     * subset version twice must be treated as purging that single version, so the dependency guard
+     * (which only applies when all active versions are removed) does not fire and the other version
+     * survives. Regression test for the duplicate-driven miscount.
      */
     @Test
-    void purgeExtension_withEmptyTargets_removesWholeExtensionIncludingTombstones() {
+    void purgeExtension_deDuplicatesTargetsBeforeCounting() {
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+        persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        // The extension is depended on: the guard would reject removing ALL active versions.
+        doReturn(Streamable.of(dependantReference())).when(repositories).findDependenciesReference(any());
+
+        var duplicate = new TargetPlatformVersion[] {
+            TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0"),
+            TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0")
+        };
+        // Only a single distinct version is targeted, so this is not an "all versions" purge and must
+        // succeed without tripping the dependency guard.
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, duplicate);
+
+        assertThat(versionExists("1.0.0"))
+                .as("the named version must be purged")
+                .isFalse();
+        assertThat(versionExists("2.0.0"))
+                .as("a version that was not named must survive")
+                .isTrue();
+        assertThat(extensionExists())
+                .as("purging a subset must not remove the extension record")
+                .isTrue();
+    }
+
+    /**
+     * A purge with no target versions purges nothing: versions must be named explicitly (the
+     * whole-extension shortcut was removed).
+     */
+    @Test
+    void purgeExtension_withEmptyTargetsIsNoOp() {
         persistVersion("0.9.0", TargetPlatform.NAME_UNIVERSAL, false, true); // pre-existing tombstone
         persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
 
         extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION);
 
-        assertThat(versionExists("1.0.0")).isFalse();
+        assertThat(versionExists("1.0.0"))
+                .as("an empty-target purge must not remove any version")
+                .isTrue();
         assertThat(versionExists("0.9.0"))
-                .as("an unscoped purge must remove reserved tombstones too")
-                .isFalse();
+                .as("an empty-target purge must not remove tombstones")
+                .isTrue();
         assertThat(extensionExists())
-                .as("an unscoped purge must remove the extension record")
-                .isFalse();
+                .as("an empty-target purge must not remove the extension record")
+                .isTrue();
     }
 
     private ExtensionVersion dependantReference() {
