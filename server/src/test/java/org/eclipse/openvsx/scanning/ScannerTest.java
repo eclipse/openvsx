@@ -115,6 +115,24 @@ class ScannerTest {
         assertFalse(result.isClean());
         assertEquals(1, result.getThreats().size());
         assertEquals("Verdict: malicious", result.getSummary());
+        assertNull(result.isMalicious());
+    }
+
+    @Test
+    void result_maliciousVerdictHelpers() {
+        var benign = Scanner.Result.of(
+                List.of(new Scanner.Threat("rule", "details", "LOW")),
+                "Looks fine",
+                false);
+        assertTrue(benign.hasBenignVerdict());
+        assertFalse(benign.hasMaliciousVerdict());
+        assertEquals(Boolean.FALSE, benign.isMalicious());
+
+        var malicious = Scanner.Result.of(List.of(), "Malicious package", true);
+        assertTrue(malicious.hasMaliciousVerdict());
+        assertFalse(malicious.hasBenignVerdict());
+        assertTrue(malicious.isClean()); // no findings, but verdict is malicious
+        assertEquals(Boolean.TRUE, malicious.isMalicious());
     }
 
     // === Scanner default methods ===

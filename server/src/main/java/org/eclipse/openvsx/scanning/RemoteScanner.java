@@ -14,6 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -405,26 +406,33 @@ public class RemoteScanner implements Scanner {
                     responseConfig.getSummaryPath());
         }
 
+        // Extract explicit malicious verdict, if configured. A configured path that fails to resolve is treated as
+        // a scan failure
+        Boolean maliciousVerdict = null;
+        if (responseConfig.getMaliciousPath() != null) {
+            maliciousVerdict = responseExtractor.extractBoolean(
+                    response,
+                    responseConfig.getFormat(),
+                    responseConfig.getMaliciousPath());
+            if (maliciousVerdict == null) {
+                throw new ScannerException(
+                        "Scanner '" + scannerName + "' has malicious-path '" + responseConfig.getMaliciousPath()
+                                + "' configured, but it did not resolve to a boolean in the response");
+            }
+        }
+
         // Extract threats
         String threatsPath = responseConfig.getThreatsPath();
-        if (threatsPath == null) {
-            // No threats path - assume clean
-            return Scanner.Result.clean(summary);
+        List<Scanner.Threat> threats = Collections.emptyList();
+        if (threatsPath != null) {
+            List<Map<String, Object>> threatObjects = responseExtractor.extractList(
+                    response,
+                    responseConfig.getFormat(),
+                    threatsPath);
+            threats = mapThreats(threatObjects, responseConfig);
         }
 
-        List<Map<String, Object>> threatObjects = responseExtractor.extractList(
-                response,
-                responseConfig.getFormat(),
-                threatsPath);
-
-        // Map threats
-        List<Scanner.Threat> threats = mapThreats(threatObjects, responseConfig);
-
-        if (threats.isEmpty()) {
-            return Scanner.Result.clean(summary);
-        } else {
-            return Scanner.Result.withThreats(threats, summary);
-        }
+        return Scanner.Result.of(threats, summary, maliciousVerdict);
     }
 
     /**

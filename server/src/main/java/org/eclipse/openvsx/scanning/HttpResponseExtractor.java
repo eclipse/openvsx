@@ -51,6 +51,23 @@ public class HttpResponseExtractor {
     }
 
     /**
+     * Extract a boolean value from a response. Accepts JSON booleans and string forms ("true"/"false"). Returns null
+     * when the path is missing or the value is not a boolean.
+     */
+    public Boolean extractBoolean(String response, String format, String path) throws ScannerException {
+        if (response == null || path == null) {
+            return null;
+        }
+
+        return switch (format.toLowerCase()) {
+            case "json" -> extractJsonBoolean(response, path);
+            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
+            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
+            default -> throw new IllegalArgumentException("Unsupported format: " + format);
+        };
+    }
+
+    /**
      * Extract a list of objects from a response.
      */
     public List<Map<String, Object>> extractList(String response, String format, String path) throws ScannerException {
@@ -77,6 +94,26 @@ public class HttpResponseExtractor {
     private String extractJsonString(String json, String jsonPath) throws ScannerException {
         JsonNode node = pickFirst(parseJson(json), jsonPath);
         return node != null && !node.isMissingNode() ? node.asString(null) : null;
+    }
+
+    private Boolean extractJsonBoolean(String json, String jsonPath) throws ScannerException {
+        JsonNode node = pickFirst(parseJson(json), jsonPath);
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        if (node.isBoolean()) {
+            return node.asBoolean();
+        }
+        if (node.isString()) {
+            String value = node.asString(null);
+            if ("true".equalsIgnoreCase(value)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(value)) {
+                return false;
+            }
+        }
+        return null;
     }
 
     private List<Map<String, Object>> extractJsonList(String json, String jsonPath) throws ScannerException {

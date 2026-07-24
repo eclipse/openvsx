@@ -73,6 +73,25 @@ class ResponseExtractorTest {
     }
 
     @Test
+    void extractBoolean_readsJsonBoolean() throws ScannerException {
+        String json = """
+                {"verdictData": {"isMalicious": true}}
+                """;
+
+        assertEquals(Boolean.TRUE, extractor.extractBoolean(json, "json", "$.verdictData.isMalicious"));
+    }
+
+    @Test
+    void extractBoolean_readsFalseAndMissing() throws ScannerException {
+        String json = """
+                {"verdictData": {"isMalicious": false}}
+                """;
+
+        assertEquals(Boolean.FALSE, extractor.extractBoolean(json, "json", "$.verdictData.isMalicious"));
+        assertNull(extractor.extractBoolean(json, "json", "$.verdictData.missing"));
+    }
+
+    @Test
     void extractString_handlesArrayIndex() throws ScannerException {
         String json = """
                 {"items": ["first", "second", "third"]}
