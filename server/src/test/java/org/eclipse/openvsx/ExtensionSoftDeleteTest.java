@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.Streamable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -30,10 +32,14 @@ import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 /**
  * Integration tests for the soft-delete (immutable version) feature in {@link ExtensionService}.
@@ -54,7 +60,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
     @Autowired
     ExtensionService extensionService;
 
-    @Autowired
+    @MockitoSpyBean
     RepositoryService repositories;
 
     @Autowired
@@ -234,6 +240,157 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
                 .containsExactly(TargetPlatform.NAME_UNIVERSAL);
     }
 
+    /**
+     * The dependency guard must fire when a delete removes the last <em>active</em> versions, even if
+     * older tombstones still occupy rows. Regression test for the flaw where the guard was keyed on the
+     * total row count (tombstones included) instead of the active versions, so deleting all active
+     * versions of a depended-on extension slipped through without the check.
+     */
+    @Test
+    void deleteExtension_runsDependencyCheckWhenDeletingAllActiveVersionsDespiteTombstone() {
+        persistVersion("0.9.0", TargetPlatform.NAME_UNIVERSAL, false, true); // pre-existing tombstone
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false); // the only active version
+
+        // Simulate another extension depending on this one, so the dependency guard must reject.
+        doReturn(Streamable.of(dependantReference())).when(repositories).findDependenciesReference(any());
+
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        assertThatThrownBy(() -> extensionService.deleteExtension(owner(), false, NAMESPACE, EXTENSION, targets))
+                .as("deleting all active versions of a depended-on extension must run the dependency check")
+                .isInstanceOf(ErrorResultException.class);
+
+        assertThat(versionRemoved("1.0.0"))
+                .as("a rejected delete must leave the active version untouched")
+                .isFalse();
+        assertThat(versionActive("1.0.0"))
+                .as("the active version must survive the rejected delete")
+                .isTrue();
+    }
+
+    /**
+     * Deleting only a subset of the active versions is not a delete-all, so the dependency guard must
+     * not fire: the selected version is soft-deleted and the remaining active version stays live.
+     */
+    @Test
+    void deleteExtension_skipsDependencyCheckWhenDeletingSubsetOfActiveVersions() {
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+        persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        // Even if a dependency exists, deleting a subset must not trigger the guard.
+        doReturn(Streamable.of(dependantReference())).when(repositories).findDependenciesReference(any());
+
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.deleteExtension(owner(), false, NAMESPACE, EXTENSION, targets);
+
+        assertThat(versionRemoved("1.0.0"))
+                .as("deleting a subset must soft-delete the selected version without a dependency check")
+                .isTrue();
+        assertThat(versionActive("2.0.0"))
+                .as("the remaining active version must stay live")
+                .isTrue();
+    }
+
+    /**
+     * Purging explicit versions must remove only those versions: pre-existing tombstones and the
+     * extension record itself must survive so reserved identities stay reserved.
+     */
+    @Test
+    void purgeExtension_withExplicitTargets_keepsExtensionAndTombstones() {
+        persistVersion("0.9.0", TargetPlatform.NAME_UNIVERSAL, false, true); // pre-existing tombstone
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, targets);
+
+        assertThat(versionExists("1.0.0"))
+                .as("the purged version's row must be physically removed")
+                .isFalse();
+        assertThat(versionExists("0.9.0"))
+                .as("a tombstone the caller did not select must survive a scoped purge")
+                .isTrue();
+        assertThat(extensionExists())
+                .as("a scoped purge must not remove the extension record itself")
+                .isTrue();
+    }
+
+    /**
+     * Purging all the active versions by naming them explicitly must still only remove those versions;
+     * the (now inactive) extension record must remain. Only an unscoped purge removes the extension.
+     */
+    @Test
+    void purgeExtension_purgingAllActiveVersionsKeepsExtensionEntity() {
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+        persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        var targets = new TargetPlatformVersion[] {
+            TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0"),
+            TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "2.0.0")
+        };
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, targets);
+
+        assertThat(versionExists("1.0.0")).isFalse();
+        assertThat(versionExists("2.0.0")).isFalse();
+        assertThat(extensionExists())
+                .as("purging named versions must not remove the extension record, even when they are all active")
+                .isTrue();
+    }
+
+    /**
+     * The dependency guard must also fire on the purge path when purging all active versions.
+     */
+    @Test
+    void purgeExtension_runsDependencyCheckWhenPurgingAllActiveVersions() {
+        persistVersion("0.9.0", TargetPlatform.NAME_UNIVERSAL, false, true); // pre-existing tombstone
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        // Simulate another extension depending on this one.
+        doReturn(Streamable.of(dependantReference())).when(repositories).findDependenciesReference(any());
+
+        var targets = TargetPlatformVersion.of(TargetPlatform.NAME_UNIVERSAL, "1.0.0");
+        assertThatThrownBy(() -> extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION, targets))
+                .as("purging all active versions of a depended-on extension must run the dependency check")
+                .isInstanceOf(ErrorResultException.class);
+
+        assertThat(versionExists("1.0.0"))
+                .as("a rejected purge must leave the active version in place")
+                .isTrue();
+        assertThat(versionExists("0.9.0"))
+                .as("a rejected purge must leave tombstones in place")
+                .isTrue();
+    }
+
+    /**
+     * An unscoped purge (no target versions) removes the whole extension, tombstones and all.
+     */
+    @Test
+    void purgeExtension_withEmptyTargets_removesWholeExtensionIncludingTombstones() {
+        persistVersion("0.9.0", TargetPlatform.NAME_UNIVERSAL, false, true); // pre-existing tombstone
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        extensionService.purgeExtensionNoWait(owner(), NAMESPACE, EXTENSION);
+
+        assertThat(versionExists("1.0.0")).isFalse();
+        assertThat(versionExists("0.9.0"))
+                .as("an unscoped purge must remove reserved tombstones too")
+                .isFalse();
+        assertThat(extensionExists())
+                .as("an unscoped purge must remove the extension record")
+                .isFalse();
+    }
+
+    private ExtensionVersion dependantReference() {
+        var namespace = new Namespace();
+        namespace.setName("dependant-ns");
+        var extension = new Extension();
+        extension.setName("dependant-ext");
+        extension.setNamespace(namespace);
+        var extVersion = new ExtensionVersion();
+        extVersion.setExtension(extension);
+        extVersion.setVersion("1.0.0");
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        return extVersion;
+    }
+
     private void persistVersion(String version, String targetPlatform, boolean active, boolean removed) {
         new TransactionTemplate(txManager).executeWithoutResult(status -> {
             var extension = em.find(Extension.class, extensionId);
@@ -266,6 +423,25 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
                 "select ev.id from ExtensionVersion ev where ev.version = :version "
                         + "and ev.extension.namespace.name = :namespace and ev.removed = true and ev.active = false",
                 version) > 0;
+    }
+
+    private boolean versionActive(String version) {
+        return count(
+                "select ev.id from ExtensionVersion ev where ev.version = :version "
+                        + "and ev.extension.namespace.name = :namespace and ev.active = true and ev.removed = false",
+                version) > 0;
+    }
+
+    private boolean extensionExists() {
+        return Boolean.TRUE.equals(
+                new TransactionTemplate(txManager).execute(
+                        status -> !em.createQuery(
+                                "select e.id from Extension e "
+                                        + "where e.name = :name and e.namespace.name = :namespace")
+                                .setParameter("name", EXTENSION)
+                                .setParameter("namespace", NAMESPACE)
+                                .getResultList()
+                                .isEmpty()));
     }
 
     private Long removedByOf(String version) {

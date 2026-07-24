@@ -287,7 +287,11 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
                     extVersion.getTargetPlatform(),
                     extVersion.getVersion());
 
-            admins.deleteExtensionNoWait(admin, namespace.getName(), extension.getName());
+            admins.deleteExtensionNoWait(
+                    admin,
+                    namespace.getName(),
+                    extension.getName(),
+                    TargetPlatformVersion.of(extVersion.getTargetPlatform(), extVersion.getVersion()));
             assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
         }
     }

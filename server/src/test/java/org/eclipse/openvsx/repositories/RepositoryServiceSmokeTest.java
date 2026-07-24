@@ -334,7 +334,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                         "extensionName",
                         "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
-                () -> repositories.isDeleteAllVersions(userData, "namespaceName", "extensionName"),
+                () -> repositories.isDeleteAllActiveVersions("namespaceName", "extensionName"),
                 () -> repositories.deactivateAccessTokens(userData),
                 () -> repositories.expireAccessTokens(NOW),
                 () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),

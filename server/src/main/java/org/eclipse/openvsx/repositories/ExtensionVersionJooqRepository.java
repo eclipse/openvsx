@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -1540,7 +1539,7 @@ public class ExtensionVersionJooqRepository {
                         .and(EXTENSION_VERSION.PRE_RELEASE.eq(!extVersion.isPreRelease())));
     }
 
-    public Integer count(String namespaceName, String extensionName) {
+    public Integer countVersions(String namespaceName, String extensionName) {
         return dsl.select(DSL.count().as("count"))
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION)
@@ -1552,14 +1551,13 @@ public class ExtensionVersionJooqRepository {
                 .fetchOne("count", Integer.class);
     }
 
-    public boolean isDeleteAllVersions(
-            @Nullable UserData user,
+    public boolean isDeleteAllActiveVersions(
             String namespaceName,
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) {
         if (targetVersions.length == 0) {
-            return true;
+            return false;
         }
 
         var all = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("all"))
@@ -1568,6 +1566,7 @@ public class ExtensionVersionJooqRepository {
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
                 .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetchOne("all", Integer.class);
 
         var rows = Arrays.stream(targetVersions).map((tv) -> DSL.row(tv.version(), tv.targetPlatform()))
@@ -1582,18 +1581,10 @@ public class ExtensionVersionJooqRepository {
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
 
-        if (user != null) {
-            actualSelect = actualSelect.join(PERSONAL_ACCESS_TOKEN)
-                    .on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        }
-
         var condition = actualSelect
                 .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
-                .and(EXTENSION.NAME.equalIgnoreCase(extensionName));
-
-        if (user != null) {
-            condition = condition.and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
-        }
+                .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.ACTIVE.eq(true));
 
         var actual = condition.fetchOne("actual", Integer.class);
 

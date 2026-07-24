@@ -177,8 +177,9 @@ public class AdminService {
     }
 
     /**
-     * Delete the provided versions of an extension. If all versions of the extension shall be deleted, the
-     * extension as a whole will be removed unless it is referenced by bundles or used as a dependency.
+     * Soft-delete the provided versions of an extension. The versions must be named explicitly; an empty
+     * {@code targetVersions} deletes nothing. When the named versions cover all active versions and the
+     * extension is referenced by bundles or used as a dependency, the operation will fail.
      * <p>
      * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
      * <p>

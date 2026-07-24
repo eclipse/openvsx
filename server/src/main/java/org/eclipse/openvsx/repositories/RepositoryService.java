@@ -624,7 +624,7 @@ public class RepositoryService {
     }
 
     public int countVersions(String namespaceName, String extensionName) {
-        return extensionVersionJooqRepo.count(namespaceName, extensionName);
+        return extensionVersionJooqRepo.countVersions(namespaceName, extensionName);
     }
 
     public Slice<MigrationItem> findNotMigratedItems(Pageable page) {
@@ -897,13 +897,12 @@ public class RepositoryService {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 
-    public boolean isDeleteAllVersions(
-            @Nullable UserData user,
+    public boolean isDeleteAllActiveVersions(
             String namespaceName,
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) {
-        return extensionVersionJooqRepo.isDeleteAllVersions(user, namespaceName, extensionName, targetVersions);
+        return extensionVersionJooqRepo.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(

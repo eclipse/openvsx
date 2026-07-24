@@ -269,32 +269,15 @@ public class ExtensionService {
     }
 
     /**
-     * Delete an extension version published by the given user.
-     * <p>
-     * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
-     * is updated at the same time, the operation will fail.
-     * <p>
-     * If the resolved extension version has not been published by the given user,
-     * a {@code ErrorResultException} will be thrown.
-     */
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteUserExtension(
-            UserData user,
-            String namespaceName,
-            String extensionName,
-            TargetPlatformVersion... targetVersions
-    ) throws ErrorResultException {
-        return deleteExtension(user, true, namespaceName, extensionName, targetVersions);
-    }
-
-    /**
-     * Deletes the given extension.
+     * Soft-deletes the given extension versions.
      * <p>
      * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
      * is updated at the same time, the operation will fail.
      * <p>
      * If {@code restrictedToUser} is {@code true}, the deletion operation is only successful if the user
      * has published the respective extension version.
+     * <p>
+     * The versions to delete must be named explicitly; an empty {@code targetVersions} deletes nothing.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(
@@ -305,14 +288,14 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
-        if (repositories
-                .isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
-            return deleteExtension(user, extension, true);
+        var versions = resolveVersions(user, restrictedToUser, namespaceName, extensionName, targetVersions);
+        // if all active versions of the extension would get deactivated, check for dependencies
+        if (extension.isActive() &&
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions)) {
+            checkNoDependencies(extension);
         }
 
-        return deleteExtensionVersions(
-                user,
-                resolveVersions(user, restrictedToUser, namespaceName, extensionName, targetVersions));
+        return deleteExtensionVersions(user, versions);
     }
 
     /**
@@ -333,14 +316,18 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
-        if (repositories
-                .isDeleteAllVersions(null, namespaceName, extensionName, targetVersions)) {
+        if (targetVersions.length == 0) {
             return purgeExtension(user, extension, true);
         }
 
-        return purgeExtensionVersions(
-                user,
-                resolveVersions(user, false, namespaceName, extensionName, targetVersions));
+        var versions = resolveVersions(user, false, namespaceName, extensionName, targetVersions);
+        // if all active versions of the extension would get deactivated, check for dependencies
+        if (extension.isActive() &&
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions)) {
+            checkNoDependencies(extension);
+        }
+
+        return purgeExtensionVersions(user, versions);
     }
 
     private List<ExtensionVersion> resolveVersions(
@@ -458,40 +445,6 @@ public class ExtensionService {
     }
 
     /**
-     * Soft-delete the given extension: mark all its versions as removed and hide the extension.
-     * <p>
-     * The extension and version rows are kept so their identities stay reserved and can never be
-     * republished; only the version files are stripped from storage. Use
-     * {@link #purgeExtension(UserData, Extension, boolean)} to physically remove the extension.
-     * <p>
-     * If {@code checkDependencies} is {@code true} and this extension is referenced by a bundle or used
-     * as a dependency, the operation will fail.
-     *
-     * @param user the user that will be used for logging the operation
-     * @param extension the extension to soft-delete
-     * @param checkDependencies whether to check if this extension is still referenced by bundles or as a dependency
-     */
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(UserData user, Extension extension, boolean checkDependencies)
-            throws ErrorResultException {
-        if (checkDependencies) {
-            checkNoDependencies(extension);
-        }
-
-        for (var extVersion : repositories.findVersions(extension)) {
-            if (!extVersion.isRemoved()) {
-                softDeleteExtensionVersion(user, extVersion);
-            }
-        }
-
-        updateExtension(extension);
-
-        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
-        logs.logAction(user, result);
-        return result;
-    }
-
-    /**
      * Soft-delete a single extension version: strip its files from storage and mark it as removed,
      * but keep the row so the version identity stays reserved. Does not touch the parent extension;
      * callers are responsible for calling {@link #updateExtension(Extension)} afterwards.
@@ -563,7 +516,7 @@ public class ExtensionService {
 
         search.removeSearchEntry(extension);
 
-        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        var result = ResultJson.success("Purged " + NamingUtil.toExtensionId(extension));
         logs.logAction(user, result);
         return result;
     }
@@ -575,7 +528,7 @@ public class ExtensionService {
         extension.getVersions().remove(extVersion);
         updateExtension(extension);
 
-        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        var result = ResultJson.success("Purged " + NamingUtil.toLogFormat(extVersion));
         logs.logAction(user, result);
         return result;
     }

@@ -412,11 +412,26 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
+            var namespace = repositories.findNamespace(namespaceName);
+            if (namespace == null) {
+                var json = NamespaceDetailsJson
+                        .error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
+                return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+            }
+
+            // Authorize before touching the extension: only namespace members may delete.
+            // Owners may delete any version; non-owner members are restricted to versions
+            // they published themselves (enforced via restrictedToUser).
+            var isOwner = repositories.isNamespaceOwner(user, namespace);
+            if (!isOwner && !repositories.hasMembership(user, namespace)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
             var targets = CollectionUtil.toArray(
                     targetVersions,
                     TargetPlatformVersionJson::toTargetPlatformVersion,
                     TargetPlatformVersion[]::new);
-            var result = extensions.deleteUserExtension(user, namespaceName, extensionName, targets);
+            var result = extensions.deleteExtension(user, !isOwner, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (NotFoundException exc) {
             var json = NamespaceDetailsJson

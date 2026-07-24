@@ -52,9 +52,6 @@ import static org.mockito.Mockito.doAnswer;
  * The race condition is deliberately triggered by intercepting the boundary call that
  * separates the check from the act (using a spy), pausing the delete operation just
  * long enough for the concurrent publish to commit.
- * <p>
- * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
- * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
 @SpringBootTest
 class ExtensionDeleteTest extends AbstractPostgresContainerTest {
@@ -135,7 +132,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
                 publisherFinished.await(RACE_WINDOW_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
             return result;
-        }).when(repositories).isDeleteAllVersions(any(), any(), any(), any());
+        }).when(repositories).isDeleteAllActiveVersions(any(), any(), any(), any());
 
         var owner = new UserData();
         owner.setId(ownerId);
