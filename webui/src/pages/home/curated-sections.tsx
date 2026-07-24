@@ -12,9 +12,8 @@
  ********************************************************************************/
 
 import { FunctionComponent } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { ExtensionCard } from '../../components/extension-card';
-import { Section } from '../../components/page-primitives';
 import { HomeCuratedSection } from '../../page-settings';
 import { useSearch } from '../../hooks/use-search';
 import { CURATED_SIZE, DEFAULT_CURATED_SECTIONS, useCuratedRows } from './use-home-data';
@@ -38,7 +37,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                     return null;
                 }
                 return (
-                    <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
+                    <Container maxWidth='xl' component='section' key={row.title}>
                         <Box
                             sx={{
                                 display: 'flex',
@@ -97,7 +96,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                                 />
                             ))}
                         </Box>
-                    </Section>
+                    </Container>
                 );
             })}
         </>

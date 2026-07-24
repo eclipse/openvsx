@@ -19,7 +19,8 @@ import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
-import { Eyebrow, Section } from '../../components/page-primitives';
+import { Eyebrow } from '../../components/page-primitives';
+import { PageContainer } from '../../components/page-container';
 import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
 import { useCategories } from '../../components/categories';
@@ -33,10 +34,8 @@ export const SearchPage: FunctionComponent = () => {
     const [resultNumber, setResultNumber] = useState(0);
 
     return (
-        <Section
-            sx={{
-                pb: { xs: '1.125rem', sm: '1.875rem' }
-            }}>
+        // flushTop: hug the nav; keep the default footer gap.
+        <PageContainer flushTop>
             {/* Mobile category pills — outside the flex row so negative-margin bleed isn't clipped */}
             {categories.length > 0 && (
                 <Box
@@ -121,6 +120,6 @@ export const SearchPage: FunctionComponent = () => {
                     />
                 </Box>
             </Box>
-        </Section>
+        </PageContainer>
     );
 };
