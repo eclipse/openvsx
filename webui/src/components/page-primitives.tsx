@@ -24,6 +24,24 @@ export const SectionStack = styled(Box)(({ theme }) => ({
     }
 }));
 
+/** Full-bleed hairline dividing stacked page sections, VS Code workbench style. */
+export const SectionSeparator = styled(Box)(({ theme }) => ({
+    borderTop: `1px solid ${theme.palette.border2}`
+}));
+
+/** Extension-card grid shared by the listings; column count falls out of available
+ *  width. Sparse grids keep auto-fill's empty tracks so few results stay card-sized;
+ *  with 7+ items (a curated row or a full results page) auto-fit collapses leftover
+ *  tracks so rows stretch to fill the width. */
+export const ExtensionGrid = styled(Box)({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(145px, 1fr))',
+    gap: '0.75rem',
+    '&:has(> :nth-child(7))': {
+        gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))'
+    }
+});
+
 /** Small uppercase label used to head sections, columns and sidebars. */
 export const Eyebrow = styled(Typography)(({ theme }) => ({
     fontSize: '0.75rem',

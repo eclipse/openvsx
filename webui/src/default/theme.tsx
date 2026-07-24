@@ -12,7 +12,7 @@ import { CSSProperties } from 'react';
 import { createTheme, Theme } from '@mui/material';
 import type {} from '@mui/x-data-grid/themeAugmentation';
 
-export const MONO_FONT = "'Geist Mono', monospace";
+export const MONO_FONT = "Menlo, Monaco, Consolas, 'Droid Sans Mono', 'Courier New', monospace";
 export const NAVBAR_HEIGHT = '3.875rem';
 // Pixel twin for scroll math (rem values assume the 16px root font size).
 export const NAVBAR_HEIGHT_PX = parseFloat(NAVBAR_HEIGHT) * 16;
@@ -100,6 +100,7 @@ declare module '@mui/material/styles/createPalette' {
 declare module '@mui/system/createTheme/shape' {
     interface Shape {
         borderRadiusCard: number;
+        borderRadiusPill: number;
     }
 }
 
@@ -107,11 +108,20 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
     const dark = themeType === 'dark';
     return createTheme({
         typography: {
-            fontFamily: "'Geist', 'Roboto', system-ui, -apple-system, sans-serif"
+            // VS Code's workbench look: the platform system font at a 13px base.
+            fontFamily: "system-ui, -apple-system, 'Segoe UI', Ubuntu, 'Droid Sans', sans-serif",
+            fontSize: 13,
+            button: {
+                textTransform: 'none',
+                fontWeight: 400,
+                letterSpacing: 0
+            }
         },
+        // Tuned to VS Code's newer "islands" look: softly rounded controls, rounder panels.
         shape: {
-            borderRadius: 9,
-            borderRadiusCard: 14
+            borderRadius: 4,
+            borderRadiusCard: 6,
+            borderRadiusPill: 6
         },
         mixins: {
             toolbar: { minHeight: NAVBAR_HEIGHT }
@@ -210,10 +220,11 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                     }
                 }
             },
+            // VS Code buttons are flat and compact (~24px page actions), with corners
+            // a touch softer than inputs; outlined trims 1px per side so the border
+            // doesn't add height.
             MuiButton: {
-                styleOverrides: {
-                    root: { textTransform: 'none' }
-                }
+                defaultProps: { disableElevation: true }
             },
             // MUI X derives the grid's borders from `divider` via lighten/darken, which
             // almost erases our already-light opaque divider. Feed the grid's design
@@ -247,19 +258,20 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                 styleOverrides: {
                     indicator: ({ theme }) => ({
                         backgroundColor: theme.palette.secondary.main,
-                        height: '2px'
+                        height: '1px'
                     })
                 }
             },
+            // VS Code tabs: 13px, regular weight, selection shown by color alone.
             MuiTab: {
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
+                        fontSize: '0.8125rem',
+                        fontWeight: 400,
                         textTransform: 'none',
                         color: theme.palette.text.disabled,
-                        minHeight: '3.25rem',
-                        padding: '0.9375rem 1rem',
+                        minHeight: '2.5rem',
+                        padding: '0.625rem 0.875rem',
                         '&.Mui-selected': { color: theme.palette.text.primary }
                     })
                 }
@@ -268,26 +280,21 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
             MuiMenu: {
                 styleOverrides: {
                     paper: { marginTop: '0.375rem' },
-                    list: { padding: '0.375rem' }
+                    list: { padding: '0.25rem' }
                 }
             },
             MuiMenuItem: {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         borderRadius: theme.shape.borderRadius,
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        minHeight: '2.25rem'
+                        fontSize: '0.8125rem',
+                        fontWeight: 400,
+                        minHeight: '2rem'
                     })
                 }
             },
             MuiTypography: {
                 styleOverrides: {
-                    button: {
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        letterSpacing: 0
-                    },
                     overline: {
                         textTransform: 'none',
                         letterSpacing: 0,

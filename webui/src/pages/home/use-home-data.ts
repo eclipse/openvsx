@@ -21,7 +21,7 @@ import { HomeCuratedSection } from '../../page-settings';
 import { controllerFromSignal } from '../../query-client';
 
 /** Number of extensions fetched for each curated row. */
-export const CURATED_SIZE = 6;
+export const CURATED_SIZE = 7;
 
 /** Categories shown in the home page grid. */
 const HOME_CATEGORIES = new Set<ExtensionCategory>([
@@ -44,6 +44,7 @@ const HOME_CATEGORIES = new Set<ExtensionCategory>([
 
 /** Curated rows shown when the consumer does not configure `home.curatedSections`. */
 export const DEFAULT_CURATED_SECTIONS: HomeCuratedSection[] = [
+    { title: 'Featured', subtitle: 'Top picks ranked by relevance', sortBy: 'relevance' },
     { title: 'Most downloaded', subtitle: 'The extensions developers rely on every day', sortBy: 'downloadCount' },
     { title: 'Recently updated', subtitle: 'Fresh releases from publishers this week', sortBy: 'timestamp' }
 ];

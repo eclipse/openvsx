@@ -104,10 +104,14 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
             ) : null}
             <AppNavbar />
             {/* Mobile: fill the viewport so the (screen-tall) footer stays below the fold.
-                Desktop: flexGrow alone sticks the footer to the viewport bottom. */}
+                Desktop: flexGrow alone sticks the footer to the viewport bottom. A flex
+                column so pages can opt into stretching over the leftover space
+                (e.g. the search page runs its sidebar seam down to the footer). */}
             <Box
                 sx={{
                     flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                     minHeight: { xs: `calc(100vh - ${NAVBAR_HEIGHT})`, sm: 0 },
                     // Only the fixed legacy footer needs clearance; the in-flow footer's gap lives on <PageContainer>.
                     pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0

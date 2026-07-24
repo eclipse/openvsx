@@ -12,11 +12,11 @@
  ********************************************************************************/
 
 import { ChangeEvent, ForwardedRef, forwardRef, KeyboardEvent, useCallback, useId, useRef } from 'react';
-import SearchIcon from '@mui/icons-material/Search';
-import ClearIcon from '@mui/icons-material/Close';
 import { IconButton, InputBase, InputBaseComponentProps, Box } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import { MONO_FONT } from '../default/theme';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Close';
 import { focusRing } from './page-primitives';
 
 interface ExtensionSearchfieldProps {
@@ -40,8 +40,8 @@ const SearchWrap = styled(Box, {
     gap: '0.625rem',
     border: hasError ? '2px solid' : '1px solid',
     borderColor: hasError ? theme.palette.error.main : theme.palette.divider,
-    borderRadius: '11px',
-    height: '2.8125rem',
+    borderRadius: theme.shape.borderRadiusCard,
+    height: '2.8rem',
     padding: '0 0.8125rem',
     backgroundColor: alpha(theme.palette.surface2, 0.7),
     backdropFilter: 'blur(2px)',
@@ -154,8 +154,9 @@ export const ExtensionSearchfield = forwardRef(
                         sx={{
                             bgcolor: 'secondary.main',
                             color: 'secondary.contrastText',
-                            borderRadius: '8px',
-                            p: '0.5rem',
+                            // sx multiplies by theme.shape.borderRadius
+                            borderRadius: 1,
+                            p: '0.375rem',
                             flexShrink: 0,
                             transition: 'background 0.14s',
                             '&:hover': { bgcolor: 'secondary.dark' }

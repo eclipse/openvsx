@@ -14,7 +14,7 @@
 import { FunctionComponent, useContext } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { PageContainer } from '../../components/page-container';
-import { SectionStack } from '../../components/page-primitives';
+import { SectionSeparator, SectionStack } from '../../components/page-primitives';
 import { MainContext } from '../../context';
 import { HomeSettings } from '../../page-settings';
 import { ExtensionListRoutes } from '../extension-list/extension-list-routes';
@@ -52,8 +52,9 @@ const HomeContent: FunctionComponent<{ home?: HomeSettings }> = ({ home }) => {
         <PageContainer fluid component='main' sx={{ animation: 'fadeIn .25s ease' }}>
             <SectionStack>
                 <HeroSearch searchHeader={pageSettings.elements.searchHeader} popularSearches={home?.popularSearches} />
-                <BrowseCategories />
+                <SectionSeparator />
                 <CuratedSections sections={home?.curatedSections} />
+                <BrowseCategories />
                 <GetInvolved heading={home?.involvement?.heading} cards={home?.involvement?.cards} />
             </SectionStack>
         </PageContainer>

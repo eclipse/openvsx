@@ -16,11 +16,12 @@ import { Link as RouteLink } from 'react-router-dom';
 import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
 import { CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import VerifiedIcon from '@mui/icons-material/Verified';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { SearchEntry } from '../extension-registry-types';
 import { ExtensionIcon } from './extension/extension-icon';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
-import { createRoute, formatCompactNumber } from '../utils';
+import { createRoute, formatCompactNumber, toCompactRelativeTime, toLocalTime } from '../utils';
 import { MONO_FONT } from '../default/theme';
 import { GridItemProps } from '../hooks/use-grid-cursor';
 import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
@@ -28,13 +29,13 @@ import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
 // Shared surface + footprint so the card and its skeleton occupy identical space.
 const cardLayout = (theme: Theme): CSSObject => ({
     ...cardSurface(theme),
-    padding: '1.375rem 1rem',
-    [theme.breakpoints.down('sm')]: { padding: '0.875rem 0.625rem' },
+    padding: '1rem 0.875rem',
+    [theme.breakpoints.down('sm')]: { padding: '0.75rem 0.625rem' },
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     height: '100%',
-    minHeight: '12.875rem'
+    minHeight: '13rem'
 });
 
 const CardRoot = styled(Paper)(({ theme }) => ({
@@ -54,14 +55,15 @@ const SkeletonRoot = styled(Paper)(({ theme }) => cardLayout(theme));
 // Only the unknown parts are skeletons; the stars' empty state looks the same loaded or not.
 const SkeletonContent: FunctionComponent = () => (
     <>
-        <Skeleton variant='rounded' width={54} height={54} sx={{ flexShrink: 0, mb: '0.875rem' }} />
-        <Box sx={{ width: '100%', height: { xs: '2.125rem', sm: '2.375rem' }, overflow: 'hidden' }}>
-            <Skeleton variant='text' sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }} />
-            <Skeleton variant='text' width='60%' sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' }, mx: 'auto' }} />
+        <Skeleton variant='rounded' width={54} height={54} sx={{ flexShrink: 0, mb: '0.75rem' }} />
+        <Skeleton variant='text' width='70%' sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }} />
+        <Box sx={{ width: '100%', height: '2.1rem', mt: '0.375rem', overflow: 'hidden' }}>
+            <Skeleton variant='text' sx={{ fontSize: '0.75rem' }} />
+            <Skeleton variant='text' width='60%' sx={{ fontSize: '0.75rem', mx: 'auto' }} />
         </Box>
-        <Box sx={{ width: '100%', mt: '0.875rem', display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+        <Box sx={{ width: '100%', mt: '0.75rem', display: 'flex', justifyContent: 'space-between', gap: 1 }}>
             <Skeleton variant='text' width='45%' sx={{ fontSize: '0.75rem' }} />
-            <Skeleton variant='text' width='25%' sx={{ fontSize: '0.6875rem' }} />
+            <Skeleton variant='text' width='30%' sx={{ fontSize: '0.6875rem' }} />
         </Box>
         <Box
             sx={{
@@ -72,7 +74,8 @@ const SkeletonContent: FunctionComponent = () => (
                 borderColor: 'border2',
                 display: 'flex',
                 alignItems: 'center',
-                fontSize: { xs: '0.875rem', sm: '1.25rem' }
+                gap: '0.0625rem',
+                fontSize: { xs: '0.875rem', sm: '1rem' }
             }}>
             <ExtensionRatingStars number={0} fontSize='inherit' />
         </Box>
@@ -107,6 +110,8 @@ export const ExtensionCard = memo(
     ) {
         const title = extension?.displayName ?? extension?.name;
         const downloadCount = extension ? formatCompactNumber(extension.downloadCount ?? 0) : undefined;
+        const reviewCount = extension?.reviewCount ?? 0;
+        const updatedCompact = toCompactRelativeTime(extension?.timestamp);
 
         // One Fade over both states so it runs once and carries through the skeleton → card swap.
         return (
@@ -130,7 +135,7 @@ export const ExtensionCard = memo(
                                     sx={{
                                         width: 54,
                                         height: 54,
-                                        mb: '0.875rem'
+                                        mb: '0.75rem'
                                     }}>
                                     <ExtensionIcon
                                         extension={extension}
@@ -139,51 +144,137 @@ export const ExtensionCard = memo(
                                     />
                                 </Box>
                                 <Typography
+                                    noWrap
                                     sx={{
                                         fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                                        fontWeight: 700,
+                                        fontWeight: 600,
                                         lineHeight: 1.3,
+                                        width: '100%'
+                                    }}>
+                                    {title}
+                                </Typography>
+                                {/* Fixed two-line box so the meta rows align across cards with short descriptions. */}
+                                <Typography
+                                    sx={{
+                                        fontSize: '0.75rem',
+                                        color: 'text.secondary',
+                                        lineHeight: 1.4,
+                                        height: '2.1rem',
+                                        mt: '0.375rem',
                                         width: '100%',
-                                        minHeight: { xs: '2.125rem', sm: '2.375rem' },
                                         display: '-webkit-box',
                                         WebkitLineClamp: 2,
                                         WebkitBoxOrient: 'vertical',
                                         overflow: 'hidden'
                                     }}>
-                                    {title}
+                                    {extension.description}
                                 </Typography>
                                 <Box
                                     sx={{
                                         width: '100%',
-                                        mt: '0.875rem',
+                                        mt: '0.75rem',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        gap: 1
+                                        gap: '0.375rem',
+                                        overflow: 'hidden',
+                                        // Hovering a truncated side unfolds it; its neighbor yields instead.
+                                        '& > :first-of-type:hover': { maxWidth: 'none' },
+                                        '& > :first-of-type:hover + *': { minWidth: 0, flexShrink: 1 },
+                                        '& > :last-of-type:hover': { flexShrink: 0 },
+                                        '& > :last-of-type:hover > :first-of-type': { maxWidth: 'none' },
+                                        '&:has(> :last-of-type:hover) > :first-of-type': {
+                                            flexShrink: 1,
+                                            minWidth: 0
+                                        }
                                     }}>
-                                    <Typography
-                                        component='div'
-                                        noWrap
+                                    <Box
                                         sx={{
-                                            fontSize: '0.75rem',
-                                            color: 'text.disabled',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem',
                                             minWidth: 0,
-                                            textAlign: 'left'
+                                            // The namespace wins at rest: it never shrinks (capped so
+                                            // extreme names can't evict the version side entirely).
+                                            flexShrink: 0,
+                                            maxWidth: '70%'
                                         }}>
-                                        {extension.namespace}
-                                    </Typography>
+                                        <Typography
+                                            component='div'
+                                            noWrap
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                color: 'text.disabled',
+                                                minWidth: 0,
+                                                textAlign: 'left'
+                                            }}>
+                                            {extension.namespace}
+                                        </Typography>
+                                        {extension.verified && (
+                                            <Box
+                                                component='span'
+                                                title='Verified publisher'
+                                                role='img'
+                                                aria-label='Verified publisher'
+                                                sx={{
+                                                    display: 'inline-flex',
+                                                    fontSize: '0.75rem',
+                                                    color: 'secondary.light',
+                                                    flexShrink: 0
+                                                }}>
+                                                <VerifiedIcon fontSize='inherit' />
+                                            </Box>
+                                        )}
+                                    </Box>
                                     <Typography
                                         component='div'
-                                        noWrap
                                         sx={{
                                             fontSize: '0.6875rem',
                                             color: 'text.disabled',
-                                            flexShrink: 0,
-                                            fontFamily: MONO_FONT
+                                            // Yields before the namespace. minWidth 0 beats the
+                                            // min-content floor, else the row clips the timestamp.
+                                            flexShrink: 1,
+                                            minWidth: 0,
+                                            fontFamily: MONO_FONT,
+                                            display: 'flex',
+                                            alignItems: 'baseline'
                                         }}>
-                                        {extension.version}
+                                        {/* Cap long calendar versions so the namespace keeps its room. */}
+                                        <Box
+                                            component='span'
+                                            title={extension.version}
+                                            sx={{
+                                                maxWidth: '10ch',
+                                                minWidth: 0,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                            }}>
+                                            {extension.version}
+                                        </Box>
+                                        {updatedCompact && (
+                                            <Box
+                                                component='span'
+                                                title={`updated ${toLocalTime(extension.timestamp)}`}
+                                                sx={{ whiteSpace: 'nowrap', flexShrink: 0, ml: '0.1875rem' }}>
+                                                {`·\u2009${updatedCompact}`}
+                                            </Box>
+                                        )}
                                     </Typography>
                                 </Box>
+                                {extension.deprecated && (
+                                    <Box
+                                        sx={{
+                                            width: '100%',
+                                            mt: '0.25rem',
+                                            textAlign: 'left',
+                                            fontSize: '0.6875rem',
+                                            fontWeight: 500,
+                                            color: 'warningAccent'
+                                        }}>
+                                        deprecated
+                                    </Box>
+                                )}
                                 <Box
                                     sx={{
                                         width: '100%',
@@ -196,11 +287,28 @@ export const ExtensionCard = memo(
                                         justifyContent: 'space-between',
                                         fontSize: '0.75rem'
                                     }}>
-                                    <Box sx={{ display: 'flex', fontSize: { xs: '0.875rem', sm: '1.25rem' } }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.0625rem',
+                                            fontSize: { xs: '0.875rem', sm: '1rem' }
+                                        }}>
                                         <ExtensionRatingStars
                                             number={extension.averageRating ?? 0}
                                             fontSize='inherit'
                                         />
+                                        {reviewCount > 0 && (
+                                            <Box
+                                                component='span'
+                                                sx={{
+                                                    fontSize: '0.6875rem',
+                                                    color: 'text.disabled',
+                                                    ml: '0.25rem'
+                                                }}>
+                                                ({formatCompactNumber(reviewCount)})
+                                            </Box>
+                                        )}
                                     </Box>
                                     {downloadCount !== '0' && (
                                         <Box

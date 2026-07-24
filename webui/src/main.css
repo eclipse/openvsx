@@ -17,6 +17,12 @@ body {
     height: 100%;
 }
 
+/* Full-bleed rules (e.g. the search header divider) may overshoot by the classic
+   scrollbar's half-width; clip instead of growing a horizontal scrollbar. */
+html {
+    overflow-x: clip;
+}
+
 img {
     object-fit: contain;
 }
