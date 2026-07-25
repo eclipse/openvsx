@@ -137,7 +137,9 @@ class ExtensionScanPersistenceServiceTest {
         when(repositories.findExtensionScan(2L)).thenReturn(scan);
         var job = jobFor(scan);
         var result = Scanner.Result.of(
-                List.of(new Scanner.Threat("rule", "desc", "HIGH")), null, false);
+                List.of(new Scanner.Threat("rule", "desc", "HIGH")),
+                null,
+                false);
 
         var outcome = svc.processCompletedScan(job, result, true, LocalDateTime.now());
 
@@ -166,7 +168,9 @@ class ExtensionScanPersistenceServiceTest {
         when(repositories.findExtensionScan(4L)).thenReturn(scan);
         var job = jobFor(scan);
         var result = Scanner.Result.of(
-                List.of(new Scanner.Threat("rule", "desc", "HIGH")), null, true);
+                List.of(new Scanner.Threat("rule", "desc", "HIGH")),
+                null,
+                true);
 
         var outcome = svc.processCompletedScan(job, result, false, LocalDateTime.now());
 
@@ -196,7 +200,9 @@ class ExtensionScanPersistenceServiceTest {
         when(fileDecisionRepository.findByFileHash("hash1"))
                 .thenReturn(FileDecision.allowed("hash1", new UserData()));
         var result = Scanner.Result.of(
-                List.of(new Scanner.Threat("rule", "desc", "HIGH", "file1", "hash1")), null, true);
+                List.of(new Scanner.Threat("rule", "desc", "HIGH", "file1", "hash1")),
+                null,
+                true);
 
         var outcome = svc.processCompletedScan(job, result, true, LocalDateTime.now());
 

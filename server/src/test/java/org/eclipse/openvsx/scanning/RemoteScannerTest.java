@@ -53,7 +53,9 @@ class RemoteScannerTest {
             RemoteScannerProperties.HttpOperation operation
     ) throws Exception {
         Method method = RemoteScanner.class.getDeclaredMethod(
-                "parseResult", String.class, RemoteScannerProperties.HttpOperation.class);
+                "parseResult",
+                String.class,
+                RemoteScannerProperties.HttpOperation.class);
         method.setAccessible(true);
         try {
             return (Scanner.Result) method.invoke(scanner, response, operation);
