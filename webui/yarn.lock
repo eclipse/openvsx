@@ -2392,6 +2392,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie-es@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "cookie-es@npm:3.1.1"
+  checksum: 10/e40083c42d0e3a4b3caa271775858f8e6cdd31f24b9c445ff08d7a8f4dc01069fc82012bdf1602d5a03fa1d75aba51a3dd33cd8a5db639db2ed17bcfd650f4bc
+  languageName: node
+  linkType: hard
+
 "cookie-signature@npm:~1.0.6":
   version: 1.0.7
   resolution: "cookie-signature@npm:1.0.7"
@@ -5264,7 +5271,7 @@ __metadata:
     react-dropzone: "npm:^14.2.3"
     react-helmet-async: "npm:^2.0.5"
     react-infinite-scroller: "npm:^1.2.6"
-    react-router: "npm:^6.30.4"
+    react-router: "npm:^8.3.0"
     react-router-dom: "npm:^6.30.4"
     rimraf: "npm:^6.1.0"
     rollup-plugin-visualizer: "npm:^7.0.1"
@@ -5704,7 +5711,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-router@npm:6.30.4, react-router@npm:^6.30.4":
+"react-router@npm:6.30.4":
   version: 6.30.4
   resolution: "react-router@npm:6.30.4"
   dependencies:
@@ -5712,6 +5719,21 @@ __metadata:
   peerDependencies:
     react: ">=16.8"
   checksum: 10/59c1b64a210cde2f1d069ffc47dce2d58991bd4d81bb0743e22ba7c6b742e63ebbdc976c42c3a3ebd90bf38a2f05258bd0efa82c162b259be000d39787716043
+  languageName: node
+  linkType: hard
+
+"react-router@npm:^8.3.0":
+  version: 8.3.0
+  resolution: "react-router@npm:8.3.0"
+  dependencies:
+    cookie-es: "npm:^3.1.1"
+  peerDependencies:
+    react: ">=19.2.7"
+    react-dom: ">=19.2.7"
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+  checksum: 10/6ef9ee17910356e7a7c1d262d3c3a943a25e36bf871a199628438d1436d1a16828091da30a5df7c318030dff434c5b3f003c16f82c7ffca9cf37545316f6525c
   languageName: node
   linkType: hard
 
