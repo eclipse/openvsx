@@ -34,7 +34,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump brace-expansion from `1.1.11` to `1.1.16` ([#1981](https://github.com/eclipse-openvsx/openvsx/pull/1981))
 - Bump brace-expansion from `2.0.2` to `2.1.2` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
 - Bump brace-expansion from `5.0.3` to `5.0.7` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
-- Bump tar from `7.5.16` to `7.5.19` ([#1959](https://github.com/eclipse-openvsx/openvsx/pull/1959))
+- Bump tar from `7.5.16` to `7.5.22` ([#1994](https://github.com/eclipse-openvsx/openvsx/pull/1994))
 - Bump js-yaml from `4.2.0` to `4.3.0` ([#1976](https://github.com/eclipse-openvsx/openvsx/pull/1976))
 - Bump dompurify from `3.4.11` to `3.4.12` ([#1984](https://github.com/eclipse-openvsx/openvsx/pull/1984))
 
