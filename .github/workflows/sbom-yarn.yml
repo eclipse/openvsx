@@ -1,0 +1,80 @@
+# Generates and uploads SBOMs for the yarn-based components (cli, webui).
+name: Generate SBOM (yarn)
+
+on:
+  push:
+    tags:
+      - 'cli-*'
+      - 'webui-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. cli-1.2.3 or webui-1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write  # required for OIDC-authenticated SBOM upload
+
+
+env:
+  # Component is derived from the tag prefix (cli-* or webui-*) and drives the
+  # working directory (source/<component>) and product name (openvsx-<component>).
+  # Resolves to an empty string for an unrecognised tag (only possible via
+  # workflow_dispatch); the "Validate tag" step below rejects that case.
+  TAG: "${{ inputs.tag || github.ref_name }}"
+  COMPONENT: "${{ (startsWith(inputs.tag || github.ref_name, 'cli-') && 'cli') || (startsWith(inputs.tag || github.ref_name, 'webui-') && 'webui') || '' }}"
+  CYCLONEDX_YARN_PLUGIN_VERSION: "3.2.1"
+
+jobs:
+  sbom-yarn:
+    runs-on: ubuntu-latest
+    steps:
+    # Fail fast on a manually dispatched tag that names no known component
+    # (push is already restricted to cli-*/webui-* tags).
+    - name: Validate tag
+      run: |
+        if [ -z "${COMPONENT}" ]; then
+          echo "::error::Tag '${TAG}' must start with 'cli-' or 'webui-'"
+          exit 1
+        fi
+
+    # Checkout project into subdirectory (path avoids collision with the tool).
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      with:
+        ref: ${{ env.TAG }}
+        path: source
+        persist-credentials: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+      with:
+        node-version: '24.x'
+        package-manager-cache: false
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Enable Corepack (Yarn Berry)
+      working-directory: source/${{ env.COMPONENT }}
+      run: corepack enable
+
+    - name: Install dependencies
+      working-directory: source/${{ env.COMPONENT }}
+      run: yarn install --immutable
+
+    - name: Generate SBOM
+      working-directory: source/${{ env.COMPONENT }}
+      run: |
+        yarn dlx -q @cyclonedx/yarn-plugin-cyclonedx@${CYCLONEDX_YARN_PLUGIN_VERSION} \
+          --output-format JSON \
+          --output-file bom.json \
+          --production
+
+    - name: Upload SBOM
+      uses: eclipse-csi/workflows/upload-sbom@a5993190de939557abd37e9d7a7ecfee80660876
+      with:
+        sbom-file: source/${{ env.COMPONENT }}/bom.json
+        # NOTE: Upload will fail for a non-registered 'product-name'.
+        # See https://github.com/eclipse-csi/workflows#upload-sbom for details.
+        product-name: openvsx-${{ env.COMPONENT }}
+        product-version: ${{ env.TAG }}
+        staging: true
