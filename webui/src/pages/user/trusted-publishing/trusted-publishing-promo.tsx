@@ -13,7 +13,7 @@
 
 import { FunctionComponent } from 'react';
 import { Alert, AlertTitle, Box } from '@mui/material';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { UserSettingsRoutes } from '../user-settings-routes';
 
