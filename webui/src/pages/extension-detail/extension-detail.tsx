@@ -26,9 +26,6 @@ import {
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import WarningIcon from '@mui/icons-material/Warning';
 import { MainContext } from '../../context';
 import { createRoute, formatCompactNumber } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -50,6 +47,9 @@ import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_PX } from '../../default/theme';
 import { useSetExtensionTint } from '../../context/extension-tint-context';
 import { accentHover, focusOutline } from '../../components/page-primitives';
 import { PageContainer } from '../../components/page-container';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import WarningIcon from '@mui/icons-material/Warning';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 
 // Category-pill look for the sticky tabs, floating over the nav bar's blur fan;
 // the translucent fill matches the nav search field's treatment.
@@ -57,7 +57,7 @@ const PillTab = styled(Tab)(({ theme }) => ({
     minHeight: 0,
     minWidth: 0,
     padding: '0.4375rem 0.8125rem',
-    borderRadius: '999px',
+    borderRadius: theme.shape.borderRadiusPill,
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: alpha(theme.palette.surface2, 0.7),
     backdropFilter: 'blur(2px) saturate(1.8)',

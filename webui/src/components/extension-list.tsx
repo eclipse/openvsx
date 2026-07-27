@@ -14,7 +14,7 @@
 
 import { FunctionComponent, useContext, useEffect, useMemo, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroller';
-import { Box } from '@mui/material';
+import { ExtensionGrid } from './page-primitives';
 import { ExtensionCard } from './extension-card';
 import { ExtensionFilter } from '../extension-registry-service';
 import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
@@ -79,18 +79,7 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, o
             }}
             hasMore={hasNextPage && !isFetchingNextPage}
             threshold={200}>
-            <Box
-                {...grid.containerProps}
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: 'repeat(2, minmax(0, 1fr))',
-                        sm: 'repeat(auto-fill, minmax(175px, 1fr))'
-                    },
-                    gap: '1rem'
-                }}>
-                {cards}
-            </Box>
+            <ExtensionGrid {...grid.containerProps}>{cards}</ExtensionGrid>
         </InfiniteScroll>
     );
 };

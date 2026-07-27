@@ -9,14 +9,8 @@
  ********************************************************************************/
 
 import { FunctionComponent, PropsWithChildren, useContext, useRef, useState } from 'react';
-import { Typography, MenuItem, Link, Button, IconButton, Avatar, Menu } from '@mui/material';
+import { Avatar, Button, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
 import { useLocation, useNavigate, Link as RouteLink } from 'react-router-dom';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import InfoIcon from '@mui/icons-material/Info';
-import PublishIcon from '@mui/icons-material/Publish';
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { alpha, styled, Theme } from '@mui/material/styles';
@@ -24,9 +18,15 @@ import { MainContext } from '../context';
 import { KbdKey } from '../components/kbd-key';
 import { useShortcut } from '../hooks/use-shortcut';
 import { focusOutline } from '../components/page-primitives';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
+import PublishIcon from '@mui/icons-material/Publish';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import InfoIcon from '@mui/icons-material/Info';
 import { AdminDashboardRoutes } from '../pages/admin-dashboard/admin-dashboard-routes';
 import { LogoutForm } from '../pages/user/logout';
 import { LoginComponent } from './login';
@@ -243,11 +243,22 @@ export const DefaultMenuContent: FunctionComponent = () => {
                         <LoginComponent
                             loginProviders={loginProviders}
                             renderButton={(href, onClick) => {
-                                // The default `action.active` gray disappears on tinted chromes.
+                                // Inherited color + opacity (not a palette gray) so the dimming
+                                // follows the nav's content color over tinted chromes, like headerItem.
+                                const loginButtonSx = {
+                                    opacity: 0.78,
+                                    transition: 'opacity 0.14s',
+                                    '&:hover': { opacity: 1 }
+                                };
                                 if (href) {
                                     return (
-                                        <IconButton href={href} color='inherit' title='Log In' aria-label='Log In'>
-                                            <AccountBoxIcon />
+                                        <IconButton
+                                            href={href}
+                                            color='inherit'
+                                            title='Log In'
+                                            aria-label='Log In'
+                                            sx={loginButtonSx}>
+                                            <AccountBoxIcon sx={{ fontSize: '1.25rem' }} />
                                         </IconButton>
                                     );
                                 } else {
@@ -256,8 +267,9 @@ export const DefaultMenuContent: FunctionComponent = () => {
                                             onClick={onClick}
                                             color='inherit'
                                             title='Log In'
-                                            aria-label='Log In'>
-                                            <AccountBoxIcon />
+                                            aria-label='Log In'
+                                            sx={loginButtonSx}>
+                                            <AccountBoxIcon sx={{ fontSize: '1.25rem' }} />
                                         </IconButton>
                                     );
                                 }

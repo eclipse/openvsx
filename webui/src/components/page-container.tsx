@@ -39,7 +39,7 @@ export const PageContainer = forwardRef<HTMLDivElement, PageContainerProps>(func
             disableGutters={fluid}
             sx={[
                 {
-                    pt: flushTop ? 0 : { xs: '2.75rem', sm: '4.875rem' },
+                    pt: flushTop ? 0 : { xs: '1.75rem', sm: '2.5rem' },
                     pb: flushBottom ? 0 : { xs: '2.5rem', sm: '4rem' }
                 },
                 ...(Array.isArray(sx) ? sx : [sx])

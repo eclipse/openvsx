@@ -22,8 +22,8 @@ import { Eyebrow, focusOutline } from '../../components/page-primitives';
 const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: '16px',
-    padding: '1.5rem',
+    borderRadius: theme.shape.borderRadiusCard,
+    padding: '1.25rem',
     display: 'flex',
     flexDirection: 'column'
 }));
@@ -92,7 +92,8 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                                     sx={{
                                         width: '2.125rem',
                                         height: '2.125rem',
-                                        borderRadius: '9px',
+                                        // sx multiplies by theme.shape.borderRadius
+                                        borderRadius: 1,
                                         bgcolor: 'accentSoft',
                                         color: 'secondary.light',
                                         display: 'flex',

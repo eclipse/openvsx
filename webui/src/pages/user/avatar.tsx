@@ -60,7 +60,7 @@ export const UserAvatar: FunctionComponent = () => {
                         color: 'secondary.light',
                         fontSize: '0.75rem',
                         fontWeight: 700,
-                        borderRadius: '8px'
+                        borderRadius: 1
                     }}>
                     {initials}
                 </Avatar>
@@ -82,7 +82,7 @@ export const UserAvatar: FunctionComponent = () => {
                             color: 'secondary.light',
                             fontSize: '0.9375rem',
                             fontWeight: 700,
-                            borderRadius: '10px',
+                            borderRadius: 1,
                             flexShrink: 0
                         }}>
                         {initials}

@@ -44,6 +44,7 @@ export interface SearchEntry {
     namespace: string;
     version: string;
     timestamp?: TimestampString;
+    verified?: boolean;
     allVersions: {
         url: UrlString;
         // key: file type, value: url
