@@ -20,6 +20,7 @@ import { ExtensionStatusChips } from './extension-status-chips';
 import { ExtensionVersionTable } from './extension-version-table';
 import { DeleteVersionDialog, VersionDeleteTarget } from './extension-version-delete-dialog';
 import { DeleteAllVersionsDialog } from './extension-delete-all-versions-dialog';
+import { ExtensionTrustedPublishers } from '../../pages/user/trusted-publishing/trusted-publishers-section';
 import { ExtensionDetailRoutes } from '../../pages/extension-detail/extension-detail-routes';
 import { createRoute } from '../../utils';
 
@@ -60,7 +61,8 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                 </Button>
                 {actions}
             </Stack>
-            <Typography variant='h6' gutterBottom>
+            <ExtensionTrustedPublishers namespace={extension.namespace} extension={extension.name} />
+            <Typography variant='h6' gutterBottom sx={{ mt: 4 }}>
                 Versions
             </Typography>
             <ExtensionVersionTable

@@ -249,6 +249,8 @@ export interface Namespace {
     membersUrl: UrlString;
     roleUrl: UrlString;
     detailsUrl: UrlString;
+    // present only when the current user may manage trusted publishers for this namespace
+    trustedPublishingUrl?: UrlString;
 }
 
 export interface NamespaceDetails {
@@ -261,6 +263,44 @@ export interface NamespaceDetails {
     supportLink?: UrlString;
     socialLinks: { [key: string]: UrlString | undefined };
     extensions?: SearchEntry[];
+}
+
+export interface TrustedPublisherInput {
+    key: string;
+    // form label / help text for the field
+    description: string;
+    optional: boolean;
+}
+
+export interface TrustedPublisherProvider {
+    id: string;
+    name: string;
+    url: UrlString;
+    registrationInputs: TrustedPublisherInput[];
+}
+
+export interface TrustedPublisherProviderList {
+    trustedPublisherProviders: TrustedPublisherProvider[];
+}
+
+export interface TrustedPublisherRequest {
+    provider: string;
+    namespace: string;
+    extension: string;
+    registration: { [key: string]: string };
+}
+
+export interface TrustedPublisher {
+    id: number;
+    provider: string;
+    namespace: string;
+    extension: string;
+    registration: { [key: string]: string };
+    createdTimestamp?: TimestampString;
+}
+
+export interface TrustedPublisherList {
+    trustedPublishers: TrustedPublisher[];
 }
 
 export interface PublisherInfo {

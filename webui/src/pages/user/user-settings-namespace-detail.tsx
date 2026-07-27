@@ -20,6 +20,7 @@ import { NamespaceChangeDialog } from '../admin-dashboard/namespace-change-dialo
 import { NamespaceDeleteDialog } from '../admin-dashboard/namespace-delete-dialog';
 import { UserNamespaceMemberList } from './user-namespace-member-list';
 import { UserNamespaceDetails } from './user-namespace-details';
+import { UserNamespaceTrustedPublishers } from './trusted-publishing/trusted-publishers-section';
 
 export interface NamespaceDetailConfig {
     defaultMemberRole?: 'contributor' | 'owner';
@@ -134,6 +135,11 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
                         ) : null}
                     </NamespaceHeader>
                 </Grid>
+                {props.namespace.detailsUrl ? (
+                    <Grid item>
+                        <UserNamespaceDetails namespace={props.namespace} />
+                    </Grid>
+                ) : null}
                 {props.namespace.membersUrl ? (
                     <Grid item>
                         <UserNamespaceMemberList
@@ -144,10 +150,8 @@ export const NamespaceDetail: FunctionComponent<NamespaceDetailProps> = props =>
                         />
                     </Grid>
                 ) : null}
-                {props.namespace.detailsUrl ? (
-                    <Grid item>
-                        <UserNamespaceDetails namespace={props.namespace} />
-                    </Grid>
+                {props.namespace.trustedPublishingUrl ? (
+                    <UserNamespaceTrustedPublishers namespace={props.namespace} />
                 ) : null}
                 <Grid item>
                     <UserNamespaceExtensionListContainer namespace={props.namespace} />

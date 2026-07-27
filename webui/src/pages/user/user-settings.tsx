@@ -15,6 +15,7 @@ import { useParams } from 'react-router-dom';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserSettingTabs } from './user-setting-tabs';
 import { UserSettingsTokens } from './user-settings-tokens';
+import { UserSettingsTrustedPublishers } from './trusted-publishing/user-settings-trusted-publishers';
 import { UserSettingsProfile } from './user-settings-profile';
 import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { UserSettingsExtensions } from './user-settings-extensions';
@@ -38,6 +39,8 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
                 return <UserSettingsProfile user={user} />;
             case 'tokens':
                 return <UserSettingsTokens />;
+            case 'trusted-publishers':
+                return <UserSettingsTrustedPublishers />;
             case 'namespaces':
                 return <UserSettingsNamespaces />;
             case 'extensions':

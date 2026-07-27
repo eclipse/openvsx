@@ -17,6 +17,7 @@ import { UserSettingsRoutes } from './user-settings-routes';
 const TABS = [
     { value: 'profile', label: 'Profile' },
     { value: 'tokens', label: 'Access Tokens' },
+    { value: 'trusted-publishers', label: 'Trusted Publishers' },
     { value: 'namespaces', label: 'Namespaces' },
     { value: 'extensions', label: 'Extensions' },
     { value: 'customers', label: 'Rate Limiting' }

@@ -18,6 +18,7 @@ export namespace UserSettingsRoutes {
     export const MAIN = createRoute([ROOT, ':tab']);
     export const PROFILE = createRoute([ROOT, 'profile']);
     export const TOKENS = createRoute([ROOT, 'tokens']);
+    export const TRUSTED_PUBLISHERS = createRoute([ROOT, 'trusted-publishers']);
     export const NAMESPACES = createRoute([ROOT, 'namespaces']);
     export const EXTENSIONS = createRoute([ROOT, 'extensions']);
     export const EXTENSION_SETTINGS = createRoute([ROOT, 'extensions', ':namespace', ':extension']);
