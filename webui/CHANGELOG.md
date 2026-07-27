@@ -29,6 +29,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Fixed
 
 - Refresh the extension version list in the delete views when a delete fails with a conflict
+- Keep the hero-to-navbar search morph working under react-router 7, which wraps location updates in `React.startTransition`
 
 ### Dependencies
 
