@@ -12,9 +12,9 @@
  ********************************************************************************/
 
 import { FunctionComponent } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { ExtensionCard } from '../../components/extension-card';
-import { Section } from '../../components/page-primitives';
+import { ExtensionGrid } from '../../components/page-primitives';
 import { HomeCuratedSection } from '../../page-settings';
 import { useSearch } from '../../hooks/use-search';
 import { CURATED_SIZE, DEFAULT_CURATED_SECTIONS, useCuratedRows } from './use-home-data';
@@ -38,13 +38,13 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                     return null;
                 }
                 return (
-                    <Section component='section' key={row.title} sx={{ mt: { xs: '2.25rem', sm: '3.375rem' } }}>
+                    <Container maxWidth='xl' component='section' key={row.title}>
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                mb: '1.125rem'
+                                mb: '0.875rem'
                             }}>
                             <Box>
                                 <Typography
@@ -79,15 +79,7 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                                 See all →
                             </Box>
                         </Box>
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                gridTemplateColumns: {
-                                    xs: 'repeat(2, minmax(0, 1fr))',
-                                    sm: 'repeat(auto-fill, minmax(190px, 1fr))'
-                                },
-                                gap: '1rem'
-                            }}>
+                        <ExtensionGrid>
                             {/* Fixed index-keyed slots so cards stay mounted across the swap and don't re-fade. */}
                             {Array.from({ length: row.loading ? CURATED_SIZE : row.extensions.length }, (_, idx) => (
                                 <ExtensionCard
@@ -96,8 +88,8 @@ export const CuratedSections: FunctionComponent<CuratedSectionsProps> = props =>
                                     fadeDelayMs={(idx % CURATED_SIZE) * 200}
                                 />
                             ))}
-                        </Box>
-                    </Section>
+                        </ExtensionGrid>
+                    </Container>
                 );
             })}
         </>

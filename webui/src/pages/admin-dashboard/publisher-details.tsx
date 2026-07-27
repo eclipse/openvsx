@@ -24,7 +24,7 @@ import {
     Typography
 } from '@mui/material';
 import { useIsMutating } from '@tanstack/react-query';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';

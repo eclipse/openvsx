@@ -11,7 +11,7 @@
 import { FunctionComponent, ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Typography, Box, Link } from '@mui/material';
-import { Link as RouteLink, Route, useParams } from 'react-router-dom';
+import { Link as RouteLink, Route, useParams } from 'react-router';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -102,7 +102,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
     };
 
     const searchHeader: FunctionComponent = () => (
-        <Box textAlign='center' sx={{ mb: 3, maxWidth: '43.75rem', mx: 'auto' }}>
+        <Box textAlign='center' sx={{ mb: 2, maxWidth: '43.75rem', mx: 'auto' }}>
             <Box
                 sx={{
                     display: 'inline-flex',
@@ -110,12 +110,12 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
                     gap: '0.5rem',
                     px: '0.8125rem',
                     py: '0.375rem',
-                    borderRadius: '999px',
+                    borderRadius: theme => `${theme.shape.borderRadiusPill}px`,
                     bgcolor: 'accentSoft',
                     color: 'secondary.light',
                     fontSize: '0.75rem',
-                    fontWeight: 600,
-                    mb: 3
+                    fontWeight: 500,
+                    mb: 2
                 }}>
                 <Box
                     component='span'
@@ -133,11 +133,11 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             <Typography
                 component='h1'
                 sx={{
-                    fontSize: { xs: '2.2rem', sm: '3rem', md: '3.375rem' },
-                    lineHeight: 1.04,
-                    letterSpacing: '-0.035em',
-                    fontWeight: 800,
-                    mb: 2
+                    fontSize: { xs: '1.875rem', sm: '2.5rem', md: '2.875rem' },
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.02em',
+                    fontWeight: 600,
+                    mb: 1.5
                 }}>
                 Find the right extension,
                 <br />

@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, lazy, Suspense, useContext, useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Banner } from '../components/banner';
@@ -104,13 +104,17 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
             ) : null}
             <AppNavbar />
             {/* Mobile: fill the viewport so the (screen-tall) footer stays below the fold.
-                Desktop: flexGrow alone sticks the footer to the viewport bottom. */}
+                Desktop: flexGrow alone sticks the footer to the viewport bottom. A flex
+                column so pages can opt into stretching over the leftover space
+                (e.g. the search page runs its sidebar seam down to the footer). */}
             <Box
                 sx={{
                     flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                     minHeight: { xs: `calc(100vh - ${NAVBAR_HEIGHT})`, sm: 0 },
-                    // Legacy footer is fixed, so pad by its height; otherwise leave a gap above the footer divider.
-                    pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : { xs: '2.5rem', sm: '4rem' }
+                    // Only the fixed legacy footer needs clearance; the in-flow footer's gap lives on <PageContainer>.
+                    pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0
                 }}>
                 <Suspense fallback={null}>
                     <Routes>

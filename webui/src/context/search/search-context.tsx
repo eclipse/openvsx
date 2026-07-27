@@ -11,10 +11,20 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { createContext, FunctionComponent, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import {
+    createContext,
+    FunctionComponent,
+    ReactNode,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useState
+} from 'react';
+import { useLocation, useSearchParams } from 'react-router';
 import { SearchFocusProvider } from './search-focus-context';
 import { PageSearchBarProvider } from './page-search-bar-context';
+import { resolveSearchViewTransition } from './search-view-transition';
 
 export interface SearchContextValue {
     query: string;
@@ -45,6 +55,11 @@ export const SearchProvider: FunctionComponent<{ children: ReactNode }> = ({ chi
     const [query, setQuery] = useState('');
     const [searchParams] = useSearchParams();
     const urlQuery = searchParams.get('q') ?? '';
+    const location = useLocation();
+
+    // This provider outlives search navigations, so it releases the hero → nav bar
+    // morph once the new route has committed.
+    useLayoutEffect(resolveSearchViewTransition, [location]);
 
     // Keep the fields in sync with URL query changes (back/forward, shared links, category tiles).
     useEffect(() => {

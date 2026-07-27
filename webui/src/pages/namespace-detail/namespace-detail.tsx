@@ -9,15 +9,15 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
-import { Typography, Box, Link, Divider } from '@mui/material';
+import { Typography, Box, Container, Link, Divider } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { ExtensionCard } from '../../components/extension-card';
+import { ExtensionGrid } from '../../components/page-primitives';
 import { MainContext } from '../../context';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Section } from '../../components/page-primitives';
 import { NamespaceDetails, isError, UrlString } from '../../extension-registry-types';
 
 export const NamespaceDetail: FunctionComponent = () => {
@@ -111,7 +111,7 @@ export const NamespaceDetail: FunctionComponent = () => {
         return (
             <>
                 <Box sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Section sx={{ py: { xs: '2rem', sm: '3rem' } }}>
+                    <Container maxWidth='xl' sx={{ py: { xs: '2rem', sm: '3rem' } }}>
                         <Box
                             sx={{
                                 display: 'flex',
@@ -205,19 +205,11 @@ export const NamespaceDetail: FunctionComponent = () => {
                                 ) : null}
                             </Box>
                         </Box>
-                    </Section>
+                    </Container>
                 </Box>
                 {namespaceDetails.extensions ? (
-                    <Section sx={{ py: { xs: '2rem', sm: '3rem' } }}>
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                gridTemplateColumns: {
-                                    xs: 'repeat(2, minmax(0, 1fr))',
-                                    sm: 'repeat(auto-fill, minmax(190px, 1fr))'
-                                },
-                                gap: '1rem'
-                            }}>
+                    <Container maxWidth='xl' sx={{ py: { xs: '2rem', sm: '3rem' } }}>
+                        <ExtensionGrid>
                             {namespaceDetails.extensions.map((ext, idx) => (
                                 <ExtensionCard
                                     extension={ext}
@@ -225,8 +217,8 @@ export const NamespaceDetail: FunctionComponent = () => {
                                     key={`${ext.namespace}.${ext.name}`}
                                 />
                             ))}
-                        </Box>
-                    </Section>
+                        </ExtensionGrid>
+                    </Container>
                 ) : null}
             </>
         );

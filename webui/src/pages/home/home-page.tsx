@@ -12,8 +12,9 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext } from 'react';
-import { Box } from '@mui/material';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router';
+import { PageContainer } from '../../components/page-container';
+import { SectionSeparator, SectionStack } from '../../components/page-primitives';
 import { MainContext } from '../../context';
 import { HomeSettings } from '../../page-settings';
 import { ExtensionListRoutes } from '../extension-list/extension-list-routes';
@@ -48,11 +49,14 @@ export const HomePage: FunctionComponent = () => {
 const HomeContent: FunctionComponent<{ home?: HomeSettings }> = ({ home }) => {
     const { pageSettings } = useContext(MainContext);
     return (
-        <Box component='main' sx={{ animation: 'fadeIn .25s ease' }}>
-            <HeroSearch searchHeader={pageSettings.elements.searchHeader} popularSearches={home?.popularSearches} />
-            <BrowseCategories />
-            <CuratedSections sections={home?.curatedSections} />
-            <GetInvolved heading={home?.involvement?.heading} cards={home?.involvement?.cards} />
-        </Box>
+        <PageContainer fluid component='main' sx={{ animation: 'fadeIn .25s ease' }}>
+            <SectionStack>
+                <HeroSearch searchHeader={pageSettings.elements.searchHeader} popularSearches={home?.popularSearches} />
+                <SectionSeparator />
+                <CuratedSections sections={home?.curatedSections} />
+                <BrowseCategories />
+                <GetInvolved heading={home?.involvement?.heading} cards={home?.involvement?.cards} />
+            </SectionStack>
+        </PageContainer>
     );
 };

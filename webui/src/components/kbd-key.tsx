@@ -30,7 +30,7 @@ export const KbdKey: FunctionComponent<PropsWithChildren> = ({ children }) => (
             pb: '0.1875rem',
             minWidth: '1.125rem',
             textAlign: 'center',
-            borderRadius: '4px',
+            borderRadius: 1,
             // All colors mix from the inherited text color, so the chip tints with
             // its context instead of being a fixed gray.
             color: 'color-mix(in srgb, currentcolor 62%, transparent)',

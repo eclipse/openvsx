@@ -10,8 +10,9 @@
 
 import { FunctionComponent, ReactNode, useContext } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Grid, Container, Box, Typography, Link } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { Grid, Box, Typography, Link } from '@mui/material';
+import { useParams } from 'react-router';
+import { PageContainer } from '../../components/page-container';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserSettingTabs } from './user-setting-tabs';
 import { UserSettingsTokens } from './user-settings-tokens';
@@ -59,52 +60,48 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
 
         if (!user) {
             return loginProviders ? (
-                <Container>
-                    <Box mt={6}>
-                        <Typography variant='h4'>Not Logged In</Typography>
-                        <Box mt={2}>
-                            <Typography variant='body1'>
-                                Please{' '}
-                                <LoginComponent
-                                    loginProviders={loginProviders}
-                                    renderButton={(href, onClick) => {
-                                        return (
-                                            <Link color='secondary' href={href} onClick={onClick}>
-                                                log in
-                                            </Link>
-                                        );
-                                    }}
-                                />{' '}
-                                to access your account settings.
-                            </Typography>
-                        </Box>
+                <PageContainer>
+                    <Typography variant='h4'>Not Logged In</Typography>
+                    <Box mt={2}>
+                        <Typography variant='body1'>
+                            Please{' '}
+                            <LoginComponent
+                                loginProviders={loginProviders}
+                                renderButton={(href, onClick) => {
+                                    return (
+                                        <Link color='secondary' href={href} onClick={onClick}>
+                                            log in
+                                        </Link>
+                                    );
+                                }}
+                            />{' '}
+                            to access your account settings.
+                        </Typography>
                     </Box>
-                </Container>
+                </PageContainer>
             ) : null;
         }
 
         return (
-            <Container maxWidth={'xl'}>
-                <Box mt={6}>
-                    <Grid
-                        container
-                        sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
-                        <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
-                            <UserSettingTabs />
-                        </Grid>
-                        <Grid
-                            item
-                            sx={{
-                                pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
-                                pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
-                                flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
-                                width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
-                            }}>
-                            <Box>{renderTab(user, tab, namespace, extension)}</Box>
-                        </Grid>
+            <PageContainer>
+                <Grid
+                    container
+                    sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
+                    <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
+                        <UserSettingTabs />
                     </Grid>
-                </Box>
-            </Container>
+                    <Grid
+                        item
+                        sx={{
+                            pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
+                            pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
+                            flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
+                            width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
+                        }}>
+                        <Box>{renderTab(user, tab, namespace, extension)}</Box>
+                    </Grid>
+                </Grid>
+            </PageContainer>
         );
     };
 

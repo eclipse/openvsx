@@ -23,7 +23,7 @@ import {
     DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { Timestamp } from '../../components/timestamp';
 import { PersonalAccessToken } from '../../extension-registry-types';

@@ -12,13 +12,13 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { KbdKey } from '../components/kbd-key';
 import { useShortcut } from '../hooks/use-shortcut';
-import { Section, Eyebrow, accentHover, focusOutline } from '../components/page-primitives';
+import { Eyebrow, accentHover, focusOutline } from '../components/page-primitives';
 import { MONO_FONT } from '../default/theme';
 import { CustomFooterSettings, StructuredFooterSettings } from '../page-settings';
 import { MainContext } from '../context';
@@ -131,7 +131,8 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
         component='footer'
         sx={{ mt: 'auto', borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
         {footer && (footer.brand || footer.columns) && (
-            <Section
+            <Container
+                maxWidth='xl'
                 sx={{
                     pt: '3rem',
                     pb: '1.875rem',
@@ -191,9 +192,10 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                         </Box>
                     </Box>
                 ))}
-            </Section>
+            </Container>
         )}
-        <Section
+        <Container
+            maxWidth='xl'
             sx={{
                 py: '1.25rem',
                 borderTop: footer?.brand || footer?.columns ? '1px solid' : 'none',
@@ -217,6 +219,6 @@ const StructuredFooter: FunctionComponent<StructuredFooterProps> = ({ footer, ve
                     </Typography>
                 )}
             </Box>
-        </Section>
+        </Container>
     </Box>
 );

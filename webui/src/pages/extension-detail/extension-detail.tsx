@@ -25,10 +25,7 @@ import {
     decomposeColor
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
-import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
-import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import WarningIcon from '@mui/icons-material/Warning';
+import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router';
 import { MainContext } from '../../context';
 import { createRoute, formatCompactNumber } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -49,6 +46,10 @@ import { useShortcut } from '../../hooks/use-shortcut';
 import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_PX } from '../../default/theme';
 import { useSetExtensionTint } from '../../context/extension-tint-context';
 import { accentHover, focusOutline } from '../../components/page-primitives';
+import { PageContainer } from '../../components/page-container';
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import WarningIcon from '@mui/icons-material/Warning';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 
 // Category-pill look for the sticky tabs, floating over the nav bar's blur fan;
 // the translucent fill matches the nav search field's treatment.
@@ -56,7 +57,7 @@ const PillTab = styled(Tab)(({ theme }) => ({
     minHeight: 0,
     minWidth: 0,
     padding: '0.4375rem 0.8125rem',
-    borderRadius: '999px',
+    borderRadius: theme.shape.borderRadiusPill,
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: alpha(theme.palette.surface2, 0.7),
     backdropFilter: 'blur(2px) saturate(1.8)',
@@ -505,7 +506,7 @@ export const ExtensionDetail: FunctionComponent = () => {
             {extension && (
                 <>
                     <ExtensionHeader extension={extension} bandRef={bandRef} />
-                    <Container maxWidth='xl'>
+                    <PageContainer flushTop>
                         <Tabs
                             value={activeTab}
                             variant='scrollable'
@@ -567,10 +568,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 state={{ preserveScroll: true }}
                             />
                         </Tabs>
-                        {/* Owns the space below the pinned pills for every tab, so the panels
-                            don't each set their own; min-height keeps the preserved scroll
-                            position valid while a panel loads. */}
-                        <Box sx={{ minHeight: '100vh', pt: 2 }}>
+                        <Box sx={{ pt: 2 }}>
                             <Routes>
                                 <Route
                                     path={ExtensionTab.REVIEWS}
@@ -591,7 +589,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 />
                             </Routes>
                         </Box>
-                    </Container>
+                    </PageContainer>
                 </>
             )}
             {error && (

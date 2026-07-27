@@ -13,7 +13,7 @@
 
 import { FunctionComponent, ReactNode, useEffect, useState } from 'react';
 import { Box, Button, Divider, Stack, Typography } from '@mui/material';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { Extension, VERSION_ALIASES, VersionTargetPlatforms } from '../../extension-registry-types';
 import { ExtensionHeader } from './extension-header';
 import { ExtensionStatusChips } from './extension-status-chips';

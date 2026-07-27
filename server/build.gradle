@@ -41,6 +41,7 @@ ext['log4j2.version'] = libs.versions.log4j2.get()
 ext['logback.version'] = libs.versions.logback.get()
 ext['netty.version'] = libs.versions.netty.get()
 ext['opentelemetry.version'] = libs.versions.opentelemetry.get()
+ext['postgresql.version'] = libs.versions.postgresql.get()
 
 java {
     sourceCompatibility = libs.versions.java.get()

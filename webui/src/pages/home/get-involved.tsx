@@ -12,18 +12,18 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { HomeInvolvementCard } from '../../page-settings';
-import { Section, Eyebrow, focusOutline } from '../../components/page-primitives';
+import { Eyebrow, focusOutline } from '../../components/page-primitives';
 
 const GetInvolvedCard = styled(Box)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: '16px',
-    padding: '1.5rem',
+    borderRadius: theme.shape.borderRadiusCard,
+    padding: '1.25rem',
     display: 'flex',
     flexDirection: 'column'
 }));
@@ -74,7 +74,7 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '3rem', sm: '4.5rem' } }}>
+        <Container maxWidth='xl' component='section'>
             <Eyebrow sx={{ letterSpacing: '0.1em', mb: { xs: '0.875rem', sm: '1.25rem' } }}>
                 {heading ?? 'Get Involved'}
             </Eyebrow>
@@ -92,7 +92,8 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                                     sx={{
                                         width: '2.125rem',
                                         height: '2.125rem',
-                                        borderRadius: '9px',
+                                        // sx multiplies by theme.shape.borderRadius
+                                        borderRadius: 1,
                                         bgcolor: 'accentSoft',
                                         color: 'secondary.light',
                                         display: 'flex',
@@ -120,6 +121,6 @@ export const GetInvolved: FunctionComponent<GetInvolvedProps> = ({ heading, card
                     );
                 })}
             </Box>
-        </Section>
+        </Container>
     );
 };

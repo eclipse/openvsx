@@ -46,7 +46,8 @@ export const CategoryCard: FunctionComponent<CategoryCardProps> = ({ label, icon
             sx={{
                 width: '1.875rem',
                 height: '1.875rem',
-                borderRadius: '8px',
+                // sx multiplies by theme.shape.borderRadius
+                borderRadius: 1,
                 bgcolor: 'accentSoft',
                 color: 'secondary.main',
                 display: 'flex',

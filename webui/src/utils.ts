@@ -123,6 +123,27 @@ export function toRelativeTime(timestamp?: string, isFutureTime: boolean = false
     }
 }
 
+/** Short form of {@link toRelativeTime} for tight layouts: "5m", "3h", "2d", "4mo", "1y". */
+export function toCompactRelativeTime(timestamp?: string): string | undefined {
+    if (!timestamp) {
+        return undefined;
+    }
+    const elapsed = Date.now() - new Date(timestamp).getTime();
+    if (elapsed < msPerMinute) {
+        return 'now';
+    } else if (elapsed < msPerHour) {
+        return `${Math.round(elapsed / msPerMinute)}m`;
+    } else if (elapsed < msPerDay) {
+        return `${Math.round(elapsed / msPerHour)}h`;
+    } else if (elapsed < msPerMonth) {
+        return `${Math.round(elapsed / msPerDay)}d`;
+    } else if (elapsed < msPerYear) {
+        return `${Math.round(elapsed / msPerMonth)}mo`;
+    } else {
+        return `${Math.round(elapsed / msPerYear)}y`;
+    }
+}
+
 export function handleError(err?: Error | Partial<ErrorResponse>): string {
     if (err) {
         if (err instanceof Error && err.name === 'AbortError') {

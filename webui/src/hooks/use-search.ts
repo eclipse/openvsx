@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { useCallback, useMemo } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { ExtensionCategory, SortBy, SortOrder } from '../extension-registry-types';
 

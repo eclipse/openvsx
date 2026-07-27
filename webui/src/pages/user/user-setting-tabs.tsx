@@ -10,7 +10,7 @@
 
 import { ReactElement } from 'react';
 import { Tabs, Tab, useTheme, useMediaQuery } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings-routes';
 

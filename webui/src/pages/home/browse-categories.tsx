@@ -12,12 +12,12 @@
  ********************************************************************************/
 
 import { FunctionComponent } from 'react';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import { ExtensionCategory } from '../../extension-registry-types';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryCard } from '../../components/category-card';
-import { Section, Eyebrow } from '../../components/page-primitives';
+import { Eyebrow } from '../../components/page-primitives';
 import { useSearch } from '../../hooks/use-search';
 import { useHomeCategories } from './use-home-data';
 
@@ -38,7 +38,7 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = props 
         return null;
     }
     return (
-        <Section component='section' sx={{ mt: { xs: '1.375rem', sm: '2.25rem' } }}>
+        <Container maxWidth='xl' component='section'>
             <Eyebrow sx={{ mb: { xs: '0.75rem', sm: '1.125rem' } }}>Browse by category</Eyebrow>
             <Box
                 sx={{
@@ -77,6 +77,6 @@ export const BrowseCategories: FunctionComponent<BrowseCategoriesProps> = props 
                     />
                 ))}
             </Box>
-        </Section>
+        </Container>
     );
 };

@@ -14,21 +14,33 @@
 import { Box, Typography } from '@mui/material';
 import { alpha, styled, Theme } from '@mui/material/styles';
 
-/** Max width of the centered content column shared by every page section. */
-export const CONTENT_MAX_WIDTH = 1320;
-
-/**
- * Horizontally-centered content column with responsive gutters. The single
- * source of truth for page width so sections stay aligned across the app.
- */
-export const Section = styled(Box)(({ theme }) => ({
-    maxWidth: CONTENT_MAX_WIDTH,
-    marginInline: 'auto',
-    paddingInline: '1.75rem',
-    [theme.breakpoints.down('sm')]: {
-        paddingInline: '1rem'
+/** Normalized gap between stacked sections; the owl selector skips the first (and any null) child. */
+export const SectionStack = styled(Box)(({ theme }) => ({
+    '& > * + *': {
+        marginTop: '2.5rem',
+        [theme.breakpoints.down('sm')]: {
+            marginTop: '1.5rem'
+        }
     }
 }));
+
+/** Full-bleed hairline dividing stacked page sections, VS Code workbench style. */
+export const SectionSeparator = styled(Box)(({ theme }) => ({
+    borderTop: `1px solid ${theme.palette.border2}`
+}));
+
+/** Extension-card grid shared by the listings; column count falls out of available
+ *  width. Sparse grids keep auto-fill's empty tracks so few results stay card-sized;
+ *  with 7+ items (a curated row or a full results page) auto-fit collapses leftover
+ *  tracks so rows stretch to fill the width. */
+export const ExtensionGrid = styled(Box)({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(145px, 1fr))',
+    gap: '0.75rem',
+    '&:has(> :nth-of-type(7))': {
+        gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))'
+    }
+});
 
 /** Small uppercase label used to head sections, columns and sidebars. */
 export const Eyebrow = styled(Typography)(({ theme }) => ({

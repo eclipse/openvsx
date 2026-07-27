@@ -19,7 +19,8 @@ import { ExtensionList } from '../../components/extension-list';
 import { CATEGORY_ICONS, DefaultCategoryIcon } from '../../components/categories';
 import { CategoryPill } from '../../components/category-pill';
 import { CategoryListItem } from '../../components/category-list-item';
-import { Eyebrow, Section } from '../../components/page-primitives';
+import { Eyebrow } from '../../components/page-primitives';
+import { PageContainer } from '../../components/page-container';
 import { NAVBAR_HEIGHT } from '../../default/theme';
 import { useSearch } from '../../hooks/use-search';
 import { useCategories } from '../../components/categories';
@@ -33,10 +34,10 @@ export const SearchPage: FunctionComponent = () => {
     const [resultNumber, setResultNumber] = useState(0);
 
     return (
-        <Section
-            sx={{
-                pb: { xs: '1.125rem', sm: '1.875rem' }
-            }}>
+        // flushTop hugs the nav; flushBottom moves the footer gap into the results
+        // column, so its seam runs unbroken into the footer divider. Growing into the
+        // layout's leftover space keeps the seam continuous on short result sets too.
+        <PageContainer flushTop flushBottom sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
             {/* Mobile category pills — outside the flex row so negative-margin bleed isn't clipped */}
             {categories.length > 0 && (
                 <Box
@@ -67,7 +68,7 @@ export const SearchPage: FunctionComponent = () => {
                 </Box>
             )}
 
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', flexGrow: 1 }}>
                 {/* Desktop categories sidebar */}
                 <Box
                     component='nav'
@@ -104,8 +105,18 @@ export const SearchPage: FunctionComponent = () => {
                     })}
                 </Box>
 
-                {/* Main content */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Main content, split from the sidebar like VS Code's sidebar/editor seam.
+                    The color rides in the shorthand: a separate borderColor would be
+                    overridden by this media-queried shorthand resetting it. */}
+                <Box
+                    sx={theme => ({
+                        flex: 1,
+                        minWidth: 0,
+                        borderLeft: { xs: 'none', md: `1px solid ${theme.palette.border2}` },
+                        pl: { md: '1.25rem' },
+                        // The footer gap PageContainer would normally own (flushBottom).
+                        pb: { xs: '2.5rem', sm: '4rem' }
+                    })}>
                     <SearchHeader
                         resultNumber={resultNumber}
                         sortBy={sortBy}
@@ -116,11 +127,11 @@ export const SearchPage: FunctionComponent = () => {
                         onSortOrderChanged={(sortOrder: SortOrder) => search({ sortOrder })}
                     />
                     <ExtensionList
-                        filter={{ query: searchQuery, category, offset: 0, size: 25, sortBy, sortOrder }}
+                        filter={{ query: searchQuery, category, offset: 0, size: 30, sortBy, sortOrder }}
                         onUpdate={setResultNumber}
                     />
                 </Box>
             </Box>
-        </Section>
+        </PageContainer>
     );
 };

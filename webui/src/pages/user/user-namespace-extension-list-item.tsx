@@ -10,7 +10,7 @@
 
 import type { ReactNode } from 'react';
 import { FunctionComponent } from 'react';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, styled } from '@mui/material';
 import { Extension } from '../../extension-registry-types';
 import { createRoute } from '../../utils';

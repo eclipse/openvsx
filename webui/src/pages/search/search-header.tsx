@@ -15,8 +15,13 @@ import { FunctionComponent } from 'react';
 import { Box, IconButton, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
 import { SortBy, SortOrder } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
+import { Theme } from '@mui/material/styles';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+
+// Distance from the content column's right edge to the viewport edge: the centered
+// PageContainer's outer gap (its cap is the xl breakpoint) plus its 1.5rem gutter (sm and up).
+const edgeBleed = (theme: Theme) => `calc((100vw - min(100vw, ${theme.breakpoints.values.xl}px)) / 2 + 1.5rem)`;
 
 export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
     const { sortBy, sortOrder, onSortByChanged, onSortOrderChanged } = props;
@@ -33,14 +38,23 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
 
     return (
         <Box
-            sx={{
+            // Bleeds left to meet the sidebar seam and right to the viewport edge;
+            // matching padding keeps the content itself on the column grid.
+            sx={theme => ({
                 pt: '1.75rem',
-                pb: '1rem',
+                pb: '0.875rem',
+                mb: '1rem',
+                ml: { md: '-1.25rem' },
+                pl: { md: '1.25rem' },
+                mr: { xs: '-1rem', sm: `calc(${edgeBleed(theme)} * -1)` },
+                pr: { xs: '1rem', sm: edgeBleed(theme) },
+                borderBottom: '1px solid',
+                borderColor: 'border2',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
                 gap: '1rem'
-            }}>
+            })}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
                     component='h1'
@@ -73,7 +87,7 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                         color: 'text.primary',
                         height: '1.875rem',
                         bgcolor: 'background.paper',
-                        borderRadius: '8px',
+                        borderRadius: 1,
                         '& .MuiSelect-select': { py: '0.25rem', pl: '0.625rem' },
                         '& .MuiSelect-icon': { color: 'text.disabled', fontSize: '1.125rem' }
                     }}>
@@ -88,7 +102,7 @@ export const SearchHeader: FunctionComponent<SearchHeaderProps> = props => {
                     aria-label={sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'}
                     sx={{
                         color: 'text.disabled',
-                        borderRadius: '6px',
+                        borderRadius: 1,
                         p: '0.1875rem',
                         transition: 'color 0.14s',
                         '&:hover': { color: 'secondary.light', bgcolor: 'transparent' }
