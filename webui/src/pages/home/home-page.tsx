@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router';
 import { PageContainer } from '../../components/page-container';
 import { SectionSeparator, SectionStack } from '../../components/page-primitives';
 import { MainContext } from '../../context';

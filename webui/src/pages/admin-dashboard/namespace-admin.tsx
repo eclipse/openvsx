@@ -10,7 +10,7 @@
 
 import { FunctionComponent, useState, useContext, useEffect, ReactNode } from 'react';
 import { Typography, Box } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { NamespaceDetail, NamespaceDetailConfigContext } from '../user/user-settings-namespace-detail';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { MainContext } from '../../context';

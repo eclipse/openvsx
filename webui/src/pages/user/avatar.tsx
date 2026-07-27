@@ -10,7 +10,7 @@
 
 import { FunctionComponent, useContext, useRef, useState } from 'react';
 import { Avatar, Box, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import SettingsIcon from '@mui/icons-material/Settings';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';

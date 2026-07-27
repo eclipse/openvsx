@@ -10,7 +10,7 @@
 
 import { FunctionComponent, ReactNode, useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { CssBaseline } from '@mui/material';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './query-client';

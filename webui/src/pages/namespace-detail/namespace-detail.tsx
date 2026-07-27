@@ -13,7 +13,7 @@ import { Typography, Box, Container, Link, Divider } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { ExtensionCard } from '../../components/extension-card';
 import { ExtensionGrid } from '../../components/page-primitives';
 import { MainContext } from '../../context';

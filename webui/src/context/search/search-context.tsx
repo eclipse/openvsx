@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { createContext, FunctionComponent, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import { SearchFocusProvider } from './search-focus-context';
 import { PageSearchBarProvider } from './page-search-bar-context';
 

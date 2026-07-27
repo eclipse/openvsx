@@ -14,7 +14,7 @@
 import { FC, useState } from 'react';
 import { Box, Typography, Button, Alert, LinearProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import type { Customer } from '../../../extension-registry-types';
 import { handleError } from '../../../utils';
 import { useAdminUsageStats } from '../usage-stats/use-usage-stats';

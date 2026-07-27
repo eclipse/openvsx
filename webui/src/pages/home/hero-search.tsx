@@ -22,7 +22,7 @@ import {
     useState
 } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { flushSync } from 'react-dom';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';

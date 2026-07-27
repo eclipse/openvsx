@@ -12,7 +12,7 @@
  *****************************************************************************/
 
 import { FunctionComponent, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { MainContext } from '../../context';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ExtensionDetailView } from '../../components/extension/extension-detail-view';

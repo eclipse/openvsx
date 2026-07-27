@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, createContext, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { Box, Button, Link, Paper, Grid, Typography } from '@mui/material';
 import { styled, Theme } from '@mui/material/styles';
 import WarningIcon from '@mui/icons-material/Warning';

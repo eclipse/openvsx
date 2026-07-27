@@ -13,7 +13,7 @@
 
 import { FC, useContext, useMemo } from 'react';
 import { Box, Alert } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { MainContext } from '../../../context';
 import type { Customer } from '../../../extension-registry-types';
 import { handleError } from '../../../utils';

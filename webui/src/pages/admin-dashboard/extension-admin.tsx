@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { Button, Typography } from '@mui/material';
 
 import { MainContext } from '../../context';

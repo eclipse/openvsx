@@ -10,7 +10,7 @@
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
 import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
-import { Link as RouteLink, useNavigate, useParams } from 'react-router-dom';
+import { Link as RouteLink, useNavigate, useParams } from 'react-router';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';

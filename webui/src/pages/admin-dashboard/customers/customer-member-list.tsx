@@ -26,7 +26,7 @@ import {
     type PaperProps,
     Paper
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
 import { MainContext } from '../../../context';
 import { Customer, UserData } from '../../../extension-registry-types';
