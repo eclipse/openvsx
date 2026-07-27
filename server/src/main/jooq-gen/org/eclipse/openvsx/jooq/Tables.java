@@ -39,6 +39,7 @@ import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
 import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.TrustedPublisher;
 import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
 
@@ -227,6 +228,11 @@ public class Tables {
      * The table <code>public.tier</code>.
      */
     public static final Tier TIER = Tier.TIER;
+
+    /**
+     * The table <code>public.trusted_publisher</code>.
+     */
+    public static final TrustedPublisher TRUSTED_PUBLISHER = TrustedPublisher.TRUSTED_PUBLISHER;
 
     /**
      * The table <code>public.usage_stats</code>.

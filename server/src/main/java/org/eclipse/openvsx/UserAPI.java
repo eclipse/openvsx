@@ -447,6 +447,8 @@ public class UserAPI {
                 json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
                 json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));
                 json.setDetailsUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "details"));
+                json.setTrustedPublishingUrl(
+                        createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "trusted-publishing"));
             }
 
             return json;

@@ -39,6 +39,7 @@ import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
 import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.TrustedPublisher;
 import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
 import org.eclipse.openvsx.jooq.tables.records.AdminScanDecisionRecord;
@@ -76,6 +77,7 @@ import org.eclipse.openvsx.jooq.tables.records.SignatureKeyPairRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionAttributesRecord;
 import org.eclipse.openvsx.jooq.tables.records.SpringSessionRecord;
 import org.eclipse.openvsx.jooq.tables.records.TierRecord;
+import org.eclipse.openvsx.jooq.tables.records.TrustedPublisherRecord;
 import org.eclipse.openvsx.jooq.tables.records.UsageStatsRecord;
 import org.eclipse.openvsx.jooq.tables.records.UserDataRecord;
 import org.jooq.ForeignKey;
@@ -137,6 +139,7 @@ public class Keys {
     public static final UniqueKey<SpringSessionAttributesRecord> SPRING_SESSION_ATTRIBUTES_PK = Internal.createUniqueKey(SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES, DSL.name("spring_session_attributes_pk"), new TableField[] { SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.SESSION_PRIMARY_ID, SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.ATTRIBUTE_NAME }, true);
     public static final UniqueKey<TierRecord> TIER_PKEY = Internal.createUniqueKey(Tier.TIER, DSL.name("tier_pkey"), new TableField[] { Tier.TIER.ID }, true);
     public static final UniqueKey<TierRecord> TIER_UNIQUE_NAME = Internal.createUniqueKey(Tier.TIER, DSL.name("tier_unique_name"), new TableField[] { Tier.TIER.NAME }, true);
+    public static final UniqueKey<TrustedPublisherRecord> TRUSTED_PUBLISHER_PKEY = Internal.createUniqueKey(TrustedPublisher.TRUSTED_PUBLISHER, DSL.name("trusted_publisher_pkey"), new TableField[] { TrustedPublisher.TRUSTED_PUBLISHER.ID }, true);
     public static final UniqueKey<UsageStatsRecord> USAGE_STATS_PKEY = Internal.createUniqueKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_pkey"), new TableField[] { UsageStats.USAGE_STATS.ID }, true);
     public static final UniqueKey<UsageStatsRecord> USAGE_STATS_UNIQUE_CUSTOMER_WINDOW = Internal.createUniqueKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_unique_customer_window"), new TableField[] { UsageStats.USAGE_STATS.CUSTOMER_ID, UsageStats.USAGE_STATS.WINDOW_START }, true);
     public static final UniqueKey<UserDataRecord> UNIQUE_USER_DATA = Internal.createUniqueKey(UserData.USER_DATA, DSL.name("unique_user_data"), new TableField[] { UserData.USER_DATA.PROVIDER, UserData.USER_DATA.LOGIN_NAME }, true);
@@ -178,5 +181,7 @@ public class Keys {
     public static final ForeignKey<RateLimitTokenRecord, CustomerRecord> RATE_LIMIT_TOKEN__RATE_LIMIT_TOKEN_CUSTOMER_FK = Internal.createForeignKey(RateLimitToken.RATE_LIMIT_TOKEN, DSL.name("rate_limit_token_customer_fk"), new TableField[] { RateLimitToken.RATE_LIMIT_TOKEN.CUSTOMER }, Keys.CUSTOMER_PKEY, new TableField[] { Customer.CUSTOMER.ID }, true);
     public static final ForeignKey<ScanCheckResultRecord, ExtensionScanRecord> SCAN_CHECK_RESULT__FK_SCAN_CHECK_RESULT_SCAN = Internal.createForeignKey(ScanCheckResult.SCAN_CHECK_RESULT, DSL.name("fk_scan_check_result_scan"), new TableField[] { ScanCheckResult.SCAN_CHECK_RESULT.SCAN_ID }, Keys.EXTENSION_SCAN_PKEY, new TableField[] { ExtensionScan.EXTENSION_SCAN.ID }, true);
     public static final ForeignKey<SpringSessionAttributesRecord, SpringSessionRecord> SPRING_SESSION_ATTRIBUTES__SPRING_SESSION_ATTRIBUTES_FK = Internal.createForeignKey(SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES, DSL.name("spring_session_attributes_fk"), new TableField[] { SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES.SESSION_PRIMARY_ID }, Keys.SPRING_SESSION_PK, new TableField[] { SpringSession.SPRING_SESSION.PRIMARY_ID }, true);
+    public static final ForeignKey<TrustedPublisherRecord, UserDataRecord> TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_CREATED_BY_FKEY = Internal.createForeignKey(TrustedPublisher.TRUSTED_PUBLISHER, DSL.name("trusted_publisher_created_by_fkey"), new TableField[] { TrustedPublisher.TRUSTED_PUBLISHER.CREATED_BY }, Keys.USER_DATA_PKEY, new TableField[] { UserData.USER_DATA.ID }, true);
+    public static final ForeignKey<TrustedPublisherRecord, NamespaceRecord> TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_NAMESPACE_FKEY = Internal.createForeignKey(TrustedPublisher.TRUSTED_PUBLISHER, DSL.name("trusted_publisher_namespace_fkey"), new TableField[] { TrustedPublisher.TRUSTED_PUBLISHER.NAMESPACE }, Keys.NAMESPACE_PKEY, new TableField[] { Namespace.NAMESPACE.ID }, true);
     public static final ForeignKey<UsageStatsRecord, CustomerRecord> USAGE_STATS__USAGE_STATS_CUSTOMER_ID_FK = Internal.createForeignKey(UsageStats.USAGE_STATS, DSL.name("usage_stats_customer_id_fk"), new TableField[] { UsageStats.USAGE_STATS.CUSTOMER_ID }, Keys.CUSTOMER_PKEY, new TableField[] { Customer.CUSTOMER.ID }, true);
 }

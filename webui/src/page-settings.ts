@@ -147,5 +147,6 @@ export interface PageSettings {
         extensionDefaultIcon: string;
         namespaceAccessInfo: string;
         publisherAgreement?: string;
+        trustedPublishing?: string;
     };
 }

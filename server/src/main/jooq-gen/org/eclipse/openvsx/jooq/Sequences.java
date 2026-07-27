@@ -146,6 +146,11 @@ public class Sequences {
     public static final Sequence<Long> TIER_SEQ = Internal.createSequence("tier_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
+     * The sequence <code>public.trusted_publisher_seq</code>
+     */
+    public static final Sequence<Long> TRUSTED_PUBLISHER_SEQ = Internal.createSequence("trusted_publisher_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.usage_stats_seq</code>
      */
     public static final Sequence<Long> USAGE_STATS_SEQ = Internal.createSequence("usage_stats_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);

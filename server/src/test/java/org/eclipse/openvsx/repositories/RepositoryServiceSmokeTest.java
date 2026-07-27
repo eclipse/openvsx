@@ -12,8 +12,8 @@ package org.eclipse.openvsx.repositories;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -43,6 +43,7 @@ import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
@@ -149,6 +150,14 @@ class RepositoryServiceSmokeTest {
         dailyUsageStats.setTotalRequests(1L);
         dailyUsageStats.setP95Requests(1L);
 
+        var trustedPublisher = new TrustedPublisher();
+        trustedPublisher.setNamespace(namespace);
+        trustedPublisher.setProvider("provider");
+        trustedPublisher.setRegistration(Map.of("foo", "bar"));
+        trustedPublisher.setClaims(Map.of("claim", "value"));
+        trustedPublisher.setCreatedBy(userData);
+        trustedPublisher.setCreatedTimestamp(NOW);
+
         // Persist all entities consistently using EntityManager
         Stream.of(
                 namespace,
@@ -165,7 +174,8 @@ class RepositoryServiceSmokeTest {
                 scanCheckResult,
                 tier,
                 customer,
-                usageStats)
+                usageStats,
+                trustedPublisher)
                 .forEach(em::persist);
         em.flush();
 
@@ -278,8 +288,8 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findPublicId("namespaceName", "extensionName"),
                 () -> repositories.findPublicId("namespaceName.extensionName"),
                 () -> repositories.findNamespacePublicId("namespaceName.extensionName"),
-                () -> repositories.updateExtensionPublicIds(Collections.emptyMap()),
-                () -> repositories.updateNamespacePublicIds(Collections.emptyMap()),
+                () -> repositories.updateExtensionPublicIds(Map.of()),
+                () -> repositories.updateNamespacePublicIds(Map.of()),
                 () -> repositories.extensionPublicIdExists("namespaceName.extensionName"),
                 () -> repositories.namespacePublicIdExists("namespaceName.extensionName"),
                 () -> repositories.fetchSitemapRows(),
@@ -347,12 +357,11 @@ class RepositoryServiceSmokeTest {
                         "extensionName",
                         "namespaceName",
                         "displayName",
-                        Collections.emptyList(),
+                        List.of(),
                         0.5,
                         false,
                         10),
-                () -> repositories
-                        .findSimilarNamespacesByLevenshtein("namespaceName", Collections.emptyList(), 0.5, false, 10),
+                () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", List.of(), 0.5, false, 10),
                 () -> repositories.findExtensionScans(extVersion),
                 () -> repositories.findLatestExtensionScan(extVersion),
                 () -> repositories.findExtensionScans(extension),
@@ -519,6 +528,9 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findDailyUsageStats(customer, NOW.toLocalDate()),
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
+                () -> repositories.findTrustedPublishers(namespace),
+                () -> repositories.findTrustedPublisher(1L),
+                () -> repositories.deleteTrustedPublisher(trustedPublisher),
                 () -> repositories.deleteTier(tier),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails

@@ -29,6 +29,7 @@ import { Timestamp } from '../../components/timestamp';
 import { PersonalAccessToken } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { GenerateAccessTokenDialog } from './generate-access-token-dialog';
+import { TrustedPublishingPromo } from './trusted-publishing/trusted-publishing-promo';
 import { UserSettingsRoutes } from './user-settings-routes';
 
 const link = ({ theme }: { theme: Theme }) => ({
@@ -201,6 +202,9 @@ export const UserSettingsTokens: FunctionComponent = () => {
                         </DeleteButton>
                     </Box>
                 </Box>
+            </Box>
+            <Box mt={2}>
+                <TrustedPublishingPromo />
             </Box>
             <Box mt={2}>
                 {tokens.length === 0 && !loading ? (

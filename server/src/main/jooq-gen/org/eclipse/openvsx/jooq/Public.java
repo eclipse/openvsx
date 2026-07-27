@@ -42,6 +42,7 @@ import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.SpringSessionAttributes;
 import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.TrustedPublisher;
 import org.eclipse.openvsx.jooq.tables.UsageStats;
 import org.eclipse.openvsx.jooq.tables.UserData;
 import org.jooq.Catalog;
@@ -243,6 +244,11 @@ public class Public extends SchemaImpl {
     public final Tier TIER = Tier.TIER;
 
     /**
+     * The table <code>public.trusted_publisher</code>.
+     */
+    public final TrustedPublisher TRUSTED_PUBLISHER = TrustedPublisher.TRUSTED_PUBLISHER;
+
+    /**
      * The table <code>public.usage_stats</code>.
      */
     public final UsageStats USAGE_STATS = UsageStats.USAGE_STATS;
@@ -294,6 +300,7 @@ public class Public extends SchemaImpl {
             Sequences.SETTING_SEQ,
             Sequences.SIGNATURE_KEY_PAIR_SEQ,
             Sequences.TIER_SEQ,
+            Sequences.TRUSTED_PUBLISHER_SEQ,
             Sequences.USAGE_STATS_SEQ,
             Sequences.USER_DATA_SEQ
         );
@@ -337,6 +344,7 @@ public class Public extends SchemaImpl {
             SpringSession.SPRING_SESSION,
             SpringSessionAttributes.SPRING_SESSION_ATTRIBUTES,
             Tier.TIER,
+            TrustedPublisher.TRUSTED_PUBLISHER,
             UsageStats.USAGE_STATS,
             UserData.USER_DATA
         );

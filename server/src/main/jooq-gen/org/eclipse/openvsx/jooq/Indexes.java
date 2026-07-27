@@ -25,6 +25,7 @@ import org.eclipse.openvsx.jooq.tables.ScanJob;
 import org.eclipse.openvsx.jooq.tables.SignatureKeyPair;
 import org.eclipse.openvsx.jooq.tables.SpringSession;
 import org.eclipse.openvsx.jooq.tables.Tier;
+import org.eclipse.openvsx.jooq.tables.TrustedPublisher;
 import org.jooq.Index;
 import org.jooq.OrderField;
 import org.jooq.impl.DSL;
@@ -95,6 +96,7 @@ public class Indexes {
     public static final Index SPRING_SESSION_IX2 = Internal.createIndex(DSL.name("spring_session_ix2"), SpringSession.SPRING_SESSION, new OrderField[] { SpringSession.SPRING_SESSION.EXPIRY_TIME }, false);
     public static final Index SPRING_SESSION_IX3 = Internal.createIndex(DSL.name("spring_session_ix3"), SpringSession.SPRING_SESSION, new OrderField[] { SpringSession.SPRING_SESSION.PRINCIPAL_NAME }, false);
     public static final Index TIER_TIER_TYPE = Internal.createIndex(DSL.name("tier_tier_type"), Tier.TIER, new OrderField[] { Tier.TIER.TIER_TYPE }, false);
+    public static final Index TRUSTED_PUBLISHER_NAMESPACE_IDX = Internal.createIndex(DSL.name("trusted_publisher_namespace_idx"), TrustedPublisher.TRUSTED_PUBLISHER, new OrderField[] { TrustedPublisher.TRUSTED_PUBLISHER.NAMESPACE, TrustedPublisher.TRUSTED_PUBLISHER.EXTENSION_NAME }, false);
     public static final Index UNIQUE_ACTIVE_SIGNATURE_KEY_PAIR_IDX = Internal.createIndex(DSL.name("unique_active_signature_key_pair_idx"), SignatureKeyPair.SIGNATURE_KEY_PAIR, new OrderField[] { SignatureKeyPair.SIGNATURE_KEY_PAIR.ACTIVE }, true);
     public static final Index UNIQUE_ADMIN_STATISTICS = Internal.createIndex(DSL.name("unique_admin_statistics"), AdminStatistics.ADMIN_STATISTICS, new OrderField[] { AdminStatistics.ADMIN_STATISTICS.YEAR, AdminStatistics.ADMIN_STATISTICS.MONTH }, true);
 }
