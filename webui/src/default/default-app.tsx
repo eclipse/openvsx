@@ -18,7 +18,7 @@ import '../main.css';
 import { createRoot } from 'react-dom/client';
 import { useMemo } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import { ThemeProvider } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { ExtensionRegistryService } from '../extension-registry-service';

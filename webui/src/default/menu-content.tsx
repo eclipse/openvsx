@@ -10,7 +10,7 @@
 
 import { FunctionComponent, PropsWithChildren, useContext, useRef, useState } from 'react';
 import { Avatar, Button, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
-import { useLocation, useNavigate, Link as RouteLink } from 'react-router-dom';
+import { useLocation, useNavigate, Link as RouteLink } from 'react-router';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { alpha, styled, Theme } from '@mui/material/styles';

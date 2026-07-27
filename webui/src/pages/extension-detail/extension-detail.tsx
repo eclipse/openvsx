@@ -25,7 +25,7 @@ import {
     decomposeColor
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
-import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router';
 import { MainContext } from '../../context';
 import { createRoute, formatCompactNumber } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';

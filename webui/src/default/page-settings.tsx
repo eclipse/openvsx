@@ -11,7 +11,7 @@
 import { FunctionComponent, ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Typography, Box, Link } from '@mui/material';
-import { Link as RouteLink, Route, useParams } from 'react-router-dom';
+import { Link as RouteLink, Route, useParams } from 'react-router';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
 import BugReportIcon from '@mui/icons-material/BugReport';

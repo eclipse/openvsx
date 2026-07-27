@@ -11,7 +11,7 @@
 import { FunctionComponent, ReactNode, useContext, lazy, Suspense } from 'react';
 import { Box, Container, CssBaseline, Typography, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import BarChartIcon from '@mui/icons-material/BarChart';

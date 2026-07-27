@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { forwardRef, FunctionComponent, memo } from 'react';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
 import { CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';

@@ -13,7 +13,7 @@ import { Menu, IconButton, useTheme } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';
 import { MainContext } from './context';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 export const HeaderMenu: FunctionComponent = () => {
     const theme = useTheme();

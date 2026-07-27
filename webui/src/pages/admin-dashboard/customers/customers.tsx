@@ -24,7 +24,7 @@ import { DeleteCustomerDialog } from './delete-customer-dialog';
 import { createRoute, handleError } from '../../../utils';
 import { createMultiSelectFilterOperators, createArrayContainsFilterOperators } from '../components';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useCreateCustomer, useCustomers, useDeleteCustomer, useUpdateCustomer } from './use-customers';
 
 export const Customers: FC = () => {

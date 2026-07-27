@@ -10,7 +10,7 @@
 
 import { FunctionComponent } from 'react';
 import { Box, Card, CardActionArea, CardContent, Divider, Grid, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { isNavGroup, NavEntry, RouteEntry } from './nav-types';
 
 interface NavSection {

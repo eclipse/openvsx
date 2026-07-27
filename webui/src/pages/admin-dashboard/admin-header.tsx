@@ -14,7 +14,7 @@
 import { FunctionComponent } from 'react';
 import { AppBar, Breadcrumbs, IconButton, Link, Toolbar, Typography } from '@mui/material';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router';
 
 export interface AdminHeaderProps {
     routeNames: Record<string, string>;

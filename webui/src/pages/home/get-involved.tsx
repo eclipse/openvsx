@@ -15,7 +15,7 @@ import { FunctionComponent, ReactNode } from 'react';
 import { Box, Container, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { HomeInvolvementCard } from '../../page-settings';
 import { Eyebrow, focusOutline } from '../../components/page-primitives';
 

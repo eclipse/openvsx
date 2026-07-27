@@ -22,12 +22,12 @@ import {
     useState
 } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import { flushSync } from 'react-dom';
+import { useLocation } from 'react-router';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
 import { useSearch, SEARCH_DEBOUNCE_MS } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
+import { startSearchViewTransition } from '../../context/search/search-view-transition';
 import { useSearchFocus } from '../../context/search/search-focus-context';
 import { useRegisterPageSearchBar } from '../../context/search/page-search-bar-context';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
@@ -167,36 +167,24 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     }, [locationKey, searchFocusSignal.emit]);
 
     // Wrap search calls with a view transition so the hero input morphs into the nav bar.
-    type ViewTransitionDocument = Document & {
-        startViewTransition?: (callback: () => void) => { finished: Promise<void> };
-    };
-
     const searchWithTransition = useCallback(
         (q: string) => {
             // Sync context immediately so the nav bar input value is ready before the
             // navigation commits (the hero input morphs into the nav field mid-transition).
             setQuery(q);
             const shouldFocus = Boolean(q);
-            // flushSync inside the transition commits the navigation and the focus signal
-            // synchronously, so the nav field takes focus while the hero input is still
-            // focused — keeping the mobile keyboard open across the morph.
-            const go = () => {
-                flushSync(() => {
-                    search({ query: q });
-                    if (shouldFocus) searchFocusSignal.emit();
-                });
-            };
-            const doc = document as ViewTransitionDocument;
-            if (doc.startViewTransition) {
-                const transition = doc.startViewTransition(go);
-                // Re-issue the focus request once the transition settles as a fallback:
-                // the synchronous focus above can be interrupted by the morph, and by now
-                // the nav field is fully mounted and interactive.
-                if (shouldFocus) {
-                    transition.finished.then(searchFocusSignal.emit).catch(() => undefined);
-                }
-            } else {
-                go();
+            // Navigation and focus request land in the same commit, so the nav field takes
+            // focus while the hero input still has it — keeping the mobile keyboard open
+            // across the morph.
+            const transition = startSearchViewTransition(() => {
+                search({ query: q });
+                if (shouldFocus) searchFocusSignal.emit();
+            });
+            // Re-issue the focus request once the transition settles as a fallback: the
+            // focus above can be interrupted by the morph, and by now the nav field is
+            // fully mounted and interactive.
+            if (shouldFocus) {
+                transition?.finished.then(searchFocusSignal.emit).catch(() => undefined);
             }
         },
         [search, setQuery, searchFocusSignal.emit]

@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, lazy, Suspense, useContext, useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Banner } from '../components/banner';
