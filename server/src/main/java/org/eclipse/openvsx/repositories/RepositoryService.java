@@ -52,6 +52,7 @@ import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
@@ -112,6 +113,7 @@ public class RepositoryService {
     private final RateLimitTokenRepository rateLimitTokenRepository;
     private final DailyUsageStatsRepository dailyUsageStatsRepository;
     private final UserDataJooqRepository userDataJooqRepo;
+    private final TrustedPublisherRepository trustedPublisherRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -149,7 +151,8 @@ public class RepositoryService {
             UsageStatsRepository usageStatsRepository,
             RateLimitTokenRepository rateLimitTokenRepository,
             DailyUsageStatsRepository dailyUsageStatsRepository,
-            UserDataJooqRepository userDataJooqRepo
+            UserDataJooqRepository userDataJooqRepo,
+            TrustedPublisherRepository trustedPublisherRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -187,6 +190,19 @@ public class RepositoryService {
         this.rateLimitTokenRepository = rateLimitTokenRepository;
         this.dailyUsageStatsRepository = dailyUsageStatsRepository;
         this.userDataJooqRepo = userDataJooqRepo;
+        this.trustedPublisherRepo = trustedPublisherRepo;
+    }
+
+    public Streamable<TrustedPublisher> findTrustedPublishers(Namespace namespace) {
+        return trustedPublisherRepo.findByNamespace(namespace);
+    }
+
+    public TrustedPublisher findTrustedPublisher(long id) {
+        return trustedPublisherRepo.findById(id);
+    }
+
+    public void deleteTrustedPublisher(TrustedPublisher trustedPublisher) {
+        trustedPublisherRepo.delete(trustedPublisher);
     }
 
     public Namespace findNamespace(String name) {

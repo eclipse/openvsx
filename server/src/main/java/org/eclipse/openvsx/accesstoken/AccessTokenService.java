@@ -52,18 +52,22 @@ public class AccessTokenService {
 
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description) {
+        return createAccessToken(
+                user,
+                description,
+                config.isTokenExpiryEnabled()
+                        ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
+                        : null);
+    }
+
+    @Transactional
+    public AccessTokenJson createAccessToken(UserData user, String description, LocalDateTime expiresTimestamp) {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(generateTokenValue());
         token.setActive(true);
-
-        var createdAt = TimeUtil.getCurrentUTC();
-        token.setCreatedTimestamp(createdAt);
-
-        if (config.isTokenExpiryEnabled()) {
-            token.setExpiresTimestamp(createdAt.plus(config.getExpiration()));
-        }
-
+        token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+        token.setExpiresTimestamp(expiresTimestamp);
         token.setDescription(description);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();

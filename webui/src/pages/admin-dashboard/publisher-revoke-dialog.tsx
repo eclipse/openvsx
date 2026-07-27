@@ -26,11 +26,6 @@ import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 import { useRevokePublisherContributions } from './use-publisher-admin';
 
-const dangerButtonSx = {
-    textTransform: 'none',
-    '&:hover': { bgcolor: 'error.main', color: 'common.white' }
-} as const;
-
 export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevokeContributionsButtonProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
@@ -69,7 +64,7 @@ export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevo
 
     return (
         <>
-            <Button variant='outlined' color='error' sx={dangerButtonSx} onClick={() => setDialogOpen(true)}>
+            <Button variant='outlined' color='error' onClick={() => setDialogOpen(true)}>
                 Revoke publisher contributions
             </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
