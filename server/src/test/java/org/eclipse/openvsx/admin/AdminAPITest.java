@@ -97,6 +97,7 @@ import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.LocalStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -2295,7 +2296,8 @@ class AdminAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    new PublishingConfig());
+                    new PublishingConfig(),
+                    new TrustedPublishingConfig());
         }
 
         @Bean

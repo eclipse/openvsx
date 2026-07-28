@@ -36,6 +36,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.VersionService;
 
@@ -107,7 +108,8 @@ class LocalRegistryServiceTest {
                 cacheService,
                 integrityService,
                 similarityCheckService,
-                new PublishingConfig());
+                new PublishingConfig(),
+                new TrustedPublishingConfig());
 
         doNothing().when(eclipse).checkPublisherAgreement(any());
     }

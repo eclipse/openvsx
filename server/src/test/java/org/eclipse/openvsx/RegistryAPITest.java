@@ -75,6 +75,7 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -2976,7 +2977,8 @@ class RegistryAPITest {
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService,
-                PublishingConfig publishingConfig
+                PublishingConfig publishingConfig,
+                TrustedPublishingConfig trustedPublishingConfig
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2992,12 +2994,18 @@ class RegistryAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    publishingConfig);
+                    publishingConfig,
+                    trustedPublishingConfig);
         }
 
         @Bean
         PublishingConfig publishingConfig() {
             return new PublishingConfig();
+        }
+
+        @Bean
+        TrustedPublishingConfig trustedPublishingConfig() {
+            return new TrustedPublishingConfig();
         }
 
         @Bean

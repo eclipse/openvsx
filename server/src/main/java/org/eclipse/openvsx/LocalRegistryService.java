@@ -42,6 +42,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -78,6 +79,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final PublishingConfig publishingConfig;
+    private final TrustedPublishingConfig trustedPublishingConfig;
 
     public LocalRegistryService(
             EntityManager entityManager,
@@ -93,7 +95,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
-            PublishingConfig publishingConfig
+            PublishingConfig publishingConfig,
+            TrustedPublishingConfig trustedPublishingConfig
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -109,6 +112,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.publishingConfig = publishingConfig;
+        this.trustedPublishingConfig = trustedPublishingConfig;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -116,9 +120,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Value("${ovsx.registry.version:}")
     String registryVersion;
-
-    @Value("${ovsx.trusted-publishing.enabled:false}")
-    boolean trustedPublishingEnabled;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -1326,7 +1327,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
-        json.setTrustedPublishingEnabled(trustedPublishingEnabled);
+        json.setTrustedPublishingEnabled(trustedPublishingConfig.isEnabled());
         return json;
     }
 }
