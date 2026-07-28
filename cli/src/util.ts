@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
 import { RegistryOptions } from './registry-options';
+import { TrustedPublishingOptions } from './trusted-publishing-options';
 
 export { promisify } from 'util';
 
@@ -21,6 +22,19 @@ export function addEnvOptions(options: RegistryOptions): void {
     options.pat ??= process.env.OVSX_PAT;
     options.username ??= process.env.OVSX_USERNAME;
     options.password ??= process.env.OVSX_PASSWORD;
+}
+
+export function addTrustedPublishingEnvOptions(options: TrustedPublishingOptions): void {
+    options.trustedPublishing ??= parseBooleanEnv(process.env.OVSX_TRUSTED_PUBLISHING);
+    options.idToken ??= process.env.OVSX_ID_TOKEN;
+    options.oidcAudience ??= process.env.OVSX_OIDC_AUDIENCE;
+}
+
+function parseBooleanEnv(value?: string): boolean | undefined {
+    if (value === undefined || value.trim().length === 0) {
+        return undefined;
+    }
+    return ['true', '1', 'yes'].includes(value.trim().toLowerCase());
 }
 
 export function matchExtensionId(id: string): RegExpExecArray | null {

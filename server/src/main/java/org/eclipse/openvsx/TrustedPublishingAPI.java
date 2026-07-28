@@ -180,8 +180,9 @@ public class TrustedPublishingAPI {
     )
     @MutatingOperation
     public ResponseEntity<AccessTokenJson> requestPublishToken(@RequestBody TrustedPublisherTokenRequestJson request) {
-        if (!StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getToken())) {
-            var json = AccessTokenJson.error("The fields namespace and token are mandatory.");
+        if (!StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
+                || !StringUtils.hasText(request.getToken())) {
+            var json = AccessTokenJson.error("The fields namespace, extension and token are mandatory.");
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
         }
 

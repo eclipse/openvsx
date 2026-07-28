@@ -8,8 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import { RegistryOptions } from './registry-options';
+import { TrustedPublishingOptions } from './trusted-publishing-options';
 
-export interface PublishCommonOptions extends RegistryOptions {
+export interface PublishCommonOptions extends RegistryOptions, TrustedPublishingOptions {
     /**
      * Path to the vsix file to be published. Cannot be used together with `packagePath`.
      */
