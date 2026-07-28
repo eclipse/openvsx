@@ -327,6 +327,7 @@ export interface TargetPlatformVersion {
 export interface RegistryVersion {
     version: string;
     maxExtensionSize?: number;
+    trustedPublishingEnabled?: boolean;
 }
 
 export interface LoginProviders {

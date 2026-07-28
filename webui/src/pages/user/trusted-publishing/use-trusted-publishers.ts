@@ -15,12 +15,20 @@ import { useContext } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
 import {
+    RegistryVersion,
     TrustedPublisher,
     TrustedPublisherProvider,
     TrustedPublisherRequest,
     UrlString
 } from '../../../extension-registry-types';
 import { controllerFromSignal } from '../../../query-client';
+
+/**
+ * Whether the registry has trusted publishing enabled server-side. Pass this to
+ * `useRegistryValue` to hide trusted-publishing UI when the feature is off.
+ */
+export const isTrustedPublishingEnabled = (version: RegistryVersion): boolean =>
+    Boolean(version.trustedPublishingEnabled);
 
 // keyed by the namespace's trusted-publishing URL (the endpoint we actually query)
 export const trustedPublisherKeys = {
