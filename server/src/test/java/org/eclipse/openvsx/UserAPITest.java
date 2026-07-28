@@ -39,6 +39,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
+import org.eclipse.openvsx.accesstoken.PersistentAccessTokenService;
+import org.eclipse.openvsx.accesstoken.TransientAccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -103,6 +105,9 @@ class UserAPITest {
 
     @MockitoSpyBean
     AccessTokenService tokens;
+
+    @MockitoSpyBean
+    PersistentAccessTokenService persistentTokens;
 
     @MockitoBean
     EntityManager entityManager;
@@ -169,7 +174,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(tokens).generateTokenValue();
+        Mockito.doReturn("foobar").when(persistentTokens).generateTokenValue();
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -1070,12 +1075,27 @@ class UserAPITest {
 
         @Bean
         AccessTokenService accessTokenService(
+                TransientAccessTokenService transientAccessTokenService,
+                PersistentAccessTokenService persistentAccessTokenService
+        ) {
+            return new AccessTokenService(transientAccessTokenService, persistentAccessTokenService);
+        }
+
+        @Bean
+        TransientAccessTokenService transientAccessTokenService(
+                AccessTokenConfig config
+        ) {
+            return new TransientAccessTokenService(config);
+        }
+
+        @Bean
+        PersistentAccessTokenService persistentAccessTokenService(
                 AccessTokenConfig config,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new PersistentAccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean
