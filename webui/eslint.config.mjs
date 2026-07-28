@@ -7,6 +7,7 @@ import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
 import { reactRefresh } from 'eslint-plugin-react-refresh';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
+import testingLibrary from 'eslint-plugin-testing-library';
 import * as parserPlain from 'eslint-parser-plain';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,10 @@ export default [
             'react/prop-types': 'off',
             'react/react-in-jsx-scope': ['off']
         }
+    },
+    {
+        files: ['test/unit/**/*.spec.{ts,tsx}'],
+        ...testingLibrary.configs['flat/react']
     },
     {
         // JSON / CSS-Less-SCSS / YAML / GraphQL / Vue / Handlebars (Angular
