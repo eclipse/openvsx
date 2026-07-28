@@ -138,7 +138,9 @@ public class DataMirrorJobRequestHandler implements JobRequestHandler<DataMirror
             var extensionId = NamingUtil.toExtensionId(extension);
             ThreadLocalJobContext.getJobContext().logger().info("deleting " + extensionId);
             try {
-                extensions.purgeExtension(mirrorUser, extension, false);
+                // Purge by name so that the extension is locked and re-read inside the purge transaction:
+                // the entities of this query are detached here, they can not be removed as they are.
+                extensions.purgeExtension(mirrorUser, extension.getNamespace().getName(), extension.getName());
             } catch (ErrorResultException e) {
                 if (e.getStatus() != HttpStatus.NOT_FOUND) {
                     logger.warn("mirror: failed to delete extension {}", extensionId, e);

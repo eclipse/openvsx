@@ -360,6 +360,18 @@ public class ExtensionVersion implements Serializable {
         this.removed = removed;
     }
 
+    /**
+     * Whether the extension this version belongs to should be reported as deleted, i.e. this version is a
+     * soft-delete tombstone <em>and</em> the extension has no active version left.
+     * <p>
+     * Meant for the endpoints that describe an extension through its latest version: as the latest version
+     * is picked across all target platforms including removed ones, a removed version on its own says
+     * nothing about the extension — other versions or target platforms may well still be available.
+     */
+    public boolean isExtensionRemoved() {
+        return removed && extension != null && !extension.isActive();
+    }
+
     public LocalDateTime getRemovedTimestamp() {
         return removedTimestamp;
     }

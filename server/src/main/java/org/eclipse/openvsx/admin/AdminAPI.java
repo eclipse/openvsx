@@ -393,7 +393,7 @@ public class AdminAPI {
                 json.setAllTargetPlatformVersions(
                         repositories.findTargetPlatformsGroupedByVersion(latest.getExtension()));
                 json.setActive(latest.getExtension().isActive());
-                json.setRemoved(latest.isRemoved());
+                json.setRemoved(latest.isExtensionRemoved());
             } else {
                 var extension = repositories.findExtension(extensionName, namespaceName);
                 if (extension == null) {

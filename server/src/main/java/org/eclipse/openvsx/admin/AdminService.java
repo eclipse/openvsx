@@ -192,8 +192,7 @@ public class AdminService {
     @Transactional(rollbackOn = ErrorResultException.class)
     public void purgeExtension(UserData admin, String namespaceName, String extensionName)
             throws ErrorResultException {
-        var extension = extensions.lockExtension(namespaceName, extensionName);
-        extensions.purgeExtension(admin, extension, false);
+        extensions.purgeExtension(admin, namespaceName, extensionName);
     }
 
     /**
@@ -408,7 +407,7 @@ public class AdminService {
                             // findLatestVersions(user) includes inactive versions, which may be soft-deleted
                             // tombstones; surface that so the admin UI can distinguish removed from merely
                             // deactivated (mirrors UserAPI.getOwnExtensions and AdminAPI.getExtension).
-                            json.setRemoved(latest.isRemoved());
+                            json.setRemoved(latest.isExtensionRemoved());
                             json.setFiles(fileUrls.get(latest.getId()));
 
                             return json;

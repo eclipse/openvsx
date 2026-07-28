@@ -206,6 +206,50 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
     }
 
     /**
+     * Background jobs (mirror, migrations) collect the versions to purge in one transaction and purge them
+     * afterwards, so the version handed over is detached. It must still be removed rather than blowing up
+     * with "Removing a detached instance".
+     */
+    @Test
+    void purgeExtensionVersion_acceptsDetachedVersion() {
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+        persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+
+        // read in a transaction of its own, so the version is detached by the time it is purged
+        var detached = new TransactionTemplate(txManager).execute(
+                status -> repositories.findVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, EXTENSION, NAMESPACE));
+
+        extensionService.purgeExtensionVersion(owner(), detached);
+
+        assertThat(versionExists("1.0.0"))
+                .as("purging a detached version must physically remove its row")
+                .isFalse();
+        assertThat(versionExists("2.0.0"))
+                .as("an untouched version must survive the purge")
+                .isTrue();
+    }
+
+    /**
+     * Purging an extension by name locks and re-reads it, so callers that only hold detached entities
+     * (the mirror deleting extensions dropped upstream) can purge it.
+     */
+    @Test
+    void purgeExtension_byNameRemovesExtensionAndVersions() {
+        persistVersion("1.0.0", TargetPlatform.NAME_UNIVERSAL, true, false);
+        persistVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, false, true);
+
+        extensionService.purgeExtension(owner(), NAMESPACE, EXTENSION);
+
+        assertThat(versionExists("1.0.0")).isFalse();
+        assertThat(versionExists("2.0.0"))
+                .as("purging an extension must also remove its tombstones")
+                .isFalse();
+        assertThat(extensionExists())
+                .as("purging an extension must remove the extension record itself")
+                .isFalse();
+    }
+
+    /**
      * Fix #2: the version listing used by the public {@code /versions} API must never surface tombstones.
      */
     @Test

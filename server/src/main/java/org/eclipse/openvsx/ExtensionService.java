@@ -513,12 +513,18 @@ public class ExtensionService {
      * the extension and version identities for republishing. Intended for administrative purge and automated
      * cleanup (mirror, extension control).
      * <p>
-     * If {@code checkDependencies} is {@code true} and this extension is referenced by a bundle or used
-     * as a dependency, the operation will fail.
+     * If {@code checkDependencies} is {@code true} and another extension declares a dependency on this
+     * extension, the operation will fail. Extension packs that bundle this extension are deliberately
+     * <em>not</em> checked: bundles are not validated on publication either and IDEs skip bundled
+     * extensions that do not exist (see #1956).
+     * <p>
+     * The given extension must be managed by the current transaction, e.g. locked via
+     * {@link #lockExtension(String, String)}. Use {@link #purgeExtension(UserData, String, String)} if only
+     * the extension coordinates are at hand.
      *
      * @param user the user that will be used for logging the operation
      * @param extension the extension to purge
-     * @param checkDependencies whether to check if this extension is still referenced by bundles or as a dependency
+     * @param checkDependencies whether to check if this extension is still referenced as a dependency
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson purgeExtension(UserData user, Extension extension, boolean checkDependencies)
@@ -555,14 +561,34 @@ public class ExtensionService {
         return result;
     }
 
+    /**
+     * Purge (permanently delete) the given extension and evict caches. The extension is locked for the
+     * operation, waiting until the lock can be acquired. No dependency check is performed.
+     *
+     * @throws ErrorResultException if no extension exists with the given namespace and extension name
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson purgeExtension(UserData user, String namespaceName, String extensionName)
+            throws ErrorResultException {
+        return purgeExtension(user, lockExtension(namespaceName, extensionName), false);
+    }
+
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson purgeExtensionVersion(UserData user, ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        removeExtensionVersion(extVersion);
-        extension.getVersions().remove(extVersion);
+        // Callers may hand us a version that was loaded in another transaction (background jobs collect
+        // versions before purging them), which would be detached here. Re-read it so that removing it and
+        // updating the parent extension below both operate on managed entities.
+        var managedVersion = entityManager.find(ExtensionVersion.class, extVersion.getId());
+        if (managedVersion == null) {
+            return ResultJson.success("Already purged " + NamingUtil.toLogFormat(extVersion));
+        }
+
+        var extension = managedVersion.getExtension();
+        removeExtensionVersion(managedVersion);
+        extension.getVersions().remove(managedVersion);
         updateExtension(extension);
 
-        var result = ResultJson.success("Purged " + NamingUtil.toLogFormat(extVersion));
+        var result = ResultJson.success("Purged " + NamingUtil.toLogFormat(managedVersion));
         logs.logAction(user, result);
         return result;
     }

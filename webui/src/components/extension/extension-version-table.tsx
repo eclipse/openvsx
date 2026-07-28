@@ -53,6 +53,7 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                         </TableCell>
                         <TableCell>Target Platforms</TableCell>
                         <TableCell />
+                        {onPurgeVersion && <TableCell />}
                     </TableRow>
                 </TableHead>
                 <TableBody>

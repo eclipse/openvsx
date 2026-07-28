@@ -54,7 +54,6 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UsageStatsListJson;
 import org.eclipse.openvsx.json.UserJson;
-import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
@@ -275,7 +274,7 @@ public class UserAPI {
                     var json = latest.toExtensionJson();
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
-                    json.setRemoved(latest.isRemoved());
+                    json.setRemoved(latest.isExtensionRemoved());
                     json.setFiles(fileUrls.get(latest.getId()));
 
                     // Add scan/review status information
@@ -437,22 +436,11 @@ public class UserAPI {
             if (latest != null) {
                 json = local.toExtensionVersionJson(latest, null, false);
                 var extension = latest.getExtension();
-                var allVersions = repositories.findTargetPlatformsGroupedByVersion(extension);
-                // Annotate each version with whether the caller may delete it, mirroring deleteExtension:
+                // Each version is annotated with whether the caller may delete it, mirroring deleteExtension:
                 // owners may delete any version, other members only the versions they published themselves.
-                var deletableVersions = isOwner
-                        ? null
-                        : repositories.findTargetPlatformsGroupedByVersion(extension, user).stream()
-                                .map(VersionTargetPlatformsJson::version)
-                                .collect(Collectors.toSet());
-                json.setAllTargetPlatformVersions(
-                        allVersions.stream()
-                                .map(
-                                        v -> v.withCanDelete(
-                                                deletableVersions == null || deletableVersions.contains(v.version())))
-                                .toList());
+                json.setAllTargetPlatformVersions(users.getVersionsWithDeletePermission(user, extension, isOwner));
                 json.setActive(extension.isActive());
-                json.setRemoved(latest.isRemoved());
+                json.setRemoved(latest.isExtensionRemoved());
             } else {
                 var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
                 throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
