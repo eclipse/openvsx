@@ -60,14 +60,16 @@
         "eslint": "^9.15.0",
         "limiter": "^2.1.0",
         "rimraf": "^6.0.1",
-        "typescript": "^5.6.3"
+        "typescript": "^5.6.3",
+        "vitest": "^4.1.10"
     },
     "scripts": {
         "clean": "rimraf lib",
         "prebuild": "node -p \"'export const LIB_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/version.ts",
         "build": "tsc -p ./tsconfig.json && yarn run lint",
         "watch": "tsc -w -p ./tsconfig.json",
-        "lint": "eslint -c ./configs/eslintrc.mjs src",
+        "test": "vitest run",
+        "lint": "eslint -c ./configs/eslintrc.mjs src test",
         "prepare": "yarn run clean && yarn run prebuild && yarn run build",
         "publish:next": "yarn npm publish --tag next",
         "publish:latest": "yarn npm publish --tag latest",

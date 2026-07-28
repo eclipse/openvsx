@@ -17,6 +17,7 @@ import { rejectError, statusError } from './util';
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
 export const DEFAULT_PUBLISH_SIZE = 512 * 1024 * 1024;
+export const DEFAULT_TOKEN_REQUEST_SIZE = 8 * 1024;
 
 export class Registry {
 
@@ -71,6 +72,18 @@ export class Registry {
             return this.postFile(file, url, {
                 'Content-Type': 'application/octet-stream'
             }, this.maxPublishSize);
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    requestTrustedPublishingToken(namespace: string, extension: string, idToken: string): Promise<AccessToken> {
+        try {
+            const url = this.getUrl(['api', '-', 'trusted-publishing', 'token']);
+            const request = { namespace, extension, token: idToken };
+            return this.post(JSON.stringify(request), url, {
+                'Content-Type': 'application/json'
+            }, DEFAULT_TOKEN_REQUEST_SIZE);
         } catch (err) {
             return rejectError(err);
         }
@@ -263,6 +276,15 @@ export interface Extension extends Response {
     badges?: Badge[];
     dependencies?: ExtensionReference[];
     bundledExtensions?: ExtensionReference[];
+}
+
+export interface AccessToken extends Response {
+    id: number;
+    value?: string;
+    description: string;
+    createdTimestamp: string;
+    accessedTimestamp?: string;
+    expiresTimestamp?: string;
 }
 
 export interface UserData {
