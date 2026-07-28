@@ -136,8 +136,8 @@ public class PublishExtensionVersionHandler {
     }
 
     /**
-     * Checks the preconditions that do not depend on the contents of the extension package: the publisher
-     * must exist, the user of {@code token} must be allowed to publish to it, and the version must not be
+     * Checks publish preconditions that should be evaluated before running any package validation or scanning: the
+     * publisher must exist, the user of {@code token} must be allowed to publish to it, and the version must not be
      * published already.
      * <p>
      * Callers publishing with scanning enabled have to invoke this before validating or scanning the
@@ -202,7 +202,7 @@ public class PublishExtensionVersionHandler {
             LocalDateTime timestamp
     ) {
         var namespace = checkPublishPermission(processor, user);
-        var namespaceName = processor.getNamespace();
+        var namespaceName = namespace.getName();
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
