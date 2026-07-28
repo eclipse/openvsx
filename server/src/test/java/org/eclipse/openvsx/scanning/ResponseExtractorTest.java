@@ -109,7 +109,7 @@ class ResponseExtractorTest {
 
     @Test
     void extractString_throwsForUnsupportedFormat() {
-        assertThrows(UnsupportedOperationException.class, () -> extractor.extractString("<xml/>", "xml", "/root"));
+        assertThrows(IllegalArgumentException.class, () -> extractor.extractString("<xml/>", "xml", "/root"));
     }
 
     // === List extraction tests ===

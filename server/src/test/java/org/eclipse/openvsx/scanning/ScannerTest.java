@@ -127,11 +127,12 @@ class ScannerTest {
         assertTrue(benign.hasBenignVerdict());
         assertFalse(benign.hasMaliciousVerdict());
         assertEquals(Boolean.FALSE, benign.isMalicious());
+        assertTrue(benign.isClean()); // benign verdict overrides the raw finding count
 
         var malicious = Scanner.Result.of(List.of(), "Malicious package", true);
         assertTrue(malicious.hasMaliciousVerdict());
         assertFalse(malicious.hasBenignVerdict());
-        assertTrue(malicious.isClean()); // no findings, but verdict is malicious
+        assertFalse(malicious.isClean()); // malicious verdict is never clean, even with no findings
         assertEquals(Boolean.TRUE, malicious.isMalicious());
     }
 

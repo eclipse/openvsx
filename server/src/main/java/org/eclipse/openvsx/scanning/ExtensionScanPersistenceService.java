@@ -350,7 +350,7 @@ public class ExtensionScanPersistenceService {
             Scanner.@NonNull Result result,
             boolean scannerEnforced
     ) {
-        if (result.isClean()) {
+        if (result.getThreats().isEmpty()) {
             logger.debug("No threats to save for scanner job {}", job.getId());
             return ThreatSaveResult.clean();
         }
@@ -436,16 +436,14 @@ public class ExtensionScanPersistenceService {
             boolean scannerEnforced,
             @NonNull LocalDateTime startedAt
     ) {
-        int threatCount = 0;
+        int threatCount = result.getThreats().size();
         String summary;
         ScanCheckResult.CheckResult checkResult;
 
-        if (result.isClean() && !result.hasMaliciousVerdict()) {
+        if (threatCount == 0 && !result.hasMaliciousVerdict()) {
             checkResult = ScanCheckResult.CheckResult.PASSED;
             summary = "No threats found";
         } else {
-            threatCount = result.getThreats().size();
-
             // A benign verdict may only downgrade enforcement (never quarantine on findings alone); a malicious
             // verdict may never upgrade past the scanner's own enforced setting
             boolean findingsEnforced = scannerEnforced && !result.hasBenignVerdict();

@@ -44,8 +44,6 @@ public class HttpResponseExtractor {
 
         return switch (format.toLowerCase()) {
             case "json" -> extractJsonString(response, path);
-            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
-            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
             default -> throw new IllegalArgumentException("Unsupported format: " + format);
         };
     }
@@ -61,8 +59,6 @@ public class HttpResponseExtractor {
 
         return switch (format.toLowerCase()) {
             case "json" -> extractJsonBoolean(response, path);
-            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
-            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
             default -> throw new IllegalArgumentException("Unsupported format: " + format);
         };
     }
@@ -77,8 +73,6 @@ public class HttpResponseExtractor {
 
         return switch (format.toLowerCase()) {
             case "json" -> extractJsonList(response, path);
-            case "xml" -> throw new UnsupportedOperationException("XML extraction not yet implemented");
-            case "text" -> throw new UnsupportedOperationException("Text extraction not yet implemented");
             default -> throw new IllegalArgumentException("Unsupported format: " + format);
         };
     }

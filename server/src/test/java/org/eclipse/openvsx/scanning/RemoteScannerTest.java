@@ -21,8 +21,7 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link RemoteScanner}'s response parsing, focused on the fail-closed
- * behavior of the isMalicious verdict extraction.
+ * Tests for {@link RemoteScanner}'s response parsing, focused on the malicious verdict extraction.
  */
 class RemoteScannerTest {
 
@@ -38,9 +37,9 @@ class RemoteScannerTest {
                 null);
     }
 
-    private RemoteScannerProperties.HttpOperation operationWithMaliciousPath(String maliciousPath) {
+    private RemoteScannerProperties.HttpOperation operationWithMaliciousVerdictPath(String maliciousVerdictPath) {
         var response = new RemoteScannerProperties.ResponseConfig();
-        response.setMaliciousPath(maliciousPath);
+        response.setMaliciousVerdictPath(maliciousVerdictPath);
 
         var operation = new RemoteScannerProperties.HttpOperation();
         operation.setResponse(response);
@@ -68,27 +67,32 @@ class RemoteScannerTest {
     }
 
     @Test
-    void parseResult_failsClosed_whenMaliciousPathConfigured_butMissingFromResponse() {
+    void parseResult_fallsBackToFindings_whenMaliciousVerdictPathConfigured_butMissingFromResponse()
+            throws Exception {
         var scanner = newScanner();
-        var operation = operationWithMaliciousPath("$.verdictData.isMalicious");
+        var operation = operationWithMaliciousVerdictPath("$.verdictData.isMalicious");
         String response = "{\"verdictData\": {\"summary\": \"ok\"}}"; // no isMalicious field
 
-        assertThrows(ScannerException.class, () -> parseResult(scanner, response, operation));
+        Scanner.Result result = parseResult(scanner, response, operation);
+
+        assertNull(result.isMalicious());
     }
 
     @Test
-    void parseResult_failsClosed_whenMaliciousPathConfigured_butNotABoolean() {
+    void parseResult_fallsBackToFindings_whenMaliciousVerdictPathConfigured_butNotABoolean() throws Exception {
         var scanner = newScanner();
-        var operation = operationWithMaliciousPath("$.verdictData.isMalicious");
+        var operation = operationWithMaliciousVerdictPath("$.verdictData.isMalicious");
         String response = "{\"verdictData\": {\"isMalicious\": \"unknown\"}}"; // not true/false
 
-        assertThrows(ScannerException.class, () -> parseResult(scanner, response, operation));
+        Scanner.Result result = parseResult(scanner, response, operation);
+
+        assertNull(result.isMalicious());
     }
 
     @Test
-    void parseResult_succeeds_whenMaliciousPathConfigured_andResolvesToBoolean() throws Exception {
+    void parseResult_succeeds_whenMaliciousVerdictPathConfigured_andResolvesToBoolean() throws Exception {
         var scanner = newScanner();
-        var operation = operationWithMaliciousPath("$.verdictData.isMalicious");
+        var operation = operationWithMaliciousVerdictPath("$.verdictData.isMalicious");
         String response = "{\"verdictData\": {\"isMalicious\": true}}";
 
         Scanner.Result result = parseResult(scanner, response, operation);
@@ -97,9 +101,9 @@ class RemoteScannerTest {
     }
 
     @Test
-    void parseResult_doesNotThrow_whenNoMaliciousPathConfigured() throws Exception {
+    void parseResult_doesNotThrow_whenNoMaliciousVerdictPathConfigured() throws Exception {
         var scanner = newScanner();
-        var operation = operationWithMaliciousPath(null);
+        var operation = operationWithMaliciousVerdictPath(null);
         String response = "{}";
 
         Scanner.Result result = parseResult(scanner, response, operation);
