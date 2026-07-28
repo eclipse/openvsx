@@ -18,8 +18,7 @@ import { styled } from '@mui/material/styles';
 import { Banner } from '../components/banner';
 import { ShortcutsModal } from '../components/shortcuts-modal';
 import { MainContext } from '../context';
-import { SearchProvider } from '../context/search/search-context';
-import { KeyboardShortcutsProvider } from '../context/keyboard-shortcuts-context';
+import { useSearch } from '../hooks/use-search';
 import { ExtensionTintProvider } from '../context/extension-tint-context';
 import { useShortcut } from '../hooks/use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
@@ -53,6 +52,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     const legacyFooterHeight = typeof footer === 'object' && 'content' in footer ? footer.props?.footerHeight : 0;
 
     const navigate = useNavigate();
+    const { search } = useSearch();
     const [isBannerOpen, setIsBannerOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -78,7 +78,8 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
         key: 's',
         label: 'Go to search',
         order: 5,
-        callback: () => navigate('/search')
+        // Through `search` (not a bare navigate) so the field clears with the URL.
+        callback: () => search({ query: '' })
     });
 
     const onDismissBannerButtonClick = () => {
@@ -142,14 +143,12 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     );
 };
 
+// Keyboard shortcuts and search now live app-wide in AppProviders; this keeps
+// only the feature-scoped tint provider.
 export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
-    <KeyboardShortcutsProvider>
-        <SearchProvider>
-            <ExtensionTintProvider>
-                <AppLayoutContent {...props} />
-            </ExtensionTintProvider>
-        </SearchProvider>
-    </KeyboardShortcutsProvider>
+    <ExtensionTintProvider>
+        <AppLayoutContent {...props} />
+    </ExtensionTintProvider>
 );
 
 export interface AppLayoutProps {
