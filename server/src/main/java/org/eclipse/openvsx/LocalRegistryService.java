@@ -44,6 +44,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
@@ -80,6 +81,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final PublishingConfig publishingConfig;
+    private final TrustedPublishingConfig trustedPublishingConfig;
 
     /**
      * How far behind the present the changes feed stops, see {@link #visibleUntil}.
@@ -101,6 +103,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
             PublishingConfig publishingConfig,
+            TrustedPublishingConfig trustedPublishingConfig,
             @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag
     ) {
         this.entityManager = entityManager;
@@ -117,6 +120,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.publishingConfig = publishingConfig;
+        this.trustedPublishingConfig = trustedPublishingConfig;
         this.changesFeedLag = changesFeedLag;
     }
 
@@ -125,9 +129,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Value("${ovsx.registry.version:}")
     String registryVersion;
-
-    @Value("${ovsx.trusted-publishing.enabled:false}")
-    boolean trustedPublishingEnabled;
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
@@ -1329,7 +1330,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
-        json.setTrustedPublishingEnabled(trustedPublishingEnabled);
+        json.setTrustedPublishingEnabled(trustedPublishingConfig.isEnabled());
         return json;
     }
 
