@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -107,7 +108,8 @@ class LocalRegistryServiceTest {
                 cacheService,
                 integrityService,
                 similarityCheckService,
-                new PublishingConfig());
+                new PublishingConfig(),
+                new TrustedPublishingConfig());
 
         doNothing().when(eclipse).checkPublisherAgreement(any());
     }

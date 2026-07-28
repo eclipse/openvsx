@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -1133,7 +1134,8 @@ class UserAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    new PublishingConfig());
+                    new PublishingConfig(),
+                    new TrustedPublishingConfig());
         }
 
         @Bean

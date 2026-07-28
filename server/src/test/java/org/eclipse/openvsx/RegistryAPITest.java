@@ -24,6 +24,7 @@ import java.util.zip.ZipOutputStream;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -2976,7 +2977,8 @@ class RegistryAPITest {
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService,
-                PublishingConfig publishingConfig
+                PublishingConfig publishingConfig,
+                TrustedPublishingConfig trustedPublishingConfig
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -2992,12 +2994,18 @@ class RegistryAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    publishingConfig);
+                    publishingConfig,
+                    trustedPublishingConfig);
         }
 
         @Bean
         PublishingConfig publishingConfig() {
             return new PublishingConfig();
+        }
+
+        @Bean
+        TrustedPublishingConfig trustedPublishingConfig() {
+            return new TrustedPublishingConfig();
         }
 
         @Bean
