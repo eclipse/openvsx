@@ -266,18 +266,16 @@ test {
 }
 
 tasks.register('unitTests', Test) {
-    description = 'Runs unit tests (excluding integration tests).'
+    description = 'Runs unit tests (excluding container-backed integration tests).'
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    exclude 'org/eclipse/openvsx/ExtensionDeleteTest.class'
-    exclude 'org/eclipse/openvsx/IntegrationTest.class'
-    exclude 'org/eclipse/openvsx/cache/CacheServiceTest.class'
-    exclude 'org/eclipse/openvsx/ratelimit/RateLimitIntegrationTest.class'
-    exclude 'org/eclipse/openvsx/repositories/NamespaceRepositoryTest.class'
-    exclude 'org/eclipse/openvsx/repositories/RepositoryServiceSmokeTest.class'
-    exclude 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
+    // Exclude container-backed tests by tag rather than a hand-maintained class list: any test that
+    // extends AbstractPostgresContainerTest (or is otherwise tagged "integration") is skipped here, so
+    // this fast task never spins up a Docker container. New integration tests are covered automatically.
+    useJUnitPlatform {
+        excludeTags 'integration'
+    }
 }
 
 tasks.register('s3IntegrationTests', Test) {
@@ -285,8 +283,11 @@ tasks.register('s3IntegrationTests', Test) {
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    include 'org/eclipse/openvsx/storage/AwsStorageServiceIntegrationTest.class'
+    // Select S3 integration tests by tag rather than a hardcoded class name, so new tests tagged "s3"
+    // are picked up automatically.
+    useJUnitPlatform {
+        includeTags 's3'
+    }
 
     // Set system properties for test configuration
     systemProperty 'spring.profiles.active', 's3-integration'

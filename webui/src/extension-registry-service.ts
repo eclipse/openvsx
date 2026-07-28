@@ -674,6 +674,11 @@ export interface AdminService {
         extension: string;
         targetPlatformVersions?: object[];
     }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    purgeExtensions(req: {
+        namespace: string;
+        extension: string;
+        targetPlatformVersions?: object[];
+    }): Promise<Readonly<SuccessResult | ErrorResult>>;
     getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>;
     createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>;
     deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>;
@@ -828,6 +833,36 @@ export class AdminServiceImpl implements AdminService {
                 req.namespace,
                 req.extension,
                 'delete'
+            ]),
+            headers,
+            payload: req.targetPlatformVersions
+        });
+    }
+
+    async purgeExtensions(req: {
+        namespace: string;
+        extension: string;
+        targetPlatformVersions?: object[];
+    }): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'extension',
+                req.namespace,
+                req.extension,
+                'purge'
             ]),
             headers,
             payload: req.targetPlatformVersions

@@ -25,11 +25,14 @@ import { ExtensionDetailRoutes } from '../../pages/extension-detail/extension-de
 import { createRoute } from '../../utils';
 
 export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = props => {
-    const { extension, actions, onRemoveVersion, onVersionDeleted } = props;
+    const { extension, actions, onRemoveVersion, onVersionDeleted, onPurgeVersion } = props;
+    const canPurge = !!onPurgeVersion;
 
     const [page, setPage] = useState(0);
     const [deleteDialogVersion, setDeleteDialogVersion] = useState<VersionTargetPlatforms | null>(null);
+    const [purgeDialogVersion, setPurgeDialogVersion] = useState<VersionTargetPlatforms | null>(null);
     const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+    const [purgeAllOpen, setPurgeAllOpen] = useState(false);
 
     useEffect(() => {
         setPage(0);
@@ -37,6 +40,12 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
 
     const publicRoute = createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name]);
     const allVersions = (extension.allTargetPlatformVersions ?? []).filter(v => !VERSION_ALIASES.includes(v.version));
+    // Versions the current user is allowed to delete. canDelete is only populated in the user settings
+    // view (undefined means unrestricted, e.g. admin/purge); a non-owner member may only delete the
+    // versions they published themselves. "Delete All Versions" therefore operates on this subset.
+    const deletableVersions = canPurge ? allVersions : allVersions.filter(v => v.canDelete !== false);
+    // A version can still be (soft-)deleted while it has at least one target platform that is not removed.
+    const hasDeletableVersions = deletableVersions.some(v => v.targetPlatforms.some(tp => !tp.removed));
 
     return (
         <Box>
@@ -49,16 +58,27 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
             <ExtensionStatusChips extension={extension} />
             <Divider sx={{ my: 2 }} />
             <Stack direction='row' spacing={2} mb={3}>
-                <Button variant='outlined' component={RouteLink} to={publicRoute}>
-                    View in Marketplace
-                </Button>
+                {extension.active && (
+                    <Button variant='outlined' component={RouteLink} to={publicRoute}>
+                        View in Marketplace
+                    </Button>
+                )}
                 <Button
                     variant='outlined'
                     color='error'
                     onClick={() => setDeleteAllOpen(true)}
-                    disabled={allVersions.length === 0}>
+                    disabled={!hasDeletableVersions}>
                     Delete All Versions
                 </Button>
+                {canPurge && (
+                    <Button
+                        variant='contained'
+                        color='error'
+                        onClick={() => setPurgeAllOpen(true)}
+                        disabled={allVersions.length === 0}>
+                        Purge All Versions
+                    </Button>
+                )}
                 {actions}
             </Stack>
             <ExtensionTrustedPublishers namespace={extension.namespace} extension={extension.name} />
@@ -70,6 +90,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                 page={page}
                 onPageChange={setPage}
                 onDeleteVersion={setDeleteDialogVersion}
+                onPurgeVersion={canPurge ? setPurgeDialogVersion : undefined}
             />
             {deleteDialogVersion && (
                 <DeleteVersionDialog
@@ -81,13 +102,35 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                     onDeleted={onVersionDeleted}
                 />
             )}
+            {purgeDialogVersion && onPurgeVersion && (
+                <DeleteVersionDialog
+                    open={true}
+                    mode='purge'
+                    onClose={() => setPurgeDialogVersion(null)}
+                    extension={extension}
+                    version={purgeDialogVersion}
+                    onRemove={onPurgeVersion}
+                    onDeleted={onVersionDeleted}
+                />
+            )}
             {deleteAllOpen && (
                 <DeleteAllVersionsDialog
                     open={true}
                     onClose={() => setDeleteAllOpen(false)}
                     extension={extension}
-                    versions={allVersions}
+                    versions={deletableVersions}
                     onRemove={onRemoveVersion}
+                    onDeleted={onVersionDeleted}
+                />
+            )}
+            {purgeAllOpen && onPurgeVersion && (
+                <DeleteAllVersionsDialog
+                    open={true}
+                    mode='purge'
+                    onClose={() => setPurgeAllOpen(false)}
+                    extension={extension}
+                    versions={allVersions}
+                    onRemove={onPurgeVersion}
                     onDeleted={onVersionDeleted}
                 />
             )}
@@ -100,4 +143,6 @@ export interface ExtensionDetailViewProps {
     actions?: ReactNode;
     onRemoveVersion: (targets: VersionDeleteTarget[]) => Promise<unknown>;
     onVersionDeleted: () => void;
+    // When provided (admin only), enables the permanent-purge affordances.
+    onPurgeVersion?: (targets: VersionDeleteTarget[]) => Promise<unknown>;
 }

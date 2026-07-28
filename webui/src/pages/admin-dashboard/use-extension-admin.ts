@@ -65,3 +65,14 @@ export const useDeleteExtension = () => {
         mutationFn: (req: DeleteExtensionRequest) => service.admin.deleteExtensions(req)
     });
 };
+
+/**
+ * Permanently purges extension versions (admin only). Unlike delete, this physically removes the
+ * versions from the database and storage, freeing their identities for republishing.
+ */
+export const usePurgeExtension = () => {
+    const { service } = useContext(MainContext);
+    return useMutation({
+        mutationFn: (req: DeleteExtensionRequest) => service.admin.purgeExtensions(req)
+    });
+};

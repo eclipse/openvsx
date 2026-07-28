@@ -20,6 +20,7 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
  *
  * @param targetPlatform Name of the target platform
  * @param active Whether this target platform version is active
+ * @param removed Whether this target platform version has been removed (soft-deleted)
  */
 @Schema(
     name = "TargetPlatformActive",
@@ -43,5 +44,8 @@ public record TargetPlatformActiveJson(
                 NAME_UNIVERSAL
             }
         ) String targetPlatform,
-        @Schema(description = "Whether this extension version for this target platform is active") boolean active
+        @Schema(description = "Whether this extension version for this target platform is active") boolean active,
+        @Schema(
+            description = "Whether this extension version for this target platform has been removed (soft-deleted)"
+        ) boolean removed
 ){}

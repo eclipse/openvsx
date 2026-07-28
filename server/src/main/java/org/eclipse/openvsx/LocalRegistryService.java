@@ -119,6 +119,15 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
+        return getNamespace(namespaceName, false);
+    }
+
+    /**
+     * Build the namespace JSON. When {@code includeInactive} is {@code true}, all extensions of the
+     * namespace are listed, including inactive/soft-deleted ones; otherwise only active extensions are
+     * listed. Inactive extensions must only be exposed on admin surfaces.
+     */
+    public NamespaceJson getNamespace(String namespaceName, boolean includeInactive) {
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
             throw new NotFoundException();
@@ -127,13 +136,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.setName(namespace.getName());
         var extensionsMap = new LinkedHashMap<String, String>();
         var serverUrl = UrlUtil.getBaseUrl();
-        for (var name : repositories.findActiveExtensionNames(namespace)) {
+        var extensionNames = includeInactive
+                ? repositories.findAllExtensionNames(namespace)
+                : repositories.findActiveExtensionNames(namespace);
+        for (var name : extensionNames) {
             String url = createApiUrl(serverUrl, "api", namespace.getName(), name);
             extensionsMap.put(name, url);
         }
         json.setExtensions(extensionsMap);
         json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
-        json.setAccess(RESTRICTED_ACCESS);
         return json;
     }
 

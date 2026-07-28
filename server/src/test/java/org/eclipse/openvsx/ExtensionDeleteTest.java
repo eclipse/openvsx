@@ -22,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -53,17 +52,9 @@ import static org.mockito.Mockito.doAnswer;
  * The race condition is deliberately triggered by intercepting the boundary call that
  * separates the check from the act (using a spy), pausing the delete operation just
  * long enough for the concurrent publish to commit.
- * <p>
- * {@link ExtensionService#deleteUserExtension(UserData, String, String, TargetPlatformVersion...)}
- * is protected by a {@code SELECT … FOR UPDATE NOWAIT} lock and therefore passes.
  */
-@SpringBootTest(
-    properties = {
-        "ovsx.elasticsearch.enabled=false"
-    }
-)
-@ActiveProfiles("test_db")
-class ExtensionDeleteTest {
+@SpringBootTest
+class ExtensionDeleteTest extends AbstractPostgresContainerTest {
 
     private static final String NAMESPACE = "race-testns";
     private static final String EXTENSION = "race-testext";
@@ -141,7 +132,7 @@ class ExtensionDeleteTest {
                 publisherFinished.await(RACE_WINDOW_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
             return result;
-        }).when(repositories).isDeleteAllVersions(any(), any(), any(), any());
+        }).when(repositories).isDeleteAllActiveVersions(any(), any(), any(), any());
 
         var owner = new UserData();
         owner.setId(ownerId);
@@ -196,8 +187,11 @@ class ExtensionDeleteTest {
                 .as("another publisher's version must not be removed or orphaned")
                 .isTrue();
         assertThat(versionExists("1.0.0"))
-                .as("the owner's deleted version must be gone")
-                .isFalse();
+                .as("the owner's deleted version row must be kept as an immutable tombstone")
+                .isTrue();
+        assertThat(versionRemoved("1.0.0"))
+                .as("the owner's deleted version must be marked removed and inactive")
+                .isTrue();
     }
 
     /**
@@ -279,6 +273,20 @@ class ExtensionDeleteTest {
                                 "select ev.id from ExtensionVersion ev "
                                         + "where ev.version = :version "
                                         + "and ev.extension.namespace.name = :namespace")
+                                .setParameter("version", version)
+                                .setParameter("namespace", NAMESPACE)
+                                .getResultList()
+                                .isEmpty()));
+    }
+
+    private boolean versionRemoved(String version) {
+        return Boolean.TRUE.equals(
+                new TransactionTemplate(txManager).execute(
+                        status -> !em.createQuery(
+                                "select ev.id from ExtensionVersion ev "
+                                        + "where ev.version = :version "
+                                        + "and ev.extension.namespace.name = :namespace "
+                                        + "and ev.removed = true and ev.active = false")
                                 .setParameter("version", version)
                                 .setParameter("namespace", NAMESPACE)
                                 .getResultList()

@@ -51,7 +51,7 @@ public class MirrorExtensionQueryRequestHandler implements IExtensionQueryReques
                     return result;
                 }
                 return local.toQueryResult(
-                        result.results().get(0).extensions().stream()
+                        result.results().getFirst().extensions().stream()
                                 .filter(e -> dataMirror.match(e.publisher().publisherName(), e.extensionName()))
                                 .collect(Collectors.toList()));
             } catch (NotFoundException | ResponseStatusException exc) {

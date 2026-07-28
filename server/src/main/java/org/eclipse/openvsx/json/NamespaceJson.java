@@ -40,16 +40,6 @@ public class NamespaceJson extends ResultJson {
     @NotNull
     private Boolean verified;
 
-    /**
-     * @deprecated
-     */
-    @Schema(
-        description = "Access level of the namespace. Deprecated: namespaces are now always restricted",
-        allowableValues = { "public", "restricted" }
-    )
-    @Deprecated
-    private String access;
-
     @Schema(hidden = true)
     private String membersUrl;
 
@@ -84,14 +74,6 @@ public class NamespaceJson extends ResultJson {
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
-    }
-
-    public String getAccess() {
-        return access;
-    }
-
-    public void setAccess(String access) {
-        this.access = access;
     }
 
     public String getMembersUrl() {

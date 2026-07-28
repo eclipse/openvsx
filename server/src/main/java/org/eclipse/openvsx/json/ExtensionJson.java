@@ -89,6 +89,9 @@ public class ExtensionJson extends ResultJson {
     @Schema(hidden = true)
     private Boolean active;
 
+    @Schema(hidden = true)
+    private Boolean removed;
+
     @Schema(
         description = "Review/publishing status: published (active and visible to all), under_review (being reviewed), rejected (blocked)",
         allowableValues = { "published", "under_review", "rejected" }
@@ -317,6 +320,14 @@ public class ExtensionJson extends ResultJson {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Boolean removed) {
+        this.removed = removed;
     }
 
     public String getReviewStatus() {
@@ -650,6 +661,7 @@ public class ExtensionJson extends ResultJson {
                 && Objects.equals(preRelease, that.preRelease)
                 && Objects.equals(publishedBy, that.publishedBy)
                 && Objects.equals(active, that.active)
+                && Objects.equals(removed, that.removed)
                 && Objects.equals(reviewStatus, that.reviewStatus)
                 && Objects.equals(reviewMessage, that.reviewMessage)
                 && Objects.equals(verified, that.verified)
@@ -701,6 +713,7 @@ public class ExtensionJson extends ResultJson {
                 preRelease,
                 publishedBy,
                 active,
+                removed,
                 reviewStatus,
                 reviewMessage,
                 verified,

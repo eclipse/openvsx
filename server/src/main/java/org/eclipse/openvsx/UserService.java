@@ -35,11 +35,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ServerErrorException;
 
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
@@ -89,6 +91,33 @@ public class UserService {
             return entityManager.find(UserData.class, principal.getId());
         }
         return null;
+    }
+
+    /**
+     * Returns every target platform version of the given extension, each annotated with whether {@code user}
+     * is allowed to delete it. This mirrors the authorization enforced when deleting a version: namespace
+     * owners may delete any version, other members only the versions they published themselves.
+     *
+     * @param user the user the {@code canDelete} flags are computed for
+     * @param extension the extension whose versions are listed
+     * @param isOwner whether the user owns the extension's namespace, as already determined by the caller
+     */
+    public List<VersionTargetPlatformsJson> getVersionsWithDeletePermission(
+            UserData user,
+            Extension extension,
+            boolean isOwner
+    ) {
+        var allVersions = repositories.findTargetPlatformsGroupedByVersion(extension);
+        if (isOwner) {
+            return allVersions.stream().map(version -> version.withCanDelete(true)).toList();
+        }
+
+        var publishedVersions = repositories.findTargetPlatformsGroupedByVersion(extension, user).stream()
+                .map(VersionTargetPlatformsJson::version)
+                .collect(Collectors.toSet());
+        return allVersions.stream()
+                .map(version -> version.withCanDelete(publishedVersions.contains(version.version())))
+                .toList();
     }
 
     public boolean hasPublishPermission(UserData user, Namespace namespace) {

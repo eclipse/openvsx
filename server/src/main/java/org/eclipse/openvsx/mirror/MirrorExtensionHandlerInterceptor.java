@@ -33,13 +33,12 @@ public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-            throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         var params = request.getRequestURI().equals("/vscode/item")
                 ? extractQueryParams(request)
                 : extractPathParams(request);
-        var namespaceName = (String) params.get("namespaceName");
-        var extensionName = (String) params.get("extensionName");
+        var namespaceName = params.get("namespaceName");
+        var extensionName = params.get("extensionName");
         if (!dataMirror.match(namespaceName, extensionName)) {
             response.reset();
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);

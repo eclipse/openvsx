@@ -79,6 +79,7 @@ export interface Extension {
     // key: version, value: url
     allVersions: { [version: string]: UrlString };
     active?: boolean;
+    removed?: boolean;
     reviewStatus?: 'published' | 'under_review' | 'rejected';
     reviewMessage?: string;
 
@@ -136,11 +137,18 @@ export interface ExtensionReference {
 export interface TargetPlatformActive {
     targetPlatform: string;
     active: boolean;
+    // Whether this target platform version has been removed (soft-deleted). A removed version is a
+    // permanent tombstone: hidden and non-republishable. Only an admin purge frees it.
+    removed: boolean;
 }
 
 export interface VersionTargetPlatforms {
     version: string;
     targetPlatforms: TargetPlatformActive[];
+    // Whether the current user may delete this version. Omitted (undefined) in contexts where deletion
+    // is unrestricted (admin) or not applicable (public); explicitly false for namespace members who
+    // did not publish this version and therefore may only delete their own versions.
+    canDelete?: boolean;
 }
 
 export type StarRating = 1 | 2 | 3 | 4 | 5;

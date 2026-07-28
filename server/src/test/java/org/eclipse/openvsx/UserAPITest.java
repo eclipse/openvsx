@@ -72,6 +72,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAPI.class)
@@ -108,6 +109,9 @@ class UserAPITest {
 
     @MockitoBean
     RepositoryService repositories;
+
+    @Autowired
+    StorageUtilService storageUtil;
 
     @MockitoBean
     org.eclipse.openvsx.repositories.ExtensionScanRepository scanRepository;
@@ -278,7 +282,14 @@ class UserAPITest {
     @Test
     void testOwnExtension() throws Exception {
         var userData = mockUserData();
-        mockExtension(userData, 2, 0, 0);
+        var versions = mockExtension(userData, 2, 0, 0);
+        var namespace = versions.getLast().getExtension().getNamespace();
+        // The user is still a member of the namespace, so their published extension is listed.
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(userData);
+        membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        Mockito.when(repositories.findMemberships(userData)).thenReturn(Streamable.of(membership));
         mockMvc.perform(
                 get("/user/extensions")
                         .with(user("test_user")))
@@ -292,10 +303,147 @@ class UserAPITest {
     }
 
     @Test
+    void testOwnExtensionExcludesNonMemberNamespace() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 2, 0, 0);
+        // The user published the extension but is no longer a member of its namespace: it must not
+        // be listed. findMemberships returns nothing, so the published extension is filtered out.
+        Mockito.when(repositories.findMemberships(userData)).thenReturn(Streamable.empty());
+        mockMvc.perform(
+                get("/user/extensions")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
     void testOwnExtensionNotLoggedIn() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 1, 0, 0);
         mockMvc.perform(get("/user/extensions"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testGetOwnExtensionAsNamespaceOwner() throws Exception {
+        var userData = mockUserData();
+        var versions = mockExtension(userData, 2, 0, 0);
+        var latest = versions.getLast();
+        latest.setId(42L);
+        var extension = latest.getExtension();
+        // The caller owns the namespace: the unscoped lookup is used and every version is deletable.
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.findLatestVersion(eq("foobar"), eq("baz"), any(), eq(false), eq(false)))
+                .thenReturn(latest);
+        Mockito.when(repositories.findTargetPlatformsGroupedByVersion(extension))
+                .thenReturn(
+                        List.of(
+                                new VersionTargetPlatformsJson(
+                                        "2.0.0",
+                                        List.of(
+                                                new TargetPlatformActiveJson(
+                                                        TargetPlatform.NAME_UNIVERSAL,
+                                                        true,
+                                                        false))),
+                                new VersionTargetPlatformsJson(
+                                        "1.0.0",
+                                        List.of(
+                                                new TargetPlatformActiveJson(
+                                                        TargetPlatform.NAME_UNIVERSAL,
+                                                        true,
+                                                        false)))));
+        Mockito.when(
+                storageUtil.getFileUrls(
+                        Mockito.anyCollection(),
+                        Mockito.anyString(),
+                        Mockito.any(String[].class)))
+                .thenReturn(java.util.Map.of(42L, new java.util.HashMap<>()));
+        mockMvc.perform(
+                get("/user/extension/{namespace}/{extension}", "foobar", "baz")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"name\":\"baz\",\"namespace\":\"foobar\"}"))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[0].canDelete").value(true))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[1].canDelete").value(true));
+    }
+
+    @Test
+    void testGetOwnExtensionAsNamespaceMember() throws Exception {
+        var userData = mockUserData();
+        var versions = mockExtension(userData, 2, 0, 0);
+        var latest = versions.getLast();
+        latest.setId(42L);
+        var extension = latest.getExtension();
+        // The caller is a namespace member but not an owner: the unscoped lookup lets them see every
+        // version, but only the versions they published themselves are marked deletable.
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.findLatestVersion(eq("foobar"), eq("baz"), any(), eq(false), eq(false)))
+                .thenReturn(latest);
+        Mockito.when(repositories.findTargetPlatformsGroupedByVersion(extension))
+                .thenReturn(
+                        List.of(
+                                new VersionTargetPlatformsJson(
+                                        "2.0.0",
+                                        List.of(
+                                                new TargetPlatformActiveJson(
+                                                        TargetPlatform.NAME_UNIVERSAL,
+                                                        true,
+                                                        false))),
+                                new VersionTargetPlatformsJson(
+                                        "1.0.0",
+                                        List.of(
+                                                new TargetPlatformActiveJson(
+                                                        TargetPlatform.NAME_UNIVERSAL,
+                                                        true,
+                                                        false)))));
+        // Only version 1.0.0 was published by this user.
+        Mockito.when(repositories.findTargetPlatformsGroupedByVersion(extension, userData))
+                .thenReturn(
+                        List.of(
+                                new VersionTargetPlatformsJson(
+                                        "1.0.0",
+                                        List.of(
+                                                new TargetPlatformActiveJson(
+                                                        TargetPlatform.NAME_UNIVERSAL,
+                                                        true,
+                                                        false)))));
+        Mockito.when(
+                storageUtil.getFileUrls(
+                        Mockito.anyCollection(),
+                        Mockito.anyString(),
+                        Mockito.any(String[].class)))
+                .thenReturn(java.util.Map.of(42L, new java.util.HashMap<>()));
+        mockMvc.perform(
+                get("/user/extension/{namespace}/{extension}", "foobar", "baz")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(content().json("{\"name\":\"baz\",\"namespace\":\"foobar\"}"))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[0].version").value("2.0.0"))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[0].canDelete").value(false))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[1].version").value("1.0.0"))
+                .andExpect(jsonPath("$.allTargetPlatformVersions[1].canDelete").value(true));
+    }
+
+    @Test
+    void testGetOwnExtensionNotMember() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 2, 0, 0);
+        // Not a namespace member: no access at all, even to versions the user may have published
+        // while they were still a member => 404 without ever looking up any version.
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        mockMvc.perform(
+                get("/user/extension/{namespace}/{extension}", "foobar", "baz")
+                        .with(user("test_user")))
+                .andExpect(status().isNotFound());
+        Mockito.verify(repositories, Mockito.never())
+                .findLatestVersion(eq("foobar"), eq("baz"), any(), eq(false), eq(false));
+    }
+
+    @Test
+    void testGetOwnExtensionNotLoggedIn() throws Exception {
+        mockMvc.perform(get("/user/extension/{namespace}/{extension}", "foobar", "baz"))
                 .andExpect(status().isForbidden());
     }
 
@@ -540,6 +688,10 @@ class UserAPITest {
         Mockito.doReturn(otherUser).when(users).findLoggedInUser();
 
         mockExtension(userData, 2, 0, 0);
+        // A namespace member, but not the publisher of the targeted version: the version lookup is
+        // scoped to the caller, so it is not found and the delete fails with 404.
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
         mockMvc.perform(
                 post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
@@ -550,9 +702,28 @@ class UserAPITest {
     }
 
     @Test
+    void testDeleteExtensionNotMember() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 2, 0, 0);
+        // Neither owner nor member of the namespace: rejected before the extension is touched.
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        mockMvc.perform(
+                post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testDeleteExtension() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 2, 0, 0);
+        // A member deletes all versions they published by naming them explicitly; each is soft-deleted.
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
         mockMvc.perform(
                 post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content(
@@ -561,13 +732,33 @@ class UserAPITest {
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
+    }
+
+    @Test
+    void testDeleteExtensionEmptyTargetsIsNoOp() throws Exception {
+        var userData = mockUserData();
+        mockExtension(userData, 2, 0, 0);
+        // With the whole-extension shortcut removed, an empty target list deletes nothing.
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
+        mockMvc.perform(
+                post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
+                        .content("[]")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("")));
     }
 
     @Test
     void testDeleteExtensionVersion() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 3, 0, 0);
+        // Non-owner member may delete versions they published themselves.
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
         mockMvc.perform(
                 post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content(
@@ -583,6 +774,10 @@ class UserAPITest {
     void testDeleteLastExtensionVersion() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 1, 0, 0);
+        // Non-owner member deleting the last version they published: soft-deleted per version
+        // (the extension record itself survives, deactivated).
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
         mockMvc.perform(
                 post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content("[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"}]")
@@ -590,31 +785,16 @@ class UserAPITest {
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz")));
-    }
-
-    @Test
-    void testDeleteBundledExtension() throws Exception {
-        var userData = mockUserData();
-        mockExtension(userData, 2, 1, 0);
-        mockMvc.perform(
-                post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                        .content(
-                                "[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user("test_user"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        content().json(
-                                errorJson(
-                                        "Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1.0.0")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0")));
     }
 
     @Test
     void testDeleteDependingExtension() throws Exception {
         var userData = mockUserData();
         mockExtension(userData, 2, 0, 1);
+        // Deleting all active versions of a depended-on extension triggers the dependency check.
+        Mockito.when(repositories.hasMembership(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(false);
         mockMvc.perform(
                 post("/user/extension/{namespace}/{extension}/delete", "foobar", "baz")
                         .content(
@@ -814,11 +994,12 @@ class UserAPITest {
                 .thenReturn(Streamable.of(versions));
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(List.of(versions.getLast()));
         Mockito.when(
-                repositories.isDeleteAllVersions(any(), eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class)))
+                repositories
+                        .isDeleteAllActiveVersions(eq("foobar"), eq("baz"), any(TargetPlatformVersion[].class)))
                 .then(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) {
-                        return ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length == numberOfVersions;
+                        return ((TargetPlatformVersion[]) invocation.getRawArguments()[2]).length == numberOfVersions;
                     }
                 });
 

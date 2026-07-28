@@ -12,6 +12,7 @@ package org.eclipse.openvsx;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -146,9 +147,9 @@ public class UserAPI {
     }
 
     /**
-     * This endpoint is used to check whether there is a logged-in user. For this reason, it
-     * does not return a 403 status, but an OK status with JSON body when no user data is
-     * available. This is to avoid unnecessary network error logging in the browser console.
+     * This endpoint is used to check whether there is a logged-in user. For this reason, it does not return a 403
+     * status, but an OK status with JSON body when no user data is available. This is to avoid unnecessary network
+     * error logging in the browser console.
      */
     @GetMapping(
         path = "/user",
@@ -236,6 +237,17 @@ public class UserAPI {
         }
     }
 
+    /**
+     * Lists the extensions shown in the authenticated user's settings view.
+     * <p>
+     * Only extensions the user published <em>and</em> whose namespace the user is <em>currently</em>
+     * a member of are returned. Extensions the user published in a namespace they have since left
+     * (or been removed from) are excluded, since the user no longer has any access to them (see
+     * {@link #getOwnExtension}). The list includes inactive and removed (soft-deleted) versions of
+     * the extensions that do qualify.
+     *
+     * @return {@code 200 OK} with the list of extensions, or {@code 403 Forbidden} if not logged in
+     */
     @GetMapping(
         path = "/user/extensions",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -246,7 +258,14 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        var extVersions = repositories.findLatestVersions(user);
+        // Restrict to namespaces the user is currently a member of: a user who left a namespace must
+        // no longer see extensions they published there, even though they remain the publisher.
+        var memberNamespaceIds = repositories.findMemberships(user).stream()
+                .map(membership -> membership.getNamespace().getId())
+                .collect(Collectors.toSet());
+        var extVersions = repositories.findLatestVersions(user).stream()
+                .filter(ev -> memberNamespaceIds.contains(ev.getExtension().getNamespace().getId()))
+                .toList();
 
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
@@ -255,6 +274,7 @@ public class UserAPI {
                     var json = latest.toExtensionJson();
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
+                    json.setRemoved(latest.isExtensionRemoved());
                     json.setFiles(fileUrls.get(latest.getId()));
 
                     // Add scan/review status information
@@ -269,9 +289,11 @@ public class UserAPI {
      * Add review/scan status information to the extension JSON.
      * <p>
      * This shows users the current state of their extension in simple terms:
-     * - "published" - Extension is active and publicly available
-     * - "under_review" - Extension is being reviewed (validation, scanning, etc.)
-     * - "rejected" - Extension was blocked (quarantined or rejected)
+     * <ul>
+     *   <li>"published" - Extension is active and publicly available</li>
+     *   <li>"under_review" - Extension is being reviewed (validation, scanning, etc.)</li>
+     *   <li>"rejected" - Extension was blocked (quarantined or rejected)</li>
+     * </ul>
      */
     private void enrichWithReviewStatus(ExtensionJson json, ExtensionVersion extVersion) {
         // Look up scan by extension metadata (namespace, name, version, platform)
@@ -284,11 +306,16 @@ public class UserAPI {
                         extVersion.getTargetPlatform());
 
         if (Boolean.TRUE.equals(json.getActive())) {
-            // Only mark published if scan result indicates PASSED or no scan result exists (scanning disabled / manual activation)
+            // Only mark published if scan result indicates PASSED or no scan result exists (scanning disabled / manual
+            // activation)
             if (scanResult == null || scanResult.getStatus() == ScanStatus.PASSED) {
                 json.setReviewStatus("published");
                 return;
             }
+        }
+
+        if (extVersion.isRemoved()) {
+            return;
         }
 
         if (scanResult == null) {
@@ -358,6 +385,26 @@ public class UserAPI {
         }
     }
 
+    /**
+     * Returns an extension for the authenticated user's settings view, including every version's
+     * target platforms and, per version, whether the caller may delete it.
+     * <p>
+     * Access is restricted to <em>current</em> namespace members: a member (owner or not) sees
+     * <em>all</em> versions of the extension, including versions they did not publish themselves and
+     * removed (soft-deleted) ones. A user who is not a member of the namespace has no access and
+     * receives {@code 404 Not Found}, even for versions they published while they were still a member.
+     * <p>
+     * Each returned version carries a {@code canDelete} flag mirroring the authorization enforced by
+     * {@link #deleteExtension}: owners may delete any version, other members only the versions they
+     * published themselves. This lets the settings UI disable delete controls the caller is not
+     * allowed to use.
+     *
+     * @param namespaceName the namespace of the extension
+     * @param extensionName the extension name
+     * @return {@code 200 OK} with the extension, {@code 403 Forbidden} if not logged in, or
+     *         {@code 404 Not Found} if the caller is not a namespace member or the extension does
+     *         not exist
+     */
     @GetMapping(
         path = "/user/extension/{namespaceName}/{extensionName}",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -372,13 +419,28 @@ public class UserAPI {
         }
 
         try {
+            var namespace = repositories.findNamespace(namespaceName);
+            // Only current namespace members may inspect an extension here. A user who left the
+            // namespace (or was never a member) has no access, even to versions they published
+            // themselves. Members see every version, including ones they did not publish.
+            var isOwner = namespace != null && repositories.isNamespaceOwner(user, namespace);
+            var isMember = isOwner || (namespace != null && repositories.hasMembership(user, namespace));
+            if (!isMember) {
+                var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
+                throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
+            }
+
+            var latest = repositories.findLatestVersion(namespaceName, extensionName, null, false, false);
+
             ExtensionJson json;
-            var latest = repositories.findLatestVersion(user, namespaceName, extensionName);
             if (latest != null) {
                 json = local.toExtensionVersionJson(latest, null, false);
-                json.setAllTargetPlatformVersions(
-                        repositories.findTargetPlatformsGroupedByVersion(latest.getExtension(), user));
-                json.setActive(latest.getExtension().isActive());
+                var extension = latest.getExtension();
+                // Each version is annotated with whether the caller may delete it, mirroring deleteExtension:
+                // owners may delete any version, other members only the versions they published themselves.
+                json.setAllTargetPlatformVersions(users.getVersionsWithDeletePermission(user, extension, isOwner));
+                json.setActive(extension.isActive());
+                json.setRemoved(latest.isExtensionRemoved());
             } else {
                 var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
                 throw new ErrorResultException(error, HttpStatus.NOT_FOUND);
@@ -404,11 +466,26 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
+            var namespace = repositories.findNamespace(namespaceName);
+            if (namespace == null) {
+                var json = NamespaceDetailsJson
+                        .error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
+                return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
+            }
+
+            // Authorize before touching the extension: only namespace members may delete.
+            // Owners may delete any version; non-owner members are restricted to versions
+            // they published themselves (enforced via restrictedToUser).
+            var isOwner = repositories.isNamespaceOwner(user, namespace);
+            if (!isOwner && !repositories.hasMembership(user, namespace)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
             var targets = CollectionUtil.toArray(
                     targetVersions,
                     TargetPlatformVersionJson::toTargetPlatformVersion,
                     TargetPlatformVersion[]::new);
-            var result = extensions.deleteUserExtension(user, namespaceName, extensionName, targets);
+            var result = extensions.deleteExtension(user, !isOwner, namespaceName, extensionName, targets);
             return ResponseEntity.ok(result);
         } catch (NotFoundException exc) {
             var json = NamespaceDetailsJson
@@ -433,7 +510,8 @@ public class UserAPI {
             var namespace = membership.getNamespace();
             var extensions = new LinkedHashMap<String, String>();
             var serverUrl = UrlUtil.getBaseUrl();
-            repositories.findActiveExtensionsForUrls(namespace).forEach(extension -> {
+            // return all extension of the namespace, include deleted ones
+            repositories.findExtensionsForUrls(namespace).forEach(extension -> {
                 String url = createApiUrl(serverUrl, "api", namespace.getName(), extension.getName());
                 extensions.put(extension.getName(), url);
             });
