@@ -11,14 +11,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { FunctionComponent, useContext, useLayoutEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { PageContainer } from '../../components/page-container';
 import { SectionSeparator, SectionStack } from '../../components/page-primitives';
 import { MainContext } from '../../context';
 import { HomeSettings } from '../../page-settings';
-import { ExtensionListRoutes } from '../extension-list/extension-list-routes';
-import { addQuery } from '../../utils';
+import { useSearch } from '../../hooks/use-search';
 import { HeroSearch } from './hero-search';
 import { BrowseCategories } from './browse-categories';
 import { CuratedSections } from './curated-sections';
@@ -28,14 +27,18 @@ import { GetInvolved } from './get-involved';
 export const HomePage: FunctionComponent = () => {
     const { pageSettings } = useContext(MainContext);
     const [params] = useSearchParams();
-    if (['search', 'category', 'sortBy', 'sortOrder'].some(key => params.has(key))) {
-        const target = addQuery(ExtensionListRoutes.SEARCH, [
-            { key: 'q', value: params.get('search') ?? undefined },
-            { key: 'category', value: params.get('category') ?? undefined },
-            { key: 'sortBy', value: params.get('sortBy') ?? undefined },
-            { key: 'sortOrder', value: params.get('sortOrder') ?? undefined }
-        ]);
-        return <Navigate to={target} replace />;
+    const { search } = useSearch();
+    // `search` maps `?search=` → `?q=` and carries the other params through; the
+    // other keys already match the filter. Redirecting via `search` (not a bare
+    // <Navigate>) sets the field; `replace` keeps the legacy URL out of history.
+    const isLegacySearchUrl = ['search', 'category', 'sortBy', 'sortOrder'].some(key => params.has(key));
+    useLayoutEffect(() => {
+        if (isLegacySearchUrl) {
+            search({ query: params.get('search') ?? '' }, { replace: true });
+        }
+    }, [isLegacySearchUrl, params, search]);
+    if (isLegacySearchUrl) {
+        return null;
     }
     const home = pageSettings.elements.home;
     if (typeof home === 'function') {

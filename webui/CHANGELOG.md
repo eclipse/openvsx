@@ -18,6 +18,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Changed
 
 - Redesign the web UI: new navbar with integrated search field, new theme, extension cards, category pills and page layout
+- Consolidate the app-wide providers into a single `AppProviders`; keyboard shortcuts and search now wrap every route, including the admin dashboard
 - Improve accessibility: visible focus outlines on interactive controls
 - Morph the hero search into the navbar search field using the View Transitions API
 - Token display in generate-token dialog now uses a masked input with show/hide toggle and copy button ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)

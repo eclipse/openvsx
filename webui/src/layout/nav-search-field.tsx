@@ -25,17 +25,16 @@ import { Box } from '@mui/material';
 import { useLocation } from 'react-router';
 import { ExtensionSearchfield } from '../components/extension-searchfield';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
-import { useSearch, SEARCH_DEBOUNCE_MS } from '../hooks/use-search';
+import { useSearch } from '../hooks/use-search';
 import { useSearchQuery } from '../context/search/search-context';
 import { useSearchFocus } from '../context/search/search-focus-context';
 import { usePageSearchBar } from '../context/search/page-search-bar-context';
 import { useSignalEffect } from '../hooks/use-signal-effect';
-import { useDebouncedCallback } from '../hooks/use-debounced-callback';
 import { useShortcut } from '../hooks/use-shortcut';
 
 export const NavSearchField: FunctionComponent = () => {
     const { pathname } = useLocation();
-    const { query, setQuery } = useSearchQuery();
+    const { query } = useSearchQuery();
     const { search, filter } = useSearch();
     const { searchFocusSignal, resultsNavigationSignal, setSearchFocused } = useSearchFocus();
     const { hasPageSearchBar, isPageSearchBarActive } = usePageSearchBar();
@@ -49,11 +48,6 @@ export const NavSearchField: FunctionComponent = () => {
         const id = requestAnimationFrame(() => setFadeReady(true));
         return () => cancelAnimationFrame(id);
     }, []);
-
-    // Typing debounces navigation; Enter searches immediately. A route change
-    // drops any pending navigation (e.g. the user clicked a result mid-debounce).
-    const debouncedSearch = useDebouncedCallback(search, SEARCH_DEBOUNCE_MS);
-    useLayoutEffect(() => debouncedSearch.cancel, [pathname, debouncedSearch]);
 
     // While a page search bar is registered, this field is only an opacity-0
     // placeholder for the view-transition morph; `inert` removes it from the tab
@@ -91,23 +85,10 @@ export const NavSearchField: FunctionComponent = () => {
     // The '/' shortcut asks whichever search field is active to take focus.
     useShortcut({ key: '/', label: 'Focus search', order: 1, callback: searchFocusSignal.emit });
 
-    const handleNavSearch = useCallback(
-        (q: string) => {
-            setQuery(q);
-            // Emptying the field only re-searches on the search page (where empty
-            // means "show all"); elsewhere it shouldn't navigate away.
-            if (!q.trim() && pathname !== ExtensionListRoutes.SEARCH) {
-                debouncedSearch.cancel();
-                return;
-            }
-            debouncedSearch({ query: q });
-        },
-        [setQuery, debouncedSearch, pathname]
-    );
+    const handleNavSearch = useCallback((q: string) => search({ query: q }, { debounce: true }), [search]);
 
     const handleNavSubmit = useCallback(
         (q: string) => {
-            debouncedSearch.cancel();
             // On the search page, Enter on an already-applied query opens the card
             // under the cursor; on a fresh query it applies the search first.
             if (pathname === ExtensionListRoutes.SEARCH && q.trim() === filter.query) {
@@ -116,7 +97,7 @@ export const NavSearchField: FunctionComponent = () => {
             }
             search({ query: q });
         },
-        [debouncedSearch, search, pathname, filter.query, resultsNavigationSignal.emit]
+        [search, pathname, filter.query, resultsNavigationSignal.emit]
     );
 
     // Move cursor to end when the input gains focus (e.g. after view-transition morphs
