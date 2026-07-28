@@ -202,7 +202,7 @@ public class PublishExtensionVersionHandler {
             LocalDateTime timestamp
     ) {
         var namespace = checkPublishPermission(processor, user);
-        var namespaceName = namespace.getName();
+        var namespaceName = processor.getNamespace();
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
