@@ -39,6 +39,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
@@ -134,12 +135,30 @@ public class PublishExtensionVersionHandler {
         return extVersion;
     }
 
-    private ExtensionVersion createExtensionVersion(
-            ExtensionProcessor processor,
-            UserData user,
-            PersonalAccessToken token,
-            LocalDateTime timestamp
-    ) {
+    /**
+     * Checks the preconditions that do not depend on the contents of the extension package: the publisher
+     * must exist, the user of {@code token} must be allowed to publish to it, and the version must not be
+     * published already.
+     * <p>
+     * Callers publishing with scanning enabled have to invoke this before validating or scanning the
+     * package, as neither is of any use for a package that can not be published in the first place.
+     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, PersonalAccessToken,
+     * LocalDateTime, boolean)}, which enforces them while holding the extension lock.
+     *
+     * @throws ErrorResultException if the extension version can not be published
+     */
+    public void checkPublishPreconditions(ExtensionProcessor processor, PersonalAccessToken token) {
+        var namespace = checkPublishPermission(processor, token.getUser());
+        var extensionName = processor.getExtensionName();
+        var existingVersion = repositories
+                .findVersion(processor.getVersion(), processor.getTargetPlatform(), extensionName, namespace.getName());
+        if (existingVersion != null) {
+            throw new ErrorResultException(
+                    alreadyPublishedMessage(namespace.getName(), extensionName, existingVersion));
+        }
+    }
+
+    private Namespace checkPublishPermission(ExtensionProcessor processor, UserData user) {
         var namespaceName = processor.getNamespace();
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
@@ -150,6 +169,40 @@ public class PublishExtensionVersionHandler {
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());
         }
+        return namespace;
+    }
+
+    private String alreadyPublishedMessage(
+            String namespaceName,
+            String extensionName,
+            ExtensionVersion existingVersion
+    ) {
+        var extVersionId = NamingUtil.toLogFormat(
+                namespaceName,
+                extensionName,
+                existingVersion.getTargetPlatform(),
+                existingVersion.getVersion());
+        var message = "Extension " + extVersionId + " is already published";
+        if (existingVersion.isRemoved()) {
+            message += " and was removed. Extension versions are immutable, so this version's identity"
+                    + " stays permanently reserved and cannot be republished."
+                    + " Ask an administrator to purge it if it must be republished.";
+        } else {
+            message += existingVersion.isActive()
+                    ? "."
+                    : ", but currently isn't active and therefore not visible.";
+        }
+        return message;
+    }
+
+    private ExtensionVersion createExtensionVersion(
+            ExtensionProcessor processor,
+            UserData user,
+            PersonalAccessToken token,
+            LocalDateTime timestamp
+    ) {
+        var namespace = checkPublishPermission(processor, user);
+        var namespaceName = processor.getNamespace();
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
@@ -184,22 +237,8 @@ public class PublishExtensionVersionHandler {
             var existingVersion = repositories
                     .findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
             if (existingVersion != null) {
-                var extVersionId = NamingUtil.toLogFormat(
-                        namespaceName,
-                        extensionName,
-                        extVersion.getTargetPlatform(),
-                        extVersion.getVersion());
-                var message = "Extension " + extVersionId + " is already published";
-                if (existingVersion.isRemoved()) {
-                    message += " and was removed. Extension versions are immutable, so this version's identity"
-                            + " stays permanently reserved and cannot be republished."
-                            + " Ask an administrator to purge it if it must be republished.";
-                } else {
-                    message += existingVersion.isActive()
-                            ? "."
-                            : ", but currently isn't active and therefore not visible.";
-                }
-                throw new ErrorResultException(message);
+                throw new ErrorResultException(
+                        alreadyPublishedMessage(namespaceName, extensionName, existingVersion));
             }
         }
 
