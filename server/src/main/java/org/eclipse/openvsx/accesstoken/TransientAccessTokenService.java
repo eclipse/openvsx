@@ -14,6 +14,7 @@ package org.eclipse.openvsx.accesstoken;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 public class TransientAccessTokenService {
     private final AccessTokenConfig config;
 
+    private final AtomicInteger counter = new AtomicInteger(0);
     private final ConcurrentHashMap<String, PersonalAccessToken> transientTokens;
 
     public TransientAccessTokenService(
@@ -36,7 +38,8 @@ public class TransientAccessTokenService {
     }
 
     public AccessTokenJson createAccessToken(UserData user, String description) {
-        String value = config.getPrefix() + UUID.randomUUID();
+        // monotonic grow + random - to make sure it is unique, and it does not clash with persistent ones
+        String value = config.getPrefix() + "ot" + UUID.randomUUID() + "-" + counter.incrementAndGet();
         var token = new PersonalAccessToken();
         token.setId(0L); // ID is not used for transient tokens
         token.setUser(user);
