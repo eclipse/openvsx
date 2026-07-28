@@ -117,6 +117,9 @@ public class LocalRegistryService implements IExtensionRegistry {
     @Value("${ovsx.registry.version:}")
     String registryVersion;
 
+    @Value("${ovsx.trusted-publishing.enabled:false}")
+    boolean trustedPublishingEnabled;
+
     @Override
     public NamespaceJson getNamespace(String namespaceName) {
         return getNamespace(namespaceName, false);
@@ -1323,6 +1326,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
+        json.setTrustedPublishingEnabled(trustedPublishingEnabled);
         return json;
     }
 }

@@ -32,6 +32,9 @@ public class RegistryVersionJson extends ResultJson {
     @Schema(description = "Maximum allowed extension package size in bytes")
     private long maxExtensionSize;
 
+    @Schema(description = "Whether trusted publishing is enabled on the registry")
+    private boolean trustedPublishingEnabled;
+
     public String getVersion() {
         return version;
     }
@@ -46,5 +49,13 @@ public class RegistryVersionJson extends ResultJson {
 
     public void setMaxExtensionSize(long maxExtensionSize) {
         this.maxExtensionSize = maxExtensionSize;
+    }
+
+    public boolean isTrustedPublishingEnabled() {
+        return trustedPublishingEnabled;
+    }
+
+    public void setTrustedPublishingEnabled(boolean trustedPublishingEnabled) {
+        this.trustedPublishingEnabled = trustedPublishingEnabled;
     }
 }
