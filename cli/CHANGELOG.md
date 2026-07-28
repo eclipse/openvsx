@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Added
 
 - Add an encrypted filestore as fallback to the system keychain if it cant be accessed ([#1950](https://github.com/eclipse/openvsx/pull/1950))
+- Support trusted publishing: `publish` can exchange an OIDC ID token for a short-lived publishing token, via `--trusted-publishing`, `--idToken` and `--oidcAudience`
 
 #### Changed
 
