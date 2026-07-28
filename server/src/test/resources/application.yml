@@ -35,6 +35,11 @@ jobrunr:
     allow-anonymous-data-usage: false
 
 ovsx:
+  elasticsearch:
+    # Disabled by default for tests: the Elasticsearch container is expensive, so only tests that
+    # activate the "test_search" profile (which also provisions the container) enable it, via
+    # application-test_search.yml.
+    enabled: false
   redis:
     embedded: true
   storage:

@@ -11,6 +11,8 @@ package org.eclipse.openvsx.publish;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -20,12 +22,15 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 
 @Component
 public class PublishExtensionVersionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PublishExtensionVersionService.class);
 
     private final RepositoryService repositories;
     private final EntityManager entityManager;
@@ -76,8 +81,25 @@ public class PublishExtensionVersionService {
     @Transactional
     @CacheEvict(value = CACHE_SITEMAP, allEntries = true)
     public void activateExtension(ExtensionVersion extVersion, ExtensionService extensions) {
-        extVersion.setActive(true);
-        extVersion = entityManager.merge(extVersion);
-        extensions.updateExtension(extVersion.getExtension());
+        // Reload the current row before mutating: the passed-in entity may carry a stale snapshot (e.g. it
+        // was fetched before a concurrent soft-delete committed), so we must not trust its flags. This
+        // matters when a version is soft-deleted while an asynchronous scan for it is still in flight: the
+        // scan completing (or being allowed by an admin) must not resurrect the removed version, whose files
+        // have already been stripped from storage.
+        var current = entityManager.find(ExtensionVersion.class, extVersion.getId());
+        if (current == null) {
+            // The row was purged (hard-deleted) in the meantime; nothing to activate.
+            logger.warn("Refusing to activate missing extension version: {}", NamingUtil.toLogFormat(extVersion));
+            return;
+        }
+
+        // A soft-deleted version is a permanent tombstone and must never be reactivated.
+        if (current.isRemoved()) {
+            logger.warn("Refusing to activate removed extension version: {}", NamingUtil.toLogFormat(current));
+            return;
+        }
+
+        current.setActive(true);
+        extensions.updateExtension(current.getExtension());
     }
 }

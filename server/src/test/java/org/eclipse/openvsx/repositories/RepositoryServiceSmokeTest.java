@@ -25,8 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.ActiveProfiles;
 
+import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.entities.AdminScanDecision;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.entities.DailyUsageStats;
@@ -56,13 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * Run the DB queries and assert no DB error, just to ensure that the queries
  * are consistent with the schema.
  */
-@SpringBootTest(
-    properties = {
-        "ovsx.elasticsearch.enabled=false"
-    }
-)
-@ActiveProfiles("test_db")
-class RepositoryServiceSmokeTest {
+@SpringBootTest
+class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
 
     private static final List<String> STRING_LIST = List.of("id1", "id2");
 
@@ -202,6 +197,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories.findActiveVersions(extension),
                 () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensions(),
+                () -> repositories.findAllExtensionNames(namespace),
                 () -> repositories.findAllPersistedLogs(),
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findPersistedLogsPaginated(page),
@@ -323,7 +319,7 @@ class RepositoryServiceSmokeTest {
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
-                () -> repositories.findActiveExtensionsForUrls(namespace),
+                () -> repositories.findExtensionsForUrls(namespace),
                 () -> repositories.deactivateKeyPairs(),
                 () -> repositories.hasExtension("namespaceName", "extensionName"),
                 () -> repositories.findDeprecatedExtensions(extension),
@@ -338,7 +334,7 @@ class RepositoryServiceSmokeTest {
                         "extensionName",
                         "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
-                () -> repositories.isDeleteAllVersions(userData, "namespaceName", "extensionName"),
+                () -> repositories.isDeleteAllActiveVersions("namespaceName", "extensionName"),
                 () -> repositories.deactivateAccessTokens(userData),
                 () -> repositories.expireAccessTokens(NOW),
                 () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),

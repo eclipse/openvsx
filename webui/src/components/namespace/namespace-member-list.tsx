@@ -10,12 +10,12 @@
 
 import { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
-import { UserNamespaceMember } from './user-namespace-member-component';
+import { NamespaceMember } from './namespace-member-component';
 import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
 import { AddMemberDialog } from './add-namespace-member-dialog';
 import { MainContext } from '../../context';
 
-export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListProps> = props => {
+export const NamespaceMemberList: FunctionComponent<NamespaceMemberListProps> = props => {
     const { service, user, handleError } = useContext(MainContext);
     const [members, setMembers] = useState<NamespaceMembership[]>([]);
     const [addDialogIsOpen, setAddDialogIsOpen] = useState(false);
@@ -89,7 +89,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
             {members.length ? (
                 <Paper elevation={3}>
                     {members.map(member => (
-                        <UserNamespaceMember
+                        <NamespaceMember
                             key={'nspcmbr-' + member.user.loginName + member.user.provider}
                             namespace={props.namespace}
                             member={member}
@@ -114,7 +114,7 @@ export const UserNamespaceMemberList: FunctionComponent<UserNamespaceMemberListP
     );
 };
 
-export interface UserNamespaceMemberListProps {
+export interface NamespaceMemberListProps {
     namespace: Namespace;
     setLoadingState: (loadingState: boolean) => void;
     filterUsers: (user: UserData) => boolean;

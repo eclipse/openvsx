@@ -11,9 +11,9 @@
 import { FunctionComponent, useContext, useRef } from 'react';
 import { UserData } from '../..';
 import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
-import { NamespaceDetailConfigContext } from './user-settings-namespace-detail';
+import { NamespaceDetailConfigContext } from './namespace-detail-view';
 import { MainContext } from '../../context';
-import { AddUserDialog } from './add-user-dialog';
+import { AddUserDialog } from '../add-user-dialog';
 
 export interface AddMemberDialogProps {
     open: boolean;

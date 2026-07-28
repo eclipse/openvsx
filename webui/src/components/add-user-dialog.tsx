@@ -24,8 +24,8 @@ import {
     Box,
     Avatar
 } from '@mui/material';
-import type { UserData } from '../../extension-registry-types';
-import { MainContext } from '../../context';
+import type { UserData } from '../extension-registry-types';
+import { MainContext } from '../context';
 
 export interface AddUserDialogProps {
     open: boolean;

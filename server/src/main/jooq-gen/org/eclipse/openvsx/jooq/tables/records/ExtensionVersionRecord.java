@@ -525,6 +525,48 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         return (Boolean) get(35);
     }
 
+    /**
+     * Setter for <code>public.extension_version.removed</code>.
+     */
+    public void setRemoved(Boolean value) {
+        set(36, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.removed</code>.
+     */
+    public Boolean getRemoved() {
+        return (Boolean) get(36);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.removed_timestamp</code>.
+     */
+    public void setRemovedTimestamp(LocalDateTime value) {
+        set(37, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.removed_timestamp</code>.
+     */
+    public LocalDateTime getRemovedTimestamp() {
+        return (LocalDateTime) get(37);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.removed_by_id</code>.
+     */
+    public void setRemovedById(Long value) {
+        set(38, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.removed_by_id</code>.
+     */
+    public Long getRemovedById() {
+        return (Long) get(38);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -548,7 +590,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious, Boolean removed, LocalDateTime removedTimestamp, Long removedById) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -587,6 +629,9 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setSemverBuildMetadata(semverBuildMetadata);
         setUniversalTargetPlatform(universalTargetPlatform);
         setPotentiallyMalicious(potentiallyMalicious);
+        setRemoved(removed);
+        setRemovedTimestamp(removedTimestamp);
+        setRemovedById(removedById);
         resetChangedOnNotNull();
     }
 }

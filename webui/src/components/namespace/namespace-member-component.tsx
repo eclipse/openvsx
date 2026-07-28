@@ -13,7 +13,7 @@ import { Box, Typography, Avatar, Select, MenuItem, Button, SelectChangeEvent } 
 import { NamespaceMembership, MembershipRole, Namespace, UserData } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 
-export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = props => {
+export const NamespaceMember: FunctionComponent<NamespaceMemberProps> = props => {
     const equalUser = (user1: UserData | undefined, user2: UserData | undefined) => {
         return user1?.loginName === user2?.loginName && user1?.provider === user2?.provider;
     };
@@ -85,7 +85,7 @@ export const UserNamespaceMember: FunctionComponent<UserNamespaceMemberProps> = 
     );
 };
 
-export interface UserNamespaceMemberProps {
+export interface NamespaceMemberProps {
     namespace: Namespace;
     member: NamespaceMembership;
     fixSelf: boolean;

@@ -23,11 +23,16 @@ export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogP
     const { handleError } = useContext(MainContext);
     const [working, setWorking] = useState(false);
 
+    const isPurge = (props.mode ?? 'delete') === 'purge';
+
     const handleRemove = async () => {
         try {
             setWorking(true);
+            // Delete (soft) only applies to versions still present; purge can also target already-removed ones.
             const targets: VersionDeleteTarget[] = props.versions.flatMap(v =>
-                v.targetPlatforms.map(({ targetPlatform }) => ({ version: v.version, targetPlatform }))
+                v.targetPlatforms
+                    .filter(tp => isPurge || !tp.removed)
+                    .map(({ targetPlatform }) => ({ version: v.version, targetPlatform }))
             );
             await props.onRemove(targets);
             props.onDeleted();
@@ -52,12 +57,20 @@ export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogP
 
     return (
         <Dialog open={props.open} onClose={props.onClose} maxWidth='xs' fullWidth>
-            <DialogTitle>Delete all versions of {props.extension.displayName ?? props.extension.name}?</DialogTitle>
+            <DialogTitle>
+                {isPurge ? 'Purge' : 'Delete'} all versions of {props.extension.displayName ?? props.extension.name}?
+            </DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    This will permanently remove {props.versions.length} version
-                    {props.versions.length === 1 ? '' : 's'} of this extension across all target platforms. This action
-                    cannot be undone.
+                    {isPurge
+                        ? `This permanently removes ${props.versions.length} version` +
+                          `${props.versions.length === 1 ? '' : 's'} of this extension from the database and storage ` +
+                          'across all target platforms, freeing the version numbers so they can be published again. ' +
+                          'This cannot be undone.'
+                        : `This removes ${props.versions.length} version` +
+                          `${props.versions.length === 1 ? '' : 's'} of this extension across all target platforms and ` +
+                          'deletes their files. Extension versions are immutable, so removed versions stay ' +
+                          'permanently reserved and can never be republished. This cannot be undone.'}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -65,7 +78,7 @@ export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogP
                     Cancel
                 </Button>
                 <ButtonWithProgress sx={{ ml: 1 }} color='error' working={working} onClick={handleRemove}>
-                    Delete All Versions
+                    {isPurge ? 'Purge All Versions' : 'Delete All Versions'}
                 </ButtonWithProgress>
             </DialogActions>
         </Dialog>
@@ -79,4 +92,6 @@ export interface DeleteAllVersionsDialogProps {
     versions: VersionTargetPlatforms[];
     onRemove: (targets: VersionDeleteTarget[]) => Promise<unknown>;
     onDeleted: () => void;
+    // 'delete' (default) soft-deletes; 'purge' permanently removes (admin only).
+    mode?: 'delete' | 'purge';
 }

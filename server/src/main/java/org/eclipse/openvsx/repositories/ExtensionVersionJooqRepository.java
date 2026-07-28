@@ -16,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jooq.*;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +53,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -408,6 +408,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -541,6 +542,14 @@ public class ExtensionVersionJooqRepository {
         extVersion
                 .setPotentiallyMalicious(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS)));
 
+        // The `removed` column is only selected by queries that may include non-active versions; when it
+        // is present, carry it through so callers observe the correct tombstone state. (Active versions
+        // are never removed, so leaving it false for active-only queries is correct.)
+        var removedField = extensionVersionMapper.map(EXTENSION_VERSION.REMOVED);
+        if (row.field(removedField) != null) {
+            extVersion.setRemoved(row.get(removedField));
+        }
+
         if (extension == null) {
             var namespace = new Namespace();
             namespace.setId(row.get(NAMESPACE.ID));
@@ -573,6 +582,10 @@ public class ExtensionVersionJooqRepository {
                 .orderBy(
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc());
+        var targetPlatformsRemoved = DSL.arrayAgg(EXTENSION_VERSION.REMOVED)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc());
 
         return dsl.select(
                 EXTENSION_VERSION.SEMVER_MAJOR,
@@ -581,7 +594,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                 EXTENSION_VERSION.VERSION,
                 targetPlatforms,
-                targetPlatformsActive)
+                targetPlatformsActive,
+                targetPlatformsRemoved)
                 .from(EXTENSION_VERSION)
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
                 .groupBy(
@@ -601,7 +615,8 @@ public class ExtensionVersionJooqRepository {
                         row -> toVersionTargetPlatformsJson(
                                 row.get(EXTENSION_VERSION.VERSION),
                                 row.get(targetPlatforms),
-                                row.get(targetPlatformsActive)));
+                                row.get(targetPlatformsActive),
+                                row.get(targetPlatformsRemoved)));
     }
 
     public List<VersionTargetPlatformsJson> findTargetPlatformsGroupedByVersion(Extension extension, UserData user) {
@@ -613,6 +628,10 @@ public class ExtensionVersionJooqRepository {
                 .orderBy(
                         EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
                         EXTENSION_VERSION.TARGET_PLATFORM.asc());
+        var targetPlatformsRemoved = DSL.arrayAgg(EXTENSION_VERSION.REMOVED)
+                .orderBy(
+                        EXTENSION_VERSION.UNIVERSAL_TARGET_PLATFORM.desc(),
+                        EXTENSION_VERSION.TARGET_PLATFORM.asc());
 
         return dsl.select(
                 EXTENSION_VERSION.SEMVER_MAJOR,
@@ -621,7 +640,8 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.SEMVER_IS_PRE_RELEASE,
                 EXTENSION_VERSION.VERSION,
                 targetPlatforms,
-                targetPlatformsActive)
+                targetPlatformsActive,
+                targetPlatformsRemoved)
                 .from(EXTENSION_VERSION)
                 .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
@@ -643,17 +663,23 @@ public class ExtensionVersionJooqRepository {
                         row -> toVersionTargetPlatformsJson(
                                 row.get(EXTENSION_VERSION.VERSION),
                                 row.get(targetPlatforms),
-                                row.get(targetPlatformsActive)));
+                                row.get(targetPlatformsActive),
+                                row.get(targetPlatformsRemoved)));
     }
 
     private VersionTargetPlatformsJson toVersionTargetPlatformsJson(
             String version,
             String[] targetPlatforms,
-            Boolean[] active
+            Boolean[] active,
+            Boolean[] removed
     ) {
         var platforms = new ArrayList<TargetPlatformActiveJson>(targetPlatforms.length);
         for (int i = 0; i < targetPlatforms.length; i++) {
-            platforms.add(new TargetPlatformActiveJson(targetPlatforms[i], active[i]));
+            platforms.add(
+                    new TargetPlatformActiveJson(
+                            targetPlatforms[i],
+                            Boolean.TRUE.equals(active[i]),
+                            Boolean.TRUE.equals(removed[i])));
         }
 
         return new VersionTargetPlatformsJson(version, platforms);
@@ -668,7 +694,11 @@ public class ExtensionVersionJooqRepository {
         query.addFrom(EXTENSION_VERSION);
         query.addConditions(
                 EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()),
-                EXTENSION_VERSION.VERSION.eq(version));
+                EXTENSION_VERSION.VERSION.eq(version),
+                // Only active versions may be offered for download. A soft-deleted (removed) version is always
+                // inactive and has had its files stripped from storage, so it must never appear in the public
+                // download URL map (this also avoids spurious "Could not find download" warnings for tombstones).
+                EXTENSION_VERSION.ACTIVE.eq(true));
         if (targetPlatform != null) {
             query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
@@ -738,6 +768,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -807,6 +838,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -881,6 +913,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -924,6 +957,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DEPRECATED,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
+                latest.field(EXTENSION_VERSION.REMOVED),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
                 latest.field(EXTENSION_VERSION.PREVIEW),
@@ -1046,6 +1080,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -1092,6 +1127,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOADABLE,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
+                latest.field(EXTENSION_VERSION.REMOVED),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
                 latest.field(EXTENSION_VERSION.PREVIEW),
@@ -1152,6 +1188,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -1198,6 +1235,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION.DOWNLOADABLE,
                 latest.field(EXTENSION_VERSION.ID),
                 latest.field(EXTENSION_VERSION.POTENTIALLY_MALICIOUS),
+                latest.field(EXTENSION_VERSION.REMOVED),
                 latest.field(EXTENSION_VERSION.VERSION),
                 latest.field(EXTENSION_VERSION.TARGET_PLATFORM),
                 latest.field(EXTENSION_VERSION.PREVIEW),
@@ -1294,6 +1332,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -1425,6 +1464,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
                 EXTENSION_VERSION.TARGET_PLATFORM,
                 EXTENSION_VERSION.PREVIEW,
                 EXTENSION_VERSION.PRE_RELEASE,
@@ -1499,7 +1539,7 @@ public class ExtensionVersionJooqRepository {
                         .and(EXTENSION_VERSION.PRE_RELEASE.eq(!extVersion.isPreRelease())));
     }
 
-    public Integer count(String namespaceName, String extensionName) {
+    public Integer countVersions(String namespaceName, String extensionName) {
         return dsl.select(DSL.count().as("count"))
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION)
@@ -1511,14 +1551,13 @@ public class ExtensionVersionJooqRepository {
                 .fetchOne("count", Integer.class);
     }
 
-    public boolean isDeleteAllVersions(
-            @Nullable UserData user,
+    public boolean isDeleteAllActiveVersions(
             String namespaceName,
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) {
         if (targetVersions.length == 0) {
-            return true;
+            return false;
         }
 
         var all = dsl.select(DSL.count(EXTENSION_VERSION.ID).as("all"))
@@ -1527,6 +1566,7 @@ public class ExtensionVersionJooqRepository {
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
                 .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetchOne("all", Integer.class);
 
         var rows = Arrays.stream(targetVersions).map((tv) -> DSL.row(tv.version(), tv.targetPlatform()))
@@ -1541,18 +1581,10 @@ public class ExtensionVersionJooqRepository {
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
 
-        if (user != null) {
-            actualSelect = actualSelect.join(PERSONAL_ACCESS_TOKEN)
-                    .on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        }
-
         var condition = actualSelect
                 .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
-                .and(EXTENSION.NAME.equalIgnoreCase(extensionName));
-
-        if (user != null) {
-            condition = condition.and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
-        }
+                .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
+                .and(EXTENSION_VERSION.ACTIVE.eq(true));
 
         var actual = condition.fetchOne("actual", Integer.class);
 

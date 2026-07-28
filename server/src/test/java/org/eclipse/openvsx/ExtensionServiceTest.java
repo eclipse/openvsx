@@ -137,6 +137,32 @@ class ExtensionServiceTest {
         assertThat(extVersion.isActive()).isTrue();
     }
 
+    @Test
+    void shouldNotReactivateRemovedVersions() {
+        var user = mockUser();
+        var ext = mockExtension();
+
+        // A soft-deleted (removed) version is a permanent tombstone: even though it is inactive (and would
+        // otherwise be a reactivation candidate), it must never be brought back to life.
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion("1.1.0");
+        extVersion.setTargetPlatform("linux");
+        extVersion.setActive(false);
+        extVersion.setRemoved(true);
+        extVersion.setExtension(ext);
+        ext.getVersions().add(extVersion);
+
+        Mockito.when(repositories.findVersionsByUser(user, false)).thenReturn(Streamable.of(extVersion));
+
+        svc.reactivateExtensions(user);
+
+        assertThat(extVersion.isActive()).isFalse();
+        assertThat(ext.isActive()).isFalse();
+        // A tombstone is rejected up front, so its scan state is never even consulted.
+        Mockito.verify(repositories, Mockito.never()).findLatestExtensionScan(Mockito.any());
+    }
+
     // ---------- UTILITY ----------//
 
     private Extension mockExtension() {

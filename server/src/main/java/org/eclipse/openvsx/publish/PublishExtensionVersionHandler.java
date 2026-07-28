@@ -190,7 +190,15 @@ public class PublishExtensionVersionHandler {
                         extVersion.getTargetPlatform(),
                         extVersion.getVersion());
                 var message = "Extension " + extVersionId + " is already published";
-                message += existingVersion.isActive() ? "." : ", but currently isn't active and therefore not visible.";
+                if (existingVersion.isRemoved()) {
+                    message += " and was removed. Extension versions are immutable, so this version's identity"
+                            + " stays permanently reserved and cannot be republished."
+                            + " Ask an administrator to purge it if it must be republished.";
+                } else {
+                    message += existingVersion.isActive()
+                            ? "."
+                            : ", but currently isn't active and therefore not visible.";
+                }
                 throw new ErrorResultException(message);
             }
         }

@@ -33,8 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-@ActiveProfiles({ "test", "test_db", "test_search" })
-class IntegrationTest {
+@ActiveProfiles({ "test", "test_search" })
+class IntegrationTest extends AbstractPostgresContainerTest {
 
     protected final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
 

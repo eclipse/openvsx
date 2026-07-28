@@ -244,8 +244,13 @@ public class DataMirrorService {
     }
 
     public void deleteExtensionVersion(ExtensionVersion extVersion, UserData user) {
+        // The mirror must not keep tombstones: versions dropped upstream are purged so the mirror can
+        // re-track upstream state (and re-publish a version that later reappears upstream).
+        // Purge by coordinates: the version was collected in a previous transaction and is detached here,
+        // so it has to be locked and re-read inside the purge transaction. This also removes the extension
+        // itself once its last version is gone.
         var extension = extVersion.getExtension();
-        admin.deleteExtensionNoWait(
+        extensions.purgeExtensionNoWait(
                 user,
                 extension.getNamespace().getName(),
                 extension.getName(),

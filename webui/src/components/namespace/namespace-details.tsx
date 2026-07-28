@@ -42,8 +42,8 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import CloseIcon from '@mui/icons-material/Close';
 import { MainContext } from '../../context';
-import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { Namespace, NamespaceDetails, isError } from '../../extension-registry-types';
+import { DelayedLoadIndicator } from '../delayed-load-indicator';
+import { Namespace, NamespaceDetails as NamespaceDetailsData, isError } from '../../extension-registry-types';
 import Dropzone from 'react-dropzone';
 import AvatarEditor, { Position, type AvatarEditorRef } from 'react-avatar-editor';
 import _ from 'lodash';
@@ -86,7 +86,7 @@ const GridIconItem = styled(Grid)({
     alignItems: 'center'
 });
 
-export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> = props => {
+export const NamespaceDetails: FunctionComponent<NamespaceDetailsProps> = props => {
     const INPUT_DISPLAY_NAME = 'display-name';
     const INPUT_DESCRIPTION = 'description';
     const INPUT_WEBSITE = 'website';
@@ -101,8 +101,8 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     const editor = useRef<AvatarEditorRef>(null);
 
     const context = useContext(MainContext);
-    const [currentDetails, setCurrentDetails] = useState<NamespaceDetails>();
-    const [newDetails, setNewDetails] = useState<NamespaceDetails>();
+    const [currentDetails, setCurrentDetails] = useState<NamespaceDetailsData>();
+    const [newDetails, setNewDetails] = useState<NamespaceDetailsData>();
     const [detailsUpdated, setDetailsUpdated] = useState<boolean>(false);
     const [bannerNamespaceName, setBannerNamespaceName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
@@ -186,7 +186,7 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
         }
     };
 
-    const copy = (arg: NamespaceDetails): NamespaceDetails => {
+    const copy = (arg: NamespaceDetailsData): NamespaceDetailsData => {
         return JSON.parse(JSON.stringify(arg));
     };
 
@@ -700,6 +700,6 @@ export const UserNamespaceDetails: FunctionComponent<UserNamespaceDetailsProps> 
     );
 };
 
-export interface UserNamespaceDetailsProps {
+export interface NamespaceDetailsProps {
     namespace: Namespace;
 }
