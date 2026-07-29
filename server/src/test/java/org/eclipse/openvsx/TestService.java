@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 
 @Component
@@ -37,6 +38,7 @@ public class TestService {
         token.setActive(true);
         token.setUser(user);
         token.setValue("test_token");
+        token.setType(PersonalAccessTokenType.PAT);
         entityManager.persist(token);
     }
 

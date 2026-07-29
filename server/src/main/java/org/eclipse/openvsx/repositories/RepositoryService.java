@@ -82,7 +82,7 @@ public class RepositoryService {
     private final ExtensionReviewRepository extensionReviewRepo;
     private final UserDataRepository userDataRepo;
     private final NamespaceMembershipRepository membershipRepo;
-    private final PersonalAccessTokenRepository tokenRepo;
+    private final PersonalAccessTokenRepository personalAccessTokenRepo;
     private final PersistedLogRepository persistedLogRepo;
     private final DownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
@@ -120,7 +120,7 @@ public class RepositoryService {
             ExtensionReviewRepository extensionReviewRepo,
             UserDataRepository userDataRepo,
             NamespaceMembershipRepository membershipRepo,
-            PersonalAccessTokenRepository tokenRepo,
+            PersonalAccessTokenRepository personalAccessTokenRepo,
             PersistedLogRepository persistedLogRepo,
             DownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
@@ -157,7 +157,7 @@ public class RepositoryService {
         this.extensionReviewRepo = extensionReviewRepo;
         this.userDataRepo = userDataRepo;
         this.membershipRepo = membershipRepo;
-        this.tokenRepo = tokenRepo;
+        this.personalAccessTokenRepo = personalAccessTokenRepo;
         this.persistedLogRepo = persistedLogRepo;
         this.downloadCountRepo = downloadCountRepo;
         this.extensionJooqRepo = extensionJooqRepo;
@@ -491,36 +491,56 @@ public class RepositoryService {
         return membershipJooqRepo.findByNamespaceName(namespaceName);
     }
 
-    public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
-        return tokenRepo.findByUser(user);
+    public Streamable<PersonalAccessToken> findPersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.findByUser(user);
     }
 
-    public Streamable<PersonalAccessToken> findAllAccessTokens() {
-        return tokenRepo.findAll();
+    public Streamable<PersonalAccessToken> findAllPersonalAccessTokens() {
+        return personalAccessTokenRepo.findAll();
     }
 
-    public Streamable<PersonalAccessToken> findActiveAccessTokens(UserData user) {
-        return tokenRepo.findByUserAndActiveTrue(user);
+    public Streamable<PersonalAccessToken> findActivePersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.findByUserAndActiveTrue(user);
     }
 
-    public long countActiveAccessTokens(UserData user) {
-        return tokenRepo.countByUserAndActiveTrue(user);
+    public long countActivePersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.countByUserAndActiveTrue(user);
     }
 
-    public PersonalAccessToken findAccessToken(String value) {
-        return tokenRepo.findByValue(value);
+    public PersonalAccessToken findPersonalAccessToken(String value) {
+        return personalAccessTokenRepo.findByValue(value);
     }
 
-    public PersonalAccessToken findAccessToken(long id) {
-        return tokenRepo.findById(id);
+    public PersonalAccessToken findPersonalAccessToken(long id) {
+        return personalAccessTokenRepo.findById(id);
     }
 
-    public List<PersonalAccessToken> findExpiringAccessTokensWithoutNotification(
+    public List<PersonalAccessToken> findExpiringPersonalAccessTokensWithoutNotification(
             LocalDateTime expirationTime,
             Pageable pageable
     ) {
-        return tokenRepo
+        return personalAccessTokenRepo
                 .findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(expirationTime, pageable);
+    }
+
+    public int deactivatePersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.updateActiveSetFalse(user);
+    }
+
+    public List<PersonalAccessToken> expirePersonalAccessTokens(LocalDateTime timestamp) {
+        return personalAccessTokenRepo.expireAccessTokens(timestamp);
+    }
+
+    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp) {
+        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
+    }
+
+    public boolean hasPersonalAccessToken(String value) {
+        return personalAccessTokenRepo.findByValue(value) != null;
+    }
+
+    public PersonalAccessToken findPersonalAccessToken(UserData user, String description) {
+        return personalAccessTokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
     }
 
     public Streamable<PersistedLog> findAllPersistedLogs() {
@@ -827,18 +847,6 @@ public class RepositoryService {
         signatureKeyPairRepo.updateActiveSetFalse();
     }
 
-    public int deactivateAccessTokens(UserData user) {
-        return tokenRepo.updateActiveSetFalse(user);
-    }
-
-    public List<PersonalAccessToken> expireAccessTokens(LocalDateTime timestamp) {
-        return tokenRepo.expireAccessTokens(timestamp);
-    }
-
-    public int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp) {
-        return tokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
-    }
-
     public List<String> findActiveExtensionNames(Namespace namespace) {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }
@@ -867,10 +875,6 @@ public class RepositoryService {
         return extensionReviewJooqRepo.hasActiveReview(extension, user);
     }
 
-    public boolean hasAccessToken(String value) {
-        return tokenRepo.findByValue(value) != null;
-    }
-
     public boolean canPublishInNamespace(UserData user, Namespace namespace) {
         return membershipJooqRepo.canPublish(user, namespace);
     }
@@ -886,10 +890,6 @@ public class RepositoryService {
 
     public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         return extensionJooqRepo.findFirstUnresolvedDependency(dependencies);
-    }
-
-    public PersonalAccessToken findAccessToken(UserData user, String description) {
-        return tokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
     }
 
     public NamespaceMembership findFirstMembership(String namespaceName) {

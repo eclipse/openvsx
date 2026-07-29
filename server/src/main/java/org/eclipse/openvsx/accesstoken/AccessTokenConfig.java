@@ -44,7 +44,7 @@ public class AccessTokenConfig {
     private Duration expiration;
 
     /**
-     * The duration before the expiration of an access token
+     * The duration before the expiration of a personal access token
      * to send out a notification email to users.
      * <p>
      * Property: {@code ovsx.access-token.notification}
@@ -54,7 +54,7 @@ public class AccessTokenConfig {
     private Duration notification;
 
     /**
-     * Whether an email shall be sent when a token has expired.
+     * Whether an email shall be sent when a personal access token has expired.
      * <p>
      * Property: {@code ovsx.access-token.send-expired-mail}
      * Default: {@code true}
@@ -63,7 +63,7 @@ public class AccessTokenConfig {
     private boolean sendExpiredMail;
 
     /**
-     * The maximum number of expiring token notifications to handle
+     * The maximum number of expiring personal access token notifications to handle
      * within one job execution.
      * <p>
      * Property: {@code ovsx.access-token.max-token-notifications}
@@ -74,7 +74,7 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to disable expired
-     * access tokens.
+     * personal access tokens.
      * <p>
      * Property: {@code ovsx.access-token.expiration-schedule}
      * Default: every 15 min
@@ -84,7 +84,7 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to send out notifications
-     * for soon to be expired access tokens.
+     * for soon to be expired personal access tokens.
      * <p>
      * Property: {@code ovsx.access-token.notification-schedule}
      * Default: every 15 min

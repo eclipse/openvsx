@@ -51,6 +51,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
+import org.eclipse.openvsx.accesstoken.PersonalAccessTokens;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -2694,7 +2695,8 @@ class RegistryAPITest {
         token.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token.setValue("my_token");
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken("my_token"))
+        token.setType(PersonalAccessTokenType.PAT);
+        Mockito.when(repositories.findPersonalAccessToken("my_token"))
                 .thenReturn(token);
         return token;
     }
@@ -2934,12 +2936,19 @@ class RegistryAPITest {
 
         @Bean
         AccessTokenService tokenService(
+                PersonalAccessTokens personalAccessTokens
+        ) {
+            return new AccessTokenService(personalAccessTokens);
+        }
+
+        @Bean
+        PersonalAccessTokens personalAccessTokens(
                 AccessTokenConfig config,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new PersonalAccessTokens(config, entityManager, repositories, mailService);
         }
 
         @Bean

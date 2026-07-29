@@ -19,6 +19,8 @@ import jakarta.persistence.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.util.TimeUtil;
 
+import static java.util.Objects.requireNonNull;
+
 @Entity
 @Table(name = "personal_access_token")
 public class PersonalAccessToken implements Serializable {
@@ -51,6 +53,10 @@ public class PersonalAccessToken implements Serializable {
     @Column(length = 2048)
     private String description;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PersonalAccessTokenType type;
+
     /**
      * Convert to a JSON object.
      */
@@ -69,6 +75,7 @@ public class PersonalAccessToken implements Serializable {
         }
         json.setNotified(this.isNotified());
         json.setDescription(this.getDescription());
+        json.setType(this.getType().name());
         return json;
     }
 
@@ -144,6 +151,14 @@ public class PersonalAccessToken implements Serializable {
         this.description = description;
     }
 
+    public PersonalAccessTokenType getType() {
+        return type;
+    }
+
+    public void setType(PersonalAccessTokenType type) {
+        this.type = requireNonNull(type);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -161,7 +176,8 @@ public class PersonalAccessToken implements Serializable {
                 && Objects.equals(accessedTimestamp, that.accessedTimestamp)
                 && Objects.equals(expiresTimestamp, that.expiresTimestamp)
                 && Objects.equals(notified, that.notified)
-                && Objects.equals(description, that.description);
+                && Objects.equals(description, that.description)
+                && Objects.equals(type, that.type);
     }
 
     @Override
@@ -175,6 +191,7 @@ public class PersonalAccessToken implements Serializable {
                 accessedTimestamp,
                 expiresTimestamp,
                 notified,
-                description);
+                description,
+                type);
     }
 }

@@ -28,13 +28,13 @@ public class NotifyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final SettingsService settings;
     private final AccessTokenConfig config;
-    private final AccessTokenService tokens;
+    private final PersonalAccessTokens tokens;
     private final RepositoryService repositories;
 
     public NotifyPersonalAccessTokenExpirationHandler(
             SettingsService settings,
             AccessTokenConfig config,
-            AccessTokenService tokens,
+            PersonalAccessTokens tokens,
             RepositoryService repositories
     ) {
         this.settings = settings;
@@ -53,7 +53,8 @@ public class NotifyPersonalAccessTokenExpirationHandler implements JobRequestHan
         if (config.isTokenExpiryNotificationEnabled()) {
             var expireBefore = TimeUtil.getCurrentUTC().plus(config.getNotification());
             var page = PageRequest.of(0, config.getMaxTokenNotifications());
-            var expiringAccessTokens = repositories.findExpiringAccessTokensWithoutNotification(expireBefore, page);
+            var expiringAccessTokens = repositories
+                    .findExpiringPersonalAccessTokensWithoutNotification(expireBefore, page);
             for (var token : expiringAccessTokens) {
                 tokens.scheduleTokenExpirationNotification(token);
             }

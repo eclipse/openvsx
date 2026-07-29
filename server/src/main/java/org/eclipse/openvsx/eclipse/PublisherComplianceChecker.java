@@ -64,7 +64,7 @@ public class PublisherComplianceChecker {
             return;
         }
 
-        var publisherTokens = repositories.findAllAccessTokens().stream()
+        var publisherTokens = repositories.findAllPersonalAccessTokens().stream()
                 .collect(Collectors.groupingBy(PersonalAccessToken::getUser));
         publisherTokens.keySet().forEach(user -> {
             var accessTokens = publisherTokens.get(user);

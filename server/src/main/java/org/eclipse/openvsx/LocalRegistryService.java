@@ -779,12 +779,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = tokens.createAccessToken(user, "One time use publish token");
-        try {
-            return publish(content, token.getValue());
-        } finally {
-            tokens.deactivateAccessToken(user, token.getId());
-        }
+        return publish(content, tokens.createAccessToken(user, "One time use publish token", true).getValue());
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {

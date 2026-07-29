@@ -115,6 +115,7 @@ class PublishExtensionVersionHandlerTest {
             var namespace = buildNamespace("publisher");
             var user = new UserData();
             var token = new PersonalAccessToken();
+            token.setType(PersonalAccessTokenType.PAT);
             token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
@@ -146,6 +147,7 @@ class PublishExtensionVersionHandlerTest {
             var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
+            token.setType(PersonalAccessTokenType.PAT);
 
             when(repositories.findNamespace("unknown")).thenReturn(null);
 
@@ -171,6 +173,7 @@ class PublishExtensionVersionHandlerTest {
             var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
+            token.setType(PersonalAccessTokenType.PAT);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -202,6 +205,7 @@ class PublishExtensionVersionHandlerTest {
             var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
+            token.setType(PersonalAccessTokenType.PAT);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -224,6 +228,7 @@ class PublishExtensionVersionHandlerTest {
             var user = new UserData();
             var token = new PersonalAccessToken();
             token.setUser(user);
+            token.setType(PersonalAccessTokenType.PAT);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);

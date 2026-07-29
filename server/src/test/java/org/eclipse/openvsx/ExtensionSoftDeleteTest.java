@@ -29,6 +29,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -91,6 +92,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
             token.setValue(OWNER_LOGIN + "_token");
             token.setCreatedTimestamp(LocalDateTime.now());
             token.setActive(true);
+            token.setType(PersonalAccessTokenType.PAT);
             em.persist(token);
 
             var namespace = new Namespace();

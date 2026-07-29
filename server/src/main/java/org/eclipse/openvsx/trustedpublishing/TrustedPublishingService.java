@@ -235,7 +235,7 @@ public class TrustedPublishingService {
         return tokens.createAccessToken(
                 match.getCreatedBy(),
                 description,
-                TimeUtil.getCurrentUTC().plus(config.getTokenExpiry()));
+                true);
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

@@ -506,6 +506,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         token.setDescription("test token");
         token.setCreatedTimestamp(LocalDateTime.now());
         token.setAccessedTimestamp(LocalDateTime.now());
+        token.setType(PersonalAccessTokenType.PAT);
         entityManager.persist(token);
 
         var extVersion = new ExtensionVersion();
