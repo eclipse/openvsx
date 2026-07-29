@@ -44,6 +44,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -295,7 +296,7 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
                 .thenReturn(new ExtensionProcessor.PackageMetadata(NAMESPACE, EXTENSION, VERSION, "Race Test"));
         // Like the real processor, hand out a fresh instance per call: a retried attempt must not
         // reuse the entity of the attempt that was rolled back.
-        when(processor.getMetadata()).thenAnswer(invocation -> {
+        when(processor.getMetadata(anyInt())).thenAnswer(invocation -> {
             var extVersion = new ExtensionVersion();
             extVersion.setVersion(VERSION);
             extVersion.setTargetPlatform(targetPlatform);

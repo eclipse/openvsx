@@ -18,6 +18,8 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import org.eclipse.openvsx.ExtensionProcessor;
+
 @Configuration
 @ConfigurationProperties("ovsx.publishing")
 public class PublishingConfig {
@@ -33,6 +35,15 @@ public class PublishingConfig {
      * See: <a href="https://github.com/eclipse-openvsx/openvsx/issues/2">Block SVG Images</a>
      */
     private List<String> unsupportedIconFormats = List.of("svg");
+
+    /**
+     * Maximum number of tags to extract from a package and store with an extension version. Tags
+     * beyond that limit are dropped, a negative value keeps all of them.
+     * <p>
+     * See: <a href="https://github.com/eclipse-openvsx/openvsx/issues/1968">Limit the number of
+     * processed tags per extension</a>
+     */
+    private int maxTags = ExtensionProcessor.DEFAULT_MAX_TAGS;
 
     public long getMaxContentSize() {
         return maxContentSize;
@@ -56,5 +67,13 @@ public class PublishingConfig {
 
     public void setUnsupportedIconFormats(List<String> unsupportedIconFormats) {
         this.unsupportedIconFormats = unsupportedIconFormats;
+    }
+
+    public int getMaxTags() {
+        return maxTags;
+    }
+
+    public void setMaxTags(int maxTags) {
+        this.maxTags = maxTags;
     }
 }
