@@ -7,6 +7,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 #### Added
 
 - Add an encrypted filestore as fallback to the system keychain if it cant be accessed ([#1950](https://github.com/eclipse/openvsx/pull/1950))
+- Add `--allow-missing-repository` option to the `publish` command, passed on to `vsce` to package an extension whose `package.json` has no `repository` field without asking for confirmation ([#1735](https://github.com/eclipse-openvsx/openvsx/issues/1735))
 
 #### Changed
 
