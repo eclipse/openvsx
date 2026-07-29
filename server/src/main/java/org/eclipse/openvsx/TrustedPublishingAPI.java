@@ -25,13 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TrustedPublisherJson;
 import org.eclipse.openvsx.json.TrustedPublisherListJson;
 import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
-import org.eclipse.openvsx.json.TrustedPublisherProviderListJson;
+import org.eclipse.openvsx.json.TrustedPublisherStatusJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingService;
@@ -42,10 +43,16 @@ import org.eclipse.openvsx.util.NotFoundException;
 public class TrustedPublishingAPI {
 
     private final UserService users;
+    private final EclipseService eclipseService;
     private final TrustedPublishingService trustedPublishing;
 
-    public TrustedPublishingAPI(UserService users, TrustedPublishingService trustedPublishing) {
+    public TrustedPublishingAPI(
+            UserService users,
+            EclipseService eclipseService,
+            TrustedPublishingService trustedPublishing
+    ) {
         this.users = users;
+        this.eclipseService = eclipseService;
         this.trustedPublishing = trustedPublishing;
     }
 
@@ -54,7 +61,7 @@ public class TrustedPublishingAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @MutatingOperation
-    public ResponseEntity<TrustedPublisherJson> registerTrustedPublisher(
+    public ResponseEntity<TrustedPublisherJson> createTrustedPublisher(
             @PathVariable String namespace,
             @RequestBody TrustedPublisherJson request
     ) {
@@ -62,6 +69,7 @@ public class TrustedPublishingAPI {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+        eclipseService.checkPublisherAgreement(user);
         if (!StringUtils.hasText(request.getProvider())
                 || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
                 || request.getRegistration() == null || request.getRegistration().isEmpty()) {
@@ -135,40 +143,6 @@ public class TrustedPublishingAPI {
         }
     }
 
-    @GetMapping(
-        path = "/user/namespace/{namespace}/trusted-publishing/providers",
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<TrustedPublisherProviderListJson> getTrustedPublisherProviders(
-            @PathVariable String namespace
-    ) {
-        var user = users.findLoggedInUser();
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        try {
-            var json = new TrustedPublisherProviderListJson();
-            json.setTrustedPublisherProviders(
-                    trustedPublishing.getTrustedPublisherProviders(user, namespace).values().stream()
-                            .map(p -> {
-                                var providerJson = new TrustedPublisherProviderJson();
-                                providerJson.setId(p.getProviderId());
-                                providerJson.setName(p.getProviderName());
-                                providerJson.setUrl(p.getProviderUrl());
-                                providerJson.setRegistrationInputs(p.getRegistrationInputs());
-                                return providerJson;
-                            })
-                            .toList());
-            return ResponseEntity.ok(json);
-        } catch (NotFoundException exc) {
-            var json = TrustedPublisherProviderListJson.error("Namespace not found: " + namespace);
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
-        } catch (ErrorResultException exc) {
-            return exc.toResponseEntity(TrustedPublisherProviderListJson.class);
-        }
-    }
-
     /**
      * Exchanges a valid OIDC ID token, issued by a trusted publishing provider and matching a registered
      * trusted publisher, for a short-lived access token to publish with.
@@ -192,6 +166,47 @@ public class TrustedPublishingAPI {
             return new ResponseEntity<>(json, HttpStatus.CREATED);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(AccessTokenJson.class);
+        }
+    }
+
+    /**
+     * Queries TP status. Shown to logged-in users.
+     */
+    @GetMapping(
+        path = "/api/-/trusted-publishing/status",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<TrustedPublisherStatusJson> getTrustedPublishingStatus() {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            var json = new TrustedPublisherStatusJson();
+            if (trustedPublishing.isEnabled()) {
+                json.setEnabled(true);
+                json.setAllowed(eclipseService.hasPublisherAgreement(user));
+                if (json.isAllowed()) {
+                    json.setTrustedPublisherProviders(
+                            trustedPublishing.getTrustedPublisherProviders().values().stream()
+                                    .map(p -> {
+                                        var providerJson = new TrustedPublisherProviderJson();
+                                        providerJson.setId(p.getProviderId());
+                                        providerJson.setName(p.getProviderName());
+                                        providerJson.setUrl(p.getProviderUrl());
+                                        providerJson.setRegistrationInputs(p.getRegistrationInputs());
+                                        return providerJson;
+                                    })
+                                    .toList());
+                }
+            } else {
+                json.setEnabled(false);
+            }
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(TrustedPublisherStatusJson.class);
         }
     }
 }

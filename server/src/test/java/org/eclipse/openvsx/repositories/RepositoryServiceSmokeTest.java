@@ -545,6 +545,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
                 () -> repositories.findTrustedPublishers(namespace),
+                () -> repositories.findTrustedPublishers(namespace, "extensionName"),
                 () -> repositories.findTrustedPublisher(1L),
                 () -> repositories.deleteTrustedPublisher(trustedPublisher),
                 () -> repositories.deleteTier(tier),

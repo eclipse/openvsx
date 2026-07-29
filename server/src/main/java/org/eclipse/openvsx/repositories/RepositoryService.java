@@ -197,6 +197,10 @@ public class RepositoryService {
         return trustedPublisherRepo.findByNamespace(namespace);
     }
 
+    public Streamable<TrustedPublisher> findTrustedPublishers(Namespace namespace, String extensionName) {
+        return trustedPublisherRepo.findByNamespaceAndExtensionName(namespace, extensionName);
+    }
+
     public TrustedPublisher findTrustedPublisher(long id) {
         return trustedPublisherRepo.findById(id);
     }

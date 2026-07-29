@@ -111,16 +111,12 @@ public class TrustedPublishingService {
         }
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
 
-        Map<String, String> claims = provider.extractRequest(registration);
-
-        boolean duplicate = repositories.findTrustedPublishers(namespace).stream()
-                .anyMatch(
-                        tp -> Objects.equals(extensionName, tp.getExtensionName())
-                                && tp.getProvider().equals(provider.getProviderId())
-                                && tp.getClaims().equals(claims));
+        boolean duplicate = repositories.findTrustedPublishers(namespace, extensionName).stream().findAny().isPresent();
         if (duplicate) {
             throw new ErrorResultException("An equivalent trusted publisher is already registered.");
         }
+
+        Map<String, String> claims = provider.extractRequest(registration);
 
         TrustedPublisher publisher = new TrustedPublisher();
         publisher.setNamespace(namespace);
@@ -163,17 +159,18 @@ public class TrustedPublishingService {
     }
 
     /**
-     * Lists trusted publisher providers supported on a namespace. The user must be an owner of the namespace.
-     * For now, we do not use any of the provided information to filter providers, just enforce required conditions.
+     * Returns the enforced "audience" ({@code aud}) header of the accepted OIDC ID tokens, if service is enabled.
      */
-    public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders(
-            UserData user,
-            String namespaceName
-    ) {
-        requireNonNull(user);
-        requireNonNull(namespaceName);
+    public String getRequiredAudience() {
         ensureEnabled();
-        requireOwnedNamespace(user, namespaceName);
+        return config.getAudience();
+    }
+
+    /**
+     * Lists trusted publisher providers.
+     */
+    public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders() {
+        ensureEnabled();
         return providers;
     }
 
@@ -216,8 +213,7 @@ public class TrustedPublishingService {
             throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
         }
 
-        TrustedPublisher match = repositories.findTrustedPublishers(namespace).stream()
-                .filter(tp -> Objects.equals(extensionName, tp.getExtensionName()))
+        TrustedPublisher match = repositories.findTrustedPublishers(namespace, extensionName).stream()
                 .filter(tp -> tp.getProvider().equals(provider.getProviderId()))
                 .filter(tp -> provider.matches(tp.getClaims(), claims))
                 .findFirst()

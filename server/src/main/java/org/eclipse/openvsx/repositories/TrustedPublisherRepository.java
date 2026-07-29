@@ -22,6 +22,8 @@ public interface TrustedPublisherRepository extends Repository<TrustedPublisher,
 
     Streamable<TrustedPublisher> findByNamespace(Namespace namespace);
 
+    Streamable<TrustedPublisher> findByNamespaceAndExtensionName(Namespace namespace, String extensionName);
+
     TrustedPublisher findById(long id);
 
     void delete(TrustedPublisher trustedPublisher);
