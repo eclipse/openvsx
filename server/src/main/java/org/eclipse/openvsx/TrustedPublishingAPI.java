@@ -145,42 +145,6 @@ public class TrustedPublishingAPI {
     }
 
     /**
-     * Lists supported trusted publisher providers. Shown to the logged-in users, but otherwise no other checks
-     * performed (they are checked on registering a TP).
-     * TODO: if no need for two endpoints (ie limit TP per NS or user), we may consider removing it.
-     */
-    @GetMapping(
-        path = "/user/namespace/{namespace}/trusted-publishing/providers",
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<TrustedPublisherProviderListJson> getTrustedPublishingProviders(
-            @PathVariable String namespace
-    ) {
-        var user = users.findLoggedInUser();
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-
-        try {
-            var json = new TrustedPublisherProviderListJson();
-            json.setTrustedPublisherProviders(
-                    trustedPublishing.getTrustedPublisherProviders().values().stream()
-                            .map(p -> {
-                                var providerJson = new TrustedPublisherProviderJson();
-                                providerJson.setId(p.getProviderId());
-                                providerJson.setName(p.getProviderName());
-                                providerJson.setUrl(p.getProviderUrl());
-                                providerJson.setRegistrationInputs(p.getRegistrationInputs());
-                                return providerJson;
-                            })
-                            .toList());
-            return ResponseEntity.ok(json);
-        } catch (ErrorResultException exc) {
-            return exc.toResponseEntity(TrustedPublisherProviderListJson.class);
-        }
-    }
-
-    /**
      * Exchanges a valid OIDC ID token, issued by a trusted publishing provider and matching a registered
      * trusted publisher, for a short-lived access token to publish with.
      */
