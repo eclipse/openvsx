@@ -163,6 +163,14 @@ public class TrustedPublishingService {
     }
 
     /**
+     * Returns the enforced "audience" ({@code aud}) header of the accepted OIDC ID tokens, if service is enabled.
+     */
+    public String getRequiredAudience() {
+        ensureEnabled();
+        return config.getAudience();
+    }
+
+    /**
      * Lists trusted publisher providers.
      */
     public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders() {
