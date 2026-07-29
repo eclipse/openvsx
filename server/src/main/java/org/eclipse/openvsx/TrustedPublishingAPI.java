@@ -32,7 +32,6 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TrustedPublisherJson;
 import org.eclipse.openvsx.json.TrustedPublisherListJson;
 import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
-import org.eclipse.openvsx.json.TrustedPublisherProviderListJson;
 import org.eclipse.openvsx.json.TrustedPublisherStatusJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
