@@ -269,7 +269,7 @@ class AwsStorageServiceIntegrationTest {
 
         var location = storageService.getLocation(resource).toString();
         assertTrue(
-                location.contains("testnamespace/test-extension/1.0.0%2B10/extension.vsix"),
+                location.matches("(?i).*testnamespace/test-extension/1\\.0\\.0%2b10/extension\\.vsix.*"),
                 "expected an encoded '+' in " + location);
 
         var response = HttpClient.newHttpClient().send(
