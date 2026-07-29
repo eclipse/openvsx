@@ -12,6 +12,7 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.Nullable;
 
 @Schema(
     name = "RegistryVersion",
@@ -33,6 +34,7 @@ public class RegistryVersionJson extends ResultJson {
     private long maxExtensionSize;
 
     @Schema(description = "Audience for trusted publishing on the registry, if feature enabled.")
+    @Nullable
     private String trustedPublishingAudience;
 
     public String getVersion() {
