@@ -65,7 +65,7 @@ public class PersonalAccessTokens {
                 oneTime);
     }
 
-    protected AccessTokenJson createAccessToken(
+    private AccessTokenJson createAccessToken(
             UserData user,
             String description,
             LocalDateTime expiresTimestamp,
@@ -130,6 +130,7 @@ public class PersonalAccessTokens {
         return token;
     }
 
+    @Transactional
     public int expireAccessTokens() {
         var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
         if (config.isSendExpiredMailEnabled()) {
@@ -151,12 +152,6 @@ public class PersonalAccessTokens {
             } finally {
                 token.setNotified(true);
             }
-        }
-    }
-
-    public void scheduleTokenExpiredMail(PersonalAccessToken token) {
-        if (token.getType() == PersonalAccessTokenType.PAT) {
-            mail.scheduleAccessTokenExpiredMail(token);
         }
     }
 
