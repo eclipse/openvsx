@@ -97,6 +97,26 @@ public class EclipseService {
     }
 
     /**
+     * Check whether the given user has an active publisher agreement and returns {@code true} if user has it.
+     */
+    public boolean hasPublisherAgreement(UserData user) {
+        // Users without authentication provider have been created directly in the DB,
+        // so we skip the agreement check in this case.
+        if (!isActive() || user.getProvider() == null) {
+            return true;
+        }
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            return false;
+        }
+        var json = user.toUserJson();
+        enrichUserJsonWithPublisherAgreement(json, user);
+        var publisherAgreement = json.getPublisherAgreement();
+
+        return publisherAgreement != null && publisherAgreement.getStatus().equals("signed");
+    }
+
+    /**
      * Check whether the given user has an active publisher agreement.
      * @throws ErrorResultException if the user has no active agreement
      */

@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS public.trusted_publisher
     created_timestamp TIMESTAMP without time zone NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS trusted_publisher_namespace_idx ON public.trusted_publisher (namespace, extension_name);
+CREATE UNIQUE INDEX IF NOT EXISTS trusted_publisher_namespace_idx ON public.trusted_publisher (namespace, extension_name);
