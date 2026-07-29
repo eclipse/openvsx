@@ -33,8 +33,6 @@ public class TrustedPublisherStatusJson extends ResultJson {
 
     private boolean allowedToUser;
 
-    private String audience;
-
     private List<TrustedPublisherProviderJson> trustedPublisherProviders;
 
     public boolean isEnabled() {
@@ -51,14 +49,6 @@ public class TrustedPublisherStatusJson extends ResultJson {
 
     public void setAllowedToUser(boolean allowedToUser) {
         this.allowedToUser = allowedToUser;
-    }
-
-    public String getAudience() {
-        return audience;
-    }
-
-    public void setAudience(String audience) {
-        this.audience = audience;
     }
 
     public List<TrustedPublisherProviderJson> getTrustedPublisherProviders() {

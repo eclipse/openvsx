@@ -189,7 +189,6 @@ public class TrustedPublishingAPI {
                 json.setEnabled(true);
                 json.setAllowedToUser(eclipseService.hasPublisherAgreement(user));
                 if (json.isAllowedToUser()) {
-                    json.setAudience(trustedPublishing.getRequiredAudience());
                     json.setTrustedPublisherProviders(
                             trustedPublishing.getTrustedPublisherProviders().values().stream()
                                     .map(p -> {
