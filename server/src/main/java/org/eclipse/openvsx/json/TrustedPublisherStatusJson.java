@@ -16,6 +16,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Response body for querying TP status. This is one way, is sent to users only from server.
@@ -29,10 +30,13 @@ public class TrustedPublisherStatusJson extends ResultJson {
         return result;
     }
 
+    @Schema(description = "Indicates whether the trusted publisher feature is enabled")
     private boolean enabled;
 
-    private boolean allowedToUser;
+    @Schema(description = "Indicates whether the current user is allowed to use the trusted publisher feature")
+    private boolean allowed;
 
+    @Schema(description = "List of supported trusted publisher providers")
     private List<TrustedPublisherProviderJson> trustedPublisherProviders;
 
     public boolean isEnabled() {
@@ -43,12 +47,12 @@ public class TrustedPublisherStatusJson extends ResultJson {
         this.enabled = enabled;
     }
 
-    public boolean isAllowedToUser() {
-        return allowedToUser;
+    public boolean isAllowed() {
+        return allowed;
     }
 
-    public void setAllowedToUser(boolean allowedToUser) {
-        this.allowedToUser = allowedToUser;
+    public void setAllowed(boolean allowed) {
+        this.allowed = allowed;
     }
 
     public List<TrustedPublisherProviderJson> getTrustedPublisherProviders() {
