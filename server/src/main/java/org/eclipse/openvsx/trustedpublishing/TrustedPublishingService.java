@@ -163,17 +163,10 @@ public class TrustedPublishingService {
     }
 
     /**
-     * Lists trusted publisher providers supported on a namespace. The user must be an owner of the namespace.
-     * For now, we do not use any of the provided information to filter providers, just enforce required conditions.
+     * Lists trusted publisher providers.
      */
-    public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders(
-            UserData user,
-            String namespaceName
-    ) {
-        requireNonNull(user);
-        requireNonNull(namespaceName);
+    public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders() {
         ensureEnabled();
-        requireOwnedNamespace(user, namespaceName);
         return providers;
     }
 

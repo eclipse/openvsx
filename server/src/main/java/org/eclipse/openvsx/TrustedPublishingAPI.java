@@ -14,6 +14,7 @@ package org.eclipse.openvsx;
 
 import java.util.Objects;
 
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,10 +43,12 @@ import org.eclipse.openvsx.util.NotFoundException;
 public class TrustedPublishingAPI {
 
     private final UserService users;
+    private final EclipseService eclipseService;
     private final TrustedPublishingService trustedPublishing;
 
-    public TrustedPublishingAPI(UserService users, TrustedPublishingService trustedPublishing) {
+    public TrustedPublishingAPI(UserService users, EclipseService eclipseService, TrustedPublishingService trustedPublishing) {
         this.users = users;
+        this.eclipseService = eclipseService;
         this.trustedPublishing = trustedPublishing;
     }
 
@@ -62,6 +65,7 @@ public class TrustedPublishingAPI {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
+        eclipseService.checkPublisherAgreement(user);
         if (!StringUtils.hasText(request.getProvider())
                 || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
                 || request.getRegistration() == null || request.getRegistration().isEmpty()) {
@@ -135,6 +139,11 @@ public class TrustedPublishingAPI {
         }
     }
 
+    /**
+     * Lists supported trusted publisher providers. Shown to the logged-in users, but otherwise no other checks
+     * performed (they are checked on registering a TP). Currently, the logic is same as {@link #getTrustedPublisherProviders()}.
+     * TODO: if no need for two endpoints (ie limit TP per NS or user), we may consider removing it.
+     */
     @GetMapping(
         path = "/user/namespace/{namespace}/trusted-publishing/providers",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -150,7 +159,7 @@ public class TrustedPublishingAPI {
         try {
             var json = new TrustedPublisherProviderListJson();
             json.setTrustedPublisherProviders(
-                    trustedPublishing.getTrustedPublisherProviders(user, namespace).values().stream()
+                    trustedPublishing.getTrustedPublisherProviders().values().stream()
                             .map(p -> {
                                 var providerJson = new TrustedPublisherProviderJson();
                                 providerJson.setId(p.getProviderId());
@@ -161,9 +170,6 @@ public class TrustedPublishingAPI {
                             })
                             .toList());
             return ResponseEntity.ok(json);
-        } catch (NotFoundException exc) {
-            var json = TrustedPublisherProviderListJson.error("Namespace not found: " + namespace);
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(TrustedPublisherProviderListJson.class);
         }
@@ -192,6 +198,41 @@ public class TrustedPublishingAPI {
             return new ResponseEntity<>(json, HttpStatus.CREATED);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(AccessTokenJson.class);
+        }
+    }
+
+
+    /**
+     * Lists supported trusted publisher providers. Shown to the logged-in users, but otherwise
+     * no other checks performed (they are checked on registering a TP).
+     */
+    @GetMapping(
+            path = "/api/-/trusted-publishing/providers",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<TrustedPublisherProviderListJson> getTrustedPublisherProviders() {
+        var user = users.findLoggedInUser();
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        try {
+            var json = new TrustedPublisherProviderListJson();
+            json.setTrustedPublisherProviders(
+                    trustedPublishing.getTrustedPublisherProviders().values().stream()
+                            .map(p -> {
+                                var providerJson = new TrustedPublisherProviderJson();
+                                providerJson.setId(p.getProviderId());
+                                providerJson.setName(p.getProviderName());
+                                providerJson.setUrl(p.getProviderUrl());
+                                providerJson.setRegistrationInputs(p.getRegistrationInputs());
+                                return providerJson;
+                            })
+                            .toList());
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(TrustedPublisherProviderListJson.class);
         }
     }
 }
