@@ -17,7 +17,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createVSIX, publishVSIX } from '../../src/api';
+import { createVSIX, CreateVSIXOptions, publishVSIX } from '../../src/api';
 import { Logger } from '../../src/logger';
 
 // The credential store is never supposed to be consulted by the API, and touching the keychain of the
@@ -252,10 +252,32 @@ describe('publishVSIX', () => {
 describe('createVSIX', () => {
 
     const directories: string[] = [];
+    const environment = { ...process.env };
+
+    beforeEach(() => {
+        // Keeps vsce from blocking on its confirmation prompt when it has something to complain about,
+        // and from reporting warnings as workflow commands instead of to the console.
+        process.env['VSCE_TESTS'] = '1';
+        delete process.env['GITHUB_ACTIONS'];
+    });
 
     afterEach(() => {
+        process.env = { ...environment };
         directories.splice(0).forEach(directory => fs.rmSync(directory, { recursive: true, force: true }));
     });
+
+    /**
+     * Collects what vsce reported while packaging.
+     */
+    async function warningsWhilePackaging(options: CreateVSIXOptions): Promise<string> {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => { });
+        try {
+            await createVSIX(options);
+            return warn.mock.calls.map(call => call.join(' ')).join('\n');
+        } finally {
+            warn.mockRestore();
+        }
+    }
 
     function givenExtension(manifest: Record<string, unknown> = {}): string {
         const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ovsx-test-'));
@@ -281,6 +303,23 @@ describe('createVSIX', () => {
 
         expect(vsix).toBe(outputPath);
         expect(fs.existsSync(outputPath)).toBe(true);
+    });
+
+    it('lets vsce accept a missing repository when asked to', async () => {
+        const packagePath = givenExtension({ repository: undefined });
+
+        const warnings = await warningsWhilePackaging(
+            { packagePath, dependencies: false, allowMissingRepository: true });
+
+        expect(warnings).not.toContain("'repository' field is missing");
+    });
+
+    it('has vsce complain about a missing repository otherwise', async () => {
+        const packagePath = givenExtension({ repository: undefined });
+
+        const warnings = await warningsWhilePackaging({ packagePath, dependencies: false });
+
+        expect(warnings).toContain("'repository' field is missing");
     });
 
     it('rejects an incomplete manifest', async () => {

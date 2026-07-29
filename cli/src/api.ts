@@ -104,6 +104,7 @@ export async function createVSIX(options: CreateVSIXOptions = {}): Promise<strin
         useYarn: options.yarn,
         dependencies: options.dependencies,
         preRelease: options.preRelease,
+        allowMissingRepository: options.allowMissingRepository,
         version: options.packageVersion
     };
     await createVsceVSIX(packageOptions);
