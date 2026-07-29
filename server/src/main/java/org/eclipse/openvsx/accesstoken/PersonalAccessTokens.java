@@ -33,7 +33,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 /**
- * Service handling long-living "Personal Access Tokens".
+ * Component handling "Personal Access Tokens".
  */
 @Component
 public class PersonalAccessTokens {
@@ -120,7 +120,11 @@ public class PersonalAccessTokens {
         if (token == null || !token.isActive()) {
             return null;
         }
-        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        if (token.getType() == PersonalAccessTokenType.OTT) {
+            token.setActive(false);;
+        } else if (token.getType() == PersonalAccessTokenType.PAT) {
+            token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        }
         return token;
     }
 
@@ -128,7 +132,9 @@ public class PersonalAccessTokens {
         var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {
-                mail.scheduleAccessTokenExpiredMail(token);
+                if (token.getType() == PersonalAccessTokenType.PAT) {
+                    mail.scheduleAccessTokenExpiredMail(token);
+                }
             }
         }
         return expiredAccessTokens.size();
@@ -137,15 +143,19 @@ public class PersonalAccessTokens {
     @Transactional
     public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
         token = entityManager.merge(token);
-        try {
-            mail.scheduleAccessTokenExpiryNotification(token);
-        } finally {
-            token.setNotified(true);
+        if (token.getType() == PersonalAccessTokenType.PAT && !token.isNotified()) {
+            try {
+                mail.scheduleAccessTokenExpiryNotification(token);
+            } finally {
+                token.setNotified(true);
+            }
         }
     }
 
     public void scheduleTokenExpiredMail(PersonalAccessToken token) {
-        mail.scheduleAccessTokenExpiredMail(token);
+        if (token.getType() == PersonalAccessTokenType.PAT) {
+            mail.scheduleAccessTokenExpiredMail(token);
+        }
     }
 
     @Transactional
