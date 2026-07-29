@@ -76,15 +76,17 @@ public class PersonalAccessTokens {
         token.setValue(generateTokenValue());
         token.setActive(true);
         token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.PAT);
-        token.setExpiresTimestamp(expiresTimestamp);
         token.setDescription(description);
+        token.setExpiresTimestamp(expiresTimestamp);
+        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.PAT);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
         json.setValue(token.getValue());
-        json.setDeleteTokenUrl(
-                createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
+        if (!oneTime) {
+            json.setDeleteTokenUrl(
+                    createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
+        }
 
         return json;
     }
