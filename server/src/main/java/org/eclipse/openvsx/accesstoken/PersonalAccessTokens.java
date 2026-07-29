@@ -122,10 +122,10 @@ public class PersonalAccessTokens {
         if (token == null || !token.isActive()) {
             return null;
         }
+        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
         if (token.getType() == PersonalAccessTokenType.OTT) {
-            token.setActive(false);;
-        } else if (token.getType() == PersonalAccessTokenType.PAT) {
-            token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+            // it is OTT; pull it out immediately on first use
+            token.setActive(false);
         }
         return token;
     }
