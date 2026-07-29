@@ -10,6 +10,10 @@
 package org.eclipse.openvsx.storage;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -240,6 +244,39 @@ class AwsStorageServiceIntegrationTest {
         assertTrue(locationStr.contains(TEST_BUCKET));
         assertTrue(locationStr.contains("testnamespace/test-extension/1.0.0/extension.vsix"));
         assertTrue(locationStr.contains("X-Amz-Algorithm"));
+
+        tempFile.close();
+    }
+
+    /**
+     * A version with semver build metadata is stored under a key containing a literal {@code +}, which the
+     * presigner has to hand out percent-encoded because S3 reads a {@code +} in a URL path as a space.
+     * See <a href="https://github.com/eclipse-openvsx/openvsx/issues/1459">issue 1459</a>.
+     * <p>
+     * Note that LocalStack does not reproduce that behaviour — it resolves a literal {@code +} in the path
+     * just fine — so this test guards the encoding of the URL rather than reproducing the failure.
+     */
+    @Test
+    void testGetPresignedUrlForVersionWithPlusSign() throws Exception {
+        extVersion.setVersion("1.0.0+10");
+        var tempFile = new TempFile("test_", ".vsix");
+        Files.write(tempFile.getPath(), "test content".getBytes(), StandardOpenOption.CREATE);
+        tempFile.setResource(resource);
+        storageService.uploadFile(tempFile);
+
+        var objectKey = (String) ReflectionTestUtils.invokeMethod(storageService, "getObjectKey", resource);
+        assertEquals("testnamespace/test-extension/1.0.0+10/extension.vsix", objectKey);
+
+        var location = storageService.getLocation(resource).toString();
+        assertTrue(
+                location.contains("testnamespace/test-extension/1.0.0%2B10/extension.vsix"),
+                "expected an encoded '+' in " + location);
+
+        var response = HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create(location)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        assertEquals("test content", response.body());
 
         tempFile.close();
     }

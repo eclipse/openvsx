@@ -244,7 +244,7 @@ public class StorageUtilService implements IStorageService {
         if (storageService != null) {
             String cdnFrontUrl = cdnServiceConfig.getCdnFrontUrl(storageType);
             if (cdnFrontUrl != null) {
-                return UrlUtil.createURI(cdnFrontUrl, storageService.getObjectKey(resource));
+                return UrlUtil.createURI(cdnFrontUrl, storageService.getObjectKeyAsUrlPath(resource));
             } else {
                 return storageService.getLocation(resource);
             }
@@ -260,7 +260,7 @@ public class StorageUtilService implements IStorageService {
         if (storageService != null) {
             String cdnFrontUrl = cdnServiceConfig.getCdnFrontUrl(storageType);
             if (cdnFrontUrl != null) {
-                return UrlUtil.createURI(cdnFrontUrl, storageService.getObjectKey(namespace));
+                return UrlUtil.createURI(cdnFrontUrl, storageService.getObjectKeyAsUrlPath(namespace));
             } else {
                 return storageService.getNamespaceLogoLocation(namespace);
             }
