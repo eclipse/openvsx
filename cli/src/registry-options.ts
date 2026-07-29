@@ -8,11 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { Logger } from './logger';
+
 export interface RegistryOptions {
     /**
      * The base URL of the registry API.
      */
     registryUrl?: string;
+    /**
+     * Where to write progress messages. Defaults to the console.
+     */
+    log?: Logger;
+    /**
+     * Whether asking the user for input is allowed, e.g. for a missing access token. Defaults to
+     * `true`, except for the programmatic API in {@link publishVSIX} and {@link createVSIX}, which
+     * never prompts unless this is set explicitly.
+     */
+    interactive?: boolean;
     /**
      * Personal access token.
      */

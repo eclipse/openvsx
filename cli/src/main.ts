@@ -12,6 +12,7 @@ import * as commander from 'commander';
 import * as leven from 'leven';
 import { createNamespace } from './create-namespace';
 import { verifyPat } from './verify-pat';
+import { publishVSIX } from './api';
 import { publish } from './publish';
 import { handleError } from './util';
 import { getExtension } from './get';
@@ -74,8 +75,17 @@ module.exports = function (argv: string[]): void {
                 console.warn("Ignoring option '--packageVersion' for prepackaged extension.");
             if (extensionFile !== undefined && allowMissingRepository !== undefined)
                 console.warn("Ignoring option '--allow-missing-repository' for prepackaged extension.");
+            if (extensionFile !== undefined && preRelease !== undefined)
+                console.warn("Ignoring option '--pre-release' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion })
+            const options = { registryUrl, pat, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion, interactive: true };
+            // An extension that is packaged already is exactly what the programmatic API publishes, so
+            // use it here rather than going through the packaging path a second time. Its rejection is
+            // settled to report it like the outcome of every other package.
+            const command = extensionFile !== undefined
+                ? Promise.allSettled([publishVSIX(extensionFile, options)])
+                : publish({ ...options, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath });
+            command
                 .then(results => {
                     const reasons = results.filter(result => result.status === 'rejected')
                         .map(rejectedResult => rejectedResult.reason);

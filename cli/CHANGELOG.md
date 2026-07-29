@@ -4,15 +4,21 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ### [next] (unreleased)
 
+#### Breaking Changes
+
+- The minimum version of Node.js required is now `22`, as `20` reached its end of life
+
 #### Added
 
 - Add an encrypted filestore as fallback to the system keychain if it cant be accessed ([#1950](https://github.com/eclipse/openvsx/pull/1950))
 - Add `--allow-missing-repository` option to the `publish` command, passed on to `vsce` to package an extension whose `package.json` has no `repository` field without asking for confirmation ([#1735](https://github.com/eclipse-openvsx/openvsx/issues/1735))
+- Add `publishVSIX` and `createVSIX` to the programmatic API, a `log` option to redirect or silence the output and an `interactive` option to control prompting ([#1591](https://github.com/eclipse-openvsx/openvsx/issues/1591))
 
 #### Changed
 
 - Replace `keytar` with `cross-keychain` to store credentials in the system keychain ([#1950](https://github.com/eclipse/openvsx/pull/1950))
 - Mask token input when using `login` command ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)
+- `publish` resolves with the published extensions instead of `void`, and no longer copies the environment into the options object of the caller ([#1591](https://github.com/eclipse-openvsx/openvsx/issues/1591))
 
 #### Dependencies
 

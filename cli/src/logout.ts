@@ -8,17 +8,18 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 import { openDefaultStore } from "./store";
+import { Logger, consoleLogger } from './logger';
 
-export default async function logout(namespaceName: string) {
+export default async function logout(namespaceName: string, log: Logger = consoleLogger) {
 	if (!namespaceName) {
         throw new Error('Missing namespace name.');
     }
 
-	const store = await openDefaultStore();
+	const store = await openDefaultStore(log);
 	if (!await store.get(namespaceName)) {
 		throw new Error(`Unknown namespace '${namespaceName}'.`);
 	}
 
 	await store.delete(namespaceName);
-    console.log(`\ud83d\ude80  ${namespaceName} removed from the list of known namespaces`);
+    log.log(`\ud83d\ude80  ${namespaceName} removed from the list of known namespaces`);
 }

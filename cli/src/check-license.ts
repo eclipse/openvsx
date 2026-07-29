@@ -14,9 +14,11 @@ import { input, select } from '@inquirer/prompts';
 import {
     readManifest, writeManifest, Manifest, writeFile, validateManifest, promisify
 } from './util';
+import { Logger, consoleLogger } from './logger';
+import { RegistryOptions } from './registry-options';
 
-async function addLicense(packagePath: string, manifest: Manifest): Promise<void> {
-    console.log('Extension ' + manifest.publisher + '.' + manifest.name + ' has no license. All Open VSX '
+async function addLicense(packagePath: string, manifest: Manifest, log: Logger): Promise<void> {
+    log.log('Extension ' + manifest.publisher + '.' + manifest.name + ' has no license. All Open VSX '
         + 'Registry Content Offerings must be licensed. You may choose to publish this extension under '
         + 'the MIT License (https://opensource.org/licenses/MIT). Please note you are responsible to '
         + 'ensure that you have the necessary rights to permit this extension to be made available under '
@@ -36,14 +38,14 @@ async function addLicense(packagePath: string, manifest: Manifest): Promise<void
         });
         switch (answer) {
             case 'yes':
-                await useMITLicense(manifest, packagePath);
+                await useMITLicense(manifest, log, packagePath);
                 break;
             case 'help':
-                console.log('If you select "yes" your extension will be published under the MIT License. '
+                log.log('If you select "yes" your extension will be published under the MIT License. '
                     + 'You must enter the Copyright Year and Copyright Holder information. This information '
                     + 'along with the text of the MIT License will be written to a LICENSE file and '
                     + 'packaged with the uploaded extension.\n');
-                console.log(MIT_LICENSE_TEXT);
+                log.log(MIT_LICENSE_TEXT);
                 break;
             case 'no':
                 throw new Error('This extension cannot be accepted because it has no license.');
@@ -70,15 +72,18 @@ export async function isLicenseOk(packagePath: string, manifest?: Manifest): Pro
     return false;
 }
 
-export async function checkLicense(packagePath: string): Promise<void> {
+export async function checkLicense(packagePath: string, options: RegistryOptions = {}): Promise<void> {
     const manifest = await readManifest(packagePath);
-    if (!await isLicenseOk(packagePath, manifest) && !isCI) {
-        await addLicense(packagePath, manifest);
+    // Adding a license needs the user to accept it, so this is skipped whenever there is nobody to
+    // ask: the registry rejects the extension in that case, just like it does on CI today.
+    const canAskUser = !isCI && options.interactive !== false;
+    if (!await isLicenseOk(packagePath, manifest) && canAskUser) {
+        await addLicense(packagePath, manifest, options.log ?? consoleLogger);
     }
 }
 
-async function useMITLicense(manifest: Manifest, packagePath?: string) {
-    console.log('Please enter a value for Copyright Year and Copyright Holder.\n'
+async function useMITLicense(manifest: Manifest, log: Logger, packagePath?: string) {
+    log.log('Please enter a value for Copyright Year and Copyright Holder.\n'
         + 'Example: "Copyright 2020 John Doe"\n');
     const copyright = await input({
         message: 'Copyright',
@@ -88,7 +93,7 @@ async function useMITLicense(manifest: Manifest, packagePath?: string) {
     await writeManifest(manifest, packagePath);
     const license = MIT_LICENSE_TEXT.replace('<YEAR> <COPYRIGHT HOLDER>', copyright);
     await writeFile('LICENSE', license, packagePath);
-    console.log('LICENSE file has been written. Please commit it to the source repository.');
+    log.log('LICENSE file has been written. Please commit it to the source repository.');
 }
 
 const LICENSE_FILE_NAMES = ['license.md', 'license', 'license.txt', 'licence.md', 'licence', 'licence.txt'];

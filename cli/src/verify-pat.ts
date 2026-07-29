@@ -16,6 +16,8 @@ import { VerifyPatOptions } from './verify-pat-options';
  * Validates that a Personal Access Token can publish to a namespace.
  */
 export async function verifyPat(options: VerifyPatOptions): Promise<void> {
+    // Work on a copy: the environment must not leak into the options object of the caller.
+    options = { ...options };
     addEnvOptions(options);
     if (!options.namespace) {
         let error;

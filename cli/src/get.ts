@@ -13,13 +13,17 @@ import * as path from 'path';
 import * as semver from 'semver';
 import { Registry, Extension } from "./registry";
 import { promisify, matchExtensionId, optionalStat, makeDirs, addEnvOptions, rejectError } from './util';
+import { Logger, consoleLogger } from './logger';
 import { GetOptions } from './get-options';
 
 /**
  * Downloads an extension or its metadata.
  */
 export async function getExtension(options: GetOptions): Promise<void> {
+    // Work on a copy: the environment must not leak into the options object of the caller.
+    options = { ...options };
     addEnvOptions(options);
+    const log = options.log ?? consoleLogger;
     const registry = new Registry(options);
     const match = matchExtensionId(options.extensionId);
     if (!match) {
@@ -37,9 +41,9 @@ export async function getExtension(options: GetOptions): Promise<void> {
     }
 
     if (options.metadata) {
-        await printMetadata(registry, matchingVersion, options.output);
+        await printMetadata(registry, matchingVersion, log, options.output);
     } else {
-        await download(registry, matchingVersion, options.output);
+        await download(registry, matchingVersion, log, options.output);
     }
 }
 
@@ -63,10 +67,10 @@ function isAlias(extension: Extension, version: string): boolean {
     return extension.versionAlias.includes(version);
 }
 
-async function printMetadata(registry: Registry, extension: Extension, output?: string): Promise<void> {
+async function printMetadata(registry: Registry, extension: Extension, log: Logger, output?: string): Promise<void> {
     const metadata = JSON.stringify(extension, null, 4);
     if (!output) {
-        console.log(metadata);
+        log.log(metadata);
         return;
     }
     let filePath: string | undefined;
@@ -81,7 +85,7 @@ async function printMetadata(registry: Registry, extension: Extension, output?: 
     await promisify(fs.writeFile)(filePath, metadata);
 }
 
-async function download(registry: Registry, extension: Extension, output?: string): Promise<void> {
+async function download(registry: Registry, extension: Extension, log: Logger, output?: string): Promise<void> {
     const downloadUrl = extension.files.download;
     if (!downloadUrl) {
         throw new Error(`Extension ${extension.namespace}.${extension.name} does not provide a download URL.`);
@@ -101,6 +105,6 @@ async function download(registry: Registry, extension: Extension, output?: strin
     }
     await makeDirs(path.dirname(filePath));
     const target = extension.targetPlatform !== 'universal' ? '@' + extension.targetPlatform : '';
-    console.log(`Downloading ${extension.namespace}.${extension.name}-${extension.version}${target} to ${filePath}`);
+    log.log(`Downloading ${extension.namespace}.${extension.name}-${extension.version}${target} to ${filePath}`);
     await registry.download(filePath, new URL(downloadUrl));
 }
