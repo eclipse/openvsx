@@ -44,8 +44,6 @@ import static java.util.Objects.requireNonNull;
 
 @Service
 public class TrustedPublishingService {
-    private static final int TOKEN_DESCRIPTION_SIZE = 255;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TrustedPublishingConfig config;
     private final RepositoryService repositories;
@@ -222,19 +220,16 @@ public class TrustedPublishingService {
                                 "No trusted publisher matches the presented token.",
                                 HttpStatus.FORBIDDEN));
 
-        // ponytail: the issued token is a regular personal access token of the registering user, valid for
-        // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
-        String description = "Trusted publishing (" + provider.getProviderId() + "): " + claims.get(JwtClaimNames.SUB);
-        if (description.length() > TOKEN_DESCRIPTION_SIZE) {
-            description = description.substring(0, TOKEN_DESCRIPTION_SIZE);
-        }
         logger.info(
                 "Issuing trusted publishing token for namespace {} to {}",
                 namespace.getName(),
                 claims.get(JwtClaimNames.SUB));
+
+        // The issued token is OTT personal access token of the registering user, valid for
+        // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
         return tokens.createAccessToken(
                 match.getCreatedBy(),
-                description,
+                "Trusted publishing (" + provider.getProviderId() + ")",
                 true);
     }
 

@@ -86,6 +86,10 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     private UserJson publishedBy;
 
+    @Schema(description = "The token type used to publish this version")
+    @NotNull
+    private String publishedWith;
+
     @Schema(hidden = true)
     private Boolean active;
 
@@ -312,6 +316,14 @@ public class ExtensionJson extends ResultJson {
 
     public void setPublishedBy(UserJson publishedBy) {
         this.publishedBy = publishedBy;
+    }
+
+    public String getPublishedWith() {
+        return publishedWith;
+    }
+
+    public void setPublishedWith(String publishedWith) {
+        this.publishedWith = publishedWith;
     }
 
     public Boolean getActive() {

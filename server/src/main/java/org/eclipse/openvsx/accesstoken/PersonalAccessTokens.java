@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -68,7 +69,7 @@ public class PersonalAccessTokens {
     private AccessTokenJson createAccessToken(
             UserData user,
             String description,
-            LocalDateTime expiresTimestamp,
+            @Nullable LocalDateTime expiresTimestamp,
             boolean oneTime
     ) {
         var token = new PersonalAccessToken();
