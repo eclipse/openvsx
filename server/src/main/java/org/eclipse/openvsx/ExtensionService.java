@@ -138,7 +138,7 @@ public class ExtensionService {
 
             doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
 
-            // Publish async handles requesting the longrunning scans
+            // Publish async handles requesting the long-running scans
             publishHandler.publishAsync(extensionFile, this, scan);
             var download = extensionFile.getResource();
             publishHandler.schedulePublicIdJob(extensionFile.getResource());
