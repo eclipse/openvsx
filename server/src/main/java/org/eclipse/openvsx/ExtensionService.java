@@ -127,13 +127,18 @@ public class ExtensionService {
         ExtensionScan scan = null;
 
         try (var processor = new ExtensionProcessor(extensionFile)) {
+            // Fail before any validation or scanning happens (and before a scan record is stored) if the
+            // extension version can not be published anyway, e.g. because the publisher lacks the access
+            // rights for the namespace or the version is published already.
+            publishHandler.checkPublishPreconditions(processor, token);
+
             scan = scanService.initializeScan(processor, token.getUser());
 
             scanService.runValidation(scan, extensionFile, token.getUser());
 
             doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
 
-            // Publish async handles requesting the longrunning scans
+            // Publish async handles requesting the long-running scans
             publishHandler.publishAsync(extensionFile, this, scan);
             var download = extensionFile.getResource();
             publishHandler.schedulePublicIdJob(extensionFile.getResource());

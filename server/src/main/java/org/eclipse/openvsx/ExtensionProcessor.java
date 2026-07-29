@@ -300,6 +300,7 @@ public class ExtensionProcessor implements AutoCloseable {
     }
 
     public String getVersion() {
+        loadVsixManifest();
         return vsixManifest.path(MANIFEST_METADATA).path(MANIFEST_IDENTITY).path("Version").asString();
     }
 
