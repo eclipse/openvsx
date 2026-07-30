@@ -231,8 +231,8 @@ public class PublishExtensionVersionHandler {
         validateExtensionVersion(processor, namespaceName, extensionName);
 
         // This is the only place where extracted metadata gets persisted, so it is the one that has to
-        // honour the configured tag limit.
-        var extVersion = processor.getMetadata(config.getMaxTags());
+        // honour the configured tag limits.
+        var extVersion = processor.getMetadata(config.getMaxTags(), config.getMaxInternalTags());
         var displayName = extVersion.getDisplayName();
         validateExtensionName(namespaceName, extensionName, displayName, user);
 

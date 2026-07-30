@@ -1831,6 +1831,42 @@ class RegistryAPITest {
     }
 
     @Test
+    void testPublishLimitsInternalTagsSeparately() throws Exception {
+        var previousMaxTags = publishingConfig.getMaxTags();
+        var previousMaxInternalTags = publishingConfig.getMaxInternalTags();
+        try {
+            publishingConfig.setMaxTags(1);
+            publishingConfig.setMaxInternalTags(2);
+            mockForPublish("contributor");
+            mockActiveVersion();
+            var bytes = createExtensionPackage(
+                    "bar",
+                    "1.0.0",
+                    null,
+                    false,
+                    null,
+                    List.of("__ext_yml", "beta", "__ext_yaml", "alpha", "__web_extension"));
+            mockMvc.perform(
+                    post("/api/-/publish?token={token}", "my_token")
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .content(bytes))
+                    .andExpect(status().isCreated())
+                    .andExpect(content().json(extensionJson(e -> {
+                        e.setNamespace("foo");
+                        e.setName("bar");
+                        e.setVersion("1.0.0");
+                        e.setDownloadable(true);
+                        // The generated tags don't take up a slot of the declared ones, both kinds are
+                        // capped on their own.
+                        e.setTags(List.of("__ext_yaml", "__ext_yml", "beta"));
+                    })));
+        } finally {
+            publishingConfig.setMaxTags(previousMaxTags);
+            publishingConfig.setMaxInternalTags(previousMaxInternalTags);
+        }
+    }
+
+    @Test
     void testPublishInactiveToken() throws Exception {
         mockForPublish("invalid");
         var bytes = createExtensionPackage("bar", "1.0.0", null);
