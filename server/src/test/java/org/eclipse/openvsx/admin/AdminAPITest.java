@@ -53,8 +53,6 @@ import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
-import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
@@ -130,7 +128,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CacheService.class,
         PublishExtensionVersionHandler.class,
         SearchUtilService.class,
-        EclipseService.class,
         SimpleMeterRegistry.class,
         FileCacheDurationConfig.class,
         MailService.class,
@@ -2216,21 +2213,9 @@ class AdminAPITest {
         @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                EclipseTokenService eclipseTokenService,
-                EntityManager entityManager,
-                EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
-        }
-
-        @Bean
-        EclipseTokenService eclipseTokenService(
-                TransactionTemplate transactions,
-                EntityManager entityManager,
-                ClientRegistrationRepository clientRegistrationRepository
-        ) {
-            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
+            return new OAuth2UserServices(users, attributesConfig, List.of());
         }
 
         @Bean
@@ -2242,7 +2227,6 @@ class AdminAPITest {
                 AccessTokenService tokenService,
                 ExtensionValidator validator,
                 SearchUtilService search,
-                EclipseService eclipse,
                 StorageUtilService storageUtil,
                 CacheService cache,
                 JobRequestScheduler scheduler,
@@ -2257,7 +2241,7 @@ class AdminAPITest {
                     tokenService,
                     validator,
                     search,
-                    eclipse,
+                    null,
                     storageUtil,
                     cache,
                     scheduler,
@@ -2276,7 +2260,6 @@ class AdminAPITest {
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
-                EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService
@@ -2291,7 +2274,7 @@ class AdminAPITest {
                     search,
                     validator,
                     storageUtil,
-                    eclipse,
+                    null,
                     cache,
                     integrityService,
                     similarityCheckService,

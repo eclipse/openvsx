@@ -9,6 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,7 +36,11 @@ public class SecurityConfig {
     String[] additionalRoutes;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, OAuth2UserServices userServices) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            OAuth2UserServices userServices,
+            List<OAuth2LoginHandler> loginHandlers
+    ) throws Exception {
         var filterChain = http.authorizeHttpRequests(
                 registry -> registry
                         .requestMatchers(
@@ -93,7 +99,7 @@ public class SecurityConfig {
             var redirectUrl = StringUtils.isEmpty(webuiUrl) ? "/" : webuiUrl;
             filterChain.oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);
-                configurer.successHandler(new CustomAuthenticationSuccessHandler(redirectUrl));
+                configurer.successHandler(new CustomAuthenticationSuccessHandler(redirectUrl, loginHandlers));
                 configurer.failureUrl(redirectUrl + "?auth-error");
                 configurer.userInfoEndpoint(
                         customizer -> customizer.oidcUserService(userServices.getOidc())

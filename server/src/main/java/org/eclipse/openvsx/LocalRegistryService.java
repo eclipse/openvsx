@@ -30,10 +30,10 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
+import org.eclipse.openvsx.publish.PublisherAgreementService;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.ExtensionSearch;
@@ -73,7 +73,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final SearchUtilService search;
     private final ExtensionValidator validator;
     private final StorageUtilService storageUtil;
-    private final EclipseService eclipse;
+    private final PublisherAgreementService publisherAgreement;
     private final CacheService cache;
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
@@ -89,7 +89,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             SearchUtilService search,
             ExtensionValidator validator,
             StorageUtilService storageUtil,
-            EclipseService eclipse,
+            @Nullable PublisherAgreementService publisherAgreement,
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
@@ -104,7 +104,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.search = search;
         this.validator = validator;
         this.storageUtil = storageUtil;
-        this.eclipse = eclipse;
+        this.publisherAgreement = publisherAgreement != null ? publisherAgreement : new PublisherAgreementService() {
+        };
         this.cache = cache;
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
@@ -719,7 +720,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException(namespaceIssue.get().toString());
         }
 
-        eclipse.checkPublisherAgreement(user);
+        publisherAgreement.checkPublisherAgreement(user);
         var namespaceName = repositories.findNamespaceName(json.getName());
         if (namespaceName != null) {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
@@ -790,7 +791,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
+        publisherAgreement.checkPublisherAgreement(token.getUser());
 
         var extVersion = extensions.publishVersion(content, token);
         var json = toExtensionVersionJson(extVersion, null, true);

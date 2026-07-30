@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,6 @@ import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
@@ -51,6 +51,7 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
+import org.eclipse.openvsx.publish.PublisherAgreementService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -74,7 +75,7 @@ public class AdminService {
     private final AccessTokenService tokens;
     private final ExtensionValidator validator;
     private final SearchUtilService search;
-    private final EclipseService eclipse;
+    private final PublisherAgreementService publisherAgreement;
     private final StorageUtilService storageUtil;
     private final CacheService cache;
     private final JobRequestScheduler scheduler;
@@ -89,7 +90,7 @@ public class AdminService {
             AccessTokenService tokens,
             ExtensionValidator validator,
             SearchUtilService search,
-            EclipseService eclipse,
+            @Nullable PublisherAgreementService publisherAgreement,
             StorageUtilService storageUtil,
             CacheService cache,
             JobRequestScheduler scheduler,
@@ -103,7 +104,8 @@ public class AdminService {
         this.tokens = tokens;
         this.validator = validator;
         this.search = search;
-        this.eclipse = eclipse;
+        this.publisherAgreement = publisherAgreement != null ? publisherAgreement : new PublisherAgreementService() {
+        };
         this.storageUtil = storageUtil;
         this.cache = cache;
         this.scheduler = scheduler;
@@ -393,7 +395,7 @@ public class AdminService {
         var userJson = user.toUserJson();
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
-        eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
+        publisherAgreement.adminEnrichUserJson(userPublishInfo.getUser(), user);
         userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
@@ -471,10 +473,8 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        // Send a DELETE request to the Eclipse publisher agreement API
-        if (eclipse.isActive() && user.getEclipsePersonId() != null) {
-            eclipse.revokePublisherAgreement(user, admin);
-        }
+        // Revoke the user's publisher agreement, if the deployment has any
+        publisherAgreement.revokePublisherAgreement(user, admin);
 
         var accessTokens = repositories.findAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();

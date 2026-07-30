@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
-import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.ScanStatus;
@@ -54,6 +54,7 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UsageStatsListJson;
 import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.publish.PublisherAgreementService;
 import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
@@ -86,7 +87,7 @@ public class UserAPI {
     private final RepositoryService repositories;
     private final UserService users;
     private final AccessTokenService tokens;
-    private final EclipseService eclipse;
+    private final PublisherAgreementService publisherAgreement;
     private final StorageUtilService storageUtil;
     private final LocalRegistryService local;
     private final ExtensionService extensions;
@@ -96,7 +97,7 @@ public class UserAPI {
             RepositoryService repositories,
             UserService users,
             AccessTokenService tokens,
-            EclipseService eclipse,
+            @Nullable PublisherAgreementService publisherAgreement,
             StorageUtilService storageUtil,
             LocalRegistryService local,
             ExtensionService extensions,
@@ -105,7 +106,8 @@ public class UserAPI {
         this.repositories = repositories;
         this.users = users;
         this.tokens = tokens;
-        this.eclipse = eclipse;
+        this.publisherAgreement = publisherAgreement != null ? publisherAgreement : new PublisherAgreementService() {
+        };
         this.storageUtil = storageUtil;
         this.local = local;
         this.extensions = extensions;
@@ -165,7 +167,7 @@ public class UserAPI {
         json.setRole(user.getRoleAsString());
         json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
         json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
-        eclipse.enrichUserJsonWithPublisherAgreement(json, user);
+        publisherAgreement.enrichUserJsonWithPublisherAgreement(json, user);
         return json;
     }
 
@@ -685,30 +687,6 @@ public class UserAPI {
         return repositories.searchUsers(name, null, pageable).stream()
                 .map(UserData::toUserJson)
                 .toList();
-    }
-
-    @PostMapping(
-        path = "/user/publisher-agreement",
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<UserJson> signPublisherAgreement() {
-        var user = users.findLoggedInUser();
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
-        try {
-            var agreement = eclipse.signPublisherAgreement(user);
-            var json = user.toUserJson();
-            var serverUrl = UrlUtil.getBaseUrl();
-            json.setRole(user.getRoleAsString());
-            json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
-            json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
-            eclipse.enrichUserJson(json, user, agreement);
-
-            return ResponseEntity.ok(json);
-        } catch (ErrorResultException exc) {
-            return exc.toResponseEntity(UserJson.class);
-        }
     }
 
 }

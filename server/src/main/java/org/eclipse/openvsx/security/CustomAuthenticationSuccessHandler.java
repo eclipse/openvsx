@@ -9,18 +9,21 @@
  ********************************************************************************/
 package org.eclipse.openvsx.security;
 
+import java.util.List;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
-import org.eclipse.openvsx.util.UrlUtil;
-
 public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
 
-    public CustomAuthenticationSuccessHandler(String defaultTargetUrl) {
+    private final List<OAuth2LoginHandler> loginHandlers;
+
+    public CustomAuthenticationSuccessHandler(String defaultTargetUrl, List<OAuth2LoginHandler> loginHandlers) {
         setDefaultTargetUrl(defaultTargetUrl);
+        this.loginHandlers = loginHandlers;
     }
 
     @Override
@@ -31,9 +34,14 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     ) {
         if (authentication instanceof OAuth2AuthenticationToken) {
             var token = (OAuth2AuthenticationToken) authentication;
-            // Redirect to user profile page after login to Eclipse
-            if ("eclipse".equals(token.getAuthorizedClientRegistrationId())) {
-                return UrlUtil.createApiUrl(getDefaultTargetUrl(), "user-settings", "profile");
+            var registrationId = token.getAuthorizedClientRegistrationId();
+            var targetUrl = loginHandlers.stream()
+                    .filter(handler -> handler.getRegistrationId().equals(registrationId))
+                    .map(handler -> handler.getSuccessRedirectUrl(getDefaultTargetUrl()))
+                    .filter(url -> url != null)
+                    .findFirst();
+            if (targetUrl.isPresent()) {
+                return targetUrl.get();
             }
         }
         return determineTargetUrl(request, response);
