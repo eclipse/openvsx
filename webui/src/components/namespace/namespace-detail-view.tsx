@@ -17,8 +17,7 @@ import { NamespaceMemberList } from './namespace-member-list';
 import { NamespaceDetails } from './namespace-details';
 import { Namespace, UserData } from '../../extension-registry-types';
 import { UserNamespaceTrustedPublishers } from '../../pages/user/trusted-publishing/trusted-publishers-section';
-import { isTrustedPublishingEnabled } from '../../pages/user/trusted-publishing/use-trusted-publishers';
-import { useRegistryValue } from '../../hooks/use-registry-value';
+import { useTrustedPublishingStatus } from '../../pages/user/trusted-publishing/use-trusted-publishers';
 
 export interface NamespaceDetailConfig {
     defaultMemberRole?: 'contributor' | 'owner';
@@ -67,7 +66,7 @@ const NamespaceHeader = styled(Box)(({ theme }: { theme: Theme }) => ({
  *  - `fetchExtension` selects the endpoint used to load each extension (public vs. admin).
  */
 export const NamespaceDetailView: FunctionComponent<NamespaceDetailViewProps> = props => {
-    const trustedPublishingEnabled = useRegistryValue(isTrustedPublishingEnabled);
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
     const warningColor = props.theme === 'dark' ? '#fff' : '#151515';
     return (
         <NamespaceDetailContainer container direction='column' spacing={4}>
@@ -114,7 +113,7 @@ export const NamespaceDetailView: FunctionComponent<NamespaceDetailViewProps> = 
                     <NamespaceDetails namespace={props.namespace} />
                 </Grid>
             ) : null}
-            {props.namespace.trustedPublishingUrl && trustedPublishingEnabled ? (
+            {props.namespace.trustedPublishingUrl && trustedPublishingStatus?.enabled ? (
                 <Grid item>
                     <UserNamespaceTrustedPublishers namespace={props.namespace} />
                 </Grid>

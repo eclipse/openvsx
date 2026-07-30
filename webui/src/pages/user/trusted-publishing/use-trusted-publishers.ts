@@ -14,62 +14,28 @@
 import { useContext } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
-import {
-    RegistryVersion,
-    TrustedPublisher,
-    TrustedPublisherProvider,
-    TrustedPublisherRequest,
-    UrlString
-} from '../../../extension-registry-types';
+import { TrustedPublisher, TrustedPublisherRequest, UrlString } from '../../../extension-registry-types';
 import { controllerFromSignal } from '../../../query-client';
 
-/**
- * Whether the registry has trusted publishing enabled server-side. Pass this to
- * `useRegistryValue` to hide trusted-publishing UI when the feature is off.
- */
-export const isTrustedPublishingEnabled = (version: RegistryVersion): boolean =>
-    Boolean(version.trustedPublishingEnabled);
-
-// keyed by the namespace's trusted-publishing URL (the endpoint we actually query)
 export const trustedPublisherKeys = {
-    providers: (trustedPublishingUrl?: UrlString) =>
-        ['user', 'trusted-publisher-providers', trustedPublishingUrl] as const,
+    // the status (and with it the provider list) is global, not namespace-scoped
+    status: ['user', 'trusted-publishing-status'] as const,
+    // keyed by the namespace's trusted-publishing URL (the endpoint we actually query)
     publishers: (trustedPublishingUrl?: UrlString) => ['user', 'trusted-publishers', trustedPublishingUrl] as const
 };
 
 /**
- * Fails when trusted publishing is disabled server-side or the current user
- * cannot manage the namespace, so an error means "feature unavailable". Idle
- * when there is no URL, since that already means the user cannot manage it.
+ * Trusted-publishing status for the current user: whether the feature is enabled on the
+ * registry, whether this user may use it, and the supported providers (present only when
+ * allowed). The endpoint requires a logged-in user, so the query idles without one; idle
+ * or failed queries leave `data` undefined, so feature gates reading it fail closed.
  */
-export const useTrustedPublisherProviders = (trustedPublishingUrl?: UrlString) => {
-    const { service } = useContext(MainContext);
+export const useTrustedPublishingStatus = () => {
+    const { service, user } = useContext(MainContext);
     return useQuery({
-        queryKey: trustedPublisherKeys.providers(trustedPublishingUrl),
-        queryFn: ({ signal }) =>
-            service.getTrustedPublisherProviders(controllerFromSignal(signal), trustedPublishingUrl!),
-        enabled: Boolean(trustedPublishingUrl)
-    });
-};
-
-/** Providers of several namespaces at once, keyed by trusted-publishing URL; failed probes yield empty lists. */
-export const useAllTrustedPublisherProviders = (trustedPublishingUrls: UrlString[]) => {
-    const { service } = useContext(MainContext);
-    return useQueries({
-        queries: trustedPublishingUrls.map(trustedPublishingUrl => ({
-            queryKey: trustedPublisherKeys.providers(trustedPublishingUrl),
-            queryFn: ({ signal }: { signal?: AbortSignal }) =>
-                service.getTrustedPublisherProviders(controllerFromSignal(signal), trustedPublishingUrl)
-        })),
-        combine: results => ({
-            isLoading: results.some(result => result.isLoading),
-            providersByUrl: Object.fromEntries(
-                trustedPublishingUrls.map((trustedPublishingUrl, index) => [
-                    trustedPublishingUrl,
-                    results[index]?.data ?? []
-                ])
-            ) as Record<string, readonly TrustedPublisherProvider[]>
-        })
+        queryKey: trustedPublisherKeys.status,
+        queryFn: ({ signal }) => service.getTrustedPublishingStatus(controllerFromSignal(signal)),
+        enabled: user != null
     });
 };
 
