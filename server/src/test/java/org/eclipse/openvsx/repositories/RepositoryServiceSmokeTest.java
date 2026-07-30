@@ -35,6 +35,7 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionValidationFailure;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -269,6 +270,19 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(queryRequest),
+                () -> repositories.findChanges(null, null, page),
+                () -> repositories.findChanges(NOW.minus(Duration.ofDays(1)), NOW, page),
+                () -> repositories.findExtensionVersionChanges(extVersion),
+                () -> repositories.findLatestExtensionVersionChange(extVersion),
+                () -> repositories.recordExtensionVersionChange(
+                        extVersion,
+                        ExtensionVersionChange.STATE_ACTIVE,
+                        NOW),
+                () -> repositories.recordPurgedExtensionVersionChange(
+                        extVersion,
+                        ExtensionVersionChange.STATE_REMOVED,
+                        NOW),
+                () -> repositories.detachExtensionVersionChanges(extVersion),
                 () -> repositories.findActiveVersionStringsSorted(LONG_LIST, "targetPlatform"),
                 () -> repositories.findActiveVersionReferencesSorted(List.of(1L)),
                 () -> repositories.findAllPublicIds(),

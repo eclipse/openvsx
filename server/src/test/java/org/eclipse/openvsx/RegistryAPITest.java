@@ -37,6 +37,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
@@ -84,6 +85,7 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -2228,6 +2230,145 @@ class RegistryAPITest {
     }
 
     @Test
+    void testGetChanges() throws Exception {
+        var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var removed = mockChangeEntry("0.9.0", ChangeEntryJson.STATE_REMOVED, "2000-02-01T10:00Z");
+        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(published, removed), PageRequest.of(0, 100), 2));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> {
+                    c.setTotalSize(2);
+                    c.setChanges(List.of(published, removed));
+                })));
+    }
+
+    @Test
+    void testGetChangesReportsEveryTransitionOfAVersion() throws Exception {
+        // A version that is published, has its publisher's contributions revoked and is then reinstated
+        // appears once per transition, in the order they happened, rather than as a single entry that
+        // moves around. A consumer polling in between therefore never misses that it was withdrawn.
+        var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var deactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_INACTIVE, "2000-03-01T10:00Z");
+        var reactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-04-01T10:00Z");
+        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
+                .thenReturn(
+                        new PageImpl<>(
+                                List.of(published, deactivated, reactivated),
+                                PageRequest.of(0, 100),
+                                3));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalSize").value(3))
+                .andExpect(jsonPath("$.changes[0].state").value("ACTIVE"))
+                .andExpect(jsonPath("$.changes[1].state").value("INACTIVE"))
+                .andExpect(jsonPath("$.changes[2].state").value("ACTIVE"))
+                // each entry is reported at the instant of its own transition, while they all keep
+                // naming the version's publication timestamp
+                .andExpect(jsonPath("$.changes[1].lastUpdated").value("2000-03-01T10:00Z"))
+                .andExpect(jsonPath("$.changes[2].lastUpdated").value("2000-04-01T10:00Z"))
+                .andExpect(jsonPath("$.changes[1].timestamp").value("2000-01-01T10:00Z"));
+    }
+
+    @Test
+    void testGetChangesAddsTheVersionUrl() throws Exception {
+        var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(List.of(entry), PageRequest.of(0, 100), 1));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                // the entry names one target platform, so the URL addresses exactly that version
+                .andExpect(jsonPath("$.changes[0].url").value("http://localhost/api/foo/bar/universal/1.0.0"));
+    }
+
+    @Test
+    void testGetChangesEmpty() throws Exception {
+        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> {
+                    c.setTotalSize(0);
+                    c.setChanges(Collections.emptyList());
+                })));
+    }
+
+    @Test
+    void testGetChangesWithinATimeWindow() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T00:00");
+        var until = LocalDateTime.parse("2026-02-01T00:00");
+        Mockito.when(repositories.findChanges(since, until, PageRequest.of(2, 50)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(2, 50), 300));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?since={since}&until={until}&size={size}&offset={offset}",
+                        "2026-01-01T00:00:00Z",
+                        "2026-02-01T00:00:00Z",
+                        "50",
+                        "100"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> {
+                    c.setOffset(100);
+                    c.setTotalSize(300);
+                    c.setChanges(Collections.emptyList());
+                })));
+    }
+
+    @Test
+    void testGetChangesConvertsATimestampWithAnOffsetToUTC() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T10:00");
+        Mockito.when(repositories.findChanges(since, null, PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T12:00:00+02:00"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(since, null, PageRequest.of(0, 100));
+    }
+
+    @Test
+    void testGetChangesAcceptsATimestampWithoutAZone() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T10:00");
+        Mockito.when(repositories.findChanges(since, null, PageRequest.of(0, 100)))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T10:00:00"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(since, null, PageRequest.of(0, 100));
+    }
+
+    @Test
+    void testInvalidGetChanges() throws Exception {
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "yesterday"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Invalid 'since' parameter: yesterday")));
+
+        mockMvc.perform(get("/api/-/version-changes?until={until}", "2026-13-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Invalid 'until' parameter: 2026-13-01T00:00:00Z")));
+
+        mockMvc.perform(get("/api/-/version-changes?size={size}", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must be positive"));
+
+        mockMvc.perform(get("/api/-/version-changes?size={size}", "1001"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
+
+        mockMvc.perform(get("/api/-/version-changes?offset={offset}", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+
+        Mockito.verify(repositories, never()).findChanges(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
     void testInvalidGetVersions() throws Exception {
         mockMvc.perform(
                 get("/api/{namespace}/{extension}/versions?size={size}&offset={offset}", "foo", "bar", "-1", "0"))
@@ -2678,6 +2819,25 @@ class RegistryAPITest {
     private String reviewsJson(Consumer<ReviewListJson> content) throws JacksonException {
         var json = new ReviewListJson();
         json.setReviews(new ArrayList<>());
+        content.accept(json);
+        return JsonMapper.shared().writeValueAsString(json);
+    }
+
+    private ChangeEntryJson mockChangeEntry(String version, String state, String lastUpdated) {
+        var entry = new ChangeEntryJson();
+        entry.setNamespace("foo");
+        entry.setName("bar");
+        entry.setVersion(version);
+        entry.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        entry.setState(state);
+        entry.setTimestamp("2000-01-01T10:00Z");
+        entry.setLastUpdated(lastUpdated);
+        return entry;
+    }
+
+    private String changesJson(Consumer<ChangesResultJson> content) throws JacksonException {
+        var json = new ChangesResultJson();
+        json.setChanges(new ArrayList<>());
         content.accept(json);
         return JsonMapper.shared().writeValueAsString(json);
     }

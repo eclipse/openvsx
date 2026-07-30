@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1323,6 +1324,32 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
+        return json;
+    }
+
+    /**
+     * Feed of the extension versions that are or were publicly available, so that consumers such as
+     * mirrors or security scanners can follow what the registry publishes and removes without polling
+     * every extension.
+     */
+    public ChangesResultJson getChanges(LocalDateTime since, LocalDateTime until, int size, int offset) {
+        var page = repositories.findChanges(since, until, PageRequest.of(offset / size, size));
+
+        var baseUrl = UrlUtil.getBaseUrl();
+        var changes = page.getContent();
+        changes.forEach(
+                entry -> entry.setUrl(
+                        UrlUtil.createApiVersionUrl(
+                                baseUrl,
+                                entry.getNamespace(),
+                                entry.getName(),
+                                entry.getTargetPlatform(),
+                                entry.getVersion())));
+
+        var json = new ChangesResultJson();
+        json.setOffset((int) page.getPageable().getOffset());
+        json.setTotalSize((int) page.getTotalElements());
+        json.setChanges(changes);
         return json;
     }
 }

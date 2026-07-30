@@ -11,6 +11,10 @@ package org.eclipse.openvsx;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -1528,6 +1532,98 @@ public class RegistryAPI {
             return ResponseEntity.ok(json);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(
+        path = "/api/-/version-changes",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(
+        summary = "Provides a paginated feed of the publicly visible transitions of extension versions",
+        description = "One entry per transition, ordered by the instant it happened, oldest first: the "
+                + "publication of a version, an administrative deactivation, a reactivation, and a "
+                + "removal. A version that transitions repeatedly is therefore reported once per "
+                + "transition, so that nothing is missed between two requests. To follow the registry, "
+                + "remember the 'lastUpdated' value of the last processed entry and pass it as 'since' "
+                + "on the next request. Entries are only ever appended and are never reordered, so a "
+                + "page stays valid for as long as its reported total does. A version that is deleted "
+                + "and one that is permanently purged are both reported as REMOVED, as either way the "
+                + "version is no longer available for download. Only changes in availability are "
+                + "reported: editing the metadata of a version, such as its readme or its tags, is not "
+                + "a transition and produces no entry."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "The changes are returned in JSON format"
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The request contains an invalid parameter value",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{\"error\": \"Invalid 'since' parameter: yesterday\"}")
+        )
+    )
+    public ResponseEntity<ChangesResultJson> getChanges(
+            @RequestParam(required = false)
+            @Parameter(
+                description = "Only include entries at or after this date and time (ISO-8601)",
+                example = "2026-01-01T00:00:00Z"
+            ) String since,
+            @RequestParam(required = false)
+            @Parameter(
+                description = "Only include entries before this date and time, exclusive (ISO-8601)",
+                example = "2026-02-01T00:00:00Z"
+            ) String until,
+            @RequestParam(defaultValue = "100")
+            @Min(value = 1, message = "parameter must be positive")
+            @Max(value = 1000, message = "parameter must not exceed 1000")
+            @Parameter(
+                description = "Maximal number of entries to return",
+                schema = @Schema(type = "integer", minimum = "1", maximum = "1000", defaultValue = "100")
+            ) int size,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative")
+            @Parameter(
+                description = "Number of entries to skip (usually a multiple of the page size)",
+                schema = @Schema(type = "integer", minimum = "0", defaultValue = "0")
+            ) int offset
+    ) {
+        LocalDateTime sinceDate;
+        LocalDateTime untilDate;
+        try {
+            sinceDate = parseTimestamp(since);
+        } catch (DateTimeParseException exc) {
+            return ResponseEntity.badRequest().body(ChangesResultJson.error("Invalid 'since' parameter: " + since));
+        }
+        try {
+            untilDate = parseTimestamp(until);
+        } catch (DateTimeParseException exc) {
+            return ResponseEntity.badRequest().body(ChangesResultJson.error("Invalid 'until' parameter: " + until));
+        }
+
+        // Entries are only ever appended and never reordered, so a page stays valid for as long as its
+        // reported total does. Polling faster than the cache period gains a consumer nothing and would
+        // put the unbounded 'totalSize' count on the database for every request.
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES).cachePublic())
+                .body(local.getChanges(sinceDate, untilDate, size, offset));
+    }
+
+    /**
+     * Parses an ISO-8601 date and time into the UTC date and time the registry stores. An explicit
+     * offset is honoured, a timestamp given without one is taken to be UTC already.
+     */
+    private LocalDateTime parseTimestamp(String value) {
+        if (StringUtils.isEmpty(value)) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value).withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        } catch (DateTimeParseException exc) {
+            return LocalDateTime.parse(value);
         }
     }
 

@@ -186,7 +186,14 @@ public class DataMirrorService {
     @Transactional
     public void activateExtension(String namespaceName, String extensionName) {
         var extension = repositories.findExtension(extensionName, namespaceName);
-        extension.getVersions().stream().filter(this::canActivate).forEach(extVersion -> extVersion.setActive(true));
+        // A mirrored version becomes available here rather than at the upstream timestamp it carries, so
+        // that the changes feed this mirror serves stays followable: an entry written at the upstream
+        // instant would land in a part of the feed that the mirror's own consumers have already read.
+        var now = TimeUtil.getCurrentUTC();
+        extension.getVersions().stream().filter(this::canActivate).forEach(extVersion -> {
+            extVersion.setActive(true);
+            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionChange.STATE_ACTIVE, now);
+        });
         extensions.updateExtension(extension);
     }
 

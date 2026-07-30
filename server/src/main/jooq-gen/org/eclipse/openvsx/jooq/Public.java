@@ -25,6 +25,7 @@ import org.eclipse.openvsx.jooq.tables.ExtensionScan;
 import org.eclipse.openvsx.jooq.tables.ExtensionThreat;
 import org.eclipse.openvsx.jooq.tables.ExtensionValidationFailure;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.ExtensionVersionChange;
 import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
@@ -158,6 +159,11 @@ public class Public extends SchemaImpl {
     public final ExtensionVersion EXTENSION_VERSION = ExtensionVersion.EXTENSION_VERSION;
 
     /**
+     * The table <code>public.extension_version_change</code>.
+     */
+    public final ExtensionVersionChange EXTENSION_VERSION_CHANGE = ExtensionVersionChange.EXTENSION_VERSION_CHANGE;
+
+    /**
      * The table <code>public.file_decision</code>.
      */
     public final FileDecision FILE_DECISION = FileDecision.FILE_DECISION;
@@ -279,6 +285,7 @@ public class Public extends SchemaImpl {
             Sequences.EXTENSION_SEQ,
             Sequences.EXTENSION_THREAT_SEQ,
             Sequences.EXTENSION_VALIDATION_FAILURE_SEQ,
+            Sequences.EXTENSION_VERSION_CHANGE_SEQ,
             Sequences.EXTENSION_VERSION_SEQ,
             Sequences.FILE_DECISION_SEQ,
             Sequences.FILE_RESOURCE_SEQ,
@@ -320,6 +327,7 @@ public class Public extends SchemaImpl {
             ExtensionThreat.EXTENSION_THREAT,
             ExtensionValidationFailure.EXTENSION_VALIDATION_FAILURE,
             ExtensionVersion.EXTENSION_VERSION,
+            ExtensionVersionChange.EXTENSION_VERSION_CHANGE,
             FileDecision.FILE_DECISION,
             FileResource.FILE_RESOURCE,
             FlywaySchemaHistory.FLYWAY_SCHEMA_HISTORY,

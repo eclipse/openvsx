@@ -12,33 +12,43 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publish;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link PublishExtensionVersionService#activateExtension}, focusing on the soft-delete
- * guard: a removed version is an immutable tombstone and must never be reactivated, even though it is
- * inactive and could otherwise be a reactivation candidate. This can happen when a version is soft-deleted
- * while an asynchronous scan for it is still in flight and the scan later completes (or is allowed by an
- * admin) and tries to activate it.
+ * Unit tests for {@link PublishExtensionVersionService#activateExtension}.
+ * <p>
+ * Partly the soft-delete guard: a removed version is an immutable tombstone and must never be reactivated,
+ * even though it is inactive and could otherwise be a reactivation candidate. This can happen when a
+ * version is soft-deleted while an asynchronous scan for it is still in flight and the scan later completes
+ * (or is allowed by an admin) and tries to activate it.
+ * <p>
+ * Partly the entry this appends to the changes feed log, which is where a version's publication enters the
+ * feed -- including the instant it is reported at, as the feed is ordered by it.
  */
 @ExtendWith(MockitoExtension.class)
 class PublishExtensionVersionServiceTest {
@@ -71,6 +81,56 @@ class PublishExtensionVersionServiceTest {
     }
 
     @Test
+    void activateExtension_recordsThePublication() {
+        var extVersion = version(1L, false);
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+
+        svc.activateExtension(extVersion, extensions);
+
+        // Becoming active is the transition the changes feed reports as the version's publication.
+        verify(repositories)
+                .recordExtensionVersionChange(eq(extVersion), eq(ExtensionVersionChange.STATE_ACTIVE), any());
+    }
+
+    @Test
+    void activateExtension_recordsThePublicationAtTheInstantTheVersionBecomesVisible() {
+        // Activation can wait a long time on a scan completing or on an admin releasing a quarantined
+        // version, so the version's own timestamp is well in the past by the time it becomes visible.
+        var extVersion = version(1L, false);
+        extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+
+        var before = TimeUtil.getCurrentUTC();
+        svc.activateExtension(extVersion, extensions);
+
+        var changedAt = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(repositories)
+                .recordExtensionVersionChange(
+                        eq(extVersion),
+                        eq(ExtensionVersionChange.STATE_ACTIVE),
+                        changedAt.capture());
+        // The feed is ordered by this instant, so it has to be when the version actually became
+        // visible. Recording it at the version's older timestamp would sort the entry into a part of
+        // the feed that consumers have already read past, and they would never see the publication.
+        assertThat(changedAt.getValue())
+                .as("the publication is reported when the version becomes visible, not when it was uploaded")
+                .isAfterOrEqualTo(before);
+    }
+
+    @Test
+    void activateExtension_doesNotRecordAnAlreadyActiveVersion() {
+        var extVersion = version(1L, false);
+        extVersion.setActive(true);
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+
+        svc.activateExtension(extVersion, extensions);
+
+        // Nothing changed publicly, and the log is append-only: a second entry would report a
+        // publication that never happened.
+        verify(repositories, never()).recordExtensionVersionChange(any(), any(), any());
+    }
+
+    @Test
     void activateExtension_refusesRemovedVersion() {
         var extVersion = version(1L, true);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
@@ -81,6 +141,8 @@ class PublishExtensionVersionServiceTest {
                 .as("a soft-deleted tombstone must never be reactivated")
                 .isFalse();
         verify(extensions, never()).updateExtension(any());
+        // The version never became visible, so the feed has nothing to report about it.
+        verify(repositories, never()).recordExtensionVersionChange(any(), any(), any());
     }
 
     @Test
@@ -93,6 +155,7 @@ class PublishExtensionVersionServiceTest {
 
         assertThat(extVersion.isActive()).isFalse();
         verify(extensions, never()).updateExtension(any());
+        verify(repositories, never()).recordExtensionVersionChange(any(), any(), any());
     }
 
     private ExtensionVersion version(long id, boolean removed) {

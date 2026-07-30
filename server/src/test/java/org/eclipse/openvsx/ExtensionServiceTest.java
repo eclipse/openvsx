@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -120,6 +121,97 @@ class ExtensionServiceTest {
 
         assertThat(ext.isActive()).isTrue();
         assertThat(extVersion.isActive()).isTrue();
+        // becoming visible again is its own transition, reported after the one for the deactivation
+        // rather than replacing it
+        Mockito.verify(repositories)
+                .recordExtensionVersionChange(
+                        Mockito.eq(extVersion),
+                        Mockito.eq(ExtensionVersionChange.STATE_ACTIVE),
+                        Mockito.any());
+    }
+
+    @Test
+    void shouldNotRecordAChangeForVersionsThatAreNotReactivated() {
+        var user = mockUser();
+        var ext = mockExtension();
+        var extVersion = mockExtensionVersion(ext, "1.1.0", ScanStatus.QUARANTINED, user);
+        ext.getVersions().add(extVersion);
+
+        svc.reactivateExtensions(user);
+
+        // The version stays hidden, so nothing happened that the changes feed should report.
+        assertThat(extVersion.isActive()).isFalse();
+        Mockito.verify(repositories, Mockito.never())
+                .recordExtensionVersionChange(
+                        Mockito.any(),
+                        Mockito.any(),
+                        Mockito.any());
+    }
+
+    @Test
+    void shouldReportAPurgedVersionAsRemoved() {
+        var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        // the feed announced this version as available at some point
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_ACTIVE)));
+
+        svc.removeExtensionVersion(extVersion);
+
+        // A purge takes the row with it, so unless the feed reports it the version would just stop
+        // appearing and consumers would keep offering a download that no longer exists. It is reported
+        // as removed like a deletion: the tombstone a deletion keeps is invisible from the outside.
+        // Recorded as a purge, so the entry does not reference the row this transaction is about to delete.
+        Mockito.verify(repositories)
+                .recordPurgedExtensionVersionChange(
+                        Mockito.eq(extVersion),
+                        Mockito.eq(ExtensionVersionChange.STATE_REMOVED),
+                        Mockito.any());
+    }
+
+    @Test
+    void shouldNotReportAPurgeOfAVersionThatWasAlreadyRemoved() {
+        var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_REMOVED)));
+
+        svc.removeExtensionVersion(extVersion);
+
+        // Purging a deleted version only drops its tombstone. The feed already reported it as gone, so a
+        // second entry would claim a transition that never happened.
+        Mockito.verify(repositories, Mockito.never())
+                .recordPurgedExtensionVersionChange(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldNotReportAPurgeOfAVersionThatWasNeverPublic() {
+        var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        // no entry was ever written for it, e.g. its publication failed before it was activated
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion)).thenReturn(Optional.empty());
+
+        svc.removeExtensionVersion(extVersion);
+
+        // The feed never announced this version, so it has nothing to withdraw. Reporting a removal here
+        // would tell consumers about a version they have never seen.
+        Mockito.verify(repositories, Mockito.never())
+                .recordPurgedExtensionVersionChange(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldDetachTheLogFromAPurgedVersionEvenWhenItReportsNothing() {
+        var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_REMOVED)));
+
+        svc.removeExtensionVersion(extVersion);
+
+        // The entries stay in the log but must stop pointing at the row being deleted, on this path too:
+        // an entry still referencing it when the transaction flushes is rejected outright, which would
+        // make purging a previously deleted version fail altogether.
+        Mockito.verify(repositories).detachExtensionVersionChanges(extVersion);
     }
 
     @Test
@@ -195,6 +287,29 @@ class ExtensionServiceTest {
     }
 
     // ---------- UTILITY ----------//
+
+    /**
+     * A version attached to the given extension, without the scan and lookup stubbing that
+     * {@link #mockExtensionVersion} sets up for the reactivation flow.
+     */
+    private ExtensionVersion plainExtensionVersion(Extension extension, String version) {
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform("linux");
+        extVersion.setActive(true);
+        extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
+        extVersion.setExtension(extension);
+        return extVersion;
+    }
+
+    private ExtensionVersionChange change(ExtensionVersion extVersion, String state) {
+        var change = new ExtensionVersionChange();
+        change.setExtensionVersion(extVersion);
+        change.setState(state);
+        change.setChangedAt(LocalDateTime.parse("2000-01-01T10:00"));
+        return change;
+    }
 
     private Extension mockExtension() {
         var namespace = new Namespace();
