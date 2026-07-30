@@ -48,7 +48,11 @@ export const useTrustedPublishers = (trustedPublishingUrl?: UrlString) => {
     });
 };
 
-/** The publishers of several namespaces flattened into one list. */
+/**
+ * The publishers of several namespaces flattened into one list. `registrableExtensions` stays
+ * per namespace and is index-aligned with `trustedPublishingUrls`, because registering needs to
+ * know which namespace an extension belongs to.
+ */
 export const useAllTrustedPublishers = (trustedPublishingUrls: UrlString[]) => {
     const { service } = useContext(MainContext);
     return useQueries({
@@ -59,7 +63,8 @@ export const useAllTrustedPublishers = (trustedPublishingUrls: UrlString[]) => {
         })),
         combine: results => ({
             isLoading: results.some(result => result.isLoading),
-            publishers: results.flatMap(result => result.data ?? []) as TrustedPublisher[]
+            publishers: results.flatMap(result => result.data?.trustedPublishers ?? []) as TrustedPublisher[],
+            registrableExtensions: results.map(result => result.data?.registrableExtensions ?? []) as string[][]
         })
     });
 };

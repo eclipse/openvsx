@@ -313,6 +313,9 @@ export interface TrustedPublisher {
 
 export interface TrustedPublisherList {
     trustedPublishers: TrustedPublisher[];
+    // extensions a trusted publisher can still be registered for: active, and not registered yet
+    // (the server allows at most one registration per extension)
+    registrableExtensions: string[];
 }
 
 export interface PublisherInfo {

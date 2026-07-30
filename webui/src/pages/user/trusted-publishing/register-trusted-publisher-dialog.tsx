@@ -90,7 +90,10 @@ const fieldHelp = (providerId: string, key: string): ReactNode => FIELD_HELP[pro
 
 export interface SelectableNamespace {
     name: string;
-    extensionNames: string[];
+    // extensions a trusted publisher can still be registered for, as reported by the server
+    registrableExtensions: string[];
+    // extensions that already have one; used only to explain an empty selection
+    registeredExtensions: string[];
     // base endpoint for this namespace's trusted-publishing requests
     trustedPublishingUrl: UrlString;
 }
@@ -138,7 +141,7 @@ export const RegisterTrustedPublisherDialog: FunctionComponent<RegisterTrustedPu
 
     const namespace = props.namespace ?? namespaceName;
     const selectedNamespace = props.namespaces.find(ns => ns.name === namespace);
-    const extensionNames = selectedNamespace?.extensionNames ?? [];
+    const extensionNames = selectedNamespace?.registrableExtensions ?? [];
 
     const handleClose = () => {
         if (!loading) {
@@ -202,17 +205,24 @@ export const RegisterTrustedPublisherDialog: FunctionComponent<RegisterTrustedPu
         }
     };
 
+    // Why nothing can be registered: either everything is taken (one publisher per extension) or
+    // there is nothing to bind to. Extensions must exist and be active, which the server enforces.
+    const nothingRegistrableText = (): string => {
+        if ((selectedNamespace?.registeredExtensions.length ?? 0) === 0) {
+            return 'This namespace has no active extensions yet. Publish an extension before registering a trusted publisher.';
+        }
+        return lockedExtension
+            ? 'This extension already has a trusted publisher. Delete the existing registration to replace it.'
+            : 'Every active extension in this namespace already has a trusted publisher. Delete an existing registration to replace it.';
+    };
+
     // Provider and registration fields for the chosen namespace; only rendered once one is picked.
     const renderFormBody = (): ReactNode => {
         if (namespace === '') {
             return null;
         }
-        if (!lockedExtension && extensionNames.length === 0) {
-            return (
-                <DialogContentText color='error'>
-                    This namespace has no extensions yet. Publish an extension before registering a trusted publisher.
-                </DialogContentText>
-            );
+        if (extensionNames.length === 0) {
+            return <DialogContentText color='error'>{nothingRegistrableText()}</DialogContentText>;
         }
         return (
             <>
