@@ -174,7 +174,6 @@ public class TrustedPublishingAPI {
      */
     @GetMapping(
         path = "/api/-/trusted-publishing/status",
-        consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<TrustedPublisherStatusJson> getTrustedPublishingStatus() {
