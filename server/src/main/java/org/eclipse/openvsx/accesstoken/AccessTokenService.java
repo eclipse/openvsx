@@ -12,24 +12,24 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Service;
+
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.AccessTokenJson;
+import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.jspecify.annotations.Nullable;
-import org.springframework.stereotype.Service;
-
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.AccessTokenJson;
-import org.eclipse.openvsx.json.ResultJson;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
