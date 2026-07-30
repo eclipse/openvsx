@@ -50,11 +50,8 @@ public class TrustedPublisher implements Serializable {
     private long id;
 
     @ManyToOne
-    @JoinColumn(name = "namespace", nullable = false)
-    private Namespace namespace;
-
-    @Column(name = "extension_name", nullable = false)
-    private String extensionName;
+    @JoinColumn(name = "extension_id", nullable = false)
+    private Extension extension;
 
     @Column(nullable = false, length = 32)
     private String provider;
@@ -89,8 +86,8 @@ public class TrustedPublisher implements Serializable {
         var json = new TrustedPublisherJson();
         json.setId(this.getId());
         json.setProvider(this.getProvider());
-        json.setNamespace(this.getNamespace().getName());
-        json.setExtension(this.getExtensionName());
+        json.setNamespace(this.getExtension().getNamespace().getName());
+        json.setExtension(this.getExtension().getName());
         json.setRegistration(this.getRegistration());
         if (this.getCreatedTimestamp() != null) {
             json.setCreatedTimestamp(TimeUtil.toUTCString(this.getCreatedTimestamp()));
@@ -106,20 +103,12 @@ public class TrustedPublisher implements Serializable {
         this.id = id;
     }
 
-    public Namespace getNamespace() {
-        return namespace;
+    public Extension getExtension() {
+        return extension;
     }
 
-    public void setNamespace(Namespace namespace) {
-        this.namespace = namespace;
-    }
-
-    public String getExtensionName() {
-        return extensionName;
-    }
-
-    public void setExtensionName(String extensionName) {
-        this.extensionName = extensionName;
+    public void setExtension(Extension extension) {
+        this.extension = extension;
     }
 
     public String getProvider() {
@@ -172,8 +161,7 @@ public class TrustedPublisher implements Serializable {
         }
         TrustedPublisher that = (TrustedPublisher) o;
         return id == that.id
-                && Objects.equals(namespace, that.namespace)
-                && Objects.equals(extensionName, that.extensionName)
+                && Objects.equals(extension, that.extension)
                 && Objects.equals(provider, that.provider)
                 && Objects.equals(claims, that.claims)
                 && Objects.equals(createdBy, that.createdBy)
@@ -182,6 +170,6 @@ public class TrustedPublisher implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, namespace, extensionName, provider, claims, createdBy, createdTimestamp);
+        return Objects.hash(id, extension, provider, claims, createdBy, createdTimestamp);
     }
 }

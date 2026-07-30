@@ -151,7 +151,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
         dailyUsageStats.setP95Requests(1L);
 
         var trustedPublisher = new TrustedPublisher();
-        trustedPublisher.setNamespace(namespace);
+        trustedPublisher.setExtension(extension);
         trustedPublisher.setProvider("provider");
         trustedPublisher.setRegistration(Map.of("foo", "bar"));
         trustedPublisher.setClaims(Map.of("claim", "value"));
@@ -546,8 +546,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findDailyUsageStats(customer, NOW.toLocalDate()),
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
-                () -> repositories.findTrustedPublishers(namespace),
-                () -> repositories.findTrustedPublishers(namespace, "extensionName"),
+                () -> repositories.findTrustedPublishersByExtension(extension),
                 () -> repositories.findTrustedPublisher(1L),
                 () -> repositories.deleteTrustedPublisher(trustedPublisher),
                 () -> repositories.deleteTier(tier),

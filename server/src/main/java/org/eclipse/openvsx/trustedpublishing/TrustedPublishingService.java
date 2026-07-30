@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.trustedpublishing;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +28,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.stereotype.Service;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
@@ -108,12 +110,12 @@ public class TrustedPublishingService {
         ensureEnabled();
 
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
-        boolean extensionExists = repositories.findActiveExtensionNames(namespace).contains(extensionName);
-        if (!extensionExists) {
+        Extension extension = repositories.findActiveExtension(extensionName, namespaceName);
+        if (extension == null) {
             throw new ErrorResultException("Extension must exist to register trusted publisher for it.");
         }
 
-        boolean duplicate = repositories.findTrustedPublishers(namespace, extensionName).stream().findAny().isPresent();
+        boolean duplicate = repositories.findTrustedPublishersByExtension(extension).stream().findAny().isPresent();
         if (duplicate) {
             throw new ErrorResultException("An equivalent trusted publisher is already registered.");
         }
@@ -126,8 +128,7 @@ public class TrustedPublishingService {
         Map<String, String> claims = provider.extractRequest(registration);
 
         TrustedPublisher publisher = new TrustedPublisher();
-        publisher.setNamespace(namespace);
-        publisher.setExtensionName(extensionName);
+        publisher.setExtension(extension);
         publisher.setProvider(provider.getProviderId());
         publisher.setRegistration(registration);
         publisher.setClaims(claims);
@@ -145,7 +146,14 @@ public class TrustedPublishingService {
         requireNonNull(namespaceName);
         ensureEnabled();
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
-        return repositories.findTrustedPublishers(namespace).toList();
+        ArrayList<TrustedPublisher> result = new ArrayList<>();
+        for (String extensionName : repositories.findAllExtensionNames(namespace)) {
+            Extension extension = repositories.findExtension(extensionName, namespace);
+            if (extension != null) {
+                result.addAll(repositories.findTrustedPublishersByExtension(extension).toList());
+            }
+        }
+        return result;
     }
 
     /**
@@ -158,7 +166,7 @@ public class TrustedPublishingService {
         ensureEnabled();
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
         TrustedPublisher publisher = repositories.findTrustedPublisher(id);
-        if (publisher == null || publisher.getNamespace().getId() != namespace.getId()) {
+        if (publisher == null || !Objects.equals(publisher.getExtension().getNamespace().getId(), namespace.getId())) {
             throw new NotFoundException();
         }
         repositories.deleteTrustedPublisher(publisher);
@@ -219,8 +227,12 @@ public class TrustedPublishingService {
         if (namespace == null) {
             throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
         }
+        Extension extension = repositories.findActiveExtension(extensionName, namespaceName);
+        if (extension == null) {
+            throw new ErrorResultException("No trusted publisher matches the presented token.", HttpStatus.FORBIDDEN);
+        }
 
-        TrustedPublisher match = repositories.findTrustedPublishers(namespace, extensionName).stream()
+        TrustedPublisher match = repositories.findTrustedPublishersByExtension(extension).stream()
                 .filter(tp -> tp.getProvider().equals(provider.getProviderId()))
                 .filter(tp -> provider.matches(tp.getClaims(), claims))
                 .findFirst()
