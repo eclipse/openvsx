@@ -141,6 +141,7 @@ public class AccessTokenService {
             token.setActive(false);
             return null;
         }
+        token.setAccessedTimestamp(now);
         return token.getUser();
     }
 
