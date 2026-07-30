@@ -22,7 +22,12 @@ ALTER TABLE ONLY public.personal_access_token
     ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32);
 
 UPDATE public.personal_access_token
-SET type = 'LLT';
+SET type = 'OTT'
+WHERE personal_access_token.description = 'One time use publish token';
+
+UPDATE public.personal_access_token
+SET type = 'LLT'
+WHERE personal_access_token.type IS NULL;
 
 ALTER TABLE ONLY public.personal_access_token
     ALTER COLUMN type SET NOT NULL;
