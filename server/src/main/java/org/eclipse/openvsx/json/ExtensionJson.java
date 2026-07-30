@@ -86,9 +86,9 @@ public class ExtensionJson extends ResultJson {
     @NotNull
     private UserJson publishedBy;
 
-    @Schema(description = "The token type used to publish this version")
+    @Schema(description = "Indicates whether this version was published using trusted publisher")
     @NotNull
-    private String publishedWith;
+    private Boolean trustedPublisher;
 
     @Schema(hidden = true)
     private Boolean active;
@@ -318,12 +318,12 @@ public class ExtensionJson extends ResultJson {
         this.publishedBy = publishedBy;
     }
 
-    public String getPublishedWith() {
-        return publishedWith;
+    public Boolean getTrustedPublisher() {
+        return trustedPublisher;
     }
 
-    public void setPublishedWith(String publishedWith) {
-        this.publishedWith = publishedWith;
+    public void setTrustedPublisher(Boolean trustedPublisher) {
+        this.trustedPublisher = trustedPublisher;
     }
 
     public Boolean getActive() {

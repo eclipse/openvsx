@@ -44,6 +44,9 @@ import static java.util.Objects.requireNonNull;
 
 @Service
 public class TrustedPublishingService {
+    public static final String TOKEN_DESCRIPTION_PREFIX = "Trusted publishing ";
+    private static final String TOKEN_DESCRIPTION_TEMPLATE = TOKEN_DESCRIPTION_PREFIX + "(%s)";
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TrustedPublishingConfig config;
     private final RepositoryService repositories;
@@ -229,7 +232,7 @@ public class TrustedPublishingService {
         // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
         return tokens.createAccessToken(
                 match.getCreatedBy(),
-                "Trusted publishing (" + provider.getProviderId() + ")",
+                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
                 true);
     }
 
