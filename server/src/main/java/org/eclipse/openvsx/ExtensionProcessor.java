@@ -374,7 +374,7 @@ public class ExtensionProcessor implements AutoCloseable {
         // tags, so that capping the amount of tags keeps the ones the extension considers the most
         // relevant. Duplicates are removed before the cap and therefore don't take up a slot.
         var declaredTags = asStringList(tags, ",").stream()
-                .collect(Collectors.groupingBy(String::toLowerCase, LinkedHashMap::new, Collectors.toList()))
+                .collect(Collectors.groupingBy(s -> s.toLowerCase(java.util.Locale.ROOT), LinkedHashMap::new, Collectors.toList()))
                 .values().stream()
                 .map(List::getFirst)
                 .toList();
