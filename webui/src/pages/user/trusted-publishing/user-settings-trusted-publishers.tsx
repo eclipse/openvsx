@@ -45,14 +45,25 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
     const { data: trustedPublishingStatus, isLoading: statusLoading } = useTrustedPublishingStatus();
     const providers = trustedPublishingStatus?.trustedPublisherProviders ?? [];
     const manageableNamespaces = providers.length > 0 ? namespaces.filter(canManageTrustedPublishers) : [];
-    const { publishers: allPublishers, isLoading: publishersLoading } = useAllTrustedPublishers(
-        manageableNamespaces.map(ns => ns.trustedPublishingUrl)
-    );
+    const {
+        publishers: allPublishers,
+        registrableExtensions,
+        isLoading: publishersLoading
+    } = useAllTrustedPublishers(manageableNamespaces.map(ns => ns.trustedPublishingUrl));
     const { mutateAsync: deleteTrustedPublisher, isPending: deleting } = useDeleteTrustedPublisher();
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const loading = namespacesLoading || statusLoading || publishersLoading || deleting;
     const publishers = [...allPublishers].sort(byNamespaceExtensionId);
+    // registrableExtensions is index-aligned with manageableNamespaces
+    const selectableNamespaces = manageableNamespaces.map((ns, index) => ({
+        name: ns.name,
+        registrableExtensions: registrableExtensions[index] ?? [],
+        registeredExtensions: allPublishers.filter(p => p.namespace === ns.name).map(p => p.extension),
+        trustedPublishingUrl: ns.trustedPublishingUrl
+    }));
+    // nothing to register anywhere: every active extension is taken, or there are none
+    const canRegister = selectableNamespaces.some(ns => ns.registrableExtensions.length > 0);
 
     const remove = async (publisher: TrustedPublisher) => {
         const trustedPublishingUrl = manageableNamespaces.find(
@@ -82,7 +93,7 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
                         Trusted Publishers
                     </Typography>
                 </Box>
-                {manageableNamespaces.length > 0 ? (
+                {canRegister ? (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
                         <Box sx={{ mr: 1, mb: 1 }}>
                             <Button variant='outlined' startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
@@ -99,13 +110,21 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
             </Typography>
             <DelayedLoadIndicator loading={loading} />
             {publishers.length > 0 ? (
-                <PublisherList
-                    publishers={publishers}
-                    providers={providers}
-                    loading={deleting}
-                    rowDetail='namespace/extension'
-                    onDelete={remove}
-                />
+                <>
+                    <PublisherList
+                        publishers={publishers}
+                        providers={providers}
+                        loading={deleting}
+                        rowDetail='namespace/extension'
+                        onDelete={remove}
+                    />
+                    {!canRegister ? (
+                        <Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
+                            Every active extension in your namespaces already has a trusted publisher. An extension can
+                            have only one.
+                        </Typography>
+                    ) : null}
+                </>
             ) : !loading ? (
                 <Typography variant='body1'>
                     {manageableNamespaces.length === 0
@@ -116,11 +135,7 @@ export const UserSettingsTrustedPublishers: FunctionComponent = () => {
             <RegisterTrustedPublisherDialog
                 open={dialogOpen}
                 onClose={() => setDialogOpen(false)}
-                namespaces={manageableNamespaces.map(ns => ({
-                    name: ns.name,
-                    extensionNames: Object.keys(ns.extensions),
-                    trustedPublishingUrl: ns.trustedPublishingUrl
-                }))}
+                namespaces={selectableNamespaces}
                 providers={providers}
             />
         </>

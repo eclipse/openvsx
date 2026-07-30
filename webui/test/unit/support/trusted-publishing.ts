@@ -15,6 +15,7 @@ import { vi } from 'vitest';
 import { ExtensionRegistryService } from '../../../src/extension-registry-service';
 import {
     TrustedPublisher,
+    TrustedPublisherList,
     TrustedPublisherProvider,
     TrustedPublisherStatus,
     UserData
@@ -48,6 +49,13 @@ export const trustedPublisher = (overrides: Partial<TrustedPublisher> = {}): Tru
     namespace: 'foo',
     extension: 'bar',
     registration: {},
+    ...overrides
+});
+
+/** A namespace's trusted-publishing list response: registrations plus what is still registrable. */
+export const trustedPublisherList = (overrides: Partial<TrustedPublisherList> = {}): TrustedPublisherList => ({
+    trustedPublishers: [],
+    registrableExtensions: [],
     ...overrides
 });
 

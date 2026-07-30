@@ -40,7 +40,14 @@ function renderDialog(
             open
             onClose={onClose}
             onRegistered={onRegistered}
-            namespaces={[{ name: 'foo', extensionNames: ['bar'], trustedPublishingUrl: URL_FOO }]}
+            namespaces={[
+                {
+                    name: 'foo',
+                    registrableExtensions: ['bar'],
+                    registeredExtensions: [],
+                    trustedPublishingUrl: URL_FOO
+                }
+            ]}
             namespace='foo'
             lockedExtension='bar'
             initialProvider='github'
@@ -108,10 +115,49 @@ describe('RegisterTrustedPublisherDialog', () => {
     it('explains when the namespace has no extensions to register for', () => {
         renderDialog({
             lockedExtension: undefined,
-            namespaces: [{ name: 'foo', extensionNames: [], trustedPublishingUrl: URL_FOO }]
+            namespaces: [
+                { name: 'foo', registrableExtensions: [], registeredExtensions: [], trustedPublishingUrl: URL_FOO }
+            ]
         });
 
         expect(screen.getByText(/Publish an extension before registering/)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
+    });
+
+    // an extension takes at most one trusted publisher, so a fully registered namespace offers nothing
+    it('explains when every extension already has a trusted publisher', () => {
+        renderDialog({
+            lockedExtension: undefined,
+            namespaces: [
+                {
+                    name: 'foo',
+                    registrableExtensions: [],
+                    registeredExtensions: ['bar'],
+                    trustedPublishingUrl: URL_FOO
+                }
+            ]
+        });
+
+        expect(screen.getByText(/Every active extension in this namespace already has/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
+    });
+
+    it('offers only the registrable extensions', async () => {
+        const ue = userEvent.setup();
+        renderDialog({
+            lockedExtension: undefined,
+            namespaces: [
+                {
+                    name: 'foo',
+                    registrableExtensions: ['free'],
+                    registeredExtensions: ['taken'],
+                    trustedPublishingUrl: URL_FOO
+                }
+            ]
+        });
+
+        await ue.click(screen.getByRole('combobox', { name: /Extension/ }));
+        expect(screen.getByRole('option', { name: 'free' })).toBeInTheDocument();
+        expect(screen.queryByRole('option', { name: 'taken' })).not.toBeInTheDocument();
     });
 });

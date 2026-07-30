@@ -109,11 +109,13 @@ public class TrustedPublishingAPI {
         }
 
         try {
+            var trustedPublishers = trustedPublishing.getTrustedPublishers(user, namespace);
             var json = new TrustedPublisherListJson();
             json.setTrustedPublishers(
-                    trustedPublishing.getTrustedPublishers(user, namespace).stream()
+                    trustedPublishers.publishers().stream()
                             .map(TrustedPublisher::toJson)
                             .toList());
+            json.setRegistrableExtensions(trustedPublishers.registrableExtensions());
             return ResponseEntity.ok(json);
         } catch (NotFoundException exc) {
             var json = TrustedPublisherListJson.error("Namespace not found: " + namespace);
