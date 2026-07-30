@@ -28,13 +28,13 @@ public class NotifyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final SettingsService settings;
     private final AccessTokenConfig config;
-    private final PersonalAccessTokens tokens;
+    private final AccessTokenService tokens;
     private final RepositoryService repositories;
 
     public NotifyPersonalAccessTokenExpirationHandler(
             SettingsService settings,
             AccessTokenConfig config,
-            PersonalAccessTokens tokens,
+            AccessTokenService tokens,
             RepositoryService repositories
     ) {
         this.settings = settings;

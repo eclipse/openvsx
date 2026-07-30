@@ -26,12 +26,12 @@ public class LegacyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final SettingsService settings;
     private final AccessTokenConfig config;
-    private final PersonalAccessTokens tokens;
+    private final AccessTokenService tokens;
 
     public LegacyPersonalAccessTokenExpirationHandler(
             SettingsService settings,
             AccessTokenConfig config,
-            PersonalAccessTokens tokens
+            AccessTokenService tokens
     ) {
         this.settings = settings;
         this.config = config;

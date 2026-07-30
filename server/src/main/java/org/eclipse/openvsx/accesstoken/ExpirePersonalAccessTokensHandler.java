@@ -24,9 +24,9 @@ public class ExpirePersonalAccessTokensHandler implements JobRequestHandler<Hand
     private final Logger logger = LoggerFactory.getLogger(ExpirePersonalAccessTokensHandler.class);
 
     private final SettingsService settings;
-    private final PersonalAccessTokens tokens;
+    private final AccessTokenService tokens;
 
-    public ExpirePersonalAccessTokensHandler(SettingsService settings, PersonalAccessTokens tokens) {
+    public ExpirePersonalAccessTokensHandler(SettingsService settings, AccessTokenService tokens) {
         this.settings = settings;
         this.tokens = tokens;
     }

@@ -39,7 +39,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
-import org.eclipse.openvsx.accesstoken.PersonalAccessTokens;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -106,9 +105,6 @@ class UserAPITest {
     @MockitoSpyBean
     AccessTokenService tokens;
 
-    @MockitoSpyBean
-    PersonalAccessTokens personalAccessTokens;
-
     @MockitoBean
     EntityManager entityManager;
 
@@ -123,6 +119,8 @@ class UserAPITest {
 
     @Autowired
     MockMvc mockMvc;
+    @Autowired
+    private AccessTokenService accessTokenService;
 
     @Test
     void testLoggedIn() throws Exception {
@@ -174,7 +172,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(personalAccessTokens).generateTokenValue();
+        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue();
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -1081,19 +1079,12 @@ class UserAPITest {
 
         @Bean
         AccessTokenService accessTokenService(
-                PersonalAccessTokens personalAccessTokens
-        ) {
-            return new AccessTokenService(personalAccessTokens);
-        }
-
-        @Bean
-        PersonalAccessTokens personalAccessTokens(
                 AccessTokenConfig config,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new PersonalAccessTokens(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean

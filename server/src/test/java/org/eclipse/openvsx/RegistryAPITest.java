@@ -51,7 +51,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
-import org.eclipse.openvsx.accesstoken.PersonalAccessTokens;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
@@ -2973,19 +2972,12 @@ class RegistryAPITest {
 
         @Bean
         AccessTokenService tokenService(
-                PersonalAccessTokens personalAccessTokens
-        ) {
-            return new AccessTokenService(personalAccessTokens);
-        }
-
-        @Bean
-        PersonalAccessTokens personalAccessTokens(
                 AccessTokenConfig config,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new PersonalAccessTokens(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, entityManager, repositories, mailService);
         }
 
         @Bean
