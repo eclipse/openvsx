@@ -75,7 +75,6 @@ public class PersonalAccessToken implements Serializable {
         }
         json.setNotified(this.isNotified());
         json.setDescription(this.getDescription());
-        json.setType(this.getType().name());
         return json;
     }
 

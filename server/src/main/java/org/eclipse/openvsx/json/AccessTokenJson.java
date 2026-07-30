@@ -41,8 +41,6 @@ public class AccessTokenJson extends ResultJson {
 
     private String deleteTokenUrl;
 
-    private String type;
-
     public Long getId() {
         return id;
     }
@@ -108,13 +106,5 @@ public class AccessTokenJson extends ResultJson {
 
     public void setDeleteTokenUrl(String deleteTokenUrl) {
         this.deleteTokenUrl = deleteTokenUrl;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 }
