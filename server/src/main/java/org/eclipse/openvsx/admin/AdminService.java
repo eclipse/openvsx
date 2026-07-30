@@ -9,6 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
+import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.ICON;
+import static org.eclipse.openvsx.entities.FileResource.LICENSE;
+import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
+import static org.eclipse.openvsx.entities.FileResource.README;
+import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
+
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -17,21 +25,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
-import org.jobrunr.scheduling.JobRequestScheduler;
-import org.jobrunr.scheduling.cron.Cron;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
@@ -57,15 +53,26 @@ import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
+import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jobrunr.scheduling.cron.Cron;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 
-import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.ICON;
-import static org.eclipse.openvsx.entities.FileResource.LICENSE;
-import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
-import static org.eclipse.openvsx.entities.FileResource.README;
-import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
 @Component
 public class AdminService {
@@ -596,34 +603,22 @@ public class AdminService {
             eclipse.revokePublisherAgreement(user, admin);
         }
 
-        // Handle namespace memberships. Where the user is the sole member, unpublish the
-        // namespace's extensions (deactivate every version, which deactivates the extension and
-        // drops it from search) but keep them in the database for existing installs. Where other
-        // members remain, only the membership is removed and the extensions stay active.
-        var unpublishedExtensionCount = 0;
+        // Handle namespace memberships, removing the users active memberships where found
         var removedMembershipCount = 0;
         for (var membership : repositories.findMemberships(user).toList()) {
             var namespace = membership.getNamespace();
-            var soleMember = repositories.findMemberships(namespace).toList().size() <= 1;
-            if (soleMember) {
-                for (var extension : repositories.findActiveExtensions(namespace).toList()) {
-                    var deactivated = false;
-                    for (var version : repositories.findVersions(extension)) {
-                        if (version.isActive()) {
-                            version.setActive(false);
-                            deactivated = true;
-                        }
-                    }
-                    if (deactivated) {
-                        extensions.updateExtension(extension);
-                        unpublishedExtensionCount++;
-                    }
-                }
-            }
-
             users.removeNamespaceMember(namespace, user);
             removedMembershipCount++;
             search.updateSearchEntries(repositories.findActiveExtensions(namespace).toList());
+        }
+
+        var removedExtensionCount = 0;
+        // Delete all published extension versions for the user, both active and not
+        var allVersions = Stream.concat(repositories.findVersionsByUser(user, true).stream(),
+                repositories.findVersionsByUser(user, false).stream()).toList();
+        for (var version : allVersions) {
+            extensions.deleteExtensionVersion(user, version);
+            removedExtensionCount++;
         }
 
         // Remove customer memberships. The customer and its rate-limit tokens are organisation-level
@@ -665,7 +660,7 @@ public class AdminService {
 
         // The success message deliberately contains no personal data, only the tombstone id and counts.
         var result = ResultJson.success("Forgot user " + tombstoneLogin
-                + ": unpublished " + unpublishedExtensionCount + " extensions, removed "
+                + ": unpublished " + removedExtensionCount + " extensions, removed "
                 + removedMembershipCount + " namespace memberships, removed "
                 + removedCustomerMembershipCount + " customer memberships, deleted "
                 + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
