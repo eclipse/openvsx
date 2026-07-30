@@ -127,13 +127,18 @@ public class ExtensionService {
         ExtensionScan scan = null;
 
         try (var processor = new ExtensionProcessor(extensionFile)) {
+            // Fail before any validation or scanning happens (and before a scan record is stored) if the
+            // extension version can not be published anyway, e.g. because the publisher lacks the access
+            // rights for the namespace or the version is published already.
+            publishHandler.checkPublishPreconditions(processor, token);
+
             scan = scanService.initializeScan(processor, token.getUser());
 
             scanService.runValidation(scan, extensionFile, token.getUser());
 
             doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
 
-            // Publish async handles requesting the longrunning scans
+            // Publish async handles requesting the long-running scans
             publishHandler.publishAsync(extensionFile, this, scan);
             var download = extensionFile.getResource();
             publishHandler.schedulePublicIdJob(extensionFile.getResource());
@@ -242,6 +247,11 @@ public class ExtensionService {
     }
 
     private boolean canBeReactivated(ExtensionVersion extVersion) {
+        // A soft-deleted version is a permanent tombstone and must never be reactivated.
+        if (extVersion.isRemoved()) {
+            return false;
+        }
+
         var scan = repositories.findLatestExtensionScan(extVersion);
         // if no scan could be found, scanning is disabled, so allow reactivation
         if (scan == null) {
@@ -264,32 +274,15 @@ public class ExtensionService {
     }
 
     /**
-     * Delete an extension version published by the given user.
-     * <p>
-     * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
-     * is updated at the same time, the operation will fail.
-     * <p>
-     * If the resolved extension version has not been published by the given user,
-     * a {@code ErrorResultException} will be thrown.
-     */
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteUserExtension(
-            UserData user,
-            String namespaceName,
-            String extensionName,
-            TargetPlatformVersion... targetVersions
-    ) throws ErrorResultException {
-        return deleteExtension(user, true, namespaceName, extensionName, targetVersions);
-    }
-
-    /**
-     * Deletes the given extension.
+     * Soft-deletes the given extension versions.
      * <p>
      * The extension will be locked for the operation. If the lock can not be acquired, i.e. the extension
      * is updated at the same time, the operation will fail.
      * <p>
      * If {@code restrictedToUser} is {@code true}, the deletion operation is only successful if the user
      * has published the respective extension version.
+     * <p>
+     * The versions to delete must be named explicitly; an empty {@code targetVersions} deletes nothing.
      */
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson deleteExtension(
@@ -300,40 +293,116 @@ public class ExtensionService {
             TargetPlatformVersion... targetVersions
     ) throws ErrorResultException {
         var extension = lockExtensionNoWait(namespaceName, extensionName);
-        if (repositories
-                .isDeleteAllVersions(restrictedToUser ? user : null, namespaceName, extensionName, targetVersions)) {
-            return deleteExtension(user, extension, true);
+        var uniqueVersions = distinctVersions(targetVersions);
+        var versions = resolveVersions(user, restrictedToUser, namespaceName, extensionName, uniqueVersions);
+
+        // if all active versions of the extension would get deactivated, check for dependencies
+        if (extension.isActive() &&
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, uniqueVersions)) {
+            checkNoDependencies(extension);
         }
 
-        return deleteExtensionVersions(
-                user,
-                Arrays.stream(targetVersions)
-                        .map(target -> {
-                            var extVersion = restrictedToUser
-                                    ? repositories.findVersionPublishedWithUser(
-                                            user,
-                                            target.version(),
-                                            target.targetPlatform(),
-                                            extensionName,
-                                            namespaceName)
-                                    : repositories.findVersion(
-                                            target.version(),
-                                            target.targetPlatform(),
-                                            extensionName,
-                                            namespaceName);
+        return deleteExtensionVersions(user, versions);
+    }
 
-                            if (extVersion == null) {
-                                throw new ErrorResultException(
-                                        "Extension not found: " + NamingUtil.toLogFormat(
-                                                namespaceName,
-                                                extensionName,
-                                                target.targetPlatform(),
-                                                target.version()),
-                                        HttpStatus.NOT_FOUND);
-                            }
-                            return extVersion;
-                        })
-                        .toList());
+    /**
+     * Purges (permanently deletes) the given extension versions from the database and storage.
+     * <p>
+     * Unlike {@link #deleteExtension(UserData, boolean, String, String, TargetPlatformVersion...)}, which
+     * soft-deletes versions (keeping the row so the version identity stays reserved), this physically removes
+     * the rows and frees the version identity for republishing. It is intended for administrative purge and
+     * automated cleanup (mirror, extension control) and performs no user-ownership check.
+     * <p>
+     * The versions to purge must be named explicitly; an empty {@code targetVersions} purges nothing. Use
+     * {@link #purgeExtension(UserData, Extension, boolean)} to purge an extension as a whole.
+     * <p>
+     * The method will try to lock the extension and fail with an {@code ErrorResultException} if it can't acquire it.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson purgeExtensionNoWait(
+            UserData user,
+            String namespaceName,
+            String extensionName,
+            TargetPlatformVersion... targetVersions
+    ) throws ErrorResultException {
+        var extension = lockExtensionNoWait(namespaceName, extensionName);
+        var uniqueVersions = distinctVersions(targetVersions);
+        var versions = resolveVersions(user, false, namespaceName, extensionName, uniqueVersions);
+
+        // if every version of the extension is purged, purge the extension as a whole so that its
+        // record, reviews and search entry are removed too and nothing is left orphaned
+        if (!versions.isEmpty() && versions.size() == repositories.countVersions(namespaceName, extensionName)) {
+            return purgeExtension(user, extension, extension.isActive());
+        }
+
+        // if all active versions of the extension would get deactivated, check for dependencies
+        if (extension.isActive() &&
+                repositories.isDeleteAllActiveVersions(namespaceName, extensionName, uniqueVersions)) {
+            checkNoDependencies(extension);
+        }
+
+        return purgeExtensionVersions(user, versions);
+    }
+
+    /**
+     * Returns the given target versions with duplicates removed, so that callers can reason about the
+     * exact set of versions to delete/purge without a repeated entry inflating any count-based check.
+     */
+    private static TargetPlatformVersion[] distinctVersions(TargetPlatformVersion... targetVersions) {
+        return Arrays.stream(targetVersions).distinct().toArray(TargetPlatformVersion[]::new);
+    }
+
+    private List<ExtensionVersion> resolveVersions(
+            UserData user,
+            boolean restrictedToUser,
+            String namespaceName,
+            String extensionName,
+            TargetPlatformVersion... targetVersions
+    ) {
+        var versions = Arrays.stream(targetVersions)
+                .map(target -> {
+                    var extVersion = restrictedToUser
+                            ? repositories.findVersionPublishedWithUser(
+                                    user,
+                                    target.version(),
+                                    target.targetPlatform(),
+                                    extensionName,
+                                    namespaceName)
+                            : repositories.findVersion(
+                                    target.version(),
+                                    target.targetPlatform(),
+                                    extensionName,
+                                    namespaceName);
+
+                    if (extVersion == null) {
+                        throw new ErrorResultException(
+                                "Extension not found: " + NamingUtil.toLogFormat(
+                                        namespaceName,
+                                        extensionName,
+                                        target.targetPlatform(),
+                                        target.version()),
+                                HttpStatus.NOT_FOUND);
+                    }
+                    return extVersion;
+                })
+                .toList();
+
+        // Guard against a mismatch between the requested versions and what was actually resolved: the
+        // resolved versions must correspond exactly to the requested (target platform, version) pairs.
+        // Otherwise, the count-based "delete/purge all versions" checks could be driven to a wrong
+        // conclusion (e.g. by duplicate or unexpectedly-resolving entries).
+        var requested = Arrays.stream(targetVersions).collect(Collectors.toSet());
+        var resolved = versions.stream()
+                .map(v -> new TargetPlatformVersion(v.getTargetPlatform(), v.getVersion()))
+                .collect(Collectors.toSet());
+        if (!resolved.equals(requested)) {
+            throw new ErrorResultException(
+                    "The requested versions of " + NamingUtil.toExtensionId(namespaceName, extensionName)
+                            + " could not be resolved.",
+                    HttpStatus.BAD_REQUEST);
+        }
+
+        return versions;
     }
 
     /**
@@ -346,6 +415,19 @@ public class ExtensionService {
         var results = new ArrayList<ResultJson>();
         for (var version : versions) {
             results.add(deleteExtensionVersion(user, version));
+        }
+        return combineResults(results);
+    }
+
+    /**
+     * Purges (permanently deletes) the given pre-resolved extension versions without any ownership check.
+     * Callers are responsible for authorisation.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson purgeExtensionVersions(UserData user, List<ExtensionVersion> versions) {
+        var results = new ArrayList<ResultJson>();
+        for (var version : versions) {
+            results.add(purgeExtensionVersion(user, version));
         }
         return combineResults(results);
     }
@@ -402,36 +484,58 @@ public class ExtensionService {
     }
 
     /**
-     * Delete the given extension and evict caches.
+     * Soft-delete a single extension version: strip its files from storage and mark it as removed,
+     * but keep the row so the version identity stays reserved. Does not touch the parent extension;
+     * callers are responsible for calling {@link #updateExtension(Extension)} afterwards.
+     */
+    private void softDeleteExtensionVersion(UserData user, ExtensionVersion extVersion) {
+        deleteFiles(extVersion);
+        extVersion.setActive(false);
+        extVersion.setRemoved(true);
+        extVersion.setRemovedTimestamp(TimeUtil.getCurrentUTC());
+        extVersion.setRemovedBy(user);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtensionVersion(UserData user, ExtensionVersion extVersion) {
+        if (extVersion.isRemoved()) {
+            return ResultJson.success("Already removed " + NamingUtil.toLogFormat(extVersion));
+        }
+
+        var extension = extVersion.getExtension();
+        softDeleteExtensionVersion(user, extVersion);
+        updateExtension(extension);
+
+        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        logs.logAction(user, result);
+        return result;
+    }
+
+    /**
+     * Purge (permanently delete) the given extension and evict caches.
      * <p>
-     * If {@code checkDependencies} is {@code true} and this extension is referenced by a bundle or used
-     * as a dependency, the delete operation will fail.
+     * This physically removes the extension and all its versions from the database and storage, freeing
+     * the extension and version identities for republishing. Intended for administrative purge and automated
+     * cleanup (mirror, extension control).
+     * <p>
+     * If {@code checkDependencies} is {@code true} and another extension declares a dependency on this
+     * extension, the operation will fail. Extension packs that bundle this extension are deliberately
+     * <em>not</em> checked: bundles are not validated on publication either and IDEs skip bundled
+     * extensions that do not exist (see #1956).
+     * <p>
+     * The given extension must be managed by the current transaction, e.g. locked via
+     * {@link #lockExtension(String, String)}. Use {@link #purgeExtension(UserData, String, String)} if only
+     * the extension coordinates are at hand.
      *
      * @param user the user that will be used for logging the operation
-     * @param extension the extension to delete
-     * @param checkDependencies whether to check if this extension is still references by bundles or as a dependency
+     * @param extension the extension to purge
+     * @param checkDependencies whether to check if this extension is still referenced as a dependency
      */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtension(UserData user, Extension extension, boolean checkDependencies)
+    public ResultJson purgeExtension(UserData user, Extension extension, boolean checkDependencies)
             throws ErrorResultException {
         if (checkDependencies) {
-            var bundledRefs = repositories.findBundledExtensionsReference(extension);
-            if (!bundledRefs.isEmpty()) {
-                throw new ErrorResultException(
-                        "Extension " + NamingUtil.toExtensionId(extension)
-                                + " is bundled by the following extension packs: "
-                                + bundledRefs.stream()
-                                        .map(NamingUtil::toFileFormat)
-                                        .collect(Collectors.joining(", ")));
-            }
-            var dependRefs = repositories.findDependenciesReference(extension);
-            if (!dependRefs.isEmpty()) {
-                throw new ErrorResultException(
-                        "The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
-                                + dependRefs.stream()
-                                        .map(NamingUtil::toFileFormat)
-                                        .collect(Collectors.joining(", ")));
-            }
+            checkNoDependencies(extension);
         }
 
         for (var extVersion : repositories.findVersions(extension)) {
@@ -457,31 +561,70 @@ public class ExtensionService {
 
         search.removeSearchEntry(extension);
 
-        var result = ResultJson.success("Deleted " + NamingUtil.toExtensionId(extension));
+        var result = ResultJson.success("Purged " + NamingUtil.toExtensionId(extension));
         logs.logAction(user, result);
         return result;
     }
 
+    /**
+     * Purge (permanently delete) the given extension and evict caches. The extension is locked for the
+     * operation, waiting until the lock can be acquired. No dependency check is performed.
+     *
+     * @throws ErrorResultException if no extension exists with the given namespace and extension name
+     */
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson deleteExtensionVersion(UserData user, ExtensionVersion extVersion) {
-        var extension = extVersion.getExtension();
-        removeExtensionVersion(extVersion);
-        extension.getVersions().remove(extVersion);
+    public ResultJson purgeExtension(UserData user, String namespaceName, String extensionName)
+            throws ErrorResultException {
+        return purgeExtension(user, lockExtension(namespaceName, extensionName), false);
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson purgeExtensionVersion(UserData user, ExtensionVersion extVersion) {
+        // Callers may hand us a version that was loaded in another transaction (background jobs collect
+        // versions before purging them), which would be detached here. Re-read it so that removing it and
+        // updating the parent extension below both operate on managed entities.
+        var managedVersion = entityManager.find(ExtensionVersion.class, extVersion.getId());
+        if (managedVersion == null) {
+            return ResultJson.success("Already purged " + NamingUtil.toLogFormat(extVersion));
+        }
+
+        var extension = managedVersion.getExtension();
+        removeExtensionVersion(managedVersion);
+        extension.getVersions().remove(managedVersion);
         updateExtension(extension);
 
-        var result = ResultJson.success("Deleted " + NamingUtil.toLogFormat(extVersion));
+        var result = ResultJson.success("Purged " + NamingUtil.toLogFormat(managedVersion));
         logs.logAction(user, result);
         return result;
     }
 
-    @Transactional(rollbackOn = ErrorResultException.class)
-    public void removeExtensionVersion(ExtensionVersion extVersion) {
+    private void checkNoDependencies(Extension extension) throws ErrorResultException {
+        var dependRefs = repositories.findDependenciesReference(extension);
+        if (!dependRefs.isEmpty()) {
+            throw new ErrorResultException(
+                    "The following extensions have a dependency on " + NamingUtil.toExtensionId(extension) + ": "
+                            + dependRefs.stream()
+                                    .map(NamingUtil::toFileFormat)
+                                    .collect(Collectors.joining(", ")));
+        }
+    }
+
+    private void deleteFiles(ExtensionVersion extVersion) {
         // Clean up any pending scan jobs for this extension version
         // to prevent "file not found" errors after deletion
         scanPersistenceService.deleteScansForExtensionVersion(extVersion.getId());
 
         repositories.findFiles(extVersion).map(RemoveFileJobRequest::new).forEach(scheduler::enqueue);
         repositories.deleteFiles(extVersion);
+    }
+
+    /**
+     * Physically remove an extension version: strip its files from storage and delete the row.
+     * This is the low-level hard-delete primitive used by the purge paths.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public void removeExtensionVersion(ExtensionVersion extVersion) {
+        deleteFiles(extVersion);
         entityManager.remove(extVersion);
     }
 }

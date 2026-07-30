@@ -195,6 +195,14 @@ public class RepositoryService {
         return namespaceJooqRepo.findNameByNameIgnoreCase(name);
     }
 
+    /**
+     * Locks the namespace row so that concurrent publications creating the same extension serialize
+     * against each other, see {@link NamespaceRepository#findByIdForUpdate(long)}.
+     */
+    public void lockNamespace(Namespace namespace) {
+        namespaceRepo.findByIdForUpdate(namespace.getId());
+    }
+
     public Streamable<Namespace> findOrphanNamespaces() {
         return namespaceRepo.findOrphans();
     }
@@ -286,7 +294,7 @@ public class RepositoryService {
     }
 
     public Page<ExtensionVersion> findActiveVersionsSorted(String namespace, String extension, PageRequest page) {
-        return extensionVersionRepo.findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+        return extensionVersionRepo.findByActiveTrueAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
                 extension,
                 namespace,
                 page.withSort(VERSIONS_SORT));
@@ -298,11 +306,12 @@ public class RepositoryService {
             String targetPlatform,
             PageRequest page
     ) {
-        return extensionVersionRepo.findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
-                targetPlatform,
-                extension,
-                namespace,
-                page.withSort(VERSIONS_SORT));
+        return extensionVersionRepo
+                .findByActiveTrueAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+                        targetPlatform,
+                        extension,
+                        namespace,
+                        page.withSort(VERSIONS_SORT));
     }
 
     public Page<String> findActiveVersionStringsSorted(
@@ -623,7 +632,7 @@ public class RepositoryService {
     }
 
     public int countVersions(String namespaceName, String extensionName) {
-        return extensionVersionJooqRepo.count(namespaceName, extensionName);
+        return extensionVersionJooqRepo.countVersions(namespaceName, extensionName);
     }
 
     public Slice<MigrationItem> findNotMigratedItems(Pageable page) {
@@ -715,8 +724,8 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findVersionsForUrls(extension, targetPlatform, version);
     }
 
-    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
-        return extensionJooqRepo.findActiveExtensionsForUrls(namespace);
+    public List<Extension> findExtensionsForUrls(Namespace namespace) {
+        return extensionJooqRepo.findExtensionsForUrls(namespace);
     }
 
     public ExtensionVersion findExtensionVersion(
@@ -822,6 +831,10 @@ public class RepositoryService {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }
 
+    public List<String> findAllExtensionNames(Namespace namespace) {
+        return extensionJooqRepo.findAllExtensionNames(namespace);
+    }
+
     public List<NamespaceMembership> findMembershipsForOwner(UserData user, String namespaceName) {
         return membershipJooqRepo.findMembershipsForOwner(user, namespaceName);
     }
@@ -892,13 +905,12 @@ public class RepositoryService {
         return migrationItemJooqRepo.findRemoveFileResourceTypeResourceMigrationItems(offset, limit);
     }
 
-    public boolean isDeleteAllVersions(
-            @Nullable UserData user,
+    public boolean isDeleteAllActiveVersions(
             String namespaceName,
             String extensionName,
             TargetPlatformVersion... targetVersions
     ) {
-        return extensionVersionJooqRepo.isDeleteAllVersions(user, namespaceName, extensionName, targetVersions);
+        return extensionVersionJooqRepo.isDeleteAllActiveVersions(namespaceName, extensionName, targetVersions);
     }
 
     public List<Extension> findSimilarExtensionsByLevenshtein(

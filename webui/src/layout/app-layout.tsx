@@ -12,14 +12,13 @@
  ********************************************************************************/
 
 import { FunctionComponent, lazy, Suspense, useContext, useEffect, useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Banner } from '../components/banner';
 import { ShortcutsModal } from '../components/shortcuts-modal';
 import { MainContext } from '../context';
-import { SearchProvider } from '../context/search/search-context';
-import { KeyboardShortcutsProvider } from '../context/keyboard-shortcuts-context';
+import { useSearch } from '../hooks/use-search';
 import { ExtensionTintProvider } from '../context/extension-tint-context';
 import { useShortcut } from '../hooks/use-shortcut';
 import { getCookieValueByKey, setCookie } from '../utils';
@@ -53,6 +52,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     const legacyFooterHeight = typeof footer === 'object' && 'content' in footer ? footer.props?.footerHeight : 0;
 
     const navigate = useNavigate();
+    const { search } = useSearch();
     const [isBannerOpen, setIsBannerOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -78,7 +78,8 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
         key: 's',
         label: 'Go to search',
         order: 5,
-        callback: () => navigate('/search')
+        // Through `search` (not a bare navigate) so the field clears with the URL.
+        callback: () => search({ query: '' })
     });
 
     const onDismissBannerButtonClick = () => {
@@ -104,10 +105,14 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
             ) : null}
             <AppNavbar />
             {/* Mobile: fill the viewport so the (screen-tall) footer stays below the fold.
-                Desktop: flexGrow alone sticks the footer to the viewport bottom. */}
+                Desktop: flexGrow alone sticks the footer to the viewport bottom. A flex
+                column so pages can opt into stretching over the leftover space
+                (e.g. the search page runs its sidebar seam down to the footer). */}
             <Box
                 sx={{
                     flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
                     minHeight: { xs: `calc(100vh - ${NAVBAR_HEIGHT})`, sm: 0 },
                     // Only the fixed legacy footer needs clearance; the in-flow footer's gap lives on <PageContainer>.
                     pb: legacyFooterHeight ? `${legacyFooterHeight + 24}px` : 0
@@ -138,14 +143,12 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
     );
 };
 
+// Keyboard shortcuts and search now live app-wide in AppProviders; this keeps
+// only the feature-scoped tint provider.
 export const AppLayout: FunctionComponent<AppLayoutProps> = props => (
-    <KeyboardShortcutsProvider>
-        <SearchProvider>
-            <ExtensionTintProvider>
-                <AppLayoutContent {...props} />
-            </ExtensionTintProvider>
-        </SearchProvider>
-    </KeyboardShortcutsProvider>
+    <ExtensionTintProvider>
+        <AppLayoutContent {...props} />
+    </ExtensionTintProvider>
 );
 
 export interface AppLayoutProps {

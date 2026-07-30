@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, useLayoutEffect } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router';
 
 // BrowserRouter leaves window scroll untouched on navigation, so a page opened
 // from deep in a long list would start at that old offset. Reset to the top on

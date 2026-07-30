@@ -18,25 +18,30 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Changed
 
 - Redesign the web UI: new navbar with integrated search field, new theme, extension cards, category pills and page layout
+- Consolidate the app-wide providers into a single `AppProviders`; keyboard shortcuts and search now wrap every route, including the admin dashboard
 - Improve accessibility: visible focus outlines on interactive controls
 - Morph the hero search into the navbar search field using the View Transitions API
 - Token display in generate-token dialog now uses a masked input with show/hide toggle and copy button ([#1966](https://github.com/eclipse-openvsx/openvsx/pull/1966)
 - Migrate admin dashboard to use `@tanstack/react-query` ([#1917](https://github.com/eclipse-openvsx/openvsx/pull/1917)
 - Replace formatting from `stylistic` with `prettier` ([#1916](https://github.com/eclipse-openvsx/openvsx/pull/1916))
 - Upgrade to vite 8+ and disable manual chunks for bundling ([#1989](https://github.com/eclipse-openvsx/openvsx/pull/1989))
+- Upgrade to react-router 7: import everything from `react-router` instead of `react-router-dom`. Consumers passing `additionalRoutes` must upgrade to react-router 7 as well
 
 ### Fixed
 
 - Refresh the extension version list in the delete views when a delete fails with a conflict
+- Keep the hero-to-navbar search morph working under react-router 7, which wraps location updates in `React.startTransition`
 
 ### Dependencies
 
 - Bump brace-expansion from `1.1.11` to `1.1.16` ([#1981](https://github.com/eclipse-openvsx/openvsx/pull/1981))
 - Bump brace-expansion from `2.0.2` to `2.1.2` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
 - Bump brace-expansion from `5.0.3` to `5.0.7` ([#1944](https://github.com/eclipse-openvsx/openvsx/pull/1944))
-- Bump tar from `7.5.16` to `7.5.19` ([#1959](https://github.com/eclipse-openvsx/openvsx/pull/1959))
+- Bump tar from `7.5.16` to `7.5.22` ([#1994](https://github.com/eclipse-openvsx/openvsx/pull/1994))
 - Bump js-yaml from `4.2.0` to `4.3.0` ([#1976](https://github.com/eclipse-openvsx/openvsx/pull/1976))
 - Bump dompurify from `3.4.11` to `3.4.12` ([#1984](https://github.com/eclipse-openvsx/openvsx/pull/1984))
+- Bump react-router from `6.30.4` to `7.18.1`
+- Remove react-router-dom and its stale `@types/react-router-dom` v5 typings
 
 ## [v1.0.2] (23/06/2026)
 

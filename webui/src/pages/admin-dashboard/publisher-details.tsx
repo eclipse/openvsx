@@ -24,7 +24,7 @@ import {
     Typography
 } from '@mui/material';
 import { useIsMutating } from '@tanstack/react-query';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';
@@ -34,7 +34,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import { UserRelationships, SuccessResult } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
-import { UserExtensionList } from '../user/user-extension-list';
+import { ExtensionCardList } from '../../components/extension/extension-card-list';
 import { handleError as formatError, toLocalTime } from '../../utils';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { PublisherRevokeContributionsButton } from './publisher-revoke-dialog';
@@ -256,7 +256,11 @@ export const PublisherDetails: FunctionComponent<{ entry: UserRelationships }> =
                             title='Published extensions'
                             count={publisherInfo.extensions.length}>
                             {publisherInfo.extensions.length > 0 ? (
-                                <UserExtensionList extensions={publisherInfo.extensions} loading={false} />
+                                <ExtensionCardList
+                                    extensions={publisherInfo.extensions}
+                                    loading={false}
+                                    routePrefix={AdminDashboardRoutes.EXTENSION_ADMIN}
+                                />
                             ) : (
                                 <Typography variant='body2' color='text.secondary'>
                                     This user has not published any extensions.

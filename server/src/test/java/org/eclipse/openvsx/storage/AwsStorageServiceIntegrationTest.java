@@ -10,6 +10,10 @@
 package org.eclipse.openvsx.storage;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -17,6 +21,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +33,9 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -50,6 +55,8 @@ import org.eclipse.openvsx.util.TempFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("integration")
+@Tag("s3")
 @Testcontainers
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AwsStorageServiceIntegrationTest.TestConfig.class)
@@ -60,7 +67,7 @@ class AwsStorageServiceIntegrationTest {
 
     @Container
     static LocalStackContainer localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:4.7"))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.IAM)
+            .withServices("s3", "iam")
             .withReuse(true);
 
     @Autowired
@@ -78,7 +85,7 @@ class AwsStorageServiceIntegrationTest {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add(
                 "ovsx.storage.aws.service-endpoint",
-                () -> localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                () -> localstack.getEndpoint().toString());
         registry.add("ovsx.storage.aws.access-key-id", () -> "test");
         registry.add("ovsx.storage.aws.secret-access-key", () -> "test");
         registry.add("ovsx.storage.aws.region", () -> TEST_REGION);
@@ -99,11 +106,11 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 storageService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(storageService, "pathStyleAccess", true);
 
         testS3Client = S3Client.builder()
-                .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
+                .endpointOverride(localstack.getEndpoint())
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
                                 AwsBasicCredentials.create("test", "test")))
@@ -237,6 +244,39 @@ class AwsStorageServiceIntegrationTest {
         assertTrue(locationStr.contains(TEST_BUCKET));
         assertTrue(locationStr.contains("testnamespace/test-extension/1.0.0/extension.vsix"));
         assertTrue(locationStr.contains("X-Amz-Algorithm"));
+
+        tempFile.close();
+    }
+
+    /**
+     * A version with semver build metadata is stored under a key containing a literal {@code +}, which the
+     * presigner has to hand out percent-encoded because S3 reads a {@code +} in a URL path as a space.
+     * See <a href="https://github.com/eclipse-openvsx/openvsx/issues/1459">issue 1459</a>.
+     * <p>
+     * Note that LocalStack does not reproduce that behaviour — it resolves a literal {@code +} in the path
+     * just fine — so this test guards the encoding of the URL rather than reproducing the failure.
+     */
+    @Test
+    void testGetPresignedUrlForVersionWithPlusSign() throws Exception {
+        extVersion.setVersion("1.0.0+10");
+        var tempFile = new TempFile("test_", ".vsix");
+        Files.write(tempFile.getPath(), "test content".getBytes(), StandardOpenOption.CREATE);
+        tempFile.setResource(resource);
+        storageService.uploadFile(tempFile);
+
+        var objectKey = (String) ReflectionTestUtils.invokeMethod(storageService, "getObjectKey", resource);
+        assertEquals("testnamespace/test-extension/1.0.0+10/extension.vsix", objectKey);
+
+        var location = storageService.getLocation(resource).toString();
+        assertTrue(
+                location.matches("(?i).*testnamespace/test-extension/1\\.0\\.0%2b10/extension\\.vsix.*"),
+                "expected an encoded '+' in " + location);
+
+        var response = HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create(location)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        assertEquals("test content", response.body());
 
         tempFile.close();
     }
@@ -516,7 +556,7 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 restrictedBucketService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(restrictedBucketService, "pathStyleAccess", true);
 
         ReflectionTestUtils.setField(restrictedBucketService, "s3Client", null);
@@ -553,7 +593,7 @@ class AwsStorageServiceIntegrationTest {
         ReflectionTestUtils.setField(
                 awsStorageService,
                 "serviceEndpoint",
-                localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+                localstack.getEndpoint().toString());
         ReflectionTestUtils.setField(awsStorageService, "pathStyleAccess", true);
 
         return awsStorageService;

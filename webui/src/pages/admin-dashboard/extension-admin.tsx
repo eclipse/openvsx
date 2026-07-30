@@ -9,13 +9,13 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { Button, Typography } from '@mui/material';
 
 import { MainContext } from '../../context';
 import { SearchListContainer } from './search-list-container';
 import { StyledInput } from './namespace-input';
-import { useAdminExtension, useDeleteExtension } from './use-extension-admin';
+import { useAdminExtension, useDeleteExtension, usePurgeExtension } from './use-extension-admin';
 import { ExtensionDetailView } from '../../components/extension/extension-detail-view';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
 import { createRoute } from '../../utils';
@@ -42,6 +42,7 @@ export const ExtensionAdmin: FunctionComponent = () => {
 
     const { data, isFetching: loading, error: queryError, refetch } = useAdminExtension(target);
     const { mutateAsync: deleteExtension } = useDeleteExtension();
+    const { mutateAsync: purgeExtension } = usePurgeExtension();
 
     const is404 = !!queryError && (queryError as { status?: number }).status === 404;
     const extension = queryError ? undefined : data;
@@ -108,6 +109,13 @@ export const ExtensionAdmin: FunctionComponent = () => {
                         extension={extension}
                         onRemoveVersion={targets =>
                             deleteExtension({
+                                namespace: extension.namespace,
+                                extension: extension.name,
+                                targetPlatformVersions: targets
+                            })
+                        }
+                        onPurgeVersion={targets =>
+                            purgeExtension({
                                 namespace: extension.namespace,
                                 extension: extension.name,
                                 targetPlatformVersions: targets

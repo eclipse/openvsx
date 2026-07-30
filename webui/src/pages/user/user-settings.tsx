@@ -11,7 +11,7 @@
 import { FunctionComponent, ReactNode, useContext } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Grid, Box, Typography, Link } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { PageContainer } from '../../components/page-container';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserSettingTabs } from './user-setting-tabs';

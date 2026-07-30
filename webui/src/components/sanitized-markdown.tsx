@@ -15,7 +15,7 @@ import { alert } from '@mdit/plugin-alert';
 import DOMPurify from 'dompurify';
 import { Theme, styled } from '@mui/material/styles';
 import linkIcon from './link-icon';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 const Markdown = styled('div')(({ theme }: { theme: Theme }) => ({
     // The container owns the leading gap; the first block shouldn't add its own

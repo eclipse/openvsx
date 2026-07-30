@@ -30,7 +30,7 @@ const Root = styled(ButtonBase, {
     fontSize: '0.8125rem',
     fontWeight: isSelected ? 600 : 500,
     padding: '0.4375rem 0.8125rem',
-    borderRadius: '999px',
+    borderRadius: theme.shape.borderRadiusPill,
     whiteSpace: 'nowrap',
     fontFamily: 'inherit',
     transition: 'border-color 0.14s, color 0.14s',

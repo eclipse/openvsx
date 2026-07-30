@@ -11,27 +11,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import {
-    ChangeEvent,
-    ComponentType,
-    FormEvent,
-    FunctionComponent,
-    useCallback,
-    useLayoutEffect,
-    useRef,
-    useState
-} from 'react';
+import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, useLayoutEffect, useRef } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import { flushSync } from 'react-dom';
+import { useLocation } from 'react-router';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
-import { useSearch, SEARCH_DEBOUNCE_MS } from '../../hooks/use-search';
+import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
 import { useSearchFocus } from '../../context/search/search-focus-context';
 import { useRegisterPageSearchBar } from '../../context/search/page-search-bar-context';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
-import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { MONO_FONT } from '../../default/theme';
 
 const HeroSearchWrap = styled(Box)(({ theme }) => ({
@@ -40,12 +29,12 @@ const HeroSearchWrap = styled(Box)(({ theme }) => ({
     gap: '0.8125rem',
     backgroundColor: theme.palette.surface2,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: '15px',
-    height: '3.875rem',
-    paddingLeft: '1.25rem',
-    paddingRight: '0.5rem',
+    borderRadius: theme.shape.borderRadiusCard,
+    height: '3.25rem',
+    paddingLeft: '1rem',
+    paddingRight: '0.25rem',
     [theme.breakpoints.down('sm')]: {
-        height: '3.375rem',
+        height: '3rem',
         paddingLeft: '0.875rem',
         gap: '0.625rem'
     },
@@ -61,7 +50,7 @@ const HeroInput = styled('input')(({ theme }) => ({
     outline: 'none',
     background: 'none',
     color: theme.palette.text.primary,
-    fontSize: '1.0625rem',
+    fontSize: '0.9375rem',
     fontFamily: MONO_FONT,
     '&::placeholder': { color: theme.palette.text.disabled }
 }));
@@ -70,20 +59,19 @@ const HeroSubmitButton = styled(ButtonBase)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    height: '2.875rem',
-    padding: '0 1.375rem',
-    borderRadius: '11px',
+    height: '2.75rem',
+    padding: '0 1rem',
+    borderRadius: theme.shape.borderRadius,
     overflow: 'hidden',
     backgroundColor: theme.palette.secondary.main,
     color: theme.palette.secondary.contrastText,
-    fontSize: '0.9375rem',
-    fontWeight: 600,
+    fontSize: '0.8125rem',
+    fontWeight: 400,
     flexShrink: 0,
     transition: 'background 0.14s',
     [theme.breakpoints.down('sm')]: {
         height: '2.5rem',
-        padding: '0 0.875rem',
-        borderRadius: `${theme.shape.borderRadius}px`
+        padding: '0 0.875rem'
     },
     '&:hover': { backgroundColor: theme.palette.secondary.dark },
     ...focusOutline(theme)
@@ -94,9 +82,9 @@ const PopularChip = styled(ButtonBase)(({ theme }) => ({
     border: `1px solid ${theme.palette.divider}`,
     color: theme.palette.text.secondary,
     fontSize: '0.8125rem',
-    fontWeight: 500,
-    padding: '0.375rem 0.8125rem',
-    borderRadius: '999px',
+    fontWeight: 400,
+    padding: '0.3125rem 0.625rem',
+    borderRadius: theme.shape.borderRadiusPill,
     overflow: 'hidden',
     fontFamily: MONO_FONT,
     transition: 'border-color 0.14s, color 0.14s',
@@ -113,18 +101,15 @@ export interface HeroSearchProps {
 
 /**
  * The hero search section. Registers itself as the page's search bar while in
- * view, so the nav bar hides its own field. Owns a local copy of `query` so
- * keystrokes only re-render the field, not the whole homepage; typing debounces
- * `search`, submit and popular chips search immediately.
+ * view (the nav bar hides its own field) and binds to the shared draft query.
  */
 export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     searchHeader: SearchHeader,
     popularSearches = []
 }) => {
-    const { query: contextQuery, setQuery } = useSearchQuery();
+    const { query } = useSearchQuery();
     const { search } = useSearch();
     const { searchFocusSignal, searchFocused } = useSearchFocus();
-    const [query, setLocalQuery] = useState('');
     const heroInputRef = useRef<HTMLInputElement>(null);
     const isActiveSearchBar = useRegisterPageSearchBar(heroInputRef);
 
@@ -142,8 +127,8 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }, [isActiveSearchBar])
     );
 
-    // Reconcile the scroll swap: the field taking over adopts the shared draft and
-    // takes focus if its counterpart had it (the signal routes to the active bar).
+    // Route focus across the scroll swap: the field taking over grabs focus if
+    // its counterpart had it (the signal routes to the active bar).
     const wasActiveSearchBar = useRef(isActiveSearchBar);
     useLayoutEffect(() => {
         if (wasActiveSearchBar.current === isActiveSearchBar) {
@@ -151,13 +136,22 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }
         wasActiveSearchBar.current = isActiveSearchBar;
         if (isActiveSearchBar) {
-            setLocalQuery(contextQuery);
             if (searchFocused) searchFocusSignal.emit();
-        } else {
-            setQuery(query);
-            if (document.activeElement === heroInputRef.current) searchFocusSignal.emit();
+        } else if (document.activeElement === heroInputRef.current) {
+            searchFocusSignal.emit();
         }
-    }, [isActiveSearchBar, searchFocused, contextQuery, query, setQuery, searchFocusSignal.emit]);
+    }, [isActiveSearchBar, searchFocused, searchFocusSignal.emit]);
+
+    // Hand focus to the nav field when the hero unmounts mid-typing — otherwise
+    // focus falls to <body> until the morph ends and keystrokes are swallowed.
+    useLayoutEffect(
+        () => () => {
+            if (document.activeElement === heroInputRef.current) {
+                searchFocusSignal.emit();
+            }
+        },
+        [searchFocusSignal.emit]
+    );
 
     // Focus the search by default when the hero page is the app's landing page.
     const { key: locationKey } = useLocation();
@@ -167,59 +161,12 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }
     }, [locationKey, searchFocusSignal.emit]);
 
-    // Wrap search calls with a view transition so the hero input morphs into the nav bar.
-    type ViewTransitionDocument = Document & {
-        startViewTransition?: (callback: () => void) => { finished: Promise<void> };
-    };
-
-    const searchWithTransition = useCallback(
-        (q: string) => {
-            // Sync context immediately so the nav bar input value is ready before the
-            // navigation commits (the hero input morphs into the nav field mid-transition).
-            setQuery(q);
-            const shouldFocus = Boolean(q);
-            // flushSync inside the transition commits the navigation and the focus signal
-            // synchronously, so the nav field takes focus while the hero input is still
-            // focused — keeping the mobile keyboard open across the morph.
-            const go = () => {
-                flushSync(() => {
-                    search({ query: q });
-                    if (shouldFocus) searchFocusSignal.emit();
-                });
-            };
-            const doc = document as ViewTransitionDocument;
-            if (doc.startViewTransition) {
-                const transition = doc.startViewTransition(go);
-                // Re-issue the focus request once the transition settles as a fallback:
-                // the synchronous focus above can be interrupted by the morph, and by now
-                // the nav field is fully mounted and interactive.
-                if (shouldFocus) {
-                    transition.finished.then(searchFocusSignal.emit).catch(() => undefined);
-                }
-            } else {
-                go();
-            }
-        },
-        [search, setQuery, searchFocusSignal.emit]
-    );
-
-    const debouncedSearch = useDebouncedCallback(searchWithTransition, SEARCH_DEBOUNCE_MS);
-
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setLocalQuery(val);
-        if (val.trim()) {
-            debouncedSearch(val.trim());
-        } else {
-            // Clearing the field shouldn't navigate away from the home page.
-            debouncedSearch.cancel();
-        }
-    };
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) =>
+        search({ query: e.target.value }, { debounce: true });
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        debouncedSearch.cancel();
-        if (query.trim()) searchWithTransition(query.trim());
+        if (query.trim()) search({ query });
     };
 
     return (
@@ -271,7 +218,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
                         justifyContent: { xs: 'flex-start', sm: 'center' },
                         flexWrap: { xs: 'nowrap', sm: 'wrap' },
                         overflowX: { xs: 'auto', sm: 'visible' },
-                        mt: '1.125rem',
+                        mt: '0.875rem',
                         mx: { xs: '-1rem', sm: 0 },
                         px: { xs: '1rem', sm: 0 },
                         pb: { xs: '0.25rem', sm: 0 },
@@ -284,7 +231,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
                         Popular:
                     </Typography>
                     {popularSearches.map(chip => (
-                        <PopularChip key={chip} onClick={() => searchWithTransition(chip)} style={{ flexShrink: 0 }}>
+                        <PopularChip key={chip} onClick={() => search({ query: chip })} style={{ flexShrink: 0 }}>
                             {chip}
                         </PopularChip>
                     ))}

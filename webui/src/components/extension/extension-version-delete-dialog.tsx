@@ -20,6 +20,7 @@ import {
     Dialog,
     DialogActions,
     DialogContent,
+    DialogContentText,
     DialogTitle,
     FormControlLabel,
     FormGroup
@@ -44,9 +45,17 @@ export const DeleteVersionDialog: FunctionComponent<DeleteVersionDialogProps> = 
     const [items, setItems] = useState<TargetPlatformVersion[]>([]);
     const [working, setWorking] = useState(false);
 
+    const mode = props.mode ?? 'delete';
+    const isPurge = mode === 'purge';
+
     useEffect(() => {
-        setItems(buildVersionDialogItems(props.version.targetPlatforms.map(tp => tp.targetPlatform)));
-    }, [props.version]);
+        // Delete (soft) only applies to versions that are still present; purge can also target
+        // versions that were already removed (to free their identity for republishing).
+        const targetPlatforms = props.version.targetPlatforms
+            .filter(tp => isPurge || !tp.removed)
+            .map(tp => tp.targetPlatform);
+        setItems(buildVersionDialogItems(targetPlatforms));
+    }, [props.version, isPurge]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         setItems(prev => handleVersionDialogChange(event, prev));
@@ -86,9 +95,17 @@ export const DeleteVersionDialog: FunctionComponent<DeleteVersionDialogProps> = 
     return (
         <Dialog open={props.open} onClose={props.onClose} maxWidth='xs' fullWidth>
             <DialogTitle>
-                Delete version {props.version.version} of {props.extension.displayName ?? props.extension.name}
+                {isPurge ? 'Purge' : 'Delete'} version {props.version.version} of{' '}
+                {props.extension.displayName ?? props.extension.name}
             </DialogTitle>
             <DialogContent>
+                <DialogContentText sx={{ mb: 2 }}>
+                    {isPurge
+                        ? 'Purging permanently removes the selected version(s) from the database and storage, ' +
+                          'freeing the version identity so it can be published again. This cannot be undone.'
+                        : 'The selected version(s) will be removed and their files deleted. Extension versions are ' +
+                          'immutable, so a removed version stays permanently reserved and can never be republished.'}
+                </DialogContentText>
                 <FormGroup>
                     {allItem && (
                         <FormControlLabel
@@ -121,10 +138,10 @@ export const DeleteVersionDialog: FunctionComponent<DeleteVersionDialogProps> = 
                 <Box sx={{ ml: 1, position: 'relative', display: 'inline-flex' }}>
                     <Button
                         variant='contained'
-                        color='secondary'
+                        color={isPurge ? 'error' : 'secondary'}
                         disabled={selected.length === 0 || working}
                         onClick={handleRemove}>
-                        Remove
+                        {isPurge ? 'Purge' : 'Remove'}
                     </Button>
                     {working && (
                         <CircularProgress
@@ -151,4 +168,6 @@ export interface DeleteVersionDialogProps {
     version: VersionTargetPlatforms;
     onRemove: (targets: VersionDeleteTarget[]) => Promise<unknown>;
     onDeleted: () => void;
+    // 'delete' (default) soft-deletes; 'purge' permanently removes (admin only).
+    mode?: 'delete' | 'purge';
 }

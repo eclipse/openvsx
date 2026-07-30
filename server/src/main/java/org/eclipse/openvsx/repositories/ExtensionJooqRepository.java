@@ -228,6 +228,14 @@ public class ExtensionJooqRepository {
                 .fetch(EXTENSION.NAME);
     }
 
+    public List<String> findAllExtensionNames(Namespace namespace) {
+        return dsl.select(EXTENSION.NAME)
+                .from(EXTENSION)
+                .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
+                .orderBy(EXTENSION.NAME.asc())
+                .fetch(EXTENSION.NAME);
+    }
+
     public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         if (dependencies.isEmpty()) {
             return null;
@@ -247,11 +255,10 @@ public class ExtensionJooqRepository {
                 .fetchOne(unresolvedDependency);
     }
 
-    public List<Extension> findActiveExtensionsForUrls(Namespace namespace) {
+    public List<Extension> findExtensionsForUrls(Namespace namespace) {
         return dsl.select(EXTENSION.ID, EXTENSION.NAME)
                 .from(EXTENSION)
                 .where(EXTENSION.NAMESPACE_ID.eq(namespace.getId()))
-                .and(EXTENSION.ACTIVE.eq(true))
                 .fetch(row -> {
                     var extension = new Extension();
                     extension.setId(row.get(EXTENSION.ID));

@@ -12,7 +12,7 @@
  *****************************************************************************/
 
 import { FunctionComponent } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { Sidepanel } from '../../components/sidepanel/sidepanel';
 import { NavigationItem } from '../../components/sidepanel/navigation-item';
 import { isNavGroup, NavEntry } from './nav-types';

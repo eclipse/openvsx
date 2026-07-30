@@ -421,7 +421,7 @@ class AdminAPITest {
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
     }
 
     @Test
@@ -433,9 +433,12 @@ class AdminAPITest {
                         "/admin/api/extension/{namespace}/{extension}/delete?token={token}",
                         "foobar",
                         "baz",
-                        token.getValue()))
+                        token.getValue())
+                        .content(
+                                "[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
     }
 
     @Test
@@ -507,25 +510,7 @@ class AdminAPITest {
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Deleted foobar.baz")));
-    }
-
-    @Test
-    void testDeleteBundledExtension() throws Exception {
-        mockAdminUser();
-        mockExtension(2, 1, 0);
-        mockMvc.perform(
-                post("/admin/extension/{namespace}/{extension}/delete", "foobar", "baz")
-                        .content(
-                                "[{\"targetPlatform\":\"universal\",\"version\":\"1.0.0\"},{\"targetPlatform\":\"universal\",\"version\":\"2.0.0\"}]")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isBadRequest())
-                .andExpect(
-                        content().json(
-                                errorJson(
-                                        "Extension foobar.baz is bundled by the following extension packs: foobar.bundle-1.0.0")));
+                .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0")));
     }
 
     @Test
@@ -2047,15 +2032,14 @@ class AdminAPITest {
 
         extension.getVersions().addAll(versions);
         Mockito.when(
-                repositories.isDeleteAllVersions(
-                        any(),
+                repositories.isDeleteAllActiveVersions(
                         eq(namespace.getName()),
                         eq(extension.getName()),
                         any(TargetPlatformVersion[].class)))
                 .then(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) {
-                        var len = ((TargetPlatformVersion[]) invocation.getRawArguments()[3]).length;
+                        var len = ((TargetPlatformVersion[]) invocation.getRawArguments()[2]).length;
                         return len == 0 || len == numberOfVersions;
                     }
                 });

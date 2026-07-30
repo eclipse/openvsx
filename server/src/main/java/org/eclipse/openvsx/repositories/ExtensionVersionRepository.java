@@ -76,13 +76,13 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
     @Query("update ExtensionVersion ev set ev.signatureKeyPair = null")
     void setKeyPairsNull();
 
-    Page<ExtensionVersion> findByExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+    Page<ExtensionVersion> findByActiveTrueAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
             String extension,
             String namespace,
             Pageable page
     );
 
-    Page<ExtensionVersion> findByTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+    Page<ExtensionVersion> findByActiveTrueAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
             String targetPlatform,
             String extension,
             String namespace,

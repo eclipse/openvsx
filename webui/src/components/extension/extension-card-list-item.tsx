@@ -10,13 +10,12 @@
 
 import type { ReactNode } from 'react';
 import { FunctionComponent } from 'react';
-import { Link as RouteLink } from 'react-router-dom';
+import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, styled } from '@mui/material';
 import { Extension } from '../../extension-registry-types';
 import { createRoute } from '../../utils';
-import { ExtensionIcon } from '../../components/extension/extension-icon';
-import { Timestamp } from '../../components/timestamp';
-import { UserSettingsRoutes } from './user-settings-routes';
+import { ExtensionIcon } from './extension-icon';
+import { Timestamp } from '../timestamp';
 
 const getOpacity = (extension: Extension) => {
     if (extension.deprecated) {
@@ -40,12 +39,25 @@ const Paragraph = styled(Box)({
     justifyContent: 'space-between'
 });
 
-export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExtensionListItemProps> = props => {
+export const ExtensionCardListItem: FunctionComponent<ExtensionCardListItemProps> = props => {
     const { extension } = props;
-    const route = createRoute([UserSettingsRoutes.EXTENSIONS, extension.namespace, extension.name]);
+    const route = createRoute([props.routePrefix, extension.namespace, extension.name]);
     const inactive = extension.active === false;
 
     const renderStatus = (): ReactNode => {
+        if (extension?.removed) {
+            return (
+                <Box mt={0.25}>
+                    <Typography variant='body2' sx={{ fontWeight: 600, color: 'error.main' }}>
+                        Deleted
+                    </Typography>
+                    <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                        {extension.reviewMessage ?? 'The extension has been deleted.'}
+                    </Typography>
+                </Box>
+            );
+        }
+
         if (extension.reviewStatus === 'under_review') {
             return (
                 <Box mt={0.25}>
@@ -106,11 +118,15 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
                 <ExtensionIcon
                     extension={extension}
                     sx={{
-                        flex: '0 0 15%',
+                        // Fixed-size icon. `flex-basis: 15%` here made the icon's width scale with the
+                        // card width, so a single full-width card (auto-fit `1fr`) blew the icon up and,
+                        // capped by max-height, rendered it distorted/cut. Keep it a fixed 3rem square.
+                        flex: '0 0 auto',
                         display: 'block',
                         mr: 2,
                         width: '3rem',
-                        maxHeight: '4rem'
+                        maxHeight: '4rem',
+                        objectFit: 'contain'
                     }}
                 />
                 <Box component='div' sx={{ flex: '1', overflow: 'hidden' }}>
@@ -132,7 +148,10 @@ export const UserNamespaceExtensionListItem: FunctionComponent<UserNamespaceExte
     ) : null;
 };
 
-export interface UserNamespaceExtensionListItemProps {
+export interface ExtensionCardListItemProps {
     extension: Extension;
     canDelete?: boolean;
+    // Base route the card links to; the extension's namespace and name are appended. Supplied by the
+    // caller (e.g. the user settings or admin extension route).
+    routePrefix: string;
 }

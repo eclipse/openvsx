@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.LocalRegistryService;
 import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
@@ -76,6 +77,7 @@ public class AdminAPI {
 
     private final RepositoryService repositories;
     private final AdminService admins;
+    private final ExtensionService extensions;
     private final SettingsService settings;
     private final LogService logs;
     private final LocalRegistryService local;
@@ -84,6 +86,7 @@ public class AdminAPI {
     public AdminAPI(
             RepositoryService repositories,
             AdminService admins,
+            ExtensionService extensions,
             SettingsService settings,
             LogService logs,
             LocalRegistryService local,
@@ -91,6 +94,7 @@ public class AdminAPI {
     ) {
         this.repositories = repositories;
         this.admins = admins;
+        this.extensions = extensions;
         this.settings = settings;
         this.logs = logs;
         this.local = local;
@@ -389,6 +393,7 @@ public class AdminAPI {
                 json.setAllTargetPlatformVersions(
                         repositories.findTargetPlatformsGroupedByVersion(latest.getExtension()));
                 json.setActive(latest.getExtension().isActive());
+                json.setRemoved(latest.isExtensionRemoved());
             } else {
                 var extension = repositories.findExtension(extensionName, namespaceName);
                 if (extension == null) {
@@ -499,6 +504,98 @@ public class AdminAPI {
     }
 
     @PostMapping(
+        path = "/api/extension/{namespaceName}/{extensionName}/purge",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(
+        summary = "Permanently purge an extension or one or multiple extension versions",
+        description = "Unlike delete, this physically removes the versions from the database and storage, "
+                + "freeing their identities for republishing. Extension versions are otherwise immutable."
+    )
+    @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content()
+    )
+    public ResponseEntity<ResultJson> purgeExtension(
+            @PathVariable
+            @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
+            @PathVariable
+            @Parameter(description = "Extension name", example = "language-julia") String extensionName,
+            @RequestParam(value = "token")
+            @Parameter(description = "A personal access token") String tokenValue,
+            @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var targets = CollectionUtil.toArray(
+                    targetVersions,
+                    TargetPlatformVersionJson::toTargetPlatformVersion,
+                    TargetPlatformVersion[]::new);
+            var result = extensions.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/extension/{namespaceName}/{extensionName}/purge",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Permanently purge an extension or one or multiple extension versions")
+    @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = ResultJson.class)
+        )
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "Extension not found",
+        content = @Content()
+    )
+    public ResponseEntity<ResultJson> purgeExtension(
+            @PathVariable
+            @Parameter(description = "Namespace name", example = "julialang") String namespaceName,
+            @PathVariable
+            @Parameter(description = "Extension name", example = "language-julia") String extensionName,
+            @RequestBody List<TargetPlatformVersionJson> targetVersions
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            var targets = CollectionUtil.toArray(
+                    targetVersions,
+                    TargetPlatformVersionJson::toTargetPlatformVersion,
+                    TargetPlatformVersion[]::new);
+            var result = extensions.purgeExtensionNoWait(adminUser, namespaceName, extensionName, targets);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
         path = "/extension/{namespace}/{extension}/review/{provider}/{loginName}/delete",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
@@ -602,7 +699,8 @@ public class AdminAPI {
         try {
             admins.checkAdminUser();
 
-            var namespace = local.getNamespace(namespaceName);
+            // Admins see all extensions of the namespace, including inactive/soft-deleted ones.
+            var namespace = local.getNamespace(namespaceName, true);
             var adminNamespaceUrl = createAdminNamespaceUrl(namespace);
             namespace.setMembersUrl(UrlUtil.createApiUrl(adminNamespaceUrl, "members"));
             namespace.setRoleUrl(UrlUtil.createApiUrl(adminNamespaceUrl, "change-member"));

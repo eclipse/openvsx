@@ -26,11 +26,11 @@ import {
     type PaperProps,
     Paper
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router';
 import { AdminDashboardRoutes } from '../admin-dashboard-routes';
 import { MainContext } from '../../../context';
 import { Customer, UserData } from '../../../extension-registry-types';
-import { AddUserDialog } from '../../user/add-user-dialog';
+import { AddUserDialog } from '../../../components/add-user-dialog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { createRoute } from '../../../utils';

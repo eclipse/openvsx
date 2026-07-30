@@ -35,9 +35,14 @@ import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TargetPlatform;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -265,6 +270,120 @@ class PublishExtensionVersionHandlerTest {
         }
     }
 
+    @Test
+    void shouldPassPreconditionsForUnpublishedVersion() {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(processor.getNamespace()).thenReturn("publisher");
+            when(processor.getExtensionName()).thenReturn("demo");
+            when(processor.getVersion()).thenReturn("2.0.0");
+            when(processor.getTargetPlatform()).thenReturn(TargetPlatform.NAME_UNIVERSAL);
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
+                    .thenReturn(null);
+
+            assertThatCode(() -> handler.checkPublishPreconditions(processor, token)).doesNotThrowAnyException();
+        }
+    }
+
+    @Test
+    void shouldFailPreconditionsWithoutPublishPermission() {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(processor.getNamespace()).thenReturn("publisher");
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(false);
+
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Insufficient access rights for publisher: publisher");
+
+            // the package is not inspected any further once the access rights are missing
+            verify(repositories, never()).findVersion(anyString(), anyString(), anyString(), anyString());
+        }
+    }
+
+    @Test
+    void shouldFailPreconditionsWithUnknownNamespace() {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var token = new PersonalAccessToken();
+            token.setUser(new UserData());
+
+            when(processor.getNamespace()).thenReturn("unknown");
+            when(repositories.findNamespace("unknown")).thenReturn(null);
+
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Unknown publisher: unknown");
+        }
+    }
+
+    @Test
+    void shouldFailPreconditionsForAlreadyPublishedVersion() {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            var existing = new ExtensionVersion();
+            existing.setVersion("2.0.0");
+            existing.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            existing.setActive(true);
+
+            when(processor.getNamespace()).thenReturn("publisher");
+            when(processor.getExtensionName()).thenReturn("demo");
+            when(processor.getVersion()).thenReturn("2.0.0");
+            when(processor.getTargetPlatform()).thenReturn(TargetPlatform.NAME_UNIVERSAL);
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
+                    .thenReturn(existing);
+
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("is already published.");
+        }
+    }
+
+    @Test
+    void shouldFailPreconditionsForRemovedVersion() {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            var tombstone = new ExtensionVersion();
+            tombstone.setVersion("2.0.0");
+            tombstone.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            tombstone.setActive(false);
+            tombstone.setRemoved(true);
+
+            when(processor.getNamespace()).thenReturn("publisher");
+            when(processor.getExtensionName()).thenReturn("demo");
+            when(processor.getVersion()).thenReturn("2.0.0");
+            when(processor.getTargetPlatform()).thenReturn(TargetPlatform.NAME_UNIVERSAL);
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
+                    .thenReturn(tombstone);
+
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("stays permanently reserved");
+        }
+    }
+
     private ExtensionVersion mockExtensionVersion(
             String namespace,
             String name,
@@ -283,7 +402,7 @@ class PublishExtensionVersionHandlerTest {
         ev.setDisplayName("Demo OK");
         ev.setVersion("2.0.0");
         ev.setTargetPlatform("any");
-        when(processor.getMetadata()).thenReturn(ev);
+        when(processor.getMetadata(anyInt(), anyInt())).thenReturn(ev);
 
         return ev;
     }

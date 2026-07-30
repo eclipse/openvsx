@@ -23,7 +23,8 @@ export default defineConfig(() => ({
     publicDir: 'static',
     test: {
         include: ['test/unit/**/*.spec.{ts,tsx}'],
-        environment: 'node'
+        environment: 'jsdom',
+        setupFiles: ['./test/setup.ts']
     },
     build: {
         target: 'es2020',
