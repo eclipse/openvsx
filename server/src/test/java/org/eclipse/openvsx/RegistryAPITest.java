@@ -2721,7 +2721,7 @@ class RegistryAPITest {
         token.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token.setValue("my_token");
         token.setActive(true);
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findPersonalAccessToken("my_token"))
                 .thenReturn(token);
         return token;

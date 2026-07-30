@@ -79,7 +79,7 @@ public class PersonalAccessTokens {
         token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
         token.setDescription(description);
         token.setExpiresTimestamp(expiresTimestamp);
-        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.PAT);
+        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.LLT);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
@@ -124,7 +124,7 @@ public class PersonalAccessTokens {
             return null;
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
-        if (token.getType() == PersonalAccessTokenType.OTT) {
+        if (token.getType().isOneTime()) {
             // it is OTT; pull it out immediately on first use
             token.setActive(false);
         }
@@ -136,7 +136,7 @@ public class PersonalAccessTokens {
         var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {
-                if (token.getType() == PersonalAccessTokenType.PAT) {
+                if (token.getType().isNotify()) {
                     mail.scheduleAccessTokenExpiredMail(token);
                 }
             }
@@ -147,7 +147,7 @@ public class PersonalAccessTokens {
     @Transactional
     public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
         token = entityManager.merge(token);
-        if (token.getType() == PersonalAccessTokenType.PAT && !token.isNotified()) {
+        if (token.getType().isNotify() && !token.isNotified()) {
             try {
                 mail.scheduleAccessTokenExpiryNotification(token);
             } finally {

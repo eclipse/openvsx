@@ -14,11 +14,27 @@ package org.eclipse.openvsx.entities;
  */
 public enum PersonalAccessTokenType {
     /**
-     * Personal access token.
+     * Long-lived personal access token (classic).
      */
-    PAT,
+    LLT(false, true),
     /**
-     * One time token.
+     * One time usable personal access token.
      */
-    OTT;
+    OTT(true, false);
+
+    private final boolean oneTime;
+    private final boolean notify;
+
+    PersonalAccessTokenType(boolean oneTime, boolean notify) {
+        this.oneTime = oneTime;
+        this.notify = notify;
+    }
+
+    public boolean isOneTime() {
+        return oneTime;
+    }
+
+    public boolean isNotify() {
+        return notify;
+    }
 }

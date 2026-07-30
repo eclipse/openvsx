@@ -22,7 +22,7 @@ ALTER TABLE ONLY public.personal_access_token
     ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32);
 
 UPDATE public.personal_access_token
-SET type = 'PAT';
+SET type = 'LLT';
 
 ALTER TABLE ONLY public.personal_access_token
     ALTER COLUMN type SET NOT NULL;

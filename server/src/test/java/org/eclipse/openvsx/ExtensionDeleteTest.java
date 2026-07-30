@@ -339,7 +339,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
         token.setValue(user.getLoginName() + "_token");
         token.setCreatedTimestamp(LocalDateTime.now());
         token.setActive(true);
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         em.persist(token);
         return token;
     }

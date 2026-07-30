@@ -201,7 +201,7 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
         Mockito.when(entityManager.merge(userData))
@@ -230,7 +230,7 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(false);
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
@@ -251,7 +251,7 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
@@ -842,21 +842,21 @@ class UserAPITest {
         token1.setDescription("This is token 1");
         token1.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token1.setActive(true);
-        token1.setType(PersonalAccessTokenType.PAT);
+        token1.setType(PersonalAccessTokenType.LLT);
         var token2 = new PersonalAccessToken();
         token2.setUser(userData);
         token2.setValue("token2");
         token2.setDescription("This is token 2");
         token2.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token2.setActive(false);
-        token2.setType(PersonalAccessTokenType.PAT);
+        token2.setType(PersonalAccessTokenType.LLT);
         var token3 = new PersonalAccessToken();
         token3.setUser(userData);
         token3.setValue("token3");
         token3.setDescription("This is token 3");
         token3.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token3.setActive(true);
-        token3.setType(PersonalAccessTokenType.PAT);
+        token3.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findActivePersonalAccessTokens(userData))
                 .thenReturn(Streamable.of(token1, token3));
     }

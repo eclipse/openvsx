@@ -92,7 +92,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
             token.setValue(OWNER_LOGIN + "_token");
             token.setCreatedTimestamp(LocalDateTime.now());
             token.setActive(true);
-            token.setType(PersonalAccessTokenType.PAT);
+            token.setType(PersonalAccessTokenType.LLT);
             em.persist(token);
 
             var namespace = new Namespace();

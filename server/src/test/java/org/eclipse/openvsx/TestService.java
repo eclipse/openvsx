@@ -38,7 +38,7 @@ public class TestService {
         token.setActive(true);
         token.setUser(user);
         token.setValue("test_token");
-        token.setType(PersonalAccessTokenType.PAT);
+        token.setType(PersonalAccessTokenType.LLT);
         entityManager.persist(token);
     }
 
