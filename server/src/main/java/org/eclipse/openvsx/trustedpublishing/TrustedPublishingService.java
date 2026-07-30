@@ -106,15 +106,21 @@ public class TrustedPublishingService {
         requireNonNull(providerId);
         requireNonNull(registration);
         ensureEnabled();
-        TrustedPublishingProviderSupport provider = providers.get(providerId);
-        if (provider == null) {
-            throw new ErrorResultException("Unknown trusted publishing provider: " + providerId);
-        }
+
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
+        boolean extensionExists = repositories.findActiveExtensionNames(namespace).contains(extensionName);
+        if (!extensionExists) {
+            throw new ErrorResultException("Extension must exist to register trusted publisher for it.");
+        }
 
         boolean duplicate = repositories.findTrustedPublishers(namespace, extensionName).stream().findAny().isPresent();
         if (duplicate) {
             throw new ErrorResultException("An equivalent trusted publisher is already registered.");
+        }
+
+        TrustedPublishingProviderSupport provider = providers.get(providerId);
+        if (provider == null) {
+            throw new ErrorResultException("Unknown trusted publishing provider: " + providerId);
         }
 
         Map<String, String> claims = provider.extractRequest(registration);
