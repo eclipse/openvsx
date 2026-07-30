@@ -21,8 +21,7 @@ import { ExtensionVersionTable } from './extension-version-table';
 import { DeleteVersionDialog, VersionDeleteTarget } from './extension-version-delete-dialog';
 import { DeleteAllVersionsDialog } from './extension-delete-all-versions-dialog';
 import { ExtensionTrustedPublishers } from '../../pages/user/trusted-publishing/trusted-publishers-section';
-import { isTrustedPublishingEnabled } from '../../pages/user/trusted-publishing/use-trusted-publishers';
-import { useRegistryValue } from '../../hooks/use-registry-value';
+import { useTrustedPublishingStatus } from '../../pages/user/trusted-publishing/use-trusted-publishers';
 import { ExtensionDetailRoutes } from '../../pages/extension-detail/extension-detail-routes';
 import { createRoute } from '../../utils';
 
@@ -35,7 +34,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
     const [purgeDialogVersion, setPurgeDialogVersion] = useState<VersionTargetPlatforms | null>(null);
     const [deleteAllOpen, setDeleteAllOpen] = useState(false);
     const [purgeAllOpen, setPurgeAllOpen] = useState(false);
-    const trustedPublishingEnabled = useRegistryValue(isTrustedPublishingEnabled);
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
 
     useEffect(() => {
         setPage(0);
@@ -84,7 +83,7 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                 )}
                 {actions}
             </Stack>
-            {trustedPublishingEnabled ? (
+            {trustedPublishingStatus?.enabled ? (
                 <ExtensionTrustedPublishers namespace={extension.namespace} extension={extension.name} />
             ) : null}
             <Typography variant='h6' gutterBottom sx={{ mt: 4 }}>

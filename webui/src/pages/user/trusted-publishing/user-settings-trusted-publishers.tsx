@@ -14,7 +14,7 @@
 import { FunctionComponent, useContext, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { Namespace, TrustedPublisher, TrustedPublisherProvider } from '../../../extension-registry-types';
+import { Namespace, TrustedPublisher } from '../../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
 import { MainContext } from '../../../context';
 import { useReportedQuery } from '../../../hooks/use-reported-query';
@@ -22,9 +22,9 @@ import { useUserNamespaces } from '../use-user-namespaces';
 import { PublisherList } from './publisher-list';
 import { RegisterTrustedPublisherDialog, TrustedPublishingDocsLink } from './register-trusted-publisher-dialog';
 import {
-    useAllTrustedPublisherProviders,
     useAllTrustedPublishers,
-    useDeleteTrustedPublisher
+    useDeleteTrustedPublisher,
+    useTrustedPublishingStatus
 } from './use-trusted-publishers';
 
 // Stable order across namespaces: namespace, then extension, then registration id.
@@ -36,32 +36,23 @@ type TrustedPublishingNamespace = Namespace & { trustedPublishingUrl: string };
 const canManageTrustedPublishers = (ns: Namespace): ns is TrustedPublishingNamespace =>
     Boolean(ns.trustedPublishingUrl);
 
-// Providers are configured server-side, so the per-namespace lists overlap; keep each id once.
-const dedupeById = (providers: readonly TrustedPublisherProvider[]): TrustedPublisherProvider[] =>
-    providers.filter((provider, index, all) => all.findIndex(p => p.id === provider.id) === index);
-
 /** Settings tab showing the trusted publishers of every namespace the user belongs to as one stack. */
 export const UserSettingsTrustedPublishers: FunctionComponent = () => {
     const { handleError } = useContext(MainContext);
     const { data: namespaces = [], isLoading: namespacesLoading } = useReportedQuery(useUserNamespaces());
 
-    // only probe namespaces the user may manage; the rest have no trustedPublishingUrl
-    const trustedPublishingNamespaces = namespaces.filter(canManageTrustedPublishers);
-    const { providersByUrl, isLoading: providersLoading } = useAllTrustedPublisherProviders(
-        trustedPublishingNamespaces.map(ns => ns.trustedPublishingUrl)
-    );
-    const manageableNamespaces = trustedPublishingNamespaces.filter(
-        ns => (providersByUrl[ns.trustedPublishingUrl] ?? []).length > 0
-    );
+    // providers are registry-global; without any (feature off or user not allowed) nothing is manageable
+    const { data: trustedPublishingStatus, isLoading: statusLoading } = useTrustedPublishingStatus();
+    const providers = trustedPublishingStatus?.trustedPublisherProviders ?? [];
+    const manageableNamespaces = providers.length > 0 ? namespaces.filter(canManageTrustedPublishers) : [];
     const { publishers: allPublishers, isLoading: publishersLoading } = useAllTrustedPublishers(
         manageableNamespaces.map(ns => ns.trustedPublishingUrl)
     );
     const { mutateAsync: deleteTrustedPublisher, isPending: deleting } = useDeleteTrustedPublisher();
     const [dialogOpen, setDialogOpen] = useState(false);
 
-    const loading = namespacesLoading || providersLoading || publishersLoading || deleting;
+    const loading = namespacesLoading || statusLoading || publishersLoading || deleting;
     const publishers = [...allPublishers].sort(byNamespaceExtensionId);
-    const providers = dedupeById(manageableNamespaces.flatMap(ns => providersByUrl[ns.trustedPublishingUrl] ?? []));
 
     const remove = async (publisher: TrustedPublisher) => {
         const trustedPublishingUrl = manageableNamespaces.find(

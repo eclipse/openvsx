@@ -54,9 +54,8 @@ import {
     UserSearchResult,
     TrustedPublisher,
     TrustedPublisherList,
-    TrustedPublisherProvider,
-    TrustedPublisherProviderList,
-    TrustedPublisherRequest
+    TrustedPublisherRequest,
+    TrustedPublisherStatus
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest, sendStrictRequest } from './server-request';
@@ -469,16 +468,13 @@ export class ExtensionRegistryService {
         return createAbsoluteURL([this.serverUrl, 'user', 'namespace', namespace, 'trusted-publishing']);
     }
 
-    async getTrustedPublisherProviders(
-        abortController: AbortController,
-        trustedPublishingUrl: UrlString
-    ): Promise<Readonly<TrustedPublisherProvider>[]> {
-        const result = await sendStrictRequest<TrustedPublisherProviderList>({
+    // Requires a logged-in user; the server answers 403 otherwise.
+    async getTrustedPublishingStatus(abortController: AbortController): Promise<Readonly<TrustedPublisherStatus>> {
+        return sendStrictRequest<TrustedPublisherStatus>({
             abortController,
             credentials: true,
-            endpoint: createAbsoluteURL([trustedPublishingUrl, 'providers'])
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', '-', 'trusted-publishing', 'status'])
         });
-        return result.trustedPublisherProviders ?? [];
     }
 
     async getTrustedPublishers(

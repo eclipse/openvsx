@@ -22,11 +22,7 @@ import { Namespace, TrustedPublisher, TrustedPublisherProvider, UrlString } from
 import { RegisterTrustedPublisherDialog, TrustedPublishingDocsLink } from './register-trusted-publisher-dialog';
 import { PublisherList } from './publisher-list';
 import { TrustedPublisherProviderIcon } from './trusted-publisher-provider-icon';
-import {
-    useDeleteTrustedPublisher,
-    useTrustedPublisherProviders,
-    useTrustedPublishers
-} from './use-trusted-publishers';
+import { useDeleteTrustedPublisher, useTrustedPublishers, useTrustedPublishingStatus } from './use-trusted-publishers';
 
 const AddPublisherPanel = styled(Box)(({ theme }) => ({
     position: 'relative',
@@ -164,8 +160,9 @@ export const TrustedPublishersSection: FunctionComponent<TrustedPublishersSectio
 export const UserNamespaceTrustedPublishers: FunctionComponent<{ namespace: Namespace }> = ({ namespace }) => {
     const { user } = useContext(MainContext);
     const { trustedPublishingUrl } = namespace;
-    // the providers query doubles as the feature probe: any failure hides the section
-    const { data: providers = [] } = useTrustedPublisherProviders(trustedPublishingUrl);
+    // the status query doubles as the feature probe: disabled, disallowed or failed → no providers → hidden
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
+    const providers = trustedPublishingStatus?.trustedPublisherProviders ?? [];
     if (!user || !trustedPublishingUrl || providers.length === 0) {
         return null;
     }
@@ -192,9 +189,14 @@ export const ExtensionTrustedPublishers: FunctionComponent<{ namespace: string; 
 }) => {
     const { user, service } = useContext(MainContext);
     const trustedPublishingUrl = service.userTrustedPublishingUrl(namespace);
-    // the providers query doubles as the feature probe: any failure hides the section
-    const { data: providers = [] } = useTrustedPublisherProviders(trustedPublishingUrl);
-    if (!user || providers.length === 0) {
+    // the status query doubles as the feature probe: disabled, disallowed or failed → no providers → hidden
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
+    const providers = trustedPublishingStatus?.trustedPublisherProviders ?? [];
+    // The URL is built client-side (unlike Namespace.trustedPublishingUrl it is not owner-granted),
+    // so the publishers list doubles as the ownership probe: it 403s unless the user owns the
+    // namespace (e.g. an admin inspecting a foreign extension), which keeps the section hidden.
+    const { isSuccess: canManage } = useTrustedPublishers(providers.length > 0 ? trustedPublishingUrl : undefined);
+    if (!user || providers.length === 0 || !canManage) {
         return null;
     }
     return (

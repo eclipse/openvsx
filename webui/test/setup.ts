@@ -20,3 +20,16 @@ import { cleanup } from '@testing-library/react';
 afterEach(() => {
     cleanup();
 });
+
+// jsdom's getComputedStyle chokes on some MUI-generated relative font sizes
+// ("object null is not iterable" in its font-size resolver), and RTL role
+// queries call it on every candidate element. Fall back to an empty style so
+// a CSS edge case cannot crash accessibility checks.
+const originalGetComputedStyle = window.getComputedStyle.bind(window);
+window.getComputedStyle = (element: Element, pseudoElt?: string | null) => {
+    try {
+        return originalGetComputedStyle(element, pseudoElt);
+    } catch {
+        return document.createElement('div').style;
+    }
+};
