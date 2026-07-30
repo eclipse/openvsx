@@ -40,6 +40,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -401,7 +402,7 @@ class PublishExtensionVersionHandlerTest {
         ev.setDisplayName("Demo OK");
         ev.setVersion("2.0.0");
         ev.setTargetPlatform("any");
-        when(processor.getMetadata()).thenReturn(ev);
+        when(processor.getMetadata(anyInt())).thenReturn(ev);
 
         return ev;
     }

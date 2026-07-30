@@ -1805,6 +1805,32 @@ class RegistryAPITest {
     }
 
     @Test
+    void testPublishLimitsTags() throws Exception {
+        var previousMaxTags = publishingConfig.getMaxTags();
+        try {
+            publishingConfig.setMaxTags(2);
+            mockForPublish("contributor");
+            mockActiveVersion();
+            var bytes = createExtensionPackage("bar", "1.0.0", null, false, null, List.of("beta", "alpha", "gamma"));
+            mockMvc.perform(
+                    post("/api/-/publish?token={token}", "my_token")
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .content(bytes))
+                    .andExpect(status().isCreated())
+                    .andExpect(content().json(extensionJson(e -> {
+                        e.setNamespace("foo");
+                        e.setName("bar");
+                        e.setVersion("1.0.0");
+                        e.setDownloadable(true);
+                        // The third declared tag is dropped, the kept ones are stored sorted.
+                        e.setTags(List.of("alpha", "beta"));
+                    })));
+        } finally {
+            publishingConfig.setMaxTags(previousMaxTags);
+        }
+    }
+
+    @Test
     void testPublishInactiveToken() throws Exception {
         mockForPublish("invalid");
         var bytes = createExtensionPackage("bar", "1.0.0", null);
@@ -2853,6 +2879,17 @@ class RegistryAPITest {
             boolean preRelease,
             String targetPlatform
     ) throws IOException {
+        return createExtensionPackage(name, version, license, preRelease, targetPlatform, List.of());
+    }
+
+    private byte[] createExtensionPackage(
+            String name,
+            String version,
+            String license,
+            boolean preRelease,
+            String targetPlatform,
+            List<String> tags
+    ) throws IOException {
         var bytes = new ByteArrayOutputStream();
         var archive = new ZipOutputStream(bytes);
         archive.putNextEntry(new ZipEntry("extension.vsixmanifest"));
@@ -2864,7 +2901,7 @@ class RegistryAPITest {
                 + (targetPlatform != null ? "TargetPlatform=\"" + targetPlatform + "\"" : "") + " />" +
                 "<DisplayName>foo</DisplayName>" +
                 "<Description xml:space=\"preserve\"></Description>" +
-                "<Tags></Tags>" +
+                "<Tags>" + String.join(",", tags) + "</Tags>" +
                 "<Categories>Other</Categories>" +
                 "<GalleryFlags>Public</GalleryFlags>" +
                 "<Badges></Badges>" +

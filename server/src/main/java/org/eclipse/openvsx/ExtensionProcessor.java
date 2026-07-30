@@ -50,6 +50,16 @@ public class ExtensionProcessor implements AutoCloseable {
         "extension/CHANGELOG.txt"
     };
 
+    /**
+     * Number of tags kept per extension version unless a different limit is configured.
+     * <p>
+     * See: <a href="https://github.com/eclipse-openvsx/openvsx/issues/1968">Limit the number of
+     * processed tags per extension</a>
+     */
+    public static final int DEFAULT_MAX_TAGS = 20;
+
+    private static final int NO_TAG_LIMIT = Integer.MAX_VALUE;
+
     private static final String MANIFEST_METADATA = "Metadata";
     private static final String MANIFEST_IDENTITY = "Identity";
     private static final String MANIFEST_PROPERTIES = "Properties";
@@ -259,7 +269,17 @@ public class ExtensionProcessor implements AutoCloseable {
         return sponsorLinkNode.path(MANIFEST_VALUE).asString();
     }
 
+    /**
+     * Extracts the metadata, keeping at most {@link #DEFAULT_MAX_TAGS} tags.
+     */
     public ExtensionVersion getMetadata() {
+        return getMetadata(DEFAULT_MAX_TAGS);
+    }
+
+    /**
+     * @param maxTags maximum number of tags to extract, a negative value keeps all of them
+     */
+    public ExtensionVersion getMetadata(int maxTags) {
         loadPackageJson();
         loadVsixManifest();
         var extVersion = new ExtensionVersion();
@@ -275,7 +295,7 @@ public class ExtensionProcessor implements AutoCloseable {
         extVersion.setEngines(getEngines(packageJson.path("engines")));
         extVersion.setCategories(asStringList(vsixManifest.path(MANIFEST_METADATA).path("Categories").asString(), ","));
         extVersion.setExtensionKind(getExtensionKinds());
-        extVersion.setTags(getTags());
+        extVersion.setTags(getTags(maxTags));
         extVersion.setLicense(packageJson.path("license").stringValue(null));
         extVersion.setHomepage(getHomepage());
         extVersion.setRepository(getRepository());
@@ -324,11 +344,15 @@ public class ExtensionProcessor implements AutoCloseable {
         return displayName;
     }
 
-    private List<String> getTags() {
+    private List<String> getTags(int maxTags) {
         var tags = vsixManifest.path(MANIFEST_METADATA).path("Tags").asString();
+        // Group case-insensitively into a map that keeps the order in which the package declares the
+        // tags, so that capping the amount of tags keeps the ones the extension considers the most
+        // relevant. Duplicates are removed before the cap and therefore don't take up a slot.
         return asStringList(tags, ",").stream()
-                .collect(Collectors.groupingBy(String::toLowerCase))
+                .collect(Collectors.groupingBy(String::toLowerCase, LinkedHashMap::new, Collectors.toList()))
                 .entrySet().stream()
+                .limit(maxTags < 0 ? NO_TAG_LIMIT : maxTags)
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> e.getValue().getFirst())
                 .collect(Collectors.toList());
