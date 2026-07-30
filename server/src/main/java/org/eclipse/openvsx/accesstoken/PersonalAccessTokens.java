@@ -57,12 +57,20 @@ public class PersonalAccessTokens {
 
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description, boolean oneTime) {
+        final LocalDateTime expiresTimestamp;
+        if (oneTime) {
+            expiresTimestamp = config.isOttTokenExpiryEnabled()
+                    ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
+                    : null;
+        } else {
+            expiresTimestamp = config.isTokenExpiryEnabled()
+                    ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
+                    : null;
+        }
         return createAccessToken(
                 user,
                 description,
-                config.isTokenExpiryEnabled()
-                        ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
-                        : null,
+                expiresTimestamp,
                 oneTime);
     }
 
@@ -123,7 +131,12 @@ public class PersonalAccessTokens {
         if (token == null || !token.isActive()) {
             return null;
         }
-        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+            token.setActive(false);
+            return null;
+        }
+        token.setAccessedTimestamp(now);
         if (token.getType().isOneTime()) {
             // it is OTT; pull it out immediately on first use
             token.setActive(false);
