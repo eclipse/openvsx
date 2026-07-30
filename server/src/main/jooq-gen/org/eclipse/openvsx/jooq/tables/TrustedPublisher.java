@@ -62,14 +62,9 @@ public class TrustedPublisher extends TableImpl<TrustedPublisherRecord> {
     public final TableField<TrustedPublisherRecord, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false).identity(true), this, "");
 
     /**
-     * The column <code>public.trusted_publisher.namespace</code>.
+     * The column <code>public.trusted_publisher.extension_id</code>.
      */
-    public final TableField<TrustedPublisherRecord, Long> NAMESPACE = createField(DSL.name("namespace"), SQLDataType.BIGINT.nullable(false), this, "");
-
-    /**
-     * The column <code>public.trusted_publisher.extension_name</code>.
-     */
-    public final TableField<TrustedPublisherRecord, String> EXTENSION_NAME = createField(DSL.name("extension_name"), SQLDataType.VARCHAR(255), this, "");
+    public final TableField<TrustedPublisherRecord, Long> EXTENSION_ID = createField(DSL.name("extension_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>public.trusted_publisher.provider</code>.
@@ -132,7 +127,7 @@ public class TrustedPublisher extends TableImpl<TrustedPublisherRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.TRUSTED_PUBLISHER_NAMESPACE_IDX);
+        return Arrays.asList(Indexes.TRUSTED_PUBLISHER_EXTENSION_IDX);
     }
 
     @Override
@@ -147,7 +142,7 @@ public class TrustedPublisher extends TableImpl<TrustedPublisherRecord> {
 
     @Override
     public List<ForeignKey<TrustedPublisherRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_CREATED_BY_FKEY, Keys.TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_NAMESPACE_FKEY);
+        return Arrays.asList(Keys.TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_CREATED_BY_FKEY, Keys.TRUSTED_PUBLISHER__TRUSTED_PUBLISHER_EXTENSION_ID_FKEY);
     }
 
     @Override
