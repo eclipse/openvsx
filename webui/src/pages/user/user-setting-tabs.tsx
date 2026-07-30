@@ -13,15 +13,15 @@ import { Tabs, Tab, useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate, useParams } from 'react-router';
 import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings-routes';
-import { useRegistryValue } from '../../hooks/use-registry-value';
-import { isTrustedPublishingEnabled } from './trusted-publishing/use-trusted-publishers';
+import { useTrustedPublishingStatus } from './trusted-publishing/use-trusted-publishers';
 
 export const UserSettingTabs = (): ReactElement => {
     const theme = useTheme();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));
     const isAMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { tab } = useParams();
-    const trustedPublishingEnabled = useRegistryValue(isTrustedPublishingEnabled);
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
+    const trustedPublishingEnabled = trustedPublishingStatus?.enabled ?? false;
 
     const navigate = useNavigate();
 

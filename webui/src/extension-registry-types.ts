@@ -288,8 +288,11 @@ export interface TrustedPublisherProvider {
     registrationInputs: TrustedPublisherInput[];
 }
 
-export interface TrustedPublisherProviderList {
-    trustedPublisherProviders: TrustedPublisherProvider[];
+export interface TrustedPublisherStatus {
+    enabled: boolean;
+    allowed: boolean;
+    // present only when the feature is enabled and the current user is allowed to use it
+    trustedPublisherProviders?: TrustedPublisherProvider[];
 }
 
 export interface TrustedPublisherRequest {
@@ -327,7 +330,6 @@ export interface TargetPlatformVersion {
 export interface RegistryVersion {
     version: string;
     maxExtensionSize?: number;
-    trustedPublishingEnabled?: boolean;
 }
 
 export interface LoginProviders {
