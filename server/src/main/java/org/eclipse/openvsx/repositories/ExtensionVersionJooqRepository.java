@@ -405,6 +405,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -496,6 +497,7 @@ public class ExtensionVersionJooqRepository {
 
         var token = new PersonalAccessToken();
         token.setUser(user);
+        token.setType(PersonalAccessTokenType.valueOf(row.get(PERSONAL_ACCESS_TOKEN.TYPE)));
 
         extVersion.setPublishedWith(token);
         extVersion.setType(ExtensionVersion.Type.REGULAR);
@@ -765,6 +767,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -835,6 +838,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -988,7 +992,8 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER);
+                USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1158,7 +1163,8 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER);
+                USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1266,7 +1272,8 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER);
+                USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1446,6 +1453,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
+                PERSONAL_ACCESS_TOKEN.TYPE,
                 NAMESPACE.ID,
                 NAMESPACE.NAME,
                 NAMESPACE.DISPLAY_NAME,

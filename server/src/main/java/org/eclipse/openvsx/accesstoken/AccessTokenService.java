@@ -17,9 +17,11 @@ import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -50,31 +52,55 @@ public class AccessTokenService {
         this.mail = mail;
     }
 
+    /**
+     * Shorthand for {@link #createAccessToken(UserData, String, boolean)} with {@code oneTime=false}.
+     */
     @Transactional
     public AccessTokenJson createAccessToken(UserData user, String description) {
-        return createAccessToken(
-                user,
-                description,
-                config.isTokenExpiryEnabled()
-                        ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
-                        : null);
+        return createAccessToken(user, description, false);
     }
 
     @Transactional
-    public AccessTokenJson createAccessToken(UserData user, String description, LocalDateTime expiresTimestamp) {
+    public AccessTokenJson createAccessToken(UserData user, String description, boolean oneTime) {
+        final LocalDateTime expiresTimestamp;
+        if (oneTime) {
+            expiresTimestamp = config.isOttTokenExpiryEnabled()
+                    ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
+                    : null;
+        } else {
+            expiresTimestamp = config.isTokenExpiryEnabled()
+                    ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
+                    : null;
+        }
+        return createAccessToken(
+                user,
+                description,
+                expiresTimestamp,
+                oneTime);
+    }
+
+    private AccessTokenJson createAccessToken(
+            UserData user,
+            String description,
+            @Nullable LocalDateTime expiresTimestamp,
+            boolean oneTime
+    ) {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(generateTokenValue());
         token.setActive(true);
         token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
-        token.setExpiresTimestamp(expiresTimestamp);
         token.setDescription(description);
+        token.setExpiresTimestamp(expiresTimestamp);
+        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.LLT);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
         json.setValue(token.getValue());
-        json.setDeleteTokenUrl(
-                createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
+        if (!oneTime) {
+            json.setDeleteTokenUrl(
+                    createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
+        }
 
         return json;
     }
@@ -84,13 +110,13 @@ public class AccessTokenService {
         String value;
         do {
             value = config.getPrefix() + UUID.randomUUID();
-        } while (repositories.hasAccessToken(value));
+        } while (repositories.hasPersonalAccessToken(value));
         return value;
     }
 
     @Transactional
     public ResultJson deactivateAccessToken(UserData user, long id) {
-        var token = repositories.findAccessToken(id);
+        var token = repositories.findPersonalAccessToken(id);
         if (token == null || !token.isActive()) {
             throw new NotFoundException();
         }
@@ -105,20 +131,47 @@ public class AccessTokenService {
     }
 
     @Transactional
-    public PersonalAccessToken useAccessToken(String tokenValue) {
-        var token = repositories.findAccessToken(tokenValue);
+    public UserData verifyAccessToken(String tokenValue) {
+        var token = repositories.findPersonalAccessToken(tokenValue);
         if (token == null || !token.isActive()) {
             return null;
         }
-        token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+            token.setActive(false);
+            return null;
+        }
+        token.setAccessedTimestamp(now);
+        return token.getUser();
+    }
+
+    @Transactional
+    public PersonalAccessToken useAccessToken(String tokenValue) {
+        var token = repositories.findPersonalAccessToken(tokenValue);
+        if (token == null || !token.isActive()) {
+            return null;
+        }
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+            token.setActive(false);
+            return null;
+        }
+        token.setAccessedTimestamp(now);
+        if (token.getType().isOneTime()) {
+            // it is OTT; pull it out immediately on first use
+            token.setActive(false);
+        }
         return token;
     }
 
+    @Transactional
     public int expireAccessTokens() {
-        var expiredAccessTokens = repositories.expireAccessTokens(TimeUtil.getCurrentUTC());
+        var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {
-                mail.scheduleAccessTokenExpiredMail(token);
+                if (token.getType().isNotify()) {
+                    mail.scheduleAccessTokenExpiredMail(token);
+                }
             }
         }
         return expiredAccessTokens.size();
@@ -127,19 +180,17 @@ public class AccessTokenService {
     @Transactional
     public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
         token = entityManager.merge(token);
-        try {
-            mail.scheduleAccessTokenExpiryNotification(token);
-        } finally {
-            token.setNotified(true);
+        if (token.getType().isNotify() && !token.isNotified()) {
+            try {
+                mail.scheduleAccessTokenExpiryNotification(token);
+            } finally {
+                token.setNotified(true);
+            }
         }
-    }
-
-    public void scheduleTokenExpiredMail(PersonalAccessToken token) {
-        mail.scheduleAccessTokenExpiredMail(token);
     }
 
     @Transactional
     public int setExpirationTimeForLegacyAccessTokens(LocalDateTime expirationTime) {
-        return repositories.updateExpiresTimeForLegacyAccessTokens(expirationTime);
+        return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime);
     }
 }

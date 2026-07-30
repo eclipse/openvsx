@@ -394,7 +394,7 @@ public class AdminService {
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
-        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
+        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActivePersonalAccessTokens(user));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
@@ -476,7 +476,7 @@ public class AdminService {
             eclipse.revokePublisherAgreement(user, admin);
         }
 
-        var accessTokens = repositories.findAccessTokens(user);
+        var accessTokens = repositories.findPersonalAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();
         var deactivatedTokenCount = 0;
         var deactivatedExtensionCount = 0;
@@ -530,7 +530,7 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
+        var deactivatedTokenCount = repositories.deactivatePersonalAccessTokens(user);
         var result = ResultJson.success(
                 "Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
         logs.logAction(admin, result);

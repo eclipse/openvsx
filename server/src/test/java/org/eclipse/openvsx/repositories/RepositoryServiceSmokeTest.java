@@ -38,6 +38,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
@@ -87,6 +88,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
         extVersion.setTargetPlatform("targetPlatform");
         extVersion.setExtension(extension);
         var personalAccessToken = new PersonalAccessToken();
+        personalAccessToken.setType(PersonalAccessTokenType.LLT);
         var keyPair = new SignatureKeyPair();
         keyPair.setPrivateKey(new byte[0]);
         keyPair.setPublicKeyText("");
@@ -197,9 +199,9 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.countPublishersThatClaimedNamespaceOwnership(),
                 () -> repositories.countUsers(),
                 () -> repositories.downloadsTotal(),
-                () -> repositories.findAccessToken("value"),
-                () -> repositories.findAccessToken(1L),
-                () -> repositories.findAccessTokens(userData),
+                () -> repositories.findPersonalAccessToken("value"),
+                () -> repositories.findPersonalAccessToken(1L),
+                () -> repositories.findPersonalAccessTokens(userData),
                 () -> repositories.findActiveExtensions(namespace),
                 () -> repositories.findActiveReviews(extension),
                 () -> repositories.findActiveReviews(extension, userData),
@@ -251,7 +253,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findFilesByType(List.of(extVersion), STRING_LIST),
                 () -> repositories.countVersions("namespaceName", "extensionName"),
                 () -> repositories.topMostDownloadedExtensions(1),
-                () -> repositories.countActiveAccessTokens(userData),
+                () -> repositories.countActivePersonalAccessTokens(userData),
                 () -> repositories.topMostActivePublishingUsers(1),
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
@@ -313,20 +315,20 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),
-                () -> repositories.findActiveAccessTokens(userData),
+                () -> repositories.findActivePersonalAccessTokens(userData),
                 () -> repositories.findLatestVersions(List.of(1L)),
                 () -> repositories.hasSameVersion(extVersion),
                 () -> repositories.hasActiveReview(extension, userData),
                 () -> repositories.findLatestVersionsIsPreview(List.of(1L)),
-                () -> repositories.findAccessToken(userData, "description"),
+                () -> repositories.findPersonalAccessToken(userData, "description"),
                 () -> repositories.findMemberships(userData),
                 () -> repositories.canPublishInNamespace(userData, namespace),
                 () -> repositories.findLatestVersion("namespaceName", "extensionName", "targetPlatform", false, false),
                 () -> repositories.hasMembership(userData, namespace),
                 () -> repositories
                         .findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
-                () -> repositories.findAllAccessTokens(),
-                () -> repositories.hasAccessToken("tokenValue"),
+                () -> repositories.findAllPersonalAccessTokens(),
+                () -> repositories.hasPersonalAccessToken("tokenValue"),
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
@@ -346,10 +348,10 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                         "namespace"),
                 () -> repositories.findLatestVersion(userData, "namespaceName", "extensionName"),
                 () -> repositories.isDeleteAllActiveVersions("namespaceName", "extensionName"),
-                () -> repositories.deactivateAccessTokens(userData),
-                () -> repositories.expireAccessTokens(NOW),
-                () -> repositories.findExpiringAccessTokensWithoutNotification(NOW, page),
-                () -> repositories.updateExpiresTimeForLegacyAccessTokens(NOW),
+                () -> repositories.deactivatePersonalAccessTokens(userData),
+                () -> repositories.expirePersonalAccessTokens(NOW),
+                () -> repositories.findExpiringPersonalAccessTokensWithoutNotification(NOW, page),
+                () -> repositories.updateExpiresTimeForLegacyPersonalAccessTokens(NOW),
                 () -> repositories.findSimilarExtensionsByLevenshtein(
                         "extensionName",
                         "namespaceName",

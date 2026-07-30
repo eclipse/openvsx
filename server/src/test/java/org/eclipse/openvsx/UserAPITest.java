@@ -119,6 +119,8 @@ class UserAPITest {
 
     @Autowired
     MockMvc mockMvc;
+    @Autowired
+    private AccessTokenService accessTokenService;
 
     @Test
     void testLoggedIn() throws Exception {
@@ -170,7 +172,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(tokens).generateTokenValue();
+        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue();
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -197,7 +199,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
         Mockito.when(entityManager.merge(userData))
                 .thenReturn(userData);
@@ -225,7 +228,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(false);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
         mockMvc.perform(
@@ -245,7 +249,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
         mockMvc.perform(
@@ -835,19 +840,22 @@ class UserAPITest {
         token1.setDescription("This is token 1");
         token1.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token1.setActive(true);
+        token1.setType(PersonalAccessTokenType.LLT);
         var token2 = new PersonalAccessToken();
         token2.setUser(userData);
         token2.setValue("token2");
         token2.setDescription("This is token 2");
         token2.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token2.setActive(false);
+        token2.setType(PersonalAccessTokenType.LLT);
         var token3 = new PersonalAccessToken();
         token3.setUser(userData);
         token3.setValue("token3");
         token3.setDescription("This is token 3");
         token3.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token3.setActive(true);
-        Mockito.when(repositories.findActiveAccessTokens(userData))
+        token3.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findActivePersonalAccessTokens(userData))
                 .thenReturn(Streamable.of(token1, token3));
     }
 
