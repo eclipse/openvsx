@@ -30,7 +30,6 @@ import { PersonalAccessToken } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { GenerateAccessTokenDialog } from './generate-access-token-dialog';
 import { TrustedPublishingPromo } from './trusted-publishing/trusted-publishing-promo';
-import { useTrustedPublishingStatus } from './trusted-publishing/use-trusted-publishers';
 import { UserSettingsRoutes } from './user-settings-routes';
 
 const link = ({ theme }: { theme: Theme }) => ({
@@ -57,8 +56,6 @@ const DeleteButton = styled(Button)(({ theme }: { theme: Theme }) => ({
 
 export const UserSettingsTokens: FunctionComponent = () => {
     const { service, user, handleError, pageSettings } = useContext(MainContext);
-    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
-    const trustedPublishingEnabled = trustedPublishingStatus?.enabled ?? false;
 
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
     const [loading, setLoading] = useState(true);
@@ -206,11 +203,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
                     </Box>
                 </Box>
             </Box>
-            {trustedPublishingEnabled ? (
-                <Box mt={2}>
-                    <TrustedPublishingPromo />
-                </Box>
-            ) : null}
+            <TrustedPublishingPromo />
             <Box mt={2}>
                 {tokens.length === 0 && !loading ? (
                     <EmptyTypography variant='body1'>You currently have no tokens.</EmptyTypography>
