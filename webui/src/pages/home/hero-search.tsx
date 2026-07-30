@@ -11,27 +11,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import {
-    ChangeEvent,
-    ComponentType,
-    FormEvent,
-    FunctionComponent,
-    useCallback,
-    useLayoutEffect,
-    useRef,
-    useState
-} from 'react';
+import { ChangeEvent, ComponentType, FormEvent, FunctionComponent, useCallback, useLayoutEffect, useRef } from 'react';
 import { Box, ButtonBase, Container, Typography } from '@mui/material';
 import { useLocation } from 'react-router';
 import { styled, alpha } from '@mui/material/styles';
 import { accentHover, focusOutline, focusRing } from '../../components/page-primitives';
-import { useSearch, SEARCH_DEBOUNCE_MS } from '../../hooks/use-search';
+import { useSearch } from '../../hooks/use-search';
 import { useSearchQuery } from '../../context/search/search-context';
-import { startSearchViewTransition } from '../../context/search/search-view-transition';
 import { useSearchFocus } from '../../context/search/search-focus-context';
 import { useRegisterPageSearchBar } from '../../context/search/page-search-bar-context';
 import { useSignalEffect } from '../../hooks/use-signal-effect';
-import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { MONO_FONT } from '../../default/theme';
 
 const HeroSearchWrap = styled(Box)(({ theme }) => ({
@@ -112,18 +101,15 @@ export interface HeroSearchProps {
 
 /**
  * The hero search section. Registers itself as the page's search bar while in
- * view, so the nav bar hides its own field. Owns a local copy of `query` so
- * keystrokes only re-render the field, not the whole homepage; typing debounces
- * `search`, submit and popular chips search immediately.
+ * view (the nav bar hides its own field) and binds to the shared draft query.
  */
 export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
     searchHeader: SearchHeader,
     popularSearches = []
 }) => {
-    const { query: contextQuery, setQuery } = useSearchQuery();
+    const { query } = useSearchQuery();
     const { search } = useSearch();
     const { searchFocusSignal, searchFocused } = useSearchFocus();
-    const [query, setLocalQuery] = useState('');
     const heroInputRef = useRef<HTMLInputElement>(null);
     const isActiveSearchBar = useRegisterPageSearchBar(heroInputRef);
 
@@ -141,8 +127,8 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }, [isActiveSearchBar])
     );
 
-    // Reconcile the scroll swap: the field taking over adopts the shared draft and
-    // takes focus if its counterpart had it (the signal routes to the active bar).
+    // Route focus across the scroll swap: the field taking over grabs focus if
+    // its counterpart had it (the signal routes to the active bar).
     const wasActiveSearchBar = useRef(isActiveSearchBar);
     useLayoutEffect(() => {
         if (wasActiveSearchBar.current === isActiveSearchBar) {
@@ -150,13 +136,22 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }
         wasActiveSearchBar.current = isActiveSearchBar;
         if (isActiveSearchBar) {
-            setLocalQuery(contextQuery);
             if (searchFocused) searchFocusSignal.emit();
-        } else {
-            setQuery(query);
-            if (document.activeElement === heroInputRef.current) searchFocusSignal.emit();
+        } else if (document.activeElement === heroInputRef.current) {
+            searchFocusSignal.emit();
         }
-    }, [isActiveSearchBar, searchFocused, contextQuery, query, setQuery, searchFocusSignal.emit]);
+    }, [isActiveSearchBar, searchFocused, searchFocusSignal.emit]);
+
+    // Hand focus to the nav field when the hero unmounts mid-typing — otherwise
+    // focus falls to <body> until the morph ends and keystrokes are swallowed.
+    useLayoutEffect(
+        () => () => {
+            if (document.activeElement === heroInputRef.current) {
+                searchFocusSignal.emit();
+            }
+        },
+        [searchFocusSignal.emit]
+    );
 
     // Focus the search by default when the hero page is the app's landing page.
     const { key: locationKey } = useLocation();
@@ -166,47 +161,12 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
         }
     }, [locationKey, searchFocusSignal.emit]);
 
-    // Wrap search calls with a view transition so the hero input morphs into the nav bar.
-    const searchWithTransition = useCallback(
-        (q: string) => {
-            // Sync context immediately so the nav bar input value is ready before the
-            // navigation commits (the hero input morphs into the nav field mid-transition).
-            setQuery(q);
-            const shouldFocus = Boolean(q);
-            // Navigation and focus request land in the same commit, so the nav field takes
-            // focus while the hero input still has it — keeping the mobile keyboard open
-            // across the morph.
-            const transition = startSearchViewTransition(() => {
-                search({ query: q });
-                if (shouldFocus) searchFocusSignal.emit();
-            });
-            // Re-issue the focus request once the transition settles as a fallback: the
-            // focus above can be interrupted by the morph, and by now the nav field is
-            // fully mounted and interactive.
-            if (shouldFocus) {
-                transition?.finished.then(searchFocusSignal.emit).catch(() => undefined);
-            }
-        },
-        [search, setQuery, searchFocusSignal.emit]
-    );
-
-    const debouncedSearch = useDebouncedCallback(searchWithTransition, SEARCH_DEBOUNCE_MS);
-
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        setLocalQuery(val);
-        if (val.trim()) {
-            debouncedSearch(val.trim());
-        } else {
-            // Clearing the field shouldn't navigate away from the home page.
-            debouncedSearch.cancel();
-        }
-    };
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) =>
+        search({ query: e.target.value }, { debounce: true });
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        debouncedSearch.cancel();
-        if (query.trim()) searchWithTransition(query.trim());
+        if (query.trim()) search({ query });
     };
 
     return (
@@ -271,7 +231,7 @@ export const HeroSearch: FunctionComponent<HeroSearchProps> = ({
                         Popular:
                     </Typography>
                     {popularSearches.map(chip => (
-                        <PopularChip key={chip} onClick={() => searchWithTransition(chip)} style={{ flexShrink: 0 }}>
+                        <PopularChip key={chip} onClick={() => search({ query: chip })} style={{ flexShrink: 0 }}>
                             {chip}
                         </PopularChip>
                     ))}

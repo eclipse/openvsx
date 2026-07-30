@@ -33,7 +33,6 @@ import software.amazon.awssdk.awscore.defaultsmode.DefaultsMode;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.S3ServiceClientConfiguration;
 import software.amazon.awssdk.services.s3.endpoints.S3EndpointParams;
 import software.amazon.awssdk.services.s3.endpoints.S3EndpointProvider;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
@@ -279,7 +278,37 @@ public class AwsStorageService implements IStorageService {
         return getLocation(getObjectKey(namespace));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Percent-encodes the {@code +} that {@link #getObjectKey(FileResource)} leaves in the key: RFC 3986
+     * allows it in a path segment, but S3 (and a CDN in front of it) decodes {@code +} in a path as a
+     * space, which makes every version carrying semver build metadata such as {@code 1.0.0+10}
+     * unresolvable. See <a href="https://github.com/eclipse-openvsx/openvsx/issues/1459">issue 1459</a>.
+     * <p>
+     * The result must only ever be passed to {@link URI#create(String)}: encoding it a second time —
+     * {@code UriUtils.encodePathSegment}, {@code UriComponentsBuilder.encode()},
+     * {@code UriComponents.toUri()} or the multi-argument {@link URI} constructor — escapes the
+     * {@code %} again and produces {@code %252B}.
+     */
+    @Override
+    public String getObjectKeyAsUrlPath(FileResource resource) {
+        return encodeObjectKeyAsUrlPath(getObjectKey(resource));
+    }
+
+    @Override
+    public String getObjectKeyAsUrlPath(Namespace namespace) {
+        return encodeObjectKeyAsUrlPath(getObjectKey(namespace));
+    }
+
+    private String encodeObjectKeyAsUrlPath(String objectKey) {
+        return objectKey.replace("+", "%2B");
+    }
+
     private URI getLocation(String objectKey) {
+        // The presigner encodes the object key itself ('+' becomes %2B) and signs that form, so the key
+        // must be handed over unencoded here: encoding it as well would both double-encode the path and
+        // invalidate the signature.
         var objectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(objectKey)

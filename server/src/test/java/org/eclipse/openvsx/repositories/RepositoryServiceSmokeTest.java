@@ -233,6 +233,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findMemberships(namespace, "role"),
                 () -> repositories.deleteMemberships(userData),
                 () -> repositories.findNamespace("name"),
+                () -> repositories.lockNamespace(namespace),
                 () -> repositories.findConflictingNamespaces("displayName", namespace),
                 () -> repositories.findOrphanNamespaces(),
                 () -> repositories.findPersistedLogsAfter(NOW),

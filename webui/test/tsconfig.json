@@ -1,0 +1,9 @@
+{
+    "extends": "../configs/base.tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "skipLibCheck": true,
+        "typeRoots": ["../node_modules/@types"]
+    },
+    "include": ["./**/*.ts", "./**/*.tsx"]
+}

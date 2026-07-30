@@ -10,10 +10,16 @@
 package org.eclipse.openvsx;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -94,6 +100,88 @@ class ExtensionProcessorTest {
             processor.getFileResources(processor.getMetadata(), consumer);
             assertThat(count.get()).isEqualTo(5);
         }
+    }
+
+    @Test
+    void testTagsAreCappedAtTheDefaultLimit() throws Exception {
+        var declaredTags = tags(25);
+        try (
+                var file = writeTagsToTempFile(declaredTags);
+                var processor = new ExtensionProcessor(file)
+        ) {
+            // The tags an extension declares first are the ones that are kept.
+            assertThat(processor.getMetadata().getTags())
+                    .hasSize(20)
+                    .containsExactlyElementsOf(declaredTags.subList(0, 20));
+        }
+    }
+
+    @Test
+    void testTagLimitIsConfigurable() throws Exception {
+        var declaredTags = tags(25);
+        try (
+                var file = writeTagsToTempFile(declaredTags);
+                var processor = new ExtensionProcessor(file)
+        ) {
+            assertThat(processor.getMetadata(3).getTags()).containsExactlyElementsOf(declaredTags.subList(0, 3));
+        }
+    }
+
+    @Test
+    void testTagLimitIsDisabledForANegativeLimit() throws Exception {
+        var declaredTags = tags(25);
+        try (
+                var file = writeTagsToTempFile(declaredTags);
+                var processor = new ExtensionProcessor(file)
+        ) {
+            assertThat(processor.getMetadata(-1).getTags()).containsExactlyElementsOf(declaredTags);
+        }
+    }
+
+    @Test
+    void testTagLimitCountsDistinctTagsOnly() throws Exception {
+        try (
+                var file = writeTagsToTempFile(List.of("Todo", "todo", "task"));
+                var processor = new ExtensionProcessor(file)
+        ) {
+            // The duplicate does not take up one of the two slots, and the first spelling wins.
+            assertThat(processor.getMetadata(2).getTags()).containsExactly("task", "Todo");
+        }
+    }
+
+    private List<String> tags(int count) {
+        // Named so that the alphabetical order the tags are stored in matches the declaration order.
+        return IntStream.rangeClosed(1, count).mapToObj(i -> String.format("tag-%02d", i)).toList();
+    }
+
+    /**
+     * Writes a package that declares the given tags, based on an existing extension so that the rest of
+     * the manifest stays valid.
+     */
+    private TempFile writeTagsToTempFile(List<String> tags) throws IOException {
+        var target = new TempFile("test", ".zip");
+        try (
+                var source = writeToTempFile("util/todo-tree.zip");
+                var zipFile = new ZipFile(source.getPath().toFile());
+                var out = new ZipOutputStream(Files.newOutputStream(target.getPath()))
+        ) {
+            for (var name : List.of("extension.vsixmanifest", "extension/package.json")) {
+                var content = new String(
+                        zipFile.getInputStream(zipFile.getEntry(name)).readAllBytes(),
+                        StandardCharsets.UTF_8);
+                if (name.equals("extension.vsixmanifest")) {
+                    content = content.replace(
+                            "<Tags>todo,task,tasklist,multi-root ready</Tags>",
+                            "<Tags>" + String.join(",", tags) + "</Tags>");
+                }
+
+                out.putNextEntry(new ZipEntry(name));
+                out.write(content.getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+            }
+        }
+
+        return target;
     }
 
     private TempFile writeToTempFile(String resource) throws IOException {

@@ -170,6 +170,31 @@ class AwsStorageServiceTest {
     }
 
     @Test
+    void testObjectKeyAsUrlPathEncodesPlusSign() {
+        // Semver build metadata, see https://github.com/eclipse-openvsx/openvsx/issues/1459
+        extVersion.setVersion("1.0.0+10");
+
+        // The object key must keep the literal '+': it identifies the stored object, and changing it
+        // would leave every file published so far unreachable.
+        assertEquals(
+                "testnamespace/test-extension/1.0.0+10/extension.vsix",
+                ReflectionTestUtils.invokeMethod(storageService, "getObjectKey", resource));
+
+        // S3 reads a '+' in a URL path as a space, so the URL form has to escape it.
+        assertEquals(
+                "testnamespace/test-extension/1.0.0%2B10/extension.vsix",
+                storageService.getObjectKeyAsUrlPath(resource));
+    }
+
+    @Test
+    void testObjectKeyAsUrlPathKeepsKeysWithoutPlusSign() {
+        assertEquals(
+                "testnamespace/test-extension/1.0.0/extension.vsix",
+                storageService.getObjectKeyAsUrlPath(resource));
+        assertEquals("testnamespace/logo/logo.png", storageService.getObjectKeyAsUrlPath(namespace));
+    }
+
+    @Test
     void testObjectKeyGenerationWithComplexNames() {
         // Test with complex namespace and extension names
         namespace.setName("my-complex-namespace");

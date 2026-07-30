@@ -98,6 +98,7 @@ async function packageExtension(options: InternalPublishOptions, registry: Regis
         useYarn: options.yarn,
         dependencies: options.dependencies,
         preRelease: options.preRelease,
+        allowMissingRepository: options.allowMissingRepository,
         version: options.packageVersion
     };
     await createVSIX(packageOptions);
