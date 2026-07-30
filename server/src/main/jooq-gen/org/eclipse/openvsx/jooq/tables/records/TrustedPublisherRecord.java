@@ -35,101 +35,87 @@ public class TrustedPublisherRecord extends UpdatableRecordImpl<TrustedPublisher
     }
 
     /**
-     * Setter for <code>public.trusted_publisher.namespace</code>.
+     * Setter for <code>public.trusted_publisher.extension_id</code>.
      */
-    public void setNamespace(Long value) {
+    public void setExtensionId(Long value) {
         set(1, value);
     }
 
     /**
-     * Getter for <code>public.trusted_publisher.namespace</code>.
+     * Getter for <code>public.trusted_publisher.extension_id</code>.
      */
-    public Long getNamespace() {
+    public Long getExtensionId() {
         return (Long) get(1);
-    }
-
-    /**
-     * Setter for <code>public.trusted_publisher.extension_name</code>.
-     */
-    public void setExtensionName(String value) {
-        set(2, value);
-    }
-
-    /**
-     * Getter for <code>public.trusted_publisher.extension_name</code>.
-     */
-    public String getExtensionName() {
-        return (String) get(2);
     }
 
     /**
      * Setter for <code>public.trusted_publisher.provider</code>.
      */
     public void setProvider(String value) {
-        set(3, value);
+        set(2, value);
     }
 
     /**
      * Getter for <code>public.trusted_publisher.provider</code>.
      */
     public String getProvider() {
-        return (String) get(3);
+        return (String) get(2);
     }
 
     /**
      * Setter for <code>public.trusted_publisher.registration</code>.
      */
     public void setRegistration(JSONB value) {
-        set(4, value);
+        set(3, value);
     }
 
     /**
      * Getter for <code>public.trusted_publisher.registration</code>.
      */
     public JSONB getRegistration() {
-        return (JSONB) get(4);
+        return (JSONB) get(3);
     }
 
     /**
      * Setter for <code>public.trusted_publisher.claims</code>.
      */
     public void setClaims(JSONB value) {
-        set(5, value);
+        set(4, value);
     }
 
     /**
      * Getter for <code>public.trusted_publisher.claims</code>.
      */
     public JSONB getClaims() {
-        return (JSONB) get(5);
+        return (JSONB) get(4);
     }
 
     /**
      * Setter for <code>public.trusted_publisher.created_by</code>.
      */
     public void setCreatedBy(Long value) {
-        set(6, value);
+        set(5, value);
     }
 
     /**
      * Getter for <code>public.trusted_publisher.created_by</code>.
      */
     public Long getCreatedBy() {
-        return (Long) get(6);
+        return (Long) get(5);
     }
 
     /**
      * Setter for <code>public.trusted_publisher.created_timestamp</code>.
      */
     public void setCreatedTimestamp(LocalDateTime value) {
-        set(7, value);
+        set(6, value);
     }
 
     /**
      * Getter for <code>public.trusted_publisher.created_timestamp</code>.
      */
     public LocalDateTime getCreatedTimestamp() {
-        return (LocalDateTime) get(7);
+        return (LocalDateTime) get(6);
     }
 
     // -------------------------------------------------------------------------
@@ -155,12 +141,11 @@ public class TrustedPublisherRecord extends UpdatableRecordImpl<TrustedPublisher
     /**
      * Create a detached, initialised TrustedPublisherRecord
      */
-    public TrustedPublisherRecord(Long id, Long namespace, String extensionName, String provider, JSONB registration, JSONB claims, Long createdBy, LocalDateTime createdTimestamp) {
+    public TrustedPublisherRecord(Long id, Long extensionId, String provider, JSONB registration, JSONB claims, Long createdBy, LocalDateTime createdTimestamp) {
         super(TrustedPublisher.TRUSTED_PUBLISHER);
 
         setId(id);
-        setNamespace(namespace);
-        setExtensionName(extensionName);
+        setExtensionId(extensionId);
         setProvider(provider);
         setRegistration(registration);
         setClaims(claims);
