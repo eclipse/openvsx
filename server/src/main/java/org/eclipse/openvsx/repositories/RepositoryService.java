@@ -215,6 +215,14 @@ public class RepositoryService {
         return namespaceJooqRepo.findNameByNameIgnoreCase(name);
     }
 
+    /**
+     * Locks the namespace row so that concurrent publications creating the same extension serialize
+     * against each other, see {@link NamespaceRepository#findByIdForUpdate(long)}.
+     */
+    public void lockNamespace(Namespace namespace) {
+        namespaceRepo.findByIdForUpdate(namespace.getId());
+    }
+
     public Streamable<Namespace> findOrphanNamespaces() {
         return namespaceRepo.findOrphans();
     }

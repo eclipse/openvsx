@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -34,9 +36,11 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 class ExtensionServiceTest {
@@ -163,6 +167,33 @@ class ExtensionServiceTest {
         Mockito.verify(repositories, Mockito.never()).findLatestExtensionScan(Mockito.any());
     }
 
+    /**
+     * Validating and scanning a package that can not be published anyway is pointless, so the publish
+     * preconditions (publisher exists, access rights, version not published yet) are checked first and
+     * no scan is initialized or run when they fail.
+     */
+    @Test
+    void shouldNotScanWhenPublishPreconditionsFail() {
+        Mockito.when(publishingConfig.getMaxContentSize()).thenReturn(1024L);
+        Mockito.when(scanService.isEnabled()).thenReturn(true);
+        Mockito.doThrow(new ErrorResultException("Insufficient access rights for publisher: redhat"))
+                .when(publishHandler).checkPublishPreconditions(Mockito.any(), Mockito.any());
+
+        var token = mockToken();
+        var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> svc.publishVersion(content, token))
+                .isInstanceOf(ErrorResultException.class)
+                .hasMessageContaining("Insufficient access rights");
+
+        Mockito.verify(scanService, Mockito.never()).initializeScan(Mockito.any(), Mockito.any());
+        Mockito.verify(scanService, Mockito.never())
+                .runValidation(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(scanService, Mockito.never()).removeScan(Mockito.any());
+        Mockito.verify(publishHandler, Mockito.never())
+                .publishAsync(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
     // ---------- UTILITY ----------//
 
     private Extension mockExtension() {
@@ -227,5 +258,13 @@ class ExtensionServiceTest {
         user.setProvider("github");
         user.setEclipseToken(new AuthToken("12345", null, null, null, null, null));
         return user;
+    }
+
+    private PersonalAccessToken mockToken() {
+        var token = new PersonalAccessToken();
+        token.setId(1L);
+        token.setValue("token");
+        token.setUser(mockUser());
+        return token;
     }
 }

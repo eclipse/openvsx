@@ -32,6 +32,11 @@ export interface PublishCommonOptions extends RegistryOptions, TrustedPublishing
      */
     preRelease?: boolean;
     /**
+     * Package the extension even though its manifest has no `repository` field, instead of asking for
+     * confirmation. Only valid with `packagePath`.
+     */
+    allowMissingRepository?: boolean;
+    /**
      * Whether to fail silently if version already exists on the marketplace
      */
     skipDuplicate?: boolean;

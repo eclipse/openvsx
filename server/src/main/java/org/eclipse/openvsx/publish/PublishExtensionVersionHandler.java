@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.publish;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,10 +23,13 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.hibernate.exception.ConstraintViolationException;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.resilience.annotation.Retryable;
+import org.springframework.resilience.retry.MethodRetryPredicate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerErrorException;
@@ -39,6 +43,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
@@ -103,6 +108,25 @@ public class PublishExtensionVersionHandler {
         return config.isRequireLicense();
     }
 
+    /**
+     * Backstop for a lost race on the creation of the extension row: a writer that does not take the
+     * namespace lock (e.g. a namespace change moving an extension in) can still commit the extension
+     * between our lookup and our insert. PostgreSQL only reports the duplicate once that writer has
+     * committed, so a single retry is enough — it finds the committed extension and adds the version
+     * to it. Retrying is safe because the method derives all of its state from {@code processor} and
+     * the retry advice runs outside the transaction advice, so every attempt gets a fresh transaction.
+     * <p>
+     * Note that this only holds for callers that publish without a transaction of their own, which is
+     * every caller but {@link ExtensionService#mirrorVersion}: an attempt joining an outer transaction
+     * can not commit after that transaction was marked for rollback, so mirroring relies on the
+     * namespace lock alone.
+     */
+    @Retryable(
+        includes = DataIntegrityViolationException.class,
+        predicate = DuplicateExtensionPredicate.class,
+        maxRetries = 1,
+        delay = 100
+    )
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(
             ExtensionProcessor processor,
@@ -134,12 +158,30 @@ public class PublishExtensionVersionHandler {
         return extVersion;
     }
 
-    private ExtensionVersion createExtensionVersion(
-            ExtensionProcessor processor,
-            UserData user,
-            PersonalAccessToken token,
-            LocalDateTime timestamp
-    ) {
+    /**
+     * Checks publish preconditions that should be evaluated before running any package validation or scanning: the
+     * publisher must exist, the user of {@code token} must be allowed to publish to it, and the version must not be
+     * published already.
+     * <p>
+     * Callers publishing with scanning enabled have to invoke this before validating or scanning the
+     * package, as neither is of any use for a package that can not be published in the first place.
+     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, PersonalAccessToken,
+     * LocalDateTime, boolean)}, which enforces them while holding the extension lock.
+     *
+     * @throws ErrorResultException if the extension version can not be published
+     */
+    public void checkPublishPreconditions(ExtensionProcessor processor, PersonalAccessToken token) {
+        var namespace = checkPublishPermission(processor, token.getUser());
+        var extensionName = processor.getExtensionName();
+        var existingVersion = repositories
+                .findVersion(processor.getVersion(), processor.getTargetPlatform(), extensionName, namespace.getName());
+        if (existingVersion != null) {
+            throw new ErrorResultException(
+                    alreadyPublishedMessage(namespace.getName(), extensionName, existingVersion));
+        }
+    }
+
+    private Namespace checkPublishPermission(ExtensionProcessor processor, UserData user) {
         var namespaceName = processor.getNamespace();
         var namespace = repositories.findNamespace(namespaceName);
         if (namespace == null) {
@@ -150,11 +192,47 @@ public class PublishExtensionVersionHandler {
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());
         }
+        return namespace;
+    }
+
+    private String alreadyPublishedMessage(
+            String namespaceName,
+            String extensionName,
+            ExtensionVersion existingVersion
+    ) {
+        var extVersionId = NamingUtil.toLogFormat(
+                namespaceName,
+                extensionName,
+                existingVersion.getTargetPlatform(),
+                existingVersion.getVersion());
+        var message = "Extension " + extVersionId + " is already published";
+        if (existingVersion.isRemoved()) {
+            message += " and was removed. Extension versions are immutable, so this version's identity"
+                    + " stays permanently reserved and cannot be republished."
+                    + " Ask an administrator to purge it if it must be republished.";
+        } else {
+            message += existingVersion.isActive()
+                    ? "."
+                    : ", but currently isn't active and therefore not visible.";
+        }
+        return message;
+    }
+
+    private ExtensionVersion createExtensionVersion(
+            ExtensionProcessor processor,
+            UserData user,
+            PersonalAccessToken token,
+            LocalDateTime timestamp
+    ) {
+        var namespace = checkPublishPermission(processor, user);
+        var namespaceName = processor.getNamespace();
 
         var extensionName = processor.getExtensionName();
         validateExtensionVersion(processor, namespaceName, extensionName);
 
-        var extVersion = processor.getMetadata();
+        // This is the only place where extracted metadata gets persisted, so it is the one that has to
+        // honour the configured tag limit.
+        var extVersion = processor.getMetadata(config.getMaxTags());
         var displayName = extVersion.getDisplayName();
         validateExtensionName(namespaceName, extensionName, displayName, user);
 
@@ -171,6 +249,17 @@ public class PublishExtensionVersionHandler {
         // against this publish (and fails fast with a retry instead of removing it under us).
         var extension = repositories.findExtensionForUpdate(extensionName, namespace.getName());
         if (extension == null) {
+            // Nothing got locked: the extension does not exist yet, and a FOR UPDATE on a row that
+            // does not exist locks nothing. Serialize concurrent publications that create the same
+            // extension on the namespace row instead, then look again — a racing publish may have
+            // created the extension in the meantime.
+            // This is only reached while holding no extension lock, so the namespace lock is always
+            // taken before the extension lock and cannot invert the lock order of another path.
+            repositories.lockNamespace(namespace);
+            extension = repositories.findExtensionForUpdate(extensionName, namespace.getName());
+        }
+
+        if (extension == null) {
             extension = new Extension();
             extension.setActive(false);
             extension.setName(extensionName);
@@ -184,22 +273,8 @@ public class PublishExtensionVersionHandler {
             var existingVersion = repositories
                     .findVersion(extVersion.getVersion(), extVersion.getTargetPlatform(), extension);
             if (existingVersion != null) {
-                var extVersionId = NamingUtil.toLogFormat(
-                        namespaceName,
-                        extensionName,
-                        extVersion.getTargetPlatform(),
-                        extVersion.getVersion());
-                var message = "Extension " + extVersionId + " is already published";
-                if (existingVersion.isRemoved()) {
-                    message += " and was removed. Extension versions are immutable, so this version's identity"
-                            + " stays permanently reserved and cannot be republished."
-                            + " Ask an administrator to purge it if it must be republished.";
-                } else {
-                    message += existingVersion.isActive()
-                            ? "."
-                            : ", but currently isn't active and therefore not visible.";
-                }
-                throw new ErrorResultException(message);
+                throw new ErrorResultException(
+                        alreadyPublishedMessage(namespaceName, extensionName, existingVersion));
             }
         }
 
@@ -491,6 +566,36 @@ public class PublishExtensionVersionHandler {
         if (StringUtils.isEmpty(extension.getPublicId())) {
             var namespace = extension.getNamespace();
             scheduler.enqueue(new VSCodeIdNewExtensionJobRequest(namespace.getName(), extension.getName()));
+        }
+    }
+
+    /**
+     * Matches only the violation that a concurrently created extension causes, so that publications
+     * failing on any other constraint are reported instead of being retried pointlessly.
+     */
+    public static class DuplicateExtensionPredicate implements MethodRetryPredicate {
+
+        // Unique index on extension(namespace_id, upper(name)), see the V1_20 migration.
+        private static final String UNIQUE_EXTENSION = "unique_extension";
+
+        private static final Logger logger = LoggerFactory.getLogger(DuplicateExtensionPredicate.class);
+
+        @Override
+        public boolean shouldRetry(Method method, Throwable exception) {
+            for (var cause = exception; cause != null; cause = cause.getCause()) {
+                var isDuplicateExtension = cause instanceof ConstraintViolationException violation
+                        && UNIQUE_EXTENSION.equals(violation.getConstraintName());
+                // The constraint name is not always available, so fall back to the reported message.
+                // The quotes keep this from matching unique_extension_version as well.
+                isDuplicateExtension |= cause.getMessage() != null
+                        && cause.getMessage().contains('"' + UNIQUE_EXTENSION + '"');
+
+                if (isDuplicateExtension) {
+                    logger.warn("Extension was created concurrently, retrying the publication", exception);
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
