@@ -1,0 +1,117 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+import { describe, expect, it, vi, Mock } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { renderWithProviders } from '../../../support/test-providers';
+import {
+    RegisterTrustedPublisherDialog,
+    RegisterTrustedPublisherDialogProps
+} from '../../../../../src/pages/user/trusted-publishing/register-trusted-publisher-dialog';
+import { ExtensionRegistryService } from '../../../../../src/extension-registry-service';
+import { PageSettings } from '../../../../../src/page-settings';
+import { gitHubProvider, testUser, trustedPublisher } from '../../../support/trusted-publishing';
+
+const URL_FOO = '/user/namespace/foo/trusted-publishing';
+// the dialog description reads pageSettings.urls (docs link), which the harness default lacks
+const pageSettings = { urls: {} } as PageSettings;
+
+// Namespace, provider and extension are preset so tests exercise the registration fields.
+function renderDialog(
+    props: Partial<RegisterTrustedPublisherDialogProps> = {},
+    register: Mock = vi.fn().mockResolvedValue(trustedPublisher())
+) {
+    const onClose = vi.fn();
+    const onRegistered = vi.fn();
+    const service = { registerTrustedPublisher: register } as unknown as ExtensionRegistryService;
+    renderWithProviders(
+        <RegisterTrustedPublisherDialog
+            open
+            onClose={onClose}
+            onRegistered={onRegistered}
+            namespaces={[{ name: 'foo', extensionNames: ['bar'], trustedPublishingUrl: URL_FOO }]}
+            namespace='foo'
+            lockedExtension='bar'
+            initialProvider='github'
+            providers={[gitHubProvider]}
+            {...props}
+        />,
+        { mainContext: { service, user: testUser, pageSettings } }
+    );
+    return { onClose, onRegistered, register };
+}
+
+const fillRequiredFields = async (ue: ReturnType<typeof userEvent.setup>, owner = 'octo') => {
+    await ue.type(screen.getByRole('textbox', { name: /Repository owner/ }), owner);
+    await ue.type(screen.getByRole('textbox', { name: /Repository name/ }), 'vsx');
+    await ue.type(screen.getByRole('textbox', { name: /Workflow file/ }), 'release.yml');
+};
+
+describe('RegisterTrustedPublisherDialog', () => {
+    it('enables Register only once all required fields are filled', async () => {
+        const ue = userEvent.setup();
+        renderDialog();
+        const registerButton = screen.getByRole('button', { name: 'Register' });
+
+        expect(registerButton).toBeDisabled();
+        await ue.type(screen.getByRole('textbox', { name: /Repository owner/ }), 'octo');
+        await ue.type(screen.getByRole('textbox', { name: /Repository name/ }), 'vsx');
+        expect(registerButton).toBeDisabled();
+
+        // the optional environment field stays empty
+        await ue.type(screen.getByRole('textbox', { name: /Workflow file/ }), 'release.yml');
+        expect(registerButton).toBeEnabled();
+    });
+
+    it('submits the trimmed registration without empty optional fields, then closes', async () => {
+        const ue = userEvent.setup();
+        const { onClose, onRegistered, register } = renderDialog();
+        await fillRequiredFields(ue, ' octo ');
+
+        await ue.click(screen.getByRole('button', { name: 'Register' }));
+
+        await waitFor(() =>
+            expect(register).toHaveBeenCalledWith(URL_FOO, {
+                provider: 'github',
+                namespace: 'foo',
+                extension: 'bar',
+                registration: { owner: 'octo', repo: 'vsx', workflow: 'release.yml' }
+            })
+        );
+        await waitFor(() => expect(onClose).toHaveBeenCalled());
+        expect(onRegistered).toHaveBeenCalled();
+    });
+
+    it('shows a server error inline and keeps the dialog open', async () => {
+        const ue = userEvent.setup();
+        const register = vi.fn().mockImplementation(() => Promise.reject({ error: 'Repository not found' }));
+        const { onClose } = renderDialog({}, register);
+        await fillRequiredFields(ue);
+
+        await ue.click(screen.getByRole('button', { name: 'Register' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('Repository not found');
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('explains when the namespace has no extensions to register for', () => {
+        renderDialog({
+            lockedExtension: undefined,
+            namespaces: [{ name: 'foo', extensionNames: [], trustedPublishingUrl: URL_FOO }]
+        });
+
+        expect(screen.getByText(/Publish an extension before registering/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Register' })).toBeDisabled();
+    });
+});
