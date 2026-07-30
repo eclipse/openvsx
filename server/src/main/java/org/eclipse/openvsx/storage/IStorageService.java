@@ -81,11 +81,30 @@ public interface IStorageService {
         segments = ArrayUtils.add(segments, extVersion.getVersion());
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         var url = UrlUtil.createApiUrl("", segments);
-        return url != null ? url.substring(1) : null; // remove first '/'
+        return url.substring(1); // remove first '/'
     }
 
     default String getObjectKey(Namespace namespace) {
         var url = UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName());
-        return url != null ? url.substring(1) : null; // remove first '/'
+        return url.substring(1); // remove first '/'
+    }
+
+    /**
+     * Returns the object key of {@code resource} in the form it has to take within a URL path.
+     * <p>
+     * Defaults to the object key itself, which {@link #getObjectKey(FileResource)} already encoded
+     * per path segment. Storage providers that do not interpret a path the way RFC 3986 defines it
+     * can override this to escape what they need on top of that.
+     */
+    default String getObjectKeyAsUrlPath(FileResource resource) {
+        return getObjectKey(resource);
+    }
+
+    /**
+     * Returns the object key of the logo of {@code namespace} in the form it has to take within a URL
+     * path, see {@link #getObjectKeyAsUrlPath(FileResource)}.
+     */
+    default String getObjectKeyAsUrlPath(Namespace namespace) {
+        return getObjectKey(namespace);
     }
 }

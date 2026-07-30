@@ -84,6 +84,31 @@ public class StorageUtilServiceTest {
         cdnServiceConfig.setEnabled(false);
     }
 
+    /**
+     * A version may carry semver build metadata, and S3 reads the {@code +} in a URL path as a space, so
+     * the CDN URL for an AWS resource has to escape it. Other storage types keep the literal {@code +}.
+     * See <a href="https://github.com/eclipse-openvsx/openvsx/issues/1459">issue 1459</a>.
+     */
+    @Test
+    public void testCdnEnabledWithPlusSignInVersion() {
+        cdnServiceConfig.setEnabled(true);
+        try {
+            var extension = mockExtension();
+            var extensionVersion = mockExtensionVersion(extension, 1, "1.0.0+10", "universal");
+            var resourceAws = mockFileResource(1, extensionVersion, "README.md", README, FileResource.STORAGE_AWS);
+            var resourceAzure = mockFileResource(1, extensionVersion, "README.md", README, FileResource.STORAGE_AZURE);
+
+            assertEquals(
+                    "https://test.cloudfront.com/aws/redhat/vscode-yaml/1.0.0%2B10/README.md",
+                    storageUtilService.getLocation(resourceAws).toString());
+            assertEquals(
+                    "https://test.cloudfront.com/azure/redhat/vscode-yaml/1.0.0+10/README.md",
+                    storageUtilService.getLocation(resourceAzure).toString());
+        } finally {
+            cdnServiceConfig.setEnabled(false);
+        }
+    }
+
     @Test
     public void testCdnDisabled() {
         // Test a file resource for which no cdn prefix is enabled
