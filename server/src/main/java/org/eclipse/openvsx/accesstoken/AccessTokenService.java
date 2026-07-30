@@ -131,6 +131,20 @@ public class AccessTokenService {
     }
 
     @Transactional
+    public UserData verifyAccessToken(String tokenValue) {
+        var token = repositories.findPersonalAccessToken(tokenValue);
+        if (token == null || !token.isActive()) {
+            return null;
+        }
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+            token.setActive(false);
+            return null;
+        }
+        return token.getUser();
+    }
+
+    @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue) {
         var token = repositories.findPersonalAccessToken(tokenValue);
         if (token == null || !token.isActive()) {

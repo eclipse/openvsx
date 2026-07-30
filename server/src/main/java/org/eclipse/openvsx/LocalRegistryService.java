@@ -760,8 +760,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
-        if (token == null) {
+        var user = tokens.verifyAccessToken(tokenValue);
+        if (user == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
@@ -770,7 +770,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
 
-        var user = token.getUser();
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
         }
