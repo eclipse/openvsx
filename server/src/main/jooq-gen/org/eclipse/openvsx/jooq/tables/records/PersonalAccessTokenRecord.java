@@ -145,6 +145,20 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         return (Boolean) get(8);
     }
 
+    /**
+     * Setter for <code>public.personal_access_token.type</code>.
+     */
+    public void setType(String value) {
+        set(9, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.type</code>.
+     */
+    public String getType() {
+        return (String) get(9);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -168,7 +182,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
     /**
      * Create a detached, initialised PersonalAccessTokenRecord
      */
-    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified) {
+    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified, String type) {
         super(PersonalAccessToken.PERSONAL_ACCESS_TOKEN);
 
         setId(id);
@@ -180,6 +194,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         setUserData(userData);
         setExpiresTimestamp(expiresTimestamp);
         setNotified(notified);
+        setType(type);
         resetChangedOnNotNull();
     }
 }

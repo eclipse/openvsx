@@ -63,6 +63,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AdminStatisticsJson;
 import org.eclipse.openvsx.json.BulkPublisherRevokeResponseJson;
@@ -912,10 +913,11 @@ class AdminAPITest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setActive(true);
+        token.setType(PersonalAccessTokenType.LLT);
         versions.forEach(v -> v.setPublishedWith(token));
 
         Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
-        Mockito.when(repositories.countActiveAccessTokens(user)).thenReturn(1L);
+        Mockito.when(repositories.countActivePersonalAccessTokens(user)).thenReturn(1L);
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(versions);
         Mockito.when(repositories.findActiveReviews(user)).thenReturn(Streamable.empty());
 
@@ -967,7 +969,8 @@ class AdminAPITest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(token));
         versions.forEach(v -> v.setPublishedWith(token));
         Mockito.when(repositories.findVersionsByUser(user, true))
@@ -1018,7 +1021,7 @@ class AdminAPITest {
         Mockito.when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
 
-        Mockito.when(repositories.deactivateAccessTokens(user)).thenReturn(2);
+        Mockito.when(repositories.deactivatePersonalAccessTokens(user)).thenReturn(2);
         mockMvc.perform(
                 post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
@@ -1713,7 +1716,8 @@ class AdminAPITest {
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
+        userToken.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
@@ -1730,7 +1734,8 @@ class AdminAPITest {
         var user2Token = new PersonalAccessToken();
         user2Token.setUser(user2);
         user2Token.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user2))
+        user2Token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessTokens(user2))
                 .thenReturn(Streamable.of(user2Token));
         versions.get(1).setPublishedWith(user2Token);
         Mockito.when(repositories.findVersionsByUser(user2, true))
@@ -1800,7 +1805,8 @@ class AdminAPITest {
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
+        userToken.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
@@ -1848,7 +1854,8 @@ class AdminAPITest {
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
-        Mockito.when(repositories.findAccessTokens(user))
+        userToken.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
         Mockito.when(repositories.findVersionsByUser(user, true))
@@ -1913,7 +1920,8 @@ class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }
@@ -1927,7 +1935,8 @@ class AdminAPITest {
         token.setActive(true);
         token.setValue(tokenValue);
         token.setUser(user);
-        Mockito.when(repositories.findAccessToken(tokenValue)).thenReturn(token);
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }

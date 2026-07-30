@@ -190,7 +190,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findActiveAccessTokens(user)
+        return repositories.findActivePersonalAccessTokens(user)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.setDeleteTokenUrl(

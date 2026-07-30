@@ -44,7 +44,8 @@ import static java.util.Objects.requireNonNull;
 
 @Service
 public class TrustedPublishingService {
-    private static final int TOKEN_DESCRIPTION_SIZE = 255;
+    public static final String TOKEN_DESCRIPTION_PREFIX = "Trusted publishing ";
+    private static final String TOKEN_DESCRIPTION_TEMPLATE = TOKEN_DESCRIPTION_PREFIX + "(%s)";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TrustedPublishingConfig config;
@@ -222,20 +223,17 @@ public class TrustedPublishingService {
                                 "No trusted publisher matches the presented token.",
                                 HttpStatus.FORBIDDEN));
 
-        // ponytail: the issued token is a regular personal access token of the registering user, valid for
-        // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
-        String description = "Trusted publishing (" + provider.getProviderId() + "): " + claims.get(JwtClaimNames.SUB);
-        if (description.length() > TOKEN_DESCRIPTION_SIZE) {
-            description = description.substring(0, TOKEN_DESCRIPTION_SIZE);
-        }
         logger.info(
                 "Issuing trusted publishing token for namespace {} to {}",
                 namespace.getName(),
                 claims.get(JwtClaimNames.SUB));
+
+        // The issued token is OTT personal access token of the registering user, valid for
+        // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
         return tokens.createAccessToken(
                 match.getCreatedBy(),
-                description,
-                TimeUtil.getCurrentUTC().plus(config.getTokenExpiry()));
+                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
+                true);
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

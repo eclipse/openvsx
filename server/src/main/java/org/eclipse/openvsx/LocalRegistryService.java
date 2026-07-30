@@ -769,8 +769,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
-        if (token == null) {
+        var user = tokens.verifyAccessToken(tokenValue);
+        if (user == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
@@ -779,7 +779,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
 
-        var user = token.getUser();
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
         }
@@ -788,12 +787,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = tokens.createAccessToken(user, "One time use publish token");
-        try {
-            return publish(content, token.getValue());
-        } finally {
-            tokens.deactivateAccessToken(user, token.getId());
-        }
+        return publish(content, tokens.createAccessToken(user, "One time use publish token", true).getValue());
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {

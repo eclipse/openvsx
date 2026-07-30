@@ -97,6 +97,11 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
      */
     public final TableField<PersonalAccessTokenRecord, Boolean> NOTIFIED = createField(DSL.name("notified"), SQLDataType.BOOLEAN, this, "");
 
+    /**
+     * The column <code>public.personal_access_token.type</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.VARCHAR(32).nullable(false), this, "");
+
     private PersonalAccessToken(Name alias, Table<PersonalAccessTokenRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

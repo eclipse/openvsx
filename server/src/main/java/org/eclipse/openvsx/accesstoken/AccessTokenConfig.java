@@ -33,7 +33,19 @@ public class AccessTokenConfig {
     private String prefix;
 
     /**
-     * The expiration period for personal access tokens.
+     * The expiration period for one time personal access tokens. The one time
+     * access token must be used in this period.
+     * <p>
+     * If {@code 0} is provided, the one time access tokens do not expire.
+     * <p>
+     * Property: {@code ovsx.access-token.ott-expiration}
+     * Default: {@code PT5M}, expires in 5 minutes
+     */
+    @Value("${ovsx.access-token.ott-expiration:PT5M}")
+    private Duration ottExpiration;
+
+    /**
+     * The expiration period for long-lived personal access tokens.
      * <p>
      * If {@code 0} is provided, the access tokens do not expire.
      * <p>
@@ -44,7 +56,7 @@ public class AccessTokenConfig {
     private Duration expiration;
 
     /**
-     * The duration before the expiration of an access token
+     * The duration before the expiration of a long-lived personal access token
      * to send out a notification email to users.
      * <p>
      * Property: {@code ovsx.access-token.notification}
@@ -54,7 +66,7 @@ public class AccessTokenConfig {
     private Duration notification;
 
     /**
-     * Whether an email shall be sent when a token has expired.
+     * Whether an email shall be sent when a long-lived personal access token has expired.
      * <p>
      * Property: {@code ovsx.access-token.send-expired-mail}
      * Default: {@code true}
@@ -63,7 +75,7 @@ public class AccessTokenConfig {
     private boolean sendExpiredMail;
 
     /**
-     * The maximum number of expiring token notifications to handle
+     * The maximum number of expiring personal long-lived access token notifications to handle
      * within one job execution.
      * <p>
      * Property: {@code ovsx.access-token.max-token-notifications}
@@ -74,7 +86,7 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to disable expired
-     * access tokens.
+     * personal long-lived access tokens.
      * <p>
      * Property: {@code ovsx.access-token.expiration-schedule}
      * Default: every 15 min
@@ -84,7 +96,7 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to send out notifications
-     * for soon to be expired access tokens.
+     * for soon to be expired personal long-lived access tokens.
      * <p>
      * Property: {@code ovsx.access-token.notification-schedule}
      * Default: every 15 min
@@ -105,6 +117,14 @@ public class AccessTokenConfig {
 
     public @NonNull Duration getExpiration() {
         return this.expiration;
+    }
+
+    public boolean isOttTokenExpiryEnabled() {
+        return this.ottExpiration.isPositive();
+    }
+
+    public @NonNull Duration getOttExpiration() {
+        return ottExpiration;
     }
 
     public boolean isTokenExpiryNotificationEnabled() {

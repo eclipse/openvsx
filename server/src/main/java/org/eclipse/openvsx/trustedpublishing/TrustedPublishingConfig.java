@@ -41,12 +41,6 @@ public class TrustedPublishingConfig {
     @Value("${ovsx.trusted-publishing.forbidden-jwt-headers:x5u,x5c,jku,jwk}")
     private List<String> forbiddenJwtHeaders;
 
-    /**
-     * The lifetime of access tokens issued in exchange for a valid OIDC ID token, in ISO-8601 duration format.
-     */
-    @Value("${ovsx.trusted-publishing.token-expiry:PT15M}")
-    private String tokenExpiry;
-
     public boolean isEnabled() {
         return enabled;
     }
@@ -61,11 +55,6 @@ public class TrustedPublishingConfig {
         return forbiddenJwtHeaders;
     }
 
-    @NonNull
-    public Duration getTokenExpiry() {
-        return Duration.parse(tokenExpiry);
-    }
-
     @PostConstruct
     public void validate() {
         if (enabled) {
@@ -75,10 +64,6 @@ public class TrustedPublishingConfig {
             if (forbiddenJwtHeaders == null || forbiddenJwtHeaders.isEmpty()) {
                 throw new IllegalStateException(
                         "Trusted publishing is enabled, but forbidden JWT headers are not configured");
-            }
-            Duration expiry = getTokenExpiry(); // throws if unparseable
-            if (expiry.isNegative() || expiry.isZero()) {
-                throw new IllegalStateException("Trusted publishing is enabled, but token expiry is not positive");
             }
         }
     }
