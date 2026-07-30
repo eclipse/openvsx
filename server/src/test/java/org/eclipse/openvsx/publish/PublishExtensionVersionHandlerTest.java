@@ -402,7 +402,7 @@ class PublishExtensionVersionHandlerTest {
         ev.setDisplayName("Demo OK");
         ev.setVersion("2.0.0");
         ev.setTargetPlatform("any");
-        when(processor.getMetadata(anyInt())).thenReturn(ev);
+        when(processor.getMetadata(anyInt(), anyInt())).thenReturn(ev);
 
         return ev;
     }

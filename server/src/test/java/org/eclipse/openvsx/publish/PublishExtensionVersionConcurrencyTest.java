@@ -296,7 +296,7 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
                 .thenReturn(new ExtensionProcessor.PackageMetadata(NAMESPACE, EXTENSION, VERSION, "Race Test"));
         // Like the real processor, hand out a fresh instance per call: a retried attempt must not
         // reuse the entity of the attempt that was rolled back.
-        when(processor.getMetadata(anyInt())).thenAnswer(invocation -> {
+        when(processor.getMetadata(anyInt(), anyInt())).thenAnswer(invocation -> {
             var extVersion = new ExtensionVersion();
             extVersion.setVersion(VERSION);
             extVersion.setTargetPlatform(targetPlatform);
