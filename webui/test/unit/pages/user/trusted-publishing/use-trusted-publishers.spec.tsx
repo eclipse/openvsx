@@ -22,7 +22,13 @@ import {
     useTrustedPublishingStatus
 } from '../../../../../src/pages/user/trusted-publishing/use-trusted-publishers';
 import { ExtensionRegistryService } from '../../../../../src/extension-registry-service';
-import { enabledStatus, statusServiceStub, testUser, trustedPublisher } from '../../../support/trusted-publishing';
+import {
+    enabledStatus,
+    statusServiceStub,
+    testUser,
+    trustedPublisher,
+    trustedPublisherList
+} from '../../../support/trusted-publishing';
 
 const URL_FOO = '/user/namespace/foo/trusted-publishing';
 const URL_BAR = '/user/namespace/bar/trusted-publishing';
@@ -65,11 +71,16 @@ describe('useTrustedPublishers', () => {
 describe('useAllTrustedPublishers', () => {
     it('flattens the lists of all namespaces and skips failed ones', async () => {
         const fooPublisher = trustedPublisher({ id: 1, namespace: 'foo' });
-        const getTrustedPublishers = vi
-            .fn()
-            .mockImplementation((_controller: AbortController, url: string) =>
-                url === URL_FOO ? Promise.resolve([fooPublisher]) : Promise.reject({ error: 'Forbidden', status: 403 })
-            );
+        const getTrustedPublishers = vi.fn().mockImplementation((_controller: AbortController, url: string) =>
+            url === URL_FOO
+                ? Promise.resolve(
+                      trustedPublisherList({
+                          trustedPublishers: [fooPublisher],
+                          registrableExtensions: ['baz']
+                      })
+                  )
+                : Promise.reject({ error: 'Forbidden', status: 403 })
+        );
         const service = { getTrustedPublishers } as unknown as ExtensionRegistryService;
         const { result } = renderHookWithProviders(() => useAllTrustedPublishers([URL_FOO, URL_BAR]), {
             mainContext: { service, user: testUser }
@@ -77,12 +88,14 @@ describe('useAllTrustedPublishers', () => {
 
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(result.current.publishers).toEqual([fooPublisher]);
+        // stays index-aligned with the requested URLs, so a failed namespace registers as nothing registrable
+        expect(result.current.registrableExtensions).toEqual([['baz'], []]);
     });
 });
 
 describe('trusted publisher mutations', () => {
     function serviceStub() {
-        const getTrustedPublishers = vi.fn().mockResolvedValue([]);
+        const getTrustedPublishers = vi.fn().mockResolvedValue(trustedPublisherList());
         const registerTrustedPublisher = vi.fn().mockResolvedValue(trustedPublisher());
         const deleteTrustedPublisher = vi.fn().mockResolvedValue({ success: 'ok' });
         return {

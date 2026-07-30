@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import com.nimbusds.jwt.JWTParser;
 import jakarta.persistence.EntityManager;
@@ -139,21 +140,42 @@ public class TrustedPublishingService {
     }
 
     /**
+     * The trusted publishers of a namespace together with the extensions a further one can be
+     * registered for. Registrations of inactive extensions are listed as well, so that they remain
+     * visible and can be deleted; such extensions are not registrable.
+     *
+     * @param publishers the registrations of every extension of the namespace
+     * @param registrableExtensions names of the active extensions without a registration, sorted by name
+     */
+    public record TrustedPublishers(List<TrustedPublisher> publishers, List<String> registrableExtensions) {}
+
+    /**
      * Lists trusted publishers of a namespace. The user must be an owner of the namespace.
      */
-    public List<TrustedPublisher> getTrustedPublishers(UserData user, String namespaceName) {
+    public TrustedPublishers getTrustedPublishers(UserData user, String namespaceName) {
         requireNonNull(user);
         requireNonNull(namespaceName);
         ensureEnabled();
         Namespace namespace = requireOwnedNamespace(user, namespaceName);
-        ArrayList<TrustedPublisher> result = new ArrayList<>();
+        var activeExtensionNames = Set.copyOf(repositories.findActiveExtensionNames(namespace));
+        var publishers = new ArrayList<TrustedPublisher>();
+        var registrableExtensions = new ArrayList<String>();
         for (String extensionName : repositories.findAllExtensionNames(namespace)) {
             Extension extension = repositories.findExtension(extensionName, namespace);
-            if (extension != null) {
-                result.addAll(repositories.findTrustedPublishersByExtension(extension).toList());
+            if (extension == null) {
+                continue;
+            }
+            var extensionPublishers = repositories.findTrustedPublishersByExtension(extension).toList();
+            if (extensionPublishers.isEmpty()) {
+                // at most one registration per extension, so only untaken active ones are still registrable
+                if (activeExtensionNames.contains(extensionName)) {
+                    registrableExtensions.add(extensionName);
+                }
+            } else {
+                publishers.addAll(extensionPublishers);
             }
         }
-        return result;
+        return new TrustedPublishers(publishers, registrableExtensions);
     }
 
     /**

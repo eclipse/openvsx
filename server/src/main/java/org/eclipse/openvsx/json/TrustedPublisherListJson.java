@@ -28,11 +28,26 @@ public class TrustedPublisherListJson extends ResultJson {
 
     private List<TrustedPublisherJson> trustedPublishers;
 
+    private List<String> registrableExtensions;
+
     public List<TrustedPublisherJson> getTrustedPublishers() {
         return trustedPublishers;
     }
 
     public void setTrustedPublishers(List<TrustedPublisherJson> trustedPublishers) {
         this.trustedPublishers = trustedPublishers;
+    }
+
+    /**
+     * Names of the extensions of this namespace a trusted publisher can still be registered for: the
+     * active extensions that do not have a registration yet. Clients should offer only these, as
+     * registering for anything else is rejected.
+     */
+    public List<String> getRegistrableExtensions() {
+        return registrableExtensions;
+    }
+
+    public void setRegistrableExtensions(List<String> registrableExtensions) {
+        this.registrableExtensions = registrableExtensions;
     }
 }

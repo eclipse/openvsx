@@ -20,14 +20,14 @@ import {
 } from '../../../../../src/pages/user/trusted-publishing/trusted-publishers-section';
 import { ExtensionRegistryService } from '../../../../../src/extension-registry-service';
 import { PageSettings } from '../../../../../src/page-settings';
-import { Namespace, TrustedPublisher, TrustedPublisherStatus } from '../../../../../src/extension-registry-types';
-import { enabledStatus, testUser, trustedPublisher } from '../../../support/trusted-publishing';
+import { Namespace, TrustedPublisherList, TrustedPublisherStatus } from '../../../../../src/extension-registry-types';
+import { enabledStatus, testUser, trustedPublisher, trustedPublisherList } from '../../../support/trusted-publishing';
 
 // the section reads pageSettings.urls (docs link), which the harness default lacks
 const pageSettings = { urls: {} } as PageSettings;
 
 // `publishers` is a factory so a rejection is only created once the query consumes it.
-function serviceStub(status: TrustedPublisherStatus, publishers: () => Promise<TrustedPublisher[]>) {
+function serviceStub(status: TrustedPublisherStatus, publishers: () => Promise<TrustedPublisherList>) {
     const getTrustedPublishingStatus = vi.fn().mockResolvedValue(status);
     const getTrustedPublishers = vi.fn().mockImplementation(publishers);
     const service = {
@@ -40,7 +40,9 @@ function serviceStub(status: TrustedPublisherStatus, publishers: () => Promise<T
 
 describe('ExtensionTrustedPublishers', () => {
     it('renders the section when providers exist and the user may manage the namespace', async () => {
-        const { service } = serviceStub(enabledStatus, () => Promise.resolve([trustedPublisher()]));
+        const { service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(trustedPublisherList({ trustedPublishers: [trustedPublisher()] }))
+        );
         renderWithProviders(<ExtensionTrustedPublishers namespace='foo' extension='bar' />, {
             mainContext: { service, user: testUser, pageSettings }
         });
@@ -54,13 +56,45 @@ describe('ExtensionTrustedPublishers', () => {
             trustedPublisher({ id: 1, extension: 'bar', registration: { owner: 'octo', repo: 'one' } }),
             trustedPublisher({ id: 2, extension: 'other', registration: { owner: 'octo', repo: 'two' } })
         ];
-        const { service } = serviceStub(enabledStatus, () => Promise.resolve(publishers));
+        const { service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(trustedPublisherList({ trustedPublishers: publishers }))
+        );
         renderWithProviders(<ExtensionTrustedPublishers namespace='foo' extension='bar' />, {
             mainContext: { service, user: testUser, pageSettings }
         });
 
         expect(await screen.findByText('octo/one')).toBeInTheDocument();
         expect(screen.queryByText('octo/two')).not.toBeInTheDocument();
+    });
+
+    // an extension takes at most one trusted publisher, so registering another one is impossible
+    it('hides the add affordance once this extension has a publisher', async () => {
+        const { service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(
+                trustedPublisherList({
+                    trustedPublishers: [trustedPublisher({ extension: 'bar' })],
+                    // 'other' is registrable in the namespace, but not from this extension's page
+                    registrableExtensions: ['other']
+                })
+            )
+        );
+        renderWithProviders(<ExtensionTrustedPublishers namespace='foo' extension='bar' />, {
+            mainContext: { service, user: testUser, pageSettings }
+        });
+
+        expect(await screen.findByText(/This extension already has a trusted publisher/)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Add a trusted publisher/ })).not.toBeInTheDocument();
+    });
+
+    it('offers registration while this extension has no publisher', async () => {
+        const { service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(trustedPublisherList({ registrableExtensions: ['bar'] }))
+        );
+        renderWithProviders(<ExtensionTrustedPublishers namespace='foo' extension='bar' />, {
+            mainContext: { service, user: testUser, pageSettings }
+        });
+
+        expect(await screen.findByRole('button', { name: 'GitHub Actions' })).toBeInTheDocument();
     });
 
     // The trusted-publishing URL is built client-side here, so the publishers list is
@@ -81,7 +115,7 @@ describe('ExtensionTrustedPublishers', () => {
     it('stays hidden without providers (feature off or user not allowed), without probing publishers', async () => {
         const { getTrustedPublishingStatus, getTrustedPublishers, service } = serviceStub(
             { enabled: true, allowed: false },
-            () => Promise.resolve([trustedPublisher()])
+            () => Promise.resolve(trustedPublisherList({ trustedPublishers: [trustedPublisher()] }))
         );
         renderWithProviders(<ExtensionTrustedPublishers namespace='foo' extension='bar' />, {
             mainContext: { service, user: testUser, pageSettings }
@@ -105,7 +139,9 @@ describe('UserNamespaceTrustedPublishers', () => {
     });
 
     it('renders the section for a namespace the user may manage', async () => {
-        const { service } = serviceStub(enabledStatus, () => Promise.resolve([trustedPublisher()]));
+        const { service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(trustedPublisherList({ trustedPublishers: [trustedPublisher()] }))
+        );
         renderWithProviders(
             <UserNamespaceTrustedPublishers namespace={namespace('/user/namespace/foo/trusted-publishing')} />,
             { mainContext: { service, user: testUser, pageSettings } }
@@ -116,7 +152,9 @@ describe('UserNamespaceTrustedPublishers', () => {
 
     // the server grants trustedPublishingUrl only to namespace owners
     it('stays hidden when the namespace has no trusted-publishing URL', async () => {
-        const { getTrustedPublishingStatus, service } = serviceStub(enabledStatus, () => Promise.resolve([]));
+        const { getTrustedPublishingStatus, service } = serviceStub(enabledStatus, () =>
+            Promise.resolve(trustedPublisherList())
+        );
         renderWithProviders(<UserNamespaceTrustedPublishers namespace={namespace(undefined)} />, {
             mainContext: { service, user: testUser, pageSettings }
         });

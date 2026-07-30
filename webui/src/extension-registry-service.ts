@@ -487,13 +487,16 @@ export class ExtensionRegistryService {
     async getTrustedPublishers(
         abortController: AbortController,
         trustedPublishingUrl: UrlString
-    ): Promise<Readonly<TrustedPublisher>[]> {
+    ): Promise<Readonly<TrustedPublisherList>> {
         const result = await sendStrictRequest<TrustedPublisherList>({
             abortController,
             credentials: true,
             endpoint: trustedPublishingUrl
         });
-        return result.trustedPublishers ?? [];
+        return {
+            trustedPublishers: result.trustedPublishers ?? [],
+            registrableExtensions: result.registrableExtensions ?? []
+        };
     }
 
     async registerTrustedPublisher(

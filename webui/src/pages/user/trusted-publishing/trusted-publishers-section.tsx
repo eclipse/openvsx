@@ -47,8 +47,6 @@ export interface TrustedPublishersSectionProps {
     namespace: string;
     // base endpoint for this namespace's trusted-publishing requests
     trustedPublishingUrl: UrlString;
-    // extensions selectable when registering
-    extensionNames: string[];
     // filters the list and locks registrations to this extension
     extensionFilter?: string;
     providers: TrustedPublisherProvider[];
@@ -59,16 +57,23 @@ export interface TrustedPublishersSectionProps {
 
 export const TrustedPublishersSection: FunctionComponent<TrustedPublishersSectionProps> = props => {
     const { handleError } = useContext(MainContext);
-    const { data: allPublishers = [], isFetching } = useReportedQuery(useTrustedPublishers(props.trustedPublishingUrl));
+    const { data, isFetching } = useReportedQuery(useTrustedPublishers(props.trustedPublishingUrl));
     const { mutateAsync: deleteTrustedPublisher, isPending: deleting } = useDeleteTrustedPublisher();
     const [selectedProvider, setSelectedProvider] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [showAdd, setShowAdd] = useState(false);
 
     // the list endpoint is namespace-scoped, so extension pages filter client-side
+    const allPublishers = data?.trustedPublishers ?? [];
     const publishers = props.extensionFilter
         ? allPublishers.filter(publisher => publisher.extension === props.extensionFilter)
         : allPublishers;
+    // the server reports which extensions are still registrable (active and without a publisher);
+    // an extension page can only ever register for its own extension
+    const allRegistrable = data?.registrableExtensions ?? [];
+    const registrableExtensions = props.extensionFilter
+        ? allRegistrable.filter(name => name === props.extensionFilter)
+        : allRegistrable;
     const loading = isFetching || deleting;
 
     const remove = async (publisher: TrustedPublisher) => {
@@ -84,9 +89,15 @@ export const TrustedPublishersSection: FunctionComponent<TrustedPublishersSectio
         setDialogOpen(true);
     };
 
+    // an extension takes at most one trusted publisher, so with nothing registrable left the add
+    // affordance is replaced by a note saying why
+    const canRegister = registrableExtensions.length > 0;
     // the empty state shows the add panel; otherwise it collapses behind a button
     const hasPublishers = publishers.length > 0;
-    const addPanelVisible = !hasPublishers || showAdd;
+    const addPanelVisible = canRegister && (!hasPublishers || showAdd);
+    const allTakenText = props.extensionFilter
+        ? 'This extension already has a trusted publisher. Delete it to register a different one.'
+        : 'Every active extension in this namespace already has a trusted publisher.';
 
     return (
         <>
@@ -132,11 +143,15 @@ export const TrustedPublishersSection: FunctionComponent<TrustedPublishersSectio
                         ))}
                     </Stack>
                 </AddPublisherPanel>
-            ) : (
+            ) : canRegister ? (
                 <Button variant='outlined' startIcon={<AddIcon />} onClick={() => setShowAdd(true)} sx={{ mt: 2 }}>
                     Add a trusted publisher
                 </Button>
-            )}
+            ) : hasPublishers ? (
+                <Typography variant='body2' color='text.secondary' sx={{ mt: 2 }}>
+                    {allTakenText}
+                </Typography>
+            ) : null}
             <RegisterTrustedPublisherDialog
                 open={dialogOpen}
                 initialProvider={selectedProvider}
@@ -145,7 +160,8 @@ export const TrustedPublishersSection: FunctionComponent<TrustedPublishersSectio
                 namespaces={[
                     {
                         name: props.namespace,
-                        extensionNames: props.extensionNames,
+                        registrableExtensions,
+                        registeredExtensions: publishers.map(publisher => publisher.extension),
                         trustedPublishingUrl: props.trustedPublishingUrl
                     }
                 ]}
@@ -174,7 +190,6 @@ export const UserNamespaceTrustedPublishers: FunctionComponent<{ namespace: Name
             <TrustedPublishersSection
                 namespace={namespace.name}
                 trustedPublishingUrl={trustedPublishingUrl}
-                extensionNames={Object.keys(namespace.extensions)}
                 providers={providers}
                 intro="Let a CI/CD workflow publish this namespace's extensions without a long-lived access token."
                 emptyText='No trusted publishers registered yet.'
@@ -208,7 +223,6 @@ export const ExtensionTrustedPublishers: FunctionComponent<{ namespace: string; 
             <TrustedPublishersSection
                 namespace={namespace}
                 trustedPublishingUrl={trustedPublishingUrl}
-                extensionNames={[extension]}
                 extensionFilter={extension}
                 providers={providers}
                 intro='Let a CI/CD workflow publish this extension without a long-lived access token.'
