@@ -149,6 +149,46 @@ class ExtensionServiceTest {
     }
 
     @Test
+    void shouldReportADeletedVersionAsRemoved() {
+        var ext = mockExtension();
+        var extVersion = plainExtensionVersion(ext, "1.1.0");
+        ext.getVersions().add(extVersion);
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        // the feed announced this version as available at some point
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_ACTIVE)));
+
+        svc.deleteExtensionVersion(mockUser(), extVersion);
+
+        // The version stops being available for download here, so the feed has to report that it is gone.
+        Mockito.verify(repositories)
+                .recordExtensionVersionChange(
+                        Mockito.eq(extVersion),
+                        Mockito.eq(ExtensionVersionChange.STATE_REMOVED),
+                        Mockito.any());
+    }
+
+    @Test
+    void shouldNotReportADeletionOfAVersionThatWasNeverPublic() {
+        var ext = mockExtension();
+        var extVersion = plainExtensionVersion(ext, "1.1.0");
+        // a version that never became public: published, then held back by a quarantining scan
+        extVersion.setActive(false);
+        ext.getVersions().add(extVersion);
+        Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
+        // no entry was ever written for it
+        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion)).thenReturn(Optional.empty());
+
+        svc.deleteExtensionVersion(mockUser(), extVersion);
+
+        // The feed never announced this version, so a deletion has nothing to withdraw -- reporting one
+        // would tell consumers a version they have never seen is gone. Same rule as for a purge.
+        assertThat(extVersion.isRemoved()).isTrue();
+        Mockito.verify(repositories, Mockito.never())
+                .recordExtensionVersionChange(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
     void shouldReportAPurgedVersionAsRemoved() {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());

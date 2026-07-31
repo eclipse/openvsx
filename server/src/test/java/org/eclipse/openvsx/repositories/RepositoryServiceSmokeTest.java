@@ -47,6 +47,7 @@ import org.eclipse.openvsx.entities.TierType;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ExtensionId;
 
 import static java.util.stream.Collectors.toList;
@@ -270,8 +271,11 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(queryRequest),
-                () -> repositories.findChanges(null, null, page),
-                () -> repositories.findChanges(NOW.minus(Duration.ofDays(1)), NOW, page),
+                () -> repositories.findChanges(null, null, null, 100),
+                () -> repositories.findChanges(NOW.minus(Duration.ofDays(1)), NOW, null, 100),
+                // exercises the (changed_at, id) row comparison the cursor resumes with
+                () -> repositories.findChanges(null, null, new ChangesCursor(NOW, 1L), 100),
+                () -> repositories.findChanges(null, NOW, new ChangesCursor(NOW.minus(Duration.ofDays(1)), 1L), 100),
                 () -> repositories.findExtensionVersionChanges(extVersion),
                 () -> repositories.findLatestExtensionVersionChange(extVersion),
                 () -> repositories.recordExtensionVersionChange(

@@ -53,9 +53,9 @@ import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.entities.TierType;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.json.ChangeEntryJson;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -562,8 +562,8 @@ public class RepositoryService {
         return extensionVersionJooqRepo.findActiveVersions(request);
     }
 
-    public Page<ChangeEntryJson> findChanges(LocalDateTime since, LocalDateTime until, Pageable page) {
-        return extensionVersionJooqRepo.findChanges(since, until, page);
+    public ChangesPage findChanges(LocalDateTime since, LocalDateTime until, ChangesCursor after, int size) {
+        return extensionVersionJooqRepo.findChanges(since, until, after, size);
     }
 
     /**

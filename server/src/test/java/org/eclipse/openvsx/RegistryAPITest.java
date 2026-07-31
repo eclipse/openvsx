@@ -67,6 +67,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.repositories.ChangesPage;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
@@ -76,6 +77,7 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -2233,15 +2235,12 @@ class RegistryAPITest {
     void testGetChanges() throws Exception {
         var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
         var removed = mockChangeEntry("0.9.0", ChangeEntryJson.STATE_REMOVED, "2000-02-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
-                .thenReturn(new PageImpl<>(List.of(published, removed), PageRequest.of(0, 100), 2));
+        Mockito.when(repositories.findChanges(null, null, null, 100))
+                .thenReturn(changesPage(List.of(published, removed), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
                 .andExpect(status().isOk())
-                .andExpect(content().json(changesJson(c -> {
-                    c.setTotalSize(2);
-                    c.setChanges(List.of(published, removed));
-                })));
+                .andExpect(content().json(changesJson(c -> c.setChanges(List.of(published, removed)))));
     }
 
     @Test
@@ -2252,16 +2251,11 @@ class RegistryAPITest {
         var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
         var deactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_INACTIVE, "2000-03-01T10:00Z");
         var reactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-04-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
-                .thenReturn(
-                        new PageImpl<>(
-                                List.of(published, deactivated, reactivated),
-                                PageRequest.of(0, 100),
-                                3));
+        Mockito.when(repositories.findChanges(null, null, null, 100))
+                .thenReturn(changesPage(List.of(published, deactivated, reactivated), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalSize").value(3))
                 .andExpect(jsonPath("$.changes[0].state").value("ACTIVE"))
                 .andExpect(jsonPath("$.changes[1].state").value("INACTIVE"))
                 .andExpect(jsonPath("$.changes[2].state").value("ACTIVE"))
@@ -2275,8 +2269,8 @@ class RegistryAPITest {
     @Test
     void testGetChangesAddsTheVersionUrl() throws Exception {
         var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
-                .thenReturn(new PageImpl<>(List.of(entry), PageRequest.of(0, 100), 1));
+        Mockito.when(repositories.findChanges(null, null, null, 100))
+                .thenReturn(changesPage(List.of(entry), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
                 .andExpect(status().isOk())
@@ -2286,61 +2280,107 @@ class RegistryAPITest {
 
     @Test
     void testGetChangesEmpty() throws Exception {
-        Mockito.when(repositories.findChanges(null, null, PageRequest.of(0, 100)))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+        Mockito.when(repositories.findChanges(null, null, null, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes"))
                 .andExpect(status().isOk())
-                .andExpect(content().json(changesJson(c -> {
-                    c.setTotalSize(0);
-                    c.setChanges(Collections.emptyList());
-                })));
+                .andExpect(content().json(changesJson(c -> c.setChanges(Collections.emptyList()))))
+                // Nothing to continue from: no entry was returned and none was asked after, so the
+                // consumer simply repeats this request rather than being handed a position.
+                .andExpect(jsonPath("$.nextCursor").doesNotExist())
+                .andExpect(jsonPath("$.hasMore").value(false));
+    }
+
+    @Test
+    void testGetChangesReportsWhereToContinue() throws Exception {
+        var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var cursor = new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 42L);
+        Mockito.when(repositories.findChanges(null, null, null, 100))
+                .thenReturn(new ChangesPage(List.of(entry), cursor, true));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                // The consumer stores this and passes it back as 'after'; 'hasMore' tells it to ask again
+                // straight away instead of waiting for its next poll.
+                .andExpect(jsonPath("$.nextCursor").value(cursor.encode()))
+                .andExpect(jsonPath("$.hasMore").value(true));
+    }
+
+    @Test
+    void testGetChangesContinuesAfterACursor() throws Exception {
+        var cursor = new ChangesCursor(LocalDateTime.parse("2026-01-14T09:30:11"), 1234L);
+        Mockito.when(repositories.findChanges(null, null, cursor, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), cursor, false));
+
+        mockMvc.perform(get("/api/-/version-changes?after={after}", cursor.encode()))
+                .andExpect(status().isOk())
+                // an idle registry hands the position straight back, so the loop keeps a usable cursor
+                .andExpect(jsonPath("$.nextCursor").value(cursor.encode()));
+
+        // The instant alone would not say which of the transitions sharing it have been processed, so the
+        // entry id has to survive the round trip through the parameter.
+        Mockito.verify(repositories).findChanges(null, null, cursor, 100);
     }
 
     @Test
     void testGetChangesWithinATimeWindow() throws Exception {
         var since = LocalDateTime.parse("2026-01-01T00:00");
         var until = LocalDateTime.parse("2026-02-01T00:00");
-        Mockito.when(repositories.findChanges(since, until, PageRequest.of(2, 50)))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(2, 50), 300));
+        Mockito.when(repositories.findChanges(since, until, null, 50))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(
                 get(
-                        "/api/-/version-changes?since={since}&until={until}&size={size}&offset={offset}",
+                        "/api/-/version-changes?since={since}&until={until}&size={size}",
                         "2026-01-01T00:00:00Z",
                         "2026-02-01T00:00:00Z",
-                        "50",
-                        "100"))
+                        "50"))
                 .andExpect(status().isOk())
-                .andExpect(content().json(changesJson(c -> {
-                    c.setOffset(100);
-                    c.setTotalSize(300);
-                    c.setChanges(Collections.emptyList());
-                })));
+                .andExpect(content().json(changesJson(c -> c.setChanges(Collections.emptyList()))));
+    }
+
+    @Test
+    void testGetChangesCatchesUpToAFixedEnd() throws Exception {
+        // 'until' bounds where a catch-up stops, which is the one range parameter that makes sense
+        // together with a position to continue from.
+        var cursor = new ChangesCursor(LocalDateTime.parse("2026-01-14T09:30:11"), 1234L);
+        var until = LocalDateTime.parse("2026-02-01T00:00");
+        Mockito.when(repositories.findChanges(null, until, cursor, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), cursor, false));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?after={after}&until={until}",
+                        cursor.encode(),
+                        "2026-02-01T00:00:00Z"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(null, until, cursor, 100);
     }
 
     @Test
     void testGetChangesConvertsATimestampWithAnOffsetToUTC() throws Exception {
         var since = LocalDateTime.parse("2026-01-01T10:00");
-        Mockito.when(repositories.findChanges(since, null, PageRequest.of(0, 100)))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+        Mockito.when(repositories.findChanges(since, null, null, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T12:00:00+02:00"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(repositories).findChanges(since, null, PageRequest.of(0, 100));
+        Mockito.verify(repositories).findChanges(since, null, null, 100);
     }
 
     @Test
     void testGetChangesAcceptsATimestampWithoutAZone() throws Exception {
         var since = LocalDateTime.parse("2026-01-01T10:00");
-        Mockito.when(repositories.findChanges(since, null, PageRequest.of(0, 100)))
-                .thenReturn(new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100), 0));
+        Mockito.when(repositories.findChanges(since, null, null, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T10:00:00"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(repositories).findChanges(since, null, PageRequest.of(0, 100));
+        Mockito.verify(repositories).findChanges(since, null, null, 100);
     }
 
     @Test
@@ -2361,11 +2401,23 @@ class RegistryAPITest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
 
-        mockMvc.perform(get("/api/-/version-changes?offset={offset}", "-1"))
+        // A cursor a consumer made up or truncated is rejected rather than resuming from somewhere else
+        // in the feed, which would silently skip entries.
+        mockMvc.perform(get("/api/-/version-changes?after={after}", "not-a-cursor"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("offset: parameter must not be negative"));
+                .andExpect(content().json(errorJson("Invalid 'after' parameter: not-a-cursor")));
 
-        Mockito.verify(repositories, never()).findChanges(Mockito.any(), Mockito.any(), Mockito.any());
+        // The two disagree about where the response starts, so neither is allowed to silently win.
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?after={after}&since={since}",
+                        new ChangesCursor(LocalDateTime.parse("2026-01-01T10:00"), 1L).encode(),
+                        "2026-01-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("The 'after' and 'since' parameters cannot be combined")));
+
+        Mockito.verify(repositories, never())
+                .findChanges(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt());
     }
 
     @Test
@@ -2840,6 +2892,14 @@ class RegistryAPITest {
         json.setChanges(new ArrayList<>());
         content.accept(json);
         return JsonMapper.shared().writeValueAsString(json);
+    }
+
+    /**
+     * A non-empty page of the changes feed. Carries a cursor because the repository always reports one for
+     * a page that returned entries, but its value does not matter to the tests using this.
+     */
+    private ChangesPage changesPage(List<ChangeEntryJson> changes, boolean hasMore) {
+        return new ChangesPage(changes, new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 1L), hasMore);
     }
 
     private List<ExtensionVersion> mockSearch() {

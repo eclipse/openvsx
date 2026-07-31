@@ -43,6 +43,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -1332,11 +1333,11 @@ public class LocalRegistryService implements IExtensionRegistry {
      * mirrors or security scanners can follow what the registry publishes and removes without polling
      * every extension.
      */
-    public ChangesResultJson getChanges(LocalDateTime since, LocalDateTime until, int size, int offset) {
-        var page = repositories.findChanges(since, until, PageRequest.of(offset / size, size));
+    public ChangesResultJson getChanges(LocalDateTime since, LocalDateTime until, ChangesCursor after, int size) {
+        var page = repositories.findChanges(since, until, after, size);
 
         var baseUrl = UrlUtil.getBaseUrl();
-        var changes = page.getContent();
+        var changes = page.changes();
         changes.forEach(
                 entry -> entry.setUrl(
                         UrlUtil.createApiVersionUrl(
@@ -1347,9 +1348,11 @@ public class LocalRegistryService implements IExtensionRegistry {
                                 entry.getVersion())));
 
         var json = new ChangesResultJson();
-        json.setOffset((int) page.getPageable().getOffset());
-        json.setTotalSize((int) page.getTotalElements());
         json.setChanges(changes);
+        json.setHasMore(page.hasMore());
+        if (page.nextCursor() != null) {
+            json.setNextCursor(page.nextCursor().encode());
+        }
         return json;
     }
 }

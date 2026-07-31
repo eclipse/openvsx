@@ -17,7 +17,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 @Schema(
@@ -33,16 +32,6 @@ public class ChangesResultJson extends ResultJson {
         return result;
     }
 
-    @Schema(description = "Number of skipped entries according to the changes request")
-    @NotNull
-    @Min(0)
-    private int offset;
-
-    @Schema(description = "Total number of entries matching the changes request")
-    @NotNull
-    @Min(0)
-    private int totalSize;
-
     @Schema(
         description = "Entries in ascending order of their last transition, limited to the size "
                 + "specified in the changes request"
@@ -50,21 +39,21 @@ public class ChangesResultJson extends ResultJson {
     @NotNull
     private List<ChangeEntryJson> changes;
 
-    public int getOffset() {
-        return offset;
-    }
+    @Schema(
+        description = "Opaque position to pass as the 'after' parameter of the next changes request in "
+                + "order to continue where this response ended. Absent only when an empty response was "
+                + "requested without a position to continue from, in which case the same request can "
+                + "simply be repeated."
+    )
+    private String nextCursor;
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getTotalSize() {
-        return totalSize;
-    }
-
-    public void setTotalSize(int totalSize) {
-        this.totalSize = totalSize;
-    }
+    @Schema(
+        description = "Whether more entries match the changes request beyond the ones in this response. "
+                + "A consumer following the feed requests the next page straight away while this is true, "
+                + "and is up to date once it is false."
+    )
+    @NotNull
+    private boolean hasMore;
 
     public List<ChangeEntryJson> getChanges() {
         return changes;
@@ -72,5 +61,21 @@ public class ChangesResultJson extends ResultJson {
 
     public void setChanges(List<ChangeEntryJson> changes) {
         this.changes = changes;
+    }
+
+    public String getNextCursor() {
+        return nextCursor;
+    }
+
+    public void setNextCursor(String nextCursor) {
+        this.nextCursor = nextCursor;
+    }
+
+    public boolean isHasMore() {
+        return hasMore;
+    }
+
+    public void setHasMore(boolean hasMore) {
+        this.hasMore = hasMore;
     }
 }

@@ -28,6 +28,7 @@ import org.eclipse.openvsx.json.ChangeEntryJson;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformActiveJson;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -1609,7 +1610,7 @@ public class ExtensionVersionJooqRepository {
      * The ordering is the one the {@code extension_version_change_feed_idx} index is built on, do not
      * change one without the other.
      */
-    public Page<ChangeEntryJson> findChanges(LocalDateTime since, LocalDateTime until, Pageable page) {
+    public ChangesPage findChanges(LocalDateTime since, LocalDateTime until, ChangesCursor after, int size) {
         var conditions = new ArrayList<Condition>();
         if (since != null) {
             conditions.add(EXTENSION_VERSION_CHANGE.CHANGED_AT.greaterOrEqual(since));
@@ -1617,11 +1618,19 @@ public class ExtensionVersionJooqRepository {
         if (until != null) {
             conditions.add(EXTENSION_VERSION_CHANGE.CHANGED_AT.lessThan(until));
         }
+        if (after != null) {
+            // Compares the whole sort key rather than just the instant, so that the entries sharing an
+            // instant with the one a consumer stopped at are resumed within: comparing instants alone
+            // would either skip the rest of them or report the ones already processed a second time.
+            conditions.add(
+                    DSL.row(EXTENSION_VERSION_CHANGE.CHANGED_AT, EXTENSION_VERSION_CHANGE.ID)
+                            .gt(after.changedAt(), after.id()));
+        }
 
-        var count = DSL.count();
-        var total = dsl.select(count).from(EXTENSION_VERSION_CHANGE).where(conditions).fetchOne(count);
-
-        var changes = dsl.select(
+        // One row past the page, to answer whether there are more entries. Cheaper than counting the
+        // matching ones, and unlike a count it stays cheap however long the append-only log grows.
+        var rows = dsl.select(
+                EXTENSION_VERSION_CHANGE.ID,
                 EXTENSION_VERSION_CHANGE.NAMESPACE,
                 EXTENSION_VERSION_CHANGE.EXTENSION,
                 EXTENSION_VERSION_CHANGE.VERSION,
@@ -1634,28 +1643,42 @@ public class ExtensionVersionJooqRepository {
                 // the id breaks ties between transitions that share an instant, so that paging through
                 // the feed can neither skip nor repeat an entry
                 .orderBy(EXTENSION_VERSION_CHANGE.CHANGED_AT.asc(), EXTENSION_VERSION_CHANGE.ID.asc())
-                .limit(page.getPageSize())
-                .offset(page.getOffset())
-                .fetch(row -> {
-                    var entry = new ChangeEntryJson();
-                    entry.setNamespace(row.get(EXTENSION_VERSION_CHANGE.NAMESPACE));
-                    entry.setName(row.get(EXTENSION_VERSION_CHANGE.EXTENSION));
-                    entry.setVersion(row.get(EXTENSION_VERSION_CHANGE.VERSION));
-                    entry.setTargetPlatform(row.get(EXTENSION_VERSION_CHANGE.TARGET_PLATFORM));
-                    entry.setState(row.get(EXTENSION_VERSION_CHANGE.STATE));
-                    // A version carries no publication timestamp of its own if it was published before
-                    // the registry recorded one, so the entry reports none either and the field is left
-                    // out of the response. 'changedAt' is always there, the log cannot be ordered without
-                    // it and the column is NOT NULL.
-                    var timestamp = row.get(EXTENSION_VERSION_CHANGE.TIMESTAMP);
-                    if (timestamp != null) {
-                        entry.setTimestamp(TimeUtil.toUTCString(timestamp));
-                    }
-                    entry.setLastUpdated(TimeUtil.toUTCString(row.get(EXTENSION_VERSION_CHANGE.CHANGED_AT)));
-                    return entry;
-                });
+                .limit(size + 1)
+                .fetch();
 
-        return new PageImpl<>(changes, page, total == null ? 0 : total);
+        var hasMore = rows.size() > size;
+        var pageRows = hasMore ? rows.subList(0, size) : rows;
+
+        var changes = pageRows.stream().map(row -> {
+            var entry = new ChangeEntryJson();
+            entry.setNamespace(row.get(EXTENSION_VERSION_CHANGE.NAMESPACE));
+            entry.setName(row.get(EXTENSION_VERSION_CHANGE.EXTENSION));
+            entry.setVersion(row.get(EXTENSION_VERSION_CHANGE.VERSION));
+            entry.setTargetPlatform(row.get(EXTENSION_VERSION_CHANGE.TARGET_PLATFORM));
+            entry.setState(row.get(EXTENSION_VERSION_CHANGE.STATE));
+            // A version carries no publication timestamp of its own if it was published before the
+            // registry recorded one, so the entry reports none either and the field is left out of the
+            // response. 'changedAt' is always there, the log cannot be ordered without it and the column
+            // is NOT NULL.
+            var timestamp = row.get(EXTENSION_VERSION_CHANGE.TIMESTAMP);
+            if (timestamp != null) {
+                entry.setTimestamp(TimeUtil.toUTCString(timestamp));
+            }
+            entry.setLastUpdated(TimeUtil.toUTCString(row.get(EXTENSION_VERSION_CHANGE.CHANGED_AT)));
+            return entry;
+        }).toList();
+
+        // An empty page resumes from where it was requested, so that a consumer polling an idle registry
+        // keeps a usable cursor instead of having to fall back to a timestamp.
+        var nextCursor = after;
+        if (!pageRows.isEmpty()) {
+            var last = pageRows.get(pageRows.size() - 1);
+            nextCursor = new ChangesCursor(
+                    last.get(EXTENSION_VERSION_CHANGE.CHANGED_AT),
+                    last.get(EXTENSION_VERSION_CHANGE.ID));
+        }
+
+        return new ChangesPage(changes, nextCursor, hasMore);
     }
 
     private interface FieldMapper {
