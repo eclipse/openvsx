@@ -153,18 +153,27 @@ public class AccessTokenService {
     @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
         var token = repositories.findPersonalAccessToken(tokenValue);
+        // existence + active
         if (token == null || !token.isActive()) {
             return null;
         }
+        // expiration
         LocalDateTime now = TimeUtil.getCurrentUTC();
         if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
             token.setActive(false);
             return null;
         }
+        // TPT without TP => registration was deleted
+        if (token.getType() == PersonalAccessTokenType.TPT && token.getTrustedPublisher() == null) {
+            token.setActive(false);
+            return null;
+        }
+        // scope
         AccessTokenScope scope = getScope(token);
         if (!scope.allowsAction(accessTokenAction)) {
             return null;
         }
+        // bookkeeping; if "using"
         if (accessTokenAction.isUsing()) {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
@@ -211,6 +220,6 @@ public class AccessTokenService {
 
     @Transactional
     public int setExpirationTimeForLegacyAccessTokens(LocalDateTime expirationTime) {
-        return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime);
+        return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime, PersonalAccessTokenType.LLT);
     }
 }

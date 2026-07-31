@@ -855,7 +855,7 @@ class UserAPITest {
         token3.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token3.setActive(true);
         token3.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findActivePersonalAccessTokens(userData))
+        Mockito.when(repositories.findActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LLT))
                 .thenReturn(Streamable.of(token1, token3));
     }
 
