@@ -57,7 +57,7 @@ public class PublishingConfig {
         return maxContentSize;
     }
 
-    public void setMaxContentSize(int maxContentSize) {
+    public void setMaxContentSize(long maxContentSize) {
         this.maxContentSize = maxContentSize;
     }
 
