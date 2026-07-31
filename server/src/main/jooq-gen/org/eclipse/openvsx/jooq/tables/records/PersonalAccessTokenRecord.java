@@ -159,6 +159,50 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         return (String) get(9);
     }
 
+    /**
+     * Setter for <code>public.personal_access_token.scope_extension_id</code>.
+     */
+    public void setScopeExtensionId(Long value) {
+        set(10, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.scope_extension_id</code>.
+     */
+    public Long getScopeExtensionId() {
+        return (Long) get(10);
+    }
+
+    /**
+     * Setter for <code>public.personal_access_token.scope_namespace_id</code>.
+     */
+    public void setScopeNamespaceId(Long value) {
+        set(11, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.scope_namespace_id</code>.
+     */
+    public Long getScopeNamespaceId() {
+        return (Long) get(11);
+    }
+
+    /**
+     * Setter for
+     * <code>public.personal_access_token.trusted_publisher_id</code>.
+     */
+    public void setTrustedPublisherId(Long value) {
+        set(12, value);
+    }
+
+    /**
+     * Getter for
+     * <code>public.personal_access_token.trusted_publisher_id</code>.
+     */
+    public Long getTrustedPublisherId() {
+        return (Long) get(12);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -182,7 +226,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
     /**
      * Create a detached, initialised PersonalAccessTokenRecord
      */
-    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified, String type) {
+    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified, String type, Long scopeExtensionId, Long scopeNamespaceId, Long trustedPublisherId) {
         super(PersonalAccessToken.PERSONAL_ACCESS_TOKEN);
 
         setId(id);
@@ -195,6 +239,9 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         setExpiresTimestamp(expiresTimestamp);
         setNotified(notified);
         setType(type);
+        setScopeExtensionId(scopeExtensionId);
+        setScopeNamespaceId(scopeNamespaceId);
+        setTrustedPublisherId(trustedPublisherId);
         resetChangedOnNotNull();
     }
 }
