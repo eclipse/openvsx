@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -28,6 +29,7 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,9 +82,11 @@ import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -120,6 +124,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 class RegistryAPITest {
+
+    /**
+     * How far behind the present the changes feed stops in these tests. The default value, so that the
+     * bound the endpoint clamps to is the one a deployment would use.
+     */
+    private static final Duration CHANGES_FEED_LAG = Duration.ofSeconds(30);
 
     @MockitoSpyBean
     UserService users;
@@ -2235,7 +2245,7 @@ class RegistryAPITest {
     void testGetChanges() throws Exception {
         var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
         var removed = mockChangeEntry("0.9.0", ChangeEntryJson.STATE_REMOVED, "2000-02-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(changesPage(List.of(published, removed), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
@@ -2251,7 +2261,7 @@ class RegistryAPITest {
         var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
         var deactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_INACTIVE, "2000-03-01T10:00Z");
         var reactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-04-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(changesPage(List.of(published, deactivated, reactivated), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
@@ -2269,7 +2279,7 @@ class RegistryAPITest {
     @Test
     void testGetChangesAddsTheVersionUrl() throws Exception {
         var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
-        Mockito.when(repositories.findChanges(null, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(changesPage(List.of(entry), false));
 
         mockMvc.perform(get("/api/-/version-changes"))
@@ -2280,7 +2290,7 @@ class RegistryAPITest {
 
     @Test
     void testGetChangesEmpty() throws Exception {
-        Mockito.when(repositories.findChanges(null, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes"))
@@ -2296,7 +2306,7 @@ class RegistryAPITest {
     void testGetChangesReportsWhereToContinue() throws Exception {
         var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
         var cursor = new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 42L);
-        Mockito.when(repositories.findChanges(null, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(new ChangesPage(List.of(entry), cursor, true));
 
         mockMvc.perform(get("/api/-/version-changes"))
@@ -2310,7 +2320,7 @@ class RegistryAPITest {
     @Test
     void testGetChangesContinuesAfterACursor() throws Exception {
         var cursor = new ChangesCursor(LocalDateTime.parse("2026-01-14T09:30:11"), 1234L);
-        Mockito.when(repositories.findChanges(null, null, cursor, 100))
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.eq(cursor), Mockito.eq(100)))
                 .thenReturn(new ChangesPage(Collections.emptyList(), cursor, false));
 
         mockMvc.perform(get("/api/-/version-changes?after={after}", cursor.encode()))
@@ -2320,7 +2330,47 @@ class RegistryAPITest {
 
         // The instant alone would not say which of the transitions sharing it have been processed, so the
         // entry id has to survive the round trip through the parameter.
-        Mockito.verify(repositories).findChanges(null, null, cursor, 100);
+        Mockito.verify(repositories)
+                .findChanges(Mockito.isNull(), lagCutoff(), Mockito.eq(cursor), Mockito.eq(100));
+    }
+
+    @Test
+    void testGetChangesHoldsBackTheMostRecentTransitions() throws Exception {
+        // A transition is stamped with the instant it happened before the transaction recording it
+        // commits, so an entry can turn up after a consumer has read past the position it occupies. The
+        // feed therefore stops short of the present, which is what a request reaching it is clamped to.
+        Mockito.when(repositories.findChanges(Mockito.isNull(), Mockito.any(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(get("/api/-/version-changes")).andExpect(status().isOk());
+
+        var until = ArgumentCaptor.forClass(LocalDateTime.class);
+        Mockito.verify(repositories)
+                .findChanges(Mockito.isNull(), until.capture(), Mockito.isNull(), Mockito.eq(100));
+
+        var now = TimeUtil.getCurrentUTC();
+        assertThat(until.getValue())
+                .isBefore(now.minus(CHANGES_FEED_LAG).plusSeconds(1))
+                .isAfter(now.minus(CHANGES_FEED_LAG).minusMinutes(1));
+    }
+
+    @Test
+    void testGetChangesDoesNotHoldBackAHistoricalWindow() throws Exception {
+        // Those entries have long been committed, so the bound the caller asked for is the restrictive
+        // one and reaches the repository unchanged.
+        var since = LocalDateTime.parse("2020-01-01T00:00");
+        var until = LocalDateTime.parse("2020-02-01T00:00");
+        Mockito.when(repositories.findChanges(since, until, null, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?since={since}&until={until}",
+                        "2020-01-01T00:00:00Z",
+                        "2020-02-01T00:00:00Z"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(since, until, null, 100);
     }
 
     @Test
@@ -2362,25 +2412,27 @@ class RegistryAPITest {
     @Test
     void testGetChangesConvertsATimestampWithAnOffsetToUTC() throws Exception {
         var since = LocalDateTime.parse("2026-01-01T10:00");
-        Mockito.when(repositories.findChanges(since, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T12:00:00+02:00"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(repositories).findChanges(since, null, null, 100);
+        Mockito.verify(repositories)
+                .findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100));
     }
 
     @Test
     void testGetChangesAcceptsATimestampWithoutAZone() throws Exception {
         var since = LocalDateTime.parse("2026-01-01T10:00");
-        Mockito.when(repositories.findChanges(since, null, null, 100))
+        Mockito.when(repositories.findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
                 .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
 
         mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T10:00:00"))
                 .andExpect(status().isOk());
 
-        Mockito.verify(repositories).findChanges(since, null, null, 100);
+        Mockito.verify(repositories)
+                .findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100));
     }
 
     @Test
@@ -2902,6 +2954,20 @@ class RegistryAPITest {
         return new ChangesPage(changes, new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 1L), hasMore);
     }
 
+    /**
+     * Matches the upper bound the endpoint clamps a request to when it reaches the present: the feed holds
+     * back the most recent transitions, so that one still being committed cannot be passed over. The exact
+     * instant moves with the clock, so the tests that are not about the lag itself match it loosely --
+     * {@link #testGetChangesHoldsBackTheMostRecentTransitions()} is the one that pins it down.
+     */
+    private LocalDateTime lagCutoff() {
+        var expected = TimeUtil.getCurrentUTC().minus(CHANGES_FEED_LAG);
+        return Mockito.argThat(
+                (LocalDateTime until) -> until != null
+                        && until.isAfter(expected.minusMinutes(1))
+                        && until.isBefore(expected.plusMinutes(1)));
+    }
+
     private List<ExtensionVersion> mockSearch() {
         var extVersion = mockExtension();
         var extension = extVersion.getExtension();
@@ -3285,7 +3351,8 @@ class RegistryAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    publishingConfig);
+                    publishingConfig,
+                    CHANGES_FEED_LAG);
         }
 
         @Bean

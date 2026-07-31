@@ -45,6 +45,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.web.PreviewOperation;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -1540,6 +1541,7 @@ public class RegistryAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
+    @PreviewOperation
     @Operation(
         summary = "Provides a paginated feed of the publicly visible transitions of extension versions",
         // Rendered as CommonMark by Swagger UI, so the structure below is what a reader sees.
@@ -1611,6 +1613,12 @@ public class RegistryAPI {
                 where the response starts; `until` combines with `after` to catch up to a fixed end.
                 - Entries are only ever appended and are never updated or reordered, so a cursor stays \
                 valid indefinitely.
+                - The feed stops short of the present by a small margin, so a transition is reported a \
+                little after it happened rather than instantly. This is what lets a consumer that has \
+                caught up be sure it has missed nothing: an entry is only reported once the transaction \
+                recording it is certain to have committed. Requesting an `until` closer to the present \
+                than that reports nothing beyond the margin rather than skipping those entries -- they \
+                turn up on a later request.
                 - Only changes in availability are reported. Editing the metadata of a version, such as \
                 its readme or its tags, is not a transition and produces no entry.
                 - Responses may be cached for up to one minute. Polling faster than that gains a \

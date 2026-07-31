@@ -10,6 +10,7 @@
 package org.eclipse.openvsx;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -81,6 +82,11 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final SimilarityCheckService similarityCheckService;
     private final PublishingConfig publishingConfig;
 
+    /**
+     * How far behind the present the changes feed stops, see {@link #visibleUntil}.
+     */
+    private final Duration changesFeedLag;
+
     public LocalRegistryService(
             EntityManager entityManager,
             RepositoryService repositories,
@@ -95,7 +101,8 @@ public class LocalRegistryService implements IExtensionRegistry {
             CacheService cache,
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
-            PublishingConfig publishingConfig
+            PublishingConfig publishingConfig,
+            @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
@@ -111,6 +118,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.publishingConfig = publishingConfig;
+        this.changesFeedLag = changesFeedLag;
     }
 
     @Value("${ovsx.webui.url:}")
@@ -1334,7 +1342,11 @@ public class LocalRegistryService implements IExtensionRegistry {
      * every extension.
      */
     public ChangesResultJson getChanges(LocalDateTime since, LocalDateTime until, ChangesCursor after, int size) {
-        var page = repositories.findChanges(since, until, after, size);
+        var page = repositories.findChanges(
+                since,
+                visibleUntil(until, TimeUtil.getCurrentUTC(), changesFeedLag),
+                after,
+                size);
 
         var baseUrl = UrlUtil.getBaseUrl();
         var changes = page.changes();
@@ -1354,5 +1366,25 @@ public class LocalRegistryService implements IExtensionRegistry {
             json.setNextCursor(page.nextCursor().encode());
         }
         return json;
+    }
+
+    /**
+     * Up to where the changes feed may report, which is the requested bound unless that reaches into the
+     * recent past the feed holds back.
+     * <p>
+     * A transition is stamped with the instant it happened before the transaction that records it commits,
+     * so an entry can become readable after a consumer has already read past the position it occupies --
+     * the feed is ordered by that instant, not by the order the entries turned up in. Holding back
+     * everything younger than the lag gives a transaction that long to commit before its entries are
+     * reported, so a consumer that has caught up cannot have missed one. The lag therefore has to exceed
+     * the longest window between a transition being stamped and its transaction committing, plus whatever
+     * the clocks of the instances writing those stamps differ by.
+     * <p>
+     * A request that asks for an older window is not clamped: those entries have long been committed, and
+     * the bound the caller asked for is the more restrictive one.
+     */
+    static LocalDateTime visibleUntil(LocalDateTime until, LocalDateTime now, Duration lag) {
+        var cutoff = now.minus(lag);
+        return until == null || until.isAfter(cutoff) ? cutoff : until;
     }
 }
