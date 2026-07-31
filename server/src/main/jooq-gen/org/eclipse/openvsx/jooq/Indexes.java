@@ -8,6 +8,7 @@ import org.eclipse.openvsx.jooq.tables.AdminScanDecision;
 import org.eclipse.openvsx.jooq.tables.AdminStatistics;
 import org.eclipse.openvsx.jooq.tables.CustomerMembership;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
+import org.eclipse.openvsx.jooq.tables.DownloadEvent;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionScan;
@@ -45,8 +46,10 @@ public class Indexes {
 
     public static final Index CUSTOMER_MEMBERSHIP_NAMESPACE_IDX = Internal.createIndex(DSL.name("customer_membership_namespace_idx"), CustomerMembership.CUSTOMER_MEMBERSHIP, new OrderField[] { CustomerMembership.CUSTOMER_MEMBERSHIP.CUSTOMER }, false);
     public static final Index CUSTOMER_MEMBERSHIP_USER_DATA_IDX = Internal.createIndex(DSL.name("customer_membership_user_data_idx"), CustomerMembership.CUSTOMER_MEMBERSHIP, new OrderField[] { CustomerMembership.CUSTOMER_MEMBERSHIP.USER_DATA }, false);
+    public static final Index DE_EXT_TIME = Internal.createIndex(DSL.name("de_ext_time"), DownloadEvent.DOWNLOAD_EVENT, new OrderField[] { DownloadEvent.DOWNLOAD_EVENT.EXTENSION_ID, DownloadEvent.DOWNLOAD_EVENT.TIME.desc() }, false);
     public static final Index DOWNLOAD_COUNT_PROCESSED_ITEM_NAME = Internal.createIndex(DSL.name("download_count_processed_item_name"), DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, new OrderField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.NAME }, false);
     public static final Index DOWNLOAD_COUNT_PROCESSED_ITEM_STORAGE_TYPE = Internal.createIndex(DSL.name("download_count_processed_item_storage_type"), DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM, new OrderField[] { DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM.STORAGE_TYPE }, false);
+    public static final Index DOWNLOAD_EVENT_TIME_IDX = Internal.createIndex(DSL.name("download_event_time_idx"), DownloadEvent.DOWNLOAD_EVENT, new OrderField[] { DownloadEvent.DOWNLOAD_EVENT.TIME.desc() }, false);
     public static final Index EXTENSION__NAMESPACE_ID__IDX = Internal.createIndex(DSL.name("extension__namespace_id__idx"), Extension.EXTENSION, new OrderField[] { Extension.EXTENSION.NAMESPACE_ID }, false);
     public static final Index EXTENSION_REVIEW__EXTENSION_ID__IDX = Internal.createIndex(DSL.name("extension_review__extension_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.EXTENSION_ID }, false);
     public static final Index EXTENSION_REVIEW__USER_ID__IDX = Internal.createIndex(DSL.name("extension_review__user_id__idx"), ExtensionReview.EXTENSION_REVIEW, new OrderField[] { ExtensionReview.EXTENSION_REVIEW.USER_ID }, false);

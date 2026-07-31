@@ -200,7 +200,12 @@ jooq {
                 name = 'org.jooq.meta.postgres.PostgresDatabase'
                 inputSchema = 'public'
                 includes = '.*'
-                excludes = 'jobrunr.*'
+                // jobrunr manages its own tables; the timescaledb extension contributes
+                // public-schema (table-valued) functions that we never call through jOOQ
+                excludes = 'jobrunr.*' +
+                        '|add_dimension|alter_job|create_hypertable|disable_chunk_skipping|drop_chunks' +
+                        '|enable_chunk_skipping|show_chunks|show_tablespaces' +
+                        '|chunk_compression_stats|chunks_detailed_size|hypertable_.*'
                 includeRoutines = false
             }
             target {
@@ -281,6 +286,12 @@ test {
     // observed as an OutOfMemoryError during unrelated context bootstrapping on CI.
     jvmArgs = ['--enable-native-access=ALL-UNNAMED', '-Xmx6144m', '-Xshare:off'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
+
+    // the test database image is timescale/timescaledb by default (the main migration chain
+    // requires the extension); override with -Dovsx.test.postgres.image=... if needed
+    if (System.getProperty('ovsx.test.postgres.image') != null) {
+        systemProperty 'ovsx.test.postgres.image', System.getProperty('ovsx.test.postgres.image')
+    }
 }
 
 tasks.register('unitTests', Test) {

@@ -149,6 +149,8 @@ ovsx:
 #      path-style-access: true
     local:
       directory: /tmp/ovsx
+  analytics:
+    enabled: true
   access-token:
     prefix: dev_ovsxat_ # use a token prefix that clearly indicates that it's for development
     expiration: 0       # do not expire tokens in a dev environment

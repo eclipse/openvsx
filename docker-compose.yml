@@ -1,7 +1,9 @@
 services:
 
   postgres:
-    image: postgres:16.2
+    # PostgreSQL with the timescaledb extension: the main migration chain contains the
+    # download analytics schema, which requires the extension
+    image: timescale/timescaledb:2.17.2-pg16
     environment:
       - POSTGRES_USER=openvsx
       - POSTGRES_PASSWORD=openvsx
