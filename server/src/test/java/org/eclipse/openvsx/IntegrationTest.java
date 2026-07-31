@@ -113,6 +113,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
                 ResultJson.class,
                 "test_token");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getError()).isNull();
         assertThat(response.getBody().getSuccess()).isEqualTo("Created namespace " + requestBody.getName());
     }
@@ -126,6 +127,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
                 ResultJson.class,
                 "test_token");
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getSuccess()).isNull();
         assertThat(response.getBody().getError()).isEqualTo("Namespace already exists: EditorConfig");
     }
@@ -134,8 +136,9 @@ class IntegrationTest extends AbstractPostgresContainerTest {
         var response = restTemplate.getForEntity(apiCall(path), JsonNode.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var json = response.getBody();
+        assertThat(json).isNotNull();
         assertThat(json.get("error")).isNull();
-        assertThat(json.get("name").asText()).isEqualTo("EditorConfig");
+        assertThat(json.get("name").asString()).isEqualTo("EditorConfig");
     }
 
     private void verifyToken() {
@@ -143,6 +146,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
                 .getForEntity(apiCall("/api/editorconfig/verify-pat?token=test_token"), ResultJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         var json = response.getBody();
+        assertThat(json).isNotNull();
         assertThat(json.getError()).isNull();
         assertThat(json.getSuccess()).isEqualTo("Valid token");
     }
@@ -178,6 +182,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
     private void getExtensionMetadata(String url) {
         var response = restTemplate.getForEntity(apiCall(url), ExtensionJson.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getDescription()).isEqualTo("EditorConfig Support for Visual Studio Code");
     }
 
@@ -188,6 +193,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
         }
 
         var response = restTemplate.getForEntity(apiCall(path + "/versions"), VersionsJson.class);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getVersions().size()).isEqualTo(1);
 
@@ -198,9 +204,10 @@ class IntegrationTest extends AbstractPostgresContainerTest {
 
     private void getVersionReferencesMetadata(String path) {
         var response = restTemplate.getForEntity(apiCall(path), VersionReferencesJson.class);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getVersions().size()).isEqualTo(1);
-        assertThat(response.getBody().getVersions().get(0).getVersion()).isEqualTo("0.16.6");
+        assertThat(response.getBody().getVersions().getFirst().getVersion()).isEqualTo("0.16.6");
     }
 
     private void getFile(String path) {
@@ -213,6 +220,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
     private void getReviews() {
         var response = restTemplate
                 .getForEntity(apiCall("/api/editorconfig/editorconfig/reviews"), ReviewListJson.class);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getError()).isNull();
         assertThat(response.getBody().getReviews().size()).isZero();
@@ -220,6 +228,7 @@ class IntegrationTest extends AbstractPostgresContainerTest {
 
     private void searchExtension() {
         var response = restTemplate.getForEntity(apiCall("/api/-/search?query=editorconfig"), SearchResultJson.class);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getExtensions().size()).isEqualTo(1);
         assertThat(response.getBody().getExtensions().getFirst().getDescription())
