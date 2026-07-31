@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -791,41 +793,51 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         // Check whether the user has a valid publisher agreement
         eclipse.checkPublisherAgreement(token.getUser());
-        var extVersion = extensions.publishVersion(content, token);
+        try (TempFile tempFile = extensions.createExtensionFile(content)) {
+            final String namespace;
+            final String extensionName;
+            try (ExtensionProcessor processor = new ExtensionProcessor(tempFile)) {
+                namespace = processor.getNamespace();
+                extensionName = processor.getExtensionName();
+            }
 
-        // now that we know the details, ensure token is still fine
-        token = tokens.useAccessToken(
-                tokenValue,
-                new AccessTokenAction.PublishVersion(
-                        extVersion.getExtension().getNamespace().getName(),
-                        extVersion.getExtension().getName()));
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            // now that we know the details, ensure token is still fine
+            token = tokens.useAccessToken(
+                    tokenValue,
+                    new AccessTokenAction.PublishVersion(namespace, extensionName));
+            if (token == null || token.getUser() == null) {
+                throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            }
+
+            var extVersion = extensions.publishVersion(tempFile, token);
+
+            var json = toExtensionVersionJson(extVersion, null, true);
+            json.setSuccess("It can take a couple minutes before the extension version is available");
+
+            if (repositories.hasSameVersion(extVersion)) {
+                var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                var extension = extVersion.getExtension();
+                var semver = extVersion.getSemanticVersion();
+                var newVersion = String
+                        .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+
+                json.setWarning(
+                        "A " + existingRelease + " already exists for "
+                                + NamingUtil.toLogFormat(
+                                        extension.getNamespace().getName(),
+                                        extension.getName(),
+                                        extVersion.getVersion())
+                                + ".\n" +
+                                "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
+                                + newVersion
+                                + " as its version instead.");
+            }
+
+            return json;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
         }
-
-        var json = toExtensionVersionJson(extVersion, null, true);
-        json.setSuccess("It can take a couple minutes before the extension version is available");
-
-        if (repositories.hasSameVersion(extVersion)) {
-            var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-            var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-            var extension = extVersion.getExtension();
-            var semver = extVersion.getSemanticVersion();
-            var newVersion = String
-                    .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
-
-            json.setWarning(
-                    "A " + existingRelease + " already exists for "
-                            + NamingUtil.toLogFormat(
-                                    extension.getNamespace().getName(),
-                                    extension.getName(),
-                                    extVersion.getVersion())
-                            + ".\n" +
-                            "To prevent update conflicts, we recommend that this " + thisRelease + " uses " + newVersion
-                            + " as its version instead.");
-        }
-
-        return json;
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)

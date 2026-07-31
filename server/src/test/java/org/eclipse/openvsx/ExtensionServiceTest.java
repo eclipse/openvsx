@@ -182,7 +182,7 @@ class ExtensionServiceTest {
         var token = mockToken();
         var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
 
-        assertThatThrownBy(() -> svc.publishVersion(content, token))
+        assertThatThrownBy(() -> svc.publishVersion(svc.createExtensionFile(content), token))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("Insufficient access rights");
 

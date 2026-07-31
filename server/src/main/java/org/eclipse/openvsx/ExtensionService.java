@@ -100,30 +100,51 @@ public class ExtensionService {
         return extensionFile.getResource().getExtension();
     }
 
-    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
+    public TempFile createExtensionFile(InputStream content) {
+        long maxContentSize = getMaxContentSize();
+        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
+            long size;
+            var extensionFile = new TempFile("extension_", ".vsix");
+            try (var out = Files.newOutputStream(extensionFile.getPath())) {
+                size = input.transferTo(out);
+            }
+
+            if (size > maxContentSize) {
+                IOUtils.closeQuietly(extensionFile);
+                var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
+                throw new ErrorResultException(
+                        "The extension package exceeds the size limit of " + maxSize + ".",
+                        HttpStatus.CONTENT_TOO_LARGE);
+            }
+
+            return extensionFile;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
+        }
+    }
+
+    public ExtensionVersion publishVersion(TempFile content, PersonalAccessToken token) throws ErrorResultException {
         if (scanService.isEnabled()) {
             return publishVersionWithScan(content, token);
         } else {
-            var extensionFile = createExtensionFile(content);
             try {
-                doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+                doPublish(content, null, token, TimeUtil.getCurrentUTC(), true);
             } catch (ErrorResultException exc) {
                 // In case publication fails early on we need to
                 // delete the temporary extension file, otherwise
                 // it's deleted within the publishAsync method.
-                IOUtils.closeQuietly(extensionFile);
+                IOUtils.closeQuietly(content);
                 throw exc;
             }
-            publishHandler.publishAsync(extensionFile, this);
-            var download = extensionFile.getResource();
+            publishHandler.publishAsync(content, this);
+            var download = content.getResource();
             publishHandler.schedulePublicIdJob(download);
             return download.getExtension();
         }
     }
 
-    private ExtensionVersion publishVersionWithScan(InputStream content, PersonalAccessToken token)
+    private ExtensionVersion publishVersionWithScan(TempFile extensionFile, PersonalAccessToken token)
             throws ErrorResultException {
-        var extensionFile = createExtensionFile(content);
         ExtensionScan scan = null;
 
         try (var processor = new ExtensionProcessor(extensionFile)) {
@@ -174,29 +195,6 @@ public class ExtensionService {
 
             var download = processor.getBinary(extVersion, binaryName);
             extensionFile.setResource(download);
-        }
-    }
-
-    private TempFile createExtensionFile(InputStream content) {
-        long maxContentSize = getMaxContentSize();
-        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
-            long size;
-            var extensionFile = new TempFile("extension_", ".vsix");
-            try (var out = Files.newOutputStream(extensionFile.getPath())) {
-                size = input.transferTo(out);
-            }
-
-            if (size > maxContentSize) {
-                IOUtils.closeQuietly(extensionFile);
-                var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
-                throw new ErrorResultException(
-                        "The extension package exceeds the size limit of " + maxSize + ".",
-                        HttpStatus.CONTENT_TOO_LARGE);
-            }
-
-            return extensionFile;
-        } catch (IOException e) {
-            throw new ErrorResultException("Failed to read extension file", e);
         }
     }
 
