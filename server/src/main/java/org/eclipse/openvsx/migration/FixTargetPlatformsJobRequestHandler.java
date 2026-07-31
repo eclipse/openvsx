@@ -71,9 +71,8 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
                 extensions.purgeExtensionVersion(service.getUser(), extVersion);
                 try (
                         var input = Files.newInputStream(extensionFile.getPath());
-                        var content = extensions.createExtensionFile(input)
                 ) {
-                    extensions.publishVersion(content, extVersion.getPublishedWith());
+                    extensions.publishVersion(input, extVersion.getPublishedWith());
                 }
             }
         }

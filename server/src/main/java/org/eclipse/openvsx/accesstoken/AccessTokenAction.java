@@ -13,7 +13,6 @@
 package org.eclipse.openvsx.accesstoken;
 
 public sealed interface AccessTokenAction {
-
     /**
      * Returns {@code true} if action makes use of token.
      */
@@ -32,14 +31,29 @@ public sealed interface AccessTokenAction {
     }
 
     /**
-     * Action that uses token for publishing.
-     */
-    record PublishVersion(String namespace, String extensionName) implements AccessTokenAction {}
-
-    /**
      * Action that uses token for namespace creation.
      */
-    record CreateNamespace(String namespace) implements AccessTokenAction {}
+    record CreateNamespace(String namespaceName) implements AccessTokenAction {
+        public CreateNamespace {
+            if (namespaceName == null || namespaceName.isBlank()) {
+                throw new IllegalArgumentException("Namespace cannot be null or blank");
+            }
+        }
+    }
+
+    /**
+     * Action that uses token for extension publishing.
+     */
+    record PublishVersion(String namespaceName, String extensionName) implements AccessTokenAction {
+        public PublishVersion {
+            if (namespaceName == null || namespaceName.isBlank()) {
+                throw new IllegalArgumentException("Namespace cannot be null or blank");
+            }
+            if (extensionName == null || extensionName.isBlank()) {
+                throw new IllegalArgumentException("Extension name cannot be null or blank");
+            }
+        }
+    }
 
     /**
      * Action that uses token for administration.
