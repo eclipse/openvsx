@@ -22,12 +22,12 @@ import org.eclipse.openvsx.entities.Namespace;
  */
 public sealed interface AccessTokenScope {
     /**
-     * Checks for scope applicability.
+     * Checks for scope applicability, and returns {@code true} if action is applicable to this scope.
      */
     boolean allowsAction(AccessTokenAction accessTokenAction);
 
     /**
-     * Unrestricted token scope.
+     * Unrestricted token scope; every action is applicable.
      */
     record Unrestricted() implements AccessTokenScope {
         @Override
@@ -37,7 +37,8 @@ public sealed interface AccessTokenScope {
     }
 
     /**
-     * Namespace scoped token scope.
+     * Namespace scoped token scope; only actions providing {@link AccessTokenAction#namespace()} that matches
+     * the namespace of this scope are applicable.
      */
     record NamespaceScoped(Namespace namespace) implements AccessTokenScope {
         @Override
@@ -48,7 +49,8 @@ public sealed interface AccessTokenScope {
     }
 
     /**
-     * Extension scoped token scope.
+     * Extension scoped token scope; only actions providing {@link AccessTokenAction#namespace()} and
+     * {@link AccessTokenAction#extension()} that match the namespace and extension of this scope are applicable.
      */
     record ExtensionScoped(Extension extension) implements AccessTokenScope {
         @Override

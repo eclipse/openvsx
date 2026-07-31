@@ -14,9 +14,13 @@ package org.eclipse.openvsx.accesstoken;
 
 import java.util.Optional;
 
+/**
+ * Provides information about the intended use of the token.
+ */
 public sealed interface AccessTokenAction {
     /**
-     * Returns {@code true} if action makes use of token.
+     * Returns {@code true} if action makes "use" of token.
+     * Using token implies "accessed TS" update and in case of one-time tokens, their immediate deactivation.
      */
     default boolean isUsing() {
         return true;
@@ -30,7 +34,8 @@ public sealed interface AccessTokenAction {
     }
 
     /**
-     * Returns extension name as optional. Values is present of actions that are namespace + extension specific.
+     * Returns extension name as optional. Value is present for actions that are namespace + extension specific.
+     * If this value is present, it is implied that {@link #namespace()} is also present.
      */
     default Optional<String> extension() {
         return Optional.empty();

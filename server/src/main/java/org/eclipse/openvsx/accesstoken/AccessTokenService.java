@@ -34,6 +34,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 
+import static java.util.Objects.requireNonNull;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
@@ -55,24 +56,37 @@ public class AccessTokenService {
         this.mail = mail;
     }
 
+    /**
+     * Creates a long-lived token for user. Depending on configuration, the token expiration may be set as well.
+     */
     @Transactional
     public AccessTokenJson createLongLivedAccessToken(UserData user, String description) {
+        requireNonNull(user);
         final LocalDateTime expiresTimestamp = config.isTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
         return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.LLT);
     }
 
+    /**
+     * Creates a one-time usable token for user. Depending on configuration, the token expiration may be set as well.
+     */
     @Transactional
     public AccessTokenJson createOneTimeAccessToken(UserData user, String description) {
+        requireNonNull(user);
         final LocalDateTime expiresTimestamp = config.isOttTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
                 : null;
         return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.OTT);
     }
 
+    /**
+     * Creates a trusted publishing token for a trusted publisher. The token is scoped to given trusted publisher
+     * associated extension only. Depending on configuration, the token expiration may be set as well.
+     */
     @Transactional
     public AccessTokenJson createTrustedPublishingAccessToken(TrustedPublisher trustedPublisher, String description) {
+        requireNonNull(trustedPublisher);
         final LocalDateTime expiresTimestamp = config.isTptTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getTptExpiration())
                 : null;
@@ -90,7 +104,7 @@ public class AccessTokenService {
             UserData user,
             String description,
             @Nullable LocalDateTime expiresTimestamp,
-            @Nullable TrustedPublisher scopeTrustedPublisher,
+            @Nullable TrustedPublisher trustedPublisher,
             @Nullable Extension scopeExtension,
             @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
@@ -103,13 +117,19 @@ public class AccessTokenService {
         token.setDescription(description);
         token.setExpiresTimestamp(expiresTimestamp);
         token.setType(type);
-
-        if (scopeTrustedPublisher != null) {
-            token.setTrustedPublisher(scopeTrustedPublisher);
-            token.setScopeExtension(scopeTrustedPublisher.getExtension());
+        if (trustedPublisher != null) {
+            // fool-proofing; only TPT token may be created with TP
+            if (type != PersonalAccessTokenType.TPT) {
+                throw new IllegalArgumentException("Only TPT token my be created with TP");
+            }
+            // link TP and scope to TP.ext
+            token.setTrustedPublisher(trustedPublisher);
+            token.setScopeExtension(trustedPublisher.getExtension());
         } else if (scopeExtension != null) {
+            // scope to ext
             token.setScopeExtension(scopeExtension);
         } else if (scopeNamespace != null) {
+            // scope to ns
             token.setScopeNamespace(scopeNamespace);
         }
 
