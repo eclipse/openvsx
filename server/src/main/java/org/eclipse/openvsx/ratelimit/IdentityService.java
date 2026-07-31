@@ -82,9 +82,6 @@ public class IdentityService {
         if (cacheKey == null) {
             var token = request.getParameter("token");
             if (token != null) {
-                // This will update the database with the time the token is last accessed,
-                // but we need to ensure that we only take valid tokens into account for rate limiting.
-                // If this turns out to be a bottleneck, we need to cache the token hashcode.
                 var tokenEntity = tokenService.useAccessToken(token, new AccessTokenAction.Verify());
                 if (tokenEntity != null) {
                     // if a valid token is present we use it as a cache key
