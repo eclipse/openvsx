@@ -130,8 +130,6 @@ ovsx:
     enabled: false
   eclipse:
     base-url: https://api.eclipse.org
-    publisher-agreement:
-      timezone: US/Eastern
   extension-control:
     enabled: false
     update-on-start: false
