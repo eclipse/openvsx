@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2295,7 +2296,8 @@ class AdminAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    new PublishingConfig());
+                    new PublishingConfig(),
+                    Duration.ofSeconds(30));
         }
 
         @Bean

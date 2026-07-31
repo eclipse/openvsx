@@ -22,6 +22,7 @@ import org.eclipse.openvsx.jooq.tables.ExtensionScan;
 import org.eclipse.openvsx.jooq.tables.ExtensionThreat;
 import org.eclipse.openvsx.jooq.tables.ExtensionValidationFailure;
 import org.eclipse.openvsx.jooq.tables.ExtensionVersion;
+import org.eclipse.openvsx.jooq.tables.ExtensionVersionChange;
 import org.eclipse.openvsx.jooq.tables.FileDecision;
 import org.eclipse.openvsx.jooq.tables.FileResource;
 import org.eclipse.openvsx.jooq.tables.FlywaySchemaHistory;
@@ -142,6 +143,11 @@ public class Tables {
      * The table <code>public.extension_version</code>.
      */
     public static final ExtensionVersion EXTENSION_VERSION = ExtensionVersion.EXTENSION_VERSION;
+
+    /**
+     * The table <code>public.extension_version_change</code>.
+     */
+    public static final ExtensionVersionChange EXTENSION_VERSION_CHANGE = ExtensionVersionChange.EXTENSION_VERSION_CHANGE;
 
     /**
      * The table <code>public.file_decision</code>.

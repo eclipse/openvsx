@@ -19,11 +19,14 @@ import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SITEMAP;
 
@@ -99,7 +102,23 @@ public class PublishExtensionVersionService {
             return;
         }
 
+        // Activating a version that is already active changes nothing publicly, and the changes feed
+        // log is append-only: recording it again would report a second publication that never happened.
+        var alreadyActive = current.isActive();
         current.setActive(true);
+        if (!alreadyActive) {
+            // The version becomes publicly visible here, which is what the changes feed reports as its
+            // publication. It is reported at the current instant rather than at the timestamp the version
+            // carries: the two are far apart whenever activation waited on something, such as a scan
+            // completing or an admin releasing a quarantined version days later, and an entry written at
+            // the older instant would sort into a part of the feed that consumers have already read past
+            // -- they would never see the version get published. The version's own timestamp is reported
+            // separately on every entry, so nothing is lost by not ordering on it.
+            repositories.recordExtensionVersionChange(
+                    current,
+                    ExtensionVersionState.ACTIVE,
+                    TimeUtil.getCurrentUTC());
+        }
         extensions.updateExtension(current.getExtension());
     }
 }

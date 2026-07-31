@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.web;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import io.swagger.v3.oas.models.OpenAPI;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,10 +29,28 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DocumentationConfig {
 
+    /**
+     * Prefixed onto the summary of a {@link PreviewOperation}, so that it is visible in the operation list
+     * without having to expand the operation.
+     */
+    static final String PREVIEW_PREFIX = "[Preview] ";
+
+    /**
+     * Prepended to the description of a {@link PreviewOperation}. Kept here rather than repeated on each
+     * operation, so that all of them say the same thing.
+     */
+    static final String PREVIEW_NOTE = """
+            **Preview** -- this endpoint may still change in a later release. Its parameters and the shape \
+            of its response are not covered by the usual compatibility expectations yet, so keep track of \
+            what you depend on and follow the release notes.
+
+            """;
+
     @Bean
     public GroupedOpenApi registry(
             OpenApiCustomizer sortSchemasAlphabetically,
-            OpenApiCustomizer addRateLimitResponse
+            OpenApiCustomizer addRateLimitResponse,
+            OperationCustomizer previewOperation
     ) {
         var description = "This API provides metadata of VS Code extensions in the Open VSX Registry as well as means to publish extensions.";
         return GroupedOpenApi.builder()
@@ -41,11 +61,16 @@ public class DocumentationConfig {
                         openApi -> openApi.getInfo().title("Open VSX Registry API").description(description))
                 .addOpenApiCustomizer(sortSchemasAlphabetically)
                 .addOpenApiCustomizer(addRateLimitResponse)
+                .addOperationCustomizer(previewOperation)
                 .build();
     }
 
     @Bean
-    public GroupedOpenApi vscode(OpenApiCustomizer sortSchemasAlphabetically, OpenApiCustomizer addRateLimitResponse) {
+    public GroupedOpenApi vscode(
+            OpenApiCustomizer sortSchemasAlphabetically,
+            OpenApiCustomizer addRateLimitResponse,
+            OperationCustomizer previewOperation
+    ) {
         var description = "Provides a compatibility layer between VS Code based editors and the Open VSX Registry.";
         return GroupedOpenApi.builder()
                 .group("vscode-adapter")
@@ -55,11 +80,15 @@ public class DocumentationConfig {
                         openApi -> openApi.getInfo().title("Open VSX VSCode Adapter").description(description))
                 .addOpenApiCustomizer(sortSchemasAlphabetically)
                 .addOpenApiCustomizer(addRateLimitResponse)
+                .addOperationCustomizer(previewOperation)
                 .build();
     }
 
     @Bean
-    public GroupedOpenApi admin(OpenApiCustomizer sortSchemasAlphabetically) {
+    public GroupedOpenApi admin(
+            OpenApiCustomizer sortSchemasAlphabetically,
+            OperationCustomizer previewOperation
+    ) {
         var description = "This API provides administration features for the Open VSX Registry.";
         return GroupedOpenApi.builder()
                 .group("admin")
@@ -67,7 +96,35 @@ public class DocumentationConfig {
                 .pathsToMatch("/admin/api/**", "/admin/report")
                 .addOpenApiCustomizer(openApi -> openApi.getInfo().title("Open VSX Admin API").description(description))
                 .addOpenApiCustomizer(sortSchemasAlphabetically)
+                .addOperationCustomizer(previewOperation)
                 .build();
+    }
+
+    /**
+     * Marks up the operations annotated with {@link PreviewOperation}: the summary is prefixed, the note
+     * above is prepended to the description, and {@code x-preview} is set for consumers reading the
+     * OpenAPI document rather than the rendered page.
+     * <p>
+     * Applying it twice leaves an operation as it was, as the customizer is registered per group and
+     * springdoc also picks up customizer beans on its own.
+     */
+    @Bean
+    public OperationCustomizer previewOperation() {
+        return (operation, handlerMethod) -> {
+            if (!handlerMethod.hasMethodAnnotation(PreviewOperation.class)) {
+                return operation;
+            }
+
+            var summary = Objects.toString(operation.getSummary(), "");
+            if (summary.startsWith(PREVIEW_PREFIX)) {
+                return operation;
+            }
+
+            operation.setSummary(PREVIEW_PREFIX + summary);
+            operation.setDescription(PREVIEW_NOTE + Objects.toString(operation.getDescription(), ""));
+            operation.addExtension("x-preview", true);
+            return operation;
+        };
     }
 
     @Bean

@@ -230,9 +230,13 @@ public class ExtensionService {
     public void reactivateExtensions(UserData user) {
         var affectedExtensions = new LinkedHashSet<Extension>();
         var versions = repositories.findVersionsByUser(user, false);
+        var now = TimeUtil.getCurrentUTC();
         for (var version : versions) {
             if (canBeReactivated(version)) {
                 version.setActive(true);
+                // the version becomes publicly visible again, which the changes feed reports as a
+                // further entry for it, after the one for its deactivation
+                repositories.recordExtensionVersionChange(version, ExtensionVersionState.ACTIVE, now);
                 affectedExtensions.add(version.getExtension());
             } else {
                 logger.warn(
@@ -490,10 +494,18 @@ public class ExtensionService {
      */
     private void softDeleteExtensionVersion(UserData user, ExtensionVersion extVersion) {
         deleteFiles(extVersion);
+        // Read before the version is marked as removed below, and only reported for a version the feed
+        // announced as available -- deleting one it never reported has nothing to withdraw, exactly as
+        // purging one does not, see recordPurge.
+        var reported = wasReportedAsAvailable(extVersion);
+        var now = TimeUtil.getCurrentUTC();
         extVersion.setActive(false);
         extVersion.setRemoved(true);
-        extVersion.setRemovedTimestamp(TimeUtil.getCurrentUTC());
+        extVersion.setRemovedTimestamp(now);
         extVersion.setRemovedBy(user);
+        if (reported) {
+            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionState.REMOVED, now);
+        }
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -625,6 +637,53 @@ public class ExtensionService {
     @Transactional(rollbackOn = ErrorResultException.class)
     public void removeExtensionVersion(ExtensionVersion extVersion) {
         deleteFiles(extVersion);
+        recordPurge(extVersion);
         entityManager.remove(extVersion);
+    }
+
+    /**
+     * Report a purged version as removed, so that consumers following the changes feed learn that it is
+     * gone instead of it silently vanishing from the registry.
+     * <p>
+     * A purge is reported no differently from a deletion: either way the version is no longer available
+     * for download, and whether the registry keeps a tombstone for it is not something a consumer of the
+     * feed can act on.
+     * <p>
+     * Has to run before the row is deleted, both to copy the version's coordinates onto the entry and to
+     * read the transition last reported for it. Neither the entry it appends nor the ones already there are
+     * left referencing the version this transaction goes on to remove -- see
+     * {@link RepositoryService#recordPurgedExtensionVersionChange} and
+     * {@link RepositoryService#detachExtensionVersionChanges}.
+     */
+    private void recordPurge(ExtensionVersion extVersion) {
+        if (wasReportedAsAvailable(extVersion)) {
+            repositories.recordPurgedExtensionVersionChange(
+                    extVersion,
+                    ExtensionVersionState.REMOVED,
+                    TimeUtil.getCurrentUTC());
+        }
+
+        // Unconditional, and in particular also on the paths that append nothing above: whatever the log
+        // already holds for this version has to stop pointing at it before it is deleted.
+        repositories.detachExtensionVersionChanges(extVersion);
+    }
+
+    /**
+     * Whether the changes feed last reported this version as being available, and so has a transition to
+     * withdraw once the version goes away.
+     * <p>
+     * False for a version the feed never reported -- one whose publication never made it public, for
+     * instance because a scan quarantined it, or one that predates the feed and was already hidden when
+     * it was seeded. Reporting its removal would withdraw a publication that consumers were never told
+     * about, which is the one thing the append-only log is not allowed to say.
+     * <p>
+     * False as well once the feed has reported the version as gone: a version is deleted before it can be
+     * purged, and the purge only drops the tombstone the deletion kept, which is invisible from the
+     * outside, so a second entry would report a transition that never happened.
+     */
+    private boolean wasReportedAsAvailable(ExtensionVersion extVersion) {
+        return repositories.findLatestExtensionVersionChange(extVersion)
+                .map(latest -> latest.getState() != ExtensionVersionState.REMOVED)
+                .orElse(false);
     }
 }

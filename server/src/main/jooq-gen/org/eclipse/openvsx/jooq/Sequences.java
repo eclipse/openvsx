@@ -71,6 +71,11 @@ public class Sequences {
     public static final Sequence<Long> EXTENSION_VALIDATION_FAILURE_SEQ = Internal.createSequence("extension_validation_failure_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
 
     /**
+     * The sequence <code>public.extension_version_change_seq</code>
+     */
+    public static final Sequence<Long> EXTENSION_VERSION_CHANGE_SEQ = Internal.createSequence("extension_version_change_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.extension_version_seq</code>
      */
     public static final Sequence<Long> EXTENSION_VERSION_SEQ = Internal.createSequence("extension_version_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);

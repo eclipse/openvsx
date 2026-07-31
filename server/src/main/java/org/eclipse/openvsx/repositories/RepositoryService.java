@@ -37,6 +37,8 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionValidationFailure;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
@@ -54,6 +56,7 @@ import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.VersionTargetPlatformsJson;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -96,6 +99,7 @@ public class RepositoryService {
     private final SignatureKeyPairRepository signatureKeyPairRepo;
     private final SignatureKeyPairJooqRepository signatureKeyPairJooqRepo;
     private final ExtensionScanRepository extensionScanRepo;
+    private final ExtensionVersionChangeRepository extensionVersionChangeRepo;
     private final ExtensionValidationFailureRepository extensionValidationFailureRepo;
     private final AdminScanDecisionRepository adminScanDecisionRepo;
     private final ExtensionThreatRepository extensionThreatRepo;
@@ -133,6 +137,7 @@ public class RepositoryService {
             SignatureKeyPairRepository signatureKeyPairRepo,
             SignatureKeyPairJooqRepository signatureKeyPairJooqRepo,
             ExtensionScanRepository extensionScanRepo,
+            ExtensionVersionChangeRepository extensionVersionChangeRepo,
             AdminScanDecisionRepository adminScanDecisionRepo,
             ExtensionValidationFailureRepository extensionValidationFailureRepo,
             ExtensionThreatRepository extensionThreatRepo,
@@ -169,6 +174,7 @@ public class RepositoryService {
         this.signatureKeyPairRepo = signatureKeyPairRepo;
         this.signatureKeyPairJooqRepo = signatureKeyPairJooqRepo;
         this.extensionScanRepo = extensionScanRepo;
+        this.extensionVersionChangeRepo = extensionVersionChangeRepo;
         this.adminScanDecisionRepo = adminScanDecisionRepo;
         this.extensionValidationFailureRepo = extensionValidationFailureRepo;
         this.extensionThreatRepo = extensionThreatRepo;
@@ -555,6 +561,92 @@ public class RepositoryService {
 
     public Page<ExtensionVersion> findActiveVersions(QueryRequest request) {
         return extensionVersionJooqRepo.findActiveVersions(request);
+    }
+
+    public ChangesPage findChanges(LocalDateTime since, LocalDateTime until, ChangesCursor after, int size) {
+        return extensionVersionJooqRepo.findChanges(since, until, after, size);
+    }
+
+    /**
+     * Appends a publicly visible transition of the given version to the log the changes feed serves.
+     * <p>
+     * The instant of the transition is passed in rather than taken here, so that a single administrative
+     * action affecting many versions reports all of them at one instant.
+     * <p>
+     * The coordinates of the version are copied onto the entry, so it has to be called while the version
+     * is still there to copy them from -- before purging it, not after.
+     */
+    public ExtensionVersionChange recordExtensionVersionChange(
+            ExtensionVersion extVersion,
+            ExtensionVersionState state,
+            LocalDateTime changedAt
+    ) {
+        return recordExtensionVersionChange(extVersion, state, changedAt, true);
+    }
+
+    /**
+     * Appends the removal of a version that is being purged in this same transaction.
+     * <p>
+     * Unlike every other transition, the entry does not reference the version: it is about to be deleted,
+     * and an entry pointing at a row that the same transaction removes is not a state the persistence
+     * provider will flush, however willing the database is to null the column out afterwards. The entry
+     * ends up exactly as the purge of an already-reported version would leave it -- detached, identifying
+     * the version only through the coordinates copied onto it, which is what the feed reads anyway.
+     */
+    public ExtensionVersionChange recordPurgedExtensionVersionChange(
+            ExtensionVersion extVersion,
+            ExtensionVersionState state,
+            LocalDateTime changedAt
+    ) {
+        return recordExtensionVersionChange(extVersion, state, changedAt, false);
+    }
+
+    private ExtensionVersionChange recordExtensionVersionChange(
+            ExtensionVersion extVersion,
+            ExtensionVersionState state,
+            LocalDateTime changedAt,
+            boolean referenceVersion
+    ) {
+        var extension = extVersion.getExtension();
+        var change = new ExtensionVersionChange();
+        if (referenceVersion) {
+            change.setExtensionVersion(extVersion);
+        }
+        change.setNamespace(extension.getNamespace().getName());
+        change.setExtension(extension.getName());
+        change.setVersion(extVersion.getVersion());
+        change.setTargetPlatform(extVersion.getTargetPlatform());
+        change.setState(state);
+        change.setTimestamp(extVersion.getTimestamp());
+        change.setChangedAt(changedAt);
+        return extensionVersionChangeRepo.save(change);
+    }
+
+    public Streamable<ExtensionVersionChange> findExtensionVersionChanges(ExtensionVersion extVersion) {
+        return extensionVersionChangeRepo.findByExtensionVersionOrderByChangedAtAsc(extVersion);
+    }
+
+    /**
+     * Clears the reference to the given version from the entries the feed has already reported for it,
+     * leaving the entries themselves in place. To be called just before the version is purged.
+     * <p>
+     * The database would do this on its own -- the foreign key is {@code ON DELETE SET NULL}, for the sake
+     * of the rows nothing holds in memory -- but not soon enough: an entry loaded into the session still
+     * references the version at flush time, and the persistence provider rejects that before the delete it
+     * would be resolved by is ever sent. Doing it here also keeps the log's survival of a purge a property
+     * of the code rather than of the schema alone.
+     */
+    public void detachExtensionVersionChanges(ExtensionVersion extVersion) {
+        extensionVersionChangeRepo.findByExtensionVersionOrderByChangedAtAsc(extVersion)
+                .forEach(change -> change.setExtensionVersion(null));
+    }
+
+    /**
+     * The transition most recently reported for the given version, or empty if the feed has never
+     * reported it at all.
+     */
+    public Optional<ExtensionVersionChange> findLatestExtensionVersionChange(ExtensionVersion extVersion) {
+        return extensionVersionChangeRepo.findFirstByExtensionVersionOrderByChangedAtDescIdDesc(extVersion);
     }
 
     public List<ExtensionVersion> findActiveExtensionVersions(Collection<Long> extensionIds, String targetPlatform) {

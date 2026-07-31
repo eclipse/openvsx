@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -28,6 +29,7 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
@@ -66,6 +69,7 @@ import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishExtensionVersionService;
 import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.repositories.ChangesPage;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
@@ -75,15 +79,19 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -116,6 +124,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 class RegistryAPITest {
+
+    /**
+     * How far behind the present the changes feed stops in these tests. The default value, so that the
+     * bound the endpoint clamps to is the one a deployment would use.
+     */
+    private static final Duration CHANGES_FEED_LAG = Duration.ofSeconds(30);
 
     @MockitoSpyBean
     UserService users;
@@ -2228,6 +2242,237 @@ class RegistryAPITest {
     }
 
     @Test
+    void testGetChanges() throws Exception {
+        var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var removed = mockChangeEntry("0.9.0", ChangeEntryJson.STATE_REMOVED, "2000-02-01T10:00Z");
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(changesPage(List.of(published, removed), false));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> c.setChanges(List.of(published, removed)))));
+    }
+
+    @Test
+    void testGetChangesReportsEveryTransitionOfAVersion() throws Exception {
+        // A version that is published, has its publisher's contributions revoked and is then reinstated
+        // appears once per transition, in the order they happened, rather than as a single entry that
+        // moves around. A consumer polling in between therefore never misses that it was withdrawn.
+        var published = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var deactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_INACTIVE, "2000-03-01T10:00Z");
+        var reactivated = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-04-01T10:00Z");
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(changesPage(List.of(published, deactivated, reactivated), false));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.changes[0].state").value("ACTIVE"))
+                .andExpect(jsonPath("$.changes[1].state").value("INACTIVE"))
+                .andExpect(jsonPath("$.changes[2].state").value("ACTIVE"))
+                // each entry is reported at the instant of its own transition, while they all keep
+                // naming the version's publication timestamp
+                .andExpect(jsonPath("$.changes[1].lastUpdated").value("2000-03-01T10:00Z"))
+                .andExpect(jsonPath("$.changes[2].lastUpdated").value("2000-04-01T10:00Z"))
+                .andExpect(jsonPath("$.changes[1].timestamp").value("2000-01-01T10:00Z"));
+    }
+
+    @Test
+    void testGetChangesAddsTheVersionUrl() throws Exception {
+        var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(changesPage(List.of(entry), false));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                // the entry names one target platform, so the URL addresses exactly that version
+                .andExpect(jsonPath("$.changes[0].url").value("http://localhost/api/foo/bar/universal/1.0.0"));
+    }
+
+    @Test
+    void testGetChangesEmpty() throws Exception {
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> c.setChanges(Collections.emptyList()))))
+                // Nothing to continue from: no entry was returned and none was asked after, so the
+                // consumer simply repeats this request rather than being handed a position.
+                .andExpect(jsonPath("$.nextCursor").doesNotExist())
+                .andExpect(jsonPath("$.hasMore").value(false));
+    }
+
+    @Test
+    void testGetChangesReportsWhereToContinue() throws Exception {
+        var entry = mockChangeEntry("1.0.0", ChangeEntryJson.STATE_ACTIVE, "2000-01-01T10:00Z");
+        var cursor = new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 42L);
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(List.of(entry), cursor, true));
+
+        mockMvc.perform(get("/api/-/version-changes"))
+                .andExpect(status().isOk())
+                // The consumer stores this and passes it back as 'after'; 'hasMore' tells it to ask again
+                // straight away instead of waiting for its next poll.
+                .andExpect(jsonPath("$.nextCursor").value(cursor.encode()))
+                .andExpect(jsonPath("$.hasMore").value(true));
+    }
+
+    @Test
+    void testGetChangesContinuesAfterACursor() throws Exception {
+        var cursor = new ChangesCursor(LocalDateTime.parse("2026-01-14T09:30:11"), 1234L);
+        Mockito.when(repositories.findChanges(Mockito.isNull(), lagCutoff(), Mockito.eq(cursor), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), cursor, false));
+
+        mockMvc.perform(get("/api/-/version-changes?after={after}", cursor.encode()))
+                .andExpect(status().isOk())
+                // an idle registry hands the position straight back, so the loop keeps a usable cursor
+                .andExpect(jsonPath("$.nextCursor").value(cursor.encode()));
+
+        // The instant alone would not say which of the transitions sharing it have been processed, so the
+        // entry id has to survive the round trip through the parameter.
+        Mockito.verify(repositories)
+                .findChanges(Mockito.isNull(), lagCutoff(), Mockito.eq(cursor), Mockito.eq(100));
+    }
+
+    @Test
+    void testGetChangesHoldsBackTheMostRecentTransitions() throws Exception {
+        // A transition is stamped with the instant it happened before the transaction recording it
+        // commits, so an entry can turn up after a consumer has read past the position it occupies. The
+        // feed therefore stops short of the present, which is what a request reaching it is clamped to.
+        Mockito.when(repositories.findChanges(Mockito.isNull(), Mockito.any(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(get("/api/-/version-changes")).andExpect(status().isOk());
+
+        var until = ArgumentCaptor.forClass(LocalDateTime.class);
+        Mockito.verify(repositories)
+                .findChanges(Mockito.isNull(), until.capture(), Mockito.isNull(), Mockito.eq(100));
+
+        var now = TimeUtil.getCurrentUTC();
+        assertThat(until.getValue())
+                .isBefore(now.minus(CHANGES_FEED_LAG).plusSeconds(1))
+                .isAfter(now.minus(CHANGES_FEED_LAG).minusMinutes(1));
+    }
+
+    @Test
+    void testGetChangesDoesNotHoldBackAHistoricalWindow() throws Exception {
+        // Those entries have long been committed, so the bound the caller asked for is the restrictive
+        // one and reaches the repository unchanged.
+        var since = LocalDateTime.parse("2020-01-01T00:00");
+        var until = LocalDateTime.parse("2020-02-01T00:00");
+        Mockito.when(repositories.findChanges(since, until, null, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?since={since}&until={until}",
+                        "2020-01-01T00:00:00Z",
+                        "2020-02-01T00:00:00Z"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(since, until, null, 100);
+    }
+
+    @Test
+    void testGetChangesWithinATimeWindow() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T00:00");
+        var until = LocalDateTime.parse("2026-02-01T00:00");
+        Mockito.when(repositories.findChanges(since, until, null, 50))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?since={since}&until={until}&size={size}",
+                        "2026-01-01T00:00:00Z",
+                        "2026-02-01T00:00:00Z",
+                        "50"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(changesJson(c -> c.setChanges(Collections.emptyList()))));
+    }
+
+    @Test
+    void testGetChangesCatchesUpToAFixedEnd() throws Exception {
+        // 'until' bounds where a catch-up stops, which is the one range parameter that makes sense
+        // together with a position to continue from.
+        var cursor = new ChangesCursor(LocalDateTime.parse("2026-01-14T09:30:11"), 1234L);
+        var until = LocalDateTime.parse("2026-02-01T00:00");
+        Mockito.when(repositories.findChanges(null, until, cursor, 100))
+                .thenReturn(new ChangesPage(Collections.emptyList(), cursor, false));
+
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?after={after}&until={until}",
+                        cursor.encode(),
+                        "2026-02-01T00:00:00Z"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories).findChanges(null, until, cursor, 100);
+    }
+
+    @Test
+    void testGetChangesConvertsATimestampWithAnOffsetToUTC() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T10:00");
+        Mockito.when(repositories.findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T12:00:00+02:00"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories)
+                .findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100));
+    }
+
+    @Test
+    void testGetChangesAcceptsATimestampWithoutAZone() throws Exception {
+        var since = LocalDateTime.parse("2026-01-01T10:00");
+        Mockito.when(repositories.findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100)))
+                .thenReturn(new ChangesPage(Collections.emptyList(), null, false));
+
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "2026-01-01T10:00:00"))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories)
+                .findChanges(Mockito.eq(since), lagCutoff(), Mockito.isNull(), Mockito.eq(100));
+    }
+
+    @Test
+    void testInvalidGetChanges() throws Exception {
+        mockMvc.perform(get("/api/-/version-changes?since={since}", "yesterday"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Invalid 'since' parameter: yesterday")));
+
+        mockMvc.perform(get("/api/-/version-changes?until={until}", "2026-13-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Invalid 'until' parameter: 2026-13-01T00:00:00Z")));
+
+        mockMvc.perform(get("/api/-/version-changes?size={size}", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must be positive"));
+
+        mockMvc.perform(get("/api/-/version-changes?size={size}", "1001"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("size: parameter must not exceed 1000"));
+
+        // A cursor a consumer made up or truncated is rejected rather than resuming from somewhere else
+        // in the feed, which would silently skip entries.
+        mockMvc.perform(get("/api/-/version-changes?after={after}", "not-a-cursor"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("Invalid 'after' parameter: not-a-cursor")));
+
+        // The two disagree about where the response starts, so neither is allowed to silently win.
+        mockMvc.perform(
+                get(
+                        "/api/-/version-changes?after={after}&since={since}",
+                        new ChangesCursor(LocalDateTime.parse("2026-01-01T10:00"), 1L).encode(),
+                        "2026-01-01T00:00:00Z"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("The 'after' and 'since' parameters cannot be combined")));
+
+        Mockito.verify(repositories, never())
+                .findChanges(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt());
+    }
+
+    @Test
     void testInvalidGetVersions() throws Exception {
         mockMvc.perform(
                 get("/api/{namespace}/{extension}/versions?size={size}&offset={offset}", "foo", "bar", "-1", "0"))
@@ -2682,6 +2927,47 @@ class RegistryAPITest {
         return JsonMapper.shared().writeValueAsString(json);
     }
 
+    private ChangeEntryJson mockChangeEntry(String version, String state, String lastUpdated) {
+        var entry = new ChangeEntryJson();
+        entry.setNamespace("foo");
+        entry.setName("bar");
+        entry.setVersion(version);
+        entry.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        entry.setState(state);
+        entry.setTimestamp("2000-01-01T10:00Z");
+        entry.setLastUpdated(lastUpdated);
+        return entry;
+    }
+
+    private String changesJson(Consumer<ChangesResultJson> content) throws JacksonException {
+        var json = new ChangesResultJson();
+        json.setChanges(new ArrayList<>());
+        content.accept(json);
+        return JsonMapper.shared().writeValueAsString(json);
+    }
+
+    /**
+     * A non-empty page of the changes feed. Carries a cursor because the repository always reports one for
+     * a page that returned entries, but its value does not matter to the tests using this.
+     */
+    private ChangesPage changesPage(List<ChangeEntryJson> changes, boolean hasMore) {
+        return new ChangesPage(changes, new ChangesCursor(LocalDateTime.parse("2000-01-01T10:00"), 1L), hasMore);
+    }
+
+    /**
+     * Matches the upper bound the endpoint clamps a request to when it reaches the present: the feed holds
+     * back the most recent transitions, so that one still being committed cannot be passed over. The exact
+     * instant moves with the clock, so the tests that are not about the lag itself match it loosely --
+     * {@link #testGetChangesHoldsBackTheMostRecentTransitions()} is the one that pins it down.
+     */
+    private LocalDateTime lagCutoff() {
+        var expected = TimeUtil.getCurrentUTC().minus(CHANGES_FEED_LAG);
+        return Mockito.argThat(
+                (LocalDateTime until) -> until != null
+                        && until.isAfter(expected.minusMinutes(1))
+                        && until.isBefore(expected.plusMinutes(1)));
+    }
+
     private List<ExtensionVersion> mockSearch() {
         var extVersion = mockExtension();
         var extension = extVersion.getExtension();
@@ -3065,7 +3351,8 @@ class RegistryAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    publishingConfig);
+                    publishingConfig,
+                    CHANGES_FEED_LAG);
         }
 
         @Bean

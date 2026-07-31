@@ -11,6 +11,10 @@ package org.eclipse.openvsx;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +45,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.web.PreviewOperation;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -1528,6 +1533,212 @@ public class RegistryAPI {
             return ResponseEntity.ok(json);
         } else {
             return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping(
+        path = "/api/-/version-changes",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @PreviewOperation
+    @Operation(
+        summary = "Provides a paginated feed of the publicly visible transitions of extension versions",
+        // Rendered as CommonMark by Swagger UI, so the structure below is what a reader sees.
+        description = """
+                Each entry reports one transition of a single extension version, ordered by the instant \
+                it happened, oldest first. A version that transitions repeatedly is reported once per \
+                transition rather than as a single entry that moves around, so that nothing is missed \
+                between two requests.
+
+                ### Reported states
+
+                - **`ACTIVE`** -- the version is publicly available.
+                - **`INACTIVE`** -- the version is not publicly available. Its files are still there and \
+                it can become `ACTIVE` again.
+                - **`REMOVED`** -- the version is no longer available for download. Reported both for a \
+                version that was deleted and for one that was permanently purged, as either way the \
+                version is gone.
+
+                ### Transitions
+
+                | From | To | Reported when |
+                | --- | --- | --- |
+                | _not in the feed_ | `ACTIVE` | the version was published and became publicly available |
+                | `ACTIVE` | `INACTIVE` | the version was deactivated administratively, for instance \
+                because the publisher's contributions were revoked or their publisher agreement is no \
+                longer signed |
+                | `INACTIVE` | `ACTIVE` | the version was reinstated and is publicly available again |
+                | `ACTIVE`, `INACTIVE` | `REMOVED` | the version was deleted or purged |
+                | `REMOVED` | `ACTIVE` | the version had been purged, freeing its identity, and the same \
+                version was published again |
+
+                A deleted version keeps its identity permanently reserved as a tombstone and can never be \
+                published again, so `REMOVED` is the last entry it ever gets. An administrator can purge \
+                it instead, which drops that tombstone and frees the identity: the same namespace, \
+                extension, version and target platform can then be published again and continue in the \
+                feed with a fresh `ACTIVE` entry. `REMOVED` is therefore the current state of the \
+                coordinates an entry names, not a guarantee that they will never come back.
+
+                Two consecutive entries for the same version never report the same state. The instant a \
+                version became publicly available can be much later than the `timestamp` it was \
+                published at, for instance when activation waited on a scan.
+
+                ### Following the registry
+
+                Every response carries a `nextCursor`, the position of its last entry. Pass it back as \
+                `after` and the next response continues exactly where the previous one ended:
+
+                1. Request the feed, leaving `after` out on the very first request.
+                2. Process the entries in order.
+                3. Store `nextCursor` and pass it as `after` on the next request.
+                4. While `hasMore` is `true` there are further entries waiting, so request the next page \
+                straight away rather than waiting for the next poll.
+
+                The same loop serves a first full synchronisation, an hourly poll and a catch-up after \
+                days of downtime, and it neither repeats nor skips an entry in any of them. Storing \
+                `nextCursor` only after the entries have been processed means a consumer that dies \
+                mid-page reprocesses that page rather than losing it.
+
+                A cursor is an opaque position in the feed, not a timestamp: it also identifies which of \
+                the transitions sharing an instant have been processed, which a timestamp cannot. Do not \
+                construct or parse one, and do not follow the feed by passing an entry's `lastUpdated` \
+                as `since` -- `since` is inclusive, so it reports the entries sharing that instant again, \
+                and no exclusive variant of it could avoid that without skipping entries instead.
+
+                ### Notes
+
+                - `since` and `until` bound the range a request is interested in and are meant for \
+                one-off queries. Combining `since` with `after` is rejected, as the two disagree about \
+                where the response starts; `until` combines with `after` to catch up to a fixed end.
+                - Entries are only ever appended and are never updated or reordered, so a cursor stays \
+                valid indefinitely.
+                - The feed stops short of the present by a small margin, so a transition is reported a \
+                little after it happened rather than instantly. This is what lets a consumer that has \
+                caught up be sure it has missed nothing: an entry is only reported once the transaction \
+                recording it is certain to have committed. Requesting an `until` closer to the present \
+                than that reports nothing beyond the margin rather than skipping those entries -- they \
+                turn up on a later request.
+                - Only changes in availability are reported. Editing the metadata of a version, such as \
+                its readme or its tags, is not a transition and produces no entry.
+                - Responses may be cached for up to one minute. Polling faster than that gains a \
+                consumer nothing.
+                """
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "The changes are returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = """
+                    {
+                      "changes": [
+                        {
+                          "namespace": "redhat",
+                          "name": "java",
+                          "version": "1.30.0",
+                          "targetPlatform": "universal",
+                          "state": "ACTIVE",
+                          "timestamp": "2026-01-14T09:12:33Z",
+                          "lastUpdated": "2026-01-14T09:12:33Z",
+                          "url": "https://open-vsx.org/api/redhat/java/universal/1.30.0"
+                        },
+                        {
+                          "namespace": "redhat",
+                          "name": "java",
+                          "version": "1.29.0",
+                          "targetPlatform": "universal",
+                          "state": "REMOVED",
+                          "timestamp": "2025-11-02T16:40:05Z",
+                          "lastUpdated": "2026-01-14T09:30:11Z",
+                          "url": "https://open-vsx.org/api/redhat/java/universal/1.29.0"
+                        }
+                      ],
+                      "nextCursor": "MjAyNi0wMS0xNFQwOTozMDoxMV8xMjM0",
+                      "hasMore": false
+                    }""")
+        )
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The request contains an invalid parameter value",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{\"error\": \"Invalid 'since' parameter: yesterday\"}")
+        )
+    )
+    public ResponseEntity<ChangesResultJson> getChanges(
+            @RequestParam(required = false)
+            @Parameter(
+                description = "Continue after this position in the feed, as reported by the 'nextCursor' "
+                        + "of a previous response. Cannot be combined with 'since'.",
+                example = "MjAyNi0wMS0xNFQwOTozMDoxMV8xMjM0"
+            ) String after,
+            @RequestParam(required = false)
+            @Parameter(
+                description = "Only include entries at or after this date and time (ISO-8601). Meant for "
+                        + "one-off queries; use 'after' to follow the feed.",
+                example = "2026-01-01T00:00:00Z"
+            ) String since,
+            @RequestParam(required = false)
+            @Parameter(
+                description = "Only include entries before this date and time, exclusive (ISO-8601)",
+                example = "2026-02-01T00:00:00Z"
+            ) String until,
+            @RequestParam(defaultValue = "100")
+            @Min(value = 1, message = "parameter must be positive")
+            @Max(value = 1000, message = "parameter must not exceed 1000")
+            @Parameter(
+                description = "Maximal number of entries to return",
+                schema = @Schema(type = "integer", minimum = "1", maximum = "1000", defaultValue = "100")
+            ) int size
+    ) {
+        // The two disagree about where the response starts, and silently letting one win would leave a
+        // consumer that passed both believing it is following the feed when it is not.
+        if (after != null && since != null) {
+            return ResponseEntity.badRequest()
+                    .body(ChangesResultJson.error("The 'after' and 'since' parameters cannot be combined"));
+        }
+
+        ChangesCursor cursor;
+        try {
+            cursor = after == null ? null : ChangesCursor.decode(after);
+        } catch (IllegalArgumentException exc) {
+            return ResponseEntity.badRequest().body(ChangesResultJson.error("Invalid 'after' parameter: " + after));
+        }
+
+        LocalDateTime sinceDate;
+        LocalDateTime untilDate;
+        try {
+            sinceDate = parseTimestamp(since);
+        } catch (DateTimeParseException exc) {
+            return ResponseEntity.badRequest().body(ChangesResultJson.error("Invalid 'since' parameter: " + since));
+        }
+        try {
+            untilDate = parseTimestamp(until);
+        } catch (DateTimeParseException exc) {
+            return ResponseEntity.badRequest().body(ChangesResultJson.error("Invalid 'until' parameter: " + until));
+        }
+
+        // Entries are only ever appended and never reordered, so a cursor stays valid indefinitely and a
+        // response can be cached. Polling faster than the cache period gains a consumer nothing.
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES).cachePublic())
+                .body(local.getChanges(sinceDate, untilDate, cursor, size));
+    }
+
+    /**
+     * Parses an ISO-8601 date and time into the UTC date and time the registry stores. An explicit
+     * offset is honoured, a timestamp given without one is taken to be UTC already.
+     */
+    private LocalDateTime parseTimestamp(String value) {
+        if (StringUtils.isEmpty(value)) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(value).withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        } catch (DateTimeParseException exc) {
+            return LocalDateTime.parse(value);
         }
     }
 

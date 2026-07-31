@@ -19,24 +19,31 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link AdminService#purgeExtensionAndReferencingExtensions(UserData, String, String)}.
+ * Unit tests for {@link AdminService}.
  * <p>
- * The cascade that purges an extension together with every extension that references it (packs bundling it,
- * extensions depending on it), walking the reverse-reference direction.
+ * Mainly {@link AdminService#purgeExtensionAndReferencingExtensions(UserData, String, String)}: the cascade
+ * that purges an extension together with every extension that references it (packs bundling it, extensions
+ * depending on it), walking the reverse-reference direction.
  */
 @ExtendWith(MockitoExtension.class)
 class AdminServiceTest {
@@ -48,6 +55,12 @@ class AdminServiceTest {
 
     @Mock
     ExtensionService extensions;
+
+    @Mock
+    EclipseService eclipse;
+
+    @Mock
+    LogService logs;
 
     @InjectMocks
     AdminService adminService;
@@ -77,6 +90,30 @@ class AdminServiceTest {
     private void mockNoReferences(Extension extension) {
         when(repositories.findBundledExtensionsReference(extension)).thenReturn(Streamable.empty());
         when(repositories.findDependenciesReference(extension)).thenReturn(Streamable.empty());
+    }
+
+    @Test
+    void revokingPublisherContributionsRecordsWhenTheVersionsStoppedBeingVisible() {
+        var user = new UserData();
+        user.setLoginName("amy");
+        var extVersion = version(extension("ext"));
+        extVersion.setActive(true);
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
+
+        adminService.revokePublisherContributions("github", "amy", admin);
+
+        assertThat(extVersion.isActive()).isFalse();
+        assertThat(extVersion.isRemoved()).isFalse();
+        // The version stops being publicly visible without being removed. Unless that transition is
+        // appended to the log, the changes feed would keep reporting the version as active and
+        // consumers following the feed would never learn that it disappeared.
+        verify(repositories).recordExtensionVersionChange(
+                eq(extVersion),
+                eq(ExtensionVersionState.INACTIVE),
+                any());
     }
 
     @Test

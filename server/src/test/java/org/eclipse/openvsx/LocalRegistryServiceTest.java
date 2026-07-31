@@ -12,6 +12,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +44,7 @@ import org.eclipse.openvsx.util.VersionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -107,9 +109,12 @@ class LocalRegistryServiceTest {
                 cacheService,
                 integrityService,
                 similarityCheckService,
-                new PublishingConfig());
+                new PublishingConfig(),
+                Duration.ofSeconds(30));
 
-        doNothing().when(eclipse).checkPublisherAgreement(any());
+        // A permissive default for a void method rather than a per-test expectation: the tests of
+        // visibleUntil exercise a pure function and touch no mock at all.
+        lenient().doNothing().when(eclipse).checkPublisherAgreement(any());
     }
 
     @Test
@@ -179,6 +184,46 @@ class LocalRegistryServiceTest {
         assertThat(persistedMembership.getNamespace()).isSameAs(persistedNamespace);
         assertThat(persistedMembership.getUser()).isSameAs(user);
         assertThat(persistedMembership.getRole()).isEqualTo(NamespaceMembership.ROLE_CONTRIBUTOR);
+    }
+
+    @Test
+    void shouldHoldBackTheMostRecentChanges() {
+        // A request that reaches the present is clamped to the lag, so an entry whose transaction may
+        // still be committing is not reported and cannot be passed over.
+        var now = LocalDateTime.parse("2026-01-14T09:30:11");
+
+        assertThat(LocalRegistryService.visibleUntil(null, now, Duration.ofSeconds(30)))
+                .isEqualTo(LocalDateTime.parse("2026-01-14T09:29:41"));
+    }
+
+    @Test
+    void shouldHoldBackAnUntilInsideTheLag() {
+        var now = LocalDateTime.parse("2026-01-14T09:30:11");
+        var until = LocalDateTime.parse("2026-01-14T09:30:00");
+
+        // Asking for entries closer to the present than the lag reports nothing beyond it rather than
+        // exposing them early.
+        assertThat(LocalRegistryService.visibleUntil(until, now, Duration.ofSeconds(30)))
+                .isEqualTo(LocalDateTime.parse("2026-01-14T09:29:41"));
+    }
+
+    @Test
+    void shouldNotHoldBackAHistoricalUntil() {
+        var now = LocalDateTime.parse("2026-01-14T09:30:11");
+        var until = LocalDateTime.parse("2026-01-01T00:00");
+
+        // Those entries have long been committed, so the caller's bound is the restrictive one and is
+        // left alone.
+        assertThat(LocalRegistryService.visibleUntil(until, now, Duration.ofSeconds(30))).isEqualTo(until);
+    }
+
+    @Test
+    void shouldReportEverythingWithoutALag() {
+        // A deployment that turns the lag off gets the whole log, which is what a registry with no
+        // concurrent writers can afford.
+        var now = LocalDateTime.parse("2026-01-14T09:30:11");
+
+        assertThat(LocalRegistryService.visibleUntil(null, now, Duration.ZERO)).isEqualTo(now);
     }
 
     private Namespace buildNamespace(String name) {

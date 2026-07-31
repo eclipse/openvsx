@@ -35,6 +35,8 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionValidationFailure;
 import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -46,6 +48,7 @@ import org.eclipse.openvsx.entities.TierType;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ExtensionId;
 
 import static java.util.stream.Collectors.toList;
@@ -269,6 +272,22 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findVersionStringsSorted(extension, "targetPlatform", true),
                 () -> repositories.findActiveVersions(queryRequest),
+                () -> repositories.findChanges(null, null, null, 100),
+                () -> repositories.findChanges(NOW.minus(Duration.ofDays(1)), NOW, null, 100),
+                // exercises the (changed_at, id) row comparison the cursor resumes with
+                () -> repositories.findChanges(null, null, new ChangesCursor(NOW, 1L), 100),
+                () -> repositories.findChanges(null, NOW, new ChangesCursor(NOW.minus(Duration.ofDays(1)), 1L), 100),
+                () -> repositories.findExtensionVersionChanges(extVersion),
+                () -> repositories.findLatestExtensionVersionChange(extVersion),
+                () -> repositories.recordExtensionVersionChange(
+                        extVersion,
+                        ExtensionVersionState.ACTIVE,
+                        NOW),
+                () -> repositories.recordPurgedExtensionVersionChange(
+                        extVersion,
+                        ExtensionVersionState.REMOVED,
+                        NOW),
+                () -> repositories.detachExtensionVersionChanges(extVersion),
                 () -> repositories.findActiveVersionStringsSorted(LONG_LIST, "targetPlatform"),
                 () -> repositories.findActiveVersionReferencesSorted(List.of(1L)),
                 () -> repositories.findAllPublicIds(),
