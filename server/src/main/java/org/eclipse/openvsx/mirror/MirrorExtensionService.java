@@ -27,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.UpstreamRegistryService;
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -230,7 +231,9 @@ public class MirrorExtensionService {
             var description = "MirrorExtensionVersion";
             var accessTokenValue = data.getOrAddAccessTokenValue(user, description);
 
-            var token = tokens.useAccessToken(accessTokenValue);
+            var token = tokens.useAccessToken(
+                    accessTokenValue,
+                    new AccessTokenAction.PublishVersion(json.getNamespace(), json.getName()));
             extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
             logger.atDebug()
                     .setMessage("completed mirroring of extension version: {}")

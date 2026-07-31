@@ -54,7 +54,7 @@ public class AccessTokenService {
 
     @Transactional
     public AccessTokenJson createLongLivedAccessToken(UserData user, String description) {
-        final LocalDateTime expiresTimestamp= config.isTokenExpiryEnabled()
+        final LocalDateTime expiresTimestamp = config.isTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
         return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.LLT);
@@ -128,7 +128,7 @@ public class AccessTokenService {
     }
 
     @Transactional
-    public UserData verifyAccessToken(String tokenValue) {
+    public PersonalAccessToken useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
         var token = repositories.findPersonalAccessToken(tokenValue);
         if (token == null || !token.isActive()) {
             return null;
@@ -139,23 +139,7 @@ public class AccessTokenService {
             return null;
         }
         token.setAccessedTimestamp(now);
-        return token.getUser();
-    }
-
-    @Transactional
-    public PersonalAccessToken useAccessToken(String tokenValue) {
-        var token = repositories.findPersonalAccessToken(tokenValue);
-        if (token == null || !token.isActive()) {
-            return null;
-        }
-        LocalDateTime now = TimeUtil.getCurrentUTC();
-        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
-            token.setActive(false);
-            return null;
-        }
-        token.setAccessedTimestamp(now);
-        if (token.getType().isOneTime()) {
-            // it is OTT; pull it out immediately on first use
+        if (!(accessTokenAction instanceof AccessTokenAction.Verify) && token.getType().isOneTime()) {
             token.setActive(false);
         }
         return token;

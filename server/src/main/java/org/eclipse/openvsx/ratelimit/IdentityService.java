@@ -26,6 +26,7 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Service;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.ratelimit.config.RateLimitConfig;
@@ -84,7 +85,7 @@ public class IdentityService {
                 // This will update the database with the time the token is last accessed,
                 // but we need to ensure that we only take valid tokens into account for rate limiting.
                 // If this turns out to be a bottleneck, we need to cache the token hashcode.
-                var tokenEntity = tokenService.useAccessToken(token);
+                var tokenEntity = tokenService.useAccessToken(token, new AccessTokenAction.Verify());
                 if (tokenEntity != null) {
                     // if a valid token is present we use it as a cache key
                     cacheKey = "token_" + tokenEntity.getUser().getId();

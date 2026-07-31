@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -544,7 +545,7 @@ public class AdminService {
 
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
-                .map(tokens::useAccessToken)
+                .map(tv -> tokens.useAccessToken(tv, new AccessTokenAction.Administration()))
                 .map(PersonalAccessToken::getUser)
                 .orElse(null);
 

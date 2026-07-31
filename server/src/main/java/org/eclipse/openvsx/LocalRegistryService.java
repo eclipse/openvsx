@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -708,7 +709,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
@@ -760,8 +761,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var user = tokens.verifyAccessToken(tokenValue);
-        if (user == null) {
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
+        if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
@@ -770,7 +771,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
 
-        if (!users.hasPublishPermission(user, namespace)) {
+        if (!users.hasPublishPermission(token.getUser(), namespace)) {
             throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
         }
 
@@ -782,7 +783,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = tokens.useAccessToken(tokenValue);
+        // TODO: what here?
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.PublishVersion("", ""));
         if (token == null || token.getUser() == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
