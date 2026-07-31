@@ -13,10 +13,23 @@
 package org.eclipse.openvsx.accesstoken;
 
 public sealed interface AccessTokenAction {
+
+    /**
+     * Returns {@code true} if action makes use of token.
+     */
+    default boolean isUsing() {
+        return true;
+    }
+
     /**
      * Action that verifies token only (does not "use" it).
      */
-    record Verify() implements AccessTokenAction {}
+    record Verify() implements AccessTokenAction {
+        @Override
+        public boolean isUsing() {
+            return false;
+        }
+    }
 
     /**
      * Action that uses token for publishing.
