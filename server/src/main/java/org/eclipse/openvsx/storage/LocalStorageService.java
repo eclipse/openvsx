@@ -20,11 +20,12 @@ import java.util.List;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.util.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerErrorException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
@@ -86,15 +87,11 @@ public class LocalStorageService implements IStorageService {
         }
     }
 
-    public ResponseEntity<StreamingResponseBody> getFile(FileResource resource) {
+    public ResponseEntity<Resource> getFile(FileResource resource) {
         var path = getPath(resource);
         return ResponseEntity.ok()
                 .headers(HttpHeadersUtil.createFileResponseHeaders(path))
-                .body(outputStream -> {
-                    try (var in = Files.newInputStream(path)) {
-                        in.transferTo(outputStream);
-                    }
-                });
+                .body(new FileSystemResource(path));
     }
 
     @Override
@@ -102,7 +99,7 @@ public class LocalStorageService implements IStorageService {
         return URI.create(UrlUtil.createApiFileUrl(UrlUtil.getBaseUrl(), resource.getExtension(), resource.getName()));
     }
 
-    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(Namespace namespace) {
+    public ResponseEntity<Resource> getNamespaceLogo(Namespace namespace) {
         if (!isEnabled()) {
             throw new IllegalStateException(
                     "Cannot determine location of logo. Configure the 'ovsx.storage.local.directory' property.");
@@ -112,11 +109,7 @@ public class LocalStorageService implements IStorageService {
 
         return ResponseEntity.ok()
                 .headers(HttpHeadersUtil.createFileResponseHeaders(path))
-                .body(outputStream -> {
-                    try (var in = Files.newInputStream(path)) {
-                        in.transferTo(outputStream);
-                    }
-                });
+                .body(new FileSystemResource(path));
     }
     public URI getNamespaceLogoLocation(Namespace namespace) {
         return URI.create(

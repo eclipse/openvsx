@@ -24,13 +24,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -169,7 +169,7 @@ public class VSCodeAPI {
         description = "The specified asset could not be found",
         content = @Content()
     )
-    public ResponseEntity<StreamingResponseBody> getAsset(
+    public ResponseEntity<Resource> getAsset(
             HttpServletRequest request,
             @PathVariable
             @Parameter(description = "Extension namespace", example = "vitest") String namespaceName,
@@ -394,7 +394,7 @@ public class VSCodeAPI {
         description = "The specified file or directory could not be found",
         content = @Content()
     )
-    public ResponseEntity<StreamingResponseBody> browse(
+    public ResponseEntity<Resource> browse(
             HttpServletRequest request,
             @PathVariable
             @Parameter(description = "Extension namespace", example = "malloydata") String namespaceName,

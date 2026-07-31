@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,6 @@ import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import org.eclipse.openvsx.json.*;
@@ -97,7 +97,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(String namespaceName, String fileName) {
+    public ResponseEntity<Resource> getNamespaceLogo(String namespaceName, String fileName) {
         var urlTemplate = urlConfigService.getUpstreamUrl() + "/api/{namespace}/logo/{file}";
         var uriVariables = Map.of(VAR_NAMESPACE, namespaceName, "file", fileName);
         return getFile(urlTemplate, uriVariables);
@@ -228,7 +228,7 @@ public class UpstreamRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> getFile(
+    public ResponseEntity<Resource> getFile(
             String namespace,
             String extension,
             String targetPlatform,
@@ -253,10 +253,10 @@ public class UpstreamRegistryService implements IExtensionRegistry {
         return getFile(urlTemplate, uriVariables);
     }
 
-    private ResponseEntity<StreamingResponseBody> getFile(String urlTemplate, Map<String, ?> uriVariables) {
-        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+    private ResponseEntity<Resource> getFile(String urlTemplate, Map<String, ?> uriVariables) {
+        var responseHandler = new ResponseExtractor<ResponseEntity<Resource>>() {
             @Override
-            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+            public ResponseEntity<Resource> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
                 if (statusCode.is2xxSuccessful()) {
                     return ResponseEntity.status(HttpStatus.FOUND)

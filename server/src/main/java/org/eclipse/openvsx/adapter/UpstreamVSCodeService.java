@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Service;
@@ -28,7 +30,6 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -38,6 +39,7 @@ import org.eclipse.openvsx.UrlConfigService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.TempFileResource;
 
 @Service
 public class UpstreamVSCodeService implements IVSCodeService {
@@ -144,7 +146,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> browse(
+    public ResponseEntity<Resource> browse(
             String namespaceName,
             String extensionName,
             String version,
@@ -172,9 +174,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
         var method = HttpMethod.GET;
         var urlTemplate = urlBuilder.toString();
-        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+        var responseHandler = new ResponseExtractor<ResponseEntity<Resource>>() {
             @Override
-            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+            public ResponseEntity<Resource> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
                 if (statusCode.isError() && statusCode != HttpStatus.NOT_FOUND) {
                     handleResponseError(urlTemplate, uriVariables, response);
@@ -189,7 +191,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
                     var json = proxy.rewriteUrls(jsonMapper.readTree(response.getBody()));
                     return ResponseEntity.status(statusCode)
                             .headers(HttpHeadersUtil.createJsonFileResponseHeaders())
-                            .body(outputStream -> jsonMapper.writeValue(outputStream, json));
+                            .body(new ByteArrayResource(jsonMapper.writeValueAsBytes(json)));
                 } else {
                     return streamResponse(response, org.springframework.util.StringUtils.getFilename(path), "browse");
                 }
@@ -276,7 +278,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> getAsset(
+    public ResponseEntity<Resource> getAsset(
             String namespace,
             String extensionName,
             String version,
@@ -312,9 +314,9 @@ public class UpstreamVSCodeService implements IVSCodeService {
         urlBuilder.append("?targetPlatform={targetPlatform}");
         var urlTemplate = urlBuilder.toString();
         var method = HttpMethod.GET;
-        var responseHandler = new ResponseExtractor<ResponseEntity<StreamingResponseBody>>() {
+        var responseHandler = new ResponseExtractor<ResponseEntity<Resource>>() {
             @Override
-            public ResponseEntity<StreamingResponseBody> extractData(ClientHttpResponse response) throws IOException {
+            public ResponseEntity<Resource> extractData(ClientHttpResponse response) throws IOException {
                 var statusCode = response.getStatusCode();
                 if (statusCode.is3xxRedirection()) {
                     var location = response.getHeaders().getLocation();
@@ -376,7 +378,7 @@ public class UpstreamVSCodeService implements IVSCodeService {
         return new NotFoundException();
     }
 
-    private ResponseEntity<StreamingResponseBody> streamResponse(
+    private ResponseEntity<Resource> streamResponse(
             ClientHttpResponse response,
             @Nullable String fileName,
             String prefix
@@ -389,15 +391,10 @@ public class UpstreamVSCodeService implements IVSCodeService {
 
             var headers = HttpHeadersUtil.createFileResponseHeaders(tempFile.getPath(), fileName);
 
+            // TempFileResource deletes the temp file once the message converter has written the body.
             return ResponseEntity.status(response.getStatusCode())
                     .headers(headers)
-                    .body(outputStream -> {
-                        try (var in = Files.newInputStream(tempFile.getPath())) {
-                            in.transferTo(outputStream);
-                        }
-
-                        IOUtils.closeQuietly(tempFile);
-                    });
+                    .body(new TempFileResource(tempFile));
         } catch (IOException e) {
             IOUtils.closeQuietly(tempFile);
             throw e;

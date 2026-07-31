@@ -33,11 +33,11 @@ import jakarta.validation.constraints.Min;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
@@ -208,7 +208,7 @@ public class RegistryAPI {
         responseCode = "404",
         description = "The specified namespace could not be found"
     )
-    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(
+    public ResponseEntity<Resource> getNamespaceLogo(
             @PathVariable
             @Parameter(description = "Namespace name", example = "Codeium") String namespace,
             @PathVariable
@@ -688,7 +688,7 @@ public class RegistryAPI {
         description = "The specified file could not be found",
         content = @Content()
     )
-    public ResponseEntity<StreamingResponseBody> getFile(
+    public ResponseEntity<Resource> getFile(
             HttpServletRequest request,
             @PathVariable
             @Parameter(description = "Extension namespace", example = "astro-build") String namespace,
@@ -734,7 +734,7 @@ public class RegistryAPI {
         description = "The specified file could not be found",
         content = @Content()
     )
-    public ResponseEntity<StreamingResponseBody> getFile(
+    public ResponseEntity<Resource> getFile(
             HttpServletRequest request,
             @PathVariable
             @Parameter(description = "Extension namespace", example = "AdaCore") String namespace,

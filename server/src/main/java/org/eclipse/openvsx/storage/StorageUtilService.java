@@ -21,10 +21,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.util.Pair;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 
@@ -319,7 +321,7 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    public ResponseEntity<StreamingResponseBody> getFileResponse(FileResource resource) {
+    public ResponseEntity<Resource> getFileResponse(FileResource resource) {
         if (resource.getStorageType().equals(STORAGE_LOCAL)) {
             return localStorage.getFile(resource);
         } else {
@@ -330,32 +332,27 @@ public class StorageUtilService implements IStorageService {
         }
     }
 
-    public ResponseEntity<StreamingResponseBody> getFileResponse(Path path) {
+    public ResponseEntity<Resource> getFileResponse(Path path) {
         var headers = HttpHeadersUtil.createFileResponseHeaders(path);
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(outputStream -> {
-                    try (var in = Files.newInputStream(path)) {
-                        in.transferTo(outputStream);
-                    }
-                });
+                .body(new FileSystemResource(path));
     }
 
-    public ResponseEntity<StreamingResponseBody> getFileResponse(ArrayNode node) {
+    public ResponseEntity<Resource> getFileResponse(ArrayNode node) {
         var baseUrl = UrlUtil.getBaseUrl();
         var headers = HttpHeadersUtil.createJsonFileResponseHeaders();
+        var value = jsonMapper.createArrayNode();
+        for (var item : node) {
+            value.add(baseUrl + item.asString());
+        }
+
         return ResponseEntity.ok()
                 .headers(headers)
-                .body(outputStream -> {
-                    var value = jsonMapper.createArrayNode();
-                    for (var item : node) {
-                        value.add(baseUrl + item.asString());
-                    }
-                    jsonMapper.writeValue(outputStream, value);
-                });
+                .body(new ByteArrayResource(jsonMapper.writeValueAsBytes(value)));
     }
 
-    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(Namespace namespace) {
+    public ResponseEntity<Resource> getNamespaceLogo(Namespace namespace) {
         if (namespace.getLogoStorageType().equals(STORAGE_LOCAL)) {
             return localStorage.getNamespaceLogo(namespace);
         } else {

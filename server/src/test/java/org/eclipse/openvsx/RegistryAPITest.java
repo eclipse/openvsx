@@ -47,7 +47,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -524,8 +523,6 @@ class RegistryAPITest {
     void testReadmeUniversalTarget() throws Exception {
         var filePath = mockReadme();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "README"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
@@ -546,8 +543,6 @@ class RegistryAPITest {
         var filePath = mockReadme(TargetPlatform.NAME_UNIVERSAL, "readme.html", "<script>alert(1)</script>");
         mockMvc.perform(
                 get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "readme.html"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
@@ -571,8 +566,6 @@ class RegistryAPITest {
                         "win32-x64",
                         "1.0.0",
                         "README"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("Please read me"))
                 .andDo(_ -> Files.delete(filePath));
@@ -598,8 +591,6 @@ class RegistryAPITest {
         var filePath = mockChangelog();
         mockMvc.perform(
                 get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "CHANGELOG"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("All notable changes is documented here"))
                 .andDo(_ -> Files.delete(filePath));
@@ -609,8 +600,6 @@ class RegistryAPITest {
     void testLicense() throws Exception {
         var filePath = mockLicense();
         mockMvc.perform(get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "1.0.0", "LICENSE"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("I never broke the Law! I am the law!"))
                 .andDo(_ -> Files.delete(filePath));
@@ -638,8 +627,6 @@ class RegistryAPITest {
         var filePath = mockLatest();
         mockMvc.perform(
                 get("/api/{namespace}/{extension}/{version}/file/{fileName}", "foo", "bar", "latest", "DOWNLOAD"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("latest download"))
                 .andDo(_ -> Files.delete(filePath));

@@ -9,8 +9,8 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
@@ -36,7 +36,7 @@ public interface IExtensionRegistry {
             int offset
     );
 
-    ResponseEntity<StreamingResponseBody> getFile(
+    ResponseEntity<Resource> getFile(
             String namespace,
             String extensionName,
             String targetPlatform,
@@ -54,7 +54,7 @@ public interface IExtensionRegistry {
 
     NamespaceDetailsJson getNamespaceDetails(String namespace);
 
-    ResponseEntity<StreamingResponseBody> getNamespaceLogo(String namespaceName, String fileName);
+    ResponseEntity<Resource> getNamespaceLogo(String namespaceName, String fileName);
 
     String getPublicKey(String publicId);
 

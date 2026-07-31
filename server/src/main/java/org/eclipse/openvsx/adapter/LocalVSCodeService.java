@@ -24,11 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.Extension;
@@ -366,7 +367,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Observed
     @Override
-    public ResponseEntity<StreamingResponseBody> getAsset(
+    public ResponseEntity<Resource> getAsset(
             String namespace,
             String extensionName,
             String version,
@@ -443,8 +444,8 @@ public class LocalVSCodeService implements IVSCodeService {
         return "Built-in extension namespace '" + BuiltInExtensionUtil.getBuiltInNamespace() + "' not allowed";
     }
 
-    private StreamingResponseBody builtinExtensionResponse() {
-        return out -> out.write(builtinExtensionMessage().getBytes(StandardCharsets.UTF_8));
+    private Resource builtinExtensionResponse() {
+        return new ByteArrayResource(builtinExtensionMessage().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -498,7 +499,7 @@ public class LocalVSCodeService implements IVSCodeService {
 
     @Observed
     @Override
-    public ResponseEntity<StreamingResponseBody> browse(
+    public ResponseEntity<Resource> browse(
             String namespaceName,
             String extensionName,
             String version,

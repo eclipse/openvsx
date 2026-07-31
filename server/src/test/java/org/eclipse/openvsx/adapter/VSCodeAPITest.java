@@ -35,7 +35,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.ExtensionValidator;
@@ -404,8 +403,6 @@ class VSCodeAPITest {
                         "vscode-yaml",
                         "0.5.2",
                         "Microsoft.VisualStudio.Code.Manifest"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("{\"foo\":\"bar\"}"))
                 .andDo(result -> Files.delete(path));
@@ -428,8 +425,6 @@ class VSCodeAPITest {
                         "0.5.2",
                         "Microsoft.VisualStudio.Code.Manifest",
                         target))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().string("{\"foo\":\"bar\",\"target\":\"darwin-arm64\"}"))
                 .andDo(result -> Files.delete(path));
@@ -470,8 +465,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "Microsoft.VisualStudio.Code.WebResources/extension/EditorConfig_icon.png"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(bytes))
                 .andDo(result -> Files.delete(path));
@@ -499,8 +492,6 @@ class VSCodeAPITest {
                         "vscode-yaml",
                         "0.5.2",
                         "Microsoft.VisualStudio.Code.Manifest"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
     }
@@ -590,8 +581,6 @@ class VSCodeAPITest {
                         "bar",
                         "1.3.4",
                         "extension/img"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Built-in extension namespace 'vscode' not allowed"));
     }
@@ -604,8 +593,6 @@ class VSCodeAPITest {
         var path = mockExtensionBrowse(namespaceName, extensionName, version);
         mockMvc.perform(
                 get("/vscode/unpkg/{namespaceName}/{extensionName}/{version}", namespaceName, extensionName, version))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(
@@ -634,8 +621,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension.vsixmanifest"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(
                         content().string(
@@ -657,8 +642,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension.vsixmanifest"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(
                         content().string(
@@ -680,8 +663,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension.vsixmanifest"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(
                         content().string(
@@ -703,8 +684,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension/"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(
@@ -747,8 +726,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension/package.json"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(
                         content().json(
@@ -770,8 +747,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension/syntaxes/"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(
@@ -800,8 +775,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension/EditorConfig_icon.png"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(bytes))
                 .andDo(result -> Files.delete(path));
@@ -827,8 +800,6 @@ class VSCodeAPITest {
                         extensionName,
                         version,
                         "extension/EditorConfig icon.png"))
-                .andExpect(request().asyncStarted())
-                .andDo(MvcResult::getAsyncResult)
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(bytes))
                 .andDo(result -> Files.delete(path));

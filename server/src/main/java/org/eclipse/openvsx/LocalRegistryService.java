@@ -23,12 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
@@ -271,7 +271,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> getFile(
+    public ResponseEntity<Resource> getFile(
             String namespace,
             String extensionName,
             String targetPlatform,
@@ -606,7 +606,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     @Override
-    public ResponseEntity<StreamingResponseBody> getNamespaceLogo(String namespaceName, String fileName) {
+    public ResponseEntity<Resource> getNamespaceLogo(String namespaceName, String fileName) {
         if (fileName == null) {
             fileName = "";
         }
