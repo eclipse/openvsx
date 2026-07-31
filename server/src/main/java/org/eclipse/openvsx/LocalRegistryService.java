@@ -64,7 +64,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     protected final Logger logger = LoggerFactory.getLogger(LocalRegistryService.class);
 
-    private static final String RESTRICTED_ACCESS = "restricted";
     private static final String ACCESS_TOKEN_ERROR = "Invalid access token.";
 
     private final EntityManager entityManager;
@@ -1007,8 +1006,6 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         json.setVersionAlias(versionAlias);
         json.setVerified(isVerified(extVersion));
-        json.setNamespaceAccess(RESTRICTED_ACCESS);
-        json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(Optional.ofNullable(extension.getReviewCount()).orElse(0L));
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
@@ -1067,8 +1064,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = extVersion.toExtensionJson();
         json.setPreview(preview);
         json.setVerified(isVerified(extVersion, membershipsByNamespaceId));
-        json.setNamespaceAccess(RESTRICTED_ACCESS);
-        json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(reviewCount);
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
@@ -1151,8 +1146,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = extVersion.toExtensionJson();
         json.setPreview(preview);
         json.setVerified(isVerified(extVersion, membershipsByNamespaceId));
-        json.setNamespaceAccess(RESTRICTED_ACCESS);
-        json.setUnrelatedPublisher(!json.getVerified());
         json.setReviewCount(reviewCount);
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));

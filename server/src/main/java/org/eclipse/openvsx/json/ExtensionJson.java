@@ -110,25 +110,6 @@ public class ExtensionJson extends ResultJson {
     /**
      * @deprecated
      */
-    @Schema(description = "Deprecated: use 'verified' instead (this property is just the negation of 'verified')")
-    @NotNull
-    @Deprecated
-    private Boolean unrelatedPublisher;
-
-    /**
-     * @deprecated
-     */
-    @Schema(
-        description = "Access level of the extension's namespace. Deprecated: namespaces are now always restricted",
-        allowableValues = { "public", "restricted" }
-    )
-    @NotNull
-    @Deprecated
-    private String namespaceAccess;
-
-    /**
-     * @deprecated
-     */
     @Schema(
         description = "Map of available versions to their metadata URLs. Deprecated: only returns the last 100 versions. Use allVersionsUrl instead."
     )
@@ -352,22 +333,6 @@ public class ExtensionJson extends ResultJson {
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
-    }
-
-    public Boolean getUnrelatedPublisher() {
-        return unrelatedPublisher;
-    }
-
-    public void setUnrelatedPublisher(Boolean unrelatedPublisher) {
-        this.unrelatedPublisher = unrelatedPublisher;
-    }
-
-    public String getNamespaceAccess() {
-        return namespaceAccess;
-    }
-
-    public void setNamespaceAccess(String namespaceAccess) {
-        this.namespaceAccess = namespaceAccess;
     }
 
     public Map<String, String> getAllVersions() {
@@ -665,8 +630,6 @@ public class ExtensionJson extends ResultJson {
                 && Objects.equals(reviewStatus, that.reviewStatus)
                 && Objects.equals(reviewMessage, that.reviewMessage)
                 && Objects.equals(verified, that.verified)
-                && Objects.equals(unrelatedPublisher, that.unrelatedPublisher)
-                && Objects.equals(namespaceAccess, that.namespaceAccess)
                 && Objects.equals(allVersions, that.allVersions)
                 && Objects.equals(allVersionsUrl, that.allVersionsUrl)
                 && Objects.equals(averageRating, that.averageRating)
@@ -717,8 +680,6 @@ public class ExtensionJson extends ResultJson {
                 reviewStatus,
                 reviewMessage,
                 verified,
-                unrelatedPublisher,
-                namespaceAccess,
                 allVersions,
                 allVersionsUrl,
                 averageRating,
