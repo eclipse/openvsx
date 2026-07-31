@@ -130,7 +130,10 @@ public class ExtensionService {
 
     public ExtensionVersion publishVersion(InputStream inputStream, PersonalAccessToken token)
             throws ErrorResultException {
-        try (TempFile tempFile = createExtensionFile(inputStream); ExtensionProcessor processor = new ExtensionProcessor(tempFile)) {
+        try (
+                TempFile tempFile = createExtensionFile(inputStream);
+                ExtensionProcessor processor = new ExtensionProcessor(tempFile)
+        ) {
             return publishVersion(processor, token);
         } catch (IOException e) {
             throw new ErrorResultException("Failed to read extension file", e);

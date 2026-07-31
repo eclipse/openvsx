@@ -14,6 +14,9 @@ package org.eclipse.openvsx.accesstoken;
 
 import java.util.Objects;
 
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.Namespace;
+
 /**
  * Access token scope.
  */
@@ -36,26 +39,23 @@ public sealed interface AccessTokenScope {
     /**
      * Namespace scoped token scope.
      */
-    record NamespaceScoped(String namespaceName) implements AccessTokenScope {
+    record NamespaceScoped(Namespace namespace) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
-            if (accessTokenAction instanceof AccessTokenAction.CreateNamespace(String namespace)) {
-                return Objects.equals(namespace, namespaceName);
-            }
-            return false;
+            return accessTokenAction.namespace().isPresent()
+                    && Objects.equals(namespace.getName(), accessTokenAction.namespace().get());
         }
     }
 
     /**
      * Extension scoped token scope.
      */
-    record ExtensionScoped(String namespaceName, String extensionName) implements AccessTokenScope {
+    record ExtensionScoped(Extension extension) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
-            if (accessTokenAction instanceof AccessTokenAction.PublishVersion(String namespace, String extension)) {
-                return Objects.equals(namespace, namespaceName) && Objects.equals(extension, extensionName);
-            }
-            return false;
+            return accessTokenAction.namespace().isPresent() && accessTokenAction.extension().isPresent() &&
+                    Objects.equals(extension.getNamespace().getName(), accessTokenAction.namespace().get()) &&
+                    Objects.equals(extension.getName(), accessTokenAction.extension().get());
         }
     }
 }

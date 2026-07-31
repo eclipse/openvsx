@@ -267,10 +267,9 @@ public class TrustedPublishingService {
                 namespace.getName(),
                 claims.get(JwtClaimNames.SUB));
 
-        // The issued token is TPT personal access token of the registering user, valid for
-        // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
+        // The issued token is TPT personal access token of the registering user scoped for selected namespace
         return tokens.createTrustedPublishingAccessToken(
-                match.getCreatedBy(),
+                match,
                 TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()));
     }
 

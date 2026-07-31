@@ -12,12 +12,28 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.util.Optional;
+
 public sealed interface AccessTokenAction {
     /**
      * Returns {@code true} if action makes use of token.
      */
     default boolean isUsing() {
         return true;
+    }
+
+    /**
+     * Returns namespace as optional. Value is present for actions that are namespace specific (e.g. publish version).
+     */
+    default Optional<String> namespace() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns extension name as optional. Values is present of actions that are namespace + extension specific.
+     */
+    default Optional<String> extension() {
+        return Optional.empty();
     }
 
     /**
@@ -31,6 +47,11 @@ public sealed interface AccessTokenAction {
     }
 
     /**
+     * Action that uses token for administration.
+     */
+    record Administration() implements AccessTokenAction {}
+
+    /**
      * Action that uses token for namespace creation.
      */
     record CreateNamespace(String namespaceName) implements AccessTokenAction {
@@ -38,6 +59,11 @@ public sealed interface AccessTokenAction {
             if (namespaceName == null || namespaceName.isBlank()) {
                 throw new IllegalArgumentException("Namespace cannot be null or blank");
             }
+        }
+
+        @Override
+        public Optional<String> namespace() {
+            return Optional.of(namespaceName);
         }
     }
 
@@ -53,10 +79,15 @@ public sealed interface AccessTokenAction {
                 throw new IllegalArgumentException("Extension name cannot be null or blank");
             }
         }
-    }
 
-    /**
-     * Action that uses token for administration.
-     */
-    record Administration() implements AccessTokenAction {}
+        @Override
+        public Optional<String> namespace() {
+            return Optional.of(namespaceName);
+        }
+
+        @Override
+        public Optional<String> extension() {
+            return Optional.of(extensionName);
+        }
+    }
 }

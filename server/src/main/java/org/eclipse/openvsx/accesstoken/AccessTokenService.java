@@ -20,8 +20,11 @@ import jakarta.transaction.Transactional;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
@@ -57,7 +60,7 @@ public class AccessTokenService {
         final LocalDateTime expiresTimestamp = config.isTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
-        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.LLT);
+        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.LLT);
     }
 
     @Transactional
@@ -65,21 +68,31 @@ public class AccessTokenService {
         final LocalDateTime expiresTimestamp = config.isOttTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
                 : null;
-        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.OTT);
+        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.OTT);
     }
 
     @Transactional
-    public AccessTokenJson createTrustedPublishingAccessToken(UserData user, String description) {
+    public AccessTokenJson createTrustedPublishingAccessToken(TrustedPublisher trustedPublisher, String description) {
         final LocalDateTime expiresTimestamp = config.isTptTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getTptExpiration())
                 : null;
-        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.TPT);
+        return createAccessToken(
+                trustedPublisher.getCreatedBy(),
+                description,
+                expiresTimestamp,
+                trustedPublisher,
+                null,
+                null,
+                PersonalAccessTokenType.TPT);
     }
 
     private AccessTokenJson createAccessToken(
             UserData user,
             String description,
             @Nullable LocalDateTime expiresTimestamp,
+            @Nullable TrustedPublisher scopeTrustedPublisher,
+            @Nullable Extension scopeExtension,
+            @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
     ) {
         var token = new PersonalAccessToken();
@@ -90,6 +103,16 @@ public class AccessTokenService {
         token.setDescription(description);
         token.setExpiresTimestamp(expiresTimestamp);
         token.setType(type);
+
+        if (scopeTrustedPublisher != null) {
+            token.setTrustedPublisher(scopeTrustedPublisher);
+            token.setScopeExtension(scopeTrustedPublisher.getExtension());
+        } else if (scopeExtension != null) {
+            token.setScopeExtension(scopeExtension);
+        } else if (scopeNamespace != null) {
+            token.setScopeNamespace(scopeNamespace);
+        }
+
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
@@ -138,6 +161,10 @@ public class AccessTokenService {
             token.setActive(false);
             return null;
         }
+        AccessTokenScope scope = getScope(token);
+        if (!scope.allowsAction(accessTokenAction)) {
+            return null;
+        }
         if (accessTokenAction.isUsing()) {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
@@ -145,6 +172,16 @@ public class AccessTokenService {
             }
         }
         return token;
+    }
+
+    private AccessTokenScope getScope(PersonalAccessToken token) {
+        if (token.getScopeExtension() != null) {
+            return new AccessTokenScope.ExtensionScoped(token.getScopeExtension());
+        } else if (token.getScopeNamespace() != null) {
+            return new AccessTokenScope.NamespaceScoped(token.getScopeNamespace());
+        } else {
+            return new AccessTokenScope.Unrestricted();
+        }
     }
 
     @Transactional
