@@ -138,9 +138,11 @@ public class AccessTokenService {
             token.setActive(false);
             return null;
         }
-        if (accessTokenAction.isUsing() && token.getType().isOneTime()) {
+        if (accessTokenAction.isUsing()) {
             token.setAccessedTimestamp(now);
-            token.setActive(false);
+            if (token.getType().isOneTime()) {
+                token.setActive(false);
+            }
         }
         return token;
     }
