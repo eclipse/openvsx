@@ -43,6 +43,8 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 @Service
 public class ExtensionService {
 
@@ -100,7 +102,12 @@ public class ExtensionService {
         return extensionFile.getResource().getExtension();
     }
 
+    /**
+     * Consumes input stream and produces a temporary file that is guaranteed to be deleted when the
+     * {@code TempFile} is closed.
+     */
     public TempFile createExtensionFile(InputStream content) {
+        requireNonNull(content);
         long maxContentSize = getMaxContentSize();
         try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
             long size;
@@ -123,7 +130,21 @@ public class ExtensionService {
         }
     }
 
+    /**
+     * Reads the namespace and extension name from the package, without persisting anything.
+     * Callers use this to know what is about to be published before the publishing itself happens,
+     * e.g. to re-check permissions against the actual extension identity.
+     */
+    public ExtensionId readExtensionId(TempFile extensionFile) {
+        requireNonNull(extensionFile);
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            return new ExtensionId(processor.getNamespace(), processor.getExtensionName());
+        }
+    }
+
     public ExtensionVersion publishVersion(TempFile content, PersonalAccessToken token) throws ErrorResultException {
+        requireNonNull(content);
+        requireNonNull(token);
         if (scanService.isEnabled()) {
             return publishVersionWithScan(content, token);
         } else {

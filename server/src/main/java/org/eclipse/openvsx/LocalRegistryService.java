@@ -785,29 +785,18 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        // just verify token existence+validity
-        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
-        }
-
-        // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
         try (TempFile tempFile = extensions.createExtensionFile(content)) {
-            final String namespace;
-            final String extensionName;
-            try (ExtensionProcessor processor = new ExtensionProcessor(tempFile)) {
-                namespace = processor.getNamespace();
-                extensionName = processor.getExtensionName();
-            }
+            var extensionId = extensions.readExtensionId(tempFile);
 
             // now that we know the details, ensure token is still fine
-            token = tokens.useAccessToken(
+            var token = tokens.useAccessToken(
                     tokenValue,
-                    new AccessTokenAction.PublishVersion(namespace, extensionName));
+                    new AccessTokenAction.PublishVersion(extensionId.namespace(), extensionId.extension()));
             if (token == null || token.getUser() == null) {
                 throw new ErrorResultException(ACCESS_TOKEN_ERROR);
             }
+            // Check whether the user has a valid publisher agreement
+            eclipse.checkPublisherAgreement(token.getUser());
 
             var extVersion = extensions.publishVersion(tempFile, token);
 
