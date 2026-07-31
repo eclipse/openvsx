@@ -145,6 +145,7 @@ class RemoteScannerPropertiesTest {
         response.setErrorPath("$.error");
         response.setErrorCondition("$.status == 'error'");
         response.setSummaryPath("$.verdictData.summary");
+        response.setMaliciousVerdictPath("$.verdictData.isMalicious");
 
         assertEquals("xml", response.getFormat());
         assertEquals("$.scan.id", response.getJobIdPath());
@@ -154,6 +155,7 @@ class RemoteScannerPropertiesTest {
         assertEquals("$.error", response.getErrorPath());
         assertEquals("$.status == 'error'", response.getErrorCondition());
         assertEquals("$.verdictData.summary", response.getSummaryPath());
+        assertEquals("$.verdictData.isMalicious", response.getMaliciousVerdictPath());
     }
 
     // === ThreatMapping tests ===

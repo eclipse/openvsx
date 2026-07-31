@@ -14,6 +14,7 @@ package org.eclipse.openvsx.scanning;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -386,45 +387,97 @@ public class RemoteScanner implements Scanner {
             throw new ScannerException("No response config for result parsing");
         }
 
-        // Check for errors first
-        if (responseConfig.getErrorPath() != null) {
-            String error = responseExtractor.extractString(
-                    response,
-                    responseConfig.getFormat(),
-                    responseConfig.getErrorPath());
-            if (error != null) {
-                throw new ScannerException("Scanner reported error: " + error);
-            }
+        checkForError(response, responseConfig);
+        String summary = extractSummary(response, responseConfig);
+        Boolean maliciousVerdict = extractMaliciousVerdict(response, responseConfig);
+        List<Scanner.Threat> threats = extractThreats(response, responseConfig);
+
+        return Scanner.Result.of(threats, summary, maliciousVerdict);
+    }
+
+    /**
+     * Throw if the response indicates a scanner-reported error.
+     */
+    private void checkForError(
+            String response,
+            RemoteScannerProperties.ResponseConfig responseConfig
+    ) throws ScannerException {
+        if (responseConfig.getErrorPath() == null) {
+            return;
         }
 
-        String summary = null;
-        if (responseConfig.getSummaryPath() != null) {
-            summary = responseExtractor.extractString(
-                    response,
-                    responseConfig.getFormat(),
-                    responseConfig.getSummaryPath());
+        String error = responseExtractor.extractString(
+                response,
+                responseConfig.getFormat(),
+                responseConfig.getErrorPath());
+        if (error != null) {
+            throw new ScannerException("Scanner reported error: " + error);
+        }
+    }
+
+    /**
+     * Extract the scanner-provided summary string, if configured. Surfaced verbatim in ScanCheckResult.summary.
+     */
+    private String extractSummary(
+            String response,
+            RemoteScannerProperties.ResponseConfig responseConfig
+    ) throws ScannerException {
+        if (responseConfig.getSummaryPath() == null) {
+            return null;
         }
 
-        // Extract threats
+        return responseExtractor.extractString(
+                response,
+                responseConfig.getFormat(),
+                responseConfig.getSummaryPath());
+    }
+
+    /**
+     * Extract the explicit malicious verdict, if configured. A configured path that fails to resolve to a boolean is
+     * logged and treated as "no verdict" for this result, falling back to finding-based enforcement: the provider's
+     * response shape may have changed or the path may be misconfigured, but a single unparseable verdict shouldn't
+     * itself block scanning.
+     */
+    private Boolean extractMaliciousVerdict(
+            String response,
+            RemoteScannerProperties.ResponseConfig responseConfig
+    ) throws ScannerException {
+        if (responseConfig.getMaliciousVerdictPath() == null) {
+            return null;
+        }
+
+        Boolean maliciousVerdict = responseExtractor.extractBoolean(
+                response,
+                responseConfig.getFormat(),
+                responseConfig.getMaliciousVerdictPath());
+        if (maliciousVerdict == null) {
+            logger.warn(
+                    "Scanner '{}' has malicious-verdict-path '{}' configured, but it did not resolve to a boolean "
+                            + "in the response; falling back to finding-based enforcement for this result",
+                    scannerName,
+                    responseConfig.getMaliciousVerdictPath());
+        }
+
+        return maliciousVerdict;
+    }
+
+    /**
+     * Extract and map the list of threats, if a threats path is configured.
+     */
+    private List<Scanner.Threat> extractThreats(
+            String response,
+            RemoteScannerProperties.ResponseConfig responseConfig
+    ) throws ScannerException {
         String threatsPath = responseConfig.getThreatsPath();
         if (threatsPath == null) {
-            // No threats path - assume clean
-            return Scanner.Result.clean(summary);
+            return Collections.emptyList();
         }
 
         List<Map<String, Object>> threatObjects = responseExtractor.extractList(
                 response,
                 responseConfig.getFormat(),
                 threatsPath);
-
-        // Map threats
-        List<Scanner.Threat> threats = mapThreats(threatObjects, responseConfig);
-
-        if (threats.isEmpty()) {
-            return Scanner.Result.clean(summary);
-        } else {
-            return Scanner.Result.withThreats(threats, summary);
-        }
+        return mapThreats(threatObjects, responseConfig);
     }
 
     /**

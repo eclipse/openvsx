@@ -350,7 +350,7 @@ public class ExtensionScanPersistenceService {
             Scanner.@NonNull Result result,
             boolean scannerEnforced
     ) {
-        if (result.isClean()) {
+        if (result.getThreats().isEmpty()) {
             logger.debug("No threats to save for scanner job {}", job.getId());
             return ThreatSaveResult.clean();
         }
@@ -436,26 +436,31 @@ public class ExtensionScanPersistenceService {
             boolean scannerEnforced,
             @NonNull LocalDateTime startedAt
     ) {
-        int threatCount = 0;
+        int threatCount = result.getThreats().size();
         String summary;
         ScanCheckResult.CheckResult checkResult;
 
-        if (result.isClean()) {
+        if (threatCount == 0 && !result.hasMaliciousVerdict()) {
             checkResult = ScanCheckResult.CheckResult.PASSED;
             summary = "No threats found";
         } else {
-            threatCount = result.getThreats().size();
+            // A benign verdict may only downgrade enforcement (never quarantine on findings alone); a malicious
+            // verdict may never upgrade past the scanner's own enforced setting
+            boolean findingsEnforced = scannerEnforced && !result.hasBenignVerdict();
 
             // Save threats and get enforcement statistics
-            var saveResult = saveThreats(job, result, scannerEnforced);
+            var saveResult = saveThreats(job, result, findingsEnforced);
 
             // Determine check result based on actual enforcement (considers allowlist)
-            if (saveResult.hasEnforcedThreats()) {
+            boolean unmitigatedMaliciousVerdict = scannerEnforced && result.hasMaliciousVerdict() && threatCount == 0;
+            if (saveResult.hasEnforcedThreats() || unmitigatedMaliciousVerdict) {
                 checkResult = ScanCheckResult.CheckResult.QUARANTINE;
-                summary = String.format(
-                        "Found %d threat(s) - %d enforced",
-                        threatCount,
-                        saveResult.enforcedCount());
+                summary = threatCount == 0
+                        ? "Marked malicious by scanner verdict (no specific findings)"
+                        : String.format(
+                                "Found %d threat(s) - %d enforced",
+                                threatCount,
+                                saveResult.enforcedCount());
             } else {
                 // Threats found but none enforced (scanner not enforced OR all on allowlist)
                 checkResult = ScanCheckResult.CheckResult.PASSED;

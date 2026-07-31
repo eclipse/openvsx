@@ -67,33 +67,54 @@ public interface Scanner {
         private final boolean clean;
         private final List<Threat> threats;
         private final String summary;
+        private final Boolean maliciousVerdict;
 
-        private Result(boolean clean, List<Threat> threats, String summary) {
+        private Result(boolean clean, List<Threat> threats, String summary, Boolean maliciousVerdict) {
             this.clean = clean;
             this.threats = new ArrayList<>(threats);
             this.summary = summary;
+            this.maliciousVerdict = maliciousVerdict;
         }
 
         @NonNull
         public static Result clean() {
-            return new Result(true, Collections.emptyList(), null);
+            return new Result(true, Collections.emptyList(), null, null);
         }
 
         @NonNull
         public static Result clean(@Nullable String summary) {
-            return new Result(true, Collections.emptyList(), summary);
+            return new Result(true, Collections.emptyList(), summary, null);
         }
 
         @NonNull
         public static Result withThreats(@NonNull List<Threat> threats) {
-            return new Result(false, threats, null);
+            return new Result(false, threats, null, null);
         }
 
         @NonNull
         public static Result withThreats(@NonNull List<Threat> threats, @Nullable String summary) {
-            return new Result(false, threats, summary);
+            return new Result(false, threats, summary, null);
         }
 
+        /**
+         * Builds a result directly from a scanner's findings and its explicit malicious verdict (e.g. Argus
+         * verdictData.isMalicious). Prefer this over clean()/withThreats() whenever a verdict is available: naming a
+         * malicious result via "clean" reads as contradictory, since findings and the safety verdict are independent
+         * signals here. When a verdict is present it is the sole gatekeeper for isClean(), overriding the
+         * raw finding count; without a verdict, "clean" falls back to whether any findings were recorded.
+         */
+        @NonNull
+        public static Result of(@NonNull List<Threat> threats, @Nullable String summary, @Nullable Boolean malicious) {
+            boolean clean = malicious != null ? !malicious : threats.isEmpty();
+            return new Result(clean, threats, summary, malicious);
+        }
+
+        /**
+         * True when the scan found nothing that should block publishing. If an explicit malicious verdict is present,
+         * it alone determines this value: a malicious verdict is never clean and a benign verdict always is, no
+         * matter how many findings were recorded alongside it - see hasMaliciousVerdict() and hasBenignVerdict().
+         * Without a verdict, this simply reflects whether the threats list is empty.
+         */
         public boolean isClean() {
             return clean;
         }
@@ -107,6 +128,25 @@ public interface Scanner {
         @Nullable
         public String getSummary() {
             return summary;
+        }
+
+        /**
+         * Explicit malicious verdict from the scanner response, if configured. null means the scanner does not expose
+         * this signal.
+         */
+        @Nullable
+        public Boolean isMalicious() {
+            return maliciousVerdict;
+        }
+
+        /** True when the scanner explicitly returned a malicious verdict. */
+        public boolean hasMaliciousVerdict() {
+            return Boolean.TRUE.equals(maliciousVerdict);
+        }
+
+        /** True when the scanner explicitly returned a non-malicious verdict. */
+        public boolean hasBenignVerdict() {
+            return Boolean.FALSE.equals(maliciousVerdict);
         }
     }
 

@@ -473,6 +473,12 @@ public class RemoteScannerProperties {
         // Surfaced verbatim in ScanCheckResult.summary when present
         private String summaryPath;
 
+        /**
+         * JSONPath to a boolean malicious verdict on the result response (e.g. "$.verdictData.isMalicious"). When set,
+         * quarantine is driven by this verdict rather than "any findings present".
+         */
+        private String maliciousVerdictPath;
+
         // For error detection
         private String errorPath; // Path to error message
         private String errorCondition; // Expression to detect errors
@@ -525,6 +531,13 @@ public class RemoteScannerProperties {
         }
         public void setSummaryPath(String summaryPath) {
             this.summaryPath = summaryPath;
+        }
+
+        public String getMaliciousVerdictPath() {
+            return maliciousVerdictPath;
+        }
+        public void setMaliciousVerdictPath(String maliciousVerdictPath) {
+            this.maliciousVerdictPath = maliciousVerdictPath;
         }
 
         public String getErrorPath() {
