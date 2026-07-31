@@ -69,9 +69,7 @@ public class FixTargetPlatformsJobRequestHandler implements JobRequestHandler<Mi
                 // Purge (hard delete) rather than soft-delete: the version is immediately republished
                 // below with the corrected target platform, so its identity must be freed, not reserved.
                 extensions.purgeExtensionVersion(service.getUser(), extVersion);
-                try (
-                        var input = Files.newInputStream(extensionFile.getPath());
-                ) {
+                try (var input = Files.newInputStream(extensionFile.getPath())) {
                     extensions.publishVersion(input, extVersion.getPublishedWith());
                 }
             }
