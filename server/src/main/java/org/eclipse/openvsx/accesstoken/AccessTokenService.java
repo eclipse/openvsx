@@ -52,38 +52,35 @@ public class AccessTokenService {
         this.mail = mail;
     }
 
-    /**
-     * Shorthand for {@link #createAccessToken(UserData, String, boolean)} with {@code oneTime=false}.
-     */
     @Transactional
-    public AccessTokenJson createAccessToken(UserData user, String description) {
-        return createAccessToken(user, description, false);
+    public AccessTokenJson createLongLivedAccessToken(UserData user, String description) {
+        final LocalDateTime expiresTimestamp= config.isTokenExpiryEnabled()
+                ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
+                : null;
+        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.LLT);
     }
 
     @Transactional
-    public AccessTokenJson createAccessToken(UserData user, String description, boolean oneTime) {
-        final LocalDateTime expiresTimestamp;
-        if (oneTime) {
-            expiresTimestamp = config.isOttTokenExpiryEnabled()
-                    ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
-                    : null;
-        } else {
-            expiresTimestamp = config.isTokenExpiryEnabled()
-                    ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
-                    : null;
-        }
-        return createAccessToken(
-                user,
-                description,
-                expiresTimestamp,
-                oneTime);
+    public AccessTokenJson createOneTimeAccessToken(UserData user, String description) {
+        final LocalDateTime expiresTimestamp = config.isOttTokenExpiryEnabled()
+                ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
+                : null;
+        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.OTT);
+    }
+
+    @Transactional
+    public AccessTokenJson createTrustedPublishingAccessToken(UserData user, String description) {
+        final LocalDateTime expiresTimestamp = config.isTptTokenExpiryEnabled()
+                ? TimeUtil.getCurrentUTC().plus(config.getTptExpiration())
+                : null;
+        return createAccessToken(user, description, expiresTimestamp, PersonalAccessTokenType.TPT);
     }
 
     private AccessTokenJson createAccessToken(
             UserData user,
             String description,
             @Nullable LocalDateTime expiresTimestamp,
-            boolean oneTime
+            PersonalAccessTokenType type
     ) {
         var token = new PersonalAccessToken();
         token.setUser(user);
@@ -92,12 +89,12 @@ public class AccessTokenService {
         token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
         token.setDescription(description);
         token.setExpiresTimestamp(expiresTimestamp);
-        token.setType(oneTime ? PersonalAccessTokenType.OTT : PersonalAccessTokenType.LLT);
+        token.setType(type);
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
         // Include the token value after creation so the user can copy it
         json.setValue(token.getValue());
-        if (!oneTime) {
+        if (!type.isOneTime()) {
             json.setDeleteTokenUrl(
                     createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
         }

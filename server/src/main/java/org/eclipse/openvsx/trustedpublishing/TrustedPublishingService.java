@@ -47,8 +47,7 @@ import static java.util.Objects.requireNonNull;
 
 @Service
 public class TrustedPublishingService {
-    public static final String TOKEN_DESCRIPTION_PREFIX = "Trusted publishing ";
-    private static final String TOKEN_DESCRIPTION_TEMPLATE = TOKEN_DESCRIPTION_PREFIX + "(%s)";
+    private static final String TOKEN_DESCRIPTION_TEMPLATE = "Trusted publishing (%s)";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final TrustedPublishingConfig config;
@@ -268,12 +267,11 @@ public class TrustedPublishingService {
                 namespace.getName(),
                 claims.get(JwtClaimNames.SUB));
 
-        // The issued token is OTT personal access token of the registering user, valid for
+        // The issued token is TPT personal access token of the registering user, valid for
         // any namespace that user can publish to; add namespace-scoped tokens if broader scope becomes a concern
-        return tokens.createAccessToken(
+        return tokens.createTrustedPublishingAccessToken(
                 match.getCreatedBy(),
-                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
-                true);
+                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()));
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

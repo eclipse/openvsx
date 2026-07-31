@@ -216,7 +216,7 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        return new ResponseEntity<>(tokens.createAccessToken(user, description), HttpStatus.CREATED);
+        return new ResponseEntity<>(tokens.createLongLivedAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(
