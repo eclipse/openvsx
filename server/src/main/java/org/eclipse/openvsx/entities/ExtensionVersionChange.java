@@ -16,7 +16,10 @@ package org.eclipse.openvsx.entities;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -43,26 +46,6 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "extension_version_change")
 public class ExtensionVersionChange {
-
-    /**
-     * The version was published and is publicly available.
-     */
-    public static final String STATE_ACTIVE = "ACTIVE";
-
-    /**
-     * The version was deactivated administratively, for instance because the publisher's contributions
-     * were revoked or their publisher agreement is no longer signed. It is not publicly available, but
-     * its files are still there and it can become {@link #STATE_ACTIVE} again.
-     */
-    public static final String STATE_INACTIVE = "INACTIVE";
-
-    /**
-     * The version is no longer available for download. Reported both for a version that was deleted,
-     * keeping its metadata as a tombstone so that it can never be published again, and for one that was
-     * purged, taking its metadata with it. The two differ only in what the registry keeps internally,
-     * which a consumer of the feed cannot act on: either way the version is gone.
-     */
-    public static final String STATE_REMOVED = "REMOVED";
 
     @Id
     @GeneratedValue(generator = "extensionVersionChangeSeq")
@@ -106,10 +89,11 @@ public class ExtensionVersionChange {
     private String targetPlatform;
 
     /**
-     * The state the version transitioned into, one of the {@code STATE_*} values of
-     * {@code ChangeEntryJson}, which is what the feed reports verbatim.
+     * The state the version transitioned into. Stored by name, which is what the feed reports verbatim.
      */
-    private String state;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private ExtensionVersionState state;
 
     /**
      * Instant the version was published, copied from it so that the entry outlives it. The same on every
@@ -172,11 +156,11 @@ public class ExtensionVersionChange {
         this.targetPlatform = targetPlatform;
     }
 
-    public String getState() {
+    public ExtensionVersionState getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(ExtensionVersionState state) {
         this.state = state;
     }
 

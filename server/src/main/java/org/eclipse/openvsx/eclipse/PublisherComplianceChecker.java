@@ -26,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -108,7 +109,7 @@ public class PublisherComplianceChecker {
                 version.setActive(false);
                 // the version stops being publicly visible here, which the changes feed reports at
                 // this instant rather than at the one it was published at
-                repositories.recordExtensionVersionChange(version, ExtensionVersionChange.STATE_INACTIVE, now);
+                repositories.recordExtensionVersionChange(version, ExtensionVersionState.INACTIVE, now);
                 entityManager.merge(version);
                 var extension = version.getExtension();
                 affectedExtensions.add(extension);

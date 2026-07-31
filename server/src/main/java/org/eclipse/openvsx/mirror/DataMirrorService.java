@@ -192,7 +192,7 @@ public class DataMirrorService {
         var now = TimeUtil.getCurrentUTC();
         extension.getVersions().stream().filter(this::canActivate).forEach(extVersion -> {
             extVersion.setActive(true);
-            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionChange.STATE_ACTIVE, now);
+            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionState.ACTIVE, now);
         });
         extensions.updateExtension(extension);
     }

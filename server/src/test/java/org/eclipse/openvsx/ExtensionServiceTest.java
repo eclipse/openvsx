@@ -126,7 +126,7 @@ class ExtensionServiceTest {
         Mockito.verify(repositories)
                 .recordExtensionVersionChange(
                         Mockito.eq(extVersion),
-                        Mockito.eq(ExtensionVersionChange.STATE_ACTIVE),
+                        Mockito.eq(ExtensionVersionState.ACTIVE),
                         Mockito.any());
     }
 
@@ -156,7 +156,7 @@ class ExtensionServiceTest {
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // the feed announced this version as available at some point
         Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_ACTIVE)));
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.ACTIVE)));
 
         svc.deleteExtensionVersion(mockUser(), extVersion);
 
@@ -164,7 +164,7 @@ class ExtensionServiceTest {
         Mockito.verify(repositories)
                 .recordExtensionVersionChange(
                         Mockito.eq(extVersion),
-                        Mockito.eq(ExtensionVersionChange.STATE_REMOVED),
+                        Mockito.eq(ExtensionVersionState.REMOVED),
                         Mockito.any());
     }
 
@@ -194,7 +194,7 @@ class ExtensionServiceTest {
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // the feed announced this version as available at some point
         Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_ACTIVE)));
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.ACTIVE)));
 
         svc.removeExtensionVersion(extVersion);
 
@@ -205,7 +205,7 @@ class ExtensionServiceTest {
         Mockito.verify(repositories)
                 .recordPurgedExtensionVersionChange(
                         Mockito.eq(extVersion),
-                        Mockito.eq(ExtensionVersionChange.STATE_REMOVED),
+                        Mockito.eq(ExtensionVersionState.REMOVED),
                         Mockito.any());
     }
 
@@ -214,7 +214,7 @@ class ExtensionServiceTest {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_REMOVED)));
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.REMOVED)));
 
         svc.removeExtensionVersion(extVersion);
 
@@ -244,7 +244,7 @@ class ExtensionServiceTest {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionChange.STATE_REMOVED)));
+                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.REMOVED)));
 
         svc.removeExtensionVersion(extVersion);
 
@@ -343,7 +343,7 @@ class ExtensionServiceTest {
         return extVersion;
     }
 
-    private ExtensionVersionChange change(ExtensionVersion extVersion, String state) {
+    private ExtensionVersionChange change(ExtensionVersion extVersion, ExtensionVersionState state) {
         var change = new ExtensionVersionChange();
         change.setExtensionVersion(extVersion);
         change.setState(state);

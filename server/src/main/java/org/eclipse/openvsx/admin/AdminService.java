@@ -41,6 +41,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
@@ -496,7 +497,7 @@ public class AdminService {
             version.setActive(false);
             // the versions stop being publicly visible here, which the changes feed reports at this
             // instant rather than at the one they were published at
-            repositories.recordExtensionVersionChange(version, ExtensionVersionChange.STATE_INACTIVE, now);
+            repositories.recordExtensionVersionChange(version, ExtensionVersionState.INACTIVE, now);
             affectedExtensions.add(version.getExtension());
             deactivatedExtensionCount++;
         }

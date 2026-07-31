@@ -23,6 +23,7 @@ import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -111,7 +112,7 @@ class AdminServiceTest {
         // consumers following the feed would never learn that it disappeared.
         verify(repositories).recordExtensionVersionChange(
                 eq(extVersion),
-                eq(ExtensionVersionChange.STATE_INACTIVE),
+                eq(ExtensionVersionState.INACTIVE),
                 any());
     }
 

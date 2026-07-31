@@ -236,7 +236,7 @@ public class ExtensionService {
                 version.setActive(true);
                 // the version becomes publicly visible again, which the changes feed reports as a
                 // further entry for it, after the one for its deactivation
-                repositories.recordExtensionVersionChange(version, ExtensionVersionChange.STATE_ACTIVE, now);
+                repositories.recordExtensionVersionChange(version, ExtensionVersionState.ACTIVE, now);
                 affectedExtensions.add(version.getExtension());
             } else {
                 logger.warn(
@@ -504,7 +504,7 @@ public class ExtensionService {
         extVersion.setRemovedTimestamp(now);
         extVersion.setRemovedBy(user);
         if (reported) {
-            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionChange.STATE_REMOVED, now);
+            repositories.recordExtensionVersionChange(extVersion, ExtensionVersionState.REMOVED, now);
         }
     }
 
@@ -659,7 +659,7 @@ public class ExtensionService {
         if (wasReportedAsAvailable(extVersion)) {
             repositories.recordPurgedExtensionVersionChange(
                     extVersion,
-                    ExtensionVersionChange.STATE_REMOVED,
+                    ExtensionVersionState.REMOVED,
                     TimeUtil.getCurrentUTC());
         }
 
@@ -683,7 +683,7 @@ public class ExtensionService {
      */
     private boolean wasReportedAsAvailable(ExtensionVersion extVersion) {
         return repositories.findLatestExtensionVersionChange(extVersion)
-                .map(latest -> !ExtensionVersionChange.STATE_REMOVED.equals(latest.getState()))
+                .map(latest -> latest.getState() != ExtensionVersionState.REMOVED)
                 .orElse(false);
     }
 }

@@ -16,7 +16,7 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -27,20 +27,23 @@ import static org.eclipse.openvsx.util.TargetPlatform.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ChangeEntryJson {
 
-    /**
-     * @see ExtensionVersionChange#STATE_ACTIVE
-     */
-    public static final String STATE_ACTIVE = ExtensionVersionChange.STATE_ACTIVE;
+    // The names of the ExtensionVersionState constants, spelled out because the @Schema below needs
+    // compile-time constants and an enum name is not one. ChangeEntryJsonTest keeps the two in step.
 
     /**
-     * @see ExtensionVersionChange#STATE_INACTIVE
+     * @see ExtensionVersionState#ACTIVE
      */
-    public static final String STATE_INACTIVE = ExtensionVersionChange.STATE_INACTIVE;
+    public static final String STATE_ACTIVE = "ACTIVE";
 
     /**
-     * @see ExtensionVersionChange#STATE_REMOVED
+     * @see ExtensionVersionState#INACTIVE
      */
-    public static final String STATE_REMOVED = ExtensionVersionChange.STATE_REMOVED;
+    public static final String STATE_INACTIVE = "INACTIVE";
+
+    /**
+     * @see ExtensionVersionState#REMOVED
+     */
+    public static final String STATE_REMOVED = "REMOVED";
 
     @Schema(description = "Namespace of the extension")
     private String namespace;

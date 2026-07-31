@@ -38,6 +38,7 @@ import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionValidationFailure;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
@@ -577,7 +578,7 @@ public class RepositoryService {
      */
     public ExtensionVersionChange recordExtensionVersionChange(
             ExtensionVersion extVersion,
-            String state,
+            ExtensionVersionState state,
             LocalDateTime changedAt
     ) {
         return recordExtensionVersionChange(extVersion, state, changedAt, true);
@@ -594,7 +595,7 @@ public class RepositoryService {
      */
     public ExtensionVersionChange recordPurgedExtensionVersionChange(
             ExtensionVersion extVersion,
-            String state,
+            ExtensionVersionState state,
             LocalDateTime changedAt
     ) {
         return recordExtensionVersionChange(extVersion, state, changedAt, false);
@@ -602,7 +603,7 @@ public class RepositoryService {
 
     private ExtensionVersionChange recordExtensionVersionChange(
             ExtensionVersion extVersion,
-            String state,
+            ExtensionVersionState state,
             LocalDateTime changedAt,
             boolean referenceVersion
     ) {

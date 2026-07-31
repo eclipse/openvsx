@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -115,7 +116,7 @@ public class PublishExtensionVersionService {
             // separately on every entry, so nothing is lost by not ordering on it.
             repositories.recordExtensionVersionChange(
                     current,
-                    ExtensionVersionChange.STATE_ACTIVE,
+                    ExtensionVersionState.ACTIVE,
                     TimeUtil.getCurrentUTC());
         }
         extensions.updateExtension(current.getExtension());

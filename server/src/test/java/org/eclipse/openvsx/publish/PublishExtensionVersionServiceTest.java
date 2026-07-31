@@ -26,6 +26,7 @@ import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
+import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -89,7 +90,7 @@ class PublishExtensionVersionServiceTest {
 
         // Becoming active is the transition the changes feed reports as the version's publication.
         verify(repositories)
-                .recordExtensionVersionChange(eq(extVersion), eq(ExtensionVersionChange.STATE_ACTIVE), any());
+                .recordExtensionVersionChange(eq(extVersion), eq(ExtensionVersionState.ACTIVE), any());
     }
 
     @Test
@@ -107,7 +108,7 @@ class PublishExtensionVersionServiceTest {
         verify(repositories)
                 .recordExtensionVersionChange(
                         eq(extVersion),
-                        eq(ExtensionVersionChange.STATE_ACTIVE),
+                        eq(ExtensionVersionState.ACTIVE),
                         changedAt.capture());
         // The feed is ordered by this instant, so it has to be when the version actually became
         // visible. Recording it at the version's older timestamp would sort the entry into a part of
