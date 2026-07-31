@@ -25,12 +25,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
-import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
+import org.eclipse.openvsx.publish.PublisherAgreementService;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -78,7 +78,7 @@ class LocalRegistryServiceTest {
     StorageUtilService storageUtilService;
 
     @Mock
-    EclipseService eclipse;
+    PublisherAgreementService publisherAgreement;
 
     @Mock
     CacheService cacheService;
@@ -103,13 +103,13 @@ class LocalRegistryServiceTest {
                 searchUtilService,
                 validator,
                 storageUtilService,
-                eclipse,
+                publisherAgreement,
                 cacheService,
                 integrityService,
                 similarityCheckService,
                 new PublishingConfig());
 
-        doNothing().when(eclipse).checkPublisherAgreement(any());
+        doNothing().when(publisherAgreement).checkPublisherAgreement(any());
     }
 
     @Test

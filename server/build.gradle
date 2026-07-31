@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'scala'
     id 'jacoco'
     alias(libs.plugins.jooq.codegen)
@@ -166,6 +166,26 @@ dependencies {
     rewrite libs.rewrite.java
 }
 
+// The io.spring.dependency-management plugin resolves the versionless dependencies
+// above only within this project; library consumers -- via the published metadata or
+// a composite build -- would find dependencies without any version at all. Mirror the
+// effective managed versions (Spring Boot BOM + the overrides above) as dependency
+// constraints so consumers can resolve the same baseline. For coordinates declared
+// above with an explicit version, the declared pin wins over the BOM version, like it
+// does in this project's own resolution.
+dependencies {
+    constraints {
+        def declared = [:]
+        ['api', 'implementation', 'compileOnly', 'runtimeOnly']
+                .collectMany { configurations.findByName(it)?.dependencies ?: [] }
+                .findAll { it.version }
+                .each { declared["${it.group}:${it.name}" as String] = it.version }
+        (dependencyManagement.managedVersions + declared).each { ga, pin ->
+            api "${ga}:${pin}"
+        }
+    }
+}
+
 configurations.configureEach {
     resolutionStrategy {
         // due to security vulnerabilities in commons-compress < 1.26.0
@@ -217,6 +237,10 @@ rewrite {
 publishing {
     publications {
         maven(MavenPublication) {
+            // Publish the java component so the server is consumable as a library:
+            // the plain jar (classifier 'plain') plus dependency metadata in the POM.
+            // The executable bootJar (no classifier) remains the main artifact.
+            from components.java
             artifact ('scripts/run-server.sh')
             artifact bootJar
         }

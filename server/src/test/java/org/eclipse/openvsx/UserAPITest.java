@@ -41,8 +41,6 @@ import org.eclipse.openvsx.accesstoken.AccessTokenConfig;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
-import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.mail.MailService;
@@ -78,7 +76,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserAPI.class)
 @MockitoBean(
     types = {
-        EclipseService.class,
         ClientRegistrationRepository.class,
         StorageUtilService.class,
         CacheService.class,
@@ -1081,21 +1078,9 @@ class UserAPITest {
         @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                EclipseTokenService eclipseTokenService,
-                EntityManager entityManager,
-                EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
-        }
-
-        @Bean
-        EclipseTokenService eclipseTokenService(
-                TransactionTemplate transactions,
-                EntityManager entityManager,
-                ClientRegistrationRepository clientRegistrationRepository
-        ) {
-            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
+            return new OAuth2UserServices(users, attributesConfig, List.of());
         }
 
         @Bean
@@ -1114,7 +1099,6 @@ class UserAPITest {
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
-                EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService
@@ -1129,7 +1113,7 @@ class UserAPITest {
                     search,
                     validator,
                     storageUtil,
-                    eclipse,
+                    null,
                     cache,
                     integrityService,
                     similarityCheckService,

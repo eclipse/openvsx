@@ -55,8 +55,6 @@ import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.ExtensionJsonCacheKeyGenerator;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
-import org.eclipse.openvsx.eclipse.EclipseService;
-import org.eclipse.openvsx.eclipse.EclipseTokenService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.json.*;
@@ -102,7 +100,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         DownloadCountService.class,
         ExtensionDownloadMetrics.class,
         CacheService.class,
-        EclipseService.class,
         PublishExtensionVersionService.class,
         SimpleMeterRegistry.class,
         JobRequestScheduler.class,
@@ -3017,21 +3014,9 @@ class RegistryAPITest {
         @Bean
         OAuth2UserServices oauth2UserServices(
                 UserService users,
-                EclipseTokenService eclipseTokenService,
-                EntityManager entityManager,
-                EclipseService eclipse,
                 OAuth2AttributesConfig attributesConfig
         ) {
-            return new OAuth2UserServices(users, eclipseTokenService, entityManager, eclipse, attributesConfig);
-        }
-
-        @Bean
-        EclipseTokenService eclipseTokenService(
-                TransactionTemplate transactions,
-                EntityManager entityManager,
-                ClientRegistrationRepository clientRegistrationRepository
-        ) {
-            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
+            return new OAuth2UserServices(users, attributesConfig, List.of());
         }
 
         @Bean
@@ -3045,7 +3030,6 @@ class RegistryAPITest {
                 SearchUtilService search,
                 ExtensionValidator validator,
                 StorageUtilService storageUtil,
-                EclipseService eclipse,
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService,
@@ -3061,7 +3045,7 @@ class RegistryAPITest {
                     search,
                     validator,
                     storageUtil,
-                    eclipse,
+                    null,
                     cache,
                     integrityService,
                     similarityCheckService,
