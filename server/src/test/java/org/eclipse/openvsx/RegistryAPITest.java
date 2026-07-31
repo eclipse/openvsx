@@ -3263,7 +3263,7 @@ class RegistryAPITest {
     }
 
     @TestConfiguration
-    @Import(SecurityConfig.class)
+    @Import({ SecurityConfig.class, MockMvcAsyncConfig.class })
     static class TestConfig {
         @Bean
         TransactionTemplate transactionTemplate() {
