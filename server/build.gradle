@@ -260,6 +260,12 @@ tasks.register('runServer', JavaExec) {
     mainClass = 'org.eclipse.openvsx.RegistryApplication'
 }
 
+testlogger {
+    // By default only frames of the test class itself are shown, which hides where a failure
+    // actually originated - useless for diagnosing failures that only reproduce on CI.
+    showFullStackTraces true
+}
+
 test {
     jvmArgs = ['--enable-native-access=ALL-UNNAMED', '-Xmx4096m'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
