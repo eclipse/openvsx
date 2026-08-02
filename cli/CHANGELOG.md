@@ -18,6 +18,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - Bump js-yaml from `4.2.0` to `4.3.0` ([#1976](https://github.com/eclipse/openvsx/pull/1976))
 - Bump tar from `7.5.16` to `7.5.21` ([#1987](https://github.com/eclipse/openvsx/pull/1987))
+- Bump brace-expansion from `1.1.16` to `1.1.18` ([#2031](https://github.com/eclipse/openvsx/pull/2031))
 
 ### [v1.0.2] (23/06/2026)
 
