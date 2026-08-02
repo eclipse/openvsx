@@ -13,6 +13,7 @@ import * as leven from 'leven';
 import { createNamespace } from './create-namespace';
 import { verifyPat } from './verify-pat';
 import { publish } from './publish';
+import { unpublish } from './unpublish';
 import { handleError } from './util';
 import { getExtension } from './get';
 import login from './login';
@@ -94,6 +95,23 @@ module.exports = function (argv: string[]): void {
                         process.exit(1);
                     }
                 });
+        });
+
+    const unpublishCmd = program.command('unpublish [namespace.extension]');
+    unpublishCmd.description('Delete an extension or some of its versions from the registry.')
+        .option('-v, --versions <versions...>', 'Only delete the given versions.')
+        .option('-t, --target <targets...>', 'Only delete the given target architectures of the given versions.')
+        .option('-f, --force', 'Skip the confirmation prompt.')
+        .action((extensionId: string, { versions, target, force }) => {
+            const { registryUrl, pat } = program.opts();
+            unpublish({
+                extensionId,
+                versions: typeof versions === 'string' ? [versions] : versions,
+                targets: typeof target === 'string' ? [target] : target,
+                force,
+                registryUrl,
+                pat
+            }).catch(handleError(program.debug));
         });
 
     const getCmd = program.command('get <namespace.extension>');

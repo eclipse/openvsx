@@ -95,4 +95,28 @@ public sealed interface AccessTokenAction {
             return Optional.of(extensionName);
         }
     }
+
+    /**
+     * Action that uses token for extension deletion.
+     */
+    record DeleteVersion(String namespaceName, String extensionName) implements AccessTokenAction {
+        public DeleteVersion {
+            if (namespaceName == null || namespaceName.isBlank()) {
+                throw new IllegalArgumentException("Namespace cannot be null or blank");
+            }
+            if (extensionName == null || extensionName.isBlank()) {
+                throw new IllegalArgumentException("Extension name cannot be null or blank");
+            }
+        }
+
+        @Override
+        public Optional<String> namespace() {
+            return Optional.of(namespaceName);
+        }
+
+        @Override
+        public Optional<String> extension() {
+            return Optional.of(extensionName);
+        }
+    }
 }

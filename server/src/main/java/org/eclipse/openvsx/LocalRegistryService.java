@@ -773,6 +773,32 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    /**
+     * Soft-deletes extension versions on behalf of the user the given personal access token belongs to.
+     * <p>
+     * This is the token-authenticated counterpart of {@code UserAPI.deleteExtension}, which authenticates
+     * the user via their login session, and applies the same authorization: only namespace members may
+     * delete, owners may delete any version while other members are restricted to the versions they
+     * published themselves.
+     *
+     * @param targetVersions the versions to delete, or {@code null} to delete the extension as a whole
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            String namespaceName,
+            String extensionName,
+            @Nullable List<TargetPlatformVersionJson> targetVersions,
+            String tokenValue
+    ) {
+        var token = tokens
+                .useAccessToken(tokenValue, new AccessTokenAction.DeleteVersion(namespaceName, extensionName));
+        if (token == null || token.getUser() == null) {
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+        }
+
+        return extensions.deleteExtensionAsUser(token.getUser(), namespaceName, extensionName, targetVersions);
+    }
+
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
         var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
         if (token == null) {

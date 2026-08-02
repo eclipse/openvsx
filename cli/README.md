@@ -53,6 +53,22 @@ Options:
 
 The issued token is valid for a few minutes only and is never written to the token store, but it does carry publishing rights, so treat CI logs accordingly.
 
+### Delete Extensions
+
+You can delete extensions you published with `ovsx unpublish`, the counterpart of `vsce unpublish`. This requires an access token as described above, and the token's user must be a member of the extension's namespace: namespace owners may delete any version, other members only the versions they published themselves.
+
+Deleting is irreversible: the files of a deleted version are removed and its version number stays reserved, so the same version can never be published again. You will be asked for confirmation unless you pass `--force` (or `-f`).
+
+Variants:
+ * `ovsx unpublish`
+   deletes all versions of the extension in the current working directory, as identified by the `publisher` and `name` fields of its package.json.
+ * `ovsx unpublish <extension>`
+   deletes all versions of the given extension, identified with the format `namespace.extension`.
+ * `ovsx unpublish <extension> --versions <versions...>`
+   deletes only the given versions, e.g. `ovsx unpublish foo.bar -v 1.0.0 1.0.1`.
+ * `ovsx unpublish <extension> --versions <versions...> --target <targets...>`
+   deletes only the given [target platforms](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions) of the given versions, e.g. `ovsx unpublish foo.bar -v 1.0.0 -t linux-x64`.
+
 ### Create a Namespace
 
 The `publisher` field of your extension's package.json defines the namespace into which the extension will be published. Before you publish the first extension in a namespace, you must create it. This requires an access token as described above.
