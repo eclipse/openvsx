@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -46,6 +45,7 @@ import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -398,7 +398,8 @@ public class AdminService {
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
-        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
+        userPublishInfo.setActiveAccessTokenNum(
+                (int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);

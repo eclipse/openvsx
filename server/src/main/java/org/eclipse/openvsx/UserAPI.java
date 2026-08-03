@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +38,7 @@ import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
