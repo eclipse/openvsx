@@ -263,7 +263,7 @@ tasks.register('runServer', JavaExec) {
 testlogger {
     // By default only frames of the test class itself are shown, which hides where a failure
     // actually originated - useless for diagnosing failures that only reproduce on CI.
-    showFullStackTraces true
+    showFullStackTraces = true
 }
 
 test {
