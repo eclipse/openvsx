@@ -12,7 +12,9 @@ package org.eclipse.openvsx.publish;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -371,15 +373,42 @@ public class PublishExtensionVersionHandler {
     }
 
     private void validateFileResources(ExtensionProcessor processor, ExtensionVersion extVersion) {
-        try {
-            // Validate that all file resources are readable/accessible during synchronous publishing
-            // to avoid failing during async publishing and report errors directly back to publishers.
-            // This creates unnecessary temp files, however these are usually small and thus it is
-            // acceptable in this case.
-            processor.getFileResources(extVersion, _ -> {
-            });
-        } catch (ErrorResultException exc) {
-            throw new ErrorResultException("Validation failed: " + exc.getMessage());
+        // Validate that all file resources are readable/accessible during synchronous publishing
+        // to avoid failing during async publishing and report errors directly back to publishers.
+        // This creates unnecessary temp files, however these are usually small, and thus it is
+        // acceptable in this case.
+        var names = new ArrayList<String>();
+        processor.getFileResources(extVersion, tempFile -> names.add(tempFile.getResource().getName()));
+
+        // Additionally check that there are no name collisions within the file resources as the file
+        // names are used as object key when uploading to the storage provider and would overwrite each other.
+        checkForNameCollisions(extVersion, names);
+    }
+
+    /**
+     * Object keys within a version share one flat namespace (see {@code IStorageService#getObjectKey}), so a
+     * resource name that collides with another resource's name, or with the reserved name of the binary, its
+     * checksum or its signature, would silently overwrite that other file on the storage backend once uploaded.
+     * Resource names come from the VSIX manifest and are therefore attacker-controlled, so this has to be
+     * rejected before any of these files are stored.
+     * <p>
+     * Storage object keys are matched case-sensitively, but {@code FileResourceJooqRepository#findByName}
+     * looks up a requested file case-insensitively and returns whichever resource sorts first by type, so a
+     * same-name-different-case resource can still shadow another one at the API level even though it would not
+     * overwrite it in storage. Collisions are therefore checked case-insensitively as well.
+     */
+    private void checkForNameCollisions(ExtensionVersion extVersion, List<String> names) {
+        var reservedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        reservedNames.add(NamingUtil.toFileFormat(extVersion, ".vsix"));
+        reservedNames.add(NamingUtil.toFileFormat(extVersion, ".sha256"));
+        reservedNames.add(NamingUtil.toFileFormat(extVersion, ".sigzip"));
+        for (var name : names) {
+            if (!reservedNames.add(name)) {
+                throw new ErrorResultException(
+                        "Extension contains multiple files named '" + name + "' (case-insensitive)."
+                                + " Rename the conflicting asset so that it does not collide with another"
+                                + " published file.");
+            }
         }
     }
 
