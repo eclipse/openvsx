@@ -249,7 +249,8 @@ public class ExtensionJooqRepository {
         return dsl.select(unresolvedDependency)
                 .from(ids)
                 .leftJoin(NAMESPACE).on(NAMESPACE.NAME.equalIgnoreCase(namespace))
-                .leftJoin(EXTENSION).on(EXTENSION.NAME.equalIgnoreCase(extension))
+                .leftJoin(EXTENSION)
+                .on(EXTENSION.NAME.equalIgnoreCase(extension).and(EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID)))
                 .where(NAMESPACE.NAME.isNull()).or(EXTENSION.NAME.isNull())
                 .limit(1)
                 .fetchOne(unresolvedDependency);
