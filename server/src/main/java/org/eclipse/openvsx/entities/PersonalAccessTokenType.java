@@ -18,9 +18,13 @@ public enum PersonalAccessTokenType {
      */
     LLT(false, true),
     /**
-     * One time usable personal access token.
+     * One time usable general personal access token.
      */
-    OTT(true, false);
+    OTT(true, false),
+    /**
+     * One time usable, trusted publishing issued access token.
+     */
+    TPT(true, false);
 
     private final boolean oneTime;
     private final boolean notify;

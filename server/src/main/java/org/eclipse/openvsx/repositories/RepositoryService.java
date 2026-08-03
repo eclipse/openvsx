@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -509,12 +510,12 @@ public class RepositoryService {
         return personalAccessTokenRepo.findAll();
     }
 
-    public Streamable<PersonalAccessToken> findActivePersonalAccessTokens(UserData user) {
-        return personalAccessTokenRepo.findByUserAndActiveTrue(user);
+    public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(UserData user, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.findByUserAndActiveTrueAndType(user, type);
     }
 
-    public long countActivePersonalAccessTokens(UserData user) {
-        return personalAccessTokenRepo.countByUserAndActiveTrue(user);
+    public long countActivePersonalAccessTokensAndType(UserData user, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.countByUserAndActiveTrueAndType(user, type);
     }
 
     public PersonalAccessToken findPersonalAccessToken(String value) {
@@ -541,8 +542,8 @@ public class RepositoryService {
         return personalAccessTokenRepo.expireAccessTokens(timestamp);
     }
 
-    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp) {
-        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
+    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
     }
 
     public boolean hasPersonalAccessToken(String value) {

@@ -102,6 +102,22 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
      */
     public final TableField<PersonalAccessTokenRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.VARCHAR(32).nullable(false), this, "");
 
+    /**
+     * The column <code>public.personal_access_token.scope_extension_id</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, Long> SCOPE_EXTENSION_ID = createField(DSL.name("scope_extension_id"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>public.personal_access_token.scope_namespace_id</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, Long> SCOPE_NAMESPACE_ID = createField(DSL.name("scope_namespace_id"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column
+     * <code>public.personal_access_token.trusted_publisher_id</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, Long> TRUSTED_PUBLISHER_ID = createField(DSL.name("trusted_publisher_id"), SQLDataType.BIGINT, this, "");
+
     private PersonalAccessToken(Name alias, Table<PersonalAccessTokenRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -150,7 +166,7 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
 
     @Override
     public List<ForeignKey<PersonalAccessTokenRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L);
+        return Arrays.asList(Keys.PERSONAL_ACCESS_TOKEN__FKTQJVMHOIG3WTTJ6DL1IBCAJ3L, Keys.PERSONAL_ACCESS_TOKEN__PERSONAL_ACCESS_TOKEN_SCOPE_EXTENSION_ID_FKEY, Keys.PERSONAL_ACCESS_TOKEN__PERSONAL_ACCESS_TOKEN_SCOPE_NAMESPACE_ID_FKEY, Keys.PERSONAL_ACCESS_TOKEN__PERSONAL_ACCESS_TOKEN_TRUSTED_PUBLISHER_ID_FKEY);
     }
 
     @Override

@@ -57,6 +57,18 @@ public class PersonalAccessToken implements Serializable {
     @Enumerated(EnumType.STRING)
     private PersonalAccessTokenType type;
 
+    @ManyToOne
+    @JoinColumn(name = "scope_extension_id")
+    private Extension scopeExtension;
+
+    @ManyToOne
+    @JoinColumn(name = "scope_namespace_id")
+    private Namespace scopeNamespace;
+
+    @ManyToOne
+    @JoinColumn(name = "trusted_publisher_id")
+    private TrustedPublisher trustedPublisher;
+
     /**
      * Convert to a JSON object.
      */
@@ -158,6 +170,30 @@ public class PersonalAccessToken implements Serializable {
         this.type = requireNonNull(type);
     }
 
+    public Extension getScopeExtension() {
+        return scopeExtension;
+    }
+
+    public void setScopeExtension(Extension scopeExtension) {
+        this.scopeExtension = scopeExtension;
+    }
+
+    public Namespace getScopeNamespace() {
+        return scopeNamespace;
+    }
+
+    public void setScopeNamespace(Namespace scopeNamespace) {
+        this.scopeNamespace = scopeNamespace;
+    }
+
+    public TrustedPublisher getTrustedPublisher() {
+        return trustedPublisher;
+    }
+
+    public void setTrustedPublisher(TrustedPublisher trustedPublisher) {
+        this.trustedPublisher = trustedPublisher;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -176,7 +212,10 @@ public class PersonalAccessToken implements Serializable {
                 && Objects.equals(expiresTimestamp, that.expiresTimestamp)
                 && Objects.equals(notified, that.notified)
                 && Objects.equals(description, that.description)
-                && Objects.equals(type, that.type);
+                && Objects.equals(type, that.type)
+                && Objects.equals(scopeExtension, that.scopeExtension)
+                && Objects.equals(scopeNamespace, that.scopeNamespace)
+                && Objects.equals(trustedPublisher, that.trustedPublisher);
     }
 
     @Override
@@ -191,6 +230,9 @@ public class PersonalAccessToken implements Serializable {
                 expiresTimestamp,
                 notified,
                 description,
-                type);
+                type,
+                scopeExtension,
+                scopeNamespace,
+                trustedPublisher);
     }
 }

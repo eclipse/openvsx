@@ -12,6 +12,7 @@ package org.eclipse.openvsx.repositories;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,9 +28,9 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     Streamable<PersonalAccessToken> findByUser(UserData user);
 
-    Streamable<PersonalAccessToken> findByUserAndActiveTrue(UserData user);
+    Streamable<PersonalAccessToken> findByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
 
-    long countByUserAndActiveTrue(UserData user);
+    long countByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
 
     PersonalAccessToken findById(long id);
 
@@ -43,9 +44,9 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     @Modifying
     @Query(
-        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null"
+        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null and t.type = ?2"
     )
-    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp);
+    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type);
 
     List<PersonalAccessToken> findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(
             LocalDateTime timestamp,

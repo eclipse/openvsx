@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -396,7 +398,7 @@ public class AdminService {
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
-        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActivePersonalAccessTokens(user));
+        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
@@ -550,7 +552,7 @@ public class AdminService {
 
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
-                .map(tokens::useAccessToken)
+                .map(tv -> tokens.useAccessToken(tv, new AccessTokenAction.Administration()))
                 .map(PersonalAccessToken::getUser)
                 .orElse(null);
 

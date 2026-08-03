@@ -31,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.SearchEntryJson;
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
@@ -200,7 +199,7 @@ public class ExtensionVersion implements Serializable {
         json.setQna(this.getQna());
         if (this.getPublishedWith() != null) {
             json.setPublishedBy(this.getPublishedWith().getUser().toUserJson());
-            json.setTrustedPublisher(isTrustedPublisherToken(this.getPublishedWith()));
+            json.setTrustedPublisher(this.getPublishedWith().getType() == PersonalAccessTokenType.TPT);
         }
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
@@ -212,12 +211,6 @@ public class ExtensionVersion implements Serializable {
         json.setDeprecated(extension.isDeprecated());
         json.setDownloadable(extension.isDownloadable());
         return json;
-    }
-
-    private boolean isTrustedPublisherToken(PersonalAccessToken token) {
-        return token != null
-                && token.getDescription() != null
-                && token.getDescription().startsWith(TrustedPublishingService.TOKEN_DESCRIPTION_PREFIX);
     }
 
     private List<ExtensionReferenceJson> toExtensionReferenceJson(List<String> extensionReferences) {
