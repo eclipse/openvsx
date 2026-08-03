@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +46,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.RateLimitToken;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
@@ -510,7 +510,10 @@ public class RepositoryService {
         return personalAccessTokenRepo.findAll();
     }
 
-    public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(UserData user, PersonalAccessTokenType type) {
+    public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(
+            UserData user,
+            PersonalAccessTokenType type
+    ) {
         return personalAccessTokenRepo.findByUserAndActiveTrueAndType(user, type);
     }
 

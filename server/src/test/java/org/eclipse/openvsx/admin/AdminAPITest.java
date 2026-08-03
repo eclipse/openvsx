@@ -917,7 +917,8 @@ class AdminAPITest {
         versions.forEach(v -> v.setPublishedWith(token));
 
         Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
-        Mockito.when(repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT)).thenReturn(1L);
+        Mockito.when(repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT))
+                .thenReturn(1L);
         Mockito.when(repositories.findLatestVersions(user)).thenReturn(versions);
         Mockito.when(repositories.findActiveReviews(user)).thenReturn(Streamable.empty());
 
