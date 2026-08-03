@@ -45,6 +45,18 @@ public class AccessTokenConfig {
     private Duration ottExpiration;
 
     /**
+     * The expiration period for one time trusted publishing tokens. The one time
+     * access token must be used in this period.
+     * <p>
+     * If {@code 0} is provided, the one time trusted publishing tokens do not expire.
+     * <p>
+     * Property: {@code ovsx.access-token.tpt-expiration}
+     * Default: {@code PT5M}, expires in 5 minutes
+     */
+    @Value("${ovsx.access-token.tpt-expiration:PT5M}")
+    private Duration tptExpiration;
+
+    /**
      * The expiration period for long-lived personal access tokens.
      * <p>
      * If {@code 0} is provided, the access tokens do not expire.
@@ -127,6 +139,14 @@ public class AccessTokenConfig {
         return ottExpiration;
     }
 
+    public boolean isTptTokenExpiryEnabled() {
+        return this.tptExpiration.isPositive();
+    }
+
+    public @NonNull Duration getTptExpiration() {
+        return tptExpiration;
+    }
+
     public boolean isTokenExpiryNotificationEnabled() {
         return this.notification.isPositive();
     }
@@ -169,6 +189,14 @@ public class AccessTokenConfig {
         if (expiration.isNegative()) {
             throw new IllegalArgumentException(
                     "ovsx.access-token.expiration must be a non-negative duration, got: " + expiration);
+        }
+        if (ottExpiration.isNegative()) {
+            throw new IllegalArgumentException(
+                    "ovsx.access-token.ott-expiration must be a non-negative duration, got: " + ottExpiration);
+        }
+        if (tptExpiration.isNegative()) {
+            throw new IllegalArgumentException(
+                    "ovsx.access-token.tpt-expiration must be a non-negative duration, got: " + tptExpiration);
         }
 
         if (notification.isNegative()) {

@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -190,7 +191,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findActivePersonalAccessTokens(user)
+        return repositories.findActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.setDeleteTokenUrl(
@@ -216,7 +217,7 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        return new ResponseEntity<>(tokens.createAccessToken(user, description), HttpStatus.CREATED);
+        return new ResponseEntity<>(tokens.createLongLivedAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(

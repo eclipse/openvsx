@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -51,6 +53,7 @@ import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -717,7 +720,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
@@ -769,8 +772,8 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var user = tokens.verifyAccessToken(tokenValue);
-        if (user == null) {
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
+        if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
@@ -779,7 +782,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new NotFoundException();
         }
 
-        if (!users.hasPublishPermission(user, namespace)) {
+        if (!users.hasPublishPermission(token.getUser(), namespace)) {
             throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
         }
 
@@ -787,42 +790,53 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        return publish(content, tokens.createAccessToken(user, "One time use publish token", true).getValue());
+        return publish(content, tokens.createOneTimeAccessToken(user, "One time use publish token").getValue());
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = tokens.useAccessToken(tokenValue);
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+        try (TempFile tempFile = extensions.createExtensionFile(content)) {
+            ExtensionVersion extVersion;
+            try (var processor = new ExtensionProcessor(tempFile)) {
+                // now that we know the details, ensure token is still fine
+                var token = tokens.useAccessToken(
+                        tokenValue,
+                        new AccessTokenAction.PublishVersion(processor.getNamespace(), processor.getExtensionName()));
+                if (token == null || token.getUser() == null) {
+                    throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+                }
+                // Check whether the user has a valid publisher agreement
+                eclipse.checkPublisherAgreement(token.getUser());
+
+                extVersion = extensions.publishVersion(processor, token);
+            }
+
+            var json = toExtensionVersionJson(extVersion, null, true);
+            json.setSuccess("It can take a couple minutes before the extension version is available");
+
+            if (repositories.hasSameVersion(extVersion)) {
+                var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                var extension = extVersion.getExtension();
+                var semver = extVersion.getSemanticVersion();
+                var newVersion = String
+                        .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+
+                json.setWarning(
+                        "A " + existingRelease + " already exists for "
+                                + NamingUtil.toLogFormat(
+                                        extension.getNamespace().getName(),
+                                        extension.getName(),
+                                        extVersion.getVersion())
+                                + ".\n" +
+                                "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
+                                + newVersion
+                                + " as its version instead.");
+            }
+
+            return json;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
         }
-
-        // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
-
-        var extVersion = extensions.publishVersion(content, token);
-        var json = toExtensionVersionJson(extVersion, null, true);
-        json.setSuccess("It can take a couple minutes before the extension version is available");
-
-        if (repositories.hasSameVersion(extVersion)) {
-            var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-            var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-            var extension = extVersion.getExtension();
-            var semver = extVersion.getSemanticVersion();
-            var newVersion = String
-                    .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
-
-            json.setWarning(
-                    "A " + existingRelease + " already exists for "
-                            + NamingUtil.toLogFormat(
-                                    extension.getNamespace().getName(),
-                                    extension.getName(),
-                                    extVersion.getVersion())
-                            + ".\n" +
-                            "To prevent update conflicts, we recommend that this " + thisRelease + " uses " + newVersion
-                            + " as its version instead.");
-        }
-
-        return json;
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)

@@ -18,15 +18,25 @@ CREATE UNIQUE INDEX IF NOT EXISTS trusted_publisher_extension_idx ON public.trus
 -- token.type
 
 ALTER TABLE ONLY public.personal_access_token
-    ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32);
+    -- the type column LLT, OTT or TPT
+    ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32),
+    -- optional; the extension that the token is scoped to
+    ADD COLUMN IF NOT EXISTS scope_extension_id BIGINT REFERENCES public.extension(id),
+    -- optional; the namespace that the token is scoped to
+    ADD COLUMN IF NOT EXISTS scope_namespace_id BIGINT REFERENCES public.namespace(id),
+    -- optional; the trusted publisher that the token was created for (token must remain; registration may be deleted)
+    ADD COLUMN IF NOT EXISTS trusted_publisher_id BIGINT REFERENCES public.trusted_publisher(id) ON DELETE SET NULL;
 
+-- set OTT based on description (is hardwired in codebase)
 UPDATE public.personal_access_token
 SET type = 'OTT'
 WHERE personal_access_token.description = 'One time use publish token';
 
+-- set LLT for all other tokens
 UPDATE public.personal_access_token
 SET type = 'LLT'
 WHERE personal_access_token.type IS NULL;
 
+-- type is required for all tokens
 ALTER TABLE ONLY public.personal_access_token
     ALTER COLUMN type SET NOT NULL;

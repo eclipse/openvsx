@@ -98,6 +98,10 @@ public class ExtensionProcessor implements AutoCloseable {
         this.extensionFile = extensionFile;
     }
 
+    public TempFile getExtensionFile() {
+        return extensionFile;
+    }
+
     @Override
     public void close() {
         if (zipFile != null) {
