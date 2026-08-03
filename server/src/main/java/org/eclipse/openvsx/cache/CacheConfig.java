@@ -284,12 +284,12 @@ public class CacheConfig {
                                 .withValueInclusion(JsonInclude.Include.NON_NULL))
                 .build();
 
-        var genericMapper = JsonMapper.shared();
+        var sharedMapper = JsonMapper.shared();
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .withCacheConfiguration(
                         CACHE_AVERAGE_REVIEW_RATING,
-                        redisCacheConfig(new GenericJacksonJsonRedisSerializer(genericMapper), averageReviewRatingTtl))
+                        redisCacheConfig(new JacksonJsonRedisSerializer<>(Double.class), averageReviewRatingTtl))
                 .withCacheConfiguration(
                         CACHE_NAMESPACE_DETAILS_JSON,
                         redisCacheConfig(
@@ -324,7 +324,12 @@ public class CacheConfig {
                         redisCacheConfig(new StringRedisSerializer(), sitemapTtl))
                 .withCacheConfiguration(
                         CACHE_MALICIOUS_EXTENSIONS,
-                        redisCacheConfig(new GenericJacksonJsonRedisSerializer(genericMapper), maliciousExtensionsTtl))
+                        redisCacheConfig(
+                                new JacksonJsonRedisSerializer<>(
+                                        sharedMapper,
+                                        sharedMapper.getTypeFactory()
+                                                .constructParametricType(List.class, String.class)),
+                                maliciousExtensionsTtl))
                 .build();
     }
 
