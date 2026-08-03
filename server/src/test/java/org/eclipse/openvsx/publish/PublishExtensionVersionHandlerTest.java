@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -35,13 +36,17 @@ import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -139,6 +144,153 @@ class PublishExtensionVersionHandlerTest {
             assertThat(result.getPublishedWith()).isEqualTo(token);
             assertThat(result.getExtension()).isSameAs(capturedExtension.getValue());
             assertThat(result.getExtension().getNamespace()).isSameAs(namespace);
+        }
+    }
+
+    @Test
+    void shouldFailWhenFileResourceCollidesWithDerivedDownloadName() throws IOException {
+        // TOB-OVSX-15: object keys for a version share one flat namespace, so a README (or any other
+        // asset) declared under the binary's derived name would silently overwrite it in storage once
+        // uploaded. That resource name is attacker-controlled (it comes from the VSIX manifest), so
+        // publication of a colliding package must be rejected before anything is stored.
+        try (
+                var processor = org.mockito.Mockito.mock(ExtensionProcessor.class);
+                var readme = new TempFile("readme_", ".md")
+        ) {
+            var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata("publisher", "demo", "2.0.0", "Demo OK"));
+
+            // Matches what createExtensionVersion will derive for the download once extVersion is wired
+            // up with its extension/namespace, which happens after this point in the real flow.
+            var maliciousName = NamingUtil.toFileFormat("publisher", "demo", "any", "2.0.0", ".vsix");
+            var readmeResource = new FileResource();
+            readmeResource.setName(maliciousName);
+            readme.setResource(readmeResource);
+
+            doAnswer(invocation -> {
+                Consumer<TempFile> consumer = invocation.getArgument(1);
+                consumer.accept(readme);
+                return null;
+            }).when(processor).getFileResources(any(), any());
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining(maliciousName);
+
+            // the version must not be persisted once its file resources are rejected
+            org.mockito.Mockito.verify(entityManager, never()).persist(metadata);
+        }
+    }
+
+    @Test
+    void shouldFailWhenTwoFileResourcesHaveTheSameName() throws IOException {
+        try (
+                var processor = org.mockito.Mockito.mock(ExtensionProcessor.class);
+                var changelog = new TempFile("changelog_", ".md");
+                var license = new TempFile("license_", ".md")
+        ) {
+            var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata("publisher", "demo", "2.0.0", "Demo OK"));
+
+            var changelogResource = new FileResource();
+            changelogResource.setName("CHANGELOG.md");
+            changelog.setResource(changelogResource);
+
+            // The license is repointed at the same file as the changelog, so both resolve to the same
+            // name under different resource types.
+            var licenseResource = new FileResource();
+            licenseResource.setName("CHANGELOG.md");
+            license.setResource(licenseResource);
+
+            doAnswer(invocation -> {
+                Consumer<TempFile> consumer = invocation.getArgument(1);
+                consumer.accept(changelog);
+                consumer.accept(license);
+                return null;
+            }).when(processor).getFileResources(any(), any());
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("CHANGELOG.md");
+        }
+    }
+
+    @Test
+    void shouldReportAllFileResourceCollisionsAtOnce() throws IOException {
+        // Reports every colliding name in one error instead of failing on the first, so a publisher
+        // does not have to republish repeatedly just to discover the next collision.
+        try (
+                var processor = org.mockito.Mockito.mock(ExtensionProcessor.class);
+                var readme = new TempFile("readme_", ".md");
+                var changelog = new TempFile("changelog_", ".md");
+                var license = new TempFile("license_", ".md")
+        ) {
+            mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata("publisher", "demo", "2.0.0", "Demo OK"));
+
+            var maliciousName = NamingUtil.toFileFormat("publisher", "demo", "any", "2.0.0", ".vsix");
+            var readmeResource = new FileResource();
+            readmeResource.setName(maliciousName);
+            readme.setResource(readmeResource);
+
+            var changelogResource = new FileResource();
+            changelogResource.setName("CHANGELOG.md");
+            changelog.setResource(changelogResource);
+
+            // A second, independent collision alongside the readme/binary one above.
+            var licenseResource = new FileResource();
+            licenseResource.setName("CHANGELOG.md");
+            license.setResource(licenseResource);
+
+            doAnswer(invocation -> {
+                Consumer<TempFile> consumer = invocation.getArgument(1);
+                consumer.accept(readme);
+                consumer.accept(changelog);
+                consumer.accept(license);
+                return null;
+            }).when(processor).getFileResources(any(), any());
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Multiple file name collisions")
+                    .hasMessageContaining(maliciousName)
+                    .hasMessageContaining("CHANGELOG.md");
         }
     }
 
