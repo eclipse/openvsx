@@ -402,14 +402,30 @@ public class PublishExtensionVersionHandler {
         reservedNames.add(NamingUtil.toFileFormat(extVersion, ".vsix"));
         reservedNames.add(NamingUtil.toFileFormat(extVersion, ".sha256"));
         reservedNames.add(NamingUtil.toFileFormat(extVersion, ".sigzip"));
+
+        // Collect every colliding name instead of failing on the first one, so a publisher fixing one
+        // collision does not have to republish repeatedly just to discover the next.
+        var collisions = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (var name : names) {
             if (!reservedNames.add(name)) {
-                throw new ErrorResultException(
-                        "Extension contains multiple files named '" + name + "' (case-insensitive)."
-                                + " Rename the conflicting asset so that it does not collide with another"
-                                + " published file.");
+                collisions.add(name);
             }
         }
+
+        if (collisions.isEmpty()) {
+            return;
+        }
+        if (collisions.size() == 1) {
+            throw new ErrorResultException(collisionMessage(collisions.first()));
+        }
+        throw new ErrorResultException(
+                "Multiple file name collisions were found in the extension:\n"
+                        + collisions.stream().map(this::collisionMessage).collect(Collectors.joining("\n")));
+    }
+
+    private String collisionMessage(String name) {
+        return "Extension contains multiple files named '" + name + "' (case-insensitive)."
+                + " Rename the conflicting asset so that it does not collide with another published file.";
     }
 
     private void validateMetadata(ExtensionVersion extVersion) {

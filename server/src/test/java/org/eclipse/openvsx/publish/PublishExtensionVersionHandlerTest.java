@@ -240,6 +240,61 @@ class PublishExtensionVersionHandlerTest {
     }
 
     @Test
+    void shouldReportAllFileResourceCollisionsAtOnce() throws IOException {
+        // Reports every colliding name in one error instead of failing on the first, so a publisher
+        // does not have to republish repeatedly just to discover the next collision.
+        try (
+                var processor = org.mockito.Mockito.mock(ExtensionProcessor.class);
+                var readme = new TempFile("readme_", ".md");
+                var changelog = new TempFile("changelog_", ".md");
+                var license = new TempFile("license_", ".md")
+        ) {
+            mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata("publisher", "demo", "2.0.0", "Demo OK"));
+
+            var maliciousName = NamingUtil.toFileFormat("publisher", "demo", "any", "2.0.0", ".vsix");
+            var readmeResource = new FileResource();
+            readmeResource.setName(maliciousName);
+            readme.setResource(readmeResource);
+
+            var changelogResource = new FileResource();
+            changelogResource.setName("CHANGELOG.md");
+            changelog.setResource(changelogResource);
+
+            // A second, independent collision alongside the readme/binary one above.
+            var licenseResource = new FileResource();
+            licenseResource.setName("CHANGELOG.md");
+            license.setResource(licenseResource);
+
+            doAnswer(invocation -> {
+                Consumer<TempFile> consumer = invocation.getArgument(1);
+                consumer.accept(readme);
+                consumer.accept(changelog);
+                consumer.accept(license);
+                return null;
+            }).when(processor).getFileResources(any(), any());
+
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+                    .isInstanceOf(ErrorResultException.class)
+                    .hasMessageContaining("Multiple file name collisions")
+                    .hasMessageContaining(maliciousName)
+                    .hasMessageContaining("CHANGELOG.md");
+        }
+    }
+
+    @Test
     void shouldFailWhenNamespaceDoesNotExist() {
         // When namespace doesn't exist, handler should throw an error.
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
