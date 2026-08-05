@@ -8,6 +8,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Bump socks from `2.8.3` to `2.8.9`
 - Bump ip-address from `9.0.5` to `10.4.0`
+- Bump postcss from `8.5.22` to `8.5.25`
 
 ## [v1.1.0] (02/08/2026)
 
