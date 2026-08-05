@@ -26,7 +26,7 @@ def jooqSrcDir = 'src/main/jooq-gen'
 
 // Steps for checking
 // - ./gradlew listDependencies
-// - jbang toolbox@maveniverse versions build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date
+// - jbang toolbox@maveniverse versions build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date"
 // OR
 // - mvn eu.maveniverse.maven.plugins:toolbox:gav-versions -Dgav=build/dependencies/list.txt -DartifactVersionSelectorSpec="minor()" | grep -v "up to date"
 
