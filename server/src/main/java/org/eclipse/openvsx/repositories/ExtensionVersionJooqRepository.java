@@ -543,8 +543,8 @@ public class ExtensionVersionJooqRepository {
         extVersion.setBundledExtensions(
                 toList(row.get(extensionVersionMapper.map(EXTENSION_VERSION.BUNDLED_EXTENSIONS)), converter));
         extVersion.setSponsorLink(row.get(extensionVersionMapper.map(EXTENSION_VERSION.SPONSOR_LINK)));
-        extVersion
-                .setPotentiallyMalicious(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS)));
+        extVersion.setPotentiallyMalicious(
+                Boolean.TRUE.equals(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS))));
 
         // The `removed` column is only selected by queries that may include non-active versions; when it
         // is present, carry it through so callers observe the correct tombstone state. (Active versions
@@ -1568,7 +1568,7 @@ public class ExtensionVersionJooqRepository {
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetchOne("all", Integer.class);

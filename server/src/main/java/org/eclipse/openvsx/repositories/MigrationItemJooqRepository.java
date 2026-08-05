@@ -34,6 +34,7 @@ public class MigrationItemJooqRepository {
                 .from(MIGRATION_ITEM)
                 .join(FILE_RESOURCE).on(FILE_RESOURCE.ID.eq(MIGRATION_ITEM.ENTITY_ID))
                 .where(MIGRATION_ITEM.JOB_NAME.eq(jobName))
+                .orderBy(MIGRATION_ITEM.ID)
                 .limit(limit)
                 .offset(offset)
                 .fetch(row -> {
