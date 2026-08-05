@@ -4,6 +4,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Dependencies
+
+- Bump socks from `2.8.3` to `2.8.9`
+- Bump ip-address from `9.0.5` to `10.4.0`
+
 ## [v1.1.0] (02/08/2026)
 
 ### Added
