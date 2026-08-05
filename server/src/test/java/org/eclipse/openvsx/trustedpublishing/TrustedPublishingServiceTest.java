@@ -53,9 +53,6 @@ class TrustedPublishingServiceTest {
     @Mock
     EntityManager entityManager;
 
-    @InjectMocks
-    TrustedPublishingService service;
-
     private final UserData user = new UserData();
 
     private final Namespace namespace = new Namespace();
@@ -63,6 +60,7 @@ class TrustedPublishingServiceTest {
     @Test
     void listsEveryRegistrationButOffersOnlyUntakenActiveExtensions() {
         when(config.isEnabled()).thenReturn(true);
+        when(config.getActiveProviders()).thenReturn(List.of("github"));
         namespace.setId(1L);
         namespace.setName(NAMESPACE);
         when(repositories.findNamespace(NAMESPACE)).thenReturn(namespace);
@@ -85,6 +83,8 @@ class TrustedPublishingServiceTest {
         when(repositories.findTrustedPublishersByExtension(free)).thenReturn(Streamable.empty());
         when(repositories.findTrustedPublishersByExtension(gone)).thenReturn(Streamable.of(gonePublisher));
 
+        // config is used in ctor, so we must set up fixture and then create the service
+        TrustedPublishingService service = new TrustedPublishingService(config, repositories, tokens, entityManager);
         var result = service.getTrustedPublishers(user, NAMESPACE);
 
         assertThat(result.publishers()).containsExactlyInAnyOrder(registeredPublisher, gonePublisher);

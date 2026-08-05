@@ -122,6 +122,13 @@ public abstract class TrustedPublishingProviderSupport {
     }
 
     /**
+     * Is provider active.
+     */
+    public boolean isActive() {
+        return config.getActiveProviders().contains(getProviderId());
+    }
+
+    /**
      * The provider name, for human consumption.
      */
     public String getProviderName() {
@@ -155,7 +162,7 @@ public abstract class TrustedPublishingProviderSupport {
      */
     public Optional<Map<String, String>> extract(String oidcId) {
         requireNonNull(oidcId);
-        if (!config.isEnabled()) {
+        if (!config.isEnabled() || !isActive()) {
             return Optional.empty();
         }
         try {

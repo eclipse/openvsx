@@ -12,7 +12,6 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
-import java.time.Duration;
 import java.util.List;
 
 import jakarta.annotation.PostConstruct;
@@ -41,6 +40,13 @@ public class TrustedPublishingConfig {
     @Value("${ovsx.trusted-publishing.forbidden-jwt-headers:x5u,x5c,jku,jwk}")
     private List<String> forbiddenJwtHeaders;
 
+    /**
+     * The comma separated list of active trusted published providers.
+     * Default: @{code "github"}.
+     */
+    @Value("${ovsx.trusted-publishing.active-providers:github}")
+    private List<String> activeProviders;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -55,6 +61,11 @@ public class TrustedPublishingConfig {
         return forbiddenJwtHeaders;
     }
 
+    @NonNull
+    public List<String> getActiveProviders() {
+        return activeProviders;
+    }
+
     @PostConstruct
     public void validate() {
         if (enabled) {
@@ -64,6 +75,10 @@ public class TrustedPublishingConfig {
             if (forbiddenJwtHeaders == null || forbiddenJwtHeaders.isEmpty()) {
                 throw new IllegalStateException(
                         "Trusted publishing is enabled, but forbidden JWT headers are not configured");
+            }
+            if (activeProviders == null || activeProviders.isEmpty()) {
+                throw new IllegalStateException(
+                        "Trusted publishing is enabled, but there are no active providers configured");
             }
         }
     }
