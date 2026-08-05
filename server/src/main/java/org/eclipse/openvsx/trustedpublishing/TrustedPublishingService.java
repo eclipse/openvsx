@@ -14,6 +14,7 @@ package org.eclipse.openvsx.trustedpublishing;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +40,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.trustedpublishing.github.GitHubTrustedPublishingProvider;
 import org.eclipse.openvsx.trustedpublishing.gitlab.EclipseGitLabTrustedPublishingProvider;
 import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvider;
+import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProviderSupport;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -91,6 +93,11 @@ public class TrustedPublishingService {
         }
     }
 
+    private boolean providerIsActive(String providerId) {
+        TrustedPublishingProviderSupport provider = providers.get(providerId);
+        return provider != null && provider.isActive();
+    }
+
     /**
      * Client initiated registration of trusted publishing. The user must be an owner of the namespace.
      */
@@ -121,7 +128,7 @@ public class TrustedPublishingService {
         }
 
         TrustedPublishingProviderSupport provider = providers.get(providerId);
-        if (provider == null) {
+        if (provider == null || !provider.isActive()) {
             throw new ErrorResultException("Unknown trusted publishing provider: " + providerId);
         }
 
@@ -171,7 +178,8 @@ public class TrustedPublishingService {
                     registrableExtensions.add(extensionName);
                 }
             } else {
-                publishers.addAll(extensionPublishers);
+                // filter by active providers; if registration exists for non-active provider, filter it out
+                publishers.addAll(extensionPublishers.stream().filter(p -> providerIsActive(p.getProvider())).toList());
             }
         }
         return new TrustedPublishers(publishers, registrableExtensions);
@@ -203,9 +211,19 @@ public class TrustedPublishingService {
     }
 
     /**
-     * Lists trusted publisher providers.
+     * Lists active trusted publisher providers.
      */
     public Map<String, TrustedPublishingProviderSupport> getTrustedPublisherProviders() {
+        ensureEnabled();
+        return providers.entrySet().stream()
+                .filter(e -> e.getValue().isActive())
+                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), HashMap::putAll);
+    }
+
+    /**
+     * Lists all trusted publisher providers.
+     */
+    public Map<String, TrustedPublishingProviderSupport> getAllTrustedPublisherProviders() {
         ensureEnabled();
         return providers;
     }
@@ -236,6 +254,7 @@ public class TrustedPublishingService {
 
         // select provider based on "iss"
         TrustedPublishingProviderSupport provider = providers.values().stream()
+                .filter(TrustedPublishingProviderSupport::isActive)
                 .filter(p -> Objects.equals(issuer, p.getOidcIssuer()))
                 .findFirst()
                 .orElseThrow(() -> new ErrorResultException("Unsupported token issuer."));
