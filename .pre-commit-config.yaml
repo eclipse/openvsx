@@ -43,3 +43,9 @@ repos:
       language: system
       require_serial: true
       files: ^server/src/(main|test)/java/.*\.java$
+    - id: server-dependency-updates
+      name: server -> check dependency updates
+      entry: server/scripts/dependency-update-check.sh
+      language: system
+      require_serial: true
+      always_run: true
