@@ -63,6 +63,10 @@ case "${COMPONENT}" in
 
     "openvsx")
         # TODO: the server component currently does not have a version indicator in the build.gradle
+        if ! ./server/scripts/dependency-update-check.sh; then
+          echo "openvsx server has unvetted dependency updates; review them first."
+          exit 1
+        fi
         ;;
 esac
 
