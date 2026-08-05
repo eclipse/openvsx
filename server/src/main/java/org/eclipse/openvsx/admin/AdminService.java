@@ -597,12 +597,6 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(provider + "/" + username), HttpStatus.NOT_FOUND);
         }
 
-        // Send a DELETE request to the Eclipse publisher agreement API. Guarded so that
-        // instances without Eclipse integration are unaffected.
-        if (eclipse.isActive() && user.getEclipsePersonId() != null) {
-            eclipse.revokePublisherAgreement(user, admin);
-        }
-
         // Handle namespace memberships, removing the users active memberships where found
         var removedMembershipCount = 0;
         for (var membership : repositories.findMemberships(user).toList()) {
