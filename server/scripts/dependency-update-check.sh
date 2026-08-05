@@ -11,4 +11,9 @@ cd "${SERVER_ROOT}"
 
 jbang toolbox@maveniverse versions build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date" > gradle/dependency-updates.txt
 
-git diff --exit-code --quiet gradle/dependency-updates.txt
+if git diff --exit-code --quiet gradle/dependency-updates.txt; then
+    echo "All dependencies are up to date."
+else
+    git diff gradle/dependency-updates.txt
+    exit 1
+fi
