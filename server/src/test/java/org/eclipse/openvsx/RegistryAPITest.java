@@ -39,7 +39,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
@@ -3305,7 +3304,7 @@ class RegistryAPITest {
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            when(uuidService.generateRandomUUID()).thenAnswer(i -> UUID.randomUUID());
+            when(uuidService.generateRandom()).thenAnswer(i -> UUID.randomUUID());
             return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 

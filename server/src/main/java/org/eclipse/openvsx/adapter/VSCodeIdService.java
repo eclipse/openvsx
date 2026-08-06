@@ -82,7 +82,7 @@ public class VSCodeIdService {
     }
 
     public String getRandomPublicId() {
-        return uuidService.generateRandomUUID().toString();
+        return uuidService.generateRandom().toString();
     }
 
     public PublicIds getUpstreamPublicIds(Extension extension) {

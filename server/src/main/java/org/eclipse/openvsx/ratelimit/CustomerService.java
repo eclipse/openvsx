@@ -186,7 +186,7 @@ public class CustomerService {
         String value;
         do {
             value = (rateLimitProperties != null ? rateLimitProperties.getTokenPrefix() : "")
-                    + uuidService.generateRandomUUID();
+                    + uuidService.generateRandom();
         } while (repositories.hasRateLimitToken(value));
         return value;
     }

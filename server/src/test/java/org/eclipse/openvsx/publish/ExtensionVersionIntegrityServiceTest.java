@@ -118,7 +118,7 @@ class ExtensionVersionIntegrityServiceTest {
                 RepositoryService repositoryService,
                 UUIDService uuidService
         ) {
-            when(uuidService.generateRandomUUID()).thenAnswer(invocation -> UUID.randomUUID());
+            when(uuidService.generateRandom()).thenAnswer(invocation -> UUID.randomUUID());
             return new GenerateKeyPairJobService(entityManager, repositoryService, uuidService);
         }
     }

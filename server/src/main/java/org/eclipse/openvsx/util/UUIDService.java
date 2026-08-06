@@ -31,14 +31,16 @@ import static java.util.Objects.requireNonNull;
 public class UUIDService {
 
     /**
-     * Generates random UUID.
+     * Generates random UUID, never returns {@code null}.
      */
-    public UUID generateRandomUUID() {
+    public UUID generateRandom() {
         return Generators.timeBasedEpochGenerator().generate();
     }
 
     /**
-     * Generates v3 "name based" UUIDv3.
+     * Generates v3 "name based" UUIDv3, never returns {@code null}.
+     *
+     * @param name the name to generate UUID from, must not be {@code null}
      */
     public UUID generateFromName(String name) {
         requireNonNull(name);

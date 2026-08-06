@@ -152,7 +152,7 @@ public class AccessTokenService {
     public String generateTokenValue() {
         String value;
         do {
-            value = config.getPrefix() + uuidService.generateRandomUUID().toString();
+            value = config.getPrefix() + uuidService.generateRandom();
         } while (repositories.hasPersonalAccessToken(value));
         return value;
     }

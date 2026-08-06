@@ -60,7 +60,7 @@ public class GenerateKeyPairJobService {
         var pair = generator.generateKeyPair();
 
         var keyPair = new SignatureKeyPair();
-        keyPair.setPublicId(uuidService.generateRandomUUID().toString());
+        keyPair.setPublicId(uuidService.generateRandom().toString());
         keyPair.setPrivateKey(((Ed25519PrivateKeyParameters) pair.getPrivate()).getEncoded());
         keyPair.setPublicKeyText(getPublicKeyText(pair));
         keyPair.setCreated(TimeUtil.getCurrentUTC());

@@ -1092,7 +1092,7 @@ class UserAPITest {
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            when(uuidService.generateRandomUUID()).thenAnswer(i -> UUID.randomUUID());
+            when(uuidService.generateRandom()).thenAnswer(i -> UUID.randomUUID());
             return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
