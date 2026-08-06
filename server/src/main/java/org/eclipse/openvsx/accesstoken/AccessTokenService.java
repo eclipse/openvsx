@@ -14,7 +14,6 @@ package org.eclipse.openvsx.accesstoken;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.uuid.Generators;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +31,7 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 
 import static java.util.Objects.requireNonNull;
@@ -40,17 +40,20 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 @Service
 public class AccessTokenService {
     private final AccessTokenConfig config;
+    private final UUIDService uuidService;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final MailService mail;
 
     public AccessTokenService(
             AccessTokenConfig config,
+            UUIDService uuidService,
             EntityManager entityManager,
             RepositoryService repositories,
             MailService mail
     ) {
         this.config = config;
+        this.uuidService = uuidService;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.mail = mail;
@@ -149,7 +152,7 @@ public class AccessTokenService {
     public String generateTokenValue() {
         String value;
         do {
-            value = config.getPrefix() + Generators.timeBasedEpochGenerator().generate().toString();
+            value = config.getPrefix() + uuidService.generateRandomUUID().toString();
         } while (repositories.hasPersonalAccessToken(value));
         return value;
     }

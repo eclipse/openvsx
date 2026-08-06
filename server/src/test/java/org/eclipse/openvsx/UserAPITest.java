@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -65,10 +66,12 @@ import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -108,6 +111,9 @@ class UserAPITest {
 
     @MockitoBean
     EntityManager entityManager;
+
+    @MockitoBean
+    UUIDService uuidService;
 
     @MockitoBean
     RepositoryService repositories;
@@ -1081,11 +1087,13 @@ class UserAPITest {
         @Bean
         AccessTokenService accessTokenService(
                 AccessTokenConfig config,
+                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            when(uuidService.generateRandomUUID()).thenAnswer(i -> UUID.randomUUID());
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
         @Bean
