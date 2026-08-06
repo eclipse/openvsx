@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.impl.NameBasedGenerator;
+import com.fasterxml.uuid.impl.TimeBasedEpochGenerator;
 import org.springframework.stereotype.Service;
 
 import static java.util.Objects.requireNonNull;
@@ -24,17 +26,19 @@ import static java.util.Objects.requireNonNull;
  * <ul>
  *     <li>Random UUIDs are generated using a time-based epoch generator as UUIDv7.</li>
  *     <li>Name-based UUIDs are generated using a name-based generator with UTF-8 encoding as UUIDv3.</li>
- *     <li>TODO: cluster wide sync using Jedis</li>
  * </ul>
  */
 @Service
 public class UUIDService {
 
+    private final TimeBasedEpochGenerator uuid7generator = Generators.timeBasedEpochGenerator();
+    private final NameBasedGenerator uuid3generator = Generators.nameBasedGenerator();
+
     /**
      * Generates random UUID, never returns {@code null}.
      */
     public UUID generateRandom() {
-        return Generators.timeBasedEpochGenerator().generate();
+        return uuid7generator.generate();
     }
 
     /**
@@ -44,6 +48,6 @@ public class UUIDService {
      */
     public UUID generateFromName(String name) {
         requireNonNull(name);
-        return Generators.nameBasedGenerator().generate(name.getBytes(StandardCharsets.UTF_8));
+        return uuid3generator.generate(name.getBytes(StandardCharsets.UTF_8));
     }
 }
