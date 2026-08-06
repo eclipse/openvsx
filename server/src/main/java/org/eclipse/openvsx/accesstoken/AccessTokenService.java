@@ -13,8 +13,8 @@
 package org.eclipse.openvsx.accesstoken;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
+import com.fasterxml.uuid.Generators;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.jspecify.annotations.Nullable;
@@ -149,7 +149,7 @@ public class AccessTokenService {
     public String generateTokenValue() {
         String value;
         do {
-            value = config.getPrefix() + UUID.randomUUID();
+            value = config.getPrefix() + Generators.timeBasedEpochGenerator().generate().toString();
         } while (repositories.hasPersonalAccessToken(value));
         return value;
     }

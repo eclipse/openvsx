@@ -11,7 +11,6 @@ package org.eclipse.openvsx.adapter;
 
 import java.time.ZoneId;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -30,6 +29,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 
 @Service
@@ -40,6 +40,7 @@ public class VSCodeIdService {
     private final RestTemplate vsCodeIdRestTemplate;
     private final UrlConfigService urlConfigService;
     private final JobRequestScheduler scheduler;
+    private final UUIDService uuidService;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
@@ -53,11 +54,13 @@ public class VSCodeIdService {
     public VSCodeIdService(
             RestTemplate vsCodeIdRestTemplate,
             UrlConfigService urlConfigService,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            UUIDService uuidService
     ) {
         this.vsCodeIdRestTemplate = vsCodeIdRestTemplate;
         this.urlConfigService = urlConfigService;
         this.scheduler = scheduler;
+        this.uuidService = uuidService;
     }
 
     @EventListener
@@ -79,7 +82,7 @@ public class VSCodeIdService {
     }
 
     public String getRandomPublicId() {
-        return UUID.randomUUID().toString();
+        return uuidService.generateRandomUUID().toString();
     }
 
     public PublicIds getUpstreamPublicIds(Extension extension) {

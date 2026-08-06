@@ -11,6 +11,7 @@ package org.eclipse.openvsx.publish;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.UUID;
 import java.util.zip.ZipFile;
 
 import jakarta.persistence.EntityManager;
@@ -31,11 +32,13 @@ import org.eclipse.openvsx.migration.GenerateKeyPairJobService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ArchiveUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.UUIDService;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@MockitoBean(types = { CacheService.class, RepositoryService.class, EntityManager.class })
+@MockitoBean(types = { CacheService.class, RepositoryService.class, EntityManager.class, UUIDService.class })
 class ExtensionVersionIntegrityServiceTest {
 
     @Autowired
@@ -112,9 +115,11 @@ class ExtensionVersionIntegrityServiceTest {
         @Bean
         GenerateKeyPairJobService generateKeyPairJobService(
                 EntityManager entityManager,
-                RepositoryService repositoryService
+                RepositoryService repositoryService,
+                UUIDService uuidService
         ) {
-            return new GenerateKeyPairJobService(entityManager, repositoryService);
+            when(uuidService.generateRandomUUID()).thenAnswer(invocation -> UUID.randomUUID());
+            return new GenerateKeyPairJobService(entityManager, repositoryService, uuidService);
         }
     }
 }

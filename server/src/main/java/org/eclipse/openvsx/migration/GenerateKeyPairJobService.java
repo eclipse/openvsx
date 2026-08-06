@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -30,16 +29,23 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 
 @Component
 public class GenerateKeyPairJobService {
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
+    private final UUIDService uuidService;
 
-    public GenerateKeyPairJobService(EntityManager entityManager, RepositoryService repositories) {
+    public GenerateKeyPairJobService(
+            EntityManager entityManager,
+            RepositoryService repositories,
+            UUIDService uuidService
+    ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
+        this.uuidService = uuidService;
     }
 
     @Transactional
@@ -54,7 +60,7 @@ public class GenerateKeyPairJobService {
         var pair = generator.generateKeyPair();
 
         var keyPair = new SignatureKeyPair();
-        keyPair.setPublicId(UUID.randomUUID().toString());
+        keyPair.setPublicId(uuidService.generateRandomUUID().toString());
         keyPair.setPrivateKey(((Ed25519PrivateKeyParameters) pair.getPrivate()).getEncoded());
         keyPair.setPublicKeyText(getPublicKeyText(pair));
         keyPair.setCreated(TimeUtil.getCurrentUTC());

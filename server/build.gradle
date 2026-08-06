@@ -108,6 +108,7 @@ dependencies {
     implementation libs.bouncycastle
     implementation libs.jedis
     implementation libs.guava
+    implementation libs.uuid.generator
 
     implementation libs.bucket4j.spring
     implementation libs.bucket4j.redis

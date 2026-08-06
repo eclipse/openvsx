@@ -13,7 +13,6 @@
 package org.eclipse.openvsx.ratelimit;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import inet.ipaddr.IPAddressString;
 import inet.ipaddr.ipv4.IPv4AddressAssociativeTrie;
@@ -36,6 +35,7 @@ import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 
 @Service
 public class CustomerService {
@@ -43,6 +43,7 @@ public class CustomerService {
 
     private final EntityManager entityManager;
     private final RepositoryService repositories;
+    private final UUIDService uuidService;
     private final @Nullable RateLimitProperties rateLimitProperties;
 
     private IPv4AddressAssociativeTrie<Customer> customersByIPAddress;
@@ -50,10 +51,12 @@ public class CustomerService {
     public CustomerService(
             EntityManager entityManager,
             RepositoryService repositories,
+            UUIDService uuidService,
             @Nullable RateLimitProperties rateLimitProperties
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
+        this.uuidService = uuidService;
         this.rateLimitProperties = rateLimitProperties;
     }
 
@@ -182,7 +185,8 @@ public class CustomerService {
     private String generateTokenValue() {
         String value;
         do {
-            value = (rateLimitProperties != null ? rateLimitProperties.getTokenPrefix() : "") + UUID.randomUUID();
+            value = (rateLimitProperties != null ? rateLimitProperties.getTokenPrefix() : "")
+                    + uuidService.generateRandomUUID();
         } while (repositories.hasRateLimitToken(value));
         return value;
     }
