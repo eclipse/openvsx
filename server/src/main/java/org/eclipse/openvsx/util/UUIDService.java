@@ -35,14 +35,14 @@ public class UUIDService {
     private final NameBasedGenerator uuid3generator = Generators.nameBasedGenerator();
 
     /**
-     * Generates random UUID, never returns {@code null}.
+     * Generates random UUIDv7, never returns {@code null}.
      */
     public UUID generateRandom() {
         return uuid7generator.generate();
     }
 
     /**
-     * Generates v3 "name based" UUIDv3, never returns {@code null}.
+     * Generates name based UUIDv3, never returns {@code null}.
      *
      * @param name the name to generate UUID from, must not be {@code null}
      */
