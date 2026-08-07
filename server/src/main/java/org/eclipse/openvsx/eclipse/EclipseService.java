@@ -274,7 +274,8 @@ public class EclipseService {
 
         var personId = user.getEclipsePersonId();
         if (personId == null) {
-            return "none";
+            // no eclipse user is linked to no point in setting a publisher agreement status
+            return null;
         }
 
         try {
