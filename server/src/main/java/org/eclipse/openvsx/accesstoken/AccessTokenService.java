@@ -46,6 +46,7 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 public class AccessTokenService {
     private static final int TOKEN_VERSION_0 = 0;
     private static final int TOKEN_VERSION_1 = 1;
+    private static final int[] ALL_TOKEN_VERSIONS = { TOKEN_VERSION_0, TOKEN_VERSION_1 };
     private static final int TOKEN_CURRENT_VERSION = TOKEN_VERSION_1;
 
     private final AccessTokenConfig config;
@@ -267,24 +268,32 @@ public class AccessTokenService {
 
     @Transactional
     public int upgradeTokens() {
-        var legacyTokens = repositories.findAllPersonalAccessTokensByVersion(TOKEN_VERSION_0);
         int upgradedCount = 0;
-        for (var token : legacyTokens) {
-            if (upgradeToken(token)) {
-                upgradedCount++;
+        for (int version : ALL_TOKEN_VERSIONS) {
+            if (version == TOKEN_CURRENT_VERSION) {
+                continue;
+            }
+            var legacyTokens = repositories.findAllPersonalAccessTokensByVersion(version);
+            for (var token : legacyTokens) {
+                if (upgradeToken(token)) {
+                    upgradedCount++;
+                }
             }
         }
         return upgradedCount;
     }
 
     private boolean upgradeToken(PersonalAccessToken token) {
-        if (token.getVersion() != TOKEN_CURRENT_VERSION) {
+        int version = token.getVersion();
+        if (version == TOKEN_VERSION_0) {
             token.setValue(hashTokenValue(token.getValue()));
-            token.setVersion(TOKEN_CURRENT_VERSION);
+            token.setVersion(TOKEN_VERSION_1);
             return true;
-        } else {
+        }
+        if (version == TOKEN_VERSION_1) {
             return false;
         }
+        throw new IllegalArgumentException("Unsupported token version: " + version);
     }
 
     private String hashTokenValue(String tokenValue) {
