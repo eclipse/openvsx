@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
-@MockitoBean(types = { CacheService.class, RepositoryService.class, EntityManager.class, UUIDService.class })
+@MockitoBean(types = { CacheService.class, RepositoryService.class, EntityManager.class })
 class ExtensionVersionIntegrityServiceTest {
 
     @Autowired
@@ -113,12 +113,16 @@ class ExtensionVersionIntegrityServiceTest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
         GenerateKeyPairJobService generateKeyPairJobService(
                 EntityManager entityManager,
                 RepositoryService repositoryService,
                 UUIDService uuidService
         ) {
-            when(uuidService.generateRandom()).thenAnswer(invocation -> UUID.randomUUID());
             return new GenerateKeyPairJobService(entityManager, repositoryService, uuidService);
         }
     }
