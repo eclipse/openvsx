@@ -39,7 +39,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
@@ -84,6 +83,7 @@ import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 
@@ -93,6 +93,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -120,7 +121,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CdnServiceConfig.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         MailService.class
     }
 )
@@ -3293,13 +3293,24 @@ class RegistryAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
+                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
         @Bean

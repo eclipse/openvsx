@@ -12,11 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +36,7 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 
 import static java.util.Objects.requireNonNull;
@@ -39,18 +44,26 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
 public class AccessTokenService {
+    private static final int TOKEN_VERSION_0 = 0;
+    private static final int TOKEN_VERSION_1 = 1;
+    private static final int[] ALL_TOKEN_VERSIONS = { TOKEN_VERSION_0, TOKEN_VERSION_1 };
+    private static final int TOKEN_CURRENT_VERSION = TOKEN_VERSION_1;
+
     private final AccessTokenConfig config;
+    private final UUIDService uuidService;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final MailService mail;
 
     public AccessTokenService(
             AccessTokenConfig config,
+            UUIDService uuidService,
             EntityManager entityManager,
             RepositoryService repositories,
             MailService mail
     ) {
         this.config = config;
+        this.uuidService = uuidService;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.mail = mail;
@@ -109,18 +122,20 @@ public class AccessTokenService {
             @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
     ) {
+        var rawValue = generateTokenValue();
         var token = new PersonalAccessToken();
         token.setUser(user);
-        token.setValue(generateTokenValue());
+        token.setValue(hashTokenValue(rawValue));
         token.setActive(true);
         token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
         token.setDescription(description);
         token.setExpiresTimestamp(expiresTimestamp);
+        token.setVersion(TOKEN_CURRENT_VERSION);
         token.setType(type);
         if (trustedPublisher != null) {
             // fool-proofing; only TPT token may be created with TP
             if (type != PersonalAccessTokenType.TPT) {
-                throw new IllegalArgumentException("Only TPT token my be created with TP");
+                throw new IllegalArgumentException("Only TPT token may be created with TP");
             }
             // link TP and scope to TP.ext
             token.setTrustedPublisher(trustedPublisher);
@@ -135,8 +150,8 @@ public class AccessTokenService {
 
         entityManager.persist(token);
         var json = token.toAccessTokenJson();
-        // Include the token value after creation so the user can copy it
-        json.setValue(token.getValue());
+        // Include the token raw value after creation so the user can copy it
+        json.setValue(rawValue);
         if (!type.isOneTime()) {
             json.setDeleteTokenUrl(
                     createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
@@ -149,7 +164,7 @@ public class AccessTokenService {
     public String generateTokenValue() {
         String value;
         do {
-            value = config.getPrefix() + UUID.randomUUID();
+            value = config.getPrefix() + uuidService.generateRandom();
         } while (repositories.hasPersonalAccessToken(value));
         return value;
     }
@@ -172,7 +187,15 @@ public class AccessTokenService {
 
     @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
-        var token = repositories.findPersonalAccessToken(tokenValue);
+        var token = repositories.findPersonalAccessToken(hashTokenValue(tokenValue));
+        if (token == null) {
+            // assume DB contains token v0; fetch and upgrade if found active token
+            token = repositories.findPersonalAccessToken(tokenValue);
+            if (token != null && token.getVersion() != TOKEN_CURRENT_VERSION) {
+                // upgrade token
+                upgradeToken(token);
+            }
+        }
         // existence + active
         if (token == null || !token.isActive()) {
             return null;
@@ -241,5 +264,49 @@ public class AccessTokenService {
     @Transactional
     public int setExpirationTimeForLegacyAccessTokens(LocalDateTime expirationTime) {
         return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime, PersonalAccessTokenType.LLT);
+    }
+
+    @Transactional
+    public int upgradeTokens() {
+        int upgradedCount = 0;
+        for (int version : ALL_TOKEN_VERSIONS) {
+            if (version == TOKEN_CURRENT_VERSION) {
+                continue;
+            }
+            var legacyTokens = repositories.findAllPersonalAccessTokensByVersion(version);
+            for (var token : legacyTokens) {
+                if (upgradeToken(token)) {
+                    upgradedCount++;
+                }
+            }
+        }
+        return upgradedCount;
+    }
+
+    private boolean upgradeToken(PersonalAccessToken token) {
+        int version = token.getVersion();
+        if (version == TOKEN_VERSION_0) {
+            token.setValue(hashTokenValue(token.getValue()));
+            token.setVersion(TOKEN_VERSION_1);
+            return true;
+        }
+        if (version == TOKEN_VERSION_1) {
+            return false;
+        }
+        throw new IllegalArgumentException("Unsupported token version: " + version);
+    }
+
+    private String hashTokenValue(String tokenValue) {
+        try {
+            // token hash salt must not be present in DB (is in config)
+            String payload = tokenValue + config.getTokenHashSalt();
+            return Hex.encodeHexString(
+                    DigestUtils.digest(
+                            MessageDigest.getInstance(config.getTokenHashAlgorithm()),
+                            payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            // we verify this on boot; unlikely
+            throw new IllegalStateException("Hash algorithm not found: " + config.getTokenHashAlgorithm(), e);
+        }
     }
 }

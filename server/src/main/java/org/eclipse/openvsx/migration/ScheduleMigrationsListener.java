@@ -9,7 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,12 +20,11 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import org.eclipse.openvsx.util.UUIDService;
+
 @Component
 public class ScheduleMigrationsListener {
-
     protected final Logger logger = LoggerFactory.getLogger(ScheduleMigrationsListener.class);
-
-    private final JobRequestScheduler scheduler;
 
     @Value("${ovsx.migrations.delay.seconds:0}")
     long delay;
@@ -37,8 +35,12 @@ public class ScheduleMigrationsListener {
     @Value("${ovsx.registry.version:}")
     String registryVersion;
 
-    public ScheduleMigrationsListener(JobRequestScheduler scheduler) {
+    private final JobRequestScheduler scheduler;
+    private final UUIDService uuidService;
+
+    public ScheduleMigrationsListener(JobRequestScheduler scheduler, UUIDService uuidService) {
         this.scheduler = scheduler;
+        this.uuidService = uuidService;
     }
 
     @EventListener
@@ -46,7 +48,7 @@ public class ScheduleMigrationsListener {
         UUID jobId = null;
         if (runMigrationsOncePerVersion) {
             var jobIdText = "MigrationScheduler::" + registryVersion;
-            jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+            jobId = uuidService.generateFromName(jobIdText);
         }
 
         var instant = Instant.now().plusSeconds(delay);

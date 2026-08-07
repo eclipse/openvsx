@@ -103,6 +103,7 @@ import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,6 +111,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -141,7 +143,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ExtensionScanService.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         SettingsService.class
     }
 )
@@ -255,9 +256,9 @@ class AdminAPITest {
         var namespace = mockNamespace();
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
-        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+        when(repositories.findUserByLoginName(null, "other_user"))
                 .thenReturn(userData2);
-        Mockito.when(repositories.findMembership(userData2, namespace))
+        when(repositories.findMembership(userData2, namespace))
                 .thenReturn(null);
 
         mockMvc.perform(
@@ -278,13 +279,13 @@ class AdminAPITest {
         var namespace = mockNamespace();
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
-        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+        when(repositories.findUserByLoginName(null, "other_user"))
                 .thenReturn(userData2);
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData2);
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMembership(userData2, namespace))
+        when(repositories.findMembership(userData2, namespace))
                 .thenReturn(membership2);
 
         mockMvc.perform(
@@ -305,13 +306,13 @@ class AdminAPITest {
         var namespace = mockNamespace();
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
-        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+        when(repositories.findUserByLoginName(null, "other_user"))
                 .thenReturn(userData2);
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData2);
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMembership(userData2, namespace))
+        when(repositories.findMembership(userData2, namespace))
                 .thenReturn(membership2);
 
         mockMvc.perform(
@@ -344,13 +345,13 @@ class AdminAPITest {
         var namespace = mockNamespace();
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
-        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+        when(repositories.findUserByLoginName(null, "other_user"))
                 .thenReturn(userData2);
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData2);
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMembership(userData2, namespace))
+        when(repositories.findMembership(userData2, namespace))
                 .thenReturn(membership2);
 
         mockMvc.perform(
@@ -371,13 +372,13 @@ class AdminAPITest {
         var namespace = mockNamespace();
         var userData2 = new UserData();
         userData2.setLoginName("other_user");
-        Mockito.when(repositories.findUserByLoginName(null, "other_user"))
+        when(repositories.findUserByLoginName(null, "other_user"))
                 .thenReturn(userData2);
         var membership2 = new NamespaceMembership();
         membership2.setUser(userData2);
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
-        Mockito.when(repositories.findMembership(userData2, namespace))
+        when(repositories.findMembership(userData2, namespace))
                 .thenReturn(membership2);
 
         mockMvc.perform(
@@ -598,7 +599,7 @@ class AdminAPITest {
         membership1.setNamespace(namespace);
         membership1.setUser(user);
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMemberships(namespace.getName()))
+        when(repositories.findMemberships(namespace.getName()))
                 .thenReturn(List.of(membership1));
 
         mockMvc.perform(
@@ -624,7 +625,7 @@ class AdminAPITest {
         membership1.setNamespace(namespace);
         membership1.setUser(user);
         membership1.setRole(NamespaceMembership.ROLE_OWNER);
-        Mockito.when(repositories.findMemberships(namespace.getName()))
+        when(repositories.findMemberships(namespace.getName()))
                 .thenReturn(List.of(membership1));
 
         mockMvc.perform(
@@ -691,7 +692,7 @@ class AdminAPITest {
     @Test
     void testCreateExistingNamespace() throws Exception {
         mockAdminUser();
-        Mockito.when(repositories.findNamespaceName("foobar"))
+        when(repositories.findNamespaceName("foobar"))
                 .thenReturn("foobar");
 
         mockMvc.perform(
@@ -728,7 +729,7 @@ class AdminAPITest {
     void testDeleteNamespace() throws Exception {
         mockAdminUser();
         var namespace = mockNamespace();
-        Mockito.when(repositories.findExtensions(namespace)).thenReturn(Streamable.empty());
+        when(repositories.findExtensions(namespace)).thenReturn(Streamable.empty());
 
         mockMvc.perform(
                 delete("/admin/namespace/" + namespace.getName())
@@ -743,7 +744,7 @@ class AdminAPITest {
         mockAdminUser();
 
         var namespace = mockNamespace(1);
-        Mockito.when(repositories.findExtensions(namespace)).thenReturn(Streamable.empty());
+        when(repositories.findExtensions(namespace)).thenReturn(Streamable.empty());
 
         mockMvc.perform(
                 delete("/admin/namespace/" + namespace.getName())
@@ -817,7 +818,7 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
 
         mockMvc.perform(
@@ -838,7 +839,7 @@ class AdminAPITest {
         user.setLoginName("test");
         user.setProvider("github");
         user.setRole(UserData.Role.ADMIN);
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
 
         mockMvc.perform(
@@ -858,7 +859,7 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
 
         mockMvc.perform(
@@ -872,7 +873,7 @@ class AdminAPITest {
     @Test
     void testUpdateUserRoleNotFound() throws Exception {
         mockAdminUser();
-        Mockito.when(repositories.findUserByLoginName("github", "unknown"))
+        when(repositories.findUserByLoginName("github", "unknown"))
                 .thenReturn(null);
 
         mockMvc.perform(
@@ -916,11 +917,11 @@ class AdminAPITest {
         token.setType(PersonalAccessTokenType.LLT);
         versions.forEach(v -> v.setPublishedWith(token));
 
-        Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
-        Mockito.when(repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT))
+        when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
+        when(repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT))
                 .thenReturn(1L);
-        Mockito.when(repositories.findLatestVersions(user)).thenReturn(versions);
-        Mockito.when(repositories.findActiveReviews(user)).thenReturn(Streamable.empty());
+        when(repositories.findLatestVersions(user)).thenReturn(versions);
+        when(repositories.findActiveReviews(user)).thenReturn(Streamable.empty());
 
         mockMvc.perform(
                 get("/admin/publisher/{provider}/{loginName}", "github", "test")
@@ -965,19 +966,19 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setActive(true);
         token.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessTokens(user))
+        when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(token));
         versions.forEach(v -> v.setPublishedWith(token));
-        Mockito.when(repositories.findVersionsByUser(user, true))
+        when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions));
 
-        Mockito.when(repositories.findActiveReviews(user))
+        when(repositories.findActiveReviews(user))
                 .thenReturn(Streamable.empty());
 
         mockMvc.perform(
@@ -1019,10 +1020,10 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
 
-        Mockito.when(repositories.deactivatePersonalAccessTokens(user)).thenReturn(2);
+        when(repositories.deactivatePersonalAccessTokens(user)).thenReturn(2);
         mockMvc.perform(
                 post("/admin/publisher/{provider}/{loginName}/tokens/revoke", "github", "test")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
@@ -1233,7 +1234,7 @@ class AdminAPITest {
                 4378,
                 3847,
                 1237);
-        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(stats);
+        when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(stats);
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month)
                         .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -1286,7 +1287,7 @@ class AdminAPITest {
         stats.setTopNamespaceExtensionVersions(Map.of("nv_foo", 234, "nv_bar", 67, "nv_baz", 932));
         stats.setTopMostDownloadedExtensions(Map.of("foo.bar", 3847L, "bar.foo", 1237L, "foo.baz", 4378L));
 
-        Mockito.when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(stats);
+        when(repositories.findAdminStatisticsByYearAndMonth(year, month)).thenReturn(stats);
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month={month}", token.getValue(), year, month)
                         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -1419,11 +1420,11 @@ class AdminAPITest {
         mockAdminUser();
         var foo = new Namespace();
         foo.setName("foo");
-        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+        when(repositories.findNamespace(foo.getName())).thenReturn(foo);
 
         var bar = new Namespace();
         bar.setName("bar");
-        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(null);
+        when(repositories.findNamespace(bar.getName())).thenReturn(null);
 
         var content = "{" +
                 "\"oldNamespace\": \"foo\", " +
@@ -1490,11 +1491,11 @@ class AdminAPITest {
     @Test
     void testChangeNamespaceOldNamespaceDoesNotExist() throws Exception {
         mockAdminUser();
-        Mockito.when(repositories.findNamespace("foo")).thenReturn(null);
+        when(repositories.findNamespace("foo")).thenReturn(null);
 
         var bar = new Namespace();
         bar.setName("bar");
-        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+        when(repositories.findNamespace(bar.getName())).thenReturn(bar);
 
         var content = "{" +
                 "\"oldNamespace\": \"foo\", " +
@@ -1558,11 +1559,11 @@ class AdminAPITest {
         mockAdminUser();
         var foo = new Namespace();
         foo.setName("foo");
-        Mockito.when(repositories.findNamespace(foo.getName())).thenReturn(foo);
+        when(repositories.findNamespace(foo.getName())).thenReturn(foo);
 
         var bar = new Namespace();
         bar.setName("bar");
-        Mockito.when(repositories.findNamespace(bar.getName())).thenReturn(bar);
+        when(repositories.findNamespace(bar.getName())).thenReturn(bar);
 
         var content = "{" +
                 "\"oldNamespace\": \"foo\", " +
@@ -1712,37 +1713,37 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         userToken.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessTokens(user))
+        when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
-        Mockito.when(repositories.findVersionsByUser(user, true))
+        when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
-        Mockito.when(repositories.findActiveReviews(user))
+        when(repositories.findActiveReviews(user))
                 .thenReturn(Streamable.empty());
 
         var user2 = new UserData();
         user2.setLoginName("test2");
         user2.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test2"))
+        when(repositories.findUserByLoginName("github", "test2"))
                 .thenReturn(user2);
         var user2Token = new PersonalAccessToken();
         user2Token.setUser(user2);
         user2Token.setActive(true);
         user2Token.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessTokens(user2))
+        when(repositories.findPersonalAccessTokens(user2))
                 .thenReturn(Streamable.of(user2Token));
         versions.get(1).setPublishedWith(user2Token);
-        Mockito.when(repositories.findVersionsByUser(user2, true))
+        when(repositories.findVersionsByUser(user2, true))
                 .thenReturn(Streamable.of(versions.get(1)));
 
-        Mockito.when(repositories.findActiveReviews(user2))
+        when(repositories.findActiveReviews(user2))
                 .thenReturn(Streamable.empty());
 
         var namespace = mockNamespace();
@@ -1750,13 +1751,13 @@ class AdminAPITest {
         membership.setNamespace(namespace);
         membership.setRole(NamespaceMembership.ROLE_OWNER);
         membership.setUser(user);
-        Mockito.when(repositories.findMemberships(user))
+        when(repositories.findMemberships(user))
                 .thenReturn(Streamable.of(membership));
         var membership2 = new NamespaceMembership();
         membership2.setNamespace(namespace);
         membership2.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
         membership2.setUser(user2);
-        Mockito.when(repositories.findMemberships(user2))
+        when(repositories.findMemberships(user2))
                 .thenReturn(Streamable.of(membership2));
 
         var baseRequest = """
@@ -1801,19 +1802,19 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         userToken.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessTokens(user))
+        when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
-        Mockito.when(repositories.findVersionsByUser(user, true))
+        when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
-        Mockito.when(repositories.findActiveReviews(user))
+        when(repositories.findActiveReviews(user))
                 .thenReturn(Streamable.empty());
 
         var baseRequest = """
@@ -1850,19 +1851,19 @@ class AdminAPITest {
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
-        Mockito.when(repositories.findUserByLoginName("github", "test"))
+        when(repositories.findUserByLoginName("github", "test"))
                 .thenReturn(user);
         var userToken = new PersonalAccessToken();
         userToken.setUser(user);
         userToken.setActive(true);
         userToken.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessTokens(user))
+        when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
-        Mockito.when(repositories.findVersionsByUser(user, true))
+        when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
-        Mockito.when(repositories.findActiveReviews(user))
+        when(repositories.findActiveReviews(user))
                 .thenReturn(Streamable.empty());
 
         var baseRequest = """
@@ -1922,7 +1923,7 @@ class AdminAPITest {
         token.setValue(tokenValue);
         token.setUser(user);
         token.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
+        when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }
@@ -1937,7 +1938,7 @@ class AdminAPITest {
         token.setValue(tokenValue);
         token.setUser(user);
         token.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
+        when(repositories.findPersonalAccessToken(tokenValue)).thenReturn(token);
 
         return token;
     }
@@ -1966,17 +1967,17 @@ class AdminAPITest {
     private Namespace mockNamespace(int numberOfMembers) {
         var namespace = new Namespace();
         namespace.setName("foobar");
-        Mockito.when(repositories.findNamespace("foobar"))
+        when(repositories.findNamespace("foobar"))
                 .thenReturn(namespace);
-        Mockito.when(repositories.findActiveExtensions(namespace))
+        when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
         if (numberOfMembers == 0) {
-            Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(false);
-            Mockito.when(repositories.findMemberships(namespace))
+            when(repositories.findMemberships(namespace))
                     .thenReturn(Streamable.empty());
         } else {
-            Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(true);
             var memberships = new ArrayList<NamespaceMembership>(numberOfMembers);
 
@@ -1990,7 +1991,7 @@ class AdminAPITest {
                 membership.setUser(user);
                 memberships.add(membership);
             }
-            Mockito.when(repositories.findMemberships(namespace))
+            when(repositories.findMemberships(namespace))
                     .thenReturn(Streamable.of(memberships));
         }
 
@@ -2015,12 +2016,12 @@ class AdminAPITest {
         extension.setNamespace(namespace);
         extension.setName("baz");
         extension.setActive(true);
-        Mockito.when(entityManager.merge(extension)).thenReturn(extension);
-        Mockito.when(repositories.findExtension("baz", "foobar"))
+        when(entityManager.merge(extension)).thenReturn(extension);
+        when(repositories.findExtension("baz", "foobar"))
                 .thenReturn(extension);
-        Mockito.when(repositories.findExtensionForUpdateNoWait("baz", "foobar"))
+        when(repositories.findExtensionForUpdateNoWait("baz", "foobar"))
                 .thenReturn(extension);
-        Mockito.when(repositories.findExtensions(namespace))
+        when(repositories.findExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
 
         var versions = new ArrayList<ExtensionVersion>(numberOfVersions);
@@ -2030,20 +2031,20 @@ class AdminAPITest {
             extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
             extVersion.setVersion(createVersion(i + 1));
             extVersion.setActive(true);
-            Mockito.when(repositories.findFiles(extVersion))
+            when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.findFilesByType(anyCollection(), any()))
+            when(repositories.findFilesByType(anyCollection(), any()))
                     .thenReturn(Collections.emptyList());
-            Mockito.when(
+            when(
                     repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
-            Mockito.when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
+            when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
                     .thenReturn(Streamable.of(versions));
             versions.add(extVersion);
         }
 
         extension.getVersions().addAll(versions);
-        Mockito.when(
+        when(
                 repositories.isDeleteAllActiveVersions(
                         eq(namespace.getName()),
                         eq(extension.getName()),
@@ -2055,12 +2056,12 @@ class AdminAPITest {
                         return len == 0 || len == numberOfVersions;
                     }
                 });
-        Mockito.when(repositories.countVersions(namespace.getName(), extension.getName())).thenReturn(numberOfVersions);
-        Mockito.when(repositories.findLatestVersion(namespace.getName(), extension.getName(), null, false, false))
+        when(repositories.countVersions(namespace.getName(), extension.getName())).thenReturn(numberOfVersions);
+        when(repositories.findLatestVersion(namespace.getName(), extension.getName(), null, false, false))
                 .thenReturn(versions.get(numberOfVersions - 1));
-        Mockito.when(repositories.findVersions(extension))
+        when(repositories.findVersions(extension))
                 .thenReturn(Streamable.of(versions));
-        Mockito.when(repositories.findActiveVersions(extension))
+        when(repositories.findActiveVersions(extension))
                 .thenReturn(Streamable.of(versions));
 
         var bundleExt = new Extension();
@@ -2075,7 +2076,7 @@ class AdminAPITest {
             bundle.setVersion(createVersion(i + 1));
             bundles.add(bundle);
         }
-        Mockito.when(repositories.findBundledExtensionsReference(extension))
+        when(repositories.findBundledExtensionsReference(extension))
                 .thenReturn(Streamable.of(bundles));
 
         var dependantExt = new Extension();
@@ -2090,12 +2091,12 @@ class AdminAPITest {
             dependant.setVersion(createVersion(i + 1));
             dependants.add(dependant);
         }
-        Mockito.when(repositories.findDependenciesReference(extension))
+        when(repositories.findDependenciesReference(extension))
                 .thenReturn(Streamable.of(dependants));
 
-        Mockito.when(repositories.findAllReviews(extension))
+        when(repositories.findAllReviews(extension))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.findDeprecatedExtensions(extension))
+        when(repositories.findDeprecatedExtensions(extension))
                 .thenReturn(Streamable.empty());
 
         return versions;
@@ -2131,21 +2132,21 @@ class AdminAPITest {
         var user3 = new UserData();
         user3.setLoginName("user3");
 
-        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user1")))
+        when(repositories.findUserByLoginName(anyString(), eq("user1")))
                 .thenReturn(user1);
-        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user2")))
+        when(repositories.findUserByLoginName(anyString(), eq("user2")))
                 .thenReturn(user2);
-        Mockito.when(repositories.findUserByLoginName(anyString(), eq("user3")))
+        when(repositories.findUserByLoginName(anyString(), eq("user3")))
                 .thenReturn(user3);
 
-        Mockito.when(repositories.findActiveReviews(any(), any()))
+        when(repositories.findActiveReviews(any(), any()))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.findActiveReviews(extension, user1))
+        when(repositories.findActiveReviews(extension, user1))
                 .thenReturn(Streamable.of(review1));
-        Mockito.when(repositories.findActiveReviews(extension, user2))
+        when(repositories.findActiveReviews(extension, user2))
                 .thenReturn(Streamable.of(review2));
 
-        Mockito.when(repositories.findActiveReviews(extension))
+        when(repositories.findActiveReviews(extension))
                 .thenReturn(Streamable.of(review1, review2));
 
         return List.of(review1, review2);
@@ -2216,13 +2217,24 @@ class AdminAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
+                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
         @Bean

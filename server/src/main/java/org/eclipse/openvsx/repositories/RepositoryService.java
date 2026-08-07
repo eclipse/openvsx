@@ -510,6 +510,10 @@ public class RepositoryService {
         return personalAccessTokenRepo.findAll();
     }
 
+    public Streamable<PersonalAccessToken> findAllPersonalAccessTokensByVersion(int version) {
+        return personalAccessTokenRepo.findByVersion(version);
+    }
+
     public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(
             UserData user,
             PersonalAccessTokenType type
