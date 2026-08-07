@@ -4,6 +4,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Fixed
+
+- Fix the admin publisher revoke dialog prompting for an Eclipse login even when the target publisher's agreement status is `none` or could not be determined (nothing confirmed to revoke)
+
 ### Dependencies
 
 - Bump socks from `2.8.3` to `2.8.9`
