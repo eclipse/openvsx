@@ -15,6 +15,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump ip-address from `9.0.5` to `10.4.0`
 - Bump postcss from `8.5.22` to `8.5.25`
 - Bump vite from `8.1.5` to `8.2.1`
+- Bump dompurify from `3.4.12` to `3.4.13`
 
 ## [v1.1.0] (02/08/2026)
 
