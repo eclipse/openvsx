@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -174,6 +175,10 @@ public class EclipseService {
     }
 
     public void enrichUserJsonWithPublisherAgreement(UserJson json, UserData user) {
+        if (!isActive()) {
+            return;
+        }
+
         var usableToken = true;
         PublisherAgreement agreement = null;
         try {
@@ -256,16 +261,20 @@ public class EclipseService {
         }
     }
 
-    public void adminEnrichUserJson(UserJson json, UserData user) {
+    /**
+     * Determine the given user's publisher agreement status for admin purposes: one of
+     * 'none', 'signed', 'outdated', or null if the status could not be reliably determined
+     * (e.g. the Eclipse profile lookup failed, or is blocked). Callers must treat null as
+     * "undetermined" and not fall back to guessing 'none' or any other value.
+     */
+    public @Nullable String determinePublisherAgreementStatus(UserData user) {
         if (!isActive()) {
-            return;
+            return null;
         }
 
-        var publisherAgreement = new UserJson.PublisherAgreement();
         var personId = user.getEclipsePersonId();
         if (personId == null) {
-            publisherAgreement.setStatus("none");
-            return;
+            return "none";
         }
 
         try {
@@ -273,17 +282,31 @@ public class EclipseService {
             var openVsxPublisherAgreement = profile.getOpenVsxPublisherAgreement();
             if (openVsxPublisherAgreement.isEmpty()
                     || StringUtils.isEmpty(openVsxPublisherAgreement.get().getVersion())) {
-                publisherAgreement.setStatus("none");
-            } else if (publisherAgreementAllowedVersions.contains(openVsxPublisherAgreement.get().getVersion())) {
-                publisherAgreement.setStatus("signed");
-            } else {
-                publisherAgreement.setStatus("outdated");
+                return "none";
             }
-
-            json.setPublisherAgreement(publisherAgreement);
-        } catch (ErrorResultException e) {
+            return publisherAgreementAllowedVersions.contains(openVsxPublisherAgreement.get().getVersion())
+                    ? "signed"
+                    : "outdated";
+        } catch (RuntimeException e) {
+            // Profile could not be retrieved (e.g. the user is blocked on Eclipse's side) or
+            // something else unexpected went wrong - the status is genuinely unknown, so it
+            // must not be reported as any of the determined values above.
             logger.error("Failed to get public profile", e);
+            return null;
         }
+    }
+
+    public void adminEnrichUserJson(UserJson json, UserData user) {
+        var status = determinePublisherAgreementStatus(user);
+        if (status == null) {
+            // Leave json.publisherAgreement unset (null) rather than guessing - the frontend
+            // must treat a missing agreement the same as an undetermined one, not as 'none'.
+            return;
+        }
+
+        var publisherAgreement = new UserJson.PublisherAgreement();
+        publisherAgreement.setStatus(status);
+        json.setPublisherAgreement(publisherAgreement);
     }
 
     /**
@@ -496,6 +519,13 @@ public class EclipseService {
             var requestCallback = restTemplate.httpEntityCallback(request);
             restTemplate.execute(urlTemplate, HttpMethod.DELETE, requestCallback, null, uriVariables);
         } catch (RestClientException exc) {
+            if (exc instanceof HttpStatusCodeException
+                    && ((HttpStatusCodeException) exc).getStatusCode() == HttpStatus.NOT_FOUND) {
+                // Same convention as getPublisherAgreement(): 404 means the user never signed
+                // one, so there is nothing to revoke - not an error worth failing the caller for.
+                return;
+            }
+
             var url = UriComponentsBuilder.fromUriString(urlTemplate).build(uriVariables);
             logger.error("Delete request failed with URL: {}", url, exc);
             throw new ErrorResultException(
