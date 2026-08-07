@@ -8,6 +8,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - Bump ip-address from `10.2.0` to `10.4.0`
 - Bump fast-uri from `3.1.4` to `3.1.5`
+- Bump js-yaml from `4.3.0` to `4.3.1`
 
 ### [v1.1.0] (02/08/2026)
 
