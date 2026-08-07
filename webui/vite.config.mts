@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, PluginOption } from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-const outRootDir = path.join(__dirname, 'dist');
+const outRootDir = path.join(import.meta.dirname, 'dist');
 
 export default defineConfig(() => ({
     plugins: [react(), visualizer() as PluginOption],
@@ -17,7 +17,7 @@ export default defineConfig(() => ({
     },
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './src')
+            '@': path.resolve(import.meta.dirname, './src')
         }
     },
     publicDir: 'static',
@@ -26,9 +26,16 @@ export default defineConfig(() => ({
         environment: 'jsdom',
         setupFiles: ['./test/setup.ts']
     },
+    // lightningcss (Vite 8's default CSS transformer) ships no prebuilt binary for ppc64le,
+    // and its minifier isn't needed once postcss is handling transforms - see
+    // https://github.com/eclipse-openvsx/openvsx/issues/2051
+    css: {
+        transformer: 'postcss'
+    },
     build: {
         target: 'es2020',
         minify: true,
+        cssMinify: false,
         sourcemap: true,
         outDir: outRootDir,
         emptyOutDir: true,

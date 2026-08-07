@@ -6,6 +6,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Fixed
 
+- Fix the WebUI build failing on s390x and ppc64le: use postcss instead of lightningcss (no ppc64le binary) for CSS, and bump vite for the Rolldown big-endian sourcemap fix ([#2051](https://github.com/eclipse-openvsx/openvsx/issues/2051))
 - Fix the admin publisher revoke dialog prompting for an Eclipse login even when the target publisher's agreement status is `none` or could not be determined (nothing confirmed to revoke)
 
 ### Dependencies
@@ -13,6 +14,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump socks from `2.8.3` to `2.8.9`
 - Bump ip-address from `9.0.5` to `10.4.0`
 - Bump postcss from `8.5.22` to `8.5.25`
+- Bump vite from `8.1.5` to `8.2.1`
 
 ## [v1.1.0] (02/08/2026)
 
