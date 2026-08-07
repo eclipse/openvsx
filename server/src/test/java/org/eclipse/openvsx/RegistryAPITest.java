@@ -121,7 +121,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CdnServiceConfig.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         MailService.class
     }
 )
@@ -138,9 +137,6 @@ class RegistryAPITest {
 
     @MockitoBean
     RepositoryService repositories;
-
-    @MockitoBean
-    UUIDService uuidService;
 
     @MockitoBean
     SearchUtilService search;
@@ -3297,6 +3293,16 @@ class RegistryAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
                 UUIDService uuidService,
@@ -3304,7 +3310,6 @@ class RegistryAPITest {
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            when(uuidService.generateRandom()).thenAnswer(i -> UUID.randomUUID());
             return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 

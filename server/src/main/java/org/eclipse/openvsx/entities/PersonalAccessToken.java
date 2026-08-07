@@ -53,6 +53,8 @@ public class PersonalAccessToken implements Serializable {
     @Column(length = 2048)
     private String description;
 
+    private int version;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private PersonalAccessTokenType type;
@@ -160,6 +162,14 @@ public class PersonalAccessToken implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 
     public PersonalAccessTokenType getType() {

@@ -97,7 +97,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ExtensionScanService.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         MailService.class
     }
 )
@@ -1085,6 +1084,16 @@ class UserAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService accessTokenService(
                 AccessTokenConfig config,
                 UUIDService uuidService,
@@ -1092,7 +1101,6 @@ class UserAPITest {
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            when(uuidService.generateRandom()).thenAnswer(i -> UUID.randomUUID());
             return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 

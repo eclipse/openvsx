@@ -18,6 +18,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS trusted_publisher_extension_idx ON public.trus
 -- token.type
 
 ALTER TABLE ONLY public.personal_access_token
+    -- extend the value column to 128 characters
+    ALTER COLUMN value TYPE CHARACTER VARYING(128),
+    -- token version
+    ADD COLUMN IF NOT EXISTS version SMALLINT,
     -- the type column LLT, OTT or TPT
     ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32),
     -- optional; the extension that the token is scoped to
@@ -37,6 +41,11 @@ UPDATE public.personal_access_token
 SET type = 'LLT'
 WHERE personal_access_token.type IS NULL;
 
+-- set version = 0 on all
+UPDATE public.personal_access_token
+SET version = 0;
+
 -- type is required for all tokens
 ALTER TABLE ONLY public.personal_access_token
+    ALTER COLUMN version SET NOT NULL,
     ALTER COLUMN type SET NOT NULL;
