@@ -69,4 +69,3 @@ jobs:
         # See https://github.com/eclipse-csi/workflows#upload-sbom for details.
         product-name: "openvsx-server"
         product-version: ${{ env.VERSION }}
-        staging: true
