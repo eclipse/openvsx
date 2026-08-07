@@ -476,21 +476,24 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        // Only send a DELETE request to the publisher agreement API when we have
-        // reliably determined that one exists ('signed' or 'outdated') - not when the status
-        // is 'none' or could not be determined at all, since in that case there is nothing
-        // confirmed to revoke and calling the Eclipse API would be a guess. Whatever the DELETE
-        // call itself throws must still not abort the rest of the revoke below - tokens,
-        // extensions and namespace memberships are unrelated to Eclipse and should still be
-        // revoked; that failure is reported back as part of the result instead.
         String revokeFailure = null;
-        var agreementStatus = eclipse.determinePublisherAgreementStatus(user);
-        if ("signed".equals(agreementStatus) || "outdated".equals(agreementStatus)) {
-            try {
-                eclipse.revokePublisherAgreement(user, admin);
-            } catch (RuntimeException exc) {
-                logger.error("Failed to revoke publisher agreement for user {}/{}", provider, loginName, exc);
-                revokeFailure = exc.getMessage();
+        if (eclipse.isActive()) {
+            // Only send a DELETE request to the publisher agreement API when we have
+            // reliably determined that one exists ('signed' or 'outdated') - not when the status
+            // is 'none' or could not be determined at all, since in that case there is nothing
+            // confirmed to revoke and calling the Eclipse API would be a guess. Whatever the DELETE
+            // call itself throws must still not abort the rest of the revoke below - tokens,
+            // extensions and namespace memberships are unrelated to Eclipse and should still be
+            // revoked; that failure is reported back as part of the result instead.
+
+            var agreementStatus = eclipse.determinePublisherAgreementStatus(user);
+            if ("signed".equals(agreementStatus) || "outdated".equals(agreementStatus)) {
+                try {
+                    eclipse.revokePublisherAgreement(user, admin);
+                } catch (RuntimeException exc) {
+                    logger.error("Failed to revoke publisher agreement for user {}/{}", provider, loginName, exc);
+                    revokeFailure = exc.getMessage();
+                }
             }
         }
 

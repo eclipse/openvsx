@@ -274,8 +274,10 @@ public class EclipseService {
 
         var personId = user.getEclipsePersonId();
         if (personId == null) {
-            // no eclipse user is linked to no point in setting a publisher agreement status
-            return null;
+            // No Eclipse account is linked at all - that's a definite, known fact (not signed),
+            // unlike the isActive()/lookup-failure cases below where the status genuinely can't
+            // be determined. Report it as "none" rather than null.
+            return "none";
         }
 
         try {

@@ -131,6 +131,7 @@ class AdminServiceTest {
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
         when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
+        when(eclipse.isActive()).thenReturn(true);
         when(eclipse.determinePublisherAgreementStatus(user)).thenReturn("signed");
         doThrow(new RuntimeException("Eclipse API is down")).when(eclipse).revokePublisherAgreement(user, admin);
 
@@ -158,6 +159,7 @@ class AdminServiceTest {
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
         when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
+        when(eclipse.isActive()).thenReturn(true);
         when(eclipse.determinePublisherAgreementStatus(user)).thenReturn(null);
 
         var result = adminService.revokePublisherContributions("github", "amy", admin);
