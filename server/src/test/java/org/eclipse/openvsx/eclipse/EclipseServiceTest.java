@@ -41,6 +41,7 @@ import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishingConfig;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 
 @ExtendWith(SpringExtension.class)
 @MockitoBean(
@@ -332,10 +334,124 @@ class EclipseServiceTest {
         }
     }
 
+    // Regression: enrichUserJsonWithPublisherAgreement is called from the "who am I" endpoint on
+    // essentially every page load, but used to skip the isActive() guard that every other method
+    // in this class applies - so it kept round-tripping to the Eclipse API (publisher agreement
+    // lookup, and potentially the public profile as a fallback) even when the feature is disabled,
+    // discarding the result anyway once it reached enrichUserJson()'s own isActive() check.
+    @Test
+    void testEnrichUserJsonWithPublisherAgreementSkipsEclipseCallsWhenNotActive() {
+        eclipse.publisherAgreementVersion = "";
+        eclipse.publisherAgreementAllowedVersions = List.of();
+
+        var user = new UserData();
+        user.setLoginName("test");
+        user.setProvider("github");
+        user.setEclipsePersonId("test");
+        var json = new UserJson();
+
+        eclipse.enrichUserJsonWithPublisherAgreement(json, user);
+
+        assertThat(json.getPublisherAgreement()).isNull();
+        Mockito.verifyNoInteractions(tokens);
+        Mockito.verifyNoInteractions(restTemplate);
+    }
+
+    @Test
+    void testAdminEnrichUserJsonNoEclipsePersonId() {
+        var user = mockUser();
+        var json = new UserJson();
+
+        eclipse.adminEnrichUserJson(json, user);
+
+        assertThat(json.getPublisherAgreement()).isNotNull();
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("none");
+    }
+
+    @Test
+    void testAdminEnrichUserJson() throws Exception {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+        var json = new UserJson();
+
+        Mockito.when(
+                restTemplate.exchange(
+                        eq(PUBLIC_PROFILE_URL),
+                        eq(HttpMethod.GET),
+                        any(HttpEntity.class),
+                        eq(String.class),
+                        eq(Map.of("personId", "test"))))
+                .thenReturn(mockProfileResponse());
+
+        eclipse.adminEnrichUserJson(json, user);
+
+        assertThat(json.getPublisherAgreement()).isNotNull();
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("signed");
+    }
+
+    @Test
+    void testAdminEnrichUserJsonProfileUnavailable() {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+        var json = new UserJson();
+
+        Mockito.when(
+                restTemplate.exchange(
+                        eq(PUBLIC_PROFILE_URL),
+                        eq(HttpMethod.GET),
+                        any(HttpEntity.class),
+                        eq(String.class),
+                        eq(Map.of("personId", "test"))))
+                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN));
+
+        eclipse.adminEnrichUserJson(json, user);
+
+        // The status genuinely could not be determined - it must be left null rather than
+        // guessed as "none" (which would wrongly read as "no agreement exists").
+        assertThat(json.getPublisherAgreement()).isNull();
+    }
+
+    @Test
+    void testDeterminePublisherAgreementStatusProfileUnavailable() {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+
+        Mockito.when(
+                restTemplate.exchange(
+                        eq(PUBLIC_PROFILE_URL),
+                        eq(HttpMethod.GET),
+                        any(HttpEntity.class),
+                        eq(String.class),
+                        eq(Map.of("personId", "test"))))
+                .thenThrow(new HttpClientErrorException(HttpStatus.FORBIDDEN));
+
+        assertThat(eclipse.determinePublisherAgreementStatus(user)).isNull();
+    }
+
     @Test
     void testRevokePublisherAgreement() {
         var user = mockUser();
         user.setEclipsePersonId("test");
+
+        eclipse.revokePublisherAgreement(user, null);
+    }
+
+    // Regression: a user with no (or unconfirmed) publisher agreement still reaches this
+    // call, since AdminService only checks for an Eclipse person ID. The Eclipse API answers
+    // the DELETE with 404 in that case, which must not fail the whole revoke action.
+    @Test
+    void testRevokePublisherAgreementNotFound() {
+        var user = mockUser();
+        user.setEclipsePersonId("test");
+
+        Mockito.when(
+                restTemplate.execute(
+                        eq(PUBLISHER_AGREEMENT_URL),
+                        eq(HttpMethod.DELETE),
+                        any(),
+                        isNull(),
+                        eq(Map.of("personId", "test"))))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
         eclipse.revokePublisherAgreement(user, null);
     }

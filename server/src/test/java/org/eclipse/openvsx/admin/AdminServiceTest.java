@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -114,6 +115,58 @@ class AdminServiceTest {
                 eq(extVersion),
                 eq(ExtensionVersionState.INACTIVE),
                 any());
+    }
+
+    // Regression: revokePublisherAgreement used to be called unguarded, so any exception it threw
+    // (Eclipse API down, unexpected runtime error, ...) rolled back the whole revoke, including the
+    // token/extension/membership cleanup that has nothing to do with Eclipse.
+    @Test
+    void revokingPublisherContributionsStillDeactivatesEverythingElseWhenTheEclipseRevokeFails() {
+        var user = new UserData();
+        user.setLoginName("amy");
+        user.setEclipsePersonId("12345");
+        var extVersion = version(extension("ext"));
+        extVersion.setActive(true);
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
+        when(eclipse.isActive()).thenReturn(true);
+        when(eclipse.determinePublisherAgreementStatus(user)).thenReturn("signed");
+        doThrow(new RuntimeException("Eclipse API is down")).when(eclipse).revokePublisherAgreement(user, admin);
+
+        var result = adminService.revokePublisherContributions("github", "amy", admin);
+
+        assertThat(extVersion.isActive()).isFalse();
+        verify(repositories).recordExtensionVersionChange(
+                eq(extVersion),
+                eq(ExtensionVersionState.INACTIVE),
+                any());
+        // The failure is reported back rather than silently dropped or failing the whole call.
+        assertThat(result.getError()).isNull();
+        assertThat(result.getWarning()).contains("Eclipse API is down");
+    }
+
+    // Regression: the revoke used to be attempted whenever an Eclipse person ID was present,
+    // even if the agreement status was 'none' or could not be determined at all - calling the
+    // Eclipse API on a guess rather than a confirmed agreement.
+    @Test
+    void revokingPublisherContributionsDoesNotCallEclipseWhenTheAgreementStatusIsNotConfirmed() {
+        var user = new UserData();
+        user.setLoginName("amy");
+        user.setEclipsePersonId("12345");
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
+        when(eclipse.isActive()).thenReturn(true);
+        when(eclipse.determinePublisherAgreementStatus(user)).thenReturn(null);
+
+        var result = adminService.revokePublisherContributions("github", "amy", admin);
+
+        verify(eclipse, never()).revokePublisherAgreement(any(), any());
+        assertThat(result.getError()).isNull();
+        assertThat(result.getWarning()).isNull();
     }
 
     @Test
