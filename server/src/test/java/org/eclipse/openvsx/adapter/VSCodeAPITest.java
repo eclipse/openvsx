@@ -39,6 +39,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockMvcAsyncConfig;
@@ -63,6 +64,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
 import org.eclipse.openvsx.web.JacksonConfig;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -120,6 +122,17 @@ class VSCodeAPITest {
     }
 
     @Test
+    void testSearchPostMissingSortFields() throws Exception {
+        // reproduces eclipse-openvsx/openvsx#2059 exactly: POST body omits pageNumber's siblings
+        // sortBy/sortOrder entirely. Confirms the @RequestBody path (fixed by #2052 / JacksonConfig)
+        // still works end-to-end, as a counterpart to the GET-focused regression tests below.
+        var body = "{\"filters\":[{\"criteria\":[{\"filterType\":8,\"value\":\"Microsoft.VisualStudio.Code\"}],"
+                + "\"pageSize\":10,\"pageNumber\":1}],\"flags\":914}";
+        mockMvc.perform(post("/vscode/gallery/extensionquery").content(body).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void testSearchAsGet() throws Exception {
         var extension = mockSearch(true);
         mockExtensionVersions(extension, null, "universal");
@@ -138,6 +151,22 @@ class VSCodeAPITest {
         mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
                 .andExpect(status().isBadRequest())
                 .andExpect(status().reason(Matchers.startsWith("Invalid extension query:")));
+    }
+
+    @Test
+    void testExtensionQueryAsGetInvalidJsonMessageIsBounded() throws Exception {
+        // the parser message is attacker-influenced (derived from `q`) and could in principle be
+        // long or contain control characters; it must stay short and single-line since it ends up
+        // in the response status line
+        var query = URLEncoder.encode("not json\nwith a newline " + "a".repeat(500), StandardCharsets.UTF_8);
+        var result = mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        var reason = ((ResponseStatusException) result.getResolvedException()).getReason();
+        assertThat(reason).startsWith("Invalid extension query:");
+        assertThat(reason).doesNotContainPattern("[\\r\\n]");
+        assertThat(reason.length()).isLessThanOrEqualTo(250);
     }
 
     @Test

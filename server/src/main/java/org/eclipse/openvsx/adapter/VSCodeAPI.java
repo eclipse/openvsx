@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -121,8 +122,10 @@ public class VSCodeAPI {
             param = jsonMapper.readValue(query, ExtensionQueryParam.class);
         } catch (JacksonException ex) {
             // include the parser's message: it is what actually gets logged when Spring resolves
-            // this exception, and it is often the only clue that e.g. a proxy double-encoded `q`
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query: " + ex.getMessage());
+            // this exception, and it is often the only clue that e.g. a proxy double-encoded `q`.
+            // Sanitized/bounded since it can echo back attacker-controlled input and Jackson
+            // messages can be long.
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query" + describe(ex));
         }
 
         var size = 0;
@@ -141,6 +144,21 @@ public class VSCodeAPI {
                 // from caching the same queries
                 .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                 .body(result);
+    }
+
+    /**
+     * A short, control-character-free description of a JacksonException suitable for a
+     * ResponseStatusException reason: the raw message can be arbitrarily long and may echo back
+     * parts of the (attacker-controlled) query string.
+     */
+    private static String describe(JacksonException ex) {
+        var message = ex.getMessage();
+        if (message == null) {
+            return "";
+        }
+
+        var singleLine = message.replaceAll("[\\r\\n\\p{Cntrl}]+", " ").trim();
+        return singleLine.isEmpty() ? "" : ": " + StringUtils.abbreviate(singleLine, 200);
     }
 
     @Observed
