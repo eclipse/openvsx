@@ -75,12 +75,15 @@ public class CacheConfig {
     @Bean
     public Cache<Object, Object> webResourceCache(
             @Value("${ovsx.caching.files-webresource.tti:PT1H}") Duration timeToIdle,
-            @Value("${ovsx.caching.files-webresource.max-size:150}") long maxSize
+            // 2 GiB total; each entry's weight is its file size in bytes rather than a flat 1, so
+            // this bounds the cache's disk footprint instead of just the number of cached files.
+            @Value("${ovsx.caching.files-webresource.max-total-size:2147483648}") long maxTotalSize
     ) {
         return Caffeine.newBuilder()
                 .removalListener(new ExpiredFileListener())
                 .expireAfterAccess(timeToIdle)
-                .maximumSize(maxSize)
+                .maximumWeight(maxTotalSize)
+                .weigher(new FileSizeWeigher())
                 .scheduler(Scheduler.systemScheduler())
                 .recordStats()
                 .build();

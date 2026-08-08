@@ -9,6 +9,7 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.util;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -16,7 +17,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FileUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
 
     private static final Map<Path, Object> LOCKS;
 
@@ -34,7 +40,10 @@ public class FileUtil {
     }
 
     /***
-     * Write to file synchronously, if it doesn't already exist.
+     * Write to file synchronously, if it doesn't already exist. If the writer fails partway
+     * through, the partial file is deleted so a later call doesn't mistake it for a completed
+     * write (writeSync only (re)invokes the writer when the path doesn't yet exist) and so it
+     * doesn't linger on disk.
      * @param path File path to write to
      * @param writer Writes to file
      */
@@ -45,8 +54,21 @@ public class FileUtil {
         }
         synchronized (lock) {
             if (!Files.exists(path)) {
-                writer.accept(path);
+                try {
+                    writer.accept(path);
+                } catch (RuntimeException e) {
+                    deleteQuietly(path);
+                    throw e;
+                }
             }
+        }
+    }
+
+    private static void deleteQuietly(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            logger.warn("Failed to delete partial file {}", path, e);
         }
     }
 }

@@ -18,8 +18,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import io.micrometer.observation.annotation.Observed;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.FileUtil;
 import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.SizeLimitInputStream;
 import org.eclipse.openvsx.util.UrlUtil;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
@@ -48,17 +51,24 @@ public class WebResourceService {
     private final FilesCacheKeyGenerator filesCacheKeyGenerator;
     private final JsonMapper jsonMapper;
 
+    // Limit the decompressed size of a single served web resource, default 32 MB matching
+    // ArchiveUtil.MAX_ENTRY_SIZE. Without this, a small VSIX containing a highly compressed entry
+    // could exhaust the java.io.tmpdir filesystem when that entry is extracted on request.
+    private final long maxFileSize;
+
     public WebResourceService(
             StorageUtilService storageUtil,
             RepositoryService repositories,
             CacheService cache,
-            FilesCacheKeyGenerator filesCacheKeyGenerator
+            FilesCacheKeyGenerator filesCacheKeyGenerator,
+            @Value("${ovsx.caching.files-webresource.max-file-size:33554432}") long maxFileSize
     ) {
         this.storageUtil = storageUtil;
         this.repositories = repositories;
         this.cache = cache;
         this.filesCacheKeyGenerator = filesCacheKeyGenerator;
         this.jsonMapper = JsonMapper.shared();
+        this.maxFileSize = maxFileSize;
     }
 
     public Path getExtensionDownload(String namespace, String extension, String targetPlatform, String version) {
@@ -154,9 +164,23 @@ public class WebResourceService {
     }
 
     private void writeBinaryFile(Path file, ZipFile zip, ZipEntry fileEntry) {
+        var declaredSize = fileEntry.getSize();
+        if (declaredSize < 0) {
+            throw new ErrorResultException("The file " + fileEntry.getName() + " has an unknown size.");
+        }
+        if (declaredSize > maxFileSize) {
+            var maxSize = FileUtils.byteCountToDisplaySize(maxFileSize);
+            throw new ErrorResultException(
+                    "The file " + fileEntry.getName() + " exceeds the size limit of " + maxSize + ".",
+                    HttpStatus.CONTENT_TOO_LARGE);
+        }
+
         FileUtil.writeSync(file, p -> {
-            try (var in = zip.getInputStream(fileEntry)) {
-                Files.copy(in, p);
+            // Wrap in SizeLimitInputStream bounded to the declared size: a zip entry can lie about
+            // its uncompressed size, so this stops the copy the moment more bytes than declared
+            // have been read instead of trusting the header.
+            try (var in = zip.getInputStream(fileEntry); var limited = new SizeLimitInputStream(in, declaredSize)) {
+                Files.copy(limited, p);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
