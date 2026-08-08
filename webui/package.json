@@ -45,7 +45,6 @@
         "@fontsource-variable/geist-mono": "^5.2.8",
         "@fontsource/roboto": "^5.2.10",
         "@mdit/plugin-alert": "^0.22.3",
-        "@mui/base": "^5.0.0-beta.9",
         "@mui/icons-material": "^5.15.14",
         "@mui/material": "^5.15.14",
         "@mui/system": "^5.15.14",
