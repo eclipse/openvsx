@@ -11,6 +11,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Dependencies
 
+- Remove the unused `@mui/base` dependency; it is deprecated upstream (replaced by `@base-ui/react`) and nothing in the codebase imports from it
 - Bump socks from `2.8.3` to `2.8.9`
 - Bump ip-address from `9.0.5` to `10.4.0`
 - Bump postcss from `8.5.22` to `8.5.25`
