@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.adapter;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +61,7 @@ import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.web.JacksonConfig;
 
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -114,6 +117,46 @@ class VSCodeAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(file("search-yaml-response.json")));
+    }
+
+    @Test
+    void testSearchAsGet() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, "universal");
+
+        // URLEncoder targets application/x-www-form-urlencoded (space -> '+'); a URI query
+        // component needs '%20' instead, since '+' there is a literal character, not a space
+        var query = URLEncoder.encode(file("search-yaml-query.json"), StandardCharsets.UTF_8).replace("+", "%20");
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("search-yaml-response.json")));
+    }
+
+    @Test
+    void testExtensionQueryAsGetInvalidJson() throws Exception {
+        var query = URLEncoder.encode("not json", StandardCharsets.UTF_8);
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason(Matchers.startsWith("Invalid extension query:")));
+    }
+
+    @Test
+    void testExtensionQueryAsGetMissingSortFields() throws Exception {
+        // a real request seen in production: a lean single-extension lookup (pageSize 1) that
+        // omits sortBy/sortOrder entirely, since they don't matter for a one-result query. Jackson
+        // 3 treats the missing primitive int fields as null and rejects them unless
+        // FAIL_ON_NULL_FOR_PRIMITIVES is disabled - which JacksonConfig does, but only for the
+        // JsonMapper bean actually wired into the app (see testConfig's @Import above)
+        var query = URLEncoder
+                .encode(
+                        "{\"filters\":[{\"criteria\":[{\"filterType\":7,"
+                                + "\"value\":\"test.extension\"}],"
+                                + "\"pageSize\":1,\"pageNumber\":1}],\"flags\":147}",
+                        StandardCharsets.UTF_8)
+                .replace("+", "%20");
+
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -1334,7 +1377,7 @@ class VSCodeAPITest {
     }
 
     @TestConfiguration
-    @Import({ SecurityConfig.class, MockMvcAsyncConfig.class })
+    @Import({ SecurityConfig.class, MockMvcAsyncConfig.class, JacksonConfig.class })
     static class TestConfig {
         @Bean
         IExtensionQueryRequestHandler extensionQueryRequestHandler(

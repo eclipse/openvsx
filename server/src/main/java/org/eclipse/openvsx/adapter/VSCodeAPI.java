@@ -56,13 +56,14 @@ public class VSCodeAPI {
     public VSCodeAPI(
             LocalVSCodeService local,
             UpstreamVSCodeService upstream,
-            IExtensionQueryRequestHandler extensionQueryRequestHandler
+            IExtensionQueryRequestHandler extensionQueryRequestHandler,
+            JsonMapper jsonMapper
     ) {
         this.local = local;
         this.upstream = upstream;
         this.registries = setupRegistries();
         this.extensionQueryRequestHandler = extensionQueryRequestHandler;
-        this.jsonMapper = JsonMapper.builder().build();
+        this.jsonMapper = jsonMapper;
     }
 
     private List<IVSCodeService> setupRegistries() {
@@ -119,7 +120,9 @@ public class VSCodeAPI {
         try {
             param = jsonMapper.readValue(query, ExtensionQueryParam.class);
         } catch (JacksonException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query");
+            // include the parser's message: it is what actually gets logged when Spring resolves
+            // this exception, and it is often the only clue that e.g. a proxy double-encoded `q`
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid extension query: " + ex.getMessage());
         }
 
         var size = 0;
