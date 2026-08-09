@@ -246,6 +246,35 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
     }
 
     @Test
+    void tiedMajorMinorPatchPreReleasesAreStillCappedViaTheTimestampTiebreak() {
+        // All 105 rows share the exact same (major, minor, patch) - the version string itself is
+        // identical - and differ only in target platform and timestamp, exactly like one release
+        // published across many platform builds, or a CI channel that republishes without ever
+        // bumping semver. On a (major, minor, patch)-only comparison none of these rows outranks
+        // any other, so none would count against the cap and all 105 would come back uncapped.
+        var extension = persistExtension("ns12", "ext12");
+        var base = LocalDateTime.parse("2024-01-01T00:00:00");
+        for (var i = 1; i <= 105; i++) {
+            persistPreReleaseVersion(extension, "0.0.1", "platform-" + i, base.plusMinutes(i));
+        }
+        em.flush();
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, 100);
+
+        assertThat(result)
+                .as("rows tied on (major, minor, patch) must still be capped, via the timestamp/id tiebreak")
+                .hasSize(100);
+        assertThat(result)
+                .as("the most recently timestamped tied row ('latest') must survive the cap")
+                .anyMatch(ev -> ev.getTargetPlatform().equals("platform-105"));
+        assertThat(result)
+                .as("the 5 earliest-timestamped tied rows must be dropped by the cap")
+                .noneMatch(
+                        ev -> List.of("platform-1", "platform-2", "platform-3", "platform-4", "platform-5")
+                                .contains(ev.getTargetPlatform()));
+    }
+
+    @Test
     void negativeMaxPreReleaseVersionsDisablesTheCapEntirely() {
         // A negative "count < limit" can never hold, so a naive reading of the cap would exclude
         // *every* pre-release rather than none - the opposite of "unlimited". This pins down that
@@ -324,5 +353,22 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
 
     private void persistPreReleaseVersions(Extension extension, String targetPlatform, int fromPatch, int toPatch) {
         persistPreReleaseVersions(extension, targetPlatform, fromPatch, toPatch, "0.0.");
+    }
+
+    private void persistPreReleaseVersion(
+            Extension extension,
+            String version,
+            String targetPlatform,
+            LocalDateTime timestamp
+    ) {
+        var extVersion = new ExtensionVersion();
+        extVersion.setExtension(extension);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(targetPlatform);
+        extVersion.setActive(true);
+        extVersion.setPreRelease(true);
+        extVersion.setTimestamp(timestamp);
+        extVersion.setPublishedWith(token);
+        em.persist(extVersion);
     }
 }

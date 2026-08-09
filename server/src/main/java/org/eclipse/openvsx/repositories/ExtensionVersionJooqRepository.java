@@ -109,7 +109,18 @@ public class ExtensionVersionJooqRepository {
 
     /**
      * True for an active pre-release version if fewer than {@code limit} other active pre-releases
-     * of the same extension - regardless of target platform - outrank it by semver.
+     * of the same extension - regardless of target platform - outrank it.
+     * <p>
+     * Ranking is (major, minor, patch) first, same as everywhere else, but that triple alone ties
+     * for any two rows that don't happen to differ in it - which is the common case, not an edge
+     * case: the same version published across several target platforms shares one (major, minor,
+     * patch) by construction, and a pre-release channel that republishes without bumping semver
+     * (relying on timestamp/build metadata to distinguish builds) produces the same tie. Neither of
+     * two tied rows outranks the other, so on a (major, minor, patch)-only comparison *neither*
+     * counts against the cap - ties can grow without bound and the cap stops capping. Falling back
+     * to {@code timestamp} (as {@code ExtensionVersion.SORT_COMPARATOR} and every DB sort index in
+     * this class already do) breaks most ties; the final {@code id} tiebreaker guarantees a strict
+     * total order so the cap always keeps exactly {@code min(limit, total)} rows, never more.
      */
     private Condition isAmongLatestPreReleases(int limit) {
         var rank = EXTENSION_VERSION.as("ev_pre_release_rank");
@@ -120,12 +131,19 @@ public class ExtensionVersionJooqRepository {
                         .and(rank.ACTIVE.isTrue())
                         .and(rank.PRE_RELEASE.isTrue())
                         .and(
-                                DSL.row(rank.SEMVER_MAJOR, rank.SEMVER_MINOR, rank.SEMVER_PATCH)
+                                DSL.row(
+                                        rank.SEMVER_MAJOR,
+                                        rank.SEMVER_MINOR,
+                                        rank.SEMVER_PATCH,
+                                        rank.TIMESTAMP,
+                                        rank.ID)
                                         .gt(
                                                 DSL.row(
                                                         EXTENSION_VERSION.SEMVER_MAJOR,
                                                         EXTENSION_VERSION.SEMVER_MINOR,
-                                                        EXTENSION_VERSION.SEMVER_PATCH))))
+                                                        EXTENSION_VERSION.SEMVER_PATCH,
+                                                        EXTENSION_VERSION.TIMESTAMP,
+                                                        EXTENSION_VERSION.ID))))
                 .lt(limit);
     }
 
