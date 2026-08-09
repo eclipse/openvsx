@@ -93,6 +93,9 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -2673,7 +2676,10 @@ class RegistryAPITest {
             versions.add(extVersion);
         }
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
+        Mockito
+                .when(
+                        repositories
+                                .findActiveExtensionVersions(eq(Set.of(extension.getId())), isNull(), anyInt()))
                 .thenReturn(versions);
         Mockito.when(repositories.findLatestVersionsIsPreview(Set.of(extension.getId())))
                 .thenReturn(Map.of(extension.getId(), versions.getFirst().isPreview()));
@@ -2715,7 +2721,10 @@ class RegistryAPITest {
         extVersion.setDisplayName("Foo Bar");
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
+        Mockito
+                .when(
+                        repositories
+                                .findActiveExtensionVersions(eq(Set.of(extension.getId())), isNull(), anyInt()))
                 .thenReturn(List.of(extVersion));
 
         Mockito.when(repositories.findLatestVersionsIsPreview(Set.of(extension.getId())))

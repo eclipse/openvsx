@@ -68,6 +68,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -1087,7 +1089,12 @@ class VSCodeAPITest {
             }
         }
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), queryTargetPlatform))
+        Mockito
+                .when(
+                        repositories.findActiveExtensionVersions(
+                                eq(Set.of(extension.getId())),
+                                eq(queryTargetPlatform),
+                                anyInt()))
                 .thenReturn(extVersions);
 
         mockFileResources(extVersions);

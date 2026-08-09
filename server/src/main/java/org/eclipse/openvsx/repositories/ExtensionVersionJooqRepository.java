@@ -45,9 +45,20 @@ public class ExtensionVersionJooqRepository {
         this.dsl = dsl;
     }
 
+    /**
+     * An extension's stable release history stays bounded on its own, but a pre-release channel
+     * can publish one build per commit and accumulate thousands of entries - {@code
+     * maxPreReleaseVersions} keeps only that many of the most recent ones per extension (across all
+     * of its target platforms combined), ranked by the same semver-based ordering {@code
+     * ExtensionVersion.SORT_COMPARATOR} uses for "latest", so the true latest pre-release - rank #1 -
+     * is never dropped by the cap. The caller decides the limit rather than it being fixed here; a
+     * negative value (e.g. {@code -1}) disables the cap entirely, matching the "negative means
+     * unlimited" convention already used for {@code ovsx.data.mirror.requests-per-second}.
+     */
     public List<ExtensionVersion> findAllActiveByExtensionIdAndTargetPlatform(
             Collection<Long> extensionIds,
-            String targetPlatform
+            String targetPlatform,
+            int maxPreReleaseVersions
     ) {
         var query = dsl.select(
                 NAMESPACE.ID,
@@ -83,11 +94,39 @@ public class ExtensionVersionJooqRepository {
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
+        if (maxPreReleaseVersions >= 0) {
+            query = query.and(
+                    EXTENSION_VERSION.PRE_RELEASE.isFalse()
+                            .or(isAmongLatestPreReleases(maxPreReleaseVersions)));
+        }
+
         if (targetPlatform != null) {
             query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return query.fetch().map(this::toExtensionVersion);
+    }
+
+    /**
+     * True for an active pre-release version if fewer than {@code limit} other active pre-releases
+     * of the same extension - regardless of target platform - outrank it by semver.
+     */
+    private Condition isAmongLatestPreReleases(int limit) {
+        var rank = EXTENSION_VERSION.as("ev_pre_release_rank");
+        return DSL.field(
+                dsl.selectCount()
+                        .from(rank)
+                        .where(rank.EXTENSION_ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                        .and(rank.ACTIVE.isTrue())
+                        .and(rank.PRE_RELEASE.isTrue())
+                        .and(
+                                DSL.row(rank.SEMVER_MAJOR, rank.SEMVER_MINOR, rank.SEMVER_PATCH)
+                                        .gt(
+                                                DSL.row(
+                                                        EXTENSION_VERSION.SEMVER_MAJOR,
+                                                        EXTENSION_VERSION.SEMVER_MINOR,
+                                                        EXTENSION_VERSION.SEMVER_PATCH))))
+                .lt(limit);
     }
 
     public Page<String> findActiveVersionStringsSorted(

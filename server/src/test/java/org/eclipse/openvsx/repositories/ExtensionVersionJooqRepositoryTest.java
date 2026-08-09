@@ -13,6 +13,8 @@
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -162,6 +164,102 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         assertThat(repo.isDeleteAllActiveVersions("ns6", "ext6")).isFalse();
     }
 
+    @Test
+    void capsPreReleaseVersionsButKeepsAllStableVersions() {
+        var extension = persistExtension("ns7", "ext7");
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_UNIVERSAL, true);
+        persistVersion(extension, "2.0.0", TargetPlatform.NAME_UNIVERSAL, true);
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_UNIVERSAL, 1, 105);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, 100);
+
+        var stable = result.stream()
+                .filter(ev -> !ev.isPreRelease())
+                .map(ExtensionVersion::getVersion)
+                .toList();
+        var preRelease = result.stream()
+                .filter(ExtensionVersion::isPreRelease)
+                .map(ExtensionVersion::getVersion)
+                .toList();
+
+        assertThat(stable)
+                .as("stable releases must never be affected by the pre-release cap")
+                .containsExactlyInAnyOrder("1.0.0", "2.0.0");
+        assertThat(preRelease).as("pre-releases must be capped at 100").hasSize(100);
+        assertThat(preRelease)
+                .as("the highest-semver pre-release ('latest') must survive the cap")
+                .contains("0.0.105");
+        assertThat(preRelease)
+                .as("the 5 lowest-semver pre-releases must be dropped by the cap")
+                .doesNotContain("0.0.1", "0.0.2", "0.0.3", "0.0.4", "0.0.5");
+    }
+
+    @Test
+    void capsPreReleaseVersionsAcrossTargetPlatformsCombinedRatherThanPerPlatform() {
+        var extension = persistExtension("ns8", "ext8");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_LINUX_X64, 1, 60);
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_WIN32_X64, 61, 105);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, 100);
+        var versions = result.stream().map(ExtensionVersion::getVersion).collect(Collectors.toSet());
+
+        assertThat(result)
+                .as("the cap counts pre-releases across all target platforms of the extension combined")
+                .hasSize(100);
+        for (var patch = 6; patch <= 105; patch++) {
+            assertThat(versions).contains("0.0." + patch);
+        }
+        for (var patch = 1; patch <= 5; patch++) {
+            assertThat(versions).doesNotContain("0.0." + patch);
+        }
+    }
+
+    @Test
+    void targetPlatformFilterIsAppliedAfterTheCrossPlatformPreReleaseCap() {
+        // 99 higher-semver win32 pre-releases crowd out all but the newest of the 2 linux
+        // pre-releases from the cross-platform top-100 cap, before the win32-x64 filter below is
+        // even applied - so requesting linux-x64 only can see fewer than 100 versions even though
+        // more than 100 exist for the extension overall.
+        var extension = persistExtension("ns9", "ext9");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_WIN32_X64, 1, 99, "1.0.");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_LINUX_X64, 1, 2);
+
+        var linuxOnly = repo.findAllActiveByExtensionIdAndTargetPlatform(
+                List.of(extension.getId()),
+                TargetPlatform.NAME_LINUX_X64,
+                100);
+
+        assertThat(linuxOnly).extracting(ExtensionVersion::getVersion).containsExactly("0.0.2");
+    }
+
+    @Test
+    void honoursTheCallerSuppliedPreReleaseCapInsteadOfAFixedOne() {
+        var extension = persistExtension("ns10", "ext10");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_UNIVERSAL, 1, 5);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, 3);
+
+        assertThat(result)
+                .as("the cap is whatever the caller passes in, not a value fixed inside the repository")
+                .extracting(ExtensionVersion::getVersion)
+                .containsExactlyInAnyOrder("0.0.3", "0.0.4", "0.0.5");
+    }
+
+    @Test
+    void negativeMaxPreReleaseVersionsDisablesTheCapEntirely() {
+        // A negative "count < limit" can never hold, so a naive reading of the cap would exclude
+        // *every* pre-release rather than none - the opposite of "unlimited". This pins down that
+        // -1 (and negative values generally) instead skip the cap condition altogether, matching
+        // the "negative means unlimited" convention already used elsewhere in this codebase (e.g.
+        // ovsx.data.mirror.requests-per-second).
+        var extension = persistExtension("ns11", "ext11");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_UNIVERSAL, 1, 105);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, -1);
+
+        assertThat(result).as("a negative cap must return every active pre-release, uncapped").hasSize(105);
+    }
+
     private Namespace persistNamespace(String namespaceName) {
         var namespace = new Namespace();
         namespace.setName(namespaceName);
@@ -198,5 +296,33 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         // bypassing the persistence context, so pending inserts must be flushed before they become
         // visible to it.
         em.flush();
+    }
+
+    /**
+     * Persists active pre-release versions {@code <versionPrefix><fromPatch>} .. {@code
+     * <versionPrefix><toPatch>} (inclusive), one flush for the whole batch rather than one per row.
+     */
+    private void persistPreReleaseVersions(
+            Extension extension,
+            String targetPlatform,
+            int fromPatch,
+            int toPatch,
+            String versionPrefix
+    ) {
+        for (var patch = fromPatch; patch <= toPatch; patch++) {
+            var extVersion = new ExtensionVersion();
+            extVersion.setExtension(extension);
+            extVersion.setVersion(versionPrefix + patch);
+            extVersion.setTargetPlatform(targetPlatform);
+            extVersion.setActive(true);
+            extVersion.setPreRelease(true);
+            extVersion.setPublishedWith(token);
+            em.persist(extVersion);
+        }
+        em.flush();
+    }
+
+    private void persistPreReleaseVersions(Extension extension, String targetPlatform, int fromPatch, int toPatch) {
+        persistPreReleaseVersions(extension, targetPlatform, fromPatch, toPatch, "0.0.");
     }
 }
