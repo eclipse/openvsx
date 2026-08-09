@@ -93,8 +93,9 @@ public class LocalVSCodeService implements IVSCodeService {
     // See RepositoryService.findActiveExtensionVersions / ExtensionVersionJooqRepository -
     // caps how many of an extension's active pre-release versions the version listing below
     // fetches per extensionQuery request; regular releases are never capped. A negative value
-    // (e.g. -1) disables the cap entirely.
-    @Value("${ovsx.extension-query.max-pre-release-versions:100}")
+    // (e.g. the -1 default) disables the cap entirely, preserving the pre-existing unbounded
+    // behaviour unless an operator opts into capping.
+    @Value("${ovsx.extension-query.max-pre-release-versions:-1}")
     int maxPreReleaseVersions;
 
     public LocalVSCodeService(
