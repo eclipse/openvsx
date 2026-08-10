@@ -20,6 +20,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - trusted-publishing
 
 env:
   REGISTRY: ghcr.io

@@ -28,6 +28,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -67,6 +68,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         token.setValue("jooq-repo-test-owner-token");
         token.setCreatedTimestamp(LocalDateTime.now());
         token.setActive(true);
+        token.setType(PersonalAccessTokenType.LLT);
         em.persist(token);
         em.flush();
     }
