@@ -23,6 +23,8 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jobrunr.scheduling.cron.Cron;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -41,7 +43,6 @@ import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionReview;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
@@ -70,6 +71,8 @@ import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 
 @Component
 public class AdminService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
 
     private final RepositoryService repositories;
     private final ExtensionService extensions;
@@ -476,9 +479,25 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        // Send a DELETE request to the Eclipse publisher agreement API
-        if (eclipse.isActive() && user.getEclipsePersonId() != null) {
-            eclipse.revokePublisherAgreement(user, admin);
+        String revokeFailure = null;
+        if (eclipse.isActive()) {
+            // Only send a DELETE request to the publisher agreement API when we have
+            // reliably determined that one exists ('signed' or 'outdated') - not when the status
+            // is 'none' or could not be determined at all, since in that case there is nothing
+            // confirmed to revoke and calling the Eclipse API would be a guess. Whatever the DELETE
+            // call itself throws must still not abort the rest of the revoke below - tokens,
+            // extensions and namespace memberships are unrelated to Eclipse and should still be
+            // revoked; that failure is reported back as part of the result instead.
+
+            var agreementStatus = eclipse.determinePublisherAgreementStatus(user);
+            if ("signed".equals(agreementStatus) || "outdated".equals(agreementStatus)) {
+                try {
+                    eclipse.revokePublisherAgreement(user, admin);
+                } catch (RuntimeException exc) {
+                    logger.error("Failed to revoke publisher agreement for user {}/{}", provider, loginName, exc);
+                    revokeFailure = exc.getMessage();
+                }
+            }
         }
 
         var accessTokens = repositories.findPersonalAccessTokens(user);
@@ -527,7 +546,14 @@ public class AdminService {
         if (reason != null) {
             message += " Reason: " + reason;
         }
-        var result = ResultJson.success(message);
+
+        ResultJson result;
+        if (revokeFailure != null) {
+            message += " Failed to revoke the publisher agreement: " + revokeFailure;
+            result = ResultJson.warning(message);
+        } else {
+            result = ResultJson.success(message);
+        }
         logs.logAction(admin, result);
         return result;
     }

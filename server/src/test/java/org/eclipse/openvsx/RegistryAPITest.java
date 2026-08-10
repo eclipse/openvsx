@@ -11,6 +11,7 @@ package org.eclipse.openvsx;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -81,6 +82,7 @@ import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
+import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
@@ -92,6 +94,9 @@ import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -1820,6 +1825,27 @@ class RegistryAPITest {
     }
 
     @Test
+    void testPublishRejectsReadmeCollidingWithBinaryName() throws Exception {
+        // Reproduces TOB-OVSX-15: object keys for a version share one flat namespace, so a README
+        // declared under the derived name of the .vsix binary would silently overwrite it in storage
+        // once uploaded. That name is attacker-controlled (it comes from the VSIX manifest), so
+        // publication of a colliding package must be rejected before anything is stored.
+        mockForPublish("contributor");
+        var bytes = createExtensionPackageWithCollidingReadme("bar", "1.0.0");
+        mockMvc.perform(
+                post("/api/-/publish?token={token}", "my_token")
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .content(bytes))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        content().json(
+                                errorJson(
+                                        "Extension contains multiple files named 'foo.bar-1.0.0.vsix'"
+                                                + " (case-insensitive). Rename the conflicting asset so that it does not"
+                                                + " collide with another published file.")));
+    }
+
+    @Test
     void testPublishLimitsTags() throws Exception {
         var previousMaxTags = publishingConfig.getMaxTags();
         try {
@@ -2651,7 +2677,10 @@ class RegistryAPITest {
             versions.add(extVersion);
         }
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
+        Mockito
+                .when(
+                        repositories
+                                .findActiveExtensionVersions(eq(Set.of(extension.getId())), isNull(), anyInt()))
                 .thenReturn(versions);
         Mockito.when(repositories.findLatestVersionsIsPreview(Set.of(extension.getId())))
                 .thenReturn(Map.of(extension.getId(), versions.getFirst().isPreview()));
@@ -2693,7 +2722,10 @@ class RegistryAPITest {
         extVersion.setDisplayName("Foo Bar");
         extVersion.setExtension(extension);
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), null))
+        Mockito
+                .when(
+                        repositories
+                                .findActiveExtensionVersions(eq(Set.of(extension.getId())), isNull(), anyInt()))
                 .thenReturn(List.of(extVersion));
 
         Mockito.when(repositories.findLatestVersionsIsPreview(Set.of(extension.getId())))
@@ -3259,6 +3291,65 @@ class RegistryAPITest {
                 (license == null ? "" : ",\"license\": \"" + license + "\"") +
                 "}";
         archive.write(packageJson.getBytes());
+        archive.closeEntry();
+        archive.finish();
+        return bytes.toByteArray();
+    }
+
+    /**
+     * Builds a package whose README asset resolves to the derived name of the .vsix binary
+     * ("foo.&lt;name&gt;-&lt;version&gt;.vsix"), reproducing TOB-OVSX-15.
+     */
+    private byte[] createExtensionPackageWithCollidingReadme(String name, String version) throws IOException {
+        var maliciousPath = "extension/"
+                + NamingUtil.toFileFormat("foo", name, TargetPlatform.NAME_UNIVERSAL, version, ".vsix");
+        var bytes = new ByteArrayOutputStream();
+        var archive = new ZipOutputStream(bytes);
+        archive.putNextEntry(new ZipEntry("extension.vsixmanifest"));
+        var vsixmanifest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                "<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\" xmlns:d=\"http://schemas.microsoft.com/developer/vsx-schema-design/2011\">"
+                +
+                "<Metadata>" +
+                "<Identity Language=\"en-US\" Id=\"" + name + "\" Version=\"" + version + "\" Publisher=\"foo\" />" +
+                "<DisplayName>foo</DisplayName>" +
+                "<Description xml:space=\"preserve\"></Description>" +
+                "<Tags></Tags>" +
+                "<Categories>Other</Categories>" +
+                "<GalleryFlags>Public</GalleryFlags>" +
+                "<Badges></Badges>" +
+                "<Properties>" +
+                "<Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.57.0\" />" +
+                "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionDependencies\" Value=\"\" />" +
+                "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionPack\" Value=\"\" />" +
+                "<Property Id=\"Microsoft.VisualStudio.Code.ExtensionKind\" Value=\"ui,web,workspace\" />" +
+                "<Property Id=\"Microsoft.VisualStudio.Code.LocalizedLanguages\" Value=\"\" />" +
+                "<Property Id=\"Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown\" Value=\"true\" />" +
+                "</Properties>" +
+                "</Metadata>" +
+                "<Installation>" +
+                "<InstallationTarget Id=\"Microsoft.VisualStudio.Code\"/>" +
+                "</Installation>" +
+                "<Dependencies/>" +
+                "<Assets>" +
+                "<Asset Type=\"Microsoft.VisualStudio.Code.Manifest\" Path=\"extension/package.json\" Addressable=\"true\" />"
+                +
+                "<Asset Type=\"Microsoft.VisualStudio.Services.Content.Details\" Path=\"" + maliciousPath
+                + "\" Addressable=\"true\" />" +
+                "</Assets>" +
+                "</PackageManifest>";
+        archive.write(vsixmanifest.getBytes());
+        archive.closeEntry();
+        archive.putNextEntry(new ZipEntry("extension/package.json"));
+        var packageJson = "{" +
+                "\"publisher\": \"foo\"," +
+                "\"name\": \"" + name + "\"," +
+                "\"version\": \"" + version + "\"," +
+                "\"displayName\": \"foo\"" +
+                "}";
+        archive.write(packageJson.getBytes());
+        archive.closeEntry();
+        archive.putNextEntry(new ZipEntry(maliciousPath));
+        archive.write("DATA FROM THE ARCHIVE".getBytes(StandardCharsets.UTF_8));
         archive.closeEntry();
         archive.finish();
         return bytes.toByteArray();

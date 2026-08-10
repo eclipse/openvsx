@@ -2,7 +2,25 @@
 
 This change log covers only the frontend library (webui) of Open VSX.
 
-## [next] (unreleased)
+## [v1.1.1] (09/08/2026)
+
+### Fixed
+
+- Fix the WebUI build failing on s390x and ppc64le: use postcss instead of lightningcss (no ppc64le binary) for CSS, and bump vite for the Rolldown big-endian sourcemap fix ([#2051](https://github.com/eclipse-openvsx/openvsx/issues/2051))
+- Fix the admin publisher revoke dialog prompting for an Eclipse login even when the target publisher's agreement status is `none` or could not be determined (nothing confirmed to revoke)
+
+### Dependencies
+
+- Remove the unused `@mui/base` dependency; it is deprecated upstream (replaced by `@base-ui/react`) and nothing in the codebase imports from it
+- Bump socks from `2.8.3` to `2.8.9`
+- Bump ip-address from `9.0.5` to `10.4.0`
+- Bump postcss from `8.5.22` to `8.5.25`
+- Bump vite from `8.1.5` to `8.2.1`
+- Bump dompurify from `3.4.12` to `3.4.13`
+- Bump js-yaml from `4.3.0` to `4.3.1`
+- Bump react-router from `7.18.1` to `7.18.2`
+
+## [v1.1.0] (02/08/2026)
 
 ### Added
 

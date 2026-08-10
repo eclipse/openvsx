@@ -45,9 +45,20 @@ public class ExtensionVersionJooqRepository {
         this.dsl = dsl;
     }
 
+    /**
+     * An extension's stable release history stays bounded on its own, but a pre-release channel
+     * can publish one build per commit and accumulate thousands of entries - {@code
+     * maxPreReleaseVersions} keeps only that many of the most recent ones per extension (across all
+     * of its target platforms combined), ranked by the same semver-based ordering {@code
+     * ExtensionVersion.SORT_COMPARATOR} uses for "latest", so the true latest pre-release - rank #1 -
+     * is never dropped by the cap. The caller decides the limit rather than it being fixed here; a
+     * negative value (e.g. {@code -1}) disables the cap entirely, matching the "negative means
+     * unlimited" convention already used for {@code ovsx.data.mirror.requests-per-second}.
+     */
     public List<ExtensionVersion> findAllActiveByExtensionIdAndTargetPlatform(
             Collection<Long> extensionIds,
-            String targetPlatform
+            String targetPlatform,
+            int maxPreReleaseVersions
     ) {
         var query = dsl.select(
                 NAMESPACE.ID,
@@ -83,11 +94,57 @@ public class ExtensionVersionJooqRepository {
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
+        if (maxPreReleaseVersions >= 0) {
+            query = query.and(
+                    EXTENSION_VERSION.PRE_RELEASE.isFalse()
+                            .or(isAmongLatestPreReleases(maxPreReleaseVersions)));
+        }
+
         if (targetPlatform != null) {
             query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return query.fetch().map(this::toExtensionVersion);
+    }
+
+    /**
+     * True for an active pre-release version if fewer than {@code limit} other active pre-releases
+     * of the same extension - regardless of target platform - outrank it.
+     * <p>
+     * Ranking is (major, minor, patch) first, same as everywhere else, but that triple alone ties
+     * for any two rows that don't happen to differ in it - which is the common case, not an edge
+     * case: the same version published across several target platforms shares one (major, minor,
+     * patch) by construction, and a pre-release channel that republishes without bumping semver
+     * (relying on timestamp/build metadata to distinguish builds) produces the same tie. Neither of
+     * two tied rows outranks the other, so on a (major, minor, patch)-only comparison *neither*
+     * counts against the cap - ties can grow without bound and the cap stops capping. Falling back
+     * to {@code timestamp} (as {@code ExtensionVersion.SORT_COMPARATOR} and every DB sort index in
+     * this class already do) breaks most ties; the final {@code id} tiebreaker guarantees a strict
+     * total order so the cap always keeps exactly {@code min(limit, total)} rows, never more.
+     */
+    private Condition isAmongLatestPreReleases(int limit) {
+        var rank = EXTENSION_VERSION.as("ev_pre_release_rank");
+        return DSL.field(
+                dsl.selectCount()
+                        .from(rank)
+                        .where(rank.EXTENSION_ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                        .and(rank.ACTIVE.isTrue())
+                        .and(rank.PRE_RELEASE.isTrue())
+                        .and(
+                                DSL.row(
+                                        rank.SEMVER_MAJOR,
+                                        rank.SEMVER_MINOR,
+                                        rank.SEMVER_PATCH,
+                                        rank.TIMESTAMP,
+                                        rank.ID)
+                                        .gt(
+                                                DSL.row(
+                                                        EXTENSION_VERSION.SEMVER_MAJOR,
+                                                        EXTENSION_VERSION.SEMVER_MINOR,
+                                                        EXTENSION_VERSION.SEMVER_PATCH,
+                                                        EXTENSION_VERSION.TIMESTAMP,
+                                                        EXTENSION_VERSION.ID))))
+                .lt(limit);
     }
 
     public Page<String> findActiveVersionStringsSorted(
@@ -545,8 +602,8 @@ public class ExtensionVersionJooqRepository {
         extVersion.setBundledExtensions(
                 toList(row.get(extensionVersionMapper.map(EXTENSION_VERSION.BUNDLED_EXTENSIONS)), converter));
         extVersion.setSponsorLink(row.get(extensionVersionMapper.map(EXTENSION_VERSION.SPONSOR_LINK)));
-        extVersion
-                .setPotentiallyMalicious(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS)));
+        extVersion.setPotentiallyMalicious(
+                Boolean.TRUE.equals(row.get(extensionVersionMapper.map(EXTENSION_VERSION.POTENTIALLY_MALICIOUS))));
 
         // The `removed` column is only selected by queries that may include non-active versions; when it
         // is present, carry it through so callers observe the correct tombstone state. (Active versions
@@ -1576,7 +1633,7 @@ public class ExtensionVersionJooqRepository {
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .and(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
+                .where(NAMESPACE.NAME.equalIgnoreCase(namespaceName))
                 .and(EXTENSION.NAME.equalIgnoreCase(extensionName))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetchOne("all", Integer.class);

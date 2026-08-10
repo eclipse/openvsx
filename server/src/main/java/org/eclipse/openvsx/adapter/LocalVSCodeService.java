@@ -90,6 +90,14 @@ public class LocalVSCodeService implements IVSCodeService {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
+    // See RepositoryService.findActiveExtensionVersions / ExtensionVersionJooqRepository -
+    // caps how many of an extension's active pre-release versions the version listing below
+    // fetches per extensionQuery request; regular releases are never capped. A negative value
+    // (e.g. the -1 default) disables the cap entirely, preserving the pre-existing unbounded
+    // behaviour unless an operator opts into capping.
+    @Value("${ovsx.extension-query.max-pre-release-versions:-1}")
+    int maxPreReleaseVersions;
+
     public LocalVSCodeService(
             RepositoryService repositories,
             VersionService versions,
@@ -206,7 +214,7 @@ public class LocalVSCodeService implements IVSCodeService {
         var extensionsMap = extensionsList.stream()
                 .collect(Collectors.toMap(Extension::getId, Function.identity(), (a, b) -> a));
         List<ExtensionVersion> allActiveExtensionVersions = repositories
-                .findActiveExtensionVersions(extensionsMap.keySet(), targetPlatform);
+                .findActiveExtensionVersions(extensionsMap.keySet(), targetPlatform, maxPreReleaseVersions);
 
         List<ExtensionVersion> extensionVersions;
         if (test(flags, FLAG_INCLUDE_LATEST_VERSION_ONLY)) {
