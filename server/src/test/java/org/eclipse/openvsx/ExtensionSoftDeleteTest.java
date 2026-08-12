@@ -480,6 +480,7 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
             extVersion.setTargetPlatform(targetPlatform);
             extVersion.setExtension(extension);
             extVersion.setPublishedWith(token);
+            extVersion.setPublishedBy(em.getReference(UserData.class, ownerId));
             extVersion.setActive(active);
             extVersion.setRemoved(removed);
             if (removed) {

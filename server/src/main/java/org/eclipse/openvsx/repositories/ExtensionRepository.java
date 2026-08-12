@@ -65,7 +65,7 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
 
     Streamable<Extension> findByIdIn(Collection<Long> extensionIds);
 
-    Streamable<Extension> findDistinctByVersionsPublishedWithUser(UserData user);
+    Streamable<Extension> findDistinctByVersionsPublishedBy(UserData user);
 
     long count();
 

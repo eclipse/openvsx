@@ -236,7 +236,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findVersions(extension),
-                () -> repositories.findVersionsByAccessToken(personalAccessToken, true),
                 () -> repositories.getMaxExtensionDownloadCount(),
                 () -> repositories.getOldestExtensionTimestamp(),
                 () -> repositories.findExtensions(LONG_LIST),
@@ -319,6 +318,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findFileByName("namespaceName", "extensionName", "targetPlatform", "version", "name"),
                 () -> repositories.findVersionsByUser(userData, false),
+                () -> repositories.findPublishers(),
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),
@@ -334,7 +334,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.hasMembership(userData, namespace),
                 () -> repositories
                         .findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
-                () -> repositories.findAllAccessTokens(),
                 () -> repositories.hasAccessToken("tokenValue"),
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
@@ -347,7 +346,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findNotMigratedItems(page),
                 () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1),
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
-                () -> repositories.findVersionPublishedWithUser(
+                () -> repositories.findVersionPublishedByUser(
                         userData,
                         "version",
                         "targetPlatform",

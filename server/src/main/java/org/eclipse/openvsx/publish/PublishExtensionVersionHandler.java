@@ -245,6 +245,7 @@ public class PublishExtensionVersionHandler {
 
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(user);
         extVersion.setActive(false);
 
         // Lock the extension row while adding a version so a concurrent delete-all serializes

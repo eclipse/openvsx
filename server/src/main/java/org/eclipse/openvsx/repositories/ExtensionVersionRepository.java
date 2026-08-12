@@ -22,6 +22,11 @@ import org.eclipse.openvsx.entities.*;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
+    @Query(
+        "select distinct ev.publishedBy from ExtensionVersion ev where ev.active = true and ev.publishedBy is not null"
+    )
+    Streamable<UserData> findPublishers();
+
     Streamable<ExtensionVersion> findByExtension(Extension extension);
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
@@ -39,7 +44,7 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+    ExtensionVersion findByPublishedByAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
             UserData user,
             String version,
             String targetPlatform,
@@ -53,9 +58,7 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
-
-    Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
+    Streamable<ExtensionVersion> findByPublishedByAndActive(UserData user, boolean active);
 
     Streamable<ExtensionVersion> findAll();
 

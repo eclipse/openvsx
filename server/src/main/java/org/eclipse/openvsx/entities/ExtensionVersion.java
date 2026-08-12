@@ -83,6 +83,13 @@ public class ExtensionVersion implements Serializable {
     @ManyToOne
     private PersonalAccessToken publishedWith;
 
+    /**
+     * Who published this version. Recorded independently of {@code publishedWith} so that authorship
+     * survives the credential: a token can be revoked, expire or be deleted, and this stays.
+     */
+    @ManyToOne
+    private UserData publishedBy;
+
     private boolean active;
 
     private boolean potentiallyMalicious;
@@ -197,8 +204,8 @@ public class ExtensionVersion implements Serializable {
         json.setGalleryTheme(this.getGalleryTheme());
         json.setLocalizedLanguages(this.getLocalizedLanguages());
         json.setQna(this.getQna());
-        if (this.getPublishedWith() != null) {
-            json.setPublishedBy(this.getPublishedWith().getUser().toUserJson());
+        if (this.getPublishedBy() != null) {
+            json.setPublishedBy(this.getPublishedBy().toUserJson());
         }
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
@@ -334,6 +341,14 @@ public class ExtensionVersion implements Serializable {
 
     public void setPublishedWith(PersonalAccessToken publishedWith) {
         this.publishedWith = publishedWith;
+    }
+
+    public UserData getPublishedBy() {
+        return publishedBy;
+    }
+
+    public void setPublishedBy(UserData publishedBy) {
+        this.publishedBy = publishedBy;
     }
 
     public boolean isActive() {
@@ -569,7 +584,9 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
                 && Objects.equals(timestamp, that.timestamp)
-                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion
+                && Objects.equals(getId(publishedBy), getId(that.publishedBy)) // use id to prevent infinite recursion
+                && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(engines, that.engines)
                 && Objects.equals(categories, that.categories)
@@ -603,6 +620,7 @@ public class ExtensionVersion implements Serializable {
                 preview,
                 timestamp,
                 getId(publishedWith),
+                getId(publishedBy),
                 active,
                 potentiallyMalicious,
                 removed,

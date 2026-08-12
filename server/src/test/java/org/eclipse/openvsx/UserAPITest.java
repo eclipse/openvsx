@@ -981,7 +981,7 @@ class UserAPITest {
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
             Mockito.when(
-                    repositories.findVersionPublishedWithUser(
+                    repositories.findVersionPublishedByUser(
                             user,
                             extVersion.getVersion(),
                             TargetPlatform.NAME_UNIVERSAL,

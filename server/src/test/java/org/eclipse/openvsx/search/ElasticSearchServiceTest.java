@@ -268,6 +268,7 @@ class ElasticSearchServiceTest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         extVer.setPublishedWith(token);
+        extVer.setPublishedBy(user);
         Mockito.when(repositories.findLatestVersion(extension, null, false, true))
                 .thenReturn(extVer);
         Mockito.when(repositories.isVerified(namespace, user))

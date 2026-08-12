@@ -457,6 +457,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         extVersion.setTags(Collections.emptyList());
         extVersion.setExtension(extension);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(token.getUser());
         entityManager.persist(extVersion);
 
         // populate extension versions list
@@ -520,6 +521,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         extVersion.setTags(Collections.emptyList());
         extVersion.setExtension(extension);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(user);
         entityManager.persist(extVersion);
 
         // populate extension versions list

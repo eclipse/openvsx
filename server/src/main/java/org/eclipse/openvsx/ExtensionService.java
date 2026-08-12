@@ -366,7 +366,7 @@ public class ExtensionService {
         var versions = Arrays.stream(targetVersions)
                 .map(target -> {
                     var extVersion = restrictedToUser
-                            ? repositories.findVersionPublishedWithUser(
+                            ? repositories.findVersionPublishedByUser(
                                     user,
                                     target.version(),
                                     target.targetPlatform(),

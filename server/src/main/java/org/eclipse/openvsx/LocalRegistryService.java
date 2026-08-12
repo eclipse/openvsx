@@ -1276,11 +1276,11 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
+        if (extVersion.getPublishedBy() == null) {
             return false;
         }
 
-        var user = extVersion.getPublishedWith().getUser();
+        var user = extVersion.getPublishedBy();
         if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }
@@ -1293,11 +1293,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersion extVersion,
             Map<Long, List<NamespaceMembership>> membershipsByNamespaceId
     ) {
-        if (extVersion.getPublishedWith() == null) {
+        if (extVersion.getPublishedBy() == null) {
             return false;
         }
 
-        var user = extVersion.getPublishedWith().getUser();
+        var user = extVersion.getPublishedBy();
         if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
             return true;
         }

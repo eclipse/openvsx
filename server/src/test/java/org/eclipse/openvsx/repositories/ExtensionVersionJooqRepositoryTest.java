@@ -54,11 +54,13 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
     @Autowired
     EntityManager em;
 
+    private UserData owner;
+
     private PersonalAccessToken token;
 
     @BeforeEach
     void setUp() {
-        var owner = new UserData();
+        owner = new UserData();
         owner.setLoginName("jooq-repo-test-owner");
         em.persist(owner);
 
@@ -319,6 +321,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setTargetPlatform(targetPlatform);
         extVersion.setActive(active);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(owner);
         em.persist(extVersion);
 
         // ExtensionVersionJooqRepository queries run over the transaction's raw JDBC connection,
@@ -346,6 +349,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
             extVersion.setActive(true);
             extVersion.setPreRelease(true);
             extVersion.setPublishedWith(token);
+            extVersion.setPublishedBy(owner);
             em.persist(extVersion);
         }
         em.flush();
@@ -369,6 +373,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setPreRelease(true);
         extVersion.setTimestamp(timestamp);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(owner);
         em.persist(extVersion);
     }
 }

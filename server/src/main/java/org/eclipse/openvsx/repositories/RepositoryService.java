@@ -275,7 +275,7 @@ public class RepositoryService {
                         namespace);
     }
 
-    public ExtensionVersion findVersionPublishedWithUser(
+    public ExtensionVersion findVersionPublishedByUser(
             UserData user,
             String version,
             String targetPlatform,
@@ -283,7 +283,7 @@ public class RepositoryService {
             String namespace
     ) {
         return extensionVersionRepo
-                .findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+                .findByPublishedByAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
                         user,
                         version,
                         targetPlatform,
@@ -354,15 +354,15 @@ public class RepositoryService {
     }
 
     public Streamable<Extension> findExtensions(UserData user) {
-        return extensionRepo.findDistinctByVersionsPublishedWithUser(user);
-    }
-
-    public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith, boolean active) {
-        return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
+        return extensionRepo.findDistinctByVersionsPublishedBy(user);
     }
 
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
-        return extensionVersionRepo.findByPublishedWithUserAndActive(user, active);
+        return extensionVersionRepo.findByPublishedByAndActive(user, active);
+    }
+
+    public Streamable<UserData> findPublishers() {
+        return extensionVersionRepo.findPublishers();
     }
 
     public LocalDateTime getOldestExtensionTimestamp() {
@@ -487,10 +487,6 @@ public class RepositoryService {
 
     public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
         return tokenRepo.findByUser(user);
-    }
-
-    public Streamable<PersonalAccessToken> findAllAccessTokens() {
-        return tokenRepo.findAll();
     }
 
     public Streamable<PersonalAccessToken> findActiveAccessTokens(UserData user) {

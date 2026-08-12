@@ -142,6 +142,7 @@ class PublishExtensionVersionHandlerTest {
             verify(entityManager).persist(metadata);
             assertThat(result).isSameAs(metadata);
             assertThat(result.getPublishedWith()).isEqualTo(token);
+            assertThat(result.getPublishedBy()).isEqualTo(user);
             assertThat(result.getExtension()).isSameAs(capturedExtension.getValue());
             assertThat(result.getExtension().getNamespace()).isSameAs(namespace);
         }

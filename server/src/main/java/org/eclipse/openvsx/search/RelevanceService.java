@@ -136,10 +136,10 @@ public class RelevanceService {
     }
 
     private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
+        if (extVersion.getPublishedBy() == null) {
             return false;
         }
-        var user = extVersion.getPublishedWith().getUser();
+        var user = extVersion.getPublishedBy();
         var namespace = extVersion.getExtension().getNamespace();
         return repositories.isVerified(namespace, user);
     }

@@ -911,7 +911,10 @@ class AdminAPITest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setActive(true);
-        versions.forEach(v -> v.setPublishedWith(token));
+        versions.forEach(v -> {
+            v.setPublishedWith(token);
+            v.setPublishedBy(user);
+        });
 
         Mockito.when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
         Mockito.when(repositories.countActiveAccessTokens(user)).thenReturn(1L);
@@ -968,7 +971,10 @@ class AdminAPITest {
         token.setActive(true);
         Mockito.when(repositories.findAccessTokens(user))
                 .thenReturn(Streamable.of(token));
-        versions.forEach(v -> v.setPublishedWith(token));
+        versions.forEach(v -> {
+            v.setPublishedWith(token);
+            v.setPublishedBy(user);
+        });
         Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions));
 
@@ -1715,6 +1721,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
@@ -1732,6 +1739,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user2))
                 .thenReturn(Streamable.of(user2Token));
         versions.get(1).setPublishedWith(user2Token);
+        versions.get(1).setPublishedBy(user2);
         Mockito.when(repositories.findVersionsByUser(user2, true))
                 .thenReturn(Streamable.of(versions.get(1)));
 
@@ -1802,6 +1810,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
@@ -1850,6 +1859,7 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
         versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         Mockito.when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 

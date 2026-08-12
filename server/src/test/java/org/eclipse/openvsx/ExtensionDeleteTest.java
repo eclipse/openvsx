@@ -349,6 +349,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
         extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(token.getUser());
         extVersion.setActive(true);
         return extVersion;
     }
