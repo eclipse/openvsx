@@ -103,7 +103,14 @@ public class AccessTokenService {
     @Transactional
     public PersonalAccessToken useAccessToken(String tokenValue) {
         var token = repositories.findAccessToken(tokenValue);
+        // existence + active
         if (token == null || !token.isActive()) {
+            return null;
+        }
+        // expiration
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+            token.setActive(false);
             return null;
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());

@@ -1701,7 +1701,21 @@ class RegistryAPITest {
                         .content(namespaceJson(n -> {
                             n.setName("foobar");
                         })))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json(errorJson("Invalid access token.")));
+    }
+
+    @Test
+    void testCreateNamespaceExpiredToken() throws Exception {
+        var token = mockAccessToken();
+        token.setExpiresTimestamp(LocalDateTime.now().minusDays(1));
+        mockMvc.perform(
+                post("/api/-/namespace/create?token={token}", "my_token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(namespaceJson(n -> {
+                            n.setName("foobar");
+                        })))
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
 
@@ -1914,7 +1928,20 @@ class RegistryAPITest {
                 post("/api/-/publish?token={token}", "my_token")
                         .contentType(MediaType.APPLICATION_OCTET_STREAM)
                         .content(bytes))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json(errorJson("Invalid access token.")));
+    }
+
+    @Test
+    void testPublishExpiredToken() throws Exception {
+        var token = mockAccessToken();
+        token.setExpiresTimestamp(LocalDateTime.now().minusDays(1));
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
+        mockMvc.perform(
+                post("/api/-/publish?token={token}", "my_token")
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .content(bytes))
+                .andExpect(status().isUnauthorized())
                 .andExpect(content().json(errorJson("Invalid access token.")));
     }
 

@@ -9,7 +9,9 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -715,7 +717,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
         var token = tokens.useAccessToken(tokenValue);
         if (token == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
         return createNamespace(json, token.getUser());
@@ -793,9 +795,14 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = tokens.useAccessToken(tokenValue);
+        PersonalAccessToken token = tokens.useAccessToken(tokenValue);
         if (token == null || token.getUser() == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            try {
+                content.transferTo(OutputStream.nullOutputStream());
+            } catch (IOException ignored) {
+                // best-effort drain; connection state doesn't matter once we're returning an error
+            }
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
         // Check whether the user has a valid publisher agreement
