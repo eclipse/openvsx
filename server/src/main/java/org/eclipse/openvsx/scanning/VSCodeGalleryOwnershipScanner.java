@@ -43,7 +43,7 @@ public class VSCodeGalleryOwnershipScanner implements Scanner {
 
     @Value("${ovsx.scanning.gallery-ownership.enabled:false}")
     private boolean enabled;
-    @Value("${ovsx.scanning.gallery-ownership.required:false}")
+    @Value("${ovsx.scanning.gallery-ownership.required:true}")
     private boolean required;
     @Value("${ovsx.scanning.gallery-ownership.enforced:true}")
     private boolean enforced;
@@ -106,10 +106,10 @@ public class VSCodeGalleryOwnershipScanner implements Scanner {
 
         var publishedWith = extVersion.getPublishedWith();
         var user = publishedWith != null ? publishedWith.getUser() : null;
-        if (user != null && repositories.isNamespaceOwner(user, namespace)) {
+        if (user != null && repositories.isVerified(namespace, user)) {
             return new Scanner.Invocation.Completed(
                     Scanner.Result.clean(
-                            "Extension exists on the VS Code Marketplace; publisher confirmed as namespace owner."));
+                            "Extension exists on the VS Code Marketplace; namespace confirmed as verified."));
         }
 
         var threat = new Scanner.Threat(

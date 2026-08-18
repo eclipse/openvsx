@@ -73,34 +73,35 @@ class VSCodeGalleryOwnershipScannerTest {
         var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
-        verify(repositories, never()).isNamespaceOwner(any(), any());
+        verify(repositories, never()).isVerified(any(), any());
     }
 
     @Test
-    void startScan_isClean_whenExistsUpstreamAndUserIsNamespaceOwner() throws Exception {
+    void startScan_raisesThreat_whenExistsUpstreamAndNamespaceIsNotVerified() throws Exception {
         var user = new UserData();
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(vsCodeIdService.getUpstreamPublicIds(any())).thenReturn(new PublicIds("acme-pub-id", "widget-pub-id"));
-        when(repositories.isNamespaceOwner(user, extVersion.getExtension().getNamespace())).thenReturn(true);
-
-        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
-
-        assertTrue(invocation.result().isClean());
-    }
-
-    @Test
-    void startScan_raisesThreat_whenExistsUpstreamAndUserIsNotNamespaceOwner() throws Exception {
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
-        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(vsCodeIdService.getUpstreamPublicIds(any())).thenReturn(new PublicIds("acme-pub-id", "widget-pub-id"));
-        when(repositories.isNamespaceOwner(user, extVersion.getExtension().getNamespace())).thenReturn(false);
+        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
 
         assertFalse(invocation.result().isClean());
         assertEquals(1, invocation.result().getThreats().size());
+    }
+
+    @Test
+    void startScan_raisesThreat_whenExistsUpstreamAndNamespaceIsVerified() throws Exception {
+        var user = new UserData();
+        var extVersion = extensionVersion(user);
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+        when(vsCodeIdService.getUpstreamPublicIds(any())).thenReturn(new PublicIds("acme-pub-id", "widget-pub-id"));
+        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
+
+        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
+
+        assertTrue(invocation.result().isClean());
+        assertEquals(0, invocation.result().getThreats().size());
     }
 
     @Test
@@ -112,7 +113,7 @@ class VSCodeGalleryOwnershipScannerTest {
         var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
 
         assertFalse(invocation.result().isClean());
-        verify(repositories, never()).isNamespaceOwner(any(), any());
+        verify(repositories, never()).isVerified(any(), any());
     }
 
     @Test
