@@ -803,8 +803,9 @@ public class LocalRegistryService implements IExtensionRegistry {
         // try-with-resources to always close it, on every exit path, drains whatever is left
         // automatically instead of requiring each rejection site to remember to do it, so a LB/proxy
         // doesn't see an early response to a request whose body is still arriving and mistake it
-        // for a 50x.
-        try (var content = new DrainOnCloseInputStream(rawContent)) {
+        // for a 50x. Capped at the same max upload size a successful publish already reads in full,
+        // so an oversized/abusive body doesn't tie up the request thread and bandwidth beyond that.
+        try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
             var token = tokens.useAccessToken(tokenValue);
             if (token == null || token.getUser() == null) {
                 throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
