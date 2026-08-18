@@ -17,14 +17,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for {@link VSCodeGalleryNSVerifiedCheckScanner}, extracted, to simplify testing.
+ * Configuration for {@link VSCodeGalleryExistenceCheckScanner}, extracted, to simplify testing.
  */
 @Configuration
-public class VSCodeGalleryNSVerifiedCheckConfig {
+public class VSCodeGalleryExistenceCheckConfig {
     /**
      * Is NS verification check for upstream existing extensions enabled or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-ownership.enabled}
+     * Property: {@code ovsx.scanning.gallery-existence-check.enabled}
      * Default: {@code false}
      */
     @Value("${ovsx.scanning.gallery-ownership.enabled:false}")
@@ -33,7 +33,7 @@ public class VSCodeGalleryNSVerifiedCheckConfig {
     /**
      * Is NS verification check for upstream existing extensions required or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-ownership.required}
+     * Property: {@code ovsx.scanning.gallery-existence-check.required}
      * Default: {@code true}
      */
     @Value("${ovsx.scanning.gallery-ownership.required:true}")
@@ -42,7 +42,7 @@ public class VSCodeGalleryNSVerifiedCheckConfig {
     /**
      * Is NS verification check for upstream existing extensions enforced or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-ownership.enforced}
+     * Property: {@code ovsx.scanning.gallery-existence-check.enforced}
      * Default: {@code true}
      */
     @Value("${ovsx.scanning.gallery-ownership.enforced:true}")
@@ -51,7 +51,7 @@ public class VSCodeGalleryNSVerifiedCheckConfig {
     /**
      * The upstream gallery API URL to perform the existence checks against.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-ownership.gallery-url}
+     * Property: {@code ovsx.scanning.gallery-existence-check.gallery-url}
      * Default: {@code ""}
      */
     @Value("${ovsx.scanning.gallery-ownership.gallery-url:}")
@@ -60,13 +60,13 @@ public class VSCodeGalleryNSVerifiedCheckConfig {
     /**
      * Default constructor.
      */
-    public VSCodeGalleryNSVerifiedCheckConfig() {
+    public VSCodeGalleryExistenceCheckConfig() {
     }
 
     /**
      * For testing.
      */
-    public VSCodeGalleryNSVerifiedCheckConfig(boolean enabled, boolean required, boolean enforced, String galleryUrl) {
+    public VSCodeGalleryExistenceCheckConfig(boolean enabled, boolean required, boolean enforced, String galleryUrl) {
         this.enabled = enabled;
         this.required = required;
         this.enforced = enforced;

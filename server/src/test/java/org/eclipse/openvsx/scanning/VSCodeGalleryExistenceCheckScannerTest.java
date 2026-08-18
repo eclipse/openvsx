@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.scanning;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -20,9 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -45,7 +41,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class VSCodeGalleryNSVerifiedCheckScannerTest {
+class VSCodeGalleryExistenceCheckScannerTest {
 
     @Mock
     private RestTemplate restTemplate;
@@ -85,9 +81,9 @@ class VSCodeGalleryNSVerifiedCheckScannerTest {
     private final ExtensionQueryResult emptyResult = new ExtensionQueryResult(
             List.of(new ExtensionQueryResult.ResultItem(List.of(), List.of())));
 
-    private VSCodeGalleryNSVerifiedCheckScanner newScanner() {
-        var config = new VSCodeGalleryNSVerifiedCheckConfig(true, true, true, "http://irrelevant");
-        return new VSCodeGalleryNSVerifiedCheckScanner(
+    private VSCodeGalleryExistenceCheckScanner newScanner() {
+        var config = new VSCodeGalleryExistenceCheckConfig(true, true, true, "http://irrelevant");
+        return new VSCodeGalleryExistenceCheckScanner(
                 config,
                 restTemplate,
                 repositories,

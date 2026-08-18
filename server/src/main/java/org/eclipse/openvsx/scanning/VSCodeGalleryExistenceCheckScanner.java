@@ -41,18 +41,18 @@ import org.eclipse.openvsx.util.UrlUtil;
  * gallery identity.
  */
 @Component
-public class VSCodeGalleryNSVerifiedCheckScanner implements Scanner {
+public class VSCodeGalleryExistenceCheckScanner implements Scanner {
 
     public static final String TYPE = "vscode-gallery-ownership";
 
-    private final VSCodeGalleryNSVerifiedCheckConfig config;
+    private final VSCodeGalleryExistenceCheckConfig config;
     private final RestTemplate restTemplate;
     private final RepositoryService repositories;
     private final EntityManager entityManager;
     private final ScannerRegistry scannerRegistry;
 
-    public VSCodeGalleryNSVerifiedCheckScanner(
-            VSCodeGalleryNSVerifiedCheckConfig config,
+    public VSCodeGalleryExistenceCheckScanner(
+            VSCodeGalleryExistenceCheckConfig config,
             RestTemplate restTemplate,
             RepositoryService repositories,
             EntityManager entityManager,
