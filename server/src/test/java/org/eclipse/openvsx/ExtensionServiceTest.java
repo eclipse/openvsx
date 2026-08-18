@@ -28,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.util.Streamable;
+import org.springframework.http.HttpStatus;
 
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
@@ -37,6 +38,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.DrainOnCloseInputStream;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
 
@@ -324,6 +326,26 @@ class ExtensionServiceTest {
         Mockito.verify(scanService, Mockito.never()).removeScan(Mockito.any());
         Mockito.verify(publishHandler, Mockito.never())
                 .publishAsync(Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldRejectAPackageExceedingTheMaxContentSize() {
+        var maxContentSize = 10L;
+        Mockito.when(publishingConfig.getMaxContentSize()).thenReturn(maxContentSize);
+
+        var token = mockToken();
+        var raw = new ByteArrayInputStream(
+                "this content is well over ten bytes long".getBytes(StandardCharsets.UTF_8));
+        // LocalRegistryService#publish always wraps the request body this way before calling
+        // publishVersion(...); wrapping it here too, with the same cap, is what actually reaches
+        // this code path in production.
+        var content = new DrainOnCloseInputStream(raw, maxContentSize);
+
+        assertThatThrownBy(() -> svc.publishVersion(content, token))
+                .isInstanceOf(ErrorResultException.class)
+                .hasMessageContaining("exceeds the size limit")
+                .extracting(exc -> ((ErrorResultException) exc).getStatus())
+                .isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
     }
 
     // ---------- UTILITY ----------//

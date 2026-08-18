@@ -34,8 +34,6 @@ import org.eclipse.openvsx.util.UrlUtil;
 
 @Service
 public class VSCodeIdService {
-    // TODO: check if this version is still valid when connecting to the VSC Marketplace
-    private static final String API_VERSION = "3.0-preview.1";
 
     private final RestTemplate vsCodeIdRestTemplate;
     private final UrlConfigService urlConfigService;
@@ -106,7 +104,7 @@ public class VSCodeIdService {
         var requestData = createRequestData(extension);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
+        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + IVSCodeService.GALLERY_API_VERSION);
         var result = vsCodeIdRestTemplate
                 .postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
         if (result != null && result.results() != null && !result.results().isEmpty()) {

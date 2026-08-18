@@ -29,6 +29,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 
+import static jakarta.transaction.Transactional.TxType;
 import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
@@ -100,10 +101,24 @@ public class AccessTokenService {
         return ResultJson.success("Deactivated access token for user " + user.getLoginName() + ".");
     }
 
-    @Transactional
+    // REQUIRES_NEW: callers such as LocalRegistryService#createNamespace(NamespaceJson, String) wrap
+    // the whole request in their own @Transactional(rollbackOn = ErrorResultException.class). Without
+    // its own transaction, the setActive(false)/setAccessedTimestamp mutations below would join that
+    // caller's transaction and be rolled back together with the very ErrorResultException the caller
+    // throws once this method returns null - silently discarding the fact that the token was touched
+    // or found expired.
+    @Transactional(TxType.REQUIRES_NEW)
     public PersonalAccessToken useAccessToken(String tokenValue) {
         var token = repositories.findAccessToken(tokenValue);
+        // existence + active
         if (token == null || !token.isActive()) {
+            return null;
+        }
+        // expiration - <=, not <, to match expireAccessTokens' "expires_timestamp <= ?1" and
+        // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
+        LocalDateTime now = TimeUtil.getCurrentUTC();
+        if (token.getExpiresTimestamp() != null && !token.getExpiresTimestamp().isAfter(now)) {
+            token.setActive(false);
             return null;
         }
         token.setAccessedTimestamp(TimeUtil.getCurrentUTC());
