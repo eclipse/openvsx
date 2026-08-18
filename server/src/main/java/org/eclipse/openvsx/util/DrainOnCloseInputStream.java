@@ -20,7 +20,8 @@ import java.io.OutputStream;
 import com.google.common.io.ByteStreams;
 
 /**
- * InputStream wrapper that drains up to a fixed number of remaining unread bytes before closing.
+ * InputStream wrapper whose close() drains whatever's left of a {@code maxBytes} budget that
+ * normal reads haven't already consumed.
  * <p>
  * A request body that a validation check rejects before the body has been fully read can make
  * some load balancers/proxies mistake the resulting early connection close for a server error.
@@ -29,15 +30,17 @@ import com.google.common.io.ByteStreams;
  * throw, or anything added later - instead of relying on each call site remembering to drain
  * manually before it responds.
  * <p>
- * The <b>total</b> bytes ever read from the underlying stream over this instance's lifetime -
- * whatever a caller reads normally before rejecting, plus whatever close() then drains - is capped
- * at {@code maxBytes}: without a bound, a client rejected for any reason (invalid token, an
- * oversized upload, ...) could force the server to read and discard an arbitrarily large body
- * before responding, trading the original LB/proxy problem for a resource-exhaustion one.
- * {@code maxBytes} should be the same "reasonable size" limit the caller already accepts reading
- * in full on the success path (e.g. the configured max upload size) - draining up to that bound
- * costs nothing beyond what a legitimate request already costs, while anything beyond it is by
- * definition not a legitimate request, and is left undrained.
+ * This does <b>not</b> itself enforce a hard limit on how many bytes a caller may read normally -
+ * only close()'s own drain is bounded, to whatever remains of {@code maxBytes} once normal reads
+ * are subtracted. Without any bound at all, a client rejected for any reason (invalid token, an
+ * oversized upload, ...) could force close() to read and discard an arbitrarily large remainder
+ * before responding, trading the original LB/proxy problem for a resource-exhaustion one; this
+ * keeps close() itself from being the one to do that. The actual total (normal reads plus
+ * whatever close() drains) only stays bounded near {@code maxBytes} in combination with a caller
+ * that itself stops reading once it has seen enough to reject the request - e.g.
+ * {@code ExtensionService#createExtensionFile}, which detects an oversized package after at most
+ * {@code maxContentSize + 1} bytes. {@code maxBytes} should be that same "reasonable size" limit
+ * the caller already accepts reading in full on the success path.
  */
 public class DrainOnCloseInputStream extends FilterInputStream {
 
