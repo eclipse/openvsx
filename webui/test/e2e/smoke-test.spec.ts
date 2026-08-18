@@ -1,10 +1,14 @@
-import { expect, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 import { test } from '../../configs/smoke-test.options';
 
 test.describe('OpenVSX', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        // The search page carries the result count, the extension grid and the
+        // category sidebar, and hosts a single search field (the hero on `/` and
+        // the nav field share a placeholder, so `/` has two).
+        await page.goto('/search');
         await page.waitForLoadState('networkidle');
+        await expect(page.getByText(/extensions found/)).toBeVisible();
     });
 
     test.afterEach(async ({ page }) => {
@@ -29,7 +33,7 @@ test.describe('OpenVSX', () => {
         extensionToOpen
     }) => {
         // search and open the extension
-        await page.getByPlaceholder('Search').fill(extensionToOpen.searchTerm);
+        await searchField(page).fill(extensionToOpen.searchTerm);
         await page.getByRole('link', { name: extensionToOpen.heading }).click();
 
         // check details of the extension
@@ -59,11 +63,11 @@ test.describe('OpenVSX', () => {
         const initialResultCount = await getResultCount(page);
         for (const extensionToCheck of searchTerms) {
             // reset search term
-            await page.getByPlaceholder('Search').clear();
+            await searchField(page).clear();
             await waitForResultCount(page, count => count === initialResultCount);
 
             // search extension and wait for result count to change
-            await page.getByPlaceholder('Search').fill(extensionToCheck);
+            await searchField(page).fill(extensionToCheck);
             await waitForResultCount(page, count => count < initialResultCount);
 
             // check we found at least 1 extension with the search tearm
@@ -75,26 +79,57 @@ test.describe('OpenVSX', () => {
     test('allows to search by category with changing number of results', async ({ page, categories }) => {
         const initialResultCount = await getResultCount(page);
         for (const category of categories) {
-            // search extension and wait for result count to change
-            await page.getByRole('combobox').filter({ hasText: 'All Categories' }).click();
-            await page.getByRole('option', { name: category }).click();
+            // pick the category from the sidebar and wait for the result count to drop
+            await categoryNav(page).getByRole('button', { name: category, exact: true }).click();
             await waitForResultCount(page, count => count < initialResultCount);
 
             // check we found at least 1 extension with the search term
             const resultCount = await getResultCount(page);
             expect(resultCount).toBeGreaterThan(0);
 
-            // switch back to main category
-            await page.getByRole('combobox').filter({ hasText: category }).click();
-            await page.getByRole('option', { name: 'All Categories' }).click();
+            // switch back to all categories
+            await categoryNav(page).getByRole('button', { name: 'All categories', exact: true }).click();
             await waitForResultCount(page, count => count === initialResultCount);
         }
     });
 });
 
+test.describe('OpenVSX home page', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+    });
+
+    test.afterEach(async ({ page }) => {
+        await expectNoErrorDialog(page);
+    });
+
+    test('allows to search from the home page hero', async ({ page, extensionToOpen }) => {
+        // the landing page's own search field; its aria-label sets it apart from the nav field
+        const hero = page.getByRole('textbox', { name: 'Search extensions' });
+        await expect(hero).toBeVisible();
+
+        // typing a query morphs the hero into the search page and filters the results
+        await hero.fill(extensionToOpen.searchTerm);
+        await expect(page).toHaveURL(/\/search\?/);
+        await expect(page.getByRole('link', { name: extensionToOpen.heading })).toBeVisible();
+    });
+});
+
+/** The extension search field (nav bar on the search page). */
+function searchField(page: Page): Locator {
+    return page.getByPlaceholder(/search extensions/i);
+}
+
+/** The category sidebar, whose entries are buttons labelled by category name. */
+function categoryNav(page: Page): Locator {
+    return page.getByRole('navigation', { name: 'Categories' });
+}
+
 async function getResultCount(page: Page): Promise<number> {
-    const resultsText = await page.getByText('Results').innerText();
-    return Number.parseInt(resultsText.split(' ')[0]);
+    // e.g. "16,647 extensions found" — strip the thousands separators and the label
+    const resultsText = await page.getByText(/extensions found/).innerText();
+    return Number.parseInt(resultsText.replace(/\D/g, ''), 10);
 }
 
 function countExtensionsOnPage(page: Page): Promise<number> {
