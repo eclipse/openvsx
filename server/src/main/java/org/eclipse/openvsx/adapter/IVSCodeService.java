@@ -13,6 +13,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 public interface IVSCodeService {
+
+    /**
+     * The version of the VS Code Gallery API protocol this service speaks, as used in the
+     * {@code api-version} media type parameter of the {@code Accept}/{@code Content-Type} headers,
+     * e.g. {@code application/json;api-version=3.0-preview.1}. Shared between the outgoing requests
+     * to an upstream marketplace ({@link VSCodeIdService}) and the {@code Content-Type} this server
+     * itself returns from the gallery endpoints in {@link VSCodeAPI}.
+     */
+    // TODO: check if this version is still valid when connecting to the VSC Marketplace
+    String GALLERY_API_VERSION = "3.0-preview.1";
+
     ExtensionQueryResult extensionQuery(ExtensionQueryParam param, int defaultPageSize);
 
     ExtensionQueryResult.Extension latest(String namespaceName, String extensionName);

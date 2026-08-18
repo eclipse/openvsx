@@ -124,6 +124,29 @@ class VSCodeAPITest {
     }
 
     @Test
+    void testSearchStampsTheGalleryApiVersionOnTheResponseContentType() throws Exception {
+        // Regression for eclipse-openvsx/openvsx#2071: without VSCodeGalleryContentTypeAdvice,
+        // Spring's content negotiation echoes back whatever "api-version" the client's Accept
+        // header happened to carry (or omits it entirely, like this request does), which then
+        // failed the exact-string match Jetty 12.1's CompressionHandler does against
+        // server.compression.mime-types - silently disabling compression for these responses.
+        // Real VS Code clients always send api-version=3.0-preview.1, but the fix must not depend
+        // on that: the server stamps its own, fixed api-version onto every Gallery JSON response.
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, "universal");
+
+        mockMvc.perform(
+                post("/vscode/gallery/extensionquery")
+                        .content(file("search-yaml-query.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(
+                        header().string(
+                                "Content-Type",
+                                "application/json;api-version=" + IVSCodeService.GALLERY_API_VERSION));
+    }
+
+    @Test
     void testSearchPostMissingSortFields() throws Exception {
         // reproduces eclipse-openvsx/openvsx#2059 exactly: POST body omits pageNumber's siblings
         // sortBy/sortOrder entirely. Confirms the @RequestBody path (fixed by #2052 / JacksonConfig)
