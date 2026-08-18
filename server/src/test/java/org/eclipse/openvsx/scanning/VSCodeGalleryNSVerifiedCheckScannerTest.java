@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
@@ -110,6 +111,15 @@ class VSCodeGalleryNSVerifiedCheckScannerTest {
             extVersion.setPublishedWith(token);
         }
         return extVersion;
+    }
+
+    @Test
+    void startScan_isClean_whenUpstreamIsDown() {
+        var extVersion = extensionVersion(new UserData());
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenThrow(new RestClientException("whatever"));
+
+        assertThrows(ScannerException.class, () -> newScanner().startScan(new Scanner.Command(1L, "scan-1")));
     }
 
     @Test
