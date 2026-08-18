@@ -301,8 +301,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     };
     const resourcesGroup = {
         display: 'flex',
-        flexDirection: 'column',
-        mb: { xs: 2, sm: 2, md: 0, lg: 0, xl: 2 }
+        flexDirection: 'column'
     };
 
     const ClaimNamespace = pageSettings.elements.claimNamespace;

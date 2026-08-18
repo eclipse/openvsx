@@ -2,6 +2,12 @@
 
 This change log covers only the frontend library (webui) of Open VSX.
 
+## [next] (unreleased)
+
+### Fixed
+
+- Fix the extension overview sidebar overlapping the readme content at narrower ("tablet") window widths: there are now only mobile and desktop layouts, with tablet widths using the desktop layout ([#2068](https://github.com/eclipse-openvsx/openvsx/issues/2068))
+
 ## [v1.1.1] (09/08/2026)
 
 ### Fixed
