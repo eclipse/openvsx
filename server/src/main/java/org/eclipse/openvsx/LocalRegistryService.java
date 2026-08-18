@@ -769,7 +769,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
         var token = tokens.useAccessToken(tokenValue);
         if (token == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
         var namespace = repositories.findNamespace(namespaceName);
@@ -779,7 +779,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var user = token.getUser();
         if (!users.hasPublishPermission(user, namespace)) {
-            throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
+            throw new ErrorResultException(
+                    "Insufficient access rights for namespace: " + namespace.getName(),
+                    HttpStatus.FORBIDDEN);
         }
 
         return ResultJson.success("Valid token");
@@ -795,18 +797,27 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        PersonalAccessToken token = tokens.useAccessToken(tokenValue);
-        if (token == null || token.getUser() == null) {
+        // Everything up to extensions.publishVersion(...) below can reject the request without ever
+        // touching `content` (invalid/expired token, missing publisher agreement). Drain it before
+        // any such rejection is sent, so a LB/proxy doesn't see an early response to a request whose
+        // body is still arriving and mistake it for a 50x.
+        PersonalAccessToken token;
+        try {
+            token = tokens.useAccessToken(tokenValue);
+            if (token == null || token.getUser() == null) {
+                throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+            }
+
+            // Check whether the user has a valid publisher agreement
+            eclipse.checkPublisherAgreement(token.getUser());
+        } catch (ErrorResultException exc) {
             try {
                 content.transferTo(OutputStream.nullOutputStream());
             } catch (IOException ignored) {
                 // best-effort drain; connection state doesn't matter once we're returning an error
             }
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+            throw exc;
         }
-
-        // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
 
         var extVersion = extensions.publishVersion(content, token);
         var json = toExtensionVersionJson(extVersion, null, true);

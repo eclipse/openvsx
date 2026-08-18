@@ -1757,7 +1757,7 @@ class RegistryAPITest {
         mockForPublish("invalid");
 
         mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -1775,7 +1775,7 @@ class RegistryAPITest {
         mockNamespace();
 
         mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foobar", "my_token"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -1786,7 +1786,7 @@ class RegistryAPITest {
                 post("/api/-/publish?token={token}", "my_token")
                         .contentType(MediaType.APPLICATION_OCTET_STREAM)
                         .content(bytes))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
 
@@ -2057,7 +2057,7 @@ class RegistryAPITest {
                 post("/api/-/publish?token={token}", "my_token")
                         .contentType(MediaType.APPLICATION_OCTET_STREAM)
                         .content(bytes))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andExpect(content().json(errorJson("Insufficient access rights for publisher: foo")));
     }
 
