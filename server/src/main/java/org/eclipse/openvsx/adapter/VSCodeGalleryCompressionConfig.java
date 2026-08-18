@@ -15,6 +15,7 @@ package org.eclipse.openvsx.adapter;
 import org.eclipse.jetty.compression.server.CompressionConfig;
 import org.eclipse.jetty.compression.server.CompressionHandler;
 import org.eclipse.jetty.http.pathmap.PathSpec;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.jetty.ConfigurableJettyWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -41,8 +42,14 @@ import org.springframework.context.annotation.Configuration;
  * trade for a project that has already committed to Jetty exclusively. The upside is that no
  * deployment's {@code server.compression.mime-types} needs to know about the VS Code Gallery API's
  * versioned Content-Type at all - it always works, regardless of configuration.
+ * <p>
+ * Guarded by {@link ConditionalOnClass} on both Jetty-specific types this class touches, so that if
+ * Jetty (and its compression module) were ever absent from the classpath - a Tomcat/Undertow
+ * deployment, or a test slice that doesn't pull in {@code spring-boot-starter-jetty} - this
+ * configuration is skipped instead of failing to load with a {@code NoClassDefFoundError}.
  */
 @Configuration
+@ConditionalOnClass({ CompressionHandler.class, ConfigurableJettyWebServerFactory.class })
 public class VSCodeGalleryCompressionConfig {
 
     private static final PathSpec DEFAULT_PATH_SPEC = PathSpec.from("/");
