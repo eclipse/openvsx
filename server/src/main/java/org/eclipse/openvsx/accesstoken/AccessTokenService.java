@@ -114,9 +114,10 @@ public class AccessTokenService {
         if (token == null || !token.isActive()) {
             return null;
         }
-        // expiration
+        // expiration - <=, not <, to match expireAccessTokens' "expires_timestamp <= ?1" and
+        // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
         LocalDateTime now = TimeUtil.getCurrentUTC();
-        if (token.getExpiresTimestamp() != null && token.getExpiresTimestamp().isBefore(now)) {
+        if (token.getExpiresTimestamp() != null && !token.getExpiresTimestamp().isAfter(now)) {
             token.setActive(false);
             return null;
         }
