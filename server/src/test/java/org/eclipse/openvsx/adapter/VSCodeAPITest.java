@@ -10,6 +10,8 @@
 package org.eclipse.openvsx.adapter;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +39,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockMvcAsyncConfig;
@@ -59,10 +62,14 @@ import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.web.JacksonConfig;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -114,6 +121,96 @@ class VSCodeAPITest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json(file("search-yaml-response.json")));
+    }
+
+    @Test
+    void testSearchStampsTheGalleryApiVersionOnTheResponseContentType() throws Exception {
+        // Regression for eclipse-openvsx/openvsx#2071: without VSCodeGalleryContentTypeAdvice,
+        // Spring's content negotiation echoes back whatever "api-version" the client's Accept
+        // header happened to carry (or omits it entirely, like this request does), which then
+        // failed the exact-string match Jetty 12.1's CompressionHandler does against
+        // server.compression.mime-types - silently disabling compression for these responses.
+        // Real VS Code clients always send api-version=3.0-preview.1, but the fix must not depend
+        // on that: the server stamps its own, fixed api-version onto every Gallery JSON response.
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, "universal");
+
+        mockMvc.perform(
+                post("/vscode/gallery/extensionquery")
+                        .content(file("search-yaml-query.json"))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(
+                        header().string(
+                                "Content-Type",
+                                "application/json;api-version=" + IVSCodeService.GALLERY_API_VERSION));
+    }
+
+    @Test
+    void testSearchPostMissingSortFields() throws Exception {
+        // reproduces eclipse-openvsx/openvsx#2059 exactly: POST body omits pageNumber's siblings
+        // sortBy/sortOrder entirely. Confirms the @RequestBody path (fixed by #2052 / JacksonConfig)
+        // still works end-to-end, as a counterpart to the GET-focused regression tests below.
+        var body = "{\"filters\":[{\"criteria\":[{\"filterType\":8,\"value\":\"Microsoft.VisualStudio.Code\"}],"
+                + "\"pageSize\":10,\"pageNumber\":1}],\"flags\":914}";
+        mockMvc.perform(post("/vscode/gallery/extensionquery").content(body).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testSearchAsGet() throws Exception {
+        var extension = mockSearch(true);
+        mockExtensionVersions(extension, null, "universal");
+
+        // URLEncoder targets application/x-www-form-urlencoded (space -> '+'); a URI query
+        // component needs '%20' instead, since '+' there is a literal character, not a space
+        var query = URLEncoder.encode(file("search-yaml-query.json"), StandardCharsets.UTF_8).replace("+", "%20");
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isOk())
+                .andExpect(content().json(file("search-yaml-response.json")));
+    }
+
+    @Test
+    void testExtensionQueryAsGetInvalidJson() throws Exception {
+        var query = URLEncoder.encode("not json", StandardCharsets.UTF_8);
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason(Matchers.startsWith("Invalid extension query:")));
+    }
+
+    @Test
+    void testExtensionQueryAsGetInvalidJsonMessageIsBounded() throws Exception {
+        // the parser message is attacker-influenced (derived from `q`) and could in principle be
+        // long or contain control characters; it must stay short and single-line since it ends up
+        // in the response status line
+        var query = URLEncoder.encode("not json\nwith a newline " + "a".repeat(500), StandardCharsets.UTF_8);
+        var result = mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        var reason = ((ResponseStatusException) result.getResolvedException()).getReason();
+        assertThat(reason).startsWith("Invalid extension query:");
+        assertThat(reason).doesNotContainPattern("[\\r\\n]");
+        assertThat(reason.length()).isLessThanOrEqualTo(250);
+    }
+
+    @Test
+    void testExtensionQueryAsGetMissingSortFields() throws Exception {
+        // a real request seen in production: a lean single-extension lookup (pageSize 1) that
+        // omits sortBy/sortOrder entirely, since they don't matter for a one-result query. Jackson
+        // 3 treats the missing primitive int fields as null and rejects them unless
+        // FAIL_ON_NULL_FOR_PRIMITIVES is disabled - which JacksonConfig does, but only for the
+        // JsonMapper bean actually wired into the app (see testConfig's @Import above)
+        var query = URLEncoder
+                .encode(
+                        "{\"filters\":[{\"criteria\":[{\"filterType\":7,"
+                                + "\"value\":\"test.extension\"}],"
+                                + "\"pageSize\":1,\"pageNumber\":1}],\"flags\":147}",
+                        StandardCharsets.UTF_8)
+                .replace("+", "%20");
+
+        mockMvc.perform(get(URI.create("/vscode/gallery/extensionquery?q=" + query)))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -1015,7 +1112,12 @@ class VSCodeAPITest {
             }
         }
 
-        Mockito.when(repositories.findActiveExtensionVersions(Set.of(extension.getId()), queryTargetPlatform))
+        Mockito
+                .when(
+                        repositories.findActiveExtensionVersions(
+                                eq(Set.of(extension.getId())),
+                                eq(queryTargetPlatform),
+                                anyInt()))
                 .thenReturn(extVersions);
 
         mockFileResources(extVersions);
@@ -1334,7 +1436,7 @@ class VSCodeAPITest {
     }
 
     @TestConfiguration
-    @Import({ SecurityConfig.class, MockMvcAsyncConfig.class })
+    @Import({ SecurityConfig.class, MockMvcAsyncConfig.class, JacksonConfig.class })
     static class TestConfig {
         @Bean
         IExtensionQueryRequestHandler extensionQueryRequestHandler(

@@ -128,8 +128,13 @@ public class RegistryAPI {
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-        responseCode = "400",
-        description = "The token has no publishing permission in the namespace or is not valid",
+        responseCode = "401",
+        description = "The token is missing, invalid or expired",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token is valid but has no publishing permission in the namespace",
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
@@ -1407,8 +1412,22 @@ public class RegistryAPI {
         description = "The extension could not be published",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Unknown publisher: foobar\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "401",
+        description = "The token is missing, invalid or expired",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token is valid but has no publishing permission in the namespace, "
+                + "or the user has not signed a Publisher Agreement",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
@@ -1464,7 +1483,8 @@ public class RegistryAPI {
     )
     @ApiResponse(
         responseCode = "403",
-        description = "User is not logged in"
+        description = "User is not logged in, has no publishing permission in the namespace, "
+                + "or has not signed a Publisher Agreement"
     )
     public ResponseEntity<ExtensionJson> publish(InputStream content) {
         try {

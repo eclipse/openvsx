@@ -77,6 +77,9 @@ dependencies {
             replacedBy("org.springframework.boot:spring-boot-starter-jetty")
         }
     }
+    // Only a transitive runtime dependency of spring-boot-starter-jetty otherwise; needed at compile
+    // time to reconfigure the installed CompressionHandler in VSCodeGalleryCompressionConfig.
+    implementation "org.eclipse.jetty.compression:jetty-compression-server"
     implementation "org.springframework.boot:spring-boot-starter-restclient"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-jooq"
@@ -94,7 +97,13 @@ dependencies {
     implementation "org.springframework.security:spring-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
 
-    implementation "org.springframework.boot:spring-boot-thymeleaf"
+    // Depend directly on Thymeleaf rather than org.springframework.boot:spring-boot-thymeleaf
+    // (the autoconfiguration module - see JacksonConfig-adjacent notes in MailConfig): the app
+    // only uses Thymeleaf for rendering mail templates and builds its own SpringTemplateEngine
+    // bean for that, so ThymeleafAutoConfiguration's ThymeleafViewResolver (which would resolve
+    // Spring MVC view names, e.g. the "error" view, through the same mail template resolver)
+    // never needs to exist in the first place. No spring.autoconfigure.exclude required.
+    implementation "org.thymeleaf:thymeleaf-spring6"
 
     implementation "org.apache.httpcomponents.client5:httpclient5"
     implementation "com.github.ben-manes.caffeine:caffeine"

@@ -9,19 +9,23 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.web;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.webmvc.autoconfigure.error.BasicErrorController;
 import org.springframework.boot.webmvc.error.ErrorAttributes;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
 
 import org.eclipse.openvsx.util.UrlUtil;
 
 @Controller
-@ConditionalOnProperty(value = "server.error.path", havingValue = "/server-error")
+// server.error.path was renamed to spring.web.error.path in Spring Boot 4 - it's what both
+// BasicErrorController's class-level @RequestMapping and the servlet container's actual
+// error-page-forward target (ErrorMvcAutoConfiguration.ErrorPageCustomizer) resolve from now.
+@ConditionalOnProperty(value = "spring.web.error.path", havingValue = "/server-error")
 public class ServerErrorController extends BasicErrorController {
 
     @Value("${ovsx.webui.url:}")
@@ -31,8 +35,14 @@ public class ServerErrorController extends BasicErrorController {
         super(errorAttributes, webProperties.getError());
     }
 
-    @RequestMapping(value = "/server-error", produces = { MediaType.TEXT_HTML_VALUE })
-    public String handleError() {
-        return "redirect:" + UrlUtil.createApiUrl(webuiUrl, "error");
+    // Override errorHtml() itself rather than adding a new method with its own explicit
+    // "/server-error" @RequestMapping: the class-level mapping above already resolves to
+    // "/server-error", and Spring concatenates class-level + method-level paths, so an
+    // explicit method-level "/server-error" would only ever match "/server-error/server-error".
+    // Overriding this exact method (no path of its own, just like the superclass's) inherits
+    // the correct, property-driven path with no combination/doubling.
+    @Override
+    public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) {
+        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webuiUrl, "error"));
     }
 }

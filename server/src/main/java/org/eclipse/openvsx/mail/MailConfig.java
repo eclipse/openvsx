@@ -12,9 +12,15 @@ package org.eclipse.openvsx.mail;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
+// Depends directly on org.thymeleaf:thymeleaf-spring6 rather than the Spring Boot
+// spring-boot-thymeleaf autoconfiguration module (see build.gradle), and builds the
+// SpringTemplateEngine bean SendMailJobRequestHandler needs by hand below, so there is no
+// ThymeleafAutoConfiguration on the classpath at all to register a ThymeleafViewResolver for
+// Spring MVC - e.g. resolving the "error" view against this same mail-only template resolver.
 @Configuration
 public class MailConfig {
 
@@ -26,5 +32,12 @@ public class MailConfig {
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode(TemplateMode.HTML);
         return templateResolver;
+    }
+
+    @Bean
+    public SpringTemplateEngine templateEngine(SpringResourceTemplateResolver templateResolver) {
+        var templateEngine = new SpringTemplateEngine();
+        templateEngine.setTemplateResolver(templateResolver);
+        return templateEngine;
     }
 }

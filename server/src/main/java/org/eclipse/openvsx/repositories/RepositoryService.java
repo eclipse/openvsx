@@ -649,8 +649,13 @@ public class RepositoryService {
         return extensionVersionChangeRepo.findFirstByExtensionVersionOrderByChangedAtDescIdDesc(extVersion);
     }
 
-    public List<ExtensionVersion> findActiveExtensionVersions(Collection<Long> extensionIds, String targetPlatform) {
-        return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
+    public List<ExtensionVersion> findActiveExtensionVersions(
+            Collection<Long> extensionIds,
+            String targetPlatform,
+            int maxPreReleaseVersions
+    ) {
+        return extensionVersionJooqRepo
+                .findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform, maxPreReleaseVersions);
     }
 
     public List<FileResource> findFileResourcesByExtensionVersionIdAndType(
