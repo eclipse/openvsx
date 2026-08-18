@@ -41,7 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     used to be enough under Spring Boot 3 / Jetty 12.0's {@code GzipHandler}, is <b>not</b> enough
  *     any more once the response carries {@link VSCodeGalleryContentTypeAdvice}'s versioned
  *     Content-Type;</li>
- *     <li>adding that exact literal restores compression.</li>
+ *     <li>adding that exact literal restores compression;</li>
+ *     <li>so does {@link VSCodeGalleryCompressionConfig}'s customizer alone, with the literal still
+ *     absent from the configured mime types - proving the config-only fix is not the only way.</li>
  * </ul>
  * See <a href="https://github.com/eclipse-openvsx/openvsx/issues/2071">#2071</a>. Deliberately talks
  * to a real {@link WebServer} rather than {@code MockMvc}, since MockMvc never touches the actual
@@ -71,6 +73,16 @@ class VSCodeGalleryCompressionTest {
         assertThat(response.headers().firstValue("Content-Encoding")).isEmpty();
     }
 
+    // Same "application/json"-only configuration as the test above - the literal is deliberately
+    // absent from server.compression.mime-types - but with VSCodeGalleryCompressionConfig's
+    // customizer also applied, proving that config alone is not the only way to fix this.
+    @Test
+    void theCompressionCustomizerRestoresCompressionWithoutTheLiteralInConfig() throws Exception {
+        var response = requestGalleryResponseCompressedWith(true, "application/json");
+
+        assertThat(response.headers().firstValue("Content-Encoding")).contains("gzip");
+    }
+
     @Test
     void addingTheVersionedLiteralRestoresCompression() throws Exception {
         var response = requestGalleryResponseCompressedWith("application/json", GALLERY_CONTENT_TYPE);
@@ -88,6 +100,13 @@ class VSCodeGalleryCompressionTest {
 
     private HttpResponse<byte[]> requestGalleryResponseCompressedWith(String... configuredMimeTypes)
             throws IOException, InterruptedException {
+        return requestGalleryResponseCompressedWith(false, configuredMimeTypes);
+    }
+
+    private HttpResponse<byte[]> requestGalleryResponseCompressedWith(
+            boolean withCompressionCustomizer,
+            String... configuredMimeTypes
+    ) throws IOException, InterruptedException {
         var compression = new Compression();
         compression.setEnabled(true);
         compression.setMimeTypes(configuredMimeTypes);
@@ -95,6 +114,9 @@ class VSCodeGalleryCompressionTest {
 
         var factory = new JettyServletWebServerFactory(0);
         factory.setCompression(compression);
+        if (withCompressionCustomizer) {
+            new VSCodeGalleryCompressionConfig().vsCodeGalleryCompressionCustomizer().customize(factory);
+        }
         server = factory.getWebServer(
                 servletContext -> servletContext
                         .addServlet("gallery", new HttpServlet() {
