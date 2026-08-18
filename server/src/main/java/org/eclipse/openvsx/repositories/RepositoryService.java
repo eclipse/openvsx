@@ -361,8 +361,8 @@ public class RepositoryService {
         return extensionVersionRepo.findByPublishedByAndActive(user, active);
     }
 
-    public Streamable<UserData> findPublishers() {
-        return extensionVersionRepo.findPublishers();
+    public Streamable<UserData> findPublishersWithActiveVersions() {
+        return extensionVersionRepo.findPublishersWithActiveVersions();
     }
 
     public LocalDateTime getOldestExtensionTimestamp() {

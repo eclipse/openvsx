@@ -22,10 +22,14 @@ import org.eclipse.openvsx.entities.*;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
+    /**
+     * Finds all distinct publishers who are enlisted as publisher in the extension_version table for active extension.
+     * In other words, returns distinct {@link UserData} for all users who published a currently active extension.
+     */
     @Query(
         "select distinct ev.publishedBy from ExtensionVersion ev where ev.active = true and ev.publishedBy is not null"
     )
-    Streamable<UserData> findPublishers();
+    Streamable<UserData> findPublishersWithActiveVersions();
 
     Streamable<ExtensionVersion> findByExtension(Extension extension);
 

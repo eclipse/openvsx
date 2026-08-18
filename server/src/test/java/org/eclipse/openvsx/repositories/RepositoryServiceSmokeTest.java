@@ -318,7 +318,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findFileByName("namespaceName", "extensionName", "targetPlatform", "version", "name"),
                 () -> repositories.findVersionsByUser(userData, false),
-                () -> repositories.findPublishers(),
+                () -> repositories.findPublishersWithActiveVersions(),
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),

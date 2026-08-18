@@ -63,7 +63,7 @@ public class PublisherComplianceChecker {
             return;
         }
 
-        repositories.findPublishers().forEach(user -> {
+        repositories.findPublishersWithActiveVersions().forEach(user -> {
             if (!isCompliant(user)) {
                 // Found a non-compliant publisher: deactivate all extension versions
                 transactions.<Void>execute(status -> {
