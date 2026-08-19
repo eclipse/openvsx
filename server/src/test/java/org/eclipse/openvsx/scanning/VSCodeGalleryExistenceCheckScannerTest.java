@@ -53,9 +53,9 @@ class VSCodeGalleryExistenceCheckScannerTest {
     private ScannerRegistry scannerRegistry;
 
     /**
-     * Dummy result; irrelevant of content
+     * Dummy non-empty result; irrelevant of content
      */
-    private final ExtensionQueryResult dummyResult = new ExtensionQueryResult(
+    private static final ExtensionQueryResult NON_EMPTY = new ExtensionQueryResult(
             List.of(
                     new ExtensionQueryResult.ResultItem(
                             List.of(
@@ -76,9 +76,9 @@ class VSCodeGalleryExistenceCheckScannerTest {
                             List.of())));
 
     /**
-     * Dummy result; irrelevant of content
+     * Dummy empty result; irrelevant of content
      */
-    private final ExtensionQueryResult emptyResult = new ExtensionQueryResult(
+    private static final ExtensionQueryResult EMPTY = new ExtensionQueryResult(
             List.of(new ExtensionQueryResult.ResultItem(List.of(), List.of())));
 
     private VSCodeGalleryExistenceCheckScanner newScanner(boolean enforced) {
@@ -132,7 +132,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
     void startScan_isClean_whenExtensionDoesNotExistUpstream() throws Exception {
         var extVersion = extensionVersion(new UserData());
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(emptyResult);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(EMPTY);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
@@ -145,7 +145,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         var user = new UserData();
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NON_EMPTY);
         when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
@@ -159,7 +159,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         var user = new UserData();
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NON_EMPTY);
         when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
@@ -172,7 +172,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
     void startScan_raisesThreat_whenExistsUpstreamAndNoPublishingUserIsAttributed() throws Exception {
         var extVersion = extensionVersion(null);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NON_EMPTY);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
