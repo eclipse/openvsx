@@ -102,6 +102,13 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
 
+        Extension active = repositories.findActiveExtension(extension.getName(), namespace.getName());
+        if (!config.isCheckActiveExtensions() && active != null) {
+            return new Scanner.Invocation.Completed(
+                    Scanner.Result.clean(
+                            "Extension '" + NamingUtil.toExtensionId(extension) + "' is already active."));
+        }
+
         try {
             boolean upstreamExists = upstreamExists(extension);
             if (!upstreamExists) {

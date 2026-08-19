@@ -49,6 +49,15 @@ public class VSCodeGalleryExistenceCheckConfig {
     private boolean enforced;
 
     /**
+     * Is NS verification check needed to run on already existing and active extensions or not.
+     * <p>
+     * Property: {@code ovsx.scanning.gallery-existence-check.checkActiveExtensions}
+     * Default: {@code false}
+     */
+    @Value("${ovsx.scanning.gallery-existence-check.checkActiveExtensions:false}")
+    private boolean checkActiveExtensions;
+
+    /**
      * The upstream gallery API URL to perform the existence checks against.
      * <p>
      * Property: {@code ovsx.scanning.gallery-existence-check.gallery-url}
@@ -66,10 +75,17 @@ public class VSCodeGalleryExistenceCheckConfig {
     /**
      * For testing.
      */
-    public VSCodeGalleryExistenceCheckConfig(boolean enabled, boolean required, boolean enforced, String galleryUrl) {
+    public VSCodeGalleryExistenceCheckConfig(
+            boolean enabled,
+            boolean required,
+            boolean enforced,
+            boolean checkActiveExtensions,
+            String galleryUrl
+    ) {
         this.enabled = enabled;
         this.required = required;
         this.enforced = enforced;
+        this.checkActiveExtensions = checkActiveExtensions;
         this.galleryUrl = galleryUrl;
     }
 
@@ -83,6 +99,10 @@ public class VSCodeGalleryExistenceCheckConfig {
 
     public boolean isEnforced() {
         return enforced;
+    }
+
+    public boolean isCheckActiveExtensions() {
+        return checkActiveExtensions;
     }
 
     public String getGalleryUrl() {
