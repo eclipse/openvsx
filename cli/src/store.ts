@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
+import { Logger, consoleLogger } from './logger';
 
 interface StoreEntry {
     name: string
@@ -134,7 +135,7 @@ export class EncryptedFileStore extends CrossKeychainStore {
 	}
 }
 
-export async function openDefaultStore(): Promise<Store> {
+export async function openDefaultStore(log: Logger = consoleLogger): Promise<Store> {
 	// OVSX_STORE=file forces the encrypted file store and skips the OS credential store.
 	const forceFile = /^file$/i.test(process.env['OVSX_STORE'] ?? '');
 
@@ -145,7 +146,7 @@ export async function openDefaultStore(): Promise<Store> {
 		try {
 			store = await KeychainStore.open();
 		} catch (err) {
-			console.warn(`WARN: ${err.message}`);
+			log.warn(`WARN: ${err.message}`);
 		}
 	}
 
@@ -154,31 +155,31 @@ export async function openDefaultStore(): Promise<Store> {
 		try {
 			store = await EncryptedFileStore.open();
 			if (!forceFile) {
-				console.warn(`WARN: Storing secrets in cross-keychain's encrypted file store as system keychain is not available..`);
+				log.warn(`WARN: Storing secrets in cross-keychain's encrypted file store as system keychain is not available..`);
 			}
 		} catch (err) {
-            console.warn(`WARN: ${err.message}`);
+            log.warn(`WARN: ${err.message}`);
 		}
 	}
 
 	// Last resort: if no cross-keychain store works, keep publishing usable by storing secrets clear-text.
 	if (!store) {
-		console.warn(`WARN: Falling back to storing secrets clear-text at '${FileStore.DefaultPath}' (not recommended).`);
+		log.warn(`WARN: Falling back to storing secrets clear-text at '${FileStore.DefaultPath}' (not recommended).`);
 		return await FileStore.open();
 	}
 
     try {
-        await migrateLegacyStore(store);
+        await migrateLegacyStore(store, log);
     } catch (err) {
-        console.warn(`WARN: Failed to read legacy file store at '${FileStore.DefaultPath}': ${err.message}`);
-        console.warn(`WARN: Skipping migration of Legacy file store.`);
+        log.warn(`WARN: Failed to read legacy file store at '${FileStore.DefaultPath}': ${err.message}`);
+        log.warn(`WARN: Skipping migration of Legacy file store.`);
     }
 
 	return store;
 }
 
 // Migrate secrets from the legacy clear-text file store into the given store, then delete it.
-async function migrateLegacyStore(target: Store): Promise<void> {
+async function migrateLegacyStore(target: Store, log: Logger): Promise<void> {
 	const fileStore = await FileStore.open();
 	if (!fileStore.size) {
 		return;
@@ -190,5 +191,5 @@ async function migrateLegacyStore(target: Store): Promise<void> {
 	}
 
 	await fileStore.deleteStore();
-	console.info(`INFO: Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
+	log.log(`INFO: Migrated ${migrated} publishers to the credential store. Deleted local store '${fileStore.path}'.`);
 }

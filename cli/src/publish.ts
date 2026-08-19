@@ -7,97 +7,62 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-import { createVSIX, IPackageOptions } from '@vscode/vsce';
-import { getPAT } from './pat';
+import { createVSIX } from './api';
+import { publishPackage } from './publish-package';
 import { createTempFile, addEnvOptions } from './util';
-import { Extension, Registry } from './registry';
-import { checkLicense } from './check-license';
-import { readVSIXPackage } from './zip';
+import { Extension } from './registry';
 import { PublishOptions, PublishCommonOptions } from './publish-options';
+import { consoleLogger } from './logger';
 
 /**
- * Publishes an extension.
+ * Publishes an extension, packaging it first if necessary.
+ *
+ * Every combination of package path and target is published independently, so the returned array
+ * reports the outcome of each one. Use {@link publishVSIX} to have the first failure reject instead.
  */
-export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
-    addEnvOptions(options);
+export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<Extension | undefined>[]> {
+    // Work on a copy: the environment must not leak into the options object of the caller. Prompting
+    // stays allowed here, unlike in the programmatic API.
+    const resolvedOptions = { interactive: true, ...options };
+    addEnvOptions(resolvedOptions);
     const internalPublishOptions: InternalPublishOptions[] = [];
-    const packagePaths = options.packagePath || [undefined];
-    const targets = options.targets || [undefined];
+    const packagePaths = resolvedOptions.packagePath || [undefined];
+    const targets = resolvedOptions.targets || [undefined];
     for (const packagePath of packagePaths) {
         for (const target of targets) {
-            internalPublishOptions.push({ ...options, packagePath: packagePath, target: target });
+            internalPublishOptions.push({ ...resolvedOptions, packagePath: packagePath, target: target });
         }
     }
 
     return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
 }
 
-async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
+/**
+ * Publishes a single extension, packaging it first if necessary. Resolves with the published
+ * extension, or with `undefined` if the version existed already and `skipDuplicate` is set.
+ */
+async function doPublish(options: InternalPublishOptions = {}): Promise<Extension | undefined> {
+    const log = options.log ?? consoleLogger;
     // if the packagePath is a link to a vsix, don't need to package it
     if (options.packagePath?.endsWith('.vsix')) {
         options.extensionFile = options.packagePath;
         delete options.packagePath;
         delete options.target;
     }
-    const registry = new Registry(options);
+
     if (!options.extensionFile) {
-        await packageExtension(options, registry);
-        console.log(); // new line
+        // Package into a temporary file instead of the location vsce would pick, so that publishing
+        // does not leave a package behind in the extension directory.
+        options.extensionFile = await createVSIX({
+            ...options,
+            outputPath: await createTempFile({ postfix: '.vsix' })
+        });
+        log.log(); // new line
     } else if (options.preRelease) {
-        console.warn("Ignoring option '--pre-release' for prepackaged extension.");
+        log.warn("Ignoring option '--pre-release' for prepackaged extension.");
     }
 
-    if (!options.pat) {
-        const namespace = (await readVSIXPackage(options.extensionFile!)).publisher;
-        options.pat = await getPAT(namespace, options);
-    }
-
-    let extension: Extension | undefined;
-    try {
-        extension = await registry.publish(options.extensionFile!, options.pat);
-    } catch (err) {
-        if (options.skipDuplicate && err.message.endsWith('is already published.')) {
-            console.log(err.message + ' Skipping publish.');
-            return;
-        } else {
-            throw err;
-        }
-    }
-    if (extension.error) {
-        throw new Error(extension.error);
-    }
-
-    const name = `${extension.namespace}.${extension.name}`;
-    let description = `${name} v${extension.version}`;
-    if (extension.targetPlatform !== 'universal') {
-        description += `@${extension.targetPlatform}`;
-    }
-
-    console.log(`\ud83d\ude80  Published ${description}`);
-    if (extension.warning) {
-        console.log(`\n!!  ${extension.warning}`);
-    }
-}
-
-async function packageExtension(options: InternalPublishOptions, registry: Registry): Promise<void> {
-    if (registry.requiresLicense) {
-        await checkLicense(options.packagePath!);
-    }
-
-    options.extensionFile = await createTempFile({ postfix: '.vsix' });
-    const packageOptions: IPackageOptions = {
-        packagePath: options.extensionFile,
-        target: options.target,
-        cwd: options.packagePath,
-        baseContentUrl: options.baseContentUrl,
-        baseImagesUrl: options.baseImagesUrl,
-        useYarn: options.yarn,
-        dependencies: options.dependencies,
-        preRelease: options.preRelease,
-        allowMissingRepository: options.allowMissingRepository,
-        version: options.packageVersion
-    };
-    await createVSIX(packageOptions);
+    return publishPackage(options.extensionFile, options);
 }
 
 // Interface used internally by the doPublish method

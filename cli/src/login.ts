@@ -9,20 +9,24 @@
  ********************************************************************************/
 import { confirm } from '@inquirer/prompts';
 import { addEnvOptions } from './util';
+import { consoleLogger } from './logger';
 import { openDefaultStore } from './store';
 import { LoginOptions } from './login-options';
 import { requestPAT } from './pat';
 
 export default async function login(options: LoginOptions) {
+	// Work on a copy: the environment must not leak into the options object of the caller.
+	options = { ...options };
 	addEnvOptions(options);
+	const log = options.log ?? consoleLogger;
 	if (!options.namespace) {
         throw new Error('Missing namespace name.');
     }
 
-	const store = await openDefaultStore();
+	const store = await openDefaultStore(log);
 	let pat = await store.get(options.namespace);
 	if (pat) {
-		console.log(`Namespace '${options.namespace}' is already known.`);
+		log.log(`Namespace '${options.namespace}' is already known.`);
 		const overwrite = await confirm({
 			message: 'Do you want to overwrite its PAT?',
 			default: false

@@ -60,3 +60,39 @@ The `logout` command lets you remove a stored access token.
    the name must correspond to the `publisher` of your extension.
 
 By default `ovsx` stores access tokens in the operating system's credential manager (via [`cross-keychain`](https://www.npmjs.com/package/cross-keychain)), falling back to storing them as plaintext in the `~/.ovsx` file if the credential manager can't be used. You can also set the environment variable `OVSX_STORE=file` to force plaintext storage; this is strongly discouraged, as it leaves your tokens readable by anyone with access to your home directory.
+
+### Programmatic API
+
+Every command is available as a function, so `ovsx` can be scripted instead of shelled out to. This is
+useful for publishing to Open VSX and the Visual Studio Marketplace from a single script:
+
+```ts
+import { createVSIX } from '@vscode/vsce';
+import { publishVSIX } from 'ovsx';
+
+const vsix = 'my-extension-1.0.0.vsix';
+await createVSIX({ packagePath: vsix });
+await publishVSIX(vsix, { pat: process.env.OVSX_PAT });
+```
+
+`publishVSIX` publishes packages that exist already and resolves with the metadata of the published
+extensions, rejecting as soon as one of them fails. `createVSIX` packages an extension — delegating to
+`vsce` and validating the license if the target registry requires one — and resolves with the path of
+the package it wrote.
+
+Unlike the command line interface, these two functions never ask for input: a missing access token is
+an error rather than a prompt. Pass `interactive: true` to opt back into prompting.
+
+Progress messages go to the console by default. Pass a `log` implementation to capture or silence
+them (note that this covers the output of `ovsx` itself; `vsce` reports the progress of packaging on
+its own):
+
+```ts
+import { publishVSIX, silentLogger } from 'ovsx';
+
+await publishVSIX(vsix, { pat: process.env.OVSX_PAT, log: silentLogger });
+```
+
+The lower level building blocks are exported as well: `publish` (packages and publishes, reporting the
+outcome of every package and target separately), `getExtension`, `createNamespace`, `verifyPat` and the
+`Registry` class that wraps the registry API.
