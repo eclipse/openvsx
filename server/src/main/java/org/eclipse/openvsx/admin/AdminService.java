@@ -580,11 +580,13 @@ public class AdminService {
     /**
      * Forget a user in line with a data-protection (GDPR) erasure request.
      * <p>
-     * The user record is anonymized in place rather than deleted, so that retained content
-     * (extension reviews, security scan and file decisions, and audit logs) keeps referring to a
-     * row that no longer holds any personal data. Extensions in namespaces where the user was the
-     * sole member are unpublished but kept in the database and storage, so people who have already
-     * installed them are unaffected.
+     * If nothing in the database still refers to the user afterward (no reviews, no removed
+     * versions, no admin scan or file decisions, no audit log entries, and no retained access
+     * tokens), the row itself is deleted. Otherwise it is anonymized in place, so that the
+     * remaining content (extension reviews, security scan and file decisions, and audit logs)
+     * keeps referring to a row that no longer holds any personal data. Extensions in namespaces
+     * where the user was the sole member are unpublished but kept in the database and storage, so
+     * people who have already installed them are unaffected.
      *
      * @param provider the authentication provider the user belongs to
      * @param username the provider-specific username of the user to forget
@@ -599,7 +601,7 @@ public class AdminService {
 
         // Handle namespace memberships, removing the users active memberships where found
         var removedMembershipCount = 0;
-        for (var membership : repositories.findMemberships(user).toList()) {
+        for (var membership : repositories.findMemberships(user)) {
             var namespace = membership.getNamespace();
             users.removeNamespaceMember(namespace, user);
             removedMembershipCount++;
@@ -619,7 +621,7 @@ public class AdminService {
         // Remove customer memberships. The customer and its rate-limit tokens are organisation-level
         // and shared, so they are retained.
         var removedCustomerMembershipCount = 0;
-        for (var customerMembership : repositories.findCustomerMemberships(user).toList()) {
+        for (var customerMembership : repositories.findCustomerMemberships(user)) {
             entityManager.remove(customerMembership);
             removedCustomerMembershipCount++;
         }
@@ -628,35 +630,50 @@ public class AdminService {
         // scrub and deactivate the rest so retained versions still resolve a publisher.
         var deletedTokenCount = 0;
         var scrubbedTokenCount = 0;
-        for (var token : repositories.findAccessTokens(user).toList()) {
+        for (var token : repositories.findAccessTokens(user)) {
             if (repositories.countVersionsByAccessToken(token) == 0) {
                 entityManager.remove(token);
                 deletedTokenCount++;
             } else {
                 token.setActive(false);
-                token.setValue(null);
                 token.setDescription(null);
                 scrubbedTokenCount++;
             }
         }
 
-        // Anonymize the user record in place. Reviews, scan and file decisions, and audit logs
-        // keep referencing this row, which no longer holds any personal data.
+        // Namespace and customer memberships are already fully removed above. If nothing else in
+        // the database still refers to this user either, delete the row outright instead of
+        // anonymizing it.
+        var canDeleteUser = scrubbedTokenCount == 0
+                && repositories.countReviews(user) == 0
+                && repositories.countVersionsRemovedBy(user) == 0
+                && repositories.countAdminScanDecisions(user) == 0
+                && repositories.countFileDecisions(user) == 0
+                && repositories.countPersistedLogs(user) == 0;
+
         var tombstoneLogin = "deleted-user-" + user.getId();
-        user.setLoginName(tombstoneLogin);
-        user.setFullName(null);
-        user.setEmail(null);
-        user.setAvatarUrl(null);
-        user.setAuthId(null);
-        user.setProviderUrl(null);
-        user.setEclipsePersonId(null);
-        user.setEclipseToken(null);
-        user.setRole(null);
+        if (canDeleteUser) {
+            entityManager.remove(user);
+        } else {
+            // Anonymize the user record in place. Reviews, scan and file decisions, and audit logs
+            // keep referencing this row, which no longer holds any personal data.
+            user.setLoginName(tombstoneLogin);
+            user.setFullName(null);
+            user.setEmail(null);
+            user.setAvatarUrl(null);
+            user.setAuthId(null);
+            user.setProvider(null);
+            user.setProviderUrl(null);
+            user.setEclipsePersonId(null);
+            user.setEclipseToken(null);
+            user.setRole(null);
+        }
 
         // The success message deliberately contains no personal data, only the tombstone id and counts.
         var result = ResultJson.success(
                 "Forgot user " + tombstoneLogin
-                        + ": deleted " + removedExtensionCount + " extensions, removed "
+                        + (canDeleteUser ? ": deleted user record, deleted " : ": deleted ")
+                        + removedExtensionCount + " extensions, removed "
                         + removedMembershipCount + " namespace memberships, removed "
                         + removedCustomerMembershipCount + " customer memberships, deleted "
                         + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");

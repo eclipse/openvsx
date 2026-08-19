@@ -59,6 +59,8 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
 
+    long countByRemovedBy(UserData removedBy);
+
     Streamable<ExtensionVersion> findAll();
 
     Streamable<ExtensionVersion> findBySignatureKeyPairNotOrSignatureKeyPairIsNull(SignatureKeyPair keyPair);

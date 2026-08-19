@@ -32,6 +32,8 @@ public interface ExtensionReviewRepository extends Repository<ExtensionReview, L
 
     long countByExtensionAndActiveTrue(Extension extension);
 
+    long countByUser(UserData user);
+
     @Cacheable(CACHE_AVERAGE_REVIEW_RATING)
     @Query("select coalesce(avg(r.rating),0) from ExtensionReview r where r.active = true")
     double averageRatingAndActiveTrue();
