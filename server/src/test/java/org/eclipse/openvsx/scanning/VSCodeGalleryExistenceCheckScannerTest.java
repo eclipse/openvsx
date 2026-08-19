@@ -81,8 +81,8 @@ class VSCodeGalleryExistenceCheckScannerTest {
     private final ExtensionQueryResult emptyResult = new ExtensionQueryResult(
             List.of(new ExtensionQueryResult.ResultItem(List.of(), List.of())));
 
-    private VSCodeGalleryExistenceCheckScanner newScanner() {
-        var config = new VSCodeGalleryExistenceCheckConfig(true, true, true, "http://irrelevant");
+    private VSCodeGalleryExistenceCheckScanner newScanner(boolean enforced) {
+        var config = new VSCodeGalleryExistenceCheckConfig(true, true, enforced, "http://irrelevant");
         return new VSCodeGalleryExistenceCheckScanner(
                 config,
                 restTemplate,
@@ -110,12 +110,22 @@ class VSCodeGalleryExistenceCheckScannerTest {
     }
 
     @Test
-    void startScan_isClean_whenUpstreamIsDown() {
+    void startScan_throws_whenEnforcedAndUpstreamIsDown() {
         var extVersion = extensionVersion(new UserData());
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenThrow(new RestClientException("whatever"));
 
-        assertThrows(ScannerException.class, () -> newScanner().startScan(new Scanner.Command(1L, "scan-1")));
+        assertThrows(ScannerException.class, () -> newScanner(true).startScan(new Scanner.Command(1L, "scan-1")));
+    }
+
+    @Test
+    void startScan_isClean_whenNotEnforcedAndUpstreamIsDown() throws Exception {
+        var extVersion = extensionVersion(new UserData());
+        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
+        when(restTemplate.postForObject(anyString(), any(), any())).thenThrow(new RestClientException("whatever"));
+
+        var invocation = (Scanner.Invocation.Completed) newScanner(false).startScan(new Scanner.Command(1L, "scan-1"));
+        assertTrue(invocation.result().isClean());
     }
 
     @Test
@@ -124,7 +134,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(emptyResult);
 
-        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
+        var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
         verify(repositories, never()).isVerified(any(), any());
@@ -138,7 +148,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
         when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
 
-        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
+        var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
         assertFalse(invocation.result().isClean());
         assertEquals(1, invocation.result().getThreats().size());
@@ -152,7 +162,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
         when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
 
-        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
+        var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
         assertEquals(0, invocation.result().getThreats().size());
@@ -164,7 +174,7 @@ class VSCodeGalleryExistenceCheckScannerTest {
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(dummyResult);
 
-        var invocation = (Scanner.Invocation.Completed) newScanner().startScan(new Scanner.Command(1L, "scan-1"));
+        var invocation = (Scanner.Invocation.Completed) newScanner(true).startScan(new Scanner.Command(1L, "scan-1"));
 
         assertFalse(invocation.result().isClean());
         verify(repositories, never()).isVerified(any(), any());
@@ -174,6 +184,6 @@ class VSCodeGalleryExistenceCheckScannerTest {
     void startScan_throws_whenExtensionVersionNotFound() {
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(null);
 
-        assertThrows(ScannerException.class, () -> newScanner().startScan(new Scanner.Command(1L, "scan-1")));
+        assertThrows(ScannerException.class, () -> newScanner(true).startScan(new Scanner.Command(1L, "scan-1")));
     }
 }

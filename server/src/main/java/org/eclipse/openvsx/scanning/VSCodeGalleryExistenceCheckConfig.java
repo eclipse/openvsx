@@ -27,7 +27,7 @@ public class VSCodeGalleryExistenceCheckConfig {
      * Property: {@code ovsx.scanning.gallery-existence-check.enabled}
      * Default: {@code false}
      */
-    @Value("${ovsx.scanning.gallery-ownership.enabled:false}")
+    @Value("${ovsx.scanning.gallery-existence-check.enabled:false}")
     private boolean enabled;
 
     /**
@@ -36,7 +36,7 @@ public class VSCodeGalleryExistenceCheckConfig {
      * Property: {@code ovsx.scanning.gallery-existence-check.required}
      * Default: {@code true}
      */
-    @Value("${ovsx.scanning.gallery-ownership.required:true}")
+    @Value("${ovsx.scanning.gallery-existence-check.required:true}")
     private boolean required;
 
     /**
@@ -45,7 +45,7 @@ public class VSCodeGalleryExistenceCheckConfig {
      * Property: {@code ovsx.scanning.gallery-existence-check.enforced}
      * Default: {@code true}
      */
-    @Value("${ovsx.scanning.gallery-ownership.enforced:true}")
+    @Value("${ovsx.scanning.gallery-existence-check.enforced:true}")
     private boolean enforced;
 
     /**
@@ -54,7 +54,7 @@ public class VSCodeGalleryExistenceCheckConfig {
      * Property: {@code ovsx.scanning.gallery-existence-check.gallery-url}
      * Default: {@code ""}
      */
-    @Value("${ovsx.scanning.gallery-ownership.gallery-url:}")
+    @Value("${ovsx.scanning.gallery-existence-check.gallery-url:}")
     private String galleryUrl;
 
     /**

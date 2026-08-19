@@ -13,7 +13,6 @@
 package org.eclipse.openvsx.scanning;
 
 import java.util.List;
-import java.util.Optional;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
@@ -27,7 +26,7 @@ import org.springframework.web.client.RestTemplate;
 
 import org.eclipse.openvsx.adapter.ExtensionQueryParam;
 import org.eclipse.openvsx.adapter.ExtensionQueryResult;
-import org.eclipse.openvsx.adapter.VSCodeIdService;
+import org.eclipse.openvsx.adapter.IVSCodeService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -36,7 +35,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 
 /**
  * Scanner that blocks publishing to a namespace/extension identifier that already exists on the
- * upstream VS Code Marketplace, unless the publishing NS is verified (has owner not only
+ * upstream VS Code Marketplace, unless the publishing NS is verified (has owner, not only
  * contributors) namespace. Guards against namespace-squatting relative to the upstream
  * gallery identity.
  */
@@ -103,13 +102,18 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
         var extension = extVersion.getExtension();
         var namespace = extension.getNamespace();
 
-        Optional<Boolean> upstreamExists = upstreamExists(extension);
-        if (upstreamExists.isEmpty()) {
-            throw new ScannerException("Failed to perform " + TYPE);
-        } else {
-            boolean upstreamDoesExists = upstreamExists.orElseThrow();
-            if (!upstreamDoesExists) {
+        try {
+            boolean upstreamExists = upstreamExists(extension);
+            if (!upstreamExists) {
                 return new Scanner.Invocation.Completed(Scanner.Result.clean());
+            }
+        } catch (RestClientException ex) {
+            if (config.isEnforced()) {
+                throw new ScannerException("Failed to perform " + TYPE, ex);
+            } else {
+                return new Scanner.Invocation.Completed(
+                        Scanner.Result.clean(
+                                "Failed to perform " + TYPE + " scan: " + ex.getMessage()));
             }
         }
 
@@ -124,7 +128,7 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
         var threat = new Scanner.Threat(
                 "vscode-gallery-namespace-conflict",
                 "'" + NamingUtil.toExtensionId(extension) + "' already exists on the VS Code Marketplace, " +
-                        "and the publishing user is not an owner of namespace '" + namespace.getName() + "'.",
+                        "and the target namespace is not verified '" + namespace.getName() + "'.",
                 "high");
         return new Scanner.Invocation.Completed(Scanner.Result.withThreats(List.of(threat)));
     }
@@ -134,7 +138,7 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
      * unreachable). It will return non-empty optional wrapped boolean only if it has definitive answer, whether
      * remote end have or does not have extension.
      */
-    private Optional<Boolean> upstreamExists(Extension extension) {
+    private boolean upstreamExists(Extension extension) throws RestClientException {
         var requestUrl = UrlUtil.createApiUrl(config.getGalleryUrl(), "extensionquery");
         var requestData = new ExtensionQueryParam(
                 List.of(
@@ -153,19 +157,13 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
                 0);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + VSCodeIdService.API_VERSION);
-        try {
-            var result = restTemplate
-                    .postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
-            if (result != null && result.results() != null && !result.results().isEmpty()) {
-                var item = result.results().getFirst();
-                if (item.extensions() != null && !item.extensions().isEmpty()) {
-                    return Optional.of(Boolean.TRUE);
-                }
-            }
-            return Optional.of(Boolean.FALSE);
-        } catch (RestClientException e) {
-            return Optional.empty(); // ie upstream is down or whatever; we have no definite answer
+        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + IVSCodeService.GALLERY_API_VERSION);
+        var result = restTemplate
+                .postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
+        if (result != null && result.results() != null && !result.results().isEmpty()) {
+            var item = result.results().getFirst();
+            return item.extensions() != null && !item.extensions().isEmpty();
         }
+        return false;
     }
 }
