@@ -134,9 +134,8 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
     }
 
     /**
-     * Method reaching upstream; if return Optional is empty, check is not definitive (ie. remote end is down or
-     * unreachable). It will return non-empty optional wrapped boolean only if it has definitive answer, whether
-     * remote end have or does not have extension.
+     * Method reaching upstream; if returns {@code true} or {@code false} only if check was performed and result was
+     * clear about it. In any other case method will throw.
      */
     private boolean upstreamExists(Extension extension) throws RestClientException {
         var requestUrl = UrlUtil.createApiUrl(config.getGalleryUrl(), "extensionquery");
