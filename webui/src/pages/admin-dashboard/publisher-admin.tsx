@@ -16,6 +16,7 @@ import {
     useContext,
     useEffect,
     useMemo,
+    useRef,
     useState
 } from 'react';
 import {
@@ -86,18 +87,30 @@ export const PublisherAdmin: FunctionComponent = () => {
     const publishers = useMemo(() => data?.pages.flatMap(page => page.content) ?? [], [data]);
     const listLoading = isFetching && !isFetchingNextPage;
 
+    // Guards the deep-link resolution below against re-selecting a publisher clearSelection just
+    // dismissed: navigate() only updates publisherParam a render or two later, so in between,
+    // publisherParam still names the dismissed publisher while selected is already null - exactly
+    // the condition this effect otherwise treats as "resolve this deep link".
+    const dismissedParamRef = useRef<string | null>(null);
+
     // Resolve a deep-linked publisher once the matching page has loaded.
     useEffect(() => {
-        if (publisherParam && !selected) {
-            const match = publishers.find(p => p.user.loginName === publisherParam);
-            if (match) {
-                setSelected(match);
-            }
+        if (!publisherParam) {
+            dismissedParamRef.current = null;
+            return;
+        }
+        if (selected || publisherParam === dismissedParamRef.current) {
+            return;
+        }
+        const match = publishers.find(p => p.user.loginName === publisherParam);
+        if (match) {
+            setSelected(match);
         }
     }, [publisherParam, selected, publishers]);
 
     const clearSelection = useCallback(() => {
         if (selected || publisherParam) {
+            dismissedParamRef.current = publisherParam ?? null;
             setSelected(null);
             navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
         }
