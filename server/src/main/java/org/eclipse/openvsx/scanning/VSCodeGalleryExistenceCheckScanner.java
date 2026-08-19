@@ -42,7 +42,7 @@ import org.eclipse.openvsx.util.UrlUtil;
 @Component
 public class VSCodeGalleryExistenceCheckScanner implements Scanner {
 
-    public static final String TYPE = "vscode-gallery-ownership";
+    public static final String TYPE = "gallery-existence-check";
 
     private final VSCodeGalleryExistenceCheckConfig config;
     private final RestTemplate restTemplate;
@@ -122,13 +122,14 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
         if (user != null && repositories.isVerified(namespace, user)) {
             return new Scanner.Invocation.Completed(
                     Scanner.Result.clean(
-                            "Extension exists on the VS Code Marketplace; namespace confirmed as verified."));
+                            "Extension '" + NamingUtil.toExtensionId(extension)
+                                    + "' exists on the VS Code Marketplace and target namespace is verified."));
         }
 
         var threat = new Scanner.Threat(
-                "vscode-gallery-namespace-conflict",
-                "'" + NamingUtil.toExtensionId(extension) + "' already exists on the VS Code Marketplace, " +
-                        "and the target namespace is not verified '" + namespace.getName() + "'.",
+                TYPE + "-conflict",
+                "Extension '" + NamingUtil.toExtensionId(extension) + "' exists on the VS Code Marketplace, " +
+                        "but the target namespace is not verified.",
                 "high");
         return new Scanner.Invocation.Completed(Scanner.Result.withThreats(List.of(threat)));
     }
