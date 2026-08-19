@@ -9,14 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
-import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
-import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
-import static org.eclipse.openvsx.entities.FileResource.ICON;
-import static org.eclipse.openvsx.entities.FileResource.LICENSE;
-import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
-import static org.eclipse.openvsx.entities.FileResource.README;
-import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
-
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -27,7 +19,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.StringUtils;
+import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jobrunr.scheduling.cron.Cron;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
@@ -60,19 +65,14 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
-import org.jobrunr.scheduling.JobRequestScheduler;
-import org.jobrunr.scheduling.cron.Cron;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
+import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
+import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
+import static org.eclipse.openvsx.entities.FileResource.ICON;
+import static org.eclipse.openvsx.entities.FileResource.LICENSE;
+import static org.eclipse.openvsx.entities.FileResource.MANIFEST;
+import static org.eclipse.openvsx.entities.FileResource.README;
+import static org.eclipse.openvsx.entities.FileResource.VSIXMANIFEST;
 
 @Component
 public class AdminService {
@@ -608,7 +608,8 @@ public class AdminService {
 
         var removedExtensionCount = 0;
         // Delete all published extension versions for the user, both active and not
-        var allVersions = Stream.concat(repositories.findVersionsByUser(user, true).stream(),
+        var allVersions = Stream.concat(
+                repositories.findVersionsByUser(user, true).stream(),
                 repositories.findVersionsByUser(user, false).stream()).toList();
         for (var version : allVersions) {
             extensions.deleteExtensionVersion(user, version);
@@ -653,11 +654,12 @@ public class AdminService {
         user.setRole(null);
 
         // The success message deliberately contains no personal data, only the tombstone id and counts.
-        var result = ResultJson.success("Forgot user " + tombstoneLogin
-                + ": unpublished " + removedExtensionCount + " extensions, removed "
-                + removedMembershipCount + " namespace memberships, removed "
-                + removedCustomerMembershipCount + " customer memberships, deleted "
-                + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
+        var result = ResultJson.success(
+                "Forgot user " + tombstoneLogin
+                        + ": unpublished " + removedExtensionCount + " extensions, removed "
+                        + removedMembershipCount + " namespace memberships, removed "
+                        + removedCustomerMembershipCount + " customer memberships, deleted "
+                        + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
         logs.logAction(admin, result);
         return result;
     }

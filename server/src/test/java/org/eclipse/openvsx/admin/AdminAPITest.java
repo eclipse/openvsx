@@ -9,20 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.admin;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +18,30 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import jakarta.persistence.EntityManager;
+import org.jobrunr.scheduling.JobRequestScheduler;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.util.Streamable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
@@ -93,30 +103,20 @@ import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.VersionService;
-import org.jobrunr.scheduling.JobRequestScheduler;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.data.util.Streamable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import jakarta.persistence.EntityManager;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.json.JsonMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminAPI.class)
 @MockitoBean(
@@ -1029,24 +1029,31 @@ class AdminAPITest {
 
     @Test
     void testForgetUserNotLoggedIn() throws Exception {
-        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
-                .with(csrf().asHeader()))
+        mockMvc.perform(
+                post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+                        .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void testForgetUserNotAdmin() throws Exception {
         mockNormalUser();
-        mockMvc.perform(post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
-                .with(user("test_user"))
-                .with(csrf().asHeader()))
+        mockMvc.perform(
+                post("/admin/publisher/{provider}/{authId}/delete", "github", "12345")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void testForgetUserWithInvalidToken() throws Exception {
         var token = mockNonAdminToken();
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={username}", "github", "12345", token.getValue()))
+        mockMvc.perform(
+                post(
+                        "/admin/api/publisher/{provider}/{authId}/delete?token={username}",
+                        "github",
+                        "12345",
+                        token.getValue()))
                 .andExpect(status().isForbidden());
     }
 
@@ -1055,7 +1062,12 @@ class AdminAPITest {
         var token = mockAdminToken();
         var loginName = "test_admin";
         Mockito.when(repositories.findUserByLoginName("github", loginName)).thenReturn(null);
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{username}/delete?token={token}", "github", loginName, token.getValue()))
+        mockMvc.perform(
+                post(
+                        "/admin/api/publisher/{provider}/{username}/delete?token={token}",
+                        "github",
+                        loginName,
+                        token.getValue()))
                 .andExpect(status().isNotFound());
     }
 
@@ -1075,7 +1087,7 @@ class AdminAPITest {
         Mockito.when(repositories.findMemberships(namespace)).thenReturn(Streamable.of(membership));
         Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
 
-        var versions = mockExtension(1,0,0);
+        var versions = mockExtension(1, 0, 0);
         var version = versions.get(0);
         var extension = versions.get(0).getExtension();
         Mockito.when(repositories.findActiveExtensions(namespace)).thenReturn(Streamable.of(extension));
@@ -1093,9 +1105,17 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
         Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
 
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "janedoe", token.getValue()))
+        mockMvc.perform(
+                post(
+                        "/admin/api/publisher/{provider}/{authId}/delete?token={token}",
+                        "github",
+                        "janedoe",
+                        token.getValue()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
+                .andExpect(
+                        content().json(
+                                successJson(
+                                        "Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
 
         // The extension and its version are deactivated but kept in the database.
         assertThat(version.isActive()).isFalse();
@@ -1135,7 +1155,7 @@ class AdminAPITest {
         Mockito.when(repositories.findMemberships(namespace)).thenReturn(Streamable.of(membership));
         Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
 
-        var versions = mockExtension(1,0,0);
+        var versions = mockExtension(1, 0, 0);
         var version = versions.get(0);
         var extension = versions.get(0).getExtension();
         Mockito.when(repositories.findActiveExtensions(namespace)).thenReturn(Streamable.of(extension));
@@ -1153,9 +1173,17 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
         Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
 
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "janedoe", token.getValue()))
+        mockMvc.perform(
+                post(
+                        "/admin/api/publisher/{provider}/{authId}/delete?token={token}",
+                        "github",
+                        "janedoe",
+                        token.getValue()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
+                .andExpect(
+                        content().json(
+                                successJson(
+                                        "Forgot user deleted-user-7: unpublished 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
 
         // The extension and its version are deactivated but kept in the database.
         assertThat(version.isActive()).isFalse();
@@ -1197,9 +1225,17 @@ class AdminAPITest {
         Mockito.when(repositories.findAccessTokens(user)).thenReturn(Streamable.of(referenced));
         Mockito.when(repositories.countVersionsByAccessToken(referenced)).thenReturn(2L);
 
-        mockMvc.perform(post("/admin/api/publisher/{provider}/{authId}/delete?token={token}", "github", "janedoe", token.getValue()))
+        mockMvc.perform(
+                post(
+                        "/admin/api/publisher/{provider}/{authId}/delete?token={token}",
+                        "github",
+                        "janedoe",
+                        token.getValue()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("Forgot user deleted-user-7: unpublished 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 1 tokens.")));
+                .andExpect(
+                        content().json(
+                                successJson(
+                                        "Forgot user deleted-user-7: unpublished 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 1 tokens.")));
 
         Mockito.verify(entityManager, Mockito.never()).remove(referenced);
         assertThat(referenced.isActive()).isFalse();
