@@ -1126,24 +1126,27 @@ public class AdminAPI {
     @Operation(summary = "Forget a user in response to a data-protection erasure request")
     @MutatingOperation
     @ApiResponse(
-            responseCode = "200",
-            description = "A success message is returned in JSON format",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "403",
-            description = "An administration token is required",
-            content = @Content(schema = @Schema(implementation = ResultJson.class))
+        responseCode = "403",
+        description = "An administration token is required",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-            responseCode = "404",
-            description = "User not found",
-            content = @Content()
+        responseCode = "404",
+        description = "User not found",
+        content = @Content()
     )
     public ResponseEntity<ResultJson> forgetUser(
-            @PathVariable @Parameter(description = "Authentication provider", example = "github") String provider,
-            @PathVariable @Parameter(description = "Provider-specific username") String username,
-            @RequestParam(value = "token") @Parameter(description = "A personal access token") String tokenValue
+            @PathVariable
+            @Parameter(description = "Authentication provider", example = "github") String provider,
+            @PathVariable
+            @Parameter(description = "Provider-specific username") String username,
+            @RequestParam(value = "token")
+            @Parameter(description = "A personal access token") String tokenValue
     ) {
         try {
             var adminUser = admins.checkAdminUser(tokenValue);
@@ -1155,8 +1158,8 @@ public class AdminAPI {
     }
 
     @PostMapping(
-            path = "/publisher/{provider}/{authId}/delete",
-            produces = MediaType.APPLICATION_JSON_VALUE
+        path = "/publisher/{provider}/{authId}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
     )
     @MutatingOperation
     public ResponseEntity<ResultJson> forgetUser(
