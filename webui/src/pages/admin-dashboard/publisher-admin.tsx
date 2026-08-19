@@ -8,7 +8,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, SyntheticEvent, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+    FunctionComponent,
+    SyntheticEvent,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState
+} from 'react';
 import {
     Alert,
     Autocomplete,
@@ -41,7 +50,7 @@ import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { useInfinitePublishers } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const UpdateContext = createContext({ handleUpdate: () => {} });
+export const UpdateContext = createContext({ handleUpdate: () => {}, handleUserDeleted: () => {} });
 
 const ROLE_FILTER_OPTIONS = [
     { value: '', label: 'Any role' },
@@ -87,22 +96,28 @@ export const PublisherAdmin: FunctionComponent = () => {
         }
     }, [publisherParam, selected, publishers]);
 
+    const clearSelection = useCallback(() => {
+        if (selected || publisherParam) {
+            setSelected(null);
+            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
+        }
+    }, [selected, publisherParam, navigate]);
+
     const updateContextValue = useMemo(
         () => ({
             handleUpdate: () => {
                 queryClient.invalidateQueries({ queryKey: ['admin', 'publisher'] });
                 queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
+            },
+            // The selected user no longer exists under this login (deleted, or anonymized to a
+            // tombstone login), so drop back to the search instead of refetching its details.
+            handleUserDeleted: () => {
+                clearSelection();
+                queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
             }
         }),
-        [queryClient]
+        [queryClient, clearSelection]
     );
-
-    const clearSelection = () => {
-        if (selected || publisherParam) {
-            setSelected(null);
-            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
-        }
-    };
 
     const handleSelect = (_event: SyntheticEvent, value: UserRelationships | null) => {
         if (!value) {
