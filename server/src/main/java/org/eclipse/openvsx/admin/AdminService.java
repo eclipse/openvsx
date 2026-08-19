@@ -637,6 +637,10 @@ public class AdminService {
             } else {
                 token.setActive(false);
                 token.setDescription(null);
+                // The value is deliberately left in place: AccessTokenService.generateTokenValue()
+                // checks repositories.hasAccessToken(value) across all tokens, active or not, to
+                // avoid ever reissuing a value that was already handed out. Nulling it here would
+                // let that (astronomically unlikely) collision go undetected.
                 scrubbedTokenCount++;
             }
         }
