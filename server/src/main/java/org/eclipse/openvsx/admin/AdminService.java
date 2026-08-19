@@ -579,8 +579,8 @@ public class AdminService {
 
     /**
      * Forget a user in line with a data-protection (GDPR) erasure request.
-     *
-     * <p>The user record is anonymised in place rather than deleted, so that retained content
+     * <p>
+     * The user record is anonymized in place rather than deleted, so that retained content
      * (extension reviews, security scan and file decisions, and audit logs) keeps referring to a
      * row that no longer holds any personal data. Extensions in namespaces where the user was the
      * sole member are unpublished but kept in the database and storage, so people who have already
@@ -640,7 +640,7 @@ public class AdminService {
             }
         }
 
-        // Anonymise the user record in place. Reviews, scan and file decisions, and audit logs
+        // Anonymize the user record in place. Reviews, scan and file decisions, and audit logs
         // keep referencing this row, which no longer holds any personal data.
         var tombstoneLogin = "deleted-user-" + user.getId();
         user.setLoginName(tombstoneLogin);
@@ -656,7 +656,7 @@ public class AdminService {
         // The success message deliberately contains no personal data, only the tombstone id and counts.
         var result = ResultJson.success(
                 "Forgot user " + tombstoneLogin
-                        + ": unpublished " + removedExtensionCount + " extensions, removed "
+                        + ": deleted " + removedExtensionCount + " extensions, removed "
                         + removedMembershipCount + " namespace memberships, removed "
                         + removedCustomerMembershipCount + " customer memberships, deleted "
                         + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
