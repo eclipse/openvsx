@@ -626,6 +626,7 @@ export interface AdminService {
     ): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getAllScans(
         abortController: AbortController,
         params?: {
@@ -951,6 +952,21 @@ export class AdminServiceImpl implements AdminService {
                 'tokens',
                 'revoke'
             ]),
+            headers
+        });
+    }
+
+    async forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'delete']),
             headers
         });
     }

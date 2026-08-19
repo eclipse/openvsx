@@ -23,6 +23,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.FileDecision;
+import org.eclipse.openvsx.entities.UserData;
 
 /**
  * Repository for file allow/block list decisions.
@@ -61,6 +62,9 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
 
     /** Count all decisions with a specific decision value */
     long countByDecision(String decision);
+
+    /** Count decisions made by a given admin user */
+    long countByDecidedBy(UserData decidedBy);
 
     /** Count total file decisions */
     long count();

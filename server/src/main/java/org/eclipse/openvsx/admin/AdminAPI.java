@@ -1118,6 +1118,63 @@ public class AdminAPI {
         }
     }
 
+    @PostMapping(
+        path = "/api/publisher/{provider}/{username}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(summary = "Forget a user in response to a data-protection erasure request")
+    @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "A success message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "An administration token is required",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "User not found",
+        content = @Content()
+    )
+    public ResponseEntity<ResultJson> forgetUser(
+            @PathVariable
+            @Parameter(description = "Authentication provider", example = "github") String provider,
+            @PathVariable
+            @Parameter(description = "Provider-specific username") String username,
+            @RequestParam(value = "token")
+            @Parameter(description = "A personal access token") String tokenValue
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser(tokenValue);
+            var result = admins.forgetUser(provider, username, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
+        path = "/publisher/{provider}/{authId}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @MutatingOperation
+    public ResponseEntity<ResultJson> forgetUser(
+            @PathVariable String provider,
+            @PathVariable String authId
+    ) {
+        try {
+            var adminUser = admins.checkAdminUser();
+            var result = admins.forgetUser(provider, authId, adminUser);
+            return ResponseEntity.ok(result);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
     @GetMapping(
         path = "/settings",
         produces = MediaType.APPLICATION_JSON_VALUE
