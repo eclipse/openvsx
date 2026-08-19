@@ -93,7 +93,7 @@ public class VSCodeGalleryExistenceCheckConfig {
     public void validate() {
         if (enabled) {
             if (galleryUrl == null || galleryUrl.isEmpty()) {
-                throw new IllegalStateException("ovsx.scanning.gallery-ownership.gallery-url must be set");
+                throw new IllegalStateException("ovsx.scanning.gallery-existence-check.gallery-url must be set");
             }
         }
     }
