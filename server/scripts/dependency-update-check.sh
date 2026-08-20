@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Reports which runtime/test dependencies have a newer minor-version release available.
+# Informational only - it never fails, so there is nothing to review-and-recommit to keep this
+# green; run it whenever you want a fresh picture of the update backlog.
+#
+# For a hard gate on the curated Spring Boot BOM overrides in build.gradle, see
+# dependency-override-check.sh instead.
+
 set -eu
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -9,11 +16,10 @@ cd "${SERVER_ROOT}"
 
 ./gradlew listDependencies --quiet
 
-jbang toolbox@maveniverse versions --force-updates build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date" > gradle/dependency-updates.txt
+updates=$(jbang toolbox@maveniverse versions --force-updates build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date" || true)
 
-if git diff --exit-code --quiet gradle/dependency-updates.txt; then
+if [ -z "${updates}" ]; then
     echo "All dependencies are up to date."
 else
-    git diff gradle/dependency-updates.txt
-    exit 1
+    echo "${updates}"
 fi
