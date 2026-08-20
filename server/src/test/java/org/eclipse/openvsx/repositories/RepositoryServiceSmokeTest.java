@@ -35,7 +35,6 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionThreat;
 import org.eclipse.openvsx.entities.ExtensionValidationFailure;
 import org.eclipse.openvsx.entities.ExtensionVersion;
-import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Namespace;
@@ -183,6 +182,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.countActiveExtensions(),
                 () -> repositories.countActiveExtensionsGroupedByExtensionReviewRating(),
                 () -> repositories.countActiveReviews(null),
+                () -> repositories.countReviews(userData),
                 () -> repositories.countExtensions(),
                 () -> repositories.hasMemberships(namespace, "role"),
                 () -> repositories.isVerified(namespace, userData),
@@ -205,6 +205,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findPersistedLogsPaginated(page),
                 () -> repositories.findPersistedLogsAfterPaginated(NOW, page),
+                () -> repositories.countPersistedLogs(userData),
                 () -> repositories.findAllReviews(extension),
                 () -> repositories
                         .findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn("storageType", STRING_LIST),
@@ -236,6 +237,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findVersions(extension),
+                () -> repositories.countVersionsByAccessToken(personalAccessToken),
                 () -> repositories.getMaxExtensionDownloadCount(),
                 () -> repositories.getOldestExtensionTimestamp(),
                 () -> repositories.findExtensions(LONG_LIST),
@@ -319,6 +321,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                         .findFileByName("namespaceName", "extensionName", "targetPlatform", "version", "name"),
                 () -> repositories.findVersionsByUser(userData, false),
                 () -> repositories.findPublishersWithActiveVersions(),
+                () -> repositories.countVersionsRemovedBy(userData),
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),
@@ -456,6 +459,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.deleteAdminScanDecision(1L),
                 () -> repositories.hasAdminScanDecisionByScanId(1L),
                 () -> repositories.countAdminScanDecisions("ALLOWED"),
+                () -> repositories.countAdminScanDecisions(userData),
                 // Note: We pass valid LocalDateTime values to avoid PostgreSQL null parameter type issues
                 () -> repositories.countAdminScanDecisionsByDateRange("ALLOWED", NOW.minusYears(1), NOW.plusYears(1)),
                 () -> repositories.countAdminScanDecisionsByEnforcement("ALLOWED", true),
@@ -499,6 +503,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.hasAdminScanDecision(scan),
                 // Additional file decision methods
                 () -> repositories.countFileDecisions("ALLOWED"),
+                () -> repositories.countFileDecisions(userData),
                 // Scan check result methods
                 () -> repositories.saveScanCheckResult(scanCheckResult),
                 () -> repositories.hasScanCheckResult(1L, "SECRET_SCANNING"),

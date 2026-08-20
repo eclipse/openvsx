@@ -357,12 +357,20 @@ public class RepositoryService {
         return extensionRepo.findDistinctByVersionsPublishedBy(user);
     }
 
+    public long countVersionsByAccessToken(PersonalAccessToken publishedWith) {
+        return extensionVersionRepo.countByPublishedWith(publishedWith);
+    }
+
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
         return extensionVersionRepo.findByPublishedByAndActive(user, active);
     }
 
     public Streamable<UserData> findPublishersWithActiveVersions() {
         return extensionVersionRepo.findPublishersWithActiveVersions();
+    }
+
+    public long countVersionsRemovedBy(UserData user) {
+        return extensionVersionRepo.countByRemovedBy(user);
     }
 
     public LocalDateTime getOldestExtensionTimestamp() {
@@ -435,6 +443,10 @@ public class RepositoryService {
 
     public long countActiveReviews(Extension extension) {
         return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
+    }
+
+    public long countReviews(UserData user) {
+        return extensionReviewRepo.countByUser(user);
     }
 
     public UserData findUserByLoginName(String provider, String loginName) {
@@ -527,6 +539,10 @@ public class RepositoryService {
 
     public Page<PersistedLog> findPersistedLogsAfterPaginated(LocalDateTime dateTime, Pageable pageable) {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampDesc(dateTime, pageable);
+    }
+
+    public long countPersistedLogs(UserData user) {
+        return persistedLogRepo.countByUser(user);
     }
 
     public List<String> findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(
@@ -1409,6 +1425,10 @@ public class RepositoryService {
         return adminScanDecisionRepo.countByDecision(decision);
     }
 
+    public long countAdminScanDecisions(UserData decidedBy) {
+        return adminScanDecisionRepo.countByDecidedBy(decidedBy);
+    }
+
     public long countAdminScanDecisionsByDateRange(
             String decision,
             LocalDateTime startedFrom,
@@ -1503,6 +1523,10 @@ public class RepositoryService {
 
     public long countFileDecisions(String decision) {
         return fileDecisionRepo.countByDecision(decision);
+    }
+
+    public long countFileDecisions(UserData decidedBy) {
+        return fileDecisionRepo.countByDecidedBy(decidedBy);
     }
 
     public long countAllFileDecisions() {

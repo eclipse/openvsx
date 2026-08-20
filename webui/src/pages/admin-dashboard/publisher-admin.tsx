@@ -8,7 +8,17 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, SyntheticEvent, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+    FunctionComponent,
+    SyntheticEvent,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from 'react';
 import {
     Alert,
     Autocomplete,
@@ -41,7 +51,7 @@ import { useDebouncedCallback } from '../../hooks/use-debounced-callback';
 import { useInfinitePublishers } from './use-publisher-admin';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const UpdateContext = createContext({ handleUpdate: () => {} });
+export const UpdateContext = createContext({ handleUpdate: () => {}, handleUserDeleted: () => {} });
 
 const ROLE_FILTER_OPTIONS = [
     { value: '', label: 'Any role' },
@@ -77,32 +87,50 @@ export const PublisherAdmin: FunctionComponent = () => {
     const publishers = useMemo(() => data?.pages.flatMap(page => page.content) ?? [], [data]);
     const listLoading = isFetching && !isFetchingNextPage;
 
+    // Guards the deep-link resolution below against re-selecting a publisher clearSelection just
+    // dismissed: navigate() only updates publisherParam a render or two later, so in between,
+    // publisherParam still names the dismissed publisher while selected is already null - exactly
+    // the condition this effect otherwise treats as "resolve this deep link".
+    const dismissedParamRef = useRef<string | null>(null);
+
     // Resolve a deep-linked publisher once the matching page has loaded.
     useEffect(() => {
-        if (publisherParam && !selected) {
-            const match = publishers.find(p => p.user.loginName === publisherParam);
-            if (match) {
-                setSelected(match);
-            }
+        if (!publisherParam) {
+            dismissedParamRef.current = null;
+            return;
+        }
+        if (selected || publisherParam === dismissedParamRef.current) {
+            return;
+        }
+        const match = publishers.find(p => p.user.loginName === publisherParam);
+        if (match) {
+            setSelected(match);
         }
     }, [publisherParam, selected, publishers]);
+
+    const clearSelection = useCallback(() => {
+        if (selected || publisherParam) {
+            dismissedParamRef.current = publisherParam ?? null;
+            setSelected(null);
+            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
+        }
+    }, [selected, publisherParam, navigate]);
 
     const updateContextValue = useMemo(
         () => ({
             handleUpdate: () => {
                 queryClient.invalidateQueries({ queryKey: ['admin', 'publisher'] });
                 queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
+            },
+            // The selected user no longer exists under this login (deleted, or anonymized to a
+            // tombstone login), so drop back to the search instead of refetching its details.
+            handleUserDeleted: () => {
+                clearSelection();
+                queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
             }
         }),
-        [queryClient]
+        [queryClient, clearSelection]
     );
-
-    const clearSelection = () => {
-        if (selected || publisherParam) {
-            setSelected(null);
-            navigate(AdminDashboardRoutes.PUBLISHER_ADMIN, { replace: true });
-        }
-    };
 
     const handleSelect = (_event: SyntheticEvent, value: UserRelationships | null) => {
         if (!value) {
