@@ -50,7 +50,7 @@ class ExtensionValidatorTest {
         extension.setVersion("1.0.0");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
+        assertThat(issues.getFirst())
                 .isEqualTo(new ExtensionValidator.Issue("Unsupported target platform 'debian-x64'"));
     }
 
@@ -62,7 +62,7 @@ class ExtensionValidatorTest {
         extension.setRepository("Foo and bar!");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
+        assertThat(issues.getFirst())
                 .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': Foo and bar!"));
     }
 
@@ -74,7 +74,7 @@ class ExtensionValidatorTest {
         extension.setRepository("https://");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
+        assertThat(issues.getFirst())
                 .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': https://"));
     }
 
@@ -86,8 +86,32 @@ class ExtensionValidatorTest {
         extension.setRepository("http://");
         var issues = validator.validateMetadata(extension);
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0))
+        assertThat(issues.getFirst())
                 .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': http://"));
+    }
+
+    @Test
+    void testNonAbsoluteURL() {
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1.0.0");
+        extension.setRepository("github.com/Foo/Bar");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.getFirst())
+                .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': github.com/Foo/Bar"));
+    }
+
+    @Test
+    void testNonAbsoluteURLWithGitPrefix() {
+        var extension = new ExtensionVersion();
+        extension.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extension.setVersion("1.0.0");
+        extension.setRepository("git+github.com/Foo/Bar");
+        var issues = validator.validateMetadata(extension);
+        assertThat(issues).hasSize(1);
+        assertThat(issues.getFirst())
+                .isEqualTo(new ExtensionValidator.Issue("Invalid URL in field 'repository': git+github.com/Foo/Bar"));
     }
 
     @Test
