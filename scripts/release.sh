@@ -63,6 +63,10 @@ case "${COMPONENT}" in
 
     "openvsx")
         # TODO: the server component currently does not have a version indicator in the build.gradle
+        if ! ./server/scripts/dependency-override-check.sh; then
+          echo "openvsx server has dependency overrides behind the Spring Boot BOM; review them first."
+          exit 1
+        fi
         ;;
 esac
 
