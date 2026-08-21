@@ -252,6 +252,11 @@ export const useScansEffect = (
     useEffect(() => {
         if (data) {
             dispatch({ type: 'SET_SCANS', payload: data });
+            // `keepPreviousData` makes the query's `isLoading` stay false across a key
+            // change once any fetch has ever succeeded, so it never flips the loading
+            // flag `SET_TAB` forced on back to false. Fresh data for the current key is
+            // the reliable signal that the forced spinner can be cleared.
+            dispatch({ type: 'SET_LOADING_SCANS', payload: false });
             dispatch({ type: 'SET_LAST_REFRESHED', payload: new Date() });
         }
     }, [data, dispatch]);
@@ -396,6 +401,10 @@ export const useFilesEffect = (
     useEffect(() => {
         if (data) {
             dispatch({ type: 'SET_FILES', payload: data });
+            // See the matching comment in useScansEffect: `keepPreviousData` keeps
+            // `isLoading` false across a key change, so the loading flag `SET_TAB`
+            // forces on can only be cleared reliably once fresh data lands.
+            dispatch({ type: 'SET_LOADING_FILES', payload: false });
             dispatch({ type: 'SET_LAST_REFRESHED', payload: new Date() });
         }
     }, [data, dispatch]);
