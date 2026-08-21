@@ -41,8 +41,8 @@ public class TrustedPublishingConfig {
     private List<String> forbiddenJwtHeaders;
 
     /**
-     * The comma separated list of active trusted published providers.
-     * Default: @{code "github"}.
+     * The comma separated list of active trusted publishing providers.
+     * Default: {@code github}.
      */
     @Value("${ovsx.trusted-publishing.active-providers:github}")
     private List<String> activeProviders;
