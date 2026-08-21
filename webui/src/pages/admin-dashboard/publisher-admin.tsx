@@ -272,6 +272,11 @@ export const PublisherAdmin: FunctionComponent = () => {
                                     value={roleFilter}
                                     onChange={e => setRoleFilter(e.target.value)}
                                     displayEmpty
+                                    // Without this, MUI's default 'outlined' variant makes Select pass a
+                                    // `notched` prop to the custom `input` below; InputBase doesn't consume
+                                    // it and it leaks onto the DOM as an invalid boolean attribute. The border
+                                    // here comes from the wrapping Paper, not from outlined chrome anyway.
+                                    variant='standard'
                                     input={<InputBase sx={{ flex: 1, pl: 1 }} />}>
                                     {ROLE_FILTER_OPTIONS.map(o => (
                                         <MenuItem key={o.value} value={o.value}>
