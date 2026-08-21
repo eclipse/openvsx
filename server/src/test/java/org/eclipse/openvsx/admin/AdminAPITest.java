@@ -1224,7 +1224,7 @@ class AdminAPITest {
     }
 
     @Test
-    void testForgetUserScrubsReferencedToken() throws Exception {
+    void testForgetUserDeletesTokenAndUser() throws Exception {
         var token = mockAdminToken();
         var user = mockForgettableUser();
         Mockito.when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
@@ -1232,13 +1232,14 @@ class AdminAPITest {
         Mockito.when(repositories.findVersionsByUser(user, false)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
 
-        // A token still referenced by a retained version must be scrubbed and kept, not deleted.
-        var referenced = new PersonalAccessToken();
-        referenced.setUser(user);
-        referenced.setActive(true);
-        referenced.setValue("secret-value");
-        referenced.setDescription("my token");
-        Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(referenced));
+        // Personal access tokens are no longer referenced by extension versions, so they are
+        // always deleted outright and never block deletion of the user row itself.
+        var personalAccessToken = new PersonalAccessToken();
+        personalAccessToken.setUser(user);
+        personalAccessToken.setActive(true);
+        personalAccessToken.setValue("secret-value");
+        personalAccessToken.setDescription("my token");
+        Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(personalAccessToken));
 
         mockMvc.perform(
                 post(
@@ -1252,9 +1253,8 @@ class AdminAPITest {
                                 successJson(
                                         "Forgot user deleted-user-7: deleted user record, deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 1 tokens.")));
 
-        Mockito.verify(entityManager, Mockito.never()).remove(referenced);
-        assertThat(referenced.isActive()).isFalse();
-        assertThat(referenced.getDescription()).isNull();
+        Mockito.verify(entityManager).remove(personalAccessToken);
+        Mockito.verify(entityManager).remove(user);
     }
 
     @Test
