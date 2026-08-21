@@ -101,6 +101,9 @@ describe('RegisterTrustedPublisherDialog', () => {
     });
 
     it('shows a server error inline and keeps the dialog open', async () => {
+        // handleError() also logs the raw error to the console; expected here since we're
+        // intentionally triggering it, so silence it rather than let it dirty test output.
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
         const ue = userEvent.setup();
         const register = vi.fn().mockImplementation(() => Promise.reject({ error: 'Repository not found' }));
         const { onClose } = renderDialog({}, register);
@@ -110,6 +113,7 @@ describe('RegisterTrustedPublisherDialog', () => {
 
         expect(await screen.findByRole('alert')).toHaveTextContent('Repository not found');
         expect(onClose).not.toHaveBeenCalled();
+        consoleError.mockRestore();
     });
 
     it('explains when the namespace has no extensions to register for', () => {
