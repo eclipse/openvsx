@@ -271,6 +271,10 @@ public class RepositoryService {
         return extensionRepo.findAllNotMatchingByExtensionId(extensionIds);
     }
 
+    public Streamable<Extension> findExtensionsWithInconsistentActiveFlag() {
+        return extensionRepo.findExtensionsWithInconsistentActiveFlag();
+    }
+
     public long countExtensions() {
         return extensionRepo.count();
     }
