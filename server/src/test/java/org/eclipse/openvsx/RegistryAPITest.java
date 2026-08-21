@@ -40,7 +40,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
 import org.springframework.http.MediaType;
@@ -180,8 +179,6 @@ class RegistryAPITest {
     @Test
     void testVerifiedNamespace() throws Exception {
         var namespace = mockNamespace();
-        var user = new UserData();
-        user.setLoginName("test_user");
         Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(true);
 
@@ -2863,6 +2860,7 @@ class RegistryAPITest {
         return JsonMapper.shared().writeValueAsString(json);
     }
 
+    @SafeVarargs
     private String queryResultJson(Consumer<ExtensionJson>... contents) throws JacksonException {
         var extensionJsons = new ArrayList<String>();
         for (var content : contents) {
