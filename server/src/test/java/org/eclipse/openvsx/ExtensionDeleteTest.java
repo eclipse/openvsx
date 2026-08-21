@@ -113,7 +113,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
             em.persist(extension);
 
             // The owner is the only publisher of the extension at check time.
-            em.persist(newVersion("1.0.0", extension, ownerToken));
+            em.persist(newVersion("1.0.0", extension, owner));
             em.flush();
 
             ownerId = owner.getId();
@@ -169,7 +169,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
         new TransactionTemplate(txManager).executeWithoutResult(status -> {
             var extension = em.find(Extension.class, extensionId);
             var token = em.getReference(PersonalAccessToken.class, otherTokenId);
-            em.persist(newVersion("2.0.0", extension, token));
+            em.persist(newVersion("2.0.0", extension, token.getUser()));
         });
 
         var owner = new UserData();
@@ -250,7 +250,7 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
                 new TransactionTemplate(txManager).executeWithoutResult(status -> {
                     var extension = em.find(Extension.class, extensionId);
                     var token = em.getReference(PersonalAccessToken.class, otherTokenId);
-                    em.persist(newVersion("2.0.0", extension, token));
+                    em.persist(newVersion("2.0.0", extension, token.getUser()));
                     // Publishing updates the extension row; this write contends with the delete's lock.
                     extension.setLastUpdatedDate(LocalDateTime.now());
                     em.flush();
@@ -343,13 +343,12 @@ class ExtensionDeleteTest extends AbstractPostgresContainerTest {
         return token;
     }
 
-    private ExtensionVersion newVersion(String version, Extension extension, PersonalAccessToken token) {
+    private ExtensionVersion newVersion(String version, Extension extension, UserData user) {
         var extVersion = new ExtensionVersion();
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
         extVersion.setExtension(extension);
-        extVersion.setPublishedWith(token);
-        extVersion.setPublishedBy(token.getUser());
+        extVersion.setPublishedBy(user);
         extVersion.setActive(true);
         return extVersion;
     }

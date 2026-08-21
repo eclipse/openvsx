@@ -357,10 +357,6 @@ public class RepositoryService {
         return extensionRepo.findDistinctByVersionsPublishedBy(user);
     }
 
-    public long countVersionsByAccessToken(PersonalAccessToken publishedWith) {
-        return extensionVersionRepo.countByPublishedWith(publishedWith);
-    }
-
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
         return extensionVersionRepo.findByPublishedByAndActive(user, active);
     }

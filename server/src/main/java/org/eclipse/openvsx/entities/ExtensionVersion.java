@@ -80,9 +80,6 @@ public class ExtensionVersion implements Serializable {
 
     private LocalDateTime timestamp;
 
-    @ManyToOne
-    private PersonalAccessToken publishedWith;
-
     /**
      * Who published this version. Recorded independently of {@code publishedWith} so that authorship
      * survives the credential: a token can be revoked, expire or be deleted, and this stays.
@@ -335,14 +332,6 @@ public class ExtensionVersion implements Serializable {
         this.timestamp = timestamp;
     }
 
-    public PersonalAccessToken getPublishedWith() {
-        return publishedWith;
-    }
-
-    public void setPublishedWith(PersonalAccessToken publishedWith) {
-        this.publishedWith = publishedWith;
-    }
-
     public UserData getPublishedBy() {
         return publishedBy;
     }
@@ -584,7 +573,6 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
                 && Objects.equals(timestamp, that.timestamp)
-                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion
                 && Objects.equals(getId(publishedBy), getId(that.publishedBy)) // use id to prevent infinite recursion
                 && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
@@ -619,7 +607,6 @@ public class ExtensionVersion implements Serializable {
                 preRelease,
                 preview,
                 timestamp,
-                getId(publishedWith),
                 getId(publishedBy),
                 active,
                 potentiallyMalicious,
@@ -650,10 +637,6 @@ public class ExtensionVersion implements Serializable {
 
     private Long getId(Extension extension) {
         return Optional.ofNullable(extension).map(Extension::getId).orElse(null);
-    }
-
-    private Long getId(PersonalAccessToken token) {
-        return Optional.ofNullable(token).map(PersonalAccessToken::getId).orElse(null);
     }
 
     private Long getId(UserData user) {

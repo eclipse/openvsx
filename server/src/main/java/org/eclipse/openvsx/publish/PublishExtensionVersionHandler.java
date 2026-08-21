@@ -47,7 +47,6 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -133,12 +132,12 @@ public class PublishExtensionVersionHandler {
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(
             ExtensionProcessor processor,
-            PersonalAccessToken token,
+            UserData userData,
             LocalDateTime timestamp,
             boolean checkDependencies
     ) {
         // Extract extension metadata from its manifest
-        var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
+        var extVersion = createExtensionVersion(processor, userData, timestamp);
         var dependencies = processor.getExtensionDependencies();
         var bundledExtensions = processor.getBundledExtensions();
         if (checkDependencies) {
@@ -168,13 +167,13 @@ public class PublishExtensionVersionHandler {
      * <p>
      * Callers publishing with scanning enabled have to invoke this before validating or scanning the
      * package, as neither is of any use for a package that can not be published in the first place.
-     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, PersonalAccessToken,
+     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, UserData,
      * LocalDateTime, boolean)}, which enforces them while holding the extension lock.
      *
      * @throws ErrorResultException if the extension version can not be published
      */
-    public void checkPublishPreconditions(ExtensionProcessor processor, PersonalAccessToken token) {
-        var namespace = checkPublishPermission(processor, token.getUser());
+    public void checkPublishPreconditions(ExtensionProcessor processor, UserData userData) {
+        var namespace = checkPublishPermission(processor, userData);
         var extensionName = processor.getExtensionName();
         var existingVersion = repositories
                 .findVersion(processor.getVersion(), processor.getTargetPlatform(), extensionName, namespace.getName());
@@ -226,7 +225,6 @@ public class PublishExtensionVersionHandler {
     private ExtensionVersion createExtensionVersion(
             ExtensionProcessor processor,
             UserData user,
-            PersonalAccessToken token,
             LocalDateTime timestamp
     ) {
         var namespace = checkPublishPermission(processor, user);
@@ -247,7 +245,6 @@ public class PublishExtensionVersionHandler {
         validatePackageMetadata(processor, namespaceName, extensionName, extVersion);
 
         extVersion.setTimestamp(timestamp);
-        extVersion.setPublishedWith(token);
         extVersion.setPublishedBy(user);
         extVersion.setActive(false);
 

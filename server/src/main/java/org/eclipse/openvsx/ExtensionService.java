@@ -130,7 +130,7 @@ public class ExtensionService {
             // Fail before any validation or scanning happens (and before a scan record is stored) if the
             // extension version can not be published anyway, e.g. because the publisher lacks the access
             // rights for the namespace or the version is published already.
-            publishHandler.checkPublishPreconditions(processor, token);
+            publishHandler.checkPublishPreconditions(processor, token.getUser());
 
             scan = scanService.initializeScan(processor, token.getUser());
 
@@ -170,7 +170,8 @@ public class ExtensionService {
             boolean checkDependencies
     ) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
-            var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+            var extVersion = publishHandler
+                    .createExtensionVersion(processor, token.getUser(), timestamp, checkDependencies);
 
             var download = processor.getBinary(extVersion, binaryName);
             extensionFile.setResource(download);

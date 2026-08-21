@@ -265,9 +265,6 @@ class ElasticSearchServiceTest {
         extension.getVersions().add(extVer);
         var user = new UserData();
         user.setLoginName(userName);
-        var token = new PersonalAccessToken();
-        token.setUser(user);
-        extVer.setPublishedWith(token);
         extVer.setPublishedBy(user);
         Mockito.when(repositories.findLatestVersion(extension, null, false, true))
                 .thenReturn(extVer);

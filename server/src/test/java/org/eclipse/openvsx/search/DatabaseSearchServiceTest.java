@@ -401,9 +401,6 @@ class DatabaseSearchServiceTest {
         extVer.setExtension(extension);
         extension.getVersions().add(extVer);
         var user = new UserData();
-        var token = new PersonalAccessToken();
-        token.setUser(user);
-        extVer.setPublishedWith(token);
         extVer.setPublishedBy(user);
         Mockito.when(repositories.isVerified(namespace, user)).thenReturn(false);
         Mockito.when(repositories.findLatestVersion(extension, null, false, true)).thenReturn(extVer);

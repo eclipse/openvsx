@@ -124,8 +124,6 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -136,12 +134,11 @@ class PublishExtensionVersionHandlerTest {
 
             var capturedExtension = ArgumentCaptor.forClass(Extension.class);
 
-            var result = handler.createExtensionVersion(processor, token, LocalDateTime.now(), false);
+            var result = handler.createExtensionVersion(processor, user, LocalDateTime.now(), false);
 
             verify(entityManager).persist(capturedExtension.capture());
             verify(entityManager).persist(metadata);
             assertThat(result).isSameAs(metadata);
-            assertThat(result.getPublishedWith()).isEqualTo(token);
             assertThat(result.getPublishedBy()).isEqualTo(user);
             assertThat(result.getExtension()).isSameAs(capturedExtension.getValue());
             assertThat(result.getExtension().getNamespace()).isSameAs(namespace);
@@ -162,8 +159,6 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -186,7 +181,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining(maliciousName);
 
@@ -206,8 +201,6 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -234,7 +227,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("CHANGELOG.md");
         }
@@ -254,8 +247,6 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -287,7 +278,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Multiple file name collisions")
                     .hasMessageContaining(maliciousName)
@@ -302,12 +293,10 @@ class PublishExtensionVersionHandlerTest {
             when(processor.getNamespace()).thenReturn("unknown");
 
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("unknown")).thenReturn(null);
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Unknown publisher");
         }
@@ -327,15 +316,13 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
             when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
             when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("uses an unsupported icon format");
         }
@@ -358,15 +345,13 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
             when(validator.validateExtensionVersion(metadata.getVersion())).thenReturn(Optional.empty());
             when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
 
-            var ev = handler.createExtensionVersion(processor, token, LocalDateTime.now(), false);
+            var ev = handler.createExtensionVersion(processor, user, LocalDateTime.now(), false);
             assertThat(ev).isNotNull();
         } finally {
             config.setUnsupportedIconFormats(previousUnsupportedIconFormats);
@@ -380,8 +365,6 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -395,7 +378,7 @@ class PublishExtensionVersionHandlerTest {
                             "2.0.0",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Publisher in extension.vsixmanifest");
 
@@ -406,7 +389,7 @@ class PublishExtensionVersionHandlerTest {
                             "2.0.0",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Extension name in extension.vsixmanifest");
 
@@ -417,7 +400,7 @@ class PublishExtensionVersionHandlerTest {
                             "9.9.9",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, token, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Extension version in extension.vsixmanifest");
         }
@@ -428,8 +411,6 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(processor.getNamespace()).thenReturn("publisher");
             when(processor.getExtensionName()).thenReturn("demo");
@@ -440,7 +421,7 @@ class PublishExtensionVersionHandlerTest {
             when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
                     .thenReturn(null);
 
-            assertThatCode(() -> handler.checkPublishPreconditions(processor, token)).doesNotThrowAnyException();
+            assertThatCode(() -> handler.checkPublishPreconditions(processor, user)).doesNotThrowAnyException();
         }
     }
 
@@ -449,14 +430,12 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             when(processor.getNamespace()).thenReturn("publisher");
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(false);
 
-            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, user))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Insufficient access rights for publisher: publisher");
 
@@ -468,13 +447,12 @@ class PublishExtensionVersionHandlerTest {
     @Test
     void shouldFailPreconditionsWithUnknownNamespace() {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
-            var token = new PersonalAccessToken();
-            token.setUser(new UserData());
+            var user = new UserData();
 
             when(processor.getNamespace()).thenReturn("unknown");
             when(repositories.findNamespace("unknown")).thenReturn(null);
 
-            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, user))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Unknown publisher: unknown");
         }
@@ -485,8 +463,6 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             var existing = new ExtensionVersion();
             existing.setVersion("2.0.0");
@@ -502,7 +478,7 @@ class PublishExtensionVersionHandlerTest {
             when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
                     .thenReturn(existing);
 
-            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, user))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("is already published.");
         }
@@ -513,8 +489,6 @@ class PublishExtensionVersionHandlerTest {
         try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var token = new PersonalAccessToken();
-            token.setUser(user);
 
             var tombstone = new ExtensionVersion();
             tombstone.setVersion("2.0.0");
@@ -531,7 +505,7 @@ class PublishExtensionVersionHandlerTest {
             when(repositories.findVersion("2.0.0", TargetPlatform.NAME_UNIVERSAL, "demo", "publisher"))
                     .thenReturn(tombstone);
 
-            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, token))
+            assertThatThrownBy(() -> handler.checkPublishPreconditions(processor, user))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("stays permanently reserved");
         }

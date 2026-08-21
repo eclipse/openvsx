@@ -320,7 +320,6 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(targetPlatform);
         extVersion.setActive(active);
-        extVersion.setPublishedWith(token);
         extVersion.setPublishedBy(owner);
         em.persist(extVersion);
 
@@ -348,7 +347,6 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
             extVersion.setTargetPlatform(targetPlatform);
             extVersion.setActive(true);
             extVersion.setPreRelease(true);
-            extVersion.setPublishedWith(token);
             extVersion.setPublishedBy(owner);
             em.persist(extVersion);
         }
@@ -372,7 +370,6 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setActive(true);
         extVersion.setPreRelease(true);
         extVersion.setTimestamp(timestamp);
-        extVersion.setPublishedWith(token);
         extVersion.setPublishedBy(owner);
         em.persist(extVersion);
     }

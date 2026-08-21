@@ -280,7 +280,8 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
 
     private ExtensionVersion publish(String targetPlatform) {
         try (var processor = mockProcessor(targetPlatform)) {
-            return publishHandler.createExtensionVersion(processor, publishToken(), LocalDateTime.now(), false);
+            return publishHandler
+                    .createExtensionVersion(processor, publishToken().getUser(), LocalDateTime.now(), false);
         }
     }
 

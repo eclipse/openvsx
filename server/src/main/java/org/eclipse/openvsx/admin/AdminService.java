@@ -626,30 +626,18 @@ public class AdminService {
             removedCustomerMembershipCount++;
         }
 
-        // Personal access tokens. Delete tokens that no retained extension version references;
-        // scrub and deactivate the rest so retained versions still resolve a publisher.
+        // Personal access tokens are no longer referenced by extension versions, so they can
+        // always be deleted outright.
         var deletedTokenCount = 0;
-        var scrubbedTokenCount = 0;
         for (var token : repositories.findAccessTokens(user)) {
-            if (repositories.countVersionsByAccessToken(token) == 0) {
-                entityManager.remove(token);
-                deletedTokenCount++;
-            } else {
-                token.setActive(false);
-                token.setDescription(null);
-                // The value is deliberately left in place: AccessTokenService.generateTokenValue()
-                // checks repositories.hasAccessToken(value) across all tokens, active or not, to
-                // avoid ever reissuing a value that was already handed out. Nulling it here would
-                // let that (astronomically unlikely) collision go undetected.
-                scrubbedTokenCount++;
-            }
+            entityManager.remove(token);
+            deletedTokenCount++;
         }
 
         // Namespace and customer memberships are already fully removed above. If nothing else in
         // the database still refers to this user either, delete the row outright instead of
         // anonymizing it.
-        var canDeleteUser = scrubbedTokenCount == 0
-                && repositories.countReviews(user) == 0
+        var canDeleteUser = repositories.countReviews(user) == 0
                 && repositories.countVersionsRemovedBy(user) == 0
                 && repositories.countAdminScanDecisions(user) == 0
                 && repositories.countFileDecisions(user) == 0
@@ -680,7 +668,7 @@ public class AdminService {
                         + removedExtensionCount + " extensions, removed "
                         + removedMembershipCount + " namespace memberships, removed "
                         + removedCustomerMembershipCount + " customer memberships, deleted "
-                        + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
+                        + deletedTokenCount + " tokens.");
         logs.logAction(admin, result);
         return result;
     }
