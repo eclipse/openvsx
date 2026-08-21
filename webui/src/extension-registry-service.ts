@@ -55,7 +55,9 @@ import {
     TrustedPublisher,
     TrustedPublisherList,
     TrustedPublisherRequest,
-    TrustedPublisherStatus
+    TrustedPublisherStatus,
+    ConsistencyCheckList,
+    ConsistencyFindingList
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest, sendStrictRequest } from './server-request';
@@ -781,6 +783,13 @@ export interface AdminService {
     deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
     updateSettings(settings: Settings): Promise<Readonly<Settings>>;
+    getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>>;
+    getConsistencyFindings(
+        abortController: AbortController,
+        checkId: string
+    ): Promise<Readonly<ConsistencyFindingList>>;
+    fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
 }
 
 export interface AdminServiceConstructor {
@@ -1582,6 +1591,62 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
             headers
         });
+    }
+
+    async getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency'])
+        });
+    }
+
+    async getConsistencyFindings(
+        abortController: AbortController,
+        checkId: string
+    ): Promise<Readonly<ConsistencyFindingList>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency', checkId, 'findings'])
+        });
+    }
+
+    async fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const headers = await this.csrfHeaders();
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency', checkId, 'fix']),
+            headers
+        });
+    }
+
+    async fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const headers = await this.csrfHeaders();
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'consistency',
+                checkId,
+                'fix',
+                String(entityId)
+            ]),
+            headers
+        });
+    }
+
+    private async csrfHeaders(): Promise<Record<string, string>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return headers;
     }
 }
 
