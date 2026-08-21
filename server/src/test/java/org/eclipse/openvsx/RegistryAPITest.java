@@ -180,8 +180,6 @@ class RegistryAPITest {
     @Test
     void testVerifiedNamespace() throws Exception {
         var namespace = mockNamespace();
-        var user = new UserData();
-        user.setLoginName("test_user");
         Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                 .thenReturn(true);
 
@@ -2863,6 +2861,7 @@ class RegistryAPITest {
         return JsonMapper.shared().writeValueAsString(json);
     }
 
+    @SafeVarargs
     private String queryResultJson(Consumer<ExtensionJson>... contents) throws JacksonException {
         var extensionJsons = new ArrayList<String>();
         for (var content : contents) {

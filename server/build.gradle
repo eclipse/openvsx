@@ -275,7 +275,7 @@ testlogger {
 }
 
 test {
-    jvmArgs = ['--enable-native-access=ALL-UNNAMED', '-Xmx4096m'] // due to https://github.com/netty/netty/issues/15161
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED', '-Xmx4096m', '-Xshare:off'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
 }
 
