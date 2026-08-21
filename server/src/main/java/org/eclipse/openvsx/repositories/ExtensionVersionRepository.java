@@ -55,7 +55,11 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
 
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
 
+    long countByPublishedWith(PersonalAccessToken publishedWith);
+
     Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
+
+    long countByRemovedBy(UserData removedBy);
 
     Streamable<ExtensionVersion> findAll();
 

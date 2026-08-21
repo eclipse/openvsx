@@ -1,0 +1,59 @@
+# Generates and uploads SBOMs for the published docker images (server, webui).
+name: Generate SBOM (docker image)
+
+on:
+  registry_package:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image on ghcr.io/eclipse-openvsx to scan"
+        required: true
+        type: choice
+        options:
+          - openvsx-server
+          - openvsx-webui
+      version:
+        description: "Version tag (e.g. v1.2.3)"
+        required: true
+
+permissions:
+  id-token: write  # required for OIDC-authenticated SBOM upload
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: eclipse-openvsx
+  NAME: "${{ inputs.image || github.event.registry_package.name }}"
+  VERSION: "${{ inputs.version || github.event.registry_package.package_version.container_metadata.tag.name }}"
+
+jobs:
+  sbom-docker:
+    # * Auto-run only triggers in upstream repo for upstream registry images.
+    #   Known snapshot images are skipped (see main.yml). An unexpected image
+    #   name is left to fail in the Upload SBOM step, whose endpoint only
+    #   accepts registered product names.
+    # * Manual dispatch is allowed on forks, but also uses upstream registry
+    #   images. Image names are restricted by the input field.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.repository_owner == 'eclipse-openvsx' &&
+       github.event.registry_package.name != 'openvsx-server-snapshot' &&
+       github.event.registry_package.name != 'openvsx-webui-snapshot')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Generate SBOM
+      uses: anchore/sbom-action@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.NAME }}:${{ env.VERSION }}
+        output-file: sbom.json
+        format: cyclonedx-json
+        upload-artifact: false
+
+    - name: Upload SBOM
+      uses: eclipse-csi/workflows/upload-sbom@a5993190de939557abd37e9d7a7ecfee80660876
+      with:
+        sbom-file: sbom.json
+        # NOTE: Upload will fail for a non-registered 'product-name'.
+        # See https://github.com/eclipse-csi/workflows#upload-sbom for details.
+        product-name: "${{ env.NAME }} docker image"
+        product-version: ${{ env.VERSION }}

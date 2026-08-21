@@ -267,9 +267,14 @@ public class ExtensionValidator {
         }
 
         try {
-            var url = new URI(value).toURL();
+            var uri = new URI(value);
+            if (!uri.isAbsolute()) {
+                return true;
+            }
+
+            var url = uri.toURL();
             return url.getProtocol().matches("http(s)?") && StringUtils.isEmpty(url.getHost());
-        } catch (URISyntaxException | MalformedURLException exc) {
+        } catch (URISyntaxException | MalformedURLException | IllegalArgumentException exc) {
             return true;
         }
     }

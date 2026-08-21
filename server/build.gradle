@@ -23,12 +23,11 @@ def jooqSrcDir = 'src/main/jooq-gen'
 
 // Note: these versions below "deviate" from Spring Boot's managed versions because we want to use newer versions
 // This means that on Spring Boot update, we need to re-check the versions here and update or remove them if needed.
-
-// Steps for checking
-// - ./gradlew listDependencies
-// - jbang toolbox@maveniverse versions build/dependencies/list.txt --artifactVersionSelectorSpec="minor()" | grep -v "up to date"
-// OR
-// - mvn eu.maveniverse.maven.plugins:toolbox:gav-versions -Dgav=build/dependencies/list.txt -DartifactVersionSelectorSpec="minor()" | grep -v "up to date"
+//
+// scripts/dependency-override-check.sh discovers this ext[...] block itself and fails if any entry
+// has fallen behind the version Spring Boot's BOM manages; run it with --latest to also
+// (non-fatally) check them against the latest upstream releases. Nothing to update there when
+// adding or removing an override here.
 
 ext['flyway.version'] = libs.versions.flyway.get()
 ext['httpclient5.version'] = libs.versions.httpclient5.get()
@@ -77,6 +76,9 @@ dependencies {
             replacedBy("org.springframework.boot:spring-boot-starter-jetty")
         }
     }
+    // Only a transitive runtime dependency of spring-boot-starter-jetty otherwise; needed at compile
+    // time to reconfigure the installed CompressionHandler in VSCodeGalleryCompressionConfig.
+    implementation "org.eclipse.jetty.compression:jetty-compression-server"
     implementation "org.springframework.boot:spring-boot-starter-restclient"
     implementation "org.springframework.boot:spring-boot-starter-validation"
     implementation "org.springframework.boot:spring-boot-starter-jooq"

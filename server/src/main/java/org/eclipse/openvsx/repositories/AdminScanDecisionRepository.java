@@ -23,6 +23,7 @@ import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.AdminScanDecision;
 import org.eclipse.openvsx.entities.ExtensionScan;
+import org.eclipse.openvsx.entities.UserData;
 
 /**
  * Repository for admin decisions on quarantined scans.
@@ -55,6 +56,9 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
 
     /** Count all ALLOWED decisions */
     long countByDecision(String decision);
+
+    /** Count decisions made by a given admin user */
+    long countByDecidedBy(UserData decidedBy);
 
     /** Count ALLOWED decisions within a date range.
      *  Uses native query to handle nullable timestamp parameters correctly with PostgreSQL. */

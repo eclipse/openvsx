@@ -37,6 +37,7 @@ import { MainContext } from '../../context';
 import { ExtensionCardList } from '../../components/extension/extension-card-list';
 import { handleError as formatError, toLocalTime } from '../../utils';
 import { AdminDashboardRoutes } from './admin-dashboard-routes';
+import { PublisherForgetUserButton } from './publisher-forget-user-button';
 import { PublisherRevokeContributionsButton } from './publisher-revoke-dialog';
 import { PublisherRevokeTokensButton } from './publisher-revoke-tokens-button';
 import {
@@ -319,6 +320,25 @@ export const PublisherDetails: FunctionComponent<{ entry: UserRelationships }> =
                                     </Box>
                                     <Box sx={{ flexShrink: 0, ml: 2 }}>
                                         <PublisherRevokeContributionsButton publisherInfo={publisherInfo} />
+                                    </Box>
+                                </Stack>
+                                <Divider />
+                                <Stack
+                                    direction='row'
+                                    alignItems='center'
+                                    justifyContent='space-between'
+                                    sx={{ px: 2, py: 1.5 }}>
+                                    <Box>
+                                        <Typography variant='body2' fontWeight={600}>
+                                            Forget user
+                                        </Typography>
+                                        <Typography variant='body2' color='text.secondary'>
+                                            Erase {user.loginName} in response to a data-protection erasure request.
+                                            This cannot be undone.
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ flexShrink: 0, ml: 2 }}>
+                                        <PublisherForgetUserButton publisherInfo={publisherInfo} />
                                     </Box>
                                 </Stack>
                             </Box>
