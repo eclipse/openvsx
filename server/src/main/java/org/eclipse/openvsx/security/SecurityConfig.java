@@ -85,6 +85,7 @@ public class SecurityConfig {
                                         "/api/-/publish",
                                         "/api/-/namespace/create",
                                         "/api/-/query",
+                                        "/api/-/trusted-publishing/token",
                                         "/vscode/**",
                                         "/admin/api/**")))
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));

@@ -9,9 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.admin;
 
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -20,19 +17,23 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 
 @Component
 public class MonthlyAdminStatisticsJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private final SettingsService settings;
     private final JobRequestScheduler scheduler;
+    private final UUIDService uuidService;
 
     public MonthlyAdminStatisticsJobRequestHandler(
             SettingsService settings,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            UUIDService uuidService
     ) {
         this.settings = settings;
         this.scheduler = scheduler;
+        this.uuidService = uuidService;
     }
 
     @Override
@@ -47,7 +48,7 @@ public class MonthlyAdminStatisticsJobRequestHandler implements JobRequestHandle
         var month = lastMonth.getMonthValue();
 
         var jobIdText = "AdminStatistics::year=" + year + ",month=" + month;
-        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        var jobId = uuidService.generateFromName(jobIdText);
         scheduler.enqueue(jobId, new AdminStatisticsJobRequest(year, month));
     }
 }

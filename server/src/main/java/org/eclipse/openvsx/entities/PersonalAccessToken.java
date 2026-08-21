@@ -19,6 +19,8 @@ import jakarta.persistence.*;
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.util.TimeUtil;
 
+import static java.util.Objects.requireNonNull;
+
 @Entity
 @Table(name = "personal_access_token")
 public class PersonalAccessToken implements Serializable {
@@ -50,6 +52,24 @@ public class PersonalAccessToken implements Serializable {
 
     @Column(length = 2048)
     private String description;
+
+    private int version;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PersonalAccessTokenType type;
+
+    @ManyToOne
+    @JoinColumn(name = "scope_extension_id")
+    private Extension scopeExtension;
+
+    @ManyToOne
+    @JoinColumn(name = "scope_namespace_id")
+    private Namespace scopeNamespace;
+
+    @ManyToOne
+    @JoinColumn(name = "trusted_publisher_id")
+    private TrustedPublisher trustedPublisher;
 
     /**
      * Convert to a JSON object.
@@ -144,6 +164,46 @@ public class PersonalAccessToken implements Serializable {
         this.description = description;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public PersonalAccessTokenType getType() {
+        return type;
+    }
+
+    public void setType(PersonalAccessTokenType type) {
+        this.type = requireNonNull(type);
+    }
+
+    public Extension getScopeExtension() {
+        return scopeExtension;
+    }
+
+    public void setScopeExtension(Extension scopeExtension) {
+        this.scopeExtension = scopeExtension;
+    }
+
+    public Namespace getScopeNamespace() {
+        return scopeNamespace;
+    }
+
+    public void setScopeNamespace(Namespace scopeNamespace) {
+        this.scopeNamespace = scopeNamespace;
+    }
+
+    public TrustedPublisher getTrustedPublisher() {
+        return trustedPublisher;
+    }
+
+    public void setTrustedPublisher(TrustedPublisher trustedPublisher) {
+        this.trustedPublisher = trustedPublisher;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -161,7 +221,11 @@ public class PersonalAccessToken implements Serializable {
                 && Objects.equals(accessedTimestamp, that.accessedTimestamp)
                 && Objects.equals(expiresTimestamp, that.expiresTimestamp)
                 && Objects.equals(notified, that.notified)
-                && Objects.equals(description, that.description);
+                && Objects.equals(description, that.description)
+                && Objects.equals(type, that.type)
+                && Objects.equals(scopeExtension, that.scopeExtension)
+                && Objects.equals(scopeNamespace, that.scopeNamespace)
+                && Objects.equals(trustedPublisher, that.trustedPublisher);
     }
 
     @Override
@@ -175,6 +239,10 @@ public class PersonalAccessToken implements Serializable {
                 accessedTimestamp,
                 expiresTimestamp,
                 notified,
-                description);
+                description,
+                type,
+                scopeExtension,
+                scopeNamespace,
+                trustedPublisher);
     }
 }

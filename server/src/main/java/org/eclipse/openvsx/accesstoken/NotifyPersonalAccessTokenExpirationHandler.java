@@ -53,7 +53,8 @@ public class NotifyPersonalAccessTokenExpirationHandler implements JobRequestHan
         if (config.isTokenExpiryNotificationEnabled()) {
             var expireBefore = TimeUtil.getCurrentUTC().plus(config.getNotification());
             var page = PageRequest.of(0, config.getMaxTokenNotifications());
-            var expiringAccessTokens = repositories.findExpiringAccessTokensWithoutNotification(expireBefore, page);
+            var expiringAccessTokens = repositories
+                    .findExpiringPersonalAccessTokensWithoutNotification(expireBefore, page);
             for (var token : expiringAccessTokens) {
                 tokens.scheduleTokenExpirationNotification(token);
             }

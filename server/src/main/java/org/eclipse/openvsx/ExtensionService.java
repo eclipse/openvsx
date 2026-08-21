@@ -43,6 +43,8 @@ import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 @Service
 public class ExtensionService {
 
@@ -95,38 +97,79 @@ public class ExtensionService {
             String binaryName,
             String timestamp
     ) {
-        doPublish(extensionFile, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+        try (var processor = new ExtensionProcessor(extensionFile)) {
+            doPublish(processor, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+        }
         publishHandler.mirror(extensionFile, signatureName);
         return extensionFile.getResource().getExtension();
     }
 
-    public ExtensionVersion publishVersion(InputStream content, PersonalAccessToken token) throws ErrorResultException {
+    public TempFile createExtensionFile(InputStream content) {
+        requireNonNull(content);
+        long maxContentSize = getMaxContentSize();
+        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
+            long size;
+            var extensionFile = new TempFile("extension_", ".vsix");
+            try (var out = Files.newOutputStream(extensionFile.getPath())) {
+                size = input.transferTo(out);
+            }
+
+            if (size > maxContentSize) {
+                IOUtils.closeQuietly(extensionFile);
+                var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
+                throw new ErrorResultException(
+                        "The extension package exceeds the size limit of " + maxSize + ".",
+                        HttpStatus.CONTENT_TOO_LARGE);
+            }
+
+            return extensionFile;
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
+        }
+    }
+
+    public ExtensionVersion publishVersion(InputStream inputStream, PersonalAccessToken token)
+            throws ErrorResultException {
+        try (
+                TempFile tempFile = createExtensionFile(inputStream);
+                ExtensionProcessor processor = new ExtensionProcessor(tempFile)
+        ) {
+            return publishVersion(processor, token);
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
+        }
+    }
+
+    public ExtensionVersion publishVersion(ExtensionProcessor processor, PersonalAccessToken token)
+            throws ErrorResultException {
+        requireNonNull(processor);
+        requireNonNull(token);
+        var content = processor.getExtensionFile();
         if (scanService.isEnabled()) {
-            return publishVersionWithScan(content, token);
+            return publishVersionWithScan(processor, token);
         } else {
-            var extensionFile = createExtensionFile(content);
             try {
-                doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+                doPublish(processor, null, token, TimeUtil.getCurrentUTC(), true);
             } catch (ErrorResultException exc) {
                 // In case publication fails early on we need to
                 // delete the temporary extension file, otherwise
                 // it's deleted within the publishAsync method.
-                IOUtils.closeQuietly(extensionFile);
+                IOUtils.closeQuietly(content);
                 throw exc;
             }
-            publishHandler.publishAsync(extensionFile, this);
-            var download = extensionFile.getResource();
+            publishHandler.publishAsync(content, this);
+            var download = content.getResource();
             publishHandler.schedulePublicIdJob(download);
             return download.getExtension();
         }
     }
 
-    private ExtensionVersion publishVersionWithScan(InputStream content, PersonalAccessToken token)
+    private ExtensionVersion publishVersionWithScan(ExtensionProcessor processor, PersonalAccessToken token)
             throws ErrorResultException {
-        var extensionFile = createExtensionFile(content);
+        var extensionFile = processor.getExtensionFile();
         ExtensionScan scan = null;
 
-        try (var processor = new ExtensionProcessor(extensionFile)) {
+        try {
             // Fail before any validation or scanning happens (and before a scan record is stored) if the
             // extension version can not be published anyway, e.g. because the publisher lacks the access
             // rights for the namespace or the version is published already.
@@ -136,7 +179,7 @@ public class ExtensionService {
 
             scanService.runValidation(scan, extensionFile, token.getUser());
 
-            doPublish(extensionFile, null, token, TimeUtil.getCurrentUTC(), true);
+            doPublish(processor, null, token, TimeUtil.getCurrentUTC(), true);
 
             // Publish async handles requesting the long-running scans
             publishHandler.publishAsync(extensionFile, this, scan);
@@ -163,41 +206,15 @@ public class ExtensionService {
     }
 
     private void doPublish(
-            TempFile extensionFile,
+            ExtensionProcessor processor,
             String binaryName,
             PersonalAccessToken token,
             LocalDateTime timestamp,
             boolean checkDependencies
     ) {
-        try (var processor = new ExtensionProcessor(extensionFile)) {
-            var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
-
-            var download = processor.getBinary(extVersion, binaryName);
-            extensionFile.setResource(download);
-        }
-    }
-
-    private TempFile createExtensionFile(InputStream content) {
-        long maxContentSize = getMaxContentSize();
-        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
-            long size;
-            var extensionFile = new TempFile("extension_", ".vsix");
-            try (var out = Files.newOutputStream(extensionFile.getPath())) {
-                size = input.transferTo(out);
-            }
-
-            if (size > maxContentSize) {
-                IOUtils.closeQuietly(extensionFile);
-                var maxSize = FileUtils.byteCountToDisplaySize(maxContentSize);
-                throw new ErrorResultException(
-                        "The extension package exceeds the size limit of " + maxSize + ".",
-                        HttpStatus.CONTENT_TOO_LARGE);
-            }
-
-            return extensionFile;
-        } catch (IOException e) {
-            throw new ErrorResultException("Failed to read extension file", e);
-        }
+        var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+        var download = processor.getBinary(extVersion, binaryName);
+        processor.getExtensionFile().setResource(download);
     }
 
     /**

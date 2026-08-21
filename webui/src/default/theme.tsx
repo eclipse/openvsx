@@ -9,7 +9,7 @@
  ********************************************************************************/
 
 import { CSSProperties } from 'react';
-import { createTheme, Theme } from '@mui/material';
+import { alpha, createTheme, Theme } from '@mui/material';
 import type {} from '@mui/x-data-grid/themeAugmentation';
 
 export const MONO_FONT = "'Geist Mono', monospace";
@@ -216,6 +216,29 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                         background: 'transparent',
                         '&:before': { display: 'none' }
                     }
+                }
+            },
+            // Info alerts follow the app's info tone (see components/banner.tsx):
+            // soft accent surface, accent icon, and accent links.
+            MuiAlert: {
+                styleOverrides: {
+                    standardInfo: ({ theme }) => ({
+                        padding: theme.spacing(1, 2),
+                        backgroundColor: theme.palette.accentSoft,
+                        color: theme.palette.text.primary,
+                        border: `1px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
+                        borderRadius: theme.shape.borderRadiusCard,
+                        '& .MuiAlert-icon': { color: theme.palette.secondary.light },
+                        '& a': {
+                            color: theme.palette.secondary.light,
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: theme.spacing(0.75),
+                            '&:hover': { textDecoration: 'underline' }
+                        }
+                    })
                 }
             },
             // VS Code buttons are flat and compact (~24px page actions), with corners

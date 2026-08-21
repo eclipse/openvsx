@@ -61,13 +61,16 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -93,7 +96,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ExtensionScanService.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         MailService.class
     }
 )
@@ -109,6 +111,9 @@ class UserAPITest {
     EntityManager entityManager;
 
     @MockitoBean
+    UUIDService uuidService;
+
+    @MockitoBean
     RepositoryService repositories;
 
     @Autowired
@@ -119,6 +124,8 @@ class UserAPITest {
 
     @Autowired
     MockMvc mockMvc;
+    @Autowired
+    private AccessTokenService accessTokenService;
 
     @Test
     void testLoggedIn() throws Exception {
@@ -170,7 +177,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(tokens).generateTokenValue();
+        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue();
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -197,7 +204,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
         Mockito.when(entityManager.merge(userData))
                 .thenReturn(userData);
@@ -225,7 +233,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(false);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
         mockMvc.perform(
@@ -245,7 +254,8 @@ class UserAPITest {
         token.setId(100);
         token.setUser(userData);
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken(100))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
 
         mockMvc.perform(
@@ -835,19 +845,22 @@ class UserAPITest {
         token1.setDescription("This is token 1");
         token1.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token1.setActive(true);
+        token1.setType(PersonalAccessTokenType.LLT);
         var token2 = new PersonalAccessToken();
         token2.setUser(userData);
         token2.setValue("token2");
         token2.setDescription("This is token 2");
         token2.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token2.setActive(false);
+        token2.setType(PersonalAccessTokenType.LLT);
         var token3 = new PersonalAccessToken();
         token3.setUser(userData);
         token3.setValue("token3");
         token3.setDescription("This is token 3");
         token3.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token3.setActive(true);
-        Mockito.when(repositories.findActiveAccessTokens(userData))
+        token3.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LLT))
                 .thenReturn(Streamable.of(token1, token3));
     }
 
@@ -1070,13 +1083,24 @@ class UserAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService accessTokenService(
                 AccessTokenConfig config,
+                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
         @Bean
@@ -1135,6 +1159,7 @@ class UserAPITest {
                     integrityService,
                     similarityCheckService,
                     new PublishingConfig(),
+                    new TrustedPublishingConfig(),
                     Duration.ofSeconds(30));
         }
 

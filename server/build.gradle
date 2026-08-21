@@ -90,10 +90,10 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-cache"
     implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-zipkin"
-    implementation "org.springframework.boot:spring-boot-security-oauth2-client"
     implementation "org.springframework.boot:spring-boot-starter-session-jdbc"
+    implementation "org.springframework.boot:spring-boot-starter-restclient"
 
-    implementation "org.springframework.security:spring-security-oauth2-client"
+    implementation "org.springframework.boot:spring-boot-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
 
     // Depend directly on Thymeleaf rather than org.springframework.boot:spring-boot-thymeleaf
@@ -116,6 +116,7 @@ dependencies {
     implementation libs.bouncycastle
     implementation libs.jedis
     implementation libs.guava
+    implementation libs.uuid.generator
 
     implementation libs.bucket4j.spring
     implementation libs.bucket4j.redis

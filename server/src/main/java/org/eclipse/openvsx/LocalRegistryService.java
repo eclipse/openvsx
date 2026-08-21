@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -45,6 +46,7 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.DrainOnCloseInputStream;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -52,6 +54,7 @@ import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -82,6 +85,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final PublishingConfig publishingConfig;
+    private final TrustedPublishingConfig trustedPublishingConfig;
 
     /**
      * How far behind the present the changes feed stops, see {@link #visibleUntil}.
@@ -103,6 +107,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
             PublishingConfig publishingConfig,
+            TrustedPublishingConfig trustedPublishingConfig,
             @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag
     ) {
         this.entityManager = entityManager;
@@ -119,6 +124,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.publishingConfig = publishingConfig;
+        this.trustedPublishingConfig = trustedPublishingConfig;
         this.changesFeedLag = changesFeedLag;
     }
 
@@ -715,7 +721,7 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
@@ -767,7 +773,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
         if (token == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
@@ -788,12 +794,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = tokens.createAccessToken(user, "One time use publish token");
-        try {
-            return publish(content, token.getValue());
-        } finally {
-            tokens.deactivateAccessToken(user, token.getId());
-        }
+        return publish(content, tokens.createOneTimeAccessToken(user, "One time use publish token").getValue());
     }
 
     public ExtensionJson publish(InputStream rawContent, String tokenValue) throws ErrorResultException {
@@ -805,16 +806,25 @@ public class LocalRegistryService implements IExtensionRegistry {
         // doesn't see an early response to a request whose body is still arriving and mistake it
         // for a 50x. Capped at the same max upload size a successful publish already reads in full,
         // so an oversized/abusive body doesn't tie up the request thread and bandwidth beyond that.
-        try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
-            var token = tokens.useAccessToken(tokenValue);
-            if (token == null || token.getUser() == null) {
-                throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+        try (
+                var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize());
+                TempFile tempFile = extensions.createExtensionFile(content)
+        ) {
+            ExtensionVersion extVersion;
+            try (var processor = new ExtensionProcessor(tempFile)) {
+                // now that we know the details, ensure token is still fine
+                var token = tokens.useAccessToken(
+                        tokenValue,
+                        new AccessTokenAction.PublishVersion(processor.getNamespace(), processor.getExtensionName()));
+                if (token == null || token.getUser() == null) {
+                    throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+                }
+                // Check whether the user has a valid publisher agreement
+                eclipse.checkPublisherAgreement(token.getUser());
+
+                extVersion = extensions.publishVersion(processor, token);
             }
 
-            // Check whether the user has a valid publisher agreement
-            eclipse.checkPublisherAgreement(token.getUser());
-
-            var extVersion = extensions.publishVersion(content, token);
             var json = toExtensionVersionJson(extVersion, null, true);
             json.setSuccess("It can take a couple minutes before the extension version is available");
 
@@ -1342,6 +1352,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
+        json.setTrustedPublishingAudience(
+                trustedPublishingConfig.isEnabled() ? trustedPublishingConfig.getAudience() : null);
         return json;
     }
 
