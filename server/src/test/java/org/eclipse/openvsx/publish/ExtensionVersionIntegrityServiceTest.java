@@ -12,6 +12,7 @@ package org.eclipse.openvsx.publish;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.zip.ZipFile;
+
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
