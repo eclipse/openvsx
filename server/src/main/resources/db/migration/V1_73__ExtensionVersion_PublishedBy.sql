@@ -26,3 +26,7 @@ CREATE INDEX extension_version__published_by_id__idx ON public.extension_version
 -- name and recreate under the naming convention used everywhere else on this table.
 ALTER TABLE public.extension_version DROP CONSTRAINT fk70khj8pm0vacasuiiaq0w0r80;
 ALTER TABLE public.extension_version DROP COLUMN published_with_id;
+
+-- and now we can delete all inactive one-time-usable personal access tokens
+DELETE FROM public.personal_access_token pat
+WHERE pat.active = false AND pat.type != 'LLT';
