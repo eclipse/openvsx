@@ -2,6 +2,12 @@
 
 This change log covers only the frontend library (webui) of Open VSX.
 
+## [next] (unreleased)
+
+### Fixed
+
+- Fix the admin dashboard Scan tab getting stuck on the loading spinner after switching tabs, even though the new tab's data had already loaded successfully
+
 ## [v1.1.2] (20/08/2026)
 
 ### Added
