@@ -16,9 +16,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
-
 public interface TrustedPublisherRepository extends Repository<TrustedPublisher, Long> {
 
     Streamable<TrustedPublisher> findTrustedPublishersByExtension(Extension extension);
