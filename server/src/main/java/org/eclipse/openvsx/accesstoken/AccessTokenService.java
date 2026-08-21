@@ -83,19 +83,6 @@ public class AccessTokenService {
     }
 
     /**
-     * Creates a one-time usable token for user. Depending on configuration, the token expiration may be set as well.
-     * TODO: this method is currently unused!
-     */
-    @Transactional
-    public AccessTokenJson createOneTimeAccessToken(UserData user, String description) {
-        requireNonNull(user);
-        final LocalDateTime expiresTimestamp = config.isOttTokenExpiryEnabled()
-                ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
-                : null;
-        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.OTT);
-    }
-
-    /**
      * Creates a trusted publishing token for a trusted publisher. The token is scoped to given trusted publisher
      * associated extension only. Depending on configuration, the token expiration may be set as well.
      */
