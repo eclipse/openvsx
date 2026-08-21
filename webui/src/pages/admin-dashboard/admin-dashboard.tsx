@@ -16,6 +16,7 @@ import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ExtensionSharpIcon from '@mui/icons-material/ExtensionSharp';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import HistoryIcon from '@mui/icons-material/History';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
@@ -42,6 +43,7 @@ import { Welcome } from './welcome';
 
 const ExtensionAdmin = lazy(() => import('./extension-admin').then(m => ({ default: m.ExtensionAdmin })));
 const UsageStatsView = lazy(() => import('./usage-stats/usage-stats').then(m => ({ default: m.UsageStatsView })));
+const DataConsistency = lazy(() => import('./consistency/consistency').then(m => ({ default: m.DataConsistency })));
 
 const navConfig: NavEntry[] = [
     {
@@ -98,7 +100,13 @@ const navConfig: NavEntry[] = [
         icon: <SettingsIcon />,
         description: 'Manage runtime settings for the registry'
     },
-    { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' }
+    { path: AdminDashboardRoutes.LOGS, name: 'Logs', icon: <HistoryIcon />, description: 'Browse admin activity logs' },
+    {
+        path: AdminDashboardRoutes.CONSISTENCY,
+        name: 'Data Consistency',
+        icon: <FactCheckIcon />,
+        description: 'Check the database for known inconsistencies and fix them'
+    }
 ];
 
 const routeNames: { [key: string]: string } = {
@@ -179,6 +187,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                                     <Route path='/usage/:customer' element={<UsageStatsView />} />
                                     <Route path='/settings' element={<RuntimeSettingsPage />} />
                                     <Route path='/logs' element={<Logs />} />
+                                    <Route path='/consistency' element={<DataConsistency />} />
                                     <Route path='*' element={<Welcome items={navConfig} />} />
                                 </Routes>
                             </Suspense>
