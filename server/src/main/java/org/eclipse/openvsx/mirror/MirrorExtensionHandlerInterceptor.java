@@ -55,6 +55,7 @@ public class MirrorExtensionHandlerInterceptor implements HandlerInterceptor {
                 : Collections.emptyMap();
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, String> extractPathParams(HttpServletRequest request) {
         return new TreeMap<>(
                 (Map<String, String>) request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE));
