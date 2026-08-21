@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -806,48 +807,59 @@ public class LocalRegistryService implements IExtensionRegistry {
         // doesn't see an early response to a request whose body is still arriving and mistake it
         // for a 50x. Capped at the same max upload size a successful publish already reads in full,
         // so an oversized/abusive body doesn't tie up the request thread and bandwidth beyond that.
-        try (
-                var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize());
-                TempFile tempFile = extensions.createExtensionFile(content)
-        ) {
-            ExtensionVersion extVersion;
-            try (var processor = new ExtensionProcessor(tempFile)) {
-                // now that we know the details, ensure token is still fine
-                var token = tokens.useAccessToken(
-                        tokenValue,
-                        new AccessTokenAction.PublishVersion(processor.getNamespace(), processor.getExtensionName()));
-                if (token == null || token.getUser() == null) {
-                    throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+        try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
+            var tempFile = extensions.createExtensionFile(content);
+            try {
+                ExtensionVersion extVersion;
+                try (var processor = new ExtensionProcessor(tempFile)) {
+                    // now that we know the details, ensure token is still fine
+                    var token = tokens.useAccessToken(
+                            tokenValue,
+                            new AccessTokenAction.PublishVersion(
+                                    processor.getNamespace(),
+                                    processor.getExtensionName()));
+                    if (token == null || token.getUser() == null) {
+                        throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+                    }
+                    // Check whether the user has a valid publisher agreement
+                    eclipse.checkPublisherAgreement(token.getUser());
+
+                    extVersion = extensions.publishVersion(processor, token);
                 }
-                // Check whether the user has a valid publisher agreement
-                eclipse.checkPublisherAgreement(token.getUser());
 
-                extVersion = extensions.publishVersion(processor, token);
+                var json = toExtensionVersionJson(extVersion, null, true);
+                json.setSuccess("It can take a couple minutes before the extension version is available");
+
+                if (repositories.hasSameVersion(extVersion)) {
+                    var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                    var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                    var extension = extVersion.getExtension();
+                    var semver = extVersion.getSemanticVersion();
+                    var newVersion = String
+                            .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+
+                    json.setWarning(
+                            "A " + existingRelease + " already exists for "
+                                    + NamingUtil.toLogFormat(
+                                            extension.getNamespace().getName(),
+                                            extension.getName(),
+                                            extVersion.getVersion())
+                                    + ".\n" +
+                                    "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
+                                    + newVersion + " as its version instead.");
+                }
+
+                return json;
+            } catch (RuntimeException exc) {
+                // extensions.publishVersion(...) either hands tempFile off to the async publish
+                // pipeline (which deletes it once done reading it) on success, or already deletes it
+                // itself before rethrowing on failure - so this only ever actually deletes anything
+                // when we reject *before* reaching that call (invalid token, no publisher agreement).
+                // Deleting an already-deleted file is a no-op, so it's safe to always try here rather
+                // than track exactly which path already handled it.
+                IOUtils.closeQuietly(tempFile);
+                throw exc;
             }
-
-            var json = toExtensionVersionJson(extVersion, null, true);
-            json.setSuccess("It can take a couple minutes before the extension version is available");
-
-            if (repositories.hasSameVersion(extVersion)) {
-                var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-                var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-                var extension = extVersion.getExtension();
-                var semver = extVersion.getSemanticVersion();
-                var newVersion = String
-                        .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
-
-                json.setWarning(
-                        "A " + existingRelease + " already exists for "
-                                + NamingUtil.toLogFormat(
-                                        extension.getNamespace().getName(),
-                                        extension.getName(),
-                                        extVersion.getVersion())
-                                + ".\n" +
-                                "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
-                                + newVersion + " as its version instead.");
-            }
-
-            return json;
         } catch (IOException e) {
             throw new ErrorResultException("Failed to read extension file", e);
         }
