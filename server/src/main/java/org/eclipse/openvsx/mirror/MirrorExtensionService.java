@@ -234,7 +234,7 @@ public class MirrorExtensionService {
             var token = tokens.useAccessToken(
                     accessTokenValue,
                     new AccessTokenAction.PublishVersion(namespaceName, json.getName()));
-            extensions.mirrorVersion(extensionFile, signatureName, token, filename, json.getTimestamp());
+            extensions.mirrorVersion(extensionFile, signatureName, token.getUser(), filename, json.getTimestamp());
             logger.atDebug()
                     .setMessage("completed mirroring of extension version: {}")
                     .addArgument(() -> NamingUtil.toLogFormat(json))

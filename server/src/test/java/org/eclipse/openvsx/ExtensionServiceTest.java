@@ -316,7 +316,7 @@ class ExtensionServiceTest {
         var token = mockToken();
         var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
 
-        assertThatThrownBy(() -> svc.publishVersion(content, token))
+        assertThatThrownBy(() -> svc.publishVersion(content, token.getUser()))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("Insufficient access rights");
 
@@ -341,7 +341,7 @@ class ExtensionServiceTest {
         // this code path in production.
         var content = new DrainOnCloseInputStream(raw, maxContentSize);
 
-        assertThatThrownBy(() -> svc.publishVersion(content, token))
+        assertThatThrownBy(() -> svc.publishVersion(content, token.getUser()))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the size limit")
                 .extracting(exc -> ((ErrorResultException) exc).getStatus())

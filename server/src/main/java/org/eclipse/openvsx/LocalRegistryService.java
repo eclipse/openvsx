@@ -794,10 +794,15 @@ public class LocalRegistryService implements IExtensionRegistry {
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        return publish(content, tokens.createOneTimeAccessToken(user, "One time use publish token").getValue());
+        return publish(content, null, user);
     }
 
     public ExtensionJson publish(InputStream rawContent, String tokenValue) throws ErrorResultException {
+        return publish(rawContent, tokenValue, null);
+    }
+
+    private ExtensionJson publish(InputStream rawContent, String tokenValue, UserData user)
+            throws ErrorResultException {
         // A rejection anywhere below - invalid/expired token, missing publisher agreement, or
         // (pre-existing, inside extensions.publishVersion) an oversized package - can happen before
         // the request body has been fully read. Wrapping it once here and relying on
@@ -812,17 +817,22 @@ public class LocalRegistryService implements IExtensionRegistry {
         ) {
             ExtensionVersion extVersion;
             try (var processor = new ExtensionProcessor(tempFile)) {
-                // now that we know the details, ensure token is still fine
-                var token = tokens.useAccessToken(
-                        tokenValue,
-                        new AccessTokenAction.PublishVersion(processor.getNamespace(), processor.getExtensionName()));
-                if (token == null || token.getUser() == null) {
-                    throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+                if (user == null) {
+                    // now that we know the details, ensure token is still fine
+                    var token = tokens.useAccessToken(
+                            tokenValue,
+                            new AccessTokenAction.PublishVersion(
+                                    processor.getNamespace(),
+                                    processor.getExtensionName()));
+                    if (token == null || token.getUser() == null) {
+                        throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+                    }
+                    user = token.getUser();
                 }
                 // Check whether the user has a valid publisher agreement
-                eclipse.checkPublisherAgreement(token.getUser());
+                eclipse.checkPublisherAgreement(user);
 
-                extVersion = extensions.publishVersion(processor, token);
+                extVersion = extensions.publishVersion(processor, user);
             }
 
             var json = toExtensionVersionJson(extVersion, null, true);
