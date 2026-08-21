@@ -84,6 +84,7 @@ public class AccessTokenService {
 
     /**
      * Creates a one-time usable token for user. Depending on configuration, the token expiration may be set as well.
+     * TODO: this method is currently unused!
      */
     @Transactional
     public AccessTokenJson createOneTimeAccessToken(UserData user, String description) {
@@ -193,7 +194,7 @@ public class AccessTokenService {
     // throws once this method returns null - silently discarding the fact that the token was touched
     // or found expired.
     @Transactional(TxType.REQUIRES_NEW)
-    public PersonalAccessToken useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
+    public UserData useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
         var token = repositories.findPersonalAccessToken(hashTokenValue(tokenValue));
         if (token == null) {
             // assume DB contains token v0; fetch and upgrade if found active token
@@ -229,9 +230,10 @@ public class AccessTokenService {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
                 token.setActive(false);
+                entityManager.remove(token);
             }
         }
-        return token;
+        return token.getUser();
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {

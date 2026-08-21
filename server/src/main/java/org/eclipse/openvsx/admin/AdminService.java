@@ -683,7 +683,6 @@ public class AdminService {
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
                 .map(tv -> tokens.useAccessToken(tv, new AccessTokenAction.Administration()))
-                .map(PersonalAccessToken::getUser)
                 .orElse(null);
 
         return checkAdminUser(user);
