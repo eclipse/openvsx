@@ -27,6 +27,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.eclipse.openvsx.entities.Customer;
 import org.eclipse.openvsx.ratelimit.config.RateLimitProperties;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.UUIDService;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -38,6 +39,9 @@ public class CustomerServiceTest {
 
     @MockitoBean
     RepositoryService repositories;
+
+    @MockitoBean
+    UUIDService uuidService;
 
     @MockitoBean
     RateLimitProperties rateLimitProperties;
@@ -71,9 +75,10 @@ public class CustomerServiceTest {
         public CustomerService customerService(
                 EntityManager entityManager,
                 RepositoryService repositoryService,
+                UUIDService uuidService,
                 RateLimitProperties rateLimitProperties
         ) {
-            return new CustomerService(entityManager, repositoryService, rateLimitProperties);
+            return new CustomerService(entityManager, repositoryService, uuidService, rateLimitProperties);
         }
     }
 }

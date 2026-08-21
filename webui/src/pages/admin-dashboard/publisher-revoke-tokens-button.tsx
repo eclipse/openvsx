@@ -16,11 +16,6 @@ import { MainContext } from '../../context';
 import { UpdateContext } from './publisher-admin';
 import { useRevokeAccessTokens } from './use-publisher-admin';
 
-const dangerButtonSx = {
-    textTransform: 'none',
-    '&:hover': { bgcolor: 'error.main', color: 'common.white' }
-} as const;
-
 export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeTokensButtonProps> = props => {
     const { handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
@@ -43,7 +38,7 @@ export const PublisherRevokeTokensButton: FunctionComponent<PublisherRevokeToken
 
     return (
         <>
-            <Button variant='outlined' color='error' sx={dangerButtonSx} onClick={() => setDialogOpen(true)}>
+            <Button variant='outlined' color='error' onClick={() => setDialogOpen(true)}>
                 Revoke access tokens{' '}
                 <Box component='span' sx={{ ml: 0.75, opacity: 0.6 }}>
                     {tokenCount}

@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -46,6 +47,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -406,7 +408,8 @@ public class AdminService {
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
-        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
+        userPublishInfo.setActiveAccessTokenNum(
+                (int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
@@ -504,7 +507,7 @@ public class AdminService {
             }
         }
 
-        var accessTokens = repositories.findAccessTokens(user);
+        var accessTokens = repositories.findPersonalAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();
         var deactivatedTokenCount = 0;
         var deactivatedExtensionCount = 0;
@@ -569,7 +572,7 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
+        var deactivatedTokenCount = repositories.deactivatePersonalAccessTokens(user);
         var result = ResultJson.success(
                 "Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
         logs.logAction(admin, result);
@@ -629,7 +632,7 @@ public class AdminService {
         // Personal access tokens are no longer referenced by extension versions, so they can
         // always be deleted outright.
         var deletedTokenCount = 0;
-        for (var token : repositories.findAccessTokens(user)) {
+        for (var token : repositories.findPersonalAccessTokens(user)) {
             entityManager.remove(token);
             deletedTokenCount++;
         }
@@ -679,7 +682,7 @@ public class AdminService {
 
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
-                .map(tokens::useAccessToken)
+                .map(tv -> tokens.useAccessToken(tv, new AccessTokenAction.Administration()))
                 .map(PersonalAccessToken::getUser)
                 .orElse(null);
 

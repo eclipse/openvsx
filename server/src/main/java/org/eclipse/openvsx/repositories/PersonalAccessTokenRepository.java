@@ -19,6 +19,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
@@ -27,9 +28,11 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     Streamable<PersonalAccessToken> findByUser(UserData user);
 
-    Streamable<PersonalAccessToken> findByUserAndActiveTrue(UserData user);
+    Streamable<PersonalAccessToken> findByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
 
-    long countByUserAndActiveTrue(UserData user);
+    Streamable<PersonalAccessToken> findByVersion(int version);
+
+    long countByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
 
     PersonalAccessToken findById(long id);
 
@@ -43,9 +46,9 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     @Modifying
     @Query(
-        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null"
+        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null and t.type = ?2"
     )
-    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp);
+    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type);
 
     List<PersonalAccessToken> findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(
             LocalDateTime timestamp,

@@ -16,6 +16,8 @@ import { PageContainer } from '../../components/page-container';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { UserSettingTabs } from './user-setting-tabs';
 import { UserSettingsTokens } from './user-settings-tokens';
+import { UserSettingsTrustedPublishers } from './trusted-publishing/user-settings-trusted-publishers';
+import { useTrustedPublishingStatus } from './trusted-publishing/use-trusted-publishers';
 import { UserSettingsProfile } from './user-settings-profile';
 import { UserSettingsNamespaces } from './user-settings-namespaces';
 import { UserSettingsExtensions } from './user-settings-extensions';
@@ -28,6 +30,8 @@ import { UserSettingsExtensionSettings } from './user-settings-extension';
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
     const { pageSettings, user, loginProviders } = useContext(MainContext);
     const { tab, namespace, extension } = useParams();
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
+    const trustedPublishingEnabled = trustedPublishingStatus?.enabled ?? false;
 
     const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
         if (tab == null && namespace != null && extension != null) {
@@ -39,6 +43,8 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
                 return <UserSettingsProfile user={user} />;
             case 'tokens':
                 return <UserSettingsTokens />;
+            case 'trusted-publishers':
+                return trustedPublishingEnabled ? <UserSettingsTrustedPublishers /> : null;
             case 'namespaces':
                 return <UserSettingsNamespaces />;
             case 'extensions':

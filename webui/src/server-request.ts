@@ -9,6 +9,7 @@
  ********************************************************************************/
 
 import fetchBuilder from 'fetch-retry';
+import { isError } from './extension-registry-types';
 
 export interface ServerAPIRequest {
     abortController?: AbortController;
@@ -120,4 +121,17 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
  */
 export function sendNonRetriableRequest<Res>(req: ServerAPIRequest): Promise<Res> {
     return sendRequest<Res>(req, false);
+}
+
+/**
+ * Like {@link sendNonRetriableRequest}, but also rejects when the server responds
+ * 200 with an error result body. This lets TanStack query/mutation functions treat
+ * the resolved value as plain data, without checking {@link isError} themselves.
+ */
+export async function sendStrictRequest<Res>(req: ServerAPIRequest): Promise<Res> {
+    const result = await sendRequest<Res>(req, false);
+    if (isError(result)) {
+        throw result;
+    }
+    return result;
 }

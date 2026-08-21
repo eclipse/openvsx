@@ -177,9 +177,9 @@ public class DataMirrorService {
     }
 
     public String getOrAddAccessTokenValue(UserData user, String description) {
-        var token = repositories.findAccessToken(user, description);
+        var token = repositories.findPersonalAccessToken(user, description);
         return token == null
-                ? tokens.createAccessToken(user, description).getValue()
+                ? tokens.createLongLivedAccessToken(user, description).getValue()
                 : token.getValue();
     }
 

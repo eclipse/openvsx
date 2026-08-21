@@ -43,6 +43,9 @@ public class UpstreamProxyService {
         if (!StringUtils.isEmpty(json.getRoleUrl())) {
             json.setRoleUrl(rewriteUrl(json.getRoleUrl()));
         }
+        if (!StringUtils.isEmpty(json.getTrustedPublishingUrl())) {
+            json.setTrustedPublishingUrl(rewriteUrl(json.getTrustedPublishingUrl()));
+        }
 
         return json;
     }

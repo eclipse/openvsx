@@ -38,6 +38,7 @@ import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
@@ -190,7 +191,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findActiveAccessTokens(user)
+        return repositories.findActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.setDeleteTokenUrl(
@@ -216,7 +217,7 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        return new ResponseEntity<>(tokens.createAccessToken(user, description), HttpStatus.CREATED);
+        return new ResponseEntity<>(tokens.createLongLivedAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(
@@ -525,6 +526,8 @@ public class UserAPI {
                 json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
                 json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));
                 json.setDetailsUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "details"));
+                json.setTrustedPublishingUrl(
+                        createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "trusted-publishing"));
             }
 
             return json;

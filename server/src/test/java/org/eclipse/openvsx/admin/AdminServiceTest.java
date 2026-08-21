@@ -101,7 +101,7 @@ class AdminServiceTest {
         extVersion.setActive(true);
 
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
-        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
 
         adminService.revokePublisherContributions("github", "amy", admin);
@@ -129,7 +129,7 @@ class AdminServiceTest {
         extVersion.setActive(true);
 
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
-        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
         when(eclipse.isActive()).thenReturn(true);
         when(eclipse.determinePublisherAgreementStatus(user)).thenReturn("signed");
@@ -157,7 +157,7 @@ class AdminServiceTest {
         user.setEclipsePersonId("12345");
 
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
-        when(repositories.findAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
         when(eclipse.isActive()).thenReturn(true);
         when(eclipse.determinePublisherAgreementStatus(user)).thenReturn(null);

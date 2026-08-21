@@ -33,6 +33,7 @@ spring-boot     = "4.0.7"
 springdoc       = "2.8.13"
 tika            = "3.3.1"
 woodstox        = "6.4.0"
+uuid-generator  = "5.2.0"
 
 [plugins]
 download                     = { id = "de.undercouch.download", version = "5.7.0" }
@@ -77,3 +78,4 @@ testcontainers-localstack    = { module = "org.testcontainers:testcontainers-loc
 testcontainers-postgresql    = { module = "org.testcontainers:testcontainers-postgresql" }
 tika-core                    = { module = "org.apache.tika:tika-core", version.ref = "tika" }
 woodstox-core                = { module = "com.fasterxml.woodstox:woodstox-core", version.ref = "woodstox" }
+uuid-generator               = { module = "com.fasterxml.uuid:java-uuid-generator", version.ref = "uuid-generator" }

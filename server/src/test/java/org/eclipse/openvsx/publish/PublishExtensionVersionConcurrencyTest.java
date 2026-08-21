@@ -37,6 +37,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
@@ -112,6 +113,7 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
             token.setValue(PUBLISHER_LOGIN + "_token");
             token.setCreatedTimestamp(LocalDateTime.now());
             token.setActive(true);
+            token.setType(PersonalAccessTokenType.LLT);
             em.persist(token);
 
             // The namespace exists, the extension does not: this is a first-time publication.

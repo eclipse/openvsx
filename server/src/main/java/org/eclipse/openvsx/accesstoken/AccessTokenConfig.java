@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 
 import jakarta.annotation.PostConstruct;
@@ -33,7 +35,31 @@ public class AccessTokenConfig {
     private String prefix;
 
     /**
-     * The expiration period for personal access tokens.
+     * The expiration period for one time personal access tokens. The one time
+     * access token must be used in this period.
+     * <p>
+     * If {@code 0} is provided, the one time access tokens do not expire.
+     * <p>
+     * Property: {@code ovsx.access-token.ott-expiration}
+     * Default: {@code PT5M}, expires in 5 minutes
+     */
+    @Value("${ovsx.access-token.ott-expiration:PT5M}")
+    private Duration ottExpiration;
+
+    /**
+     * The expiration period for one time trusted publishing tokens. The one time
+     * access token must be used in this period.
+     * <p>
+     * If {@code 0} is provided, the one time trusted publishing tokens do not expire.
+     * <p>
+     * Property: {@code ovsx.access-token.tpt-expiration}
+     * Default: {@code PT5M}, expires in 5 minutes
+     */
+    @Value("${ovsx.access-token.tpt-expiration:PT5M}")
+    private Duration tptExpiration;
+
+    /**
+     * The expiration period for long-lived personal access tokens.
      * <p>
      * If {@code 0} is provided, the access tokens do not expire.
      * <p>
@@ -44,7 +70,7 @@ public class AccessTokenConfig {
     private Duration expiration;
 
     /**
-     * The duration before the expiration of an access token
+     * The duration before the expiration of a long-lived personal access token
      * to send out a notification email to users.
      * <p>
      * Property: {@code ovsx.access-token.notification}
@@ -54,7 +80,7 @@ public class AccessTokenConfig {
     private Duration notification;
 
     /**
-     * Whether an email shall be sent when a token has expired.
+     * Whether an email shall be sent when a long-lived personal access token has expired.
      * <p>
      * Property: {@code ovsx.access-token.send-expired-mail}
      * Default: {@code true}
@@ -63,7 +89,7 @@ public class AccessTokenConfig {
     private boolean sendExpiredMail;
 
     /**
-     * The maximum number of expiring token notifications to handle
+     * The maximum number of expiring personal long-lived access token notifications to handle
      * within one job execution.
      * <p>
      * Property: {@code ovsx.access-token.max-token-notifications}
@@ -74,7 +100,7 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to disable expired
-     * access tokens.
+     * personal long-lived access tokens.
      * <p>
      * Property: {@code ovsx.access-token.expiration-schedule}
      * Default: every 15 min
@@ -84,13 +110,35 @@ public class AccessTokenConfig {
 
     /**
      * The cron schedule for the job to send out notifications
-     * for soon to be expired access tokens.
+     * for soon to be expired personal long-lived access tokens.
      * <p>
      * Property: {@code ovsx.access-token.notification-schedule}
      * Default: every 15 min
      */
     @Value("${ovsx.access-token.notification-schedule:30 */15 * * * *}")
     private String notificationSchedule;
+
+    /**
+     * The hash algorithm used for personal access tokens.
+     * <p>
+     * Property: {@code ovsx.access-token.token-hash-algorithm}
+     * Default: {@code SHA-256}
+     */
+    @Value("${ovsx.access-token.token-hash-algorithm:SHA-256}")
+    private String tokenHashAlgorithm;
+
+    /**
+     * The (instance wide) hash salt string used for personal access tokens.
+     * Note: if this instance wide salt changes, all existing/active
+     * personal access tokens will become invalid. Salt exists only in configuration,
+     * should never get into database. Default is empty string, and is not recommended
+     * for production!
+     * <p>
+     * Property: {@code ovsx.access-token.token-hash-salt}
+     * Default: {@code ''}
+     */
+    @Value("${ovsx.access-token.token-hash-salt:}")
+    private String tokenHashSalt;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     private boolean mirrorEnabled;
@@ -105,6 +153,22 @@ public class AccessTokenConfig {
 
     public @NonNull Duration getExpiration() {
         return this.expiration;
+    }
+
+    public boolean isOttTokenExpiryEnabled() {
+        return this.ottExpiration.isPositive();
+    }
+
+    public @NonNull Duration getOttExpiration() {
+        return ottExpiration;
+    }
+
+    public boolean isTptTokenExpiryEnabled() {
+        return this.tptExpiration.isPositive();
+    }
+
+    public @NonNull Duration getTptExpiration() {
+        return tptExpiration;
     }
 
     public boolean isTokenExpiryNotificationEnabled() {
@@ -139,6 +203,14 @@ public class AccessTokenConfig {
         return this.notificationSchedule;
     }
 
+    public @NonNull String getTokenHashAlgorithm() {
+        return tokenHashAlgorithm;
+    }
+
+    public @NonNull String getTokenHashSalt() {
+        return tokenHashSalt;
+    }
+
     @PostConstruct
     public void validate() {
         if (isTokenExpiryEnabled() && mirrorEnabled) {
@@ -150,6 +222,14 @@ public class AccessTokenConfig {
             throw new IllegalArgumentException(
                     "ovsx.access-token.expiration must be a non-negative duration, got: " + expiration);
         }
+        if (ottExpiration.isNegative()) {
+            throw new IllegalArgumentException(
+                    "ovsx.access-token.ott-expiration must be a non-negative duration, got: " + ottExpiration);
+        }
+        if (tptExpiration.isNegative()) {
+            throw new IllegalArgumentException(
+                    "ovsx.access-token.tpt-expiration must be a non-negative duration, got: " + tptExpiration);
+        }
 
         if (notification.isNegative()) {
             throw new IllegalArgumentException(
@@ -160,6 +240,17 @@ public class AccessTokenConfig {
             throw new IllegalArgumentException(
                     "ovsx.access-token.max-token-notifications must be a non-negative number, got: "
                             + maxTokenNotifications);
+        }
+        try {
+            MessageDigest.getInstance(tokenHashAlgorithm);
+        } catch (NullPointerException | NoSuchAlgorithmException e) {
+            throw new IllegalArgumentException(
+                    "ovsx.access-token.token-hash-algorithm must be non-null and a valid digest algorithm name, got: "
+                            + tokenHashAlgorithm,
+                    e);
+        }
+        if (tokenHashSalt == null) {
+            throw new IllegalArgumentException("ovsx.access-token.token-hash-salt must not be null");
         }
     }
 }

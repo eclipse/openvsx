@@ -51,6 +51,10 @@ jobs:
         working-directory: cli
         run: yarn
 
+      - name: Test CLI
+        working-directory: cli
+        run: yarn test
+
   build-and-push-webui:
     permissions:
       contents: read

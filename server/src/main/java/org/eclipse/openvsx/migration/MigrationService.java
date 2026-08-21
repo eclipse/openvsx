@@ -10,9 +10,7 @@
 package org.eclipse.openvsx.migration;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -30,6 +28,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.UUIDService;
 
 @Component
 public class MigrationService {
@@ -56,24 +55,27 @@ public class MigrationService {
     private final RepositoryService repositories;
     private final StorageUtilService storageUtil;
     private final JobRequestScheduler scheduler;
+    private final UUIDService uuidService;
 
     public MigrationService(
             EntityManager entityManager,
             RepositoryService repositories,
             StorageUtilService storageUtil,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            UUIDService uuidService
     ) {
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.storageUtil = storageUtil;
         this.scheduler = scheduler;
+        this.uuidService = uuidService;
     }
 
     @Transactional
     public void enqueueMigration(MigrationItem item) {
         item = entityManager.merge(item);
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
-        var jobId = UUID.nameUUIDFromBytes(jobIdText.getBytes(StandardCharsets.UTF_8));
+        var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());
         scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
         logger.info("Enqueued migration {}", jobIdText);

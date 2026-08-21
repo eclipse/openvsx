@@ -12,6 +12,7 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.Nullable;
 
 @Schema(
     name = "RegistryVersion",
@@ -32,6 +33,10 @@ public class RegistryVersionJson extends ResultJson {
     @Schema(description = "Maximum allowed extension package size in bytes")
     private long maxExtensionSize;
 
+    @Schema(description = "Audience for trusted publishing on the registry, if feature enabled.")
+    @Nullable
+    private String trustedPublishingAudience;
+
     public String getVersion() {
         return version;
     }
@@ -46,5 +51,13 @@ public class RegistryVersionJson extends ResultJson {
 
     public void setMaxExtensionSize(long maxExtensionSize) {
         this.maxExtensionSize = maxExtensionSize;
+    }
+
+    public String getTrustedPublishingAudience() {
+        return trustedPublishingAudience;
+    }
+
+    public void setTrustedPublishingAudience(String trustedPublishingAudience) {
+        this.trustedPublishingAudience = trustedPublishingAudience;
     }
 }

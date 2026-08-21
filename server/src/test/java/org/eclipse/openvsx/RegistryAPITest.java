@@ -79,11 +79,13 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
 
@@ -96,6 +98,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -123,7 +126,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CdnServiceConfig.class,
         ExtensionScanPersistenceService.class,
         LogService.class,
-        AccessTokenConfig.class,
         MailService.class
     }
 )
@@ -3098,7 +3100,8 @@ class RegistryAPITest {
         token.setCreatedTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         token.setValue("my_token");
         token.setActive(true);
-        Mockito.when(repositories.findAccessToken("my_token"))
+        token.setType(PersonalAccessTokenType.LLT);
+        Mockito.when(repositories.findPersonalAccessToken("my_token"))
                 .thenReturn(token);
         return token;
     }
@@ -3407,13 +3410,24 @@ class RegistryAPITest {
         }
 
         @Bean
+        UUIDService uuidService() {
+            return new UUIDService();
+        }
+
+        @Bean
+        AccessTokenConfig tokenConfig() {
+            return new AccessTokenConfig();
+        }
+
+        @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
+                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService);
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
         }
 
         @Bean
@@ -3451,7 +3465,8 @@ class RegistryAPITest {
                 CacheService cache,
                 ExtensionVersionIntegrityService integrityService,
                 SimilarityCheckService similarityCheckService,
-                PublishingConfig publishingConfig
+                PublishingConfig publishingConfig,
+                TrustedPublishingConfig trustedPublishingConfig
         ) {
             return new LocalRegistryService(
                     entityManager,
@@ -3468,12 +3483,18 @@ class RegistryAPITest {
                     integrityService,
                     similarityCheckService,
                     publishingConfig,
+                    trustedPublishingConfig,
                     CHANGES_FEED_LAG);
         }
 
         @Bean
         PublishingConfig publishingConfig() {
             return new PublishingConfig();
+        }
+
+        @Bean
+        TrustedPublishingConfig trustedPublishingConfig() {
+            return new TrustedPublishingConfig();
         }
 
         @Bean

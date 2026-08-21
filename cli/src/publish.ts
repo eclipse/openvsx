@@ -9,17 +9,19 @@
  ********************************************************************************/
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
 import { getPAT } from './pat';
-import { createTempFile, addEnvOptions } from './util';
+import { createTempFile, addEnvOptions, addTrustedPublishingEnvOptions } from './util';
 import { Extension, Registry } from './registry';
 import { checkLicense } from './check-license';
 import { readVSIXPackage } from './zip';
 import { PublishOptions, PublishCommonOptions } from './publish-options';
+import { getTrustedPublishingToken, useTrustedPublishing } from './trusted-publishing';
 
 /**
  * Publishes an extension.
  */
 export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
     addEnvOptions(options);
+    addTrustedPublishingEnvOptions(options);
     const internalPublishOptions: InternalPublishOptions[] = [];
     const packagePaths = options.packagePath || [undefined];
     const targets = options.targets || [undefined];
@@ -48,8 +50,10 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     }
 
     if (!options.pat) {
-        const namespace = (await readVSIXPackage(options.extensionFile!)).publisher;
-        options.pat = await getPAT(namespace, options);
+        const manifest = await readVSIXPackage(options.extensionFile!);
+        options.pat = useTrustedPublishing(options)
+            ? await getTrustedPublishingToken(registry, manifest.publisher, manifest.name, options)
+            : await getPAT(manifest.publisher, options);
     }
 
     let extension: Extension | undefined;
