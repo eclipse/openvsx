@@ -81,8 +81,7 @@ public class ExtensionVersion implements Serializable {
     private LocalDateTime timestamp;
 
     /**
-     * Who published this version. Recorded independently of {@code publishedWith} so that authorship
-     * survives the credential: a token can be revoked, expire or be deleted, and this stays.
+     * Who published this version.
      */
     @ManyToOne
     private UserData publishedBy;
