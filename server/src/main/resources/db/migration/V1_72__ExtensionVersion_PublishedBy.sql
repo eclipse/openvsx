@@ -25,5 +25,4 @@ CREATE INDEX extension_version__published_by_id__idx ON public.extension_version
 -- the database. The base migration left this constraint named by Hibernate; drop it by that generated
 -- name and recreate under the naming convention used everywhere else on this table.
 ALTER TABLE public.extension_version DROP CONSTRAINT fk70khj8pm0vacasuiiaq0w0r80;
-ALTER TABLE public.extension_version ADD CONSTRAINT extension_version_published_with_id_fkey
-FOREIGN KEY (published_with_id) REFERENCES public.personal_access_token(id) ON DELETE SET NULL;
+ALTER TABLE public.extension_version DROP COLUMN published_with_id;
