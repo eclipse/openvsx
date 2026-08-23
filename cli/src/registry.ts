@@ -67,6 +67,14 @@ export class Registry {
         }
     }
 
+    getRegistryVersion(): Promise<RegistryVersion> {
+        try {
+            return this.getJson(this.getUrl(['api', 'version']));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
     publish(file: string, pat: string): Promise<Extension> {
         try {
             const url = this.getUrl(['api', '-', 'publish'], { token: pat });
@@ -302,6 +310,12 @@ export interface Extension extends Response {
     badges?: Badge[];
     dependencies?: ExtensionReference[];
     bundledExtensions?: ExtensionReference[];
+}
+
+export interface RegistryVersion extends Response {
+    version: string;
+    maxExtensionSize: number;
+    trustedPublishingAudience?: string;
 }
 
 export interface AccessToken extends Response {

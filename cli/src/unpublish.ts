@@ -18,10 +18,16 @@ import { confirm } from '@inquirer/prompts';
 // directly to the exported value, regardless of how the importing tool handles interop.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import isCI = require('is-ci');
+import * as semver from 'semver';
 import { getPAT } from './pat';
 import { Registry, TargetPlatformVersion } from './registry';
 import { UnpublishOptions } from './unpublish-options';
 import { addEnvOptions, matchExtensionId, readManifest } from './util';
+
+/**
+ * Oldest registry version that exposes the `delete` endpoint used by this command.
+ */
+export const MIN_UNPUBLISH_REGISTRY_VERSION = '1.2.0';
 
 /**
  * Deletes an extension or some of its versions from the registry.
@@ -39,9 +45,11 @@ export async function unpublish(options: UnpublishOptions = {}): Promise<void> {
     }
 
     const [, namespace, extension] = match;
+    const registry = new Registry(options);
+    await ensureUnpublishSupported(registry);
+
     options.pat = await getPAT(namespace, { ...options, namespace }, false);
 
-    const registry = new Registry(options);
     const targetVersions = getTargetVersions(options);
     await confirmUnpublish(`${namespace}.${extension}`, targetVersions, registry.url, options.force);
 
@@ -72,6 +80,34 @@ async function readExtensionId(): Promise<string> {
         'Unable to read the extension identifier. Please supply it as an argument or run ovsx from the extension folder.' +
         (error ? `\n\n${error}` : '')
     );
+}
+
+/**
+ * Fails fast with an actionable message when the registry is known to be too old to support
+ * deleting extensions, rather than letting the delete request fail with a generic 404.
+ *
+ * The check is best-effort: registries that don't expose `/api/version` at all, or report a
+ * version that can't be parsed as semver (e.g. a build without `ovsx.registry.version` set),
+ * are assumed to support the endpoint. The delete request itself will surface any real
+ * incompatibility in that case.
+ */
+async function ensureUnpublishSupported(registry: Registry): Promise<void> {
+    let reportedVersion: string | undefined;
+    try {
+        reportedVersion = (await registry.getRegistryVersion()).version;
+    } catch {
+        return;
+    }
+
+    // `coerce` drops any prerelease/build suffix (e.g. `1.2.0-dev.0` or `1.2.0-SNAPSHOT` both
+    // become `1.2.0`), so development builds of a supported release compare as supported too.
+    const version = semver.coerce(reportedVersion);
+    if (version && semver.lt(version, MIN_UNPUBLISH_REGISTRY_VERSION)) {
+        throw new Error(
+            `The registry at ${registry.url} runs version ${reportedVersion}, but deleting extensions requires `
+            + `version ${MIN_UNPUBLISH_REGISTRY_VERSION} or later.`
+        );
+    }
 }
 
 /**

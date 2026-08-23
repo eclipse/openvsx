@@ -55,7 +55,7 @@ The issued token is valid for a few minutes only and is never written to the tok
 
 ### Delete Extensions
 
-You can delete extensions you published with `ovsx unpublish`, the counterpart of `vsce unpublish`. This requires an access token as described above, and the token's user must be a member of the extension's namespace: namespace owners may delete any version, other members only the versions they published themselves.
+You can delete extensions you published with `ovsx unpublish`, the counterpart of `vsce unpublish`. This requires an access token as described above, and the token's user must be a member of the extension's namespace: namespace owners may delete any version, other members only the versions they published themselves. This requires a registry running version 1.2.0 or later.
 
 Deleting is irreversible: the files of a deleted version are removed and its version number stays reserved, so the same version can never be published again. You will be asked for confirmation unless you pass `--force` (or `-f`).
 

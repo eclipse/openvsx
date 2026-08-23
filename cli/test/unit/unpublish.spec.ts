@@ -29,27 +29,43 @@ interface DeleteRequest {
 interface RegistryStub {
     url: string;
     requests: DeleteRequest[];
+    versionRequests: DeleteRequest[];
     close: () => Promise<void>;
 }
 
 /**
- * Stands in for the registry's `/api/{namespace}/{extension}/delete` endpoint.
+ * Stands in for the registry's `/api/{namespace}/{extension}/delete` endpoint, plus
+ * `/api/version` (reported as supporting `unpublish` unless overridden).
  */
-async function startRegistryStub(status: number = 200, body: unknown = { success: 'Deleted 1 version' }): Promise<RegistryStub> {
+async function startRegistryStub(
+    status: number = 200,
+    body: unknown = { success: 'Deleted 1 version' },
+    version: { status?: number; body?: unknown } = {}
+): Promise<RegistryStub> {
     const requests: DeleteRequest[] = [];
+    const versionRequests: DeleteRequest[] = [];
+    const versionStatus = version.status ?? 200;
+    const versionBody = version.body ?? { version: '1.2.0' };
     const server = http.createServer((req, res) => {
         const url = new URL(req.url ?? '/', 'http://127.0.0.1');
         let raw = '';
         req.on('data', chunk => raw += chunk);
         req.on('end', () => {
-            requests.push({
+            const request = {
                 method: req.method,
                 pathname: url.pathname,
                 query: url.searchParams,
                 body: raw.length > 0 ? JSON.parse(raw) : undefined
-            });
-            res.writeHead(status, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(body));
+            };
+            if (url.pathname === '/api/version') {
+                versionRequests.push(request);
+                res.writeHead(versionStatus, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(versionBody));
+            } else {
+                requests.push(request);
+                res.writeHead(status, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(body));
+            }
         });
     });
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -57,6 +73,7 @@ async function startRegistryStub(status: number = 200, body: unknown = { success
     return {
         url: `http://127.0.0.1:${port}`,
         requests,
+        versionRequests,
         close: () => new Promise<void>(resolve => server.close(() => resolve()))
     };
 }
@@ -75,8 +92,12 @@ describe('unpublish', () => {
         await Promise.all(stubs.splice(0).map(stub => stub.close()));
     });
 
-    async function givenRegistry(status?: number, body?: unknown): Promise<RegistryStub> {
-        const stub = await startRegistryStub(status, body);
+    async function givenRegistry(
+        status?: number,
+        body?: unknown,
+        version?: { status?: number; body?: unknown }
+    ): Promise<RegistryStub> {
+        const stub = await startRegistryStub(status, body, version);
         stubs.push(stub);
         return stub;
     }
@@ -185,6 +206,61 @@ describe('unpublish', () => {
 
         await expect(unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url }))
             .rejects.toThrow('Forbidden');
+    });
+
+    describe('registry version check', () => {
+        it('refuses to delete on a registry older than 1.2.0', async () => {
+            const registry = await givenRegistry(200, undefined, { body: { version: '1.1.1' } });
+
+            await expect(unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url }))
+                .rejects.toThrow(
+                    `The registry at ${registry.url} runs version 1.1.1, but deleting extensions requires version 1.2.0 or later.`
+                );
+            expect(registry.versionRequests).toHaveLength(1);
+            expect(registry.requests).toHaveLength(0);
+        });
+
+        it('proceeds when the registry is on 1.2.0 or later', async () => {
+            const registry = await givenRegistry(200, undefined, { body: { version: '1.2.0' } });
+
+            await unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url });
+
+            expect(registry.requests).toHaveLength(1);
+        });
+
+        it('proceeds when the registry does not expose `/api/version`', async () => {
+            const registry = await givenRegistry(200, undefined, { status: 404, body: {} });
+
+            await unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url });
+
+            expect(registry.requests).toHaveLength(1);
+        });
+
+        it('proceeds when the reported version is not valid semver', async () => {
+            const registry = await givenRegistry(200, undefined, { body: { version: 'unknown' } });
+
+            await unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url });
+
+            expect(registry.requests).toHaveLength(1);
+        });
+
+        it('proceeds on a development build of a supported release, e.g. `1.2.0-dev.0`', async () => {
+            const registry = await givenRegistry(200, undefined, { body: { version: '1.2.0-dev.0' } });
+
+            await unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url });
+
+            expect(registry.requests).toHaveLength(1);
+        });
+
+        it('refuses a development build of an unsupported release, e.g. `1.1.9-dev.0`', async () => {
+            const registry = await givenRegistry(200, undefined, { body: { version: '1.1.9-dev.0' } });
+
+            await expect(unpublish({ extensionId: 'foo.bar', pat: 'the.pat', force: true, registryUrl: registry.url }))
+                .rejects.toThrow(
+                    `The registry at ${registry.url} runs version 1.1.9-dev.0, but deleting extensions requires version 1.2.0 or later.`
+                );
+            expect(registry.requests).toHaveLength(0);
+        });
     });
 
     describe('extension identifier from package.json', () => {
