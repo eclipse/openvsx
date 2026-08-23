@@ -136,7 +136,7 @@ ovsx:
   integrity:
     key-pair: create # create, renew, delete, 'undefined'
   registry:
-    version: 'v1.1.0-dev'
+    version: 'v1.2.0-dev'
   storage:
     # an example config using minio (use docker compose --profile minio up)
     # and login to localhost:9000 and create a bucket with name test

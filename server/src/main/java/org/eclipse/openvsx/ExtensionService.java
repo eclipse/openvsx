@@ -23,8 +23,10 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -35,6 +37,7 @@ import org.eclipse.openvsx.admin.RemoveFileJobRequest;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -292,6 +295,129 @@ public class ExtensionService {
 
         // otherwise do not allow reactivation
         return false;
+    }
+
+    /**
+     * Soft-deletes extension versions on behalf of {@code user}, applying the authorization shared by the
+     * session-authenticated and the token-authenticated delete endpoints: only namespace members may
+     * delete, owners may delete any version while other members are restricted to the versions they
+     * published themselves.
+     * <p>
+     * The requested versions may be given incompletely: an entry without target platform selects every
+     * target platform of that version that the user is allowed to delete. A {@code null} list selects
+     * <em>all</em> versions the user is allowed to delete, i.e. the extension as a whole. An empty list
+     * deletes nothing, mirroring {@link #deleteExtension}.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtensionAsUser(
+            UserData user,
+            String namespaceName,
+            String extensionName,
+            @Nullable List<TargetPlatformVersionJson> targetVersions
+    ) throws ErrorResultException {
+        var namespace = repositories.findNamespace(namespaceName);
+        if (namespace == null) {
+            throw new ErrorResultException(
+                    "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName),
+                    HttpStatus.NOT_FOUND);
+        }
+
+        // Authorize before touching the extension: only namespace members may delete.
+        // Owners may delete any version; non-owner members are restricted to versions
+        // they published themselves (enforced via restrictedToUser).
+        var isOwner = repositories.isNamespaceOwner(user, namespace);
+        if (!isOwner && !repositories.hasMembership(user, namespace)) {
+            throw new ErrorResultException(
+                    "Insufficient access rights for namespace: " + namespaceName,
+                    HttpStatus.FORBIDDEN);
+        }
+
+        var targets = resolveTargetPlatformVersions(user, namespace, extensionName, isOwner, targetVersions);
+        return deleteExtension(user, !isOwner, namespaceName, extensionName, targets);
+    }
+
+    /**
+     * Completes the requested target platform versions against the versions that actually exist, so that
+     * {@link #deleteExtension} always receives fully qualified (target platform, version) pairs.
+     * <p>
+     * Entries that already name a target platform are passed through unchanged; a {@code null} list and
+     * entries without a target platform are expanded to the matching versions the user may delete.
+     */
+    private TargetPlatformVersion[] resolveTargetPlatformVersions(
+            UserData user,
+            Namespace namespace,
+            String extensionName,
+            boolean isOwner,
+            @Nullable List<TargetPlatformVersionJson> targetVersions
+    ) {
+        if (targetVersions != null
+                && targetVersions.stream().noneMatch(target -> StringUtils.isBlank(target.targetPlatform()))) {
+            return CollectionUtil.toArray(
+                    targetVersions,
+                    TargetPlatformVersionJson::toTargetPlatformVersion,
+                    TargetPlatformVersion[]::new);
+        }
+
+        var deletable = findDeletableVersions(user, namespace, extensionName, isOwner);
+        if (targetVersions == null) {
+            return deletable.toArray(TargetPlatformVersion[]::new);
+        }
+
+        // Keep the order the versions were requested in and drop duplicates, e.g. when a version is both
+        // named explicitly for one target platform and expanded from an entry without target platform.
+        var resolved = new LinkedHashSet<TargetPlatformVersion>();
+        for (var target : targetVersions) {
+            if (!StringUtils.isBlank(target.targetPlatform())) {
+                resolved.add(target.toTargetPlatformVersion());
+                continue;
+            }
+
+            var matching = deletable.stream()
+                    .filter(deletableVersion -> deletableVersion.version().equals(target.version()))
+                    .toList();
+            if (matching.isEmpty()) {
+                throw new ErrorResultException(
+                        "Extension not found: "
+                                + NamingUtil.toLogFormat(namespace.getName(), extensionName, target.version()),
+                        HttpStatus.NOT_FOUND);
+            }
+            resolved.addAll(matching);
+        }
+
+        return resolved.toArray(TargetPlatformVersion[]::new);
+    }
+
+    /**
+     * Returns every (target platform, version) pair of the given extension that {@code user} may delete:
+     * all of them for a namespace owner, only the ones they published themselves for another member.
+     * Already removed versions are left out, as they are permanent tombstones that cannot be deleted again.
+     */
+    private List<TargetPlatformVersion> findDeletableVersions(
+            UserData user,
+            Namespace namespace,
+            String extensionName,
+            boolean isOwner
+    ) {
+        var extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null) {
+            throw new ErrorResultException(
+                    "Extension not found: " + NamingUtil.toExtensionId(namespace.getName(), extensionName),
+                    HttpStatus.NOT_FOUND);
+        }
+
+        var versions = isOwner
+                ? repositories.findTargetPlatformsGroupedByVersion(extension)
+                : repositories.findTargetPlatformsGroupedByVersion(extension, user);
+
+        return versions.stream()
+                .flatMap(
+                        version -> version.targetPlatforms().stream()
+                                .filter(targetPlatform -> !targetPlatform.removed())
+                                .map(
+                                        targetPlatform -> new TargetPlatformVersion(
+                                                targetPlatform.targetPlatform(),
+                                                version.version())))
+                .toList();
     }
 
     /**

@@ -21,6 +21,8 @@ export * from './registry';
 export * from './registry-options';
 export * from './trusted-publishing';
 export * from './trusted-publishing-options';
+export * from './unpublish';
+export * from './unpublish-options';
 export * from './verify-pat';
 export * from './verify-pat-options';
 export { isLicenseOk } from './check-license';
