@@ -276,7 +276,7 @@ public class UserAPI {
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
                     json.setRemoved(latest.isExtensionRemoved());
-                    json.setVerified(isExtensionVerified(latest));
+                    json.setVerified(repositories.isVerifiedPublisher(latest));
                     json.setFiles(fileUrls.get(latest.getId()));
 
                     // Add scan/review status information
@@ -285,24 +285,6 @@ public class UserAPI {
                     return json;
                 })
                 .toList();
-    }
-
-    /**
-     * Whether {@code extVersion} counts as verified: published by a privileged user, or by a member of
-     * a namespace that has at least one owner. Mirrors {@code LocalRegistryService}'s own computation
-     * for the same {@code ExtensionJson.verified} field on the public endpoints.
-     */
-    private boolean isExtensionVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
-            return false;
-        }
-
-        var user = extVersion.getPublishedWith().getUser();
-        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
-            return true;
-        }
-
-        return repositories.isVerified(extVersion.getExtension().getNamespace(), user);
     }
 
     /**

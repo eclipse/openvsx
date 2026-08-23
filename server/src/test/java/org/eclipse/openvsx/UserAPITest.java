@@ -358,7 +358,7 @@ class UserAPITest {
         membership.setUser(userData);
         membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
         Mockito.when(repositories.findMemberships(userData)).thenReturn(Streamable.of(membership));
-        Mockito.when(repositories.isVerified(namespace, userData)).thenReturn(false);
+        Mockito.when(repositories.isVerifiedPublisher(latest)).thenReturn(false);
 
         var scan = new ExtensionScan();
         scan.setStatus(ScanStatus.QUARANTINED);

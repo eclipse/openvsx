@@ -1069,7 +1069,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.setVersionAlias(versionAlias);
-        json.setVerified(isVerified(extVersion));
+        json.setVerified(repositories.isVerifiedPublisher(extVersion));
         json.setReviewCount(Optional.ofNullable(extension.getReviewCount()).orElse(0L));
         var serverUrl = UrlUtil.getBaseUrl();
         json.setNamespaceUrl(createApiUrl(serverUrl, "api", json.getNamespace()));
@@ -1339,20 +1339,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
-            return false;
-        }
-
-        var user = extVersion.getPublishedWith().getUser();
-        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
-            return true;
-        }
-
-        var namespace = extVersion.getExtension().getNamespace();
-        return repositories.isVerified(namespace, user);
-    }
-
     private boolean isVerified(
             ExtensionVersion extVersion,
             Map<Long, List<NamespaceMembership>> membershipsByNamespaceId
@@ -1362,7 +1348,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         var user = extVersion.getPublishedWith().getUser();
-        if (UserData.Role.PRIVILEGED.equals(user.getRole())) {
+        if (user.isPrivileged()) {
             return true;
         }
 

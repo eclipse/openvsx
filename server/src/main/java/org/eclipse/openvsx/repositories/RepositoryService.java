@@ -498,6 +498,28 @@ public class RepositoryService {
         return membershipJooqRepo.isVerified(namespace, user);
     }
 
+    /**
+     * Whether {@code user} counts as a verified publisher for {@code namespace}: a privileged user
+     * bypasses per-namespace verification entirely; otherwise this defers to
+     * {@link #isVerified(Namespace, UserData)} (member of a namespace with at least one owner).
+     */
+    public boolean isVerifiedPublisher(Namespace namespace, UserData user) {
+        return user.isPrivileged() || isVerified(namespace, user);
+    }
+
+    /**
+     * Whether the version's publisher counts as verified, per {@link #isVerifiedPublisher(Namespace, UserData)}.
+     * {@code false} when the version records no publisher.
+     */
+    public boolean isVerifiedPublisher(ExtensionVersion extVersion) {
+        var publishedWith = extVersion.getPublishedWith();
+        if (publishedWith == null) {
+            return false;
+        }
+
+        return isVerifiedPublisher(extVersion.getExtension().getNamespace(), publishedWith.getUser());
+    }
+
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
     }

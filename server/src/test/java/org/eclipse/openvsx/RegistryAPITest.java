@@ -3393,7 +3393,7 @@ class RegistryAPITest {
                     .thenReturn(true);
             Mockito.when(repositories.canPublishInNamespace(token.getUser(), namespace))
                     .thenReturn(true);
-            Mockito.when(repositories.isVerified(namespace, token.getUser()))
+            Mockito.when(repositories.isVerifiedPublisher(any(ExtensionVersion.class)))
                     .thenReturn(true);
             // Mock findMemberships(user) for similarity check
             Mockito.when(repositories.findMemberships(token.getUser()))
@@ -3401,7 +3401,7 @@ class RegistryAPITest {
         } else if (mode.equals("contributor") || mode.equals("sole-contributor") || mode.equals("existing")) {
             Mockito.when(repositories.canPublishInNamespace(token.getUser(), namespace))
                     .thenReturn(true);
-            Mockito.when(repositories.isVerified(namespace, token.getUser()))
+            Mockito.when(repositories.isVerifiedPublisher(any(ExtensionVersion.class)))
                     .thenReturn(true);
             if (mode.equals("contributor")) {
                 var otherUser = new UserData();
@@ -3412,7 +3412,7 @@ class RegistryAPITest {
                 ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                         .thenReturn(Streamable.of(ownerMem));
-                Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                Mockito.when(repositories.isVerifiedPublisher(any(ExtensionVersion.class)))
                         .thenReturn(true);
                 // Mock findMemberships(user) for similarity check - user is a contributor
                 var contributorMem = new NamespaceMembership();
@@ -3424,7 +3424,7 @@ class RegistryAPITest {
             } else {
                 Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                         .thenReturn(Streamable.empty());
-                Mockito.when(repositories.isVerified(namespace, token.getUser()))
+                Mockito.when(repositories.isVerifiedPublisher(any(ExtensionVersion.class)))
                         .thenReturn(false);
                 // Mock findMemberships(user) for similarity check - user might be sole contributor
                 var contributorMem = new NamespaceMembership();
@@ -3447,6 +3447,10 @@ class RegistryAPITest {
                     .thenReturn(true);
             if (mode.equals("privileged")) {
                 token.getUser().setRole(UserData.Role.PRIVILEGED);
+                // A privileged user bypasses per-namespace verification (RepositoryService.isVerifiedPublisher),
+                // regardless of namespace membership.
+                Mockito.when(repositories.isVerifiedPublisher(any(ExtensionVersion.class)))
+                        .thenReturn(true);
                 // Mock findMemberships(user) for similarity check - privileged user might have memberships
                 Mockito.when(repositories.findMemberships(token.getUser()))
                         .thenReturn(Streamable.empty());

@@ -163,7 +163,7 @@ class NamespaceOwnershipCheckScannerTest {
                 .startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
-        verify(repositories, never()).isVerified(any(), any());
+        verify(repositories, never()).isVerifiedPublisher(any(), any());
     }
 
     @Test
@@ -178,7 +178,7 @@ class NamespaceOwnershipCheckScannerTest {
                 .startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
-        verify(repositories, never()).isVerified(any(), any());
+        verify(repositories, never()).isVerifiedPublisher(any(), any());
     }
 
     @Test
@@ -187,7 +187,7 @@ class NamespaceOwnershipCheckScannerTest {
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
+        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -202,7 +202,7 @@ class NamespaceOwnershipCheckScannerTest {
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
+        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -219,7 +219,7 @@ class NamespaceOwnershipCheckScannerTest {
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH_DIFFERENT_CASE);
-        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
+        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -238,7 +238,7 @@ class NamespaceOwnershipCheckScannerTest {
                 .startScan(new Scanner.Command(1L, "scan-1"));
 
         assertFalse(invocation.result().isClean());
-        verify(repositories, never()).isVerified(any(), any());
+        verify(repositories, never()).isVerifiedPublisher(any(), any());
     }
 
     @Test
@@ -247,7 +247,7 @@ class NamespaceOwnershipCheckScannerTest {
         var extVersion = extensionVersion(user);
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerified(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
+        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
         when(repositories.findActiveExtension(anyString(), anyString())).thenReturn(extVersion.getExtension());
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)

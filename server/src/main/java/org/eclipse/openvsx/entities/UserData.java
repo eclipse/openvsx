@@ -109,6 +109,14 @@ public class UserData implements Serializable {
         return role;
     }
 
+    /**
+     * Whether this user bypasses per-namespace verification entirely, e.g. in
+     * {@link org.eclipse.openvsx.repositories.RepositoryService#isVerifiedPublisher}.
+     */
+    public boolean isPrivileged() {
+        return Role.PRIVILEGED.equals(role);
+    }
+
     public @Nullable String getRoleAsString() {
         return Optional.ofNullable(this.getRole()).map(Role::toString).orElse(null);
     }
