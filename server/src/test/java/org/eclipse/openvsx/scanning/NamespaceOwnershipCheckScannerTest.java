@@ -42,7 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class VSCodeGalleryExistenceCheckScannerTest {
+class NamespaceOwnershipCheckScannerTest {
 
     @Mock
     private RestTemplate restTemplate;
@@ -82,14 +82,14 @@ class VSCodeGalleryExistenceCheckScannerTest {
     private static final ExtensionQueryResult EMPTY = new ExtensionQueryResult(
             List.of(new ExtensionQueryResult.ResultItem(List.of(), List.of())));
 
-    private VSCodeGalleryExistenceCheckScanner newScanner(boolean enforced, boolean checkActiveExtensions) {
-        var config = new VSCodeGalleryExistenceCheckConfig(
+    private NamespaceOwnershipCheckScanner newScanner(boolean enforced, boolean checkActiveExtensions) {
+        var config = new NamespaceOwnershipCheckConfig(
                 true,
                 true,
                 enforced,
                 checkActiveExtensions,
                 "http://irrelevant");
-        return new VSCodeGalleryExistenceCheckScanner(
+        return new NamespaceOwnershipCheckScanner(
                 config,
                 restTemplate,
                 repositories,

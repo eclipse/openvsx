@@ -34,24 +34,23 @@ import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 
 /**
- * Scanner that blocks publishing to a namespace/extension identifier that already exists on the
- * upstream VS Code Marketplace, unless the publishing NS is verified (has owner, not only
- * contributors) namespace. Guards against namespace-squatting relative to the upstream
- * gallery identity.
+ * Scanner that guards against namespace-squatting: it blocks publishing to a namespace/extension
+ * identifier that already exists in a referenced external gallery (by default the upstream VS Code
+ * Marketplace), unless the publishing namespace is verified (has an owner, not only contributors).
  */
 @Component
-public class VSCodeGalleryExistenceCheckScanner implements Scanner {
+public class NamespaceOwnershipCheckScanner implements Scanner {
 
-    public static final String TYPE = "gallery-existence-check";
+    public static final String TYPE = "namespace-ownership-check";
 
-    private final VSCodeGalleryExistenceCheckConfig config;
+    private final NamespaceOwnershipCheckConfig config;
     private final RestTemplate restTemplate;
     private final RepositoryService repositories;
     private final EntityManager entityManager;
     private final ScannerRegistry scannerRegistry;
 
-    public VSCodeGalleryExistenceCheckScanner(
-            VSCodeGalleryExistenceCheckConfig config,
+    public NamespaceOwnershipCheckScanner(
+            NamespaceOwnershipCheckConfig config,
             RestTemplate restTemplate,
             RepositoryService repositories,
             EntityManager entityManager,
@@ -110,8 +109,8 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
         }
 
         try {
-            boolean upstreamExists = upstreamExists(extension);
-            if (!upstreamExists) {
+            boolean existsInReferencedGallery = existsInReferencedGallery(extension);
+            if (!existsInReferencedGallery) {
                 return new Scanner.Invocation.Completed(Scanner.Result.clean());
             }
         } catch (RestClientException ex) {
@@ -130,22 +129,22 @@ public class VSCodeGalleryExistenceCheckScanner implements Scanner {
             return new Scanner.Invocation.Completed(
                     Scanner.Result.clean(
                             "Extension '" + NamingUtil.toExtensionId(extension)
-                                    + "' exists on the VS Code Marketplace and target namespace is verified."));
+                                    + "' exists in the referenced gallery and target namespace is verified."));
         }
 
         var threat = new Scanner.Threat(
                 TYPE + "-conflict",
-                "Extension '" + NamingUtil.toExtensionId(extension) + "' exists on the VS Code Marketplace, " +
+                "Extension '" + NamingUtil.toExtensionId(extension) + "' exists in the referenced gallery, " +
                         "but the target namespace is not verified.",
                 "high");
         return new Scanner.Invocation.Completed(Scanner.Result.withThreats(List.of(threat)));
     }
 
     /**
-     * Method reaching upstream; if returns {@code true} or {@code false} only if check was performed and result was
-     * clear about it. In any other case method will throw.
+     * Queries the referenced gallery; returns {@code true} or {@code false} only if the check was
+     * performed and the result was clear about it. In any other case this method throws.
      */
-    private boolean upstreamExists(Extension extension) throws RestClientException {
+    private boolean existsInReferencedGallery(Extension extension) throws RestClientException {
         var requestUrl = UrlUtil.createApiUrl(config.getGalleryUrl(), "extensionquery");
         var requestData = new ExtensionQueryParam(
                 List.of(

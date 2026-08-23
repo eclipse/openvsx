@@ -17,65 +17,65 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for {@link VSCodeGalleryExistenceCheckScanner}, extracted, to simplify testing.
+ * Configuration for {@link NamespaceOwnershipCheckScanner}, extracted, to simplify testing.
  */
 @Configuration
-public class VSCodeGalleryExistenceCheckConfig {
+public class NamespaceOwnershipCheckConfig {
     /**
-     * Is NS verification check for upstream existing extensions enabled or not.
+     * Is the namespace ownership check for extensions existing in the referenced gallery enabled or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-existence-check.enabled}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.enabled}
      * Default: {@code false}
      */
-    @Value("${ovsx.scanning.gallery-existence-check.enabled:false}")
+    @Value("${ovsx.scanning.namespace-ownership-check.enabled:false}")
     private boolean enabled;
 
     /**
-     * Is NS verification check for upstream existing extensions required or not.
+     * Is the namespace ownership check required or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-existence-check.required}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.required}
      * Default: {@code true}
      */
-    @Value("${ovsx.scanning.gallery-existence-check.required:true}")
+    @Value("${ovsx.scanning.namespace-ownership-check.required:true}")
     private boolean required;
 
     /**
-     * Is NS verification check for upstream existing extensions enforced or not.
+     * Is the namespace ownership check enforced or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-existence-check.enforced}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.enforced}
      * Default: {@code true}
      */
-    @Value("${ovsx.scanning.gallery-existence-check.enforced:true}")
+    @Value("${ovsx.scanning.namespace-ownership-check.enforced:true}")
     private boolean enforced;
 
     /**
-     * Is NS verification check needed to run on already existing and active extensions or not.
+     * Is the namespace ownership check needed to run on already existing and active extensions or not.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-existence-check.checkActiveExtensions}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.checkActiveExtensions}
      * Default: {@code false}
      */
-    @Value("${ovsx.scanning.gallery-existence-check.checkActiveExtensions:false}")
+    @Value("${ovsx.scanning.namespace-ownership-check.checkActiveExtensions:false}")
     private boolean checkActiveExtensions;
 
     /**
-     * The upstream gallery API URL to perform the existence checks against.
+     * The referenced gallery API URL to perform the namespace ownership checks against.
      * <p>
-     * Property: {@code ovsx.scanning.gallery-existence-check.gallery-url}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.gallery-url}
      * Default: {@code ""}
      */
-    @Value("${ovsx.scanning.gallery-existence-check.gallery-url:}")
+    @Value("${ovsx.scanning.namespace-ownership-check.gallery-url:}")
     private String galleryUrl;
 
     /**
      * Default constructor.
      */
-    public VSCodeGalleryExistenceCheckConfig() {
+    public NamespaceOwnershipCheckConfig() {
     }
 
     /**
      * For testing.
      */
-    public VSCodeGalleryExistenceCheckConfig(
+    public NamespaceOwnershipCheckConfig(
             boolean enabled,
             boolean required,
             boolean enforced,
@@ -113,7 +113,7 @@ public class VSCodeGalleryExistenceCheckConfig {
     public void validate() {
         if (enabled) {
             if (galleryUrl == null || galleryUrl.isEmpty()) {
-                throw new IllegalStateException("ovsx.scanning.gallery-existence-check.gallery-url must be set");
+                throw new IllegalStateException("ovsx.scanning.namespace-ownership-check.gallery-url must be set");
             }
         }
     }
