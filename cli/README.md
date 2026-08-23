@@ -24,6 +24,8 @@ Variants:
  * `ovsx publish <file>`
    publishes an already packaged file.
 
+Before uploading, `ovsx` checks the packaged extension's size against the limit the registry reports on `/api/version`, so an oversized package is rejected locally instead of failing after the whole file has been uploaded.
+
 ### Trusted Publishing
 
 Instead of a long-lived personal access token, `ovsx` can publish from a CI workflow with a short-lived token that the registry issues in exchange for an OIDC ID token of the workflow. The registry only issues such a token if the workflow matches a trusted publisher that a namespace owner registered under [trusted publishers](https://open-vsx.org/user-settings/trusted-publishers). No access token needs to be stored as a secret.

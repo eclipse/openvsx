@@ -2,6 +2,13 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [next] (unreleased)
+
+#### Added
+
+- Add `unpublish` command to delete an extension or some of its versions, mirroring `vsce unpublish` ([#1958](https://github.com/eclipse-openvsx/openvsx/issues/1958)); requires a registry running version 1.2.0 or later, which `unpublish` checks for before deleting
+- `publish` checks the packaged extension's size against the limit reported by the registry's `/api/version` endpoint before uploading, instead of failing only after the upload completes ([#1953](https://github.com/eclipse-openvsx/openvsx/issues/1953))
+
 ### [v1.1.1] (09/08/2026)
 
 ### Dependencies
@@ -14,7 +21,6 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Added
 
-- Add `unpublish` command to delete an extension or some of its versions, mirroring `vsce unpublish` ([#1958](https://github.com/eclipse-openvsx/openvsx/issues/1958)); requires a registry running version 1.2.0 or later, which `unpublish` checks for before deleting
 - Add an encrypted filestore as fallback to the system keychain if it cant be accessed ([#1950](https://github.com/eclipse/openvsx/pull/1950))
 - Add `--allow-missing-repository` option to the `publish` command, passed on to `vsce` to package an extension whose `package.json` has no `repository` field without asking for confirmation ([#1735](https://github.com/eclipse-openvsx/openvsx/issues/1735))
 - Support trusted publishing: `publish` can exchange an OIDC ID token for a short-lived publishing token, via `--trusted-publishing`, `--idToken` and `--oidcAudience`

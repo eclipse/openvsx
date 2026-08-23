@@ -7,9 +7,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
+import * as fs from 'fs';
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
 import { getPAT } from './pat';
-import { createTempFile, addEnvOptions, addTrustedPublishingEnvOptions } from './util';
+import { createTempFile, addEnvOptions, addTrustedPublishingEnvOptions, formatBytes } from './util';
 import { Extension, Registry } from './registry';
 import { checkLicense } from './check-license';
 import { readVSIXPackage } from './zip';
@@ -22,16 +23,35 @@ import { getTrustedPublishingToken, useTrustedPublishing } from './trusted-publi
 export async function publish(options: PublishOptions = {}): Promise<PromiseSettledResult<void>[]> {
     addEnvOptions(options);
     addTrustedPublishingEnvOptions(options);
+
+    // Looked up once and shared by every target/package below, rather than once per artifact.
+    const maxExtensionSize = await getMaxExtensionSize(new Registry(options));
+
     const internalPublishOptions: InternalPublishOptions[] = [];
     const packagePaths = options.packagePath || [undefined];
     const targets = options.targets || [undefined];
     for (const packagePath of packagePaths) {
         for (const target of targets) {
-            internalPublishOptions.push({ ...options, packagePath: packagePath, target: target });
+            internalPublishOptions.push({ ...options, packagePath: packagePath, target: target, maxExtensionSize });
         }
     }
 
     return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(publishOptions)));
+}
+
+/**
+ * Looks up the registry's configured extension size limit, so an oversized package can be rejected
+ * locally before the upload instead of after transferring the whole payload.
+ *
+ * Best-effort: registries that don't expose `/api/version`, or don't report a limit, return
+ * `undefined` here, and the upload proceeds to let the server enforce its own limit as before.
+ */
+async function getMaxExtensionSize(registry: Registry): Promise<number | undefined> {
+    try {
+        return (await registry.getRegistryVersion()).maxExtensionSize || undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
@@ -48,6 +68,8 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     } else if (options.preRelease) {
         console.warn("Ignoring option '--pre-release' for prepackaged extension.");
     }
+
+    await ensureWithinSizeLimit(options.extensionFile!, options.maxExtensionSize, registry.url);
 
     if (!options.pat) {
         const manifest = await readVSIXPackage(options.extensionFile!);
@@ -80,6 +102,26 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     console.log(`\ud83d\ude80  Published ${description}`);
     if (extension.warning) {
         console.log(`\n!!  ${extension.warning}`);
+    }
+}
+
+/**
+ * Fails fast with an actionable message when the packaged extension is already known to exceed the
+ * registry's configured size limit, rather than uploading the whole file only to have the server
+ * reject it. `maxSize` is `undefined` when the limit couldn't be determined, in which case the check
+ * is skipped and the upload is left to the server to accept or reject.
+ */
+async function ensureWithinSizeLimit(extensionFile: string, maxSize: number | undefined, registryUrl: string): Promise<void> {
+    if (!maxSize) {
+        return;
+    }
+
+    const { size } = await fs.promises.stat(extensionFile);
+    if (size > maxSize) {
+        throw new Error(
+            `The extension package (${formatBytes(size)}) exceeds the size limit of ${formatBytes(maxSize)} `
+            + `accepted by the registry at ${registryUrl}.`
+        );
     }
 }
 
@@ -124,4 +166,10 @@ interface InternalPublishOptions extends PublishCommonOptions {
      * Whether to do dependency detection via npm or yarn
      */
     dependencies?: boolean;
+
+    /**
+     * The registry's configured extension size limit in bytes, looked up once via `/api/version` and
+     * shared across every target/package being published. `undefined` when it couldn't be determined.
+     */
+    maxExtensionSize?: number;
 }
