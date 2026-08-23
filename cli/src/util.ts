@@ -105,14 +105,14 @@ export function handleError(debug?: boolean, additionalMessage?: string, exit: b
  * the same way.
  */
 export function formatBytes(bytes: number): string {
-    const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+    const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
     let size = bytes;
     let unit = 0;
     while (size >= 1024 && unit < units.length - 1) {
         size /= 1024;
         unit++;
     }
-    return `${unit === 0 ? size : size.toFixed(1)} ${units[unit]}`;
+    return `${Math.floor(size)} ${units[unit]}`;
 }
 
 export function statusError(response: http.IncomingMessage): Error {
