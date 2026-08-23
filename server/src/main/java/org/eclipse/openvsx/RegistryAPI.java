@@ -1575,13 +1575,15 @@ public class RegistryAPI {
                         .error("No versions specified. Provide the versions to delete or set 'allVersions'.");
                 return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
             }
+            if (targetVersions != null
+                    && targetVersions.stream().anyMatch(target -> StringUtils.isBlank(target.version()))) {
+                var json = ResultJson.error("Missing 'version' for a requested target platform version to delete.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
 
             // null tells the service to delete every version the token's user is allowed to delete
             var versions = allVersions ? null : targetVersions;
             return ResponseEntity.ok(local.deleteExtension(namespace, extension, versions, token));
-        } catch (NotFoundException exc) {
-            var json = ResultJson.error("Extension not found: " + NamingUtil.toExtensionId(namespace, extension));
-            return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

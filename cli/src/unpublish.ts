@@ -35,7 +35,7 @@ export const MIN_UNPUBLISH_REGISTRY_VERSION = '1.2.0';
 export async function unpublish(options: UnpublishOptions = {}): Promise<void> {
     addEnvOptions(options);
     if (options.targets && !options.versions) {
-        throw new Error("Please specify the versions to delete with '--version' when using '--target'.");
+        throw new Error("Please specify the versions to delete with '--versions' when using '--target'.");
     }
 
     const extensionId = options.extensionId ?? await readExtensionId();

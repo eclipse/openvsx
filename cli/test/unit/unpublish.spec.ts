@@ -119,7 +119,7 @@ describe('unpublish', () => {
                 targets: ['linux-x64'],
                 registryUrl: registry.url
             })
-        ).rejects.toThrow("Please specify the versions to delete with '--version' when using '--target'.");
+        ).rejects.toThrow("Please specify the versions to delete with '--versions' when using '--target'.");
         expect(registry.requests).toHaveLength(0);
     });
 

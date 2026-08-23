@@ -102,7 +102,7 @@ module.exports = function (argv: string[]): void {
         .option('-v, --versions <versions...>', 'Only delete the given versions.')
         .option('-t, --target <targets...>', 'Only delete the given target architectures of the given versions.')
         .option('-f, --force', 'Skip the confirmation prompt.')
-        .action((extensionId: string, { versions, target, force }) => {
+        .action((extensionId: string | undefined, { versions, target, force }) => {
             const { registryUrl, pat } = program.opts();
             unpublish({
                 extensionId,

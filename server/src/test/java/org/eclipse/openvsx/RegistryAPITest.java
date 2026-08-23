@@ -2217,6 +2217,21 @@ class RegistryAPITest {
     }
 
     @Test
+    void testDeleteExtensionMissingVersion() throws Exception {
+        // A target platform version entry without a version can't be resolved to anything: reject it
+        // explicitly with a 400 instead of letting it fall through to a confusing 404.
+        mockForDelete(true, true);
+        mockMvc.perform(
+                post("/api/{namespace}/{extension}/delete?token={token}", "foo", "bar", "my_token")
+                        .content("[{\"targetPlatform\":\"universal\"}]")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        content().json(
+                                errorJson("Missing 'version' for a requested target platform version to delete.")));
+    }
+
+    @Test
     void testDeleteExtensionEmptyBodyIsNoOp() throws Exception {
         // An explicit empty list names no version, so nothing is deleted.
         mockForDelete(true, true);
