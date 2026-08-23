@@ -6,11 +6,12 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0.
+ * https://www.eclipse.org/legal/epl-2.0
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import { FunctionComponent } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../support/test-providers';
@@ -26,7 +27,7 @@ const version = (overrides: Partial<VersionTargetPlatforms> = {}): VersionTarget
     ...overrides
 });
 
-const extension = (versions: VersionTargetPlatforms[]): Extension =>
+const extension = (versions: VersionTargetPlatforms[], overrides: Partial<Extension> = {}): Extension =>
     ({
         name: 'bar',
         namespace: 'foo',
@@ -37,17 +38,22 @@ const extension = (versions: VersionTargetPlatforms[]): Extension =>
         reviewCount: 0,
         deprecated: false,
         active: true,
-        allTargetPlatformVersions: versions
+        allTargetPlatformVersions: versions,
+        ...overrides
     }) as unknown as Extension;
 
-function renderDetail(versions: VersionTargetPlatforms[], onPurgeVersion?: () => Promise<unknown>) {
+function renderDetail(
+    versions: VersionTargetPlatforms[],
+    onPurgeVersion?: () => Promise<unknown>,
+    overrides: { extension?: Partial<Extension>; pageSettings?: Partial<PageSettings> } = {}
+) {
     const service = {
         getExtensionIcon: vi.fn().mockResolvedValue(null),
         getTrustedPublishingStatus: vi.fn().mockResolvedValue({ enabled: false, allowed: false })
     } as unknown as ExtensionRegistryService;
     renderWithProviders(
         <ExtensionDetailView
-            extension={extension(versions)}
+            extension={extension(versions, overrides.extension)}
             onRemoveVersion={vi.fn().mockResolvedValue(undefined)}
             onVersionDeleted={vi.fn()}
             onPurgeVersion={onPurgeVersion}
@@ -56,7 +62,11 @@ function renderDetail(versions: VersionTargetPlatforms[], onPurgeVersion?: () =>
             mainContext: {
                 service,
                 user: testUser,
-                pageSettings: { urls: { extensionDefaultIcon: '/icon.png' } } as PageSettings
+                pageSettings: {
+                    urls: { extensionDefaultIcon: '/icon.png' },
+                    elements: {},
+                    ...overrides.pageSettings
+                } as PageSettings
             }
         }
     );
@@ -65,6 +75,13 @@ function renderDetail(versions: VersionTargetPlatforms[], onPurgeVersion?: () =>
 // Each danger-zone row repeats its title above the button, so query the button itself.
 const dangerButton = (name: string) => screen.getByRole('button', { name });
 const noDangerButton = (name: string) => screen.queryByRole('button', { name });
+
+// Stands in for a deployment's configured `pageSettings.elements.claimNamespace`: this component's
+// own logic is only responsible for passing `extension`/`sx` through, not for what a given
+// implementation renders.
+const ClaimNamespaceStub: FunctionComponent<{ extension: Extension }> = ({ extension: ext }) => (
+    <span>Claim {ext.namespace}</span>
+);
 
 describe('ExtensionDetailView', () => {
     it('keeps the purge affordances out of the way without a purge handler', () => {
@@ -105,5 +122,59 @@ describe('ExtensionDetailView', () => {
         renderDetail([]);
 
         expect(screen.queryByText('Danger Zone')).not.toBeInTheDocument();
+    });
+
+    describe('namespace ownership conflict', () => {
+        it('renders the configured claimNamespace element when there is a conflict', () => {
+            renderDetail([], undefined, {
+                extension: { active: false, namespaceOwnershipConflict: true },
+                pageSettings: { elements: { claimNamespace: ClaimNamespaceStub } }
+            });
+
+            expect(screen.getByText('Claim foo')).toBeInTheDocument();
+        });
+
+        it('does not render claimNamespace without a namespace ownership conflict', () => {
+            renderDetail([], undefined, {
+                extension: { active: true },
+                pageSettings: { elements: { claimNamespace: ClaimNamespaceStub } }
+            });
+
+            expect(screen.queryByText('Claim foo')).not.toBeInTheDocument();
+        });
+
+        it('falls back to a generic namespace-access link when no claimNamespace element is configured', () => {
+            renderDetail([], undefined, {
+                extension: { active: false, namespaceOwnershipConflict: true },
+                pageSettings: {
+                    elements: {},
+                    urls: { namespaceAccessInfo: 'https://example.test/namespace-access' } as PageSettings['urls']
+                }
+            });
+
+            expect(screen.queryByText('Claim foo')).not.toBeInTheDocument();
+            const link = screen.getByRole('link', { name: 'Claim Namespace' });
+            expect(link).toHaveAttribute('href', 'https://example.test/namespace-access');
+        });
+
+        it('explains that the namespace needs to be claimed before the extension can be activated', () => {
+            renderDetail([], undefined, {
+                extension: { active: false, namespaceOwnershipConflict: true },
+                pageSettings: { elements: { claimNamespace: ClaimNamespaceStub } }
+            });
+
+            expect(
+                screen.getByText(/needs to be claimed \(verified\) before this extension can be activated/)
+            ).toBeInTheDocument();
+        });
+
+        it('does not show the namespace ownership explanation without a conflict', () => {
+            renderDetail([], undefined, {
+                extension: { active: true },
+                pageSettings: { elements: { claimNamespace: ClaimNamespaceStub } }
+            });
+
+            expect(screen.queryByText(/needs to be claimed/)).not.toBeInTheDocument();
+        });
     });
 });

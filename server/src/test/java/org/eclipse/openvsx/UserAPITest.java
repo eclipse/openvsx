@@ -53,6 +53,7 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
+import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
@@ -336,6 +337,60 @@ class UserAPITest {
     }
 
     @Test
+    void testOwnExtensionsVerifiedAndNamespaceOwnershipConflict() throws Exception {
+        // An extension kept inactive because its namespace conflicts with one already claimed in a
+        // referenced external gallery: 'verified' is false (no owner yet) and
+        // 'namespaceOwnershipConflict' reports the specific reason, so the webui can point the user at
+        // verifying/claiming the namespace instead of a generic "under review" message.
+        var userData = mockUserData();
+        var versions = mockExtension(userData, 1, 0, 0);
+        var latest = versions.getLast();
+        var extension = latest.getExtension();
+        extension.setActive(false);
+        var namespace = extension.getNamespace();
+
+        var token = new PersonalAccessToken();
+        token.setUser(userData);
+        latest.setPublishedWith(token);
+
+        var membership = new NamespaceMembership();
+        membership.setNamespace(namespace);
+        membership.setUser(userData);
+        membership.setRole(NamespaceMembership.ROLE_CONTRIBUTOR);
+        Mockito.when(repositories.findMemberships(userData)).thenReturn(Streamable.of(membership));
+        Mockito.when(repositories.isVerified(namespace, userData)).thenReturn(false);
+
+        var scan = new ExtensionScan();
+        scan.setStatus(ScanStatus.QUARANTINED);
+        Mockito.when(
+                scanRepository
+                        .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
+                                namespace.getName(),
+                                extension.getName(),
+                                latest.getVersion(),
+                                TargetPlatform.NAME_UNIVERSAL))
+                .thenReturn(scan);
+        Mockito.when(repositories.findExtensionThreats(scan, NamespaceOwnershipCheckScanner.TYPE))
+                .thenReturn(
+                        Streamable.of(
+                                ExtensionThreat.create(
+                                        null,
+                                        null,
+                                        null,
+                                        NamespaceOwnershipCheckScanner.TYPE,
+                                        NamespaceOwnershipCheckScanner.TYPE + "-conflict",
+                                        "Namespace 'foobar' exists in the referenced gallery, but is not verified.",
+                                        "high")));
+
+        mockMvc.perform(
+                get("/user/extensions")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].verified").value(false))
+                .andExpect(jsonPath("$[0].namespaceOwnershipConflict").value(true));
+    }
+
+    @Test
     void testGetOwnExtensionAsNamespaceOwner() throws Exception {
         var userData = mockUserData();
         var versions = mockExtension(userData, 2, 0, 0);
@@ -434,6 +489,53 @@ class UserAPITest {
                 .andExpect(jsonPath("$.allTargetPlatformVersions[0].canDelete").value(false))
                 .andExpect(jsonPath("$.allTargetPlatformVersions[1].version").value("1.0.0"))
                 .andExpect(jsonPath("$.allTargetPlatformVersions[1].canDelete").value(true));
+    }
+
+    @Test
+    void testGetOwnExtensionNamespaceOwnershipConflict() throws Exception {
+        var userData = mockUserData();
+        var versions = mockExtension(userData, 2, 0, 0);
+        var latest = versions.getLast();
+        latest.setId(42L);
+        var extension = latest.getExtension();
+        Mockito.when(repositories.isNamespaceOwner(any(UserData.class), any(Namespace.class))).thenReturn(true);
+        Mockito.when(repositories.findLatestVersion(eq("foobar"), eq("baz"), any(), eq(false), eq(false)))
+                .thenReturn(latest);
+        Mockito.when(repositories.findTargetPlatformsGroupedByVersion(extension)).thenReturn(List.of());
+        Mockito.when(
+                storageUtil.getFileUrls(
+                        Mockito.anyCollection(),
+                        Mockito.anyString(),
+                        Mockito.any(String[].class)))
+                .thenReturn(java.util.Map.of(42L, new java.util.HashMap<>()));
+
+        var scan = new ExtensionScan();
+        scan.setStatus(ScanStatus.QUARANTINED);
+        Mockito.when(
+                scanRepository
+                        .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
+                                "foobar",
+                                "baz",
+                                latest.getVersion(),
+                                TargetPlatform.NAME_UNIVERSAL))
+                .thenReturn(scan);
+        Mockito.when(repositories.findExtensionThreats(scan, NamespaceOwnershipCheckScanner.TYPE))
+                .thenReturn(
+                        Streamable.of(
+                                ExtensionThreat.create(
+                                        null,
+                                        null,
+                                        null,
+                                        NamespaceOwnershipCheckScanner.TYPE,
+                                        NamespaceOwnershipCheckScanner.TYPE + "-conflict",
+                                        "Namespace 'foobar' exists in the referenced gallery, but is not verified.",
+                                        "high")));
+
+        mockMvc.perform(
+                get("/user/extension/{namespace}/{extension}", "foobar", "baz")
+                        .with(user("test_user")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.namespaceOwnershipConflict").value(true));
     }
 
     @Test

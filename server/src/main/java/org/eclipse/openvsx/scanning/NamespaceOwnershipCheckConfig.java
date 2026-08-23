@@ -51,10 +51,10 @@ public class NamespaceOwnershipCheckConfig {
     /**
      * Is the namespace ownership check needed to run on already existing and active extensions or not.
      * <p>
-     * Property: {@code ovsx.scanning.namespace-ownership-check.checkActiveExtensions}
+     * Property: {@code ovsx.scanning.namespace-ownership-check.check-active-extensions}
      * Default: {@code false}
      */
-    @Value("${ovsx.scanning.namespace-ownership-check.checkActiveExtensions:false}")
+    @Value("${ovsx.scanning.namespace-ownership-check.check-active-extensions:false}")
     private boolean checkActiveExtensions;
 
     /**

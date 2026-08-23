@@ -112,6 +112,14 @@ public class ExtensionJson extends ResultJson {
     private Boolean verified;
 
     /**
+     * True when this version's latest scan recorded a namespace-ownership-check threat, i.e. the
+     * namespace it was published to already exists in a referenced external gallery and is not
+     * verified. Internal signal for the webui, not part of the documented public API.
+     */
+    @Schema(hidden = true)
+    private Boolean namespaceOwnershipConflict;
+
+    /**
      * @deprecated
      */
     @Schema(
@@ -345,6 +353,14 @@ public class ExtensionJson extends ResultJson {
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
+    }
+
+    public Boolean getNamespaceOwnershipConflict() {
+        return namespaceOwnershipConflict;
+    }
+
+    public void setNamespaceOwnershipConflict(Boolean namespaceOwnershipConflict) {
+        this.namespaceOwnershipConflict = namespaceOwnershipConflict;
     }
 
     public Map<String, String> getAllVersions() {
@@ -642,6 +658,7 @@ public class ExtensionJson extends ResultJson {
                 && Objects.equals(reviewStatus, that.reviewStatus)
                 && Objects.equals(reviewMessage, that.reviewMessage)
                 && Objects.equals(verified, that.verified)
+                && Objects.equals(namespaceOwnershipConflict, that.namespaceOwnershipConflict)
                 && Objects.equals(allVersions, that.allVersions)
                 && Objects.equals(allVersionsUrl, that.allVersionsUrl)
                 && Objects.equals(averageRating, that.averageRating)
@@ -692,6 +709,7 @@ public class ExtensionJson extends ResultJson {
                 reviewStatus,
                 reviewMessage,
                 verified,
+                namespaceOwnershipConflict,
                 allVersions,
                 allVersionsUrl,
                 averageRating,
