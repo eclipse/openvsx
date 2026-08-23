@@ -4,6 +4,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ### [v1.1.1] (09/08/2026)
 
+#### Added
+
+- `publish` checks the packaged extension's size against the limit reported by the registry's `/api/version` endpoint before uploading, instead of failing only after the upload completes ([#1953](https://github.com/eclipse-openvsx/openvsx/issues/1953))
+
 ### Dependencies
 
 - Bump ip-address from `10.2.0` to `10.4.0`
