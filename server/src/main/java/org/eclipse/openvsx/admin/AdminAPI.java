@@ -61,6 +61,7 @@ import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
@@ -394,6 +395,8 @@ public class AdminAPI {
                         repositories.findTargetPlatformsGroupedByVersion(latest.getExtension()));
                 json.setActive(latest.getExtension().isActive());
                 json.setRemoved(latest.isExtensionRemoved());
+                json.setNamespaceOwnershipConflict(
+                        repositories.hasThreatOfType(latest, NamespaceOwnershipCheckScanner.TYPE));
             } else {
                 var extension = repositories.findExtension(extensionName, namespaceName);
                 if (extension == null) {

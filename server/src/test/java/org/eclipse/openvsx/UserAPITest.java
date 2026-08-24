@@ -120,9 +120,6 @@ class UserAPITest {
     @Autowired
     StorageUtilService storageUtil;
 
-    @MockitoBean
-    org.eclipse.openvsx.repositories.ExtensionScanRepository scanRepository;
-
     @Autowired
     MockMvc mockMvc;
     @Autowired
@@ -362,14 +359,7 @@ class UserAPITest {
 
         var scan = new ExtensionScan();
         scan.setStatus(ScanStatus.QUARANTINED);
-        Mockito.when(
-                scanRepository
-                        .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
-                                namespace.getName(),
-                                extension.getName(),
-                                latest.getVersion(),
-                                TargetPlatform.NAME_UNIVERSAL))
-                .thenReturn(scan);
+        Mockito.when(repositories.findLatestExtensionScan(latest)).thenReturn(scan);
         Mockito.when(repositories.findExtensionThreats(scan, NamespaceOwnershipCheckScanner.TYPE))
                 .thenReturn(
                         Streamable.of(
@@ -511,14 +501,7 @@ class UserAPITest {
 
         var scan = new ExtensionScan();
         scan.setStatus(ScanStatus.QUARANTINED);
-        Mockito.when(
-                scanRepository
-                        .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
-                                "foobar",
-                                "baz",
-                                latest.getVersion(),
-                                TargetPlatform.NAME_UNIVERSAL))
-                .thenReturn(scan);
+        Mockito.when(repositories.findLatestExtensionScan(latest)).thenReturn(scan);
         Mockito.when(repositories.findExtensionThreats(scan, NamespaceOwnershipCheckScanner.TYPE))
                 .thenReturn(
                         Streamable.of(

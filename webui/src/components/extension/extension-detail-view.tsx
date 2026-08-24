@@ -116,20 +116,22 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                         This namespace already exists in a referenced gallery and needs to be claimed (verified) before
                         this extension can be activated.
                     </Typography>
-                    {ClaimNamespace ? (
-                        <ClaimNamespace extension={extension} sx={claimNamespaceButtonStyle} />
-                    ) : (
-                        // Fallback for a deployment that hasn't configured `elements.claimNamespace`:
-                        // point at the generic namespace-access docs instead of showing nothing.
-                        <Button
-                            variant='outlined'
-                            color='warning'
-                            href={pageSettings.urls.namespaceAccessInfo}
-                            target='_blank'
-                            rel='noopener'>
-                            Claim Namespace
-                        </Button>
-                    )}
+                    {/* Claiming is the publisher's action to take, not an admin's on someone else's behalf. */}
+                    {!canPurge &&
+                        (ClaimNamespace ? (
+                            <ClaimNamespace extension={extension} sx={claimNamespaceButtonStyle} />
+                        ) : (
+                            // Fallback for a deployment that hasn't configured `elements.claimNamespace`:
+                            // point at the generic namespace-access docs instead of showing nothing.
+                            <Button
+                                variant='outlined'
+                                color='warning'
+                                href={pageSettings.urls.namespaceAccessInfo}
+                                target='_blank'
+                                rel='noopener'>
+                                Claim Namespace
+                            </Button>
+                        ))}
                 </Box>
             )}
             <Eyebrow sx={{ mb: '0.75rem' }}>General</Eyebrow>

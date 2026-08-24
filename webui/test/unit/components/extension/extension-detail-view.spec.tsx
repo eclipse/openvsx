@@ -157,6 +157,20 @@ describe('ExtensionDetailView', () => {
             expect(link).toHaveAttribute('href', 'https://example.test/namespace-access');
         });
 
+        it('hides the claim action in the admin view, keeping the explanation', () => {
+            // A purge handler is only ever supplied by the admin dashboard (see ExtensionDetailViewProps).
+            renderDetail([], vi.fn().mockResolvedValue(undefined), {
+                extension: { active: false, namespaceOwnershipConflict: true },
+                pageSettings: { elements: { claimNamespace: ClaimNamespaceStub } }
+            });
+
+            expect(screen.queryByText('Claim foo')).not.toBeInTheDocument();
+            expect(screen.queryByRole('link', { name: 'Claim Namespace' })).not.toBeInTheDocument();
+            expect(
+                screen.getByText(/needs to be claimed \(verified\) before this extension can be activated/)
+            ).toBeInTheDocument();
+        });
+
         it('explains that the namespace needs to be claimed before the extension can be activated', () => {
             renderDetail([], undefined, {
                 extension: { active: false, namespaceOwnershipConflict: true },

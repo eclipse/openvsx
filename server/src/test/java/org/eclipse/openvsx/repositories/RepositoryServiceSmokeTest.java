@@ -49,6 +49,7 @@ import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
+import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.ExtensionId;
 
@@ -389,6 +390,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findSimilarNamespacesByLevenshtein("namespaceName", List.of(), 0.5, false, 10),
                 () -> repositories.findExtensionScans(extVersion),
                 () -> repositories.findLatestExtensionScan(extVersion),
+                () -> repositories.hasThreatOfType(extVersion, NamespaceOwnershipCheckScanner.TYPE),
                 () -> repositories.findExtensionScans(extension),
                 () -> repositories.findExtensionScansByNamespace(namespace.getName()),
                 () -> repositories.findExtensionScansByStatus(ScanStatus.STARTED),

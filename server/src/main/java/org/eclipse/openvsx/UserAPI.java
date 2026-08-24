@@ -56,7 +56,6 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UsageStatsListJson;
 import org.eclipse.openvsx.json.UserJson;
-import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.security.CodedAuthException;
@@ -91,7 +90,6 @@ public class UserAPI {
     private final StorageUtilService storageUtil;
     private final LocalRegistryService local;
     private final ExtensionService extensions;
-    private final ExtensionScanRepository scanRepository;
 
     public UserAPI(
             RepositoryService repositories,
@@ -100,8 +98,7 @@ public class UserAPI {
             EclipseService eclipse,
             StorageUtilService storageUtil,
             LocalRegistryService local,
-            ExtensionService extensions,
-            ExtensionScanRepository scanRepository
+            ExtensionService extensions
     ) {
         this.repositories = repositories;
         this.users = users;
@@ -110,7 +107,6 @@ public class UserAPI {
         this.storageUtil = storageUtil;
         this.local = local;
         this.extensions = extensions;
-        this.scanRepository = scanRepository;
     }
 
     @GetMapping(
@@ -292,13 +288,7 @@ public class UserAPI {
      * (scanning disabled, or the version predates the scanning feature).
      */
     private ExtensionScan findLatestScan(ExtensionVersion extVersion) {
-        var ext = extVersion.getExtension();
-        return scanRepository
-                .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
-                        ext.getNamespace().getName(),
-                        ext.getName(),
-                        extVersion.getVersion(),
-                        extVersion.getTargetPlatform());
+        return repositories.findLatestExtensionScan(extVersion);
     }
 
     /**

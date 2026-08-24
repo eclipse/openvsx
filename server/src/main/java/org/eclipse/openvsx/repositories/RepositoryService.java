@@ -1143,6 +1143,17 @@ public class RepositoryService {
                         version.getTargetPlatform());
     }
 
+    /**
+     * Whether the version's latest scan (if any) recorded a threat of the given type, e.g. an
+     * unresolved {@code NamespaceOwnershipCheckScanner.TYPE} conflict. Takes the type as a plain
+     * string rather than the scanner class itself, so this repository layer doesn't have to depend
+     * on the scanning package.
+     */
+    public boolean hasThreatOfType(ExtensionVersion version, String type) {
+        var scan = findLatestExtensionScan(version);
+        return scan != null && findExtensionThreats(scan, type).stream().findAny().isPresent();
+    }
+
     public Streamable<ExtensionScan> findExtensionScans(Extension extension) {
         var namespace = extension.getNamespace();
         return extensionScanRepo.findByNamespaceNameAndExtensionName(namespace.getName(), extension.getName());
