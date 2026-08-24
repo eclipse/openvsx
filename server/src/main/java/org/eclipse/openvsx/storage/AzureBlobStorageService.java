@@ -194,6 +194,21 @@ public class AzureBlobStorageService implements IStorageService {
     }
 
     @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        var blobName = getObjectKey(resource);
+        if (StringUtils.isEmpty(serviceEndpoint)) {
+            throw new IllegalStateException(missingEndpointMessage(blobName));
+        }
+
+        try {
+            // getProperties is a metadata-only request; it doesn't transfer the blob's content.
+            return getContainerClient().getBlobClient(blobName).getProperties().getBlobSize();
+        } catch (BlobStorageException e) {
+            throw new IOException("Failed to determine file size for " + blobName, e);
+        }
+    }
+
+    @Override
     public void copyFiles(List<Pair<FileResource, FileResource>> pairs) {
         var copyOperations = new ArrayList<SyncPoller<BlobCopyInfo, Void>>();
         for (var pair : pairs) {

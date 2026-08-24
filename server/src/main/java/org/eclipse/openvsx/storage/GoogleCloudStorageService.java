@@ -176,6 +176,21 @@ public class GoogleCloudStorageService implements IStorageService {
         return tempFile;
     }
 
+    @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
+        }
+
+        // Storage.get is a metadata-only request; it doesn't transfer the blob's content.
+        var blob = getStorage().get(BlobId.of(bucketId, getObjectKey(resource)));
+        if (blob == null) {
+            throw new IOException("Blob not found: " + getObjectKey(resource));
+        }
+
+        return blob.getSize();
+    }
+
     private String missingBucketIdMessage(String name) {
         return missingBucketIdMessage("Cannot determine location of file", name);
     }

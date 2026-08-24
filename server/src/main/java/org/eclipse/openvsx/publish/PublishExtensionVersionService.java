@@ -9,6 +9,9 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.publish;
 
+import java.io.IOException;
+import java.nio.file.Files;
+
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
@@ -61,7 +65,17 @@ public class PublishExtensionVersionService {
 
     @Transactional
     public void mirrorResource(TempFile tempFile) {
-        mirrorResource(tempFile.getResource());
+        var resource = tempFile.getResource();
+        try {
+            // the bytes were extracted from the mirrored package to build this TempFile, even though
+            // they aren't uploaded to storage here (mirror mode serves resources on the fly), so the
+            // size is still known and worth recording.
+            resource.setSize(Files.size(tempFile.getPath()));
+        } catch (IOException e) {
+            throw new ServerErrorException("Failed to determine file size", e);
+        }
+
+        mirrorResource(resource);
     }
 
     @Transactional

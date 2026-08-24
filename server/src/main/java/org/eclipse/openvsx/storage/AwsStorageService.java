@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.s3.endpoints.S3EndpointProvider;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -337,6 +338,17 @@ public class AwsStorageService implements IStorageService {
         }
         tempFile.setResource(resource);
         return tempFile;
+    }
+
+    @Override
+    public long getFileSize(FileResource resource) {
+        // headObject is a metadata-only request; it doesn't transfer the object's content.
+        var request = HeadObjectRequest.builder()
+                .bucket(bucket)
+                .key(getObjectKey(resource))
+                .build();
+
+        return getS3Client().headObject(request).contentLength();
     }
 
     @Override

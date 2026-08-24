@@ -49,7 +49,9 @@ public class MigrationService {
             "RemoveFileResourceTypeResourceMigration",
             RemoveFileResourceTypeResourceJobRequestHandler.class,
             "FixMissingFilesMigration",
-            FixMissingFilesJobRequestHandler.class);
+            FixMissingFilesJobRequestHandler.class,
+            "FileResourceSizeMigration",
+            FileResourceSizeJobRequestHandler.class);
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
@@ -100,6 +102,11 @@ public class MigrationService {
     @Retryable
     public TempFile getExtensionFile(FileResource resource) throws IOException {
         return storageUtil.downloadFile(resource);
+    }
+
+    @Retryable
+    public long getFileSize(FileResource resource) throws IOException {
+        return storageUtil.getFileSize(resource);
     }
 
     @Retryable
