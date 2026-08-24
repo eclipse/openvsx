@@ -722,12 +722,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var user = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
-        if (user == null) {
+        var tau = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
-        return createNamespace(json, user);
+        return createNamespace(json, tau.userData());
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -790,18 +790,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             @Nullable List<TargetPlatformVersionJson> targetVersions,
             String tokenValue
     ) {
-        var user = tokens
+        var tau = tokens
                 .useAccessToken(tokenValue, new AccessTokenAction.DeleteVersion(namespaceName, extensionName));
-        if (user == null) {
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
-        return extensions.deleteExtensionAsUser(user, namespaceName, extensionName, targetVersions);
+        return extensions.deleteExtensionAsUser(tau.userData(), namespaceName, extensionName, targetVersions);
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var user = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
-        if (user == null) {
+        var tau = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
@@ -809,7 +809,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (namespace == null) {
             throw new NotFoundException();
         }
-        if (!users.hasPublishPermission(user, namespace)) {
+        if (!users.hasPublishPermission(tau.userData(), namespace)) {
             throw new ErrorResultException(
                     "Insufficient access rights for namespace: " + namespace.getName(),
                     HttpStatus.FORBIDDEN);
@@ -843,11 +843,14 @@ public class LocalRegistryService implements IExtensionRegistry {
                 try (var processor = new ExtensionProcessor(tempFile)) {
                     // now that we know the details, ensure token is still fine
                     if (user == null) {
-                        user = tokens.useAccessToken(
+                        var tau = tokens.useAccessToken(
                                 tokenValue,
                                 new AccessTokenAction.PublishVersion(
                                         processor.getNamespace(),
                                         processor.getExtensionName()));
+                        if (tau != null) {
+                            user = tau.userData();
+                        }
                     }
                     if (user == null) {
                         throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);

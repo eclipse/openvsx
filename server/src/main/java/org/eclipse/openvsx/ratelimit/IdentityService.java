@@ -82,10 +82,10 @@ public class IdentityService {
         if (cacheKey == null) {
             var token = request.getParameter("token");
             if (token != null) {
-                var user = tokenService.useAccessToken(token, new AccessTokenAction.Verify());
-                if (user != null) {
+                var tau = tokenService.useAccessToken(token, new AccessTokenAction.Verify());
+                if (tau != null) {
                     // if a valid token is present we use it as a cache key
-                    cacheKey = "token_" + user.getId();
+                    cacheKey = "token_" + tau.userData().getId();
                 }
             }
         }

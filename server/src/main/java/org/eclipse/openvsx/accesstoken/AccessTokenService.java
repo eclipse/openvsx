@@ -181,7 +181,7 @@ public class AccessTokenService {
     // throws once this method returns null - silently discarding the fact that the token was touched
     // or found expired.
     @Transactional(TxType.REQUIRES_NEW)
-    public UserData useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
+    public AccessTokenAuthentication useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
         var token = repositories.findPersonalAccessToken(hashTokenValue(tokenValue));
         if (token == null) {
             // assume DB contains token v0; fetch and upgrade if found active token
@@ -220,7 +220,7 @@ public class AccessTokenService {
                 entityManager.remove(token);
             }
         }
-        return token.getUser();
+        return new AccessTokenAuthentication(token.getUser(), token.getType());
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {

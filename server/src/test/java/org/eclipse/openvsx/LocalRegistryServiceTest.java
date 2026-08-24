@@ -33,6 +33,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAuthentication;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -162,7 +163,8 @@ class LocalRegistryServiceTest {
         extVersion.setVersion("1.0.0");
 
         when(extensions.createExtensionFile(any())).thenReturn(tempFile);
-        when(tokens.useAccessToken(eq("tok"), any())).thenReturn(token.getUser());
+        when(tokens.useAccessToken(eq("tok"), any()))
+                .thenReturn(new AccessTokenAuthentication(token.getUser(), token.getType()));
         when(extensions.publishVersion(any(ExtensionProcessor.class), eq(token.getUser()))).thenReturn(extVersion);
         when(storageUtilService.getFileUrls(any(), any(), any(String[].class))).thenReturn(Map.of(42L, Map.of()));
 
