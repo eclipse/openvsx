@@ -20,6 +20,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
@@ -85,6 +87,10 @@ public class ExtensionVersion implements Serializable {
      */
     @ManyToOne
     private UserData publishedBy;
+
+    @Column(nullable = true)
+    @Enumerated(EnumType.STRING)
+    private PersonalAccessTokenType publishedWithTt;
 
     private boolean active;
 
@@ -203,6 +209,7 @@ public class ExtensionVersion implements Serializable {
         if (this.getPublishedBy() != null) {
             json.setPublishedBy(this.getPublishedBy().toUserJson());
         }
+        json.setTrustedPublisher(getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
@@ -337,6 +344,14 @@ public class ExtensionVersion implements Serializable {
 
     public void setPublishedBy(UserData publishedBy) {
         this.publishedBy = publishedBy;
+    }
+
+    public PersonalAccessTokenType getPublishedWithTt() {
+        return publishedWithTt;
+    }
+
+    public void setPublishedWithTt(PersonalAccessTokenType publishedWithTt) {
+        this.publishedWithTt = publishedWithTt;
     }
 
     public boolean isActive() {
@@ -573,6 +588,7 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(targetPlatform, that.targetPlatform)
                 && Objects.equals(timestamp, that.timestamp)
                 && Objects.equals(getId(publishedBy), getId(that.publishedBy)) // use id to prevent infinite recursion
+                && Objects.equals(publishedWithTt, that.publishedWithTt)
                 && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(engines, that.engines)
@@ -607,6 +623,7 @@ public class ExtensionVersion implements Serializable {
                 preview,
                 timestamp,
                 getId(publishedBy),
+                publishedWithTt,
                 active,
                 potentiallyMalicious,
                 removed,
