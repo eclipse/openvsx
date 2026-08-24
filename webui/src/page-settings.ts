@@ -11,6 +11,7 @@
 import { ComponentType, ReactNode } from 'react';
 import { SxProps, Theme } from '@mui/material/styles';
 import { Extension, NamespaceDetails, SortBy } from './extension-registry-types';
+import { AdminPage } from './pages/admin-dashboard/nav-types';
 import { Cookie } from './utils';
 
 /** One entry contributed to the account menu, rendered by the menu's own styling. */
@@ -147,6 +148,11 @@ export interface PageSettings {
         claimNamespace?: ComponentType<{ namespace: string; extension?: Extension; sx?: SxProps<Theme> }>;
         downloadTerms?: ComponentType;
         additionalRoutes?: ReactNode;
+        /**
+         * Extra pages for the admin dashboard, each appearing in the side panel, as a card on the
+         * dashboard overview and as a route. Additive only — see {@link AdminPage}.
+         */
+        adminPages?: AdminPage[];
         banner?: {
             content: ComponentType;
             props?: {

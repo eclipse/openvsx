@@ -31,6 +31,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Add a `Pill` component — the clickable glass pill the category pills are built on, now usable on its own — and extract the `MonoSlash`, `glassSurface` and `compactControl` page primitives out of the search field, the pills and the search header
 - Add `userLoading` to `MainContext`, so custom pages can tell "not logged in" from "still resolving the user"
 - Add a `userMenuContent` slot to `PageSettings.elements`: extra entries for the logged-in account menu, rendered above the admin entry. The slot receives a `MenuEntry` component to build entries with, so each entry is styled by the menu it appears in — the desktop and mobile menus style theirs differently, and a consumer cannot match both on its own
+- Add an `adminPages` slot to `PageSettings.elements`: extra admin dashboard pages, each declaring a name, icon, optional description and optional category, and each appearing in the side panel, as a card on the dashboard overview and as a route. Contributions are additive — a category name matching a built-in group appends to it, and a page whose path would shadow a built-in one is ignored
 
 ### Changed
 
