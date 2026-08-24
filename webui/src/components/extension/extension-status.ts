@@ -25,6 +25,11 @@ export const getExtensionStatus = (extension: Extension): ExtensionStatus | unde
     if (extension.removed) {
         return { label: 'Deleted', color: 'error.main' };
     }
+    // Usually the reason the extension is deactivated in the first place, so it outranks that and
+    // every review-related state below: it names the actual, actionable cause.
+    if (extension.namespaceOwnershipConflict) {
+        return { label: 'Namespace not verified', color: 'warningAccent' };
+    }
     switch (extension.reviewStatus) {
         case 'rejected':
             return { label: 'Rejected', color: 'error.main' };

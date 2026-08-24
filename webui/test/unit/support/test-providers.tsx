@@ -62,7 +62,9 @@ export interface ProviderOptions {
 function mainContextValue(overrides?: Partial<MainContext>): MainContext {
     return {
         service: {} as ExtensionRegistryService,
-        pageSettings: {} as PageSettings,
+        // `elements` is a required PageSettings field; the empty object keeps this default genuinely
+        // well-typed rather than relying on `as PageSettings` to paper over a missing required field.
+        pageSettings: { elements: {} } as PageSettings,
         handleError: () => {},
         updateUser: () => {},
         ...overrides

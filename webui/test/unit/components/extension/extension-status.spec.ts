@@ -26,6 +26,9 @@ describe('getExtensionStatus', () => {
 
     it('reports each publishing state on its own', () => {
         expect(getExtensionStatus(extension({ removed: true }))?.label).toBe('Deleted');
+        expect(getExtensionStatus(extension({ namespaceOwnershipConflict: true }))?.label).toBe(
+            'Namespace not verified'
+        );
         expect(getExtensionStatus(extension({ reviewStatus: 'rejected' }))?.label).toBe('Rejected');
         expect(getExtensionStatus(extension({ reviewStatus: 'under_review' }))?.label).toBe('Under review');
         expect(getExtensionStatus(extension({ active: false }))?.label).toBe('Deactivated');
@@ -34,9 +37,27 @@ describe('getExtensionStatus', () => {
 
     it('ranks a removed extension above every other state', () => {
         const status = getExtensionStatus(
-            extension({ removed: true, reviewStatus: 'under_review', active: false, deprecated: true })
+            extension({
+                removed: true,
+                namespaceOwnershipConflict: true,
+                reviewStatus: 'under_review',
+                active: false,
+                deprecated: true
+            })
         );
         expect(status?.label).toBe('Deleted');
+    });
+
+    it('ranks a namespace ownership conflict above the review verdict, deactivation and deprecation', () => {
+        const status = getExtensionStatus(
+            extension({
+                namespaceOwnershipConflict: true,
+                reviewStatus: 'under_review',
+                active: false,
+                deprecated: true
+            })
+        );
+        expect(status?.label).toBe('Namespace not verified');
     });
 
     it('ranks a review verdict above deactivation and deprecation', () => {
