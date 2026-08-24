@@ -81,16 +81,29 @@ public class MigrationService {
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());
-        scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
+        scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId(), item.getId()));
         logger.info("Enqueued migration {}", jobIdText);
         item.setMigrationScheduled(true);
+    }
+
+    /**
+     * Deletes the {@link MigrationItem} row identified by {@code id}, if it still exists. Called by
+     * {@link MigrationItemCleanupFilter} once the job it scheduled has actually completed -- see that
+     * class for why this isn't just done inline at the end of every job handler.
+     */
+    @Transactional
+    public void deleteMigrationItem(long id) {
+        var item = entityManager.find(MigrationItem.class, id);
+        if (item != null) {
+            entityManager.remove(item);
+        }
     }
 
     public ExtensionVersion getExtension(long entityId) {
         return entityManager.find(ExtensionVersion.class, entityId);
     }
 
-    public FileResource getResource(MigrationJobRequest jobRequest) {
+    public FileResource getResource(MigrationJobRequest<?> jobRequest) {
         return entityManager.find(FileResource.class, jobRequest.getEntityId());
     }
 
