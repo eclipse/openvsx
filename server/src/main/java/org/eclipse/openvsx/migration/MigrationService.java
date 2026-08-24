@@ -105,6 +105,11 @@ public class MigrationService {
     }
 
     @Retryable
+    public long getFileSize(FileResource resource) throws IOException {
+        return storageUtil.getFileSize(resource);
+    }
+
+    @Retryable
     public void uploadFileResource(TempFile tempFile) {
         storageUtil.uploadFile(tempFile);
     }

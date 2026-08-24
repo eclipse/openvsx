@@ -285,6 +285,19 @@ public class StorageUtilService implements IStorageService {
     }
 
     /**
+     * Returns the size in bytes of {@code resource} as already stored, via a metadata-only lookup
+     * rather than downloading its content -- see {@link IStorageService#getFileSize(FileResource)}.
+     */
+    public long getFileSize(FileResource resource) throws IOException {
+        var storageService = getStorageServiceForRetrieval(resource.getStorageType());
+        if (storageService == null) {
+            throw new IOException("Storage '" + resource.getStorageType() + "' is not available.");
+        }
+
+        return storageService.getFileSize(resource);
+    }
+
+    /**
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
     public Map<Long, Map<String, String>> getFileUrls(

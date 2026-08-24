@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -174,6 +175,21 @@ public class GoogleCloudStorageService implements IStorageService {
         getStorage().downloadTo(BlobId.of(bucketId, objectId), tempFile.getPath());
         tempFile.setResource(resource);
         return tempFile;
+    }
+
+    @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        if (StringUtils.isEmpty(bucketId)) {
+            throw new IllegalStateException(missingBucketIdMessage(resource.getName()));
+        }
+
+        // Storage.get is a metadata-only request; it doesn't transfer the blob's content.
+        var blob = getStorage().get(BlobId.of(bucketId, getObjectKey(resource)));
+        if (blob == null) {
+            throw new IOException("Blob not found: " + getObjectKey(resource));
+        }
+
+        return blob.getSize();
     }
 
     private String missingBucketIdMessage(String name) {

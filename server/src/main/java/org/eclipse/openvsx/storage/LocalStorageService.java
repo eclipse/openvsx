@@ -158,6 +158,11 @@ public class LocalStorageService implements IStorageService {
     }
 
     @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        return Files.size(getPath(resource));
+    }
+
+    @Override
     public void copyFiles(List<Pair<FileResource, FileResource>> pairs) {
         try {
             for (var pair : pairs) {

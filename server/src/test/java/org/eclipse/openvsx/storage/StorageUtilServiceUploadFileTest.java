@@ -25,10 +25,12 @@ import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.util.TempFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link StorageUtilService#uploadFile(TempFile)}.
+ * Unit tests for {@link StorageUtilService#uploadFile(TempFile)} and
+ * {@link StorageUtilService#getFileSize(FileResource)}.
  */
 @ExtendWith(MockitoExtension.class)
 class StorageUtilServiceUploadFileTest {
@@ -62,7 +64,38 @@ class StorageUtilServiceUploadFileTest {
     void uploadFile_recordsTheSizeOfTheUploadedBytes() throws Exception {
         when(localStorage.isEnabled()).thenReturn(true);
 
-        var svc = new StorageUtilService(
+        var svc = newService();
+        var resource = new FileResource();
+        try (var tempFile = new TempFile("upload_", ".tmp")) {
+            tempFile.setResource(resource);
+            Files.writeString(tempFile.getPath(), "extension package bytes");
+
+            svc.uploadFile(tempFile);
+
+            assertThat(resource.getStorageType()).isEqualTo(FileResource.STORAGE_LOCAL);
+            assertThat(resource.getSize()).isEqualTo(Files.size(tempFile.getPath()));
+        }
+    }
+
+    @Test
+    void getFileSize_delegatesToTheResourcesStorageBackend() throws Exception {
+        var resource = new FileResource();
+        resource.setStorageType(FileResource.STORAGE_AWS);
+        when(awsStorage.getFileSize(resource)).thenReturn(1234L);
+
+        assertThat(newService().getFileSize(resource)).isEqualTo(1234L);
+    }
+
+    @Test
+    void getFileSize_failsFastForAnUnknownStorageType() {
+        var resource = new FileResource();
+        resource.setStorageType("not-a-real-storage-type");
+
+        assertThatThrownBy(() -> newService().getFileSize(resource)).isInstanceOf(java.io.IOException.class);
+    }
+
+    private StorageUtilService newService() {
+        return new StorageUtilService(
                 repositories,
                 googleStorage,
                 azureStorage,
@@ -75,16 +108,5 @@ class StorageUtilServiceUploadFileTest {
                 entityManager,
                 fileCacheDurationConfig,
                 cdnServiceConfig);
-
-        var resource = new FileResource();
-        try (var tempFile = new TempFile("upload_", ".tmp")) {
-            tempFile.setResource(resource);
-            Files.writeString(tempFile.getPath(), "extension package bytes");
-
-            svc.uploadFile(tempFile);
-
-            assertThat(resource.getStorageType()).isEqualTo(FileResource.STORAGE_LOCAL);
-            assertThat(resource.getSize()).isEqualTo(Files.size(tempFile.getPath()));
-        }
     }
 }

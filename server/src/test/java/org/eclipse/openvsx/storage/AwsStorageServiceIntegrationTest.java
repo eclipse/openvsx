@@ -180,6 +180,18 @@ class AwsStorageServiceIntegrationTest {
     }
 
     @Test
+    void testGetFileSizeWithoutDownloading() throws IOException {
+        var tempFile = new TempFile("test_", ".vsix");
+        var testContent = "This is test extension content";
+        Files.write(tempFile.getPath(), testContent.getBytes(), StandardOpenOption.CREATE);
+        tempFile.setResource(resource);
+        storageService.uploadFile(tempFile);
+        tempFile.close();
+
+        assertEquals(testContent.length(), storageService.getFileSize(resource));
+    }
+
+    @Test
     void testUploadAndDownloadNamespaceLogo() throws IOException {
         var logoFile = new TempFile("logo_", ".png");
         var logoContent = "fake-png-content";

@@ -9,8 +9,6 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import java.nio.file.Files;
-
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.context.JobRunrDashboardLogger;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
@@ -23,11 +21,14 @@ import org.eclipse.openvsx.util.NamingUtil;
 
 /**
  * Backfills {@link org.eclipse.openvsx.entities.FileResource#getSize()} for file resources that were
- * stored before the size was tracked.
+ * stored before the size was tracked, via a metadata-only lookup against the storage backend
+ * (e.g. an S3 HEAD request) rather than downloading each file's content -- with potentially millions
+ * of stored resources across a large registry, downloading every one of them just to measure it would
+ * be far too slow and re-transfer an enormous amount of data for no reason.
  * <p>
  * Disabled on mirror instances: mirrored resources are mostly served on the fly rather than stored
- * locally (see {@code PublishExtensionVersionHandler#mirror}), so downloading them here to measure
- * their size would just fail for anything other than the download and its sha256 checksum.
+ * locally (see {@code PublishExtensionVersionHandler#mirror}), so there is usually no stored object to
+ * look up metadata for in the first place, other than the download and its sha256 checksum.
  */
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
@@ -56,9 +57,7 @@ public class FileResourceSizeJobRequestHandler implements JobRequestHandler<Migr
                 .addArgument(resource::getName)
                 .log();
 
-        try (var file = migrations.getExtensionFile(resource)) {
-            resource.setSize(Files.size(file.getPath()));
-            migrations.updateResource(resource);
-        }
+        resource.setSize(migrations.getFileSize(resource));
+        migrations.updateResource(resource);
     }
 }
