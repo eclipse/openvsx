@@ -49,7 +49,9 @@ public class MigrationService {
             "RemoveFileResourceTypeResourceMigration",
             RemoveFileResourceTypeResourceJobRequestHandler.class,
             "FixMissingFilesMigration",
-            FixMissingFilesJobRequestHandler.class);
+            FixMissingFilesJobRequestHandler.class,
+            "FileResourceSizeMigration",
+            FileResourceSizeJobRequestHandler.class);
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
