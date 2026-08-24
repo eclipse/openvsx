@@ -113,8 +113,8 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
                         variant='body2'
                         sx={{ display: 'flex', alignItems: 'center', color: 'warning.main', mb: 1 }}>
                         <WarningIcon fontSize='inherit' sx={{ mr: 0.5 }} />
-                        This namespace already exists in a referenced gallery and needs to be claimed (verified)
-                        before this extension can be activated.
+                        This namespace already exists in a referenced gallery and needs to be claimed (verified) before
+                        this extension can be activated.
                     </Typography>
                     {ClaimNamespace ? (
                         <ClaimNamespace extension={extension} sx={claimNamespaceButtonStyle} />

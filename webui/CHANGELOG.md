@@ -8,8 +8,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Add a "Data Consistency" page to the admin dashboard (#1622): a live overview of every registered consistency check's finding count, with actions to refresh it and to fix findings one at a time or all at once
 - Show a "Namespace needs verification" hint on an extension card when it can't be activated because its namespace already exists in a referenced external gallery and hasn't been verified, in both the "My Extensions" and namespace member extension lists
-- Add a "Claim Namespace" action to the extension settings page, next to "View in Marketplace", when the extension has a namespace ownership conflict: uses the deployment's configured `elements.claimNamespace`, falling back to the namespace access documentation when none is configured
-- Show a "Namespace Not Verified" status chip and an explanatory notice on the extension settings page when the extension has a namespace ownership conflict, making clear the namespace must be claimed before it can be activated
+- Show an explanatory warning notice and a "Claim Namespace" action on the extension settings page when the extension has a namespace ownership conflict, making clear the namespace must be claimed (verified) before the extension can be activated: uses the deployment's configured `elements.claimNamespace`, falling back to the namespace access documentation when none is configured
 
 ### Changed
 
