@@ -1,6 +1,7 @@
--- Time-series download analytics schema. Requires a PostgreSQL image with the timescaledb
--- extension available. See V1_72__Download_Analytics.sql.conf: continuous aggregates cannot
--- be created inside a transaction.
+-- Time-series download analytics schema, applied to the separate timeseries database. Requires
+-- a PostgreSQL image with the timescaledb extension available. Every migration in this set that
+-- creates a hypertable, a continuous aggregate or one of their policies needs an
+-- executeInTransaction=false sidecar, as those cannot run inside a transaction block.
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 

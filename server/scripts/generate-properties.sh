@@ -27,6 +27,11 @@ then
         echo "spring.datasource.url=jdbc:postgresql://postgres:5432/postgres"
         echo "spring.datasource.username=openvsx"
         echo "spring.datasource.password=openvsx"
+
+        # Set the download analytics (timeseries) Postgres host
+        echo "ovsx.analytics.datasource.url=jdbc:postgresql://postgres-timeseries:5432/openvsx_timeseries"
+        echo "ovsx.analytics.datasource.username=openvsx"
+        echo "ovsx.analytics.datasource.password=openvsx"
     } >> "${OVSX_APP_PROFILE}"
 else
     # Set the Elasticsearch host

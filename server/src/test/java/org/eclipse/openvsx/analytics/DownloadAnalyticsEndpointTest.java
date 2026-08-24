@@ -19,6 +19,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,7 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import org.eclipse.openvsx.AbstractPostgresContainerTest;
+import org.eclipse.openvsx.AbstractTimeseriesContainerTest;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -43,12 +44,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Full-stack proof of the enabled configuration: TimescaleDB-backed defaults wired by the
- * auto-configuration, queried through the public REST endpoint.
+ * Full-stack proof of the enabled configuration: the TimescaleDB-backed repository on its own
+ * database, queried through the public REST endpoint.
  */
-@SpringBootTest(properties = "ovsx.analytics.enabled=true")
+@SpringBootTest
 @AutoConfigureMockMvc
-class DownloadAnalyticsEndpointTest extends AbstractPostgresContainerTest {
+class DownloadAnalyticsEndpointTest extends AbstractTimeseriesContainerTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -57,6 +58,7 @@ class DownloadAnalyticsEndpointTest extends AbstractPostgresContainerTest {
     DownloadAnalyticsRepository repository;
 
     @Autowired
+    @Qualifier("timeseriesDataSource")
     javax.sql.DataSource dataSource;
 
     @Autowired
@@ -117,9 +119,8 @@ class DownloadAnalyticsEndpointTest extends AbstractPostgresContainerTest {
     }
 
     /**
-     * Without a log-based source covering the file, a request-path download produces an
-     * analytics event in the same transaction as the counter update, with client data taken
-     * from the current HTTP request.
+     * Without a log-based source covering the file, a request-path download produces an analytics
+     * event alongside the counter update, with client data taken from the current HTTP request.
      */
     @Test
     void testRequestPathDownloadProducesAnalyticsEvent() throws Exception {
@@ -136,7 +137,7 @@ class DownloadAnalyticsEndpointTest extends AbstractPostgresContainerTest {
             return null;
         });
 
-        // the counter and the event committed together
+        // the counter committed in the registry database
         var downloadCount = inTransaction(
                 () -> entityManager.find(Extension.class, extension.getId()).getDownloadCount());
         assertEquals(1, downloadCount);

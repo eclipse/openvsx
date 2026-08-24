@@ -31,16 +31,12 @@ import org.testcontainers.utility.DockerImageName;
  * Because all contexts now share a single database, tests must keep cleaning up after themselves (via
  * transactional rollback or an explicit tear-down) and use unique identifiers, exactly as they already
  * had to when sharing a context.
- * <p>
- * The image is timescale/timescaledb (PostgreSQL plus the timescaledb extension): the main
- * migration chain contains the download analytics schema, which requires the extension.
- * Override with {@code -Dovsx.test.postgres.image=...} if needed.
  */
 @Tag("integration")
 public abstract class AbstractPostgresContainerTest {
 
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
-            DockerImageName.parse(System.getProperty("ovsx.test.postgres.image", "timescale/timescaledb:2.17.2-pg16"))
+            DockerImageName.parse(System.getProperty("ovsx.test.postgres.image", "postgres:16.2"))
                     .asCompatibleSubstituteFor("postgres"));
 
     static {

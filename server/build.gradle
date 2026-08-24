@@ -200,12 +200,7 @@ jooq {
                 name = 'org.jooq.meta.postgres.PostgresDatabase'
                 inputSchema = 'public'
                 includes = '.*'
-                // jobrunr manages its own tables; the timescaledb extension contributes
-                // public-schema (table-valued) functions that we never call through jOOQ
-                excludes = 'jobrunr.*' +
-                        '|add_dimension|alter_job|create_hypertable|disable_chunk_skipping|drop_chunks' +
-                        '|enable_chunk_skipping|show_chunks|show_tablespaces' +
-                        '|chunk_compression_stats|chunks_detailed_size|hypertable_.*'
+                excludes = 'jobrunr.*'
                 includeRoutines = false
             }
             target {
@@ -287,10 +282,12 @@ test {
     jvmArgs = ['--enable-native-access=ALL-UNNAMED', '-Xmx6144m', '-Xshare:off'] // due to https://github.com/netty/netty/issues/15161
     useJUnitPlatform()
 
-    // the test database image is timescale/timescaledb by default (the main migration chain
-    // requires the extension); override with -Dovsx.test.postgres.image=... if needed
-    if (System.getProperty('ovsx.test.postgres.image') != null) {
-        systemProperty 'ovsx.test.postgres.image', System.getProperty('ovsx.test.postgres.image')
+    // registry tests run on plain postgres, analytics tests on timescale/timescaledb; override
+    // either image with -Dovsx.test.postgres.image=... / -Dovsx.test.timeseries.image=...
+    ['ovsx.test.postgres.image', 'ovsx.test.timeseries.image'].each { property ->
+        if (System.getProperty(property) != null) {
+            systemProperty property, System.getProperty(property)
+        }
     }
 }
 

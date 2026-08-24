@@ -16,8 +16,6 @@ import org.eclipse.openvsx.jooq.tables.Customer;
 import org.eclipse.openvsx.jooq.tables.CustomerMembership;
 import org.eclipse.openvsx.jooq.tables.DailyUsageStats;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
-import org.eclipse.openvsx.jooq.tables.DownloadEvent;
-import org.eclipse.openvsx.jooq.tables.DownloadStatsDaily;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionScan;
@@ -116,16 +114,6 @@ public class Tables {
      * The table <code>public.download_count_processed_item</code>.
      */
     public static final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
-
-    /**
-     * The table <code>public.download_event</code>.
-     */
-    public static final DownloadEvent DOWNLOAD_EVENT = DownloadEvent.DOWNLOAD_EVENT;
-
-    /**
-     * The table <code>public.download_stats_daily</code>.
-     */
-    public static final DownloadStatsDaily DOWNLOAD_STATS_DAILY = DownloadStatsDaily.DOWNLOAD_STATS_DAILY;
 
     /**
      * The table <code>public.extension</code>.

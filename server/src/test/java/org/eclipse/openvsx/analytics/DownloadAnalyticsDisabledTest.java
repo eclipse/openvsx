@@ -12,6 +12,9 @@
  *****************************************************************************/
 package org.eclipse.openvsx.analytics;
 
+import java.util.List;
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +24,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,5 +55,13 @@ class DownloadAnalyticsDisabledTest extends AbstractPostgresContainerTest {
         assertTrue(context.getBeanNamesForType(DownloadAnalyticsRepository.class).length == 0);
         assertTrue(context.getBeanNamesForType(DownloadAnalyticsService.class).length == 0);
         assertTrue(context.getBeanNamesForType(DownloadAnalyticsAPI.class).length == 0);
+    }
+
+    @Test
+    void testNoTimeseriesDatabaseWhenDisabled() {
+        // no second pool, and none of the ovsx.analytics.datasource.* properties are read
+        var dataSources = List.of(context.getBeanNamesForType(DataSource.class));
+        assertEquals(1, dataSources.size());
+        assertFalse(dataSources.contains("timeseriesDataSource"));
     }
 }

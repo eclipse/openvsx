@@ -19,8 +19,6 @@ import org.eclipse.openvsx.jooq.tables.Customer;
 import org.eclipse.openvsx.jooq.tables.CustomerMembership;
 import org.eclipse.openvsx.jooq.tables.DailyUsageStats;
 import org.eclipse.openvsx.jooq.tables.DownloadCountProcessedItem;
-import org.eclipse.openvsx.jooq.tables.DownloadEvent;
-import org.eclipse.openvsx.jooq.tables.DownloadStatsDaily;
 import org.eclipse.openvsx.jooq.tables.Extension;
 import org.eclipse.openvsx.jooq.tables.ExtensionReview;
 import org.eclipse.openvsx.jooq.tables.ExtensionScan;
@@ -130,16 +128,6 @@ public class Public extends SchemaImpl {
      * The table <code>public.download_count_processed_item</code>.
      */
     public final DownloadCountProcessedItem DOWNLOAD_COUNT_PROCESSED_ITEM = DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM;
-
-    /**
-     * The table <code>public.download_event</code>.
-     */
-    public final DownloadEvent DOWNLOAD_EVENT = DownloadEvent.DOWNLOAD_EVENT;
-
-    /**
-     * The table <code>public.download_stats_daily</code>.
-     */
-    public final DownloadStatsDaily DOWNLOAD_STATS_DAILY = DownloadStatsDaily.DOWNLOAD_STATS_DAILY;
 
     /**
      * The table <code>public.extension</code>.
@@ -340,8 +328,6 @@ public class Public extends SchemaImpl {
             CustomerMembership.CUSTOMER_MEMBERSHIP,
             DailyUsageStats.DAILY_USAGE_STATS,
             DownloadCountProcessedItem.DOWNLOAD_COUNT_PROCESSED_ITEM,
-            DownloadEvent.DOWNLOAD_EVENT,
-            DownloadStatsDaily.DOWNLOAD_STATS_DAILY,
             Extension.EXTENSION,
             ExtensionReview.EXTENSION_REVIEW,
             ExtensionScan.EXTENSION_SCAN,

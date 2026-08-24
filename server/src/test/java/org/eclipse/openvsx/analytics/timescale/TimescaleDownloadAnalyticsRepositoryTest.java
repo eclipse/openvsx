@@ -17,15 +17,17 @@ import java.util.List;
 import java.util.stream.IntStream;
 import javax.sql.DataSource;
 
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import org.eclipse.openvsx.AbstractPostgresContainerTest;
+import org.eclipse.openvsx.AbstractTimeseriesContainerTest;
 import org.eclipse.openvsx.analytics.DownloadAnalyticsRepository;
 import org.eclipse.openvsx.analytics.DownloadEvent;
 import org.eclipse.openvsx.analytics.DownloadSeriesGroupBy;
@@ -35,23 +37,24 @@ import org.eclipse.openvsx.analytics.DownloadSeriesRow;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(properties = "ovsx.analytics.enabled=true")
-class TimescaleDownloadAnalyticsRepositoryTest extends AbstractPostgresContainerTest {
+@SpringBootTest
+class TimescaleDownloadAnalyticsRepositoryTest extends AbstractTimeseriesContainerTest {
 
     @Autowired
     DownloadAnalyticsRepository repository;
-
-    @Autowired
-    DataSource dataSource;
 
     @Autowired
     PlatformTransactionManager transactionManager;
 
     JdbcTemplate jdbc;
 
+    JdbcTemplate registryJdbc;
+
+    // the time-series pool is not a default autowiring candidate; only the qualifier reaches it
     @Autowired
-    void initJdbc(DataSource dataSource) {
-        this.jdbc = new JdbcTemplate(dataSource);
+    void initJdbc(@Qualifier("timeseriesDataSource") DataSource timeseries, DataSource registry) {
+        this.jdbc = new JdbcTemplate(timeseries);
+        this.registryJdbc = new JdbcTemplate(registry);
     }
 
     @AfterEach
@@ -71,12 +74,18 @@ class TimescaleDownloadAnalyticsRepositoryTest extends AbstractPostgresContainer
                 jdbc.queryForObject(
                         "SELECT COUNT(*) FROM timescaledb_information.continuous_aggregates WHERE view_name = 'download_stats_daily'",
                         Integer.class));
-        // the analytics schema is part of the main migration chain
+        // the time-series database has its own migration chain, starting over at version 1
         assertEquals(
                 1,
                 jdbc.queryForObject(
-                        "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1.71' AND success",
+                        "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1' AND success",
                         Integer.class));
+    }
+
+    @Test
+    void testAnalyticsSchemaIsAbsentFromRegistryDatabase() {
+        assertNull(registryJdbc.queryForObject("SELECT to_regclass('download_event')::text", String.class));
+        assertNull(registryJdbc.queryForObject("SELECT to_regclass('download_stats_daily')::text", String.class));
     }
 
     @Test
@@ -108,7 +117,7 @@ class TimescaleDownloadAnalyticsRepositoryTest extends AbstractPostgresContainer
     }
 
     @Test
-    void testSaveJoinsCallerTransaction() {
+    void testSaveSurvivesRolledBackCallerTransaction() {
         var transaction = new TransactionTemplate(transactionManager);
         assertThrows(IllegalStateException.class, () -> transaction.execute(status -> {
             repository.save(
@@ -122,7 +131,8 @@ class TimescaleDownloadAnalyticsRepositoryTest extends AbstractPostgresContainer
             throw new IllegalStateException("induced failure after save");
         }));
 
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM download_event", Integer.class));
+        // the time-series database is not part of the registry transaction
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM download_event", Integer.class));
     }
 
     @Test

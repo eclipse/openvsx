@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.Duration;
 
 import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,15 +26,15 @@ import org.eclipse.openvsx.analytics.timescale.TimescaleDownloadAnalyticsReposit
 
 /**
  * Wires download analytics when {@code ovsx.analytics.enabled=true}. The download_event schema
- * is part of the main migration chain, so the database image must provide the timescaledb
- * extension.
+ * lives in its own database, migrated and pooled separately from the registry, so the registry
+ * database image needs nothing beyond plain PostgreSQL.
  */
 @Configuration
 @ConditionalOnProperty(name = "ovsx.analytics.enabled", havingValue = "true")
 class DownloadAnalyticsConfiguration {
 
     @Bean
-    DownloadAnalyticsRepository downloadAnalyticsRepository(DSLContext dsl) {
+    DownloadAnalyticsRepository downloadAnalyticsRepository(@Qualifier("timeseriesDsl") DSLContext dsl) {
         return new TimescaleDownloadAnalyticsRepository(dsl);
     }
 
