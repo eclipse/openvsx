@@ -26,10 +26,15 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Publishing goes through TanStack Query: `publishExtension` and `createNamespace` are mutation hooks (`usePublishExtension`, `useCreateNamespace`), and both service methods lose their `AbortController` parameter — writes are no longer aborted, and retries are the query client's to own. The user's extension list is a query too (`useUserExtensions`), read by the settings tab and by the publish queue as it follows a package, so a card appears in the list as soon as the registry has the package
 - `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 
+### Added
+
+- Add a `Pill` component — the clickable glass pill the category pills are built on, now usable on its own — and extract the `MonoSlash`, `glassSurface` and `compactControl` page primitives out of the search field, the pills and the search header
+
 ### Changed
 
 - Rename `ScrollToTop` to `ScrollRestoration`, matching what it does on back/forward navigation
 - Rename the extension tint context to `navbar-chrome-context` and add a second channel to it: a page with sections pinned under the navbar can extend the navbar's blur fan down to back them (`useExtendNavbarBlur`)
+- Give Popover and Autocomplete popups the same floating-paper treatment as the other menus, and stop Popovers locking body scroll — the lock jumps the scroll position on mobile and shifts the pinned chrome
 
 ### Fixed
 
