@@ -24,6 +24,8 @@ Variants:
  * `ovsx publish <file>`
    publishes an already packaged file.
 
+Before uploading, `ovsx` checks the packaged extension's size against the limit the registry reports on `/api/version`, so an oversized package is rejected locally instead of failing after the whole file has been uploaded.
+
 ### Trusted Publishing
 
 Instead of a long-lived personal access token, `ovsx` can publish from a CI workflow with a short-lived token that the registry issues in exchange for an OIDC ID token of the workflow. The registry only issues such a token if the workflow matches a trusted publisher that a namespace owner registered under [trusted publishers](https://open-vsx.org/user-settings/trusted-publishers). No access token needs to be stored as a secret.
@@ -52,6 +54,22 @@ Options:
  * `--oidcAudience <audience>` sets the audience requested for the ID token, by default the registry URL. Use it if the registry expects a different audience, and make sure it matches the `aud` claim the registry validates. The environment variable `OVSX_OIDC_AUDIENCE` does the same.
 
 The issued token is valid for a few minutes only and is never written to the token store, but it does carry publishing rights, so treat CI logs accordingly.
+
+### Delete Extensions
+
+You can delete extensions you published with `ovsx unpublish`, the counterpart of `vsce unpublish`. This requires an access token as described above, and the token's user must be a member of the extension's namespace: namespace owners may delete any version, other members only the versions they published themselves. This requires a registry running version 1.2.0 or later.
+
+Deleting is irreversible: the files of a deleted version are removed and its version number stays reserved, so the same version can never be published again. You will be asked for confirmation unless you pass `--force` (or `-f`).
+
+Variants:
+ * `ovsx unpublish`
+   deletes all versions of the extension in the current working directory, as identified by the `publisher` and `name` fields of its package.json.
+ * `ovsx unpublish <extension>`
+   deletes all versions of the given extension, identified with the format `namespace.extension`.
+ * `ovsx unpublish <extension> --versions <versions...>`
+   deletes only the given versions, e.g. `ovsx unpublish foo.bar -v 1.0.0 1.0.1`.
+ * `ovsx unpublish <extension> --versions <versions...> --target <targets...>`
+   deletes only the given [target platforms](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions) of the given versions, e.g. `ovsx unpublish foo.bar -v 1.0.0 -t linux-x64`.
 
 ### Create a Namespace
 

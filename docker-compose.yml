@@ -259,5 +259,29 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+    healthcheck:
+      test: curl -s http://localhost:9000/minio/health/live >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 5s
+    profiles:
+      - minio
+
+  # No persistent volume on `minio` above, so its bucket and access policy are wiped every time
+  # the container is recreated (not just re-started). Re-creates both on every `up` instead of
+  # requiring a manual `mc` setup each time - `mc` is bundled in the same image, so this reuses
+  # it rather than pulling minio/mc as a separate image.
+  minio-init:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/test &&
+      mc anonymous set download local/test
+      "
     profiles:
       - minio

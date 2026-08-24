@@ -76,4 +76,14 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
     Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds);
 
     Streamable<Extension> findByReplacement(Extension replacement);
+
+    // Extensions where `active` disagrees with whether any of their versions actually is. Repairs the
+    // fallout of the cross-transaction lost-update race @DynamicUpdate on Extension now prevents going
+    // forward; used by ExtensionActiveFlagReconciler to fix rows already affected.
+    @Query(
+        value = "select e.* from extension e where e.active <> exists"
+                + " (select 1 from extension_version v where v.extension_id = e.id and v.active = true)",
+        nativeQuery = true
+    )
+    Streamable<Extension> findExtensionsWithInconsistentActiveFlag();
 }

@@ -584,3 +584,24 @@ export interface LogPageableList {
 export interface Settings {
     readOnly: boolean;
 }
+
+export interface ConsistencyCheck {
+    id: string;
+    name: string;
+    description: string;
+    currentFindingsCount: number;
+}
+
+export interface ConsistencyCheckList {
+    checks: ConsistencyCheck[];
+}
+
+export interface ConsistencyFinding {
+    entityId: number;
+    label: string;
+    detail: string;
+}
+
+export interface ConsistencyFindingList {
+    findings: ConsistencyFinding[];
+}

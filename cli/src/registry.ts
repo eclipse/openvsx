@@ -18,6 +18,7 @@ export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
 export const DEFAULT_PUBLISH_SIZE = 512 * 1024 * 1024;
 export const DEFAULT_TOKEN_REQUEST_SIZE = 8 * 1024;
+export const DEFAULT_DELETE_SIZE = 64 * 1024;
 
 export class Registry {
 
@@ -66,6 +67,14 @@ export class Registry {
         }
     }
 
+    getRegistryVersion(): Promise<RegistryVersion> {
+        try {
+            return this.getJson(this.getUrl(['api', 'version']));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
     publish(file: string, pat: string): Promise<Extension> {
         try {
             const url = this.getUrl(['api', '-', 'publish'], { token: pat });
@@ -84,6 +93,31 @@ export class Registry {
             return this.post(JSON.stringify(request), url, {
                 'Content-Type': 'application/json'
             }, DEFAULT_TOKEN_REQUEST_SIZE);
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /**
+     * Deletes extension versions. Omitting `targetVersions` deletes the extension as a whole,
+     * i.e. all versions the personal access token's user is allowed to delete.
+     */
+    deleteExtension(
+        namespace: string,
+        extension: string,
+        targetVersions: TargetPlatformVersion[] | undefined,
+        pat: string
+    ): Promise<Response> {
+        try {
+            if (!targetVersions) {
+                const url = this.getUrl(['api', namespace, extension, 'delete'], { token: pat, allVersions: 'true' });
+                return this.post('', url, undefined, DEFAULT_DELETE_SIZE);
+            }
+
+            const url = this.getUrl(['api', namespace, extension, 'delete'], { token: pat });
+            return this.post(JSON.stringify(targetVersions), url, {
+                'Content-Type': 'application/json'
+            }, DEFAULT_DELETE_SIZE);
         } catch (err) {
             return rejectError(err);
         }
@@ -278,6 +312,12 @@ export interface Extension extends Response {
     bundledExtensions?: ExtensionReference[];
 }
 
+export interface RegistryVersion extends Response {
+    version: string;
+    maxExtensionSize: number;
+    trustedPublishingAudience?: string;
+}
+
 export interface AccessToken extends Response {
     id: number;
     value?: string;
@@ -285,6 +325,11 @@ export interface AccessToken extends Response {
     createdTimestamp: string;
     accessedTimestamp?: string;
     expiresTimestamp?: string;
+}
+
+export interface TargetPlatformVersion {
+    version: string;
+    targetPlatform?: string;
 }
 
 export interface UserData {

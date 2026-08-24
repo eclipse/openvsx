@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -772,6 +773,32 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
+    /**
+     * Soft-deletes extension versions on behalf of the user the given personal access token belongs to.
+     * <p>
+     * This is the token-authenticated counterpart of {@code UserAPI.deleteExtension}, which authenticates
+     * the user via their login session, and applies the same authorization: only namespace members may
+     * delete, owners may delete any version while other members are restricted to the versions they
+     * published themselves.
+     *
+     * @param targetVersions the versions to delete, or {@code null} to delete the extension as a whole
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            String namespaceName,
+            String extensionName,
+            @Nullable List<TargetPlatformVersionJson> targetVersions,
+            String tokenValue
+    ) {
+        var user = tokens
+                .useAccessToken(tokenValue, new AccessTokenAction.DeleteVersion(namespaceName, extensionName));
+        if (user == null) {
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+        }
+
+        return extensions.deleteExtensionAsUser(user, namespaceName, extensionName, targetVersions);
+    }
+
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
         var user = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
         if (user == null) {
@@ -782,7 +809,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (namespace == null) {
             throw new NotFoundException();
         }
-
         if (!users.hasPublishPermission(user, namespace)) {
             throw new ErrorResultException(
                     "Insufficient access rights for namespace: " + namespace.getName(),
@@ -810,52 +836,61 @@ public class LocalRegistryService implements IExtensionRegistry {
         // doesn't see an early response to a request whose body is still arriving and mistake it
         // for a 50x. Capped at the same max upload size a successful publish already reads in full,
         // so an oversized/abusive body doesn't tie up the request thread and bandwidth beyond that.
-        try (
-                var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize());
-                TempFile tempFile = extensions.createExtensionFile(content)
-        ) {
-            ExtensionVersion extVersion;
-            try (var processor = new ExtensionProcessor(tempFile)) {
-                if (user == null) {
+        try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
+            var tempFile = extensions.createExtensionFile(content);
+            try {
+                ExtensionVersion extVersion;
+                try (var processor = new ExtensionProcessor(tempFile)) {
                     // now that we know the details, ensure token is still fine
-                    user = tokens.useAccessToken(
-                            tokenValue,
-                            new AccessTokenAction.PublishVersion(
-                                    processor.getNamespace(),
-                                    processor.getExtensionName()));
+                    if (user == null) {
+                        user = tokens.useAccessToken(
+                                tokenValue,
+                                new AccessTokenAction.PublishVersion(
+                                        processor.getNamespace(),
+                                        processor.getExtensionName()));
+                    }
                     if (user == null) {
                         throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
                     }
+                    // Check whether the user has a valid publisher agreement
+                    eclipse.checkPublisherAgreement(user);
+
+                    extVersion = extensions.publishVersion(processor, user);
                 }
-                // Check whether the user has a valid publisher agreement
-                eclipse.checkPublisherAgreement(user);
 
-                extVersion = extensions.publishVersion(processor, user);
+                var json = toExtensionVersionJson(extVersion, null, true);
+                json.setSuccess("It can take a couple minutes before the extension version is available");
+
+                if (repositories.hasSameVersion(extVersion)) {
+                    var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                    var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                    var extension = extVersion.getExtension();
+                    var semver = extVersion.getSemanticVersion();
+                    var newVersion = String
+                            .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+
+                    json.setWarning(
+                            "A " + existingRelease + " already exists for "
+                                    + NamingUtil.toLogFormat(
+                                            extension.getNamespace().getName(),
+                                            extension.getName(),
+                                            extVersion.getVersion())
+                                    + ".\n" +
+                                    "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
+                                    + newVersion + " as its version instead.");
+                }
+
+                return json;
+            } catch (RuntimeException exc) {
+                // extensions.publishVersion(...) either hands tempFile off to the async publish
+                // pipeline (which deletes it once done reading it) on success, or already deletes it
+                // itself before rethrowing on failure - so this only ever actually deletes anything
+                // when we reject *before* reaching that call (invalid token, no publisher agreement).
+                // Deleting an already-deleted file is a no-op, so it's safe to always try here rather
+                // than track exactly which path already handled it.
+                IOUtils.closeQuietly(tempFile);
+                throw exc;
             }
-
-            var json = toExtensionVersionJson(extVersion, null, true);
-            json.setSuccess("It can take a couple minutes before the extension version is available");
-
-            if (repositories.hasSameVersion(extVersion)) {
-                var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-                var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-                var extension = extVersion.getExtension();
-                var semver = extVersion.getSemanticVersion();
-                var newVersion = String
-                        .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
-
-                json.setWarning(
-                        "A " + existingRelease + " already exists for "
-                                + NamingUtil.toLogFormat(
-                                        extension.getNamespace().getName(),
-                                        extension.getName(),
-                                        extVersion.getVersion())
-                                + ".\n" +
-                                "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
-                                + newVersion + " as its version instead.");
-            }
-
-            return json;
         } catch (IOException e) {
             throw new ErrorResultException("Failed to read extension file", e);
         }
