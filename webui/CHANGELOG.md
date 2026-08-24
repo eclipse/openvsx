@@ -26,6 +26,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Publishing goes through TanStack Query: `publishExtension` and `createNamespace` are mutation hooks (`usePublishExtension`, `useCreateNamespace`), and both service methods lose their `AbortController` parameter — writes are no longer aborted, and retries are the query client's to own. The user's extension list is a query too (`useUserExtensions`), read by the settings tab and by the publish queue as it follows a package, so a card appears in the list as soon as the registry has the package
 - `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 
+### Changed
+
+- Rename `ScrollToTop` to `ScrollRestoration`, matching what it does on back/forward navigation
+- Rename the extension tint context to `navbar-chrome-context` and add a second channel to it: a page with sections pinned under the navbar can extend the navbar's blur fan down to back them (`useExtendNavbarBlur`)
+
 ### Fixed
 
 - Fix a React warning ("Received `true` for a non-boolean attribute `notched`") from the admin dashboard's publisher role filter, whose custom `InputBase` doesn't consume the `notched` prop MUI's `Select` injects for the (unused) outlined variant
