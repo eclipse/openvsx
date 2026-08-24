@@ -27,12 +27,30 @@ import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator
 import { Timestamp } from '../../../components/timestamp';
 import { PersonalAccessToken } from '../../../extension-registry-types';
 import { MainContext } from '../../../context';
+import { DeleteIconButton } from '../../../components/delete-icon-button';
 import { DetailsCard } from '../../../components/details-card';
 import { GenerateAccessTokenDialog } from './generate-access-token-dialog';
 import { TrustedPublishingPromo } from '../trusted-publishing/trusted-publishing-promo';
 import { EmptyPlaceholder, IconTile } from '../settings/settings-primitives';
 import { SettingsHeader } from '../settings/settings-header';
 import { UserSettingsRoutes } from '../user-settings-routes';
+
+// What a pending confirmation refers to: one token, or every token at once.
+type DeleteTarget = PersonalAccessToken | 'all';
+
+/** Confirmation copy for the pending deletion. */
+const deletePrompt = (target: DeleteTarget) =>
+    target === 'all'
+        ? {
+              title: 'Delete all access tokens',
+              message: 'Are you sure you want to delete all access tokens?',
+              confirmLabel: 'Delete'
+          }
+        : {
+              title: 'Revoke access token',
+              message: `Revoking ${target.description ? `“${target.description}”` : 'this token'} cannot be undone. Any command line or CI workflow still using it will fail to publish until you replace it.`,
+              confirmLabel: 'Revoke'
+          };
 
 const TokenRow = styled(Box)({
     display: 'flex',
@@ -46,7 +64,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
     const [tokens, setTokens] = useState(new Array<PersonalAccessToken>());
     const [loading, setLoading] = useState(true);
-    const [showDeleteAll, setShowDeleteAll] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>();
 
     const abortController = useRef<AbortController>(new AbortController());
     useEffect(() => {
@@ -70,24 +88,15 @@ export const UserSettingsTokens: FunctionComponent = () => {
         }
     };
 
-    const handleDelete = async (token: PersonalAccessToken) => {
+    const confirmDelete = async (target: DeleteTarget) => {
+        setDeleteTarget(undefined);
         setLoading(true);
         try {
-            await service.deleteAccessToken(abortController.current, token);
-            updateTokens();
-        } catch (err) {
-            handleError(err);
-        }
-    };
-
-    const onShowDeleteAll = () => setShowDeleteAll(true);
-    const onHideDeleteAll = () => setShowDeleteAll(false);
-
-    const handleDeleteAll = async () => {
-        onHideDeleteAll();
-        setLoading(true);
-        try {
-            await service.deleteAllAccessTokens(abortController.current, tokens);
+            if (target === 'all') {
+                await service.deleteAllAccessTokens(abortController.current, tokens);
+            } else {
+                await service.deleteAccessToken(abortController.current, target);
+            }
             updateTokens();
         } catch (err) {
             handleError(err);
@@ -133,14 +142,13 @@ export const UserSettingsTokens: FunctionComponent = () => {
                         ) : null}
                     </Typography>
                 </Box>
-                <Button
-                    variant='outlined'
-                    size='small'
+                <DeleteIconButton
+                    title='Revoke token'
+                    aria-label={token.description ? `Revoke token ${token.description}` : 'Revoke token'}
                     sx={{ flexShrink: 0 }}
-                    onClick={() => handleDelete(token)}
-                    disabled={loading}>
-                    Revoke
-                </Button>
+                    onClick={() => setDeleteTarget(token)}
+                    disabled={loading}
+                />
             </TokenRow>
         );
     };
@@ -185,7 +193,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
                         <Button
                             variant='outlined'
                             color='error'
-                            onClick={onShowDeleteAll}
+                            onClick={() => setDeleteTarget('all')}
                             disabled={loading || tokens.length === 0}>
                             Delete all
                         </Button>
@@ -202,20 +210,37 @@ export const UserSettingsTokens: FunctionComponent = () => {
             ) : !loading ? (
                 <EmptyPlaceholder>You currently have no tokens.</EmptyPlaceholder>
             ) : null}
-            <Dialog open={showDeleteAll} onClose={onHideDeleteAll}>
-                <DialogTitle>Delete all access tokens</DialogTitle>
-                <DialogContent>
-                    <DialogContentText component='div'>
-                        Are you sure you want to delete all access tokens?
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={onHideDeleteAll}>Cancel</Button>
-                    <Button variant='contained' color='error' autoFocus onClick={handleDeleteAll}>
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            {deleteTarget ? (
+                <DeleteTokenDialog
+                    target={deleteTarget}
+                    onClose={() => setDeleteTarget(undefined)}
+                    onConfirm={() => confirmDelete(deleteTarget)}
+                />
+            ) : null}
         </Box>
     );
 };
+
+const DeleteTokenDialog: FunctionComponent<DeleteTokenDialogProps> = ({ target, onClose, onConfirm }) => {
+    const { title, message, confirmLabel } = deletePrompt(target);
+    return (
+        <Dialog open={true} onClose={onClose}>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogContent>
+                <DialogContentText component='div'>{message}</DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose}>Cancel</Button>
+                <Button variant='contained' color='error' autoFocus onClick={onConfirm}>
+                    {confirmLabel}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+interface DeleteTokenDialogProps {
+    target: DeleteTarget;
+    onClose: () => void;
+    onConfirm: () => void;
+}
