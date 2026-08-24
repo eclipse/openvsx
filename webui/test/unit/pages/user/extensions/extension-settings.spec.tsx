@@ -62,7 +62,7 @@ function renderSettings(options: { backState?: ExtensionSettingsBackState; error
                 service,
                 user: testUser,
                 handleError,
-                pageSettings: { urls: { extensionDefaultIcon: '/icon.png' } } as PageSettings
+                pageSettings: { urls: { extensionDefaultIcon: '/icon.png' }, elements: {} } as PageSettings
             },
             route: { pathname: '/user-settings/extensions/foo/bar', state: options.backState }
         }

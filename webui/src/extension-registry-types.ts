@@ -82,6 +82,9 @@ export interface Extension {
     removed?: boolean;
     reviewStatus?: 'published' | 'under_review' | 'rejected';
     reviewMessage?: string;
+    // True when this version's latest scan found that its namespace already exists in a referenced
+    // external gallery and is not verified - the namespace needs to be verified/claimed to activate it.
+    namespaceOwnershipConflict?: boolean;
 
     averageRating?: number;
     downloadCount: number;

@@ -36,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
@@ -55,8 +56,8 @@ import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.json.UsageStatsListJson;
 import org.eclipse.openvsx.json.UserJson;
-import org.eclipse.openvsx.repositories.ExtensionScanRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
@@ -89,7 +90,6 @@ public class UserAPI {
     private final StorageUtilService storageUtil;
     private final LocalRegistryService local;
     private final ExtensionService extensions;
-    private final ExtensionScanRepository scanRepository;
 
     public UserAPI(
             RepositoryService repositories,
@@ -98,8 +98,7 @@ public class UserAPI {
             EclipseService eclipse,
             StorageUtilService storageUtil,
             LocalRegistryService local,
-            ExtensionService extensions,
-            ExtensionScanRepository scanRepository
+            ExtensionService extensions
     ) {
         this.repositories = repositories;
         this.users = users;
@@ -108,7 +107,6 @@ public class UserAPI {
         this.storageUtil = storageUtil;
         this.local = local;
         this.extensions = extensions;
-        this.scanRepository = scanRepository;
     }
 
     @GetMapping(
@@ -274,6 +272,7 @@ public class UserAPI {
                     json.setPreview(latest.isPreview());
                     json.setActive(latest.getExtension().isActive());
                     json.setRemoved(latest.isExtensionRemoved());
+                    json.setVerified(repositories.isVerifiedPublisher(latest));
                     json.setFiles(fileUrls.get(latest.getId()));
 
                     // Add scan/review status information
@@ -282,6 +281,27 @@ public class UserAPI {
                     return json;
                 })
                 .toList();
+    }
+
+    /**
+     * Looks up the most recent scan recorded for {@code extVersion}, or {@code null} if none exists
+     * (scanning disabled, or the version predates the scanning feature).
+     */
+    private ExtensionScan findLatestScan(ExtensionVersion extVersion) {
+        return repositories.findLatestExtensionScan(extVersion);
+    }
+
+    /**
+     * Whether {@code scanResult} recorded a threat from the {@link NamespaceOwnershipCheckScanner}:
+     * the version's namespace already exists in a referenced external gallery and needs to be verified
+     * (claimed) before the version can be activated here.
+     */
+    private boolean hasNamespaceOwnershipConflict(ExtensionScan scanResult) {
+        return scanResult != null
+                && repositories.findExtensionThreats(scanResult, NamespaceOwnershipCheckScanner.TYPE)
+                        .stream()
+                        .findAny()
+                        .isPresent();
     }
 
     /**
@@ -295,14 +315,8 @@ public class UserAPI {
      * </ul>
      */
     private void enrichWithReviewStatus(ExtensionJson json, ExtensionVersion extVersion) {
-        // Look up scan by extension metadata (namespace, name, version, platform)
-        var ext = extVersion.getExtension();
-        var scanResult = scanRepository
-                .findFirstByNamespaceNameAndExtensionNameAndExtensionVersionAndTargetPlatformOrderByStartedAtDesc(
-                        ext.getNamespace().getName(),
-                        ext.getName(),
-                        extVersion.getVersion(),
-                        extVersion.getTargetPlatform());
+        var scanResult = findLatestScan(extVersion);
+        json.setNamespaceOwnershipConflict(hasNamespaceOwnershipConflict(scanResult));
 
         if (Boolean.TRUE.equals(json.getActive())) {
             // Only mark published if scan result indicates PASSED or no scan result exists (scanning disabled / manual
@@ -440,6 +454,7 @@ public class UserAPI {
                 json.setAllTargetPlatformVersions(users.getVersionsWithDeletePermission(user, extension, isOwner));
                 json.setActive(extension.isActive());
                 json.setRemoved(latest.isExtensionRemoved());
+                json.setNamespaceOwnershipConflict(hasNamespaceOwnershipConflict(findLatestScan(latest)));
             } else {
                 var error = "Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName);
                 throw new ErrorResultException(error, HttpStatus.NOT_FOUND);

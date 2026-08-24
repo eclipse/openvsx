@@ -58,6 +58,20 @@ export const ExtensionCardListItem: FunctionComponent<ExtensionCardListItemProps
             );
         }
 
+        if (extension.namespaceOwnershipConflict) {
+            return (
+                <Box mt={0.25}>
+                    <Typography variant='body2' sx={{ fontWeight: 600, color: 'warning.main' }}>
+                        Namespace needs verification
+                    </Typography>
+                    <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                        This namespace already exists on a referenced gallery and needs to be verified before this
+                        extension can be activated.
+                    </Typography>
+                </Box>
+            );
+        }
+
         if (extension.reviewStatus === 'under_review') {
             return (
                 <Box mt={0.25}>

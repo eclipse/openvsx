@@ -84,6 +84,7 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
+import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
@@ -119,6 +120,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -223,6 +225,20 @@ class AdminAPITest {
                     e.setVersion("2.0.0");
                     e.setActive(false);
                 })));
+    }
+
+    @Test
+    void testGetExtensionNamespaceOwnershipConflict() throws Exception {
+        mockAdminUser();
+        var latest = mockExtension(2, 0, 0).getLast();
+        when(repositories.hasThreatOfType(latest, NamespaceOwnershipCheckScanner.TYPE)).thenReturn(true);
+
+        mockMvc.perform(
+                get("/admin/extension/{namespace}/{extension}", "foobar", "baz")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.namespaceOwnershipConflict").value(true));
     }
 
     @Test
