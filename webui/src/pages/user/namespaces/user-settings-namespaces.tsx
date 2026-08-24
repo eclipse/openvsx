@@ -51,7 +51,7 @@ const NamespaceListItem = styled(ButtonBase)(({ theme }) => ({
 }));
 
 export const UserSettingsNamespaces: FunctionComponent<UserSettingsNamespacesProps> = ({ selectedName }) => {
-    const { pageSettings, user } = useContext(MainContext);
+    const { pageSettings, service, user } = useContext(MainContext);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const navigate = useNavigate();
@@ -85,6 +85,11 @@ export const UserSettingsNamespaces: FunctionComponent<UserSettingsNamespacesPro
                 setLoadingState={setDetailLoading}
                 extensionRoutePrefix={UserSettingsRoutes.EXTENSIONS}
                 namespaceAccessUrl={namespaceAccessUrl}
+                // The public endpoint hides what a namespace member still needs to manage: an
+                // inactive extension, or one whose only versions are soft-deleted.
+                fetchExtension={(abortController, extension) =>
+                    service.getExtension(abortController, namespace.name, extension.name)
+                }
             />
         </NamespaceDetailConfigContext.Provider>
     );

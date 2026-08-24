@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../../../support/test-providers';
 import { disabledStatus, testUser } from '../../../support/trusted-publishing';
 import { namespaceDetails, settingsServiceStub, testNamespace } from '../../../support/user-settings';
@@ -32,11 +32,13 @@ function renderNamespaces(namespaces: Namespace[], selectedName?: string) {
         getNamespaceDetails: vi.fn().mockResolvedValue(namespaceDetails()),
         getNamespaceMembers: vi.fn().mockResolvedValue({ namespaceMemberships: [] }),
         getExtensionDetail: vi.fn(),
+        getExtension: vi.fn().mockResolvedValue({ name: 'bar', namespace: 'redhat', files: {} }),
         getExtensionIcon: vi.fn().mockResolvedValue(null)
     };
     renderWithProviders(<UserSettingsNamespaces selectedName={selectedName} />, {
         mainContext: { service: full as unknown as ExtensionRegistryService, user: testUser, pageSettings }
     });
+    return full;
 }
 
 describe('UserSettingsNamespaces', () => {
@@ -52,6 +54,18 @@ describe('UserSettingsNamespaces', () => {
         renderNamespaces([testNamespace({ name: 'redhat' }), testNamespace({ name: 'acme' })], 'acme');
 
         expect(await screen.findByRole('heading', { name: 'acme' })).toBeInTheDocument();
+    });
+
+    it('reads each extension through the user endpoint, which keeps inactive and deleted ones', async () => {
+        const namespace = testNamespace({
+            name: 'redhat',
+            extensions: { bar: 'https://registry.test/redhat/bar' }
+        });
+        const { getExtension, getExtensionDetail } = renderNamespaces([namespace], 'redhat');
+
+        await waitFor(() => expect(getExtension).toHaveBeenCalledWith(expect.anything(), 'redhat', 'bar'));
+        // The public endpoint would hide a soft-deleted or deactivated extension.
+        expect(getExtensionDetail).not.toHaveBeenCalled();
     });
 
     it('falls back to the first namespace when the route names none', async () => {
