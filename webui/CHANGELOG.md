@@ -20,6 +20,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 - **Breaking:** `elements.claimNamespace` now receives `{ namespace, extension?, sx? }` instead of `{ extension, sx? }`. The namespace settings page offers the same claim action and has no extension to pass, so implementations must read the namespace from `namespace` rather than `extension.namespace`
 - `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart` and `dimmed` props so other surfaces can reuse it instead of copying it
 
+### Changed
+
+- Rename `ScrollToTop` to `ScrollRestoration`, matching what it does on back/forward navigation
+- Rename the extension tint context to `navbar-chrome-context` and add a second channel to it: a page with sections pinned under the navbar can extend the navbar's blur fan down to back them (`useExtendNavbarBlur`)
+
 ### Fixed
 
 - Fix a React warning ("Received `true` for a non-boolean attribute `notched`") from the admin dashboard's publisher role filter, whose custom `InputBase` doesn't consume the `notched` prop MUI's `Select` injects for the (unused) outlined variant

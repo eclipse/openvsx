@@ -14,13 +14,12 @@
 import { FunctionComponent, useLayoutEffect } from 'react';
 import { useLocation, useNavigationType } from 'react-router';
 
-// BrowserRouter leaves window scroll untouched on navigation, so a page opened
-// from deep in a long list would start at that old offset. Reset to the top on
-// forward navigations only: POP (back/forward) keeps the browser's native
-// scroll restoration, and same-path param updates (e.g. search filters, which
-// replace in place) must not jump either — hence keying on pathname alone.
-// Links that swap content in place opt out via state `{ preserveScroll: true }`.
-export const ScrollToTop: FunctionComponent = () => {
+// BrowserRouter never scrolls on push, so reset to the top on forward navigations only: POP
+// keeps the browser's restoration, and same-path param updates must not jump (hence keying on
+// pathname alone). Links that swap content in place opt out via state `{ preserveScroll: true }`.
+// TODO Use react-router's <ScrollRestoration/> once on a data router — also fixes the pop
+// landing clamped to the outgoing page's height: https://github.com/eclipse-openvsx/openvsx/issues/2079
+export const ScrollRestoration: FunctionComponent = () => {
     const { pathname, state } = useLocation();
     const navigationType = useNavigationType();
     const preserveScroll = (state as { preserveScroll?: boolean } | null)?.preserveScroll;
