@@ -258,6 +258,8 @@ export interface Namespace {
     membersUrl: UrlString;
     roleUrl: UrlString;
     detailsUrl: UrlString;
+    // present only when the current user may manage trusted publishers for this namespace
+    trustedPublishingUrl?: UrlString;
 }
 
 export interface NamespaceDetails {
@@ -270,6 +272,50 @@ export interface NamespaceDetails {
     supportLink?: UrlString;
     socialLinks: { [key: string]: UrlString | undefined };
     extensions?: SearchEntry[];
+}
+
+export interface TrustedPublisherInput {
+    key: string;
+    // form label / help text for the field
+    description: string;
+    optional: boolean;
+}
+
+export interface TrustedPublisherProvider {
+    id: string;
+    name: string;
+    url: UrlString;
+    registrationInputs: TrustedPublisherInput[];
+}
+
+export interface TrustedPublisherStatus {
+    enabled: boolean;
+    allowed: boolean;
+    // present only when the feature is enabled and the current user is allowed to use it
+    trustedPublisherProviders?: TrustedPublisherProvider[];
+}
+
+export interface TrustedPublisherRequest {
+    provider: string;
+    namespace: string;
+    extension: string;
+    registration: { [key: string]: string };
+}
+
+export interface TrustedPublisher {
+    id: number;
+    provider: string;
+    namespace: string;
+    extension: string;
+    registration: { [key: string]: string };
+    createdTimestamp?: TimestampString;
+}
+
+export interface TrustedPublisherList {
+    trustedPublishers: TrustedPublisher[];
+    // extensions a trusted publisher can still be registered for: active, and not registered yet
+    // (the server allows at most one registration per extension)
+    registrableExtensions: string[];
 }
 
 export interface PublisherInfo {
@@ -537,4 +583,25 @@ export interface LogPageableList {
 
 export interface Settings {
     readOnly: boolean;
+}
+
+export interface ConsistencyCheck {
+    id: string;
+    name: string;
+    description: string;
+    currentFindingsCount: number;
+}
+
+export interface ConsistencyCheckList {
+    checks: ConsistencyCheck[];
+}
+
+export interface ConsistencyFinding {
+    entityId: number;
+    label: string;
+    detail: string;
+}
+
+export interface ConsistencyFindingList {
+    findings: ConsistencyFinding[];
 }

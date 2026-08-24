@@ -46,12 +46,14 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.RateLimitToken;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.entities.Tier;
 import org.eclipse.openvsx.entities.TierType;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.QueryRequest;
@@ -84,7 +86,7 @@ public class RepositoryService {
     private final ExtensionReviewRepository extensionReviewRepo;
     private final UserDataRepository userDataRepo;
     private final NamespaceMembershipRepository membershipRepo;
-    private final PersonalAccessTokenRepository tokenRepo;
+    private final PersonalAccessTokenRepository personalAccessTokenRepo;
     private final PersistedLogRepository persistedLogRepo;
     private final DownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
@@ -112,6 +114,7 @@ public class RepositoryService {
     private final RateLimitTokenRepository rateLimitTokenRepository;
     private final DailyUsageStatsRepository dailyUsageStatsRepository;
     private final UserDataJooqRepository userDataJooqRepo;
+    private final TrustedPublisherRepository trustedPublisherRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -122,7 +125,7 @@ public class RepositoryService {
             ExtensionReviewRepository extensionReviewRepo,
             UserDataRepository userDataRepo,
             NamespaceMembershipRepository membershipRepo,
-            PersonalAccessTokenRepository tokenRepo,
+            PersonalAccessTokenRepository personalAccessTokenRepo,
             PersistedLogRepository persistedLogRepo,
             DownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
@@ -149,7 +152,8 @@ public class RepositoryService {
             UsageStatsRepository usageStatsRepository,
             RateLimitTokenRepository rateLimitTokenRepository,
             DailyUsageStatsRepository dailyUsageStatsRepository,
-            UserDataJooqRepository userDataJooqRepo
+            UserDataJooqRepository userDataJooqRepo,
+            TrustedPublisherRepository trustedPublisherRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -159,7 +163,7 @@ public class RepositoryService {
         this.extensionReviewRepo = extensionReviewRepo;
         this.userDataRepo = userDataRepo;
         this.membershipRepo = membershipRepo;
-        this.tokenRepo = tokenRepo;
+        this.personalAccessTokenRepo = personalAccessTokenRepo;
         this.persistedLogRepo = persistedLogRepo;
         this.downloadCountRepo = downloadCountRepo;
         this.extensionJooqRepo = extensionJooqRepo;
@@ -187,6 +191,19 @@ public class RepositoryService {
         this.rateLimitTokenRepository = rateLimitTokenRepository;
         this.dailyUsageStatsRepository = dailyUsageStatsRepository;
         this.userDataJooqRepo = userDataJooqRepo;
+        this.trustedPublisherRepo = trustedPublisherRepo;
+    }
+
+    public Streamable<TrustedPublisher> findTrustedPublishersByExtension(Extension extension) {
+        return trustedPublisherRepo.findTrustedPublishersByExtension(extension);
+    }
+
+    public TrustedPublisher findTrustedPublisher(long id) {
+        return trustedPublisherRepo.findById(id);
+    }
+
+    public void deleteTrustedPublisher(TrustedPublisher trustedPublisher) {
+        trustedPublisherRepo.delete(trustedPublisher);
     }
 
     public Namespace findNamespace(String name) {
@@ -252,6 +269,10 @@ public class RepositoryService {
 
     public Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds) {
         return extensionRepo.findAllNotMatchingByExtensionId(extensionIds);
+    }
+
+    public Streamable<Extension> findExtensionsWithInconsistentActiveFlag() {
+        return extensionRepo.findExtensionsWithInconsistentActiveFlag();
     }
 
     public long countExtensions() {
@@ -361,8 +382,16 @@ public class RepositoryService {
         return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
     }
 
+    public long countVersionsByAccessToken(PersonalAccessToken publishedWith) {
+        return extensionVersionRepo.countByPublishedWith(publishedWith);
+    }
+
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
         return extensionVersionRepo.findByPublishedWithUserAndActive(user, active);
+    }
+
+    public long countVersionsRemovedBy(UserData user) {
+        return extensionVersionRepo.countByRemovedBy(user);
     }
 
     public LocalDateTime getOldestExtensionTimestamp() {
@@ -437,6 +466,10 @@ public class RepositoryService {
         return extensionReviewRepo.countByExtensionAndActiveTrue(extension);
     }
 
+    public long countReviews(UserData user) {
+        return extensionReviewRepo.countByUser(user);
+    }
+
     public UserData findUserByLoginName(String provider, String loginName) {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
@@ -485,36 +518,63 @@ public class RepositoryService {
         return membershipJooqRepo.findByNamespaceName(namespaceName);
     }
 
-    public Streamable<PersonalAccessToken> findAccessTokens(UserData user) {
-        return tokenRepo.findByUser(user);
+    public Streamable<PersonalAccessToken> findPersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.findByUser(user);
     }
 
-    public Streamable<PersonalAccessToken> findAllAccessTokens() {
-        return tokenRepo.findAll();
+    public Streamable<PersonalAccessToken> findAllPersonalAccessTokens() {
+        return personalAccessTokenRepo.findAll();
     }
 
-    public Streamable<PersonalAccessToken> findActiveAccessTokens(UserData user) {
-        return tokenRepo.findByUserAndActiveTrue(user);
+    public Streamable<PersonalAccessToken> findAllPersonalAccessTokensByVersion(int version) {
+        return personalAccessTokenRepo.findByVersion(version);
     }
 
-    public long countActiveAccessTokens(UserData user) {
-        return tokenRepo.countByUserAndActiveTrue(user);
+    public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(
+            UserData user,
+            PersonalAccessTokenType type
+    ) {
+        return personalAccessTokenRepo.findByUserAndActiveTrueAndType(user, type);
     }
 
-    public PersonalAccessToken findAccessToken(String value) {
-        return tokenRepo.findByValue(value);
+    public long countActivePersonalAccessTokensAndType(UserData user, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.countByUserAndActiveTrueAndType(user, type);
     }
 
-    public PersonalAccessToken findAccessToken(long id) {
-        return tokenRepo.findById(id);
+    public PersonalAccessToken findPersonalAccessToken(String value) {
+        return personalAccessTokenRepo.findByValue(value);
     }
 
-    public List<PersonalAccessToken> findExpiringAccessTokensWithoutNotification(
+    public PersonalAccessToken findPersonalAccessToken(long id) {
+        return personalAccessTokenRepo.findById(id);
+    }
+
+    public List<PersonalAccessToken> findExpiringPersonalAccessTokensWithoutNotification(
             LocalDateTime expirationTime,
             Pageable pageable
     ) {
-        return tokenRepo
+        return personalAccessTokenRepo
                 .findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(expirationTime, pageable);
+    }
+
+    public int deactivatePersonalAccessTokens(UserData user) {
+        return personalAccessTokenRepo.updateActiveSetFalse(user);
+    }
+
+    public List<PersonalAccessToken> expirePersonalAccessTokens(LocalDateTime timestamp) {
+        return personalAccessTokenRepo.expireAccessTokens(timestamp);
+    }
+
+    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
+    }
+
+    public boolean hasPersonalAccessToken(String value) {
+        return personalAccessTokenRepo.findByValue(value) != null;
+    }
+
+    public PersonalAccessToken findPersonalAccessToken(UserData user, String description) {
+        return personalAccessTokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
     }
 
     public Streamable<PersistedLog> findAllPersistedLogs() {
@@ -531,6 +591,10 @@ public class RepositoryService {
 
     public Page<PersistedLog> findPersistedLogsAfterPaginated(LocalDateTime dateTime, Pageable pageable) {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampDesc(dateTime, pageable);
+    }
+
+    public long countPersistedLogs(UserData user) {
+        return persistedLogRepo.countByUser(user);
     }
 
     public List<String> findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(
@@ -649,8 +713,13 @@ public class RepositoryService {
         return extensionVersionChangeRepo.findFirstByExtensionVersionOrderByChangedAtDescIdDesc(extVersion);
     }
 
-    public List<ExtensionVersion> findActiveExtensionVersions(Collection<Long> extensionIds, String targetPlatform) {
-        return extensionVersionJooqRepo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform);
+    public List<ExtensionVersion> findActiveExtensionVersions(
+            Collection<Long> extensionIds,
+            String targetPlatform,
+            int maxPreReleaseVersions
+    ) {
+        return extensionVersionJooqRepo
+                .findAllActiveByExtensionIdAndTargetPlatform(extensionIds, targetPlatform, maxPreReleaseVersions);
     }
 
     public List<FileResource> findFileResourcesByExtensionVersionIdAndType(
@@ -907,18 +976,6 @@ public class RepositoryService {
         signatureKeyPairRepo.updateActiveSetFalse();
     }
 
-    public int deactivateAccessTokens(UserData user) {
-        return tokenRepo.updateActiveSetFalse(user);
-    }
-
-    public List<PersonalAccessToken> expireAccessTokens(LocalDateTime timestamp) {
-        return tokenRepo.expireAccessTokens(timestamp);
-    }
-
-    public int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp) {
-        return tokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp);
-    }
-
     public List<String> findActiveExtensionNames(Namespace namespace) {
         return extensionJooqRepo.findActiveExtensionNames(namespace);
     }
@@ -947,10 +1004,6 @@ public class RepositoryService {
         return extensionReviewJooqRepo.hasActiveReview(extension, user);
     }
 
-    public boolean hasAccessToken(String value) {
-        return tokenRepo.findByValue(value) != null;
-    }
-
     public boolean canPublishInNamespace(UserData user, Namespace namespace) {
         return membershipJooqRepo.canPublish(user, namespace);
     }
@@ -966,10 +1019,6 @@ public class RepositoryService {
 
     public String findFirstUnresolvedDependency(List<ExtensionId> dependencies) {
         return extensionJooqRepo.findFirstUnresolvedDependency(dependencies);
-    }
-
-    public PersonalAccessToken findAccessToken(UserData user, String description) {
-        return tokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
     }
 
     public NamespaceMembership findFirstMembership(String namespaceName) {
@@ -1408,6 +1457,10 @@ public class RepositoryService {
         return adminScanDecisionRepo.countByDecision(decision);
     }
 
+    public long countAdminScanDecisions(UserData decidedBy) {
+        return adminScanDecisionRepo.countByDecidedBy(decidedBy);
+    }
+
     public long countAdminScanDecisionsByDateRange(
             String decision,
             LocalDateTime startedFrom,
@@ -1502,6 +1555,10 @@ public class RepositoryService {
 
     public long countFileDecisions(String decision) {
         return fileDecisionRepo.countByDecision(decision);
+    }
+
+    public long countFileDecisions(UserData decidedBy) {
+        return fileDecisionRepo.countByDecidedBy(decidedBy);
     }
 
     public long countAllFileDecisions() {

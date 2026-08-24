@@ -51,10 +51,16 @@ import {
     CustomerMembershipList,
     RateLimitToken,
     Settings,
-    UserSearchResult
+    UserSearchResult,
+    TrustedPublisher,
+    TrustedPublisherList,
+    TrustedPublisherRequest,
+    TrustedPublisherStatus,
+    ConsistencyCheckList,
+    ConsistencyFindingList
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
-import { sendRequest, ErrorResponse, sendNonRetriableRequest } from './server-request';
+import { sendRequest, ErrorResponse, sendNonRetriableRequest, sendStrictRequest } from './server-request';
 
 export class ExtensionRegistryService {
     readonly admin: AdminService;
@@ -458,6 +464,72 @@ export class ExtensionRegistryService {
         });
     }
 
+    // The trusted-publishing base URL for a namespace in the user context. Callers that hold a
+    // Namespace use its server-provided `trustedPublishingUrl`; the extension page only has a name.
+    userTrustedPublishingUrl(namespace: string): UrlString {
+        return createAbsoluteURL([this.serverUrl, 'user', 'namespace', namespace, 'trusted-publishing']);
+    }
+
+    // Requires a logged-in user; the server answers 403 otherwise.
+    async getTrustedPublishingStatus(abortController: AbortController): Promise<Readonly<TrustedPublisherStatus>> {
+        return sendStrictRequest<TrustedPublisherStatus>({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', '-', 'trusted-publishing', 'status'])
+        });
+    }
+
+    async getTrustedPublishers(
+        abortController: AbortController,
+        trustedPublishingUrl: UrlString
+    ): Promise<Readonly<TrustedPublisherList>> {
+        const result = await sendStrictRequest<TrustedPublisherList>({
+            abortController,
+            credentials: true,
+            endpoint: trustedPublishingUrl
+        });
+        return {
+            trustedPublishers: result.trustedPublishers ?? [],
+            registrableExtensions: result.registrableExtensions ?? []
+        };
+    }
+
+    async registerTrustedPublisher(
+        trustedPublishingUrl: UrlString,
+        request: TrustedPublisherRequest
+    ): Promise<Readonly<TrustedPublisher>> {
+        const csrfResponse = await this.getCsrfToken();
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json;charset=UTF-8'
+        };
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendStrictRequest({
+            method: 'POST',
+            credentials: true,
+            payload: request,
+            headers,
+            endpoint: createAbsoluteURL([trustedPublishingUrl, 'create'])
+        });
+    }
+
+    async deleteTrustedPublisher(trustedPublishingUrl: UrlString, id: number): Promise<Readonly<SuccessResult>> {
+        const csrfResponse = await this.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendStrictRequest({
+            method: 'POST',
+            credentials: true,
+            headers,
+            endpoint: createAbsoluteURL([trustedPublishingUrl, 'delete', `${id}`])
+        });
+    }
+
     async signPublisherAgreement(abortController: AbortController): Promise<Readonly<UserData | ErrorResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
@@ -626,6 +698,7 @@ export interface AdminService {
     ): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>>;
     getAllScans(
         abortController: AbortController,
         params?: {
@@ -710,6 +783,13 @@ export interface AdminService {
     deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
     updateSettings(settings: Settings): Promise<Readonly<Settings>>;
+    getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>>;
+    getConsistencyFindings(
+        abortController: AbortController,
+        checkId: string
+    ): Promise<Readonly<ConsistencyFindingList>>;
+    fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
 }
 
 export interface AdminServiceConstructor {
@@ -951,6 +1031,21 @@ export class AdminServiceImpl implements AdminService {
                 'tokens',
                 'revoke'
             ]),
+            headers
+        });
+    }
+
+    async forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'delete']),
             headers
         });
     }
@@ -1496,6 +1591,62 @@ export class AdminServiceImpl implements AdminService {
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
             headers
         });
+    }
+
+    async getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency'])
+        });
+    }
+
+    async getConsistencyFindings(
+        abortController: AbortController,
+        checkId: string
+    ): Promise<Readonly<ConsistencyFindingList>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency', checkId, 'findings'])
+        });
+    }
+
+    async fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const headers = await this.csrfHeaders();
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency', checkId, 'fix']),
+            headers
+        });
+    }
+
+    async fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
+        const headers = await this.csrfHeaders();
+        return sendNonRetriableRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'consistency',
+                checkId,
+                'fix',
+                String(entityId)
+            ]),
+            headers
+        });
+    }
+
+    private async csrfHeaders(): Promise<Record<string, string>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return headers;
     }
 }
 

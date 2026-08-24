@@ -128,8 +128,13 @@ public class RegistryAPI {
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
-        responseCode = "400",
-        description = "The token has no publishing permission in the namespace or is not valid",
+        responseCode = "401",
+        description = "The token is missing, invalid or expired",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token is valid but has no publishing permission in the namespace",
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     @ApiResponse(
@@ -1407,8 +1412,22 @@ public class RegistryAPI {
         description = "The extension could not be published",
         content = @Content(
             mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Unknown publisher: foobar\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "401",
+        description = "The token is missing, invalid or expired",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token is valid but has no publishing permission in the namespace, "
+                + "or the user has not signed a Publisher Agreement",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
     public ResponseEntity<ExtensionJson> publish(
             InputStream content,
@@ -1464,7 +1483,8 @@ public class RegistryAPI {
     )
     @ApiResponse(
         responseCode = "403",
-        description = "User is not logged in"
+        description = "User is not logged in, has no publishing permission in the namespace, "
+                + "or has not signed a Publisher Agreement"
     )
     public ResponseEntity<ExtensionJson> publish(InputStream content) {
         try {
@@ -1482,6 +1502,90 @@ public class RegistryAPI {
         } catch (ErrorResultException exc) {
             logger.warn("Failed to publish extension: {}", exc.getMessage());
             return exc.toResponseEntity(ExtensionJson.class);
+        }
+    }
+
+    @PostMapping(
+        path = "/api/{namespace}/{extension}/delete",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(
+        summary = "Delete an extension or some of its versions",
+        description = """
+                Deletes extension versions on behalf of the user the personal access token belongs to. \
+                Only members of the namespace may delete: owners may delete any version, other members \
+                only the versions they published themselves.
+
+                Provide a list of target platform versions to delete; an entry without target platform \
+                selects every target platform of that version. Set `allVersions` to delete the extension \
+                as a whole instead, i.e. every version the token's user is allowed to delete.
+
+                Deleted versions are permanently reserved: their files are removed and they can never be \
+                published again."""
+    )
+    @MutatingOperation
+    @ApiResponse(
+        responseCode = "200",
+        description = "The extension versions were deleted",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "The extension versions could not be deleted",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token's user is not a member of the namespace",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Insufficient access rights for namespace: foo\" }")
+        )
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "The specified extension or version could not be found",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(value = "{ \"error\": \"Extension not found: foo.bar\" }")
+        )
+    )
+    public ResponseEntity<ResultJson> deleteExtension(
+            @PathVariable
+            @Parameter(description = "Extension namespace", example = "redhat") String namespace,
+            @PathVariable
+            @Parameter(description = "Extension name", example = "java") String extension,
+            @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions,
+            @RequestParam(required = false, defaultValue = "false")
+            @Parameter(description = "Delete all versions of the extension") boolean allVersions,
+            @RequestParam
+            @Parameter(description = "A personal access token") String token
+    ) {
+        try {
+            if (allVersions && targetVersions != null && !targetVersions.isEmpty()) {
+                var json = ResultJson
+                        .error("Specify either the versions to delete or 'allVersions', but not both.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
+            if (!allVersions && targetVersions == null) {
+                var json = ResultJson
+                        .error("No versions specified. Provide the versions to delete or set 'allVersions'.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
+            if (targetVersions != null
+                    && targetVersions.stream().anyMatch(target -> StringUtils.isBlank(target.version()))) {
+                var json = ResultJson.error("Missing 'version' for a requested target platform version to delete.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
+
+            // null tells the service to delete every version the token's user is allowed to delete
+            var versions = allVersions ? null : targetVersions;
+            return ResponseEntity.ok(local.deleteExtension(namespace, extension, versions, token));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
         }
     }
 

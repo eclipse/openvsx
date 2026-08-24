@@ -11,7 +11,6 @@ package org.eclipse.openvsx.adapter;
 
 import java.time.ZoneId;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -30,16 +29,16 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 
 @Service
 public class VSCodeIdService {
-    // TODO: check if this version is still valid when connecting to the VSC Marketplace
-    private static final String API_VERSION = "3.0-preview.1";
 
     private final RestTemplate vsCodeIdRestTemplate;
     private final UrlConfigService urlConfigService;
     private final JobRequestScheduler scheduler;
+    private final UUIDService uuidService;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
@@ -53,11 +52,13 @@ public class VSCodeIdService {
     public VSCodeIdService(
             RestTemplate vsCodeIdRestTemplate,
             UrlConfigService urlConfigService,
-            JobRequestScheduler scheduler
+            JobRequestScheduler scheduler,
+            UUIDService uuidService
     ) {
         this.vsCodeIdRestTemplate = vsCodeIdRestTemplate;
         this.urlConfigService = urlConfigService;
         this.scheduler = scheduler;
+        this.uuidService = uuidService;
     }
 
     @EventListener
@@ -79,7 +80,7 @@ public class VSCodeIdService {
     }
 
     public String getRandomPublicId() {
-        return UUID.randomUUID().toString();
+        return uuidService.generateRandom().toString();
     }
 
     public PublicIds getUpstreamPublicIds(Extension extension) {
@@ -106,7 +107,7 @@ public class VSCodeIdService {
         var requestData = createRequestData(extension);
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + API_VERSION);
+        headers.set(HttpHeaders.ACCEPT, "application/json;api-version=" + IVSCodeService.GALLERY_API_VERSION);
         var result = vsCodeIdRestTemplate
                 .postForObject(requestUrl, new HttpEntity<>(requestData, headers), ExtensionQueryResult.class);
         if (result != null && result.results() != null && !result.results().isEmpty()) {

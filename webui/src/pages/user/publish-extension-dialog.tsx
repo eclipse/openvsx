@@ -15,6 +15,7 @@ import Dropzone, { FileRejection } from 'react-dropzone';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { ErrorResult, isError } from '../../extension-registry-types';
 import { MainContext } from '../../context';
+import { useRegistryValue } from '../../hooks/use-registry-value';
 import { styled, Theme } from '@mui/material/styles';
 
 const getColor = (isFocused: boolean, isDragAccept: boolean, isDragReject: boolean) => {
@@ -52,7 +53,7 @@ export const PublishExtensionDialog: FunctionComponent<PublishExtensionDialogPro
     const [rejectedFile, setRejectedFile] = useState<File>();
 
     const context = useContext(MainContext);
-    const effectiveMaxSize = context.version?.maxExtensionSize ?? 512 * 1024 * 1024;
+    const effectiveMaxSize = useRegistryValue(version => version.maxExtensionSize) ?? 512 * 1024 * 1024;
     const abortController = useRef<AbortController>(new AbortController());
 
     useEffect(() => {

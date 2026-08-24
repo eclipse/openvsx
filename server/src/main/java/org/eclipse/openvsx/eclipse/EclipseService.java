@@ -98,6 +98,26 @@ public class EclipseService {
     }
 
     /**
+     * Check whether the given user has an active publisher agreement and returns {@code true} if user has it.
+     */
+    public boolean hasPublisherAgreement(UserData user) {
+        // Users without authentication provider have been created directly in the DB,
+        // so we skip the agreement check in this case.
+        if (!isActive() || user.getProvider() == null) {
+            return true;
+        }
+        var personId = user.getEclipsePersonId();
+        if (personId == null) {
+            return false;
+        }
+        var json = user.toUserJson();
+        enrichUserJsonWithPublisherAgreement(json, user);
+        var publisherAgreement = json.getPublisherAgreement();
+
+        return publisherAgreement != null && publisherAgreement.getStatus().equals("signed");
+    }
+
+    /**
      * Check whether the given user has an active publisher agreement.
      * @throws ErrorResultException if the user has no active agreement
      */
@@ -113,7 +133,8 @@ public class EclipseService {
         var personId = user.getEclipsePersonId();
         if (personId == null) {
             throw new ErrorResultException(
-                    "You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.");
+                    "You must log in with an Eclipse Foundation account and sign a Publisher Agreement before publishing any extension.",
+                    HttpStatus.FORBIDDEN);
         }
 
         var json = user.toUserJson();
@@ -122,7 +143,8 @@ public class EclipseService {
 
         if (publisherAgreement == null || publisherAgreement.getStatus().equals("none")) {
             throw new ErrorResultException(
-                    "You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.");
+                    "You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.",
+                    HttpStatus.FORBIDDEN);
         }
 
         if (!publisherAgreement.getStatus().equals("signed")) {
@@ -130,9 +152,12 @@ public class EclipseService {
                 throw new ErrorResultException(
                         "Your Publisher Agreement with the Eclipse Foundation is outdated (version "
                                 + publisherAgreement.getVersion() + "). The current version is "
-                                + publisherAgreementVersion + ".");
+                                + publisherAgreementVersion + ".",
+                        HttpStatus.FORBIDDEN);
             } else {
-                throw new ErrorResultException("Your Publisher Agreement with the Eclipse Foundation is outdated.");
+                throw new ErrorResultException(
+                        "Your Publisher Agreement with the Eclipse Foundation is outdated.",
+                        HttpStatus.FORBIDDEN);
             }
         }
     }

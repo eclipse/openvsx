@@ -17,10 +17,13 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.PersistedLog;
+import org.eclipse.openvsx.entities.UserData;
 
 public interface PersistedLogRepository extends Repository<PersistedLog, Long> {
 
     Streamable<PersistedLog> findByOrderByTimestampAsc();
+
+    long countByUser(UserData user);
 
     Streamable<PersistedLog> findByTimestampAfterOrderByTimestampAsc(LocalDateTime dateTime);
 

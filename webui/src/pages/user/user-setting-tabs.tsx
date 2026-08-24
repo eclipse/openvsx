@@ -8,25 +8,20 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 import { Tabs, Tab, useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate, useParams } from 'react-router';
 import { createRoute } from '../../utils';
 import { UserSettingsRoutes } from './user-settings-routes';
-
-const TABS = [
-    { value: 'profile', label: 'Profile' },
-    { value: 'tokens', label: 'Access Tokens' },
-    { value: 'namespaces', label: 'Namespaces' },
-    { value: 'extensions', label: 'Extensions' },
-    { value: 'customers', label: 'Rate Limiting' }
-];
+import { useTrustedPublishingStatus } from './trusted-publishing/use-trusted-publishers';
 
 export const UserSettingTabs = (): ReactElement => {
     const theme = useTheme();
     const isATablet = useMediaQuery(theme.breakpoints.down('md'));
     const isAMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { tab } = useParams();
+    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
+    const trustedPublishingEnabled = trustedPublishingStatus?.enabled ?? false;
 
     const navigate = useNavigate();
 
@@ -34,13 +29,25 @@ export const UserSettingTabs = (): ReactElement => {
         return createRoute([UserSettingsRoutes.ROOT, tab]);
     };
 
+    const tabs = useMemo(
+        () => [
+            { value: 'profile', label: 'Profile' },
+            { value: 'tokens', label: 'Access Tokens' },
+            ...(trustedPublishingEnabled ? [{ value: 'trusted-publishers', label: 'Trusted Publishers' }] : []),
+            { value: 'namespaces', label: 'Namespaces' },
+            { value: 'extensions', label: 'Extensions' },
+            { value: 'customers', label: 'Rate Limiting' }
+        ],
+        [trustedPublishingEnabled]
+    );
+
     return (
         <Tabs
             value={tab ?? 'extensions'}
             orientation={isATablet ? 'horizontal' : 'vertical'}
             centered={isAMobile}
             indicatorColor='secondary'>
-            {TABS.map(({ value, label }) => (
+            {tabs.map(({ value, label }) => (
                 // MUI's Tabs only fires `onChange` when the clicked tab differs from the
                 // currently selected one, so a per-Tab `onClick` is used instead to also
                 // navigate when the already-active tab is clicked.

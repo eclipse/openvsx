@@ -122,3 +122,21 @@ export const useRevokeAccessTokens = () => {
         }
     });
 };
+
+/**
+ * Forgets a user in response to a data-protection erasure request. Throws on
+ * an error result so the caller's catch path runs.
+ */
+export const useForgetUser = () => {
+    const { service } = useContext(MainContext);
+    return useMutation({
+        mutationKey: [...publisherMutationKey, 'forget-user'],
+        mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
+            const result = await service.admin.forgetUser(provider, login);
+            if (isError(result)) {
+                throw result;
+            }
+            return result;
+        }
+    });
+};

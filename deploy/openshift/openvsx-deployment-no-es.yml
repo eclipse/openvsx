@@ -147,7 +147,7 @@ objects:
             imagePullPolicy: IfNotPresent
             readinessProbe:
               httpGet:
-                path: /api/version
+                path: openvsx/api/version
                 port: 8080
               failureThreshold: 30
               initialDelaySeconds: 140
@@ -155,7 +155,7 @@ objects:
               timeoutSeconds: 5
             livenessProbe:
               httpGet:
-                path: /api/version
+                path: openvsx/api/version
                 port: 8080
               failureThreshold: 30
               initialDelaySeconds: 160
@@ -171,7 +171,7 @@ objects:
                 memory: 4Gi
             env:
               - name: OVSX_REGISTRY_URL
-                value: http://openvsx-server:8080
+                value: http://openvsx-server:8080/openvsx/.
               - name: OVSX_PAT
                 valueFrom:
                   secretKeyRef:
@@ -209,6 +209,7 @@ objects:
       app.kubernetes.io/instance: openvsx-server
       app.kubernetes.io/component: openvsx-server
   spec:
+    path: /openvsx
     to:
       kind: Service
       name: openvsx-server

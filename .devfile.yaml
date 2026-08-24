@@ -128,8 +128,8 @@ commands:
         export OVSX_PAT=super_token
         export PUBLISHERS="DotJoshJohnson eamodio felixfbecker formulahendry HookyQR ms-azuretools ms-mssql ms-python ms-vscode octref redhat ritwickdey sburg vscode vscodevim Wscats"
         for pub in $PUBLISHERS; do cli/bin/ovsx create-namespace $pub; done
-        find server/build/test-extensions-builtin -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
-        find server/build/test-extensions -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
+        find server/build-local/test-extensions-builtin -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
+        find server/build-local/test-extensions -name '*.vsix' -exec cli/bin/ovsx publish '{}' \;
 
 # Commands to deploy OpenVSX to OpenShift
   - id: create-namespace
@@ -247,7 +247,7 @@ commands:
       commandLine: |
           export CHECLUSTER_NAME="$(kubectl get checluster --all-namespaces -o json | jq -r '.items[0].metadata.name')" &&
           export CHECLUSTER_NAMESPACE="$(kubectl get checluster --all-namespaces -o json | jq -r '.items[0].metadata.namespace')" &&
-          export OPENVSX_ROUTE_URL="$(oc get route internal -n "$OPENVSX_NAMESPACE" -o jsonpath='{.spec.host}')" &&
+          export OPENVSX_ROUTE_URL="$(oc get route internal -n "$OPENVSX_NAMESPACE" -o jsonpath='{.spec.host}{.spec.path}')" &&
           export PATCH='{"spec":{"components":{"pluginRegistry":{"openVSXURL":"https://'"$OPENVSX_ROUTE_URL"'"}}}}' &&
           kubectl patch checluster "${CHECLUSTER_NAME}" --type=merge --patch "${PATCH}" -n "${CHECLUSTER_NAMESPACE}"
 

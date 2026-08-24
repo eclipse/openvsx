@@ -18,12 +18,18 @@ import java.util.List;
 import java.util.Objects;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
 import org.jspecify.annotations.NonNull;
 
 import org.eclipse.openvsx.search.ExtensionSearch;
 import org.eclipse.openvsx.util.NamingUtil;
 
+// Many code paths (downloads, reviews, mirror sync, deprecation checks) load and save this entity
+// without ever touching `active`. Without @DynamicUpdate, Hibernate's default full-row UPDATE would
+// rewrite `active` from whatever stale value that transaction happened to load, silently clobbering
+// a concurrent, correct update to it (e.g. a delete that just deactivated the last active version).
 @Entity
+@DynamicUpdate
 @Table(name = "extension")
 public class Extension implements Serializable {
 

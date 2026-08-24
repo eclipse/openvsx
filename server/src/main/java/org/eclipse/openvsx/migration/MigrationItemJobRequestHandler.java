@@ -9,15 +9,10 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
-import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 

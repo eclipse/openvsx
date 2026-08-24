@@ -12,12 +12,20 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +36,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
@@ -38,12 +49,15 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.VersionService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -93,6 +107,8 @@ class LocalRegistryServiceTest {
 
     private LocalRegistryService registryService;
 
+    private TempFile tempFile;
+
     @BeforeEach
     void setUp() {
         registryService = new LocalRegistryService(
@@ -110,11 +126,76 @@ class LocalRegistryServiceTest {
                 integrityService,
                 similarityCheckService,
                 new PublishingConfig(),
+                new TrustedPublishingConfig(),
                 Duration.ofSeconds(30));
 
         // A permissive default for a void method rather than a per-test expectation: the tests of
         // visibleUntil exercise a pure function and touch no mock at all.
         lenient().doNothing().when(eclipse).checkPublisherAgreement(any());
+    }
+
+    /**
+     * Regression test for a lost-update-style race: {@code ExtensionService.publishVersion(...)} hands
+     * the temp file off to the {@code @Async} publish pipeline once metadata validation succeeds - that
+     * pipeline reads the file (storage upload, signing, checksum) on a background thread and deletes it
+     * itself once done. If {@code publish()} also closed it in its own try-with-resources, it would
+     * delete the file out from under that background thread almost immediately, since publishVersion
+     * returns as soon as the async task is fired, well before that thread is guaranteed to have even
+     * started reading - producing an intermittent NoSuchFileException on the temp .vsix path.
+     */
+    @Test
+    void shouldNotDeleteTempFileOnceOwnershipIsHandedToAsyncPublish() throws IOException {
+        tempFile = new TempFile("extension_", ".vsix");
+        Files.write(tempFile.getPath(), createExtensionPackage("bar", "1.0.0"));
+
+        var token = new PersonalAccessToken();
+        token.setUser(new UserData());
+
+        var namespace = new Namespace();
+        namespace.setName("foo");
+        var extension = new Extension();
+        extension.setNamespace(namespace);
+        extension.setName("bar");
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(42L);
+        extVersion.setExtension(extension);
+        extVersion.setVersion("1.0.0");
+
+        when(extensions.createExtensionFile(any())).thenReturn(tempFile);
+        when(tokens.useAccessToken(eq("tok"), any())).thenReturn(token);
+        when(extensions.publishVersion(any(ExtensionProcessor.class), eq(token))).thenReturn(extVersion);
+        when(storageUtilService.getFileUrls(any(), any(), any(String[].class))).thenReturn(Map.of(42L, Map.of()));
+
+        registryService.publish(new ByteArrayInputStream(new byte[0]), "tok");
+
+        assertThat(Files.exists(tempFile.getPath()))
+                .as(
+                        "ownership of the temp file was handed to the async publish pipeline; "
+                                + "the request thread must not delete it")
+                .isTrue();
+    }
+
+    /**
+     * The counterpart of the above: when publish() rejects before ever calling
+     * extensions.publishVersion(...) (so ownership was never handed off), it must still clean up the
+     * temp file itself - nothing else will.
+     */
+    @Test
+    void shouldDeleteTempFileWhenRejectedBeforeHandoff() throws IOException {
+        tempFile = new TempFile("extension_", ".vsix");
+        Files.write(tempFile.getPath(), createExtensionPackage("bar", "1.0.0"));
+
+        when(extensions.createExtensionFile(any())).thenReturn(tempFile);
+        when(tokens.useAccessToken(eq("tok"), any())).thenReturn(null);
+
+        assertThatThrownBy(() -> registryService.publish(new ByteArrayInputStream(new byte[0]), "tok"))
+                .isInstanceOf(ErrorResultException.class);
+
+        assertThat(Files.exists(tempFile.getPath()))
+                .as(
+                        "ownership was never handed off (publishVersion was never called), so publish() "
+                                + "must clean up the temp file itself")
+                .isFalse();
     }
 
     @Test
@@ -224,6 +305,55 @@ class LocalRegistryServiceTest {
         var now = LocalDateTime.parse("2026-01-14T09:30:11");
 
         assertThat(LocalRegistryService.visibleUntil(null, now, Duration.ZERO)).isEqualTo(now);
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        if (tempFile != null) {
+            Files.deleteIfExists(tempFile.getPath());
+        }
+    }
+
+    /**
+     * Builds a minimal valid .vsix package, matching the fixture RegistryAPITest uses for the same
+     * purpose, so ExtensionProcessor can genuinely parse the namespace/extension name out of it.
+     */
+    private byte[] createExtensionPackage(String name, String version) throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        var archive = new ZipOutputStream(bytes);
+        archive.putNextEntry(new ZipEntry("extension.vsixmanifest"));
+        var vsixmanifest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<PackageManifest Version=\"2.0.0\" xmlns=\"http://schemas.microsoft.com/developer/vsx-schema/2011\">"
+                + "<Metadata>"
+                + "<Identity Language=\"en-US\" Id=\"" + name + "\" Version=\"" + version + "\" Publisher=\"foo\" />"
+                + "<DisplayName>foo</DisplayName>"
+                + "<Description xml:space=\"preserve\"></Description>"
+                + "<Tags></Tags>"
+                + "<Categories>Other</Categories>"
+                + "<GalleryFlags>Public</GalleryFlags>"
+                + "</Metadata>"
+                + "<Installation>"
+                + "<InstallationTarget Id=\"Microsoft.VisualStudio.Code\"/>"
+                + "</Installation>"
+                + "<Dependencies/>"
+                + "<Assets>"
+                + "<Asset Type=\"Microsoft.VisualStudio.Code.Manifest\" Path=\"extension/package.json\" "
+                + "Addressable=\"true\" />"
+                + "</Assets>"
+                + "</PackageManifest>";
+        archive.write(vsixmanifest.getBytes());
+        archive.closeEntry();
+        archive.putNextEntry(new ZipEntry("extension/package.json"));
+        var packageJson = "{"
+                + "\"publisher\": \"foo\","
+                + "\"name\": \"" + name + "\","
+                + "\"version\": \"" + version + "\","
+                + "\"displayName\": \"foo\""
+                + "}";
+        archive.write(packageJson.getBytes());
+        archive.closeEntry();
+        archive.finish();
+        return bytes.toByteArray();
     }
 
     private Namespace buildNamespace(String name) {

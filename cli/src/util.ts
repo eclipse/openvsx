@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import * as http from 'http';
 import { RegistryOptions } from './registry-options';
+import { TrustedPublishingOptions } from './trusted-publishing-options';
 
 export { promisify } from 'util';
 
@@ -21,6 +22,19 @@ export function addEnvOptions(options: RegistryOptions): void {
     options.pat ??= process.env.OVSX_PAT;
     options.username ??= process.env.OVSX_USERNAME;
     options.password ??= process.env.OVSX_PASSWORD;
+}
+
+export function addTrustedPublishingEnvOptions(options: TrustedPublishingOptions): void {
+    options.trustedPublishing ??= parseBooleanEnv(process.env.OVSX_TRUSTED_PUBLISHING);
+    options.idToken ??= process.env.OVSX_ID_TOKEN;
+    options.oidcAudience ??= process.env.OVSX_OIDC_AUDIENCE;
+}
+
+function parseBooleanEnv(value?: string): boolean | undefined {
+    if (value === undefined || value.trim().length === 0) {
+        return undefined;
+    }
+    return ['true', '1', 'yes'].includes(value.trim().toLowerCase());
 }
 
 export function matchExtensionId(id: string): RegExpExecArray | null {
@@ -83,6 +97,22 @@ export function handleError(debug?: boolean, additionalMessage?: string, exit: b
             process.exit(1);
         }
     };
+}
+
+/**
+ * Formats a byte count for display, e.g. `1536` -> `1.5 KB`. Mirrors the registry's own
+ * `FileUtils.byteCountToDisplaySize` formatting so client- and server-side size limit messages read
+ * the same way.
+ */
+export function formatBytes(bytes: number): string {
+    const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
+    let size = bytes;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit++;
+    }
+    return `${Math.floor(size)} ${units[unit]}`;
 }
 
 export function statusError(response: http.IncomingMessage): Error {

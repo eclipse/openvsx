@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -44,12 +47,15 @@ import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
+import org.eclipse.openvsx.util.DrainOnCloseInputStream;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
@@ -80,6 +86,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final PublishingConfig publishingConfig;
+    private final TrustedPublishingConfig trustedPublishingConfig;
 
     /**
      * How far behind the present the changes feed stops, see {@link #visibleUntil}.
@@ -101,6 +108,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
             PublishingConfig publishingConfig,
+            TrustedPublishingConfig trustedPublishingConfig,
             @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag
     ) {
         this.entityManager = entityManager;
@@ -117,6 +125,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.publishingConfig = publishingConfig;
+        this.trustedPublishingConfig = trustedPublishingConfig;
         this.changesFeedLag = changesFeedLag;
     }
 
@@ -713,9 +722,9 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
         if (token == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
         return createNamespace(json, token.getUser());
@@ -764,10 +773,36 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Created namespace " + namespace.getName());
     }
 
-    public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue);
-        if (token == null) {
+    /**
+     * Soft-deletes extension versions on behalf of the user the given personal access token belongs to.
+     * <p>
+     * This is the token-authenticated counterpart of {@code UserAPI.deleteExtension}, which authenticates
+     * the user via their login session, and applies the same authorization: only namespace members may
+     * delete, owners may delete any version while other members are restricted to the versions they
+     * published themselves.
+     *
+     * @param targetVersions the versions to delete, or {@code null} to delete the extension as a whole
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteExtension(
+            String namespaceName,
+            String extensionName,
+            @Nullable List<TargetPlatformVersionJson> targetVersions,
+            String tokenValue
+    ) {
+        var token = tokens
+                .useAccessToken(tokenValue, new AccessTokenAction.DeleteVersion(namespaceName, extensionName));
+        if (token == null || token.getUser() == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+        }
+
+        return extensions.deleteExtensionAsUser(token.getUser(), namespaceName, extensionName, targetVersions);
+    }
+
+    public ResultJson verifyToken(String namespaceName, String tokenValue) {
+        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
+        if (token == null) {
+            throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
         var namespace = repositories.findNamespace(namespaceName);
@@ -777,54 +812,83 @@ public class LocalRegistryService implements IExtensionRegistry {
 
         var user = token.getUser();
         if (!users.hasPublishPermission(user, namespace)) {
-            throw new ErrorResultException("Insufficient access rights for namespace: " + namespace.getName());
+            throw new ErrorResultException(
+                    "Insufficient access rights for namespace: " + namespace.getName(),
+                    HttpStatus.FORBIDDEN);
         }
 
         return ResultJson.success("Valid token");
     }
 
     public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        var token = tokens.createAccessToken(user, "One time use publish token");
-        try {
-            return publish(content, token.getValue());
-        } finally {
-            tokens.deactivateAccessToken(user, token.getId());
-        }
+        return publish(content, tokens.createOneTimeAccessToken(user, "One time use publish token").getValue());
     }
 
-    public ExtensionJson publish(InputStream content, String tokenValue) throws ErrorResultException {
-        var token = tokens.useAccessToken(tokenValue);
-        if (token == null || token.getUser() == null) {
-            throw new ErrorResultException(ACCESS_TOKEN_ERROR);
+    public ExtensionJson publish(InputStream rawContent, String tokenValue) throws ErrorResultException {
+        // A rejection anywhere below - invalid/expired token, missing publisher agreement, or
+        // (pre-existing, inside extensions.publishVersion) an oversized package - can happen before
+        // the request body has been fully read. Wrapping it once here and relying on
+        // try-with-resources to always close it, on every exit path, drains whatever is left
+        // automatically instead of requiring each rejection site to remember to do it, so a LB/proxy
+        // doesn't see an early response to a request whose body is still arriving and mistake it
+        // for a 50x. Capped at the same max upload size a successful publish already reads in full,
+        // so an oversized/abusive body doesn't tie up the request thread and bandwidth beyond that.
+        try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
+            var tempFile = extensions.createExtensionFile(content);
+            try {
+                ExtensionVersion extVersion;
+                try (var processor = new ExtensionProcessor(tempFile)) {
+                    // now that we know the details, ensure token is still fine
+                    var token = tokens.useAccessToken(
+                            tokenValue,
+                            new AccessTokenAction.PublishVersion(
+                                    processor.getNamespace(),
+                                    processor.getExtensionName()));
+                    if (token == null || token.getUser() == null) {
+                        throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
+                    }
+                    // Check whether the user has a valid publisher agreement
+                    eclipse.checkPublisherAgreement(token.getUser());
+
+                    extVersion = extensions.publishVersion(processor, token);
+                }
+
+                var json = toExtensionVersionJson(extVersion, null, true);
+                json.setSuccess("It can take a couple minutes before the extension version is available");
+
+                if (repositories.hasSameVersion(extVersion)) {
+                    var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
+                    var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
+                    var extension = extVersion.getExtension();
+                    var semver = extVersion.getSemanticVersion();
+                    var newVersion = String
+                            .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
+
+                    json.setWarning(
+                            "A " + existingRelease + " already exists for "
+                                    + NamingUtil.toLogFormat(
+                                            extension.getNamespace().getName(),
+                                            extension.getName(),
+                                            extVersion.getVersion())
+                                    + ".\n" +
+                                    "To prevent update conflicts, we recommend that this " + thisRelease + " uses "
+                                    + newVersion + " as its version instead.");
+                }
+
+                return json;
+            } catch (RuntimeException exc) {
+                // extensions.publishVersion(...) either hands tempFile off to the async publish
+                // pipeline (which deletes it once done reading it) on success, or already deletes it
+                // itself before rethrowing on failure - so this only ever actually deletes anything
+                // when we reject *before* reaching that call (invalid token, no publisher agreement).
+                // Deleting an already-deleted file is a no-op, so it's safe to always try here rather
+                // than track exactly which path already handled it.
+                IOUtils.closeQuietly(tempFile);
+                throw exc;
+            }
+        } catch (IOException e) {
+            throw new ErrorResultException("Failed to read extension file", e);
         }
-
-        // Check whether the user has a valid publisher agreement
-        eclipse.checkPublisherAgreement(token.getUser());
-
-        var extVersion = extensions.publishVersion(content, token);
-        var json = toExtensionVersionJson(extVersion, null, true);
-        json.setSuccess("It can take a couple minutes before the extension version is available");
-
-        if (repositories.hasSameVersion(extVersion)) {
-            var existingRelease = extVersion.isPreRelease() ? "stable release" : "pre-release";
-            var thisRelease = extVersion.isPreRelease() ? "pre-release" : "stable release";
-            var extension = extVersion.getExtension();
-            var semver = extVersion.getSemanticVersion();
-            var newVersion = String
-                    .join(".", String.valueOf(semver.getMajor()), String.valueOf(semver.getMinor() + 1), "0");
-
-            json.setWarning(
-                    "A " + existingRelease + " already exists for "
-                            + NamingUtil.toLogFormat(
-                                    extension.getNamespace().getName(),
-                                    extension.getName(),
-                                    extVersion.getVersion())
-                            + ".\n" +
-                            "To prevent update conflicts, we recommend that this " + thisRelease + " uses " + newVersion
-                            + " as its version instead.");
-        }
-
-        return json;
     }
 
     @Transactional(rollbackOn = ResponseStatusException.class)
@@ -1326,6 +1390,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         var json = new RegistryVersionJson();
         json.setVersion(registryVersion);
         json.setMaxExtensionSize(publishingConfig.getMaxContentSize());
+        json.setTrustedPublishingAudience(
+                trustedPublishingConfig.isEnabled() ? trustedPublishingConfig.getAudience() : null);
         return json;
     }
 

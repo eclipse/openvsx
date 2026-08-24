@@ -30,6 +30,7 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.resilience.retry.MethodRetryPredicate;
 import org.springframework.scheduling.annotation.Async;
@@ -192,7 +193,9 @@ public class PublishExtensionVersionHandler {
                             + "\nUse the 'create-namespace' command to create a namespace corresponding to your publisher name.");
         }
         if (!users.hasPublishPermission(user, namespace)) {
-            throw new ErrorResultException("Insufficient access rights for publisher: " + namespace.getName());
+            throw new ErrorResultException(
+                    "Insufficient access rights for publisher: " + namespace.getName(),
+                    HttpStatus.FORBIDDEN);
         }
         return namespace;
     }

@@ -13,6 +13,7 @@ import * as leven from 'leven';
 import { createNamespace } from './create-namespace';
 import { verifyPat } from './verify-pat';
 import { publish } from './publish';
+import { unpublish } from './unpublish';
 import { handleError } from './util';
 import { getExtension } from './get';
 import login from './login';
@@ -55,7 +56,10 @@ module.exports = function (argv: string[]): void {
         .option('--no-dependencies', 'Disable dependency detection via npm or yarn')
         .option('--skip-duplicate', 'Fail silently if version already exists on the marketplace')
         .option('--packageVersion <version>', 'Version of the provided VSIX packages.')
-        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion }) => {
+        .option('--trusted-publishing', 'Exchange an OIDC ID token for a short-lived publishing token. Enabled automatically when a CI system provides an ID token and no access token is given.')
+        .option('--idToken <token>', 'The OIDC ID token to exchange. Only needed on CI systems that provide the token directly, e.g. GitLab CI.')
+        .option('--oidcAudience <audience>', 'Audience to request for the OIDC ID token. Defaults to the registry URL.')
+        .action((extensionFile: string, { target, packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion, trustedPublishing, idToken, oidcAudience }) => {
             if (extensionFile !== undefined && packagePath !== undefined) {
                 console.error('\u274c  Please specify either a package file or a package path, but not both.\n');
                 publishCmd.help();
@@ -75,7 +79,7 @@ module.exports = function (argv: string[]): void {
             if (extensionFile !== undefined && allowMissingRepository !== undefined)
                 console.warn("Ignoring option '--allow-missing-repository' for prepackaged extension.");
             const { registryUrl, pat } = program.opts();
-            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion })
+            publish({ extensionFile, registryUrl, pat, targets: typeof target === 'string' ? [target] : target, packagePath: typeof packagePath === 'string' ? [packagePath] : packagePath, baseContentUrl, baseImagesUrl, yarn, preRelease, allowMissingRepository, dependencies, skipDuplicate, packageVersion, trustedPublishing, idToken, oidcAudience })
                 .then(results => {
                     const reasons = results.filter(result => result.status === 'rejected')
                         .map(rejectedResult => rejectedResult.reason);
@@ -91,6 +95,23 @@ module.exports = function (argv: string[]): void {
                         process.exit(1);
                     }
                 });
+        });
+
+    const unpublishCmd = program.command('unpublish [namespace.extension]');
+    unpublishCmd.description('Delete an extension or some of its versions from the registry.')
+        .option('-v, --versions <versions...>', 'Only delete the given versions.')
+        .option('-t, --target <targets...>', 'Only delete the given target architectures of the given versions.')
+        .option('-f, --force', 'Skip the confirmation prompt.')
+        .action((extensionId: string | undefined, { versions, target, force }) => {
+            const { registryUrl, pat } = program.opts();
+            unpublish({
+                extensionId,
+                versions: typeof versions === 'string' ? [versions] : versions,
+                targets: typeof target === 'string' ? [target] : target,
+                force,
+                registryUrl,
+                pat
+            }).catch(handleError(program.debug));
         });
 
     const getCmd = program.command('get <namespace.extension>');

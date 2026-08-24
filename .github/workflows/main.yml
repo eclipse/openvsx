@@ -51,6 +51,10 @@ jobs:
         working-directory: cli
         run: yarn
 
+      - name: Test CLI
+        working-directory: cli
+        run: yarn test
+
   build-and-push-webui:
     permissions:
       contents: read
@@ -70,7 +74,7 @@ jobs:
 
     - name: Log in to the Container registry
       if: steps.changed_webui_files.outputs.any_changed == 'true'
-      uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -118,7 +122,7 @@ jobs:
         persist-credentials: false
 
     - name: Set up JDK
-      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
       with:
         distribution: 'temurin'
         java-version: 25
@@ -135,7 +139,7 @@ jobs:
 
     - name: Log in to the Container registry
       if: steps.changed_server_files.outputs.any_changed == 'true'
-      uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
@@ -193,7 +197,7 @@ jobs:
           yarn install --immutable
 
       - name: Set up JDK
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: 25
@@ -201,4 +205,4 @@ jobs:
       - name: Set up JBang
         uses: jbangdev/setup-jbang@2b1b465a7b75f4222b81426f23a01e013aa7b95c # v0.1.1
 
-      - uses: j178/prek-action@5337cb91e0fa35a7ff31b9ca345126d8bbbcdf16 # v2.0.6
+      - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0

@@ -38,6 +38,7 @@ import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.UsageStats;
 import org.eclipse.openvsx.entities.UserData;
@@ -59,11 +60,9 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.security.CodedAuthException;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.CollectionUtil;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.NotFoundException;
-import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 
@@ -190,7 +189,7 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         var serverUrl = UrlUtil.getBaseUrl();
-        return repositories.findActiveAccessTokens(user)
+        return repositories.findActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT)
                 .map(token -> {
                     var json = token.toAccessTokenJson();
                     json.setDeleteTokenUrl(
@@ -216,7 +215,7 @@ public class UserAPI {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
-        return new ResponseEntity<>(tokens.createAccessToken(user, description), HttpStatus.CREATED);
+        return new ResponseEntity<>(tokens.createLongLivedAccessToken(user, description), HttpStatus.CREATED);
     }
 
     @PostMapping(
@@ -466,26 +465,9 @@ public class UserAPI {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
         try {
-            var namespace = repositories.findNamespace(namespaceName);
-            if (namespace == null) {
-                var json = NamespaceDetailsJson
-                        .error("Extension not found: " + NamingUtil.toExtensionId(namespaceName, extensionName));
-                return new ResponseEntity<>(json, HttpStatus.NOT_FOUND);
-            }
-
-            // Authorize before touching the extension: only namespace members may delete.
-            // Owners may delete any version; non-owner members are restricted to versions
-            // they published themselves (enforced via restrictedToUser).
-            var isOwner = repositories.isNamespaceOwner(user, namespace);
-            if (!isOwner && !repositories.hasMembership(user, namespace)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-            }
-
-            var targets = CollectionUtil.toArray(
-                    targetVersions,
-                    TargetPlatformVersionJson::toTargetPlatformVersion,
-                    TargetPlatformVersion[]::new);
-            var result = extensions.deleteExtension(user, !isOwner, namespaceName, extensionName, targets);
+            // The authorization (namespace membership, owner vs. member) is shared with the
+            // token-authenticated delete endpoint, see RegistryAPI.deleteExtension.
+            var result = extensions.deleteExtensionAsUser(user, namespaceName, extensionName, targetVersions);
             return ResponseEntity.ok(result);
         } catch (NotFoundException exc) {
             var json = NamespaceDetailsJson
@@ -525,6 +507,8 @@ public class UserAPI {
                 json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
                 json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));
                 json.setDetailsUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "details"));
+                json.setTrustedPublishingUrl(
+                        createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "trusted-publishing"));
             }
 
             return json;

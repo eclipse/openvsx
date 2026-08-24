@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.accesstoken.AccessTokenAction;
 import org.eclipse.openvsx.accesstoken.AccessTokenService;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.eclipse.EclipseService;
@@ -45,6 +47,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
@@ -57,7 +60,13 @@ import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.LogService;
+import org.eclipse.openvsx.util.NamingUtil;
+import org.eclipse.openvsx.util.NotFoundException;
+import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.TimeUtil;
+import org.eclipse.openvsx.util.UrlUtil;
 
 import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
@@ -399,7 +408,8 @@ public class AdminService {
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
         eclipse.adminEnrichUserJson(userPublishInfo.getUser(), user);
-        userPublishInfo.setActiveAccessTokenNum((int) repositories.countActiveAccessTokens(user));
+        userPublishInfo.setActiveAccessTokenNum(
+                (int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
         var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
@@ -497,7 +507,7 @@ public class AdminService {
             }
         }
 
-        var accessTokens = repositories.findAccessTokens(user);
+        var accessTokens = repositories.findPersonalAccessTokens(user);
         var affectedExtensions = new LinkedHashSet<Extension>();
         var deactivatedTokenCount = 0;
         var deactivatedExtensionCount = 0;
@@ -562,11 +572,119 @@ public class AdminService {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
 
-        var deactivatedTokenCount = repositories.deactivateAccessTokens(user);
+        var deactivatedTokenCount = repositories.deactivatePersonalAccessTokens(user);
         var result = ResultJson.success(
                 "Deactivated " + deactivatedTokenCount + " tokens of user " + provider + "/" + loginName + ".");
         logs.logAction(admin, result);
         mail.scheduleRevokedAccessTokensMail(user);
+        return result;
+    }
+
+    /**
+     * Forget a user in line with a data-protection (GDPR) erasure request.
+     * <p>
+     * If nothing in the database still refers to the user afterward (no reviews, no removed
+     * versions, no admin scan or file decisions, no audit log entries, and no retained access
+     * tokens), the row itself is deleted. Otherwise it is anonymized in place, so that the
+     * remaining content (extension reviews, security scan and file decisions, and audit logs)
+     * keeps referring to a row that no longer holds any personal data. Extensions in namespaces
+     * where the user was the sole member are unpublished but kept in the database and storage, so
+     * people who have already installed them are unaffected.
+     *
+     * @param provider the authentication provider the user belongs to
+     * @param username the provider-specific username of the user to forget
+     * @param admin the administrator performing the erasure
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson forgetUser(String provider, String username, UserData admin) {
+        var user = repositories.findUserByLoginName(provider, username);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(provider + "/" + username), HttpStatus.NOT_FOUND);
+        }
+
+        // Handle namespace memberships, removing the users active memberships where found
+        var removedMembershipCount = 0;
+        for (var membership : repositories.findMemberships(user)) {
+            var namespace = membership.getNamespace();
+            users.removeNamespaceMember(namespace, user);
+            removedMembershipCount++;
+            search.updateSearchEntries(repositories.findActiveExtensions(namespace).toList());
+        }
+
+        var removedExtensionCount = 0;
+        // Delete all published extension versions for the user, both active and not
+        var allVersions = Stream.concat(
+                repositories.findVersionsByUser(user, true).stream(),
+                repositories.findVersionsByUser(user, false).stream()).toList();
+        for (var version : allVersions) {
+            extensions.deleteExtensionVersion(user, version);
+            removedExtensionCount++;
+        }
+
+        // Remove customer memberships. The customer and its rate-limit tokens are organisation-level
+        // and shared, so they are retained.
+        var removedCustomerMembershipCount = 0;
+        for (var customerMembership : repositories.findCustomerMemberships(user)) {
+            entityManager.remove(customerMembership);
+            removedCustomerMembershipCount++;
+        }
+
+        // Personal access tokens. Delete tokens that no retained extension version references;
+        // scrub and deactivate the rest so retained versions still resolve a publisher.
+        var deletedTokenCount = 0;
+        var scrubbedTokenCount = 0;
+        for (var token : repositories.findPersonalAccessTokens(user)) {
+            if (repositories.countVersionsByAccessToken(token) == 0) {
+                entityManager.remove(token);
+                deletedTokenCount++;
+            } else {
+                token.setActive(false);
+                token.setDescription(null);
+                // The value is deliberately left in place: AccessTokenService.generateTokenValue()
+                // checks repositories.hasPersonalAccessToken(value) across all tokens, active or not, to
+                // avoid ever reissuing a value that was already handed out. Nulling it here would
+                // let that (astronomically unlikely) collision go undetected.
+                scrubbedTokenCount++;
+            }
+        }
+
+        // Namespace and customer memberships are already fully removed above. If nothing else in
+        // the database still refers to this user either, delete the row outright instead of
+        // anonymizing it.
+        var canDeleteUser = scrubbedTokenCount == 0
+                && repositories.countReviews(user) == 0
+                && repositories.countVersionsRemovedBy(user) == 0
+                && repositories.countAdminScanDecisions(user) == 0
+                && repositories.countFileDecisions(user) == 0
+                && repositories.countPersistedLogs(user) == 0;
+
+        var tombstoneLogin = "deleted-user-" + user.getId();
+        if (canDeleteUser) {
+            entityManager.remove(user);
+        } else {
+            // Anonymize the user record in place. Reviews, scan and file decisions, and audit logs
+            // keep referencing this row, which no longer holds any personal data.
+            user.setLoginName(tombstoneLogin);
+            user.setFullName(null);
+            user.setEmail(null);
+            user.setAvatarUrl(null);
+            user.setAuthId(null);
+            user.setProvider(null);
+            user.setProviderUrl(null);
+            user.setEclipsePersonId(null);
+            user.setEclipseToken(null);
+            user.setRole(null);
+        }
+
+        // The success message deliberately contains no personal data, only the tombstone id and counts.
+        var result = ResultJson.success(
+                "Forgot user " + tombstoneLogin
+                        + (canDeleteUser ? ": deleted user record, deleted " : ": deleted ")
+                        + removedExtensionCount + " extensions, removed "
+                        + removedMembershipCount + " namespace memberships, removed "
+                        + removedCustomerMembershipCount + " customer memberships, deleted "
+                        + deletedTokenCount + " tokens, scrubbed " + scrubbedTokenCount + " tokens.");
+        logs.logAction(admin, result);
         return result;
     }
 
@@ -576,7 +694,7 @@ public class AdminService {
 
     public UserData checkAdminUser(String tokenValue) {
         var user = Optional.of(tokenValue)
-                .map(tokens::useAccessToken)
+                .map(tv -> tokens.useAccessToken(tv, new AccessTokenAction.Administration()))
                 .map(PersonalAccessToken::getUser)
                 .orElse(null);
 
