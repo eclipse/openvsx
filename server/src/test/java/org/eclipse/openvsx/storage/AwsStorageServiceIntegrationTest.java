@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -183,12 +184,13 @@ class AwsStorageServiceIntegrationTest {
     void testGetFileSizeWithoutDownloading() throws IOException {
         var tempFile = new TempFile("test_", ".vsix");
         var testContent = "This is test extension content";
-        Files.write(tempFile.getPath(), testContent.getBytes(), StandardOpenOption.CREATE);
+        var testContentBytes = testContent.getBytes(StandardCharsets.UTF_8);
+        Files.write(tempFile.getPath(), testContentBytes, StandardOpenOption.CREATE);
         tempFile.setResource(resource);
         storageService.uploadFile(tempFile);
         tempFile.close();
 
-        assertEquals(testContent.length(), storageService.getFileSize(resource));
+        assertEquals(testContentBytes.length, storageService.getFileSize(resource));
     }
 
     @Test
