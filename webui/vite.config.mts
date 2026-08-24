@@ -24,7 +24,13 @@ export default defineConfig(() => ({
     test: {
         include: ['test/unit/**/*.spec.{ts,tsx}'],
         environment: 'jsdom',
-        setupFiles: ['./test/setup.ts']
+        setupFiles: ['./test/setup.ts'],
+        server: {
+            deps: {
+                // their ESM builds import directory paths Node's resolver rejects; let vite bundle them
+                inline: ['@mui/x-charts']
+            }
+        }
     },
     // lightningcss (Vite 8's default CSS transformer) ships no prebuilt binary for ppc64le,
     // and its minifier isn't needed once postcss is handling transforms - see
