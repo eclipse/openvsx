@@ -12,7 +12,12 @@ package org.eclipse.openvsx.migration;
 import org.jobrunr.jobs.lambdas.JobRequest;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 
-public class MigrationJobRequest<T extends JobRequestHandler<MigrationJobRequest<?>>> implements JobRequest {
+// The type parameter is deliberately bounded by the non-specific JobRequestHandler<?> rather than
+// JobRequestHandler<MigrationJobRequest<?>>: that self-referential bound (T's bound mentions this
+// class parametrized with itself again) sends Jackson's generic type resolution into infinite
+// recursion -- a StackOverflowError wrapped as a DatabindException -- while serializing the
+// `handler` field for JobRunr's queue storage. See MigrationJobRequestTest for a standalone repro.
+public class MigrationJobRequest<T extends JobRequestHandler<?>> implements JobRequest {
 
     private Class<T> handler;
     private long entityId;
