@@ -250,6 +250,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, Long> PUBLISHED_BY_ID = createField(DSL.name("published_by_id"), SQLDataType.BIGINT, this, "");
 
+    /**
+     * The column <code>public.extension_version.published_with_tt</code>.
+     */
+    public final TableField<ExtensionVersionRecord, String> PUBLISHED_WITH_TT = createField(DSL.name("published_with_tt"), SQLDataType.VARCHAR(32), this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

@@ -492,6 +492,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
         query.addFrom(EXTENSION_VERSION);
         query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
@@ -844,6 +845,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
         query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
@@ -910,6 +912,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
         query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
@@ -981,6 +984,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
@@ -1248,6 +1252,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
@@ -1520,6 +1525,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
         query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
