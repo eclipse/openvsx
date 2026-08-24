@@ -44,5 +44,6 @@ public abstract class AbstractTimeseriesContainerTest extends AbstractPostgresCo
         registry.add("ovsx.analytics.datasource.url", TIMESERIES::getJdbcUrl);
         registry.add("ovsx.analytics.datasource.username", TIMESERIES::getUsername);
         registry.add("ovsx.analytics.datasource.password", TIMESERIES::getPassword);
+        registry.add("ovsx.analytics.datasource.maximum-pool-size", () -> 2);
     }
 }
