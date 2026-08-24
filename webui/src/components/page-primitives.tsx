@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { Box, Typography } from '@mui/material';
-import { alpha, styled, Theme } from '@mui/material/styles';
+import { alpha, CSSObject, styled, Theme } from '@mui/material/styles';
 
 /** Normalized gap between stacked sections; the owl selector skips the first (and any null) child. */
 export const SectionStack = styled(Box)(({ theme }) => ({
@@ -118,12 +118,15 @@ export const accentHover = (theme: Theme) => ({
 });
 
 /** Hover treatment for interactive cards: accent border, shadow and lift. Suppressed on touch devices. */
-export const cardHoverLift = (theme: Theme) => ({
+export const cardHoverLift = (theme: Theme, extra?: CSSObject) => ({
+    // `extra` joins this block rather than the caller adding its own: a second
+    // '@media (hover: hover)' key in the same object replaces this one instead of merging.
     '@media (hover: hover)': {
         '&:hover': {
             borderColor: theme.palette.secondary.main,
             boxShadow: 'var(--shadow)',
             transform: 'translateY(-2px)'
-        }
+        },
+        ...extra
     }
 });

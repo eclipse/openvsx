@@ -46,7 +46,12 @@ const CardRoot = styled(Paper)(({ theme }) => ({
     textAlign: 'center',
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    ...cardHoverLift(theme),
+    ...cardHoverLift(theme, {
+        '&:hover .extension-card-overlay': {
+            opacity: 0.7,
+            color: theme.palette.secondary.light
+        }
+    }),
     // Quiet corner affordance (see the `overlay` prop): barely there until the card is hovered.
     '& .extension-card-overlay': {
         position: 'absolute',
@@ -56,12 +61,6 @@ const CardRoot = styled(Paper)(({ theme }) => ({
         color: theme.palette.text.disabled,
         opacity: 0.28,
         transition: 'opacity 0.15s, color 0.15s'
-    },
-    '@media (hover: hover)': {
-        '&:hover .extension-card-overlay': {
-            opacity: 0.7,
-            color: theme.palette.secondary.light
-        }
     },
     // Keyboard focus ring mirrors the search field's :focus-within style.
     // Ring when the card link is keyboard-focused, or when it is the grid
