@@ -11,14 +11,14 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { forwardRef, FunctionComponent, memo } from 'react';
+import { forwardRef, FunctionComponent, memo, ReactNode } from 'react';
 import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
 import { CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
-import { SearchEntry } from '../extension-registry-types';
+import { Extension, SearchEntry } from '../extension-registry-types';
 import { ExtensionIcon } from './extension/extension-icon';
 import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
 import { createRoute, formatCompactNumber } from '../utils';
@@ -42,10 +42,26 @@ const cardLayout = (theme: Theme): CSSObject => ({
 
 const CardRoot = styled(Paper)(({ theme }) => ({
     ...cardLayout(theme),
+    position: 'relative',
     textAlign: 'center',
     cursor: 'pointer',
     transition: 'border-color 0.15s, box-shadow 0.15s, transform 0.15s',
-    ...cardHoverLift(theme),
+    ...cardHoverLift(theme, {
+        '&:hover .extension-card-overlay': {
+            opacity: 0.7,
+            color: theme.palette.secondary.light
+        }
+    }),
+    // Quiet corner affordance (see the `overlay` prop): barely there until the card is hovered.
+    '& .extension-card-overlay': {
+        position: 'absolute',
+        top: '0.75rem',
+        right: '0.75rem',
+        display: 'flex',
+        color: theme.palette.text.disabled,
+        opacity: 0.28,
+        transition: 'opacity 0.15s, color 0.15s'
+    },
     // Keyboard focus ring mirrors the search field's :focus-within style.
     // Ring when the card link is keyboard-focused, or when it is the grid
     // cursor and the cursor is visible (see useGridCursor).
@@ -98,16 +114,26 @@ export interface ExtensionCardProps extends Partial<Omit<GridItemProps, 'ref'>> 
      * The extension, or `undefined` for a loading skeleton. Keep a stable key
      * across the swap so the fade plays once instead of restarting.
      */
-    extension?: SearchEntry;
+    extension?: Extension | SearchEntry;
     /** Delay before the card fades in, so grids can stagger their cards. */
     fadeDelayMs?: number;
     /** When false, the card shows immediately without its entrance fade (e.g. restored from cache on back-nav). */
     appear?: boolean;
+    /** Link target; defaults to the extension's public detail page. */
+    to?: string;
+    /** Router state carried by the link, e.g. the manage page's back-navigation target. */
+    linkState?: unknown;
+    /** Corner affordance drawn over the card, e.g. the manage gear. */
+    overlay?: ReactNode;
+    /** Replaces the rating stars in the footer, e.g. with a publishing-status label. */
+    footerStart?: ReactNode;
+    /** Dim and desaturate the card the way a deprecated extension is dimmed. */
+    dimmed?: boolean;
 }
 
 export const ExtensionCard = memo(
     forwardRef<HTMLAnchorElement, ExtensionCardProps>(function ExtensionCard(
-        { extension, fadeDelayMs = 0, appear = true, ...linkProps },
+        { extension, fadeDelayMs = 0, appear = true, to, linkState, overlay, footerStart, dimmed, ...linkProps },
         ref
     ) {
         const title = extension?.displayName ?? extension?.name;
@@ -122,12 +148,18 @@ export const ExtensionCard = memo(
                         <RouteLink
                             ref={ref}
                             {...linkProps}
-                            to={createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name])}
+                            to={to ?? createRoute([ExtensionDetailRoutes.ROOT, extension.namespace, extension.name])}
+                            state={linkState}
                             aria-label={title}
                             style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}>
                             <CardRoot
                                 elevation={0}
-                                sx={extension.deprecated ? { opacity: 0.5, filter: 'grayscale(100%)' } : undefined}>
+                                sx={
+                                    extension.deprecated || dimmed
+                                        ? { opacity: 0.5, filter: 'grayscale(100%)' }
+                                        : undefined
+                                }>
+                                {overlay ? <span className='extension-card-overlay'>{overlay}</span> : null}
                                 <Box
                                     display='flex'
                                     justifyContent='center'
@@ -273,32 +305,34 @@ export const ExtensionCard = memo(
                                         justifyContent: 'space-between',
                                         fontSize: '0.75rem'
                                     }}>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.0625rem',
-                                            fontSize: { xs: '0.8125rem', sm: '0.875rem' }
-                                        }}>
-                                        <ExtensionRatingStars
-                                            number={extension.averageRating ?? 0}
-                                            fontSize='inherit'
-                                        />
-                                        {reviewCount > 0 && (
-                                            <Box
-                                                component='span'
-                                                sx={{
-                                                    fontSize: '0.6875rem',
-                                                    color: 'text.disabled',
-                                                    ml: '0.1875rem',
-                                                    // Sheds first on tight cards; the query measures
-                                                    // the card's content box, i.e. this row's width.
-                                                    '@container (max-width: 134px)': { display: 'none' }
-                                                }}>
-                                                ({formatCompactNumber(reviewCount)})
-                                            </Box>
-                                        )}
-                                    </Box>
+                                    {footerStart ?? (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.0625rem',
+                                                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+                                            }}>
+                                            <ExtensionRatingStars
+                                                number={extension.averageRating ?? 0}
+                                                fontSize='inherit'
+                                            />
+                                            {reviewCount > 0 && (
+                                                <Box
+                                                    component='span'
+                                                    sx={{
+                                                        fontSize: '0.6875rem',
+                                                        color: 'text.disabled',
+                                                        ml: '0.1875rem',
+                                                        // Sheds first on tight cards; the query measures
+                                                        // the card's content box, i.e. this row's width.
+                                                        '@container (max-width: 134px)': { display: 'none' }
+                                                    }}>
+                                                    ({formatCompactNumber(reviewCount)})
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    )}
                                     {downloadCount !== '0' && (
                                         <Box
                                             component='span'

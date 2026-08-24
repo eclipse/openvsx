@@ -43,6 +43,9 @@ export const enabledStatus: TrustedPublisherStatus = {
     trustedPublisherProviders: [gitHubProvider]
 };
 
+/** Feature off registry-wide: no providers, so every trusted-publishing surface stays hidden. */
+export const disabledStatus: TrustedPublisherStatus = { enabled: false, allowed: false };
+
 export const trustedPublisher = (overrides: Partial<TrustedPublisher> = {}): TrustedPublisher => ({
     id: 1,
     provider: 'github',

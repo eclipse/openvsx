@@ -21,14 +21,12 @@ import {
     DialogContentText,
     DialogTitle,
     Divider,
-    IconButton,
     Paper,
     Stack,
-    Tooltip,
     Typography
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { DeleteIconButton } from '../../../components/delete-icon-button';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
 import { Timestamp } from '../../../components/timestamp';
 import { TrustedPublisher, TrustedPublisherProvider } from '../../../extension-registry-types';
@@ -127,17 +125,11 @@ export const PublisherList: FunctionComponent<PublisherListProps> = props => {
                                             </Typography>
                                         ) : null}
                                     </Box>
-                                    <Tooltip title='Delete trusted publisher'>
-                                        <span>
-                                            <IconButton
-                                                color='error'
-                                                onClick={() => setDeleteTarget(publisher)}
-                                                disabled={props.loading}
-                                                aria-label='Delete trusted publisher'>
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </span>
-                                    </Tooltip>
+                                    <DeleteIconButton
+                                        onClick={() => setDeleteTarget(publisher)}
+                                        disabled={props.loading}
+                                        aria-label='Delete trusted publisher'
+                                    />
                                 </PublisherRow>
                             );
                         })}
@@ -155,10 +147,8 @@ export const PublisherList: FunctionComponent<PublisherListProps> = props => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button variant='contained' color='primary' onClick={() => setDeleteTarget(undefined)}>
-                        Cancel
-                    </Button>
-                    <Button variant='contained' color='secondary' autoFocus onClick={confirmDelete}>
+                    <Button onClick={() => setDeleteTarget(undefined)}>Cancel</Button>
+                    <Button variant='contained' color='error' autoFocus onClick={confirmDelete}>
                         Delete
                     </Button>
                 </DialogActions>

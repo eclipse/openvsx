@@ -136,7 +136,7 @@ export const CustomerMemberList: FunctionComponent<CustomerMemberListProps> = pr
             {/*{members.length ?*/}
             {/*    <Paper elevation={3}>*/}
             {/*        {members.map(member =>*/}
-            {/*            <UserNamespaceMember*/}
+            {/*            <NamespaceMemberRow*/}
             {/*                key={'nspcmbr-' + member.user.loginName + member.user.provider}*/}
             {/*                namespace={props.namespace}*/}
             {/*                member={member}*/}

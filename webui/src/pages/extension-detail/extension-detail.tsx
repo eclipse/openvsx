@@ -17,14 +17,12 @@ import {
     Avatar,
     Paper,
     Badge,
-    Tabs,
-    Tab,
     Stack,
     useTheme,
     PaletteMode,
     decomposeColor
 } from '@mui/material';
-import { alpha, styled } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import { Link as RouteLink, Route, Routes, useNavigate, useParams } from 'react-router';
 import { MainContext } from '../../context';
 import { createRoute, formatCompactNumber } from '../../utils';
@@ -45,36 +43,11 @@ import { KbdKey } from '../../components/kbd-key';
 import { useShortcut } from '../../hooks/use-shortcut';
 import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_PX } from '../../default/theme';
 import { useSetExtensionTint } from '../../context/extension-tint-context';
-import { accentHover, focusOutline } from '../../components/page-primitives';
 import { PageContainer } from '../../components/page-container';
+import { PillTab, PillTabs } from '../../components/pill-tabs';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import WarningIcon from '@mui/icons-material/Warning';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-
-// Category-pill look for the sticky tabs, floating over the nav bar's blur fan;
-// the translucent fill matches the nav search field's treatment.
-const PillTab = styled(Tab)(({ theme }) => ({
-    minHeight: 0,
-    minWidth: 0,
-    padding: '0.4375rem 0.8125rem',
-    borderRadius: theme.shape.borderRadiusPill,
-    border: `1px solid ${theme.palette.divider}`,
-    backgroundColor: alpha(theme.palette.surface2, 0.7),
-    backdropFilter: 'blur(2px) saturate(1.8)',
-    color: theme.palette.text.secondary,
-    fontSize: '0.8125rem',
-    fontWeight: 500,
-    transition: 'border-color 0.14s, color 0.14s, background 0.14s',
-    // Still translucent so the blur fan shows through; the border carries the emphasis.
-    '&.Mui-selected': {
-        backgroundColor: alpha(theme.palette.secondary.main, 0.7),
-        borderColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.contrastText,
-        fontWeight: 600
-    },
-    '&:not(.Mui-selected)': accentHover(theme),
-    ...focusOutline(theme)
-})) as typeof Tab;
 
 const inlineLinkStyle = {
     display: 'contents',
@@ -507,33 +480,9 @@ export const ExtensionDetail: FunctionComponent = () => {
                 <>
                     <ExtensionHeader extension={extension} bandRef={bandRef} />
                     <PageContainer flushTop>
-                        <Tabs
-                            value={activeTab}
-                            variant='scrollable'
-                            scrollButtons={false}
-                            sx={{
-                                // Pin under the navbar; the transparent row lets the blur fan
-                                // back the pills (same z as the AppBar, later in the DOM).
-                                position: 'sticky',
-                                top: NAVBAR_HEIGHT,
-                                zIndex: 50,
-                                minHeight: 0,
-                                // Bleed through the gutters so overflowing pills scroll to the
-                                // screen edge; from md up a sliver remains so the scroller
-                                // doesn't clip the end pills' focus outline.
-                                mx: { xs: '-1rem', sm: '-1.5rem', md: '-0.375rem' },
-                                '& .MuiTabs-indicator': { display: 'none' },
-                                '& .MuiTabs-flexContainer': {
-                                    gap: '0.5rem',
-                                    // Inside the scroller — its overflow clips the focus ring otherwise.
-                                    py: '0.625rem',
-                                    // Sized to the pills so the trailing padding lands after the
-                                    // last pill, not at the 100% mark.
-                                    width: 'max-content',
-                                    minWidth: '100%',
-                                    px: { xs: '1rem', sm: '1.5rem', md: '0.375rem' }
-                                }
-                            }}>
+                        {/* From md up a sliver of gutter remains so the scroller doesn't
+                            clip the end pills' focus outline. */}
+                        <PillTabs value={activeTab} gutters={{ xs: '1rem', sm: '1.5rem', md: '0.375rem' }}>
                             <PillTab
                                 value={ExtensionTab.OVERVIEW}
                                 label={
@@ -567,7 +516,7 @@ export const ExtensionDetail: FunctionComponent = () => {
                                 to={reviewsPath}
                                 state={{ preserveScroll: true }}
                             />
-                        </Tabs>
+                        </PillTabs>
                         <Box sx={{ pt: 2 }}>
                             <Routes>
                                 <Route
