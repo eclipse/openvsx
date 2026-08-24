@@ -11,38 +11,27 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { renderHookWithProviders } from '../../../support/test-providers';
-import { statusServiceStub, testUser } from '../../../support/trusted-publishing';
+import { disabledStatus, enabledStatus, testUser } from '../../../support/trusted-publishing';
+import { settingsServiceStub, testCustomer } from '../../../support/user-settings';
 import { ExtensionRegistryService } from '../../../../../src/extension-registry-service';
-import { Customer, TrustedPublisherStatus } from '../../../../../src/extension-registry-types';
 import { useSettingsTabs } from '../../../../../src/pages/user/settings/settings-tabs';
-
-/** The settings navigation reads both gates, so the stub has to answer both queries. */
-function tabsServiceStub(status: TrustedPublisherStatus, customers: Customer[] = []) {
-    const { getTrustedPublishingStatus, service } = statusServiceStub(status);
-    const getCustomers = vi.fn().mockResolvedValue(customers);
-    return {
-        getTrustedPublishingStatus,
-        getCustomers,
-        service: { ...service, getCustomers } as unknown as ExtensionRegistryService
-    };
-}
 
 const renderTabs = (service: ExtensionRegistryService, user?: typeof testUser) =>
     renderHookWithProviders(() => useSettingsTabs(), { mainContext: { service, user } });
 
 describe('useSettingsTabs — trusted publishing gate', () => {
     it('includes the Trusted Publishers tab when the status reports the feature enabled', async () => {
-        const { service } = tabsServiceStub({ enabled: true, allowed: true });
+        const { service } = settingsServiceStub({ status: enabledStatus });
         const { result } = renderTabs(service, testUser);
 
         await waitFor(() => expect(result.current.map(tab => tab.value)).toContain('trusted-publishers'));
     });
 
     it('omits the tab when the status reports the feature disabled', async () => {
-        const { getTrustedPublishingStatus, service } = tabsServiceStub({ enabled: false, allowed: false });
+        const { getTrustedPublishingStatus, service } = settingsServiceStub({ status: disabledStatus });
         const { result } = renderTabs(service, testUser);
 
         await waitFor(() => expect(getTrustedPublishingStatus).toHaveBeenCalled());
@@ -51,7 +40,7 @@ describe('useSettingsTabs — trusted publishing gate', () => {
     });
 
     it('omits the tab without a logged-in user, without querying the status', () => {
-        const { getTrustedPublishingStatus, service } = tabsServiceStub({ enabled: true, allowed: true });
+        const { getTrustedPublishingStatus, service } = settingsServiceStub({ status: enabledStatus });
         const { result } = renderTabs(service);
 
         expect(getTrustedPublishingStatus).not.toHaveBeenCalled();
@@ -61,15 +50,14 @@ describe('useSettingsTabs — trusted publishing gate', () => {
 
 describe('useSettingsTabs — rate limiting gate', () => {
     it('includes the Rate Limiting tab only for members of a customer group', async () => {
-        const customer = { id: 1, name: 'acme' } as Customer;
-        const { service } = tabsServiceStub({ enabled: false, allowed: false }, [customer]);
+        const { service } = settingsServiceStub({ status: disabledStatus, customers: [testCustomer()] });
         const { result } = renderTabs(service, testUser);
 
         await waitFor(() => expect(result.current.map(tab => tab.value)).toContain('customers'));
     });
 
     it('omits the Rate Limiting tab when the user belongs to no customer group', async () => {
-        const { getCustomers, service } = tabsServiceStub({ enabled: false, allowed: false });
+        const { getCustomers, service } = settingsServiceStub({ status: disabledStatus });
         const { result } = renderTabs(service, testUser);
 
         await waitFor(() => expect(getCustomers).toHaveBeenCalled());

@@ -17,7 +17,7 @@
 import { ComponentType, FunctionComponent, ReactElement, ReactNode } from 'react';
 import { QueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
-import { MemoryRouter } from 'react-router';
+import { InitialEntry, MemoryRouter } from 'react-router';
 import { render, renderHook, RenderHookOptions, RenderOptions } from '@testing-library/react';
 import { AppProviders } from '../../../src/app-providers';
 import { MainContext } from '../../../src/context';
@@ -51,8 +51,8 @@ export function createTestQueryClient(): QueryClient {
 }
 
 export interface ProviderOptions {
-    /** Initial URL for the MemoryRouter (default '/'). */
-    route?: string;
+    /** Initial entry for the MemoryRouter (default '/'); an object seeds router state too. */
+    route?: InitialEntry;
     /** Reuse a specific client (e.g. to assert cache state); defaults to a fresh one. */
     queryClient?: QueryClient;
     /** Override MainContext fields — most often `{ service }` with the methods under test stubbed. */
