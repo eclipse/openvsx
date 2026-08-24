@@ -38,6 +38,7 @@ public class DownloadIngestionMetrics {
     public static final String SKIPPED_LINES_METRIC = "openvsx_analytics_log_lines_skipped_total";
     public static final String EVENTS_METRIC = "openvsx_analytics_events_loaded_total";
     public static final String DOWNLOADS_METRIC = "openvsx_analytics_downloads_loaded_total";
+    public static final String FAILED_EVENTS_METRIC = "openvsx_analytics_events_failed_total";
     public static final String EXTRACT_LAG_METRIC = "openvsx_analytics_extract_lag";
     public static final String DEAD_LETTER_METRIC = "openvsx_analytics_dead_letter_depth";
 
@@ -47,6 +48,7 @@ public class DownloadIngestionMetrics {
     private final Counter skippedLines;
     private final Counter events;
     private final Counter downloads;
+    private final Counter failedEvents;
     private final Timer extractLag;
 
     public DownloadIngestionMetrics(MeterRegistry registry, RepositoryService repositories) {
@@ -61,6 +63,9 @@ public class DownloadIngestionMetrics {
                 .register(registry);
         this.downloads = Counter.builder(DOWNLOADS_METRIC)
                 .description("Downloads counted by the ingestion pipeline")
+                .register(registry);
+        this.failedEvents = Counter.builder(FAILED_EVENTS_METRIC)
+                .description("Aggregated download events lost because the analytics store rejected them")
                 .register(registry);
         this.extractLag = Timer.builder(EXTRACT_LAG_METRIC)
                 .description("Delay between a download and its ingestion from access logs")
@@ -91,6 +96,10 @@ public class DownloadIngestionMetrics {
     public void recordLoaded(int eventCount, int downloadCount) {
         events.increment(eventCount);
         downloads.increment(downloadCount);
+    }
+
+    public void recordFailedEvents(int eventCount) {
+        failedEvents.increment(eventCount);
     }
 
     public void recordExtractLag(Duration lag) {

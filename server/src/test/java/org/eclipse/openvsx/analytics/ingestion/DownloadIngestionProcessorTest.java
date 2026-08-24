@@ -68,6 +68,7 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
 
     @AfterEach
     void cleanUp() {
+        analyticsRepository.failing = false;
         analyticsRepository.saved.clear();
         runInTransaction(() -> {
             seededEntities.reversed().forEach(entity -> {
@@ -81,7 +82,7 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
     }
 
     @Test
-    void testProcessAggregatesSavesAndCommitsAtomically() {
+    void testProcessAggregatesAndDefersAnalytics() {
         var extension = seedExtension("proc1", "proc1.ext-1.0.0.vsix");
 
         var hour1 = Instant.parse("2026-07-01T14:00:00Z");
@@ -96,10 +97,15 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
                         "9.9.9.9",
                         "VSCode 1.90.2"));
 
-        var updated = processor.process(FileResource.STORAGE_AWS, "analytics-test-1.gz", PROCESSED_ON, 5, records);
+        var processed = processor.process(FileResource.STORAGE_AWS, "analytics-test-1.gz", PROCESSED_ON, 5, records);
 
-        assertEquals(1, updated.size());
-        assertEquals(extension.getId(), updated.get(0).getId());
+        assertEquals(1, processed.extensions().size());
+        assertEquals(extension.getId(), processed.extensions().get(0).getId());
+
+        // the events are handed back rather than stored, so the analytics write happens after
+        // the registry transaction committed
+        assertTrue(analyticsRepository.saved.isEmpty());
+        processor.saveEvents(processed.events());
 
         // micro-batch aggregation by (hour, extension-version, country, ip, user agent)
         assertEquals(3, analyticsRepository.saved.size());
@@ -118,7 +124,7 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
         var laterHour = findEvent(hour1.plusSeconds(3600), "US", "VSCode 1.90.2");
         assertEquals(1, laterHour.count());
 
-        // the download counter is incremented by the total record count in the same transaction
+        // the download counter is incremented by the total record count
         assertEquals(4, freshDownloadCount(extension.getId()));
 
         // and the ingestion entry is written
@@ -135,7 +141,9 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
 
         var records = List.of(
                 new RawDownloadRecord(Instant.parse("2026-07-01T14:00:00Z"), "NO.SUCH-1.0.0.VSIX", null, null, null));
-        processor.process(FileResource.STORAGE_AWS, "analytics-test-2.gz", PROCESSED_ON, 5, records);
+        var processed = processor
+                .process(FileResource.STORAGE_AWS, "analytics-test-2.gz", PROCESSED_ON, 5, records);
+        processor.saveEvents(processed.events());
 
         assertTrue(analyticsRepository.saved.isEmpty());
         assertEquals(0, freshDownloadCount(extension.getId()));
@@ -187,6 +195,32 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
                 repositories.findAllSucceededDownloadIngestionsByStorageTypeAndNameIn(
                         FileResource.STORAGE_AWS,
                         List.of(overlongName)).isEmpty());
+    }
+
+    @Test
+    void testAnalyticsFailureLeavesIngestionIntact() {
+        var extension = seedExtension("proc5", "proc5.ext-1.0.0.vsix");
+
+        var records = List.of(
+                new RawDownloadRecord(
+                        Instant.parse("2026-07-01T14:00:00Z"),
+                        "PROC5.EXT-1.0.0.VSIX",
+                        "US",
+                        "9.9.9.9",
+                        null));
+        var processed = processor
+                .process(FileResource.STORAGE_AWS, "analytics-test-5.gz", PROCESSED_ON, 5, records);
+
+        // the analytics store is a separate database; losing it under-counts, nothing more
+        analyticsRepository.failing = true;
+        assertDoesNotThrow(() -> processor.saveEvents(processed.events()));
+
+        assertEquals(1, freshDownloadCount(extension.getId()));
+        assertEquals(
+                List.of("analytics-test-5.gz"),
+                repositories.findAllSucceededDownloadIngestionsByStorageTypeAndNameIn(
+                        FileResource.STORAGE_AWS,
+                        List.of("analytics-test-5.gz")));
     }
 
     private DownloadEvent findEvent(Instant time, String country, String userAgent) {
@@ -257,8 +291,14 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
     static class RecordingAnalyticsRepository implements DownloadAnalyticsRepository {
         final List<DownloadEvent> saved = new CopyOnWriteArrayList<>();
 
+        volatile boolean failing;
+
         @Override
         public void save(List<DownloadEvent> events) {
+            if (failing) {
+                throw new IllegalStateException("analytics database is unreachable");
+            }
+
             saved.addAll(events);
         }
 

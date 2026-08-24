@@ -95,13 +95,21 @@ public class DownloadIngestionProcessor {
     ) {}
 
     /**
+     * The registry-side outcome of processing one log file: the extensions whose counters changed
+     * (for cache eviction and search updates) and the aggregated events still to be handed to
+     * analytics.
+     */
+    public record ProcessedFile(List<Extension> extensions, List<DownloadEvent> events) {}
+
+    /**
      * Processes one log file's download records: resolves vsix filenames to extension versions,
-     * aggregates them into hourly {@link DownloadEvent}s and, in a single transaction, saves the
-     * events, increments the extension download counters and writes the download ingestion entry.
-     * Returns the extensions whose counters changed, for cache eviction and search updates.
+     * aggregates them into hourly {@link DownloadEvent}s and, in a single transaction, increments
+     * the extension download counters and writes the download ingestion entry. The aggregated
+     * events are returned rather than stored, for {@link #saveEvents(List)} to persist once this
+     * transaction committed.
      */
     @Transactional
-    public List<Extension> process(
+    public ProcessedFile process(
             String storageType,
             String fileName,
             LocalDateTime processedOn,
@@ -111,9 +119,6 @@ public class DownloadIngestionProcessor {
         return Observation.createNotStarted("DownloadIngestionProcessor#process", observations).observe(() -> {
             var resolved = resolveExtensions(storageType, records);
             var events = aggregate(records, resolved);
-            if (!events.isEmpty()) {
-                analyticsRepository.ifAvailable(repository -> repository.save(events));
-            }
 
             var extensionDownloads = events.stream().collect(
                     Collectors.groupingBy(DownloadEvent::extensionId, Collectors.summingInt(DownloadEvent::count)));
@@ -125,15 +130,35 @@ public class DownloadIngestionProcessor {
             metrics.recordLoaded(events.size(), events.stream().mapToInt(DownloadEvent::count).sum());
             records.stream().map(RawDownloadRecord::time).max(Instant::compareTo).ifPresent(
                     latest -> metrics.recordExtractLag(Duration.between(latest, Instant.now())));
-            return extensions;
+            return new ProcessedFile(extensions, events);
+        });
+    }
+
+    /**
+     * Stores the events of an already-committed {@link #process} call in the analytics database.
+     * Writing analytics after the registry commit under-counts if the analytics database fails -
+     * a visible gap, in a log file already marked processed and never retried - whereas writing it
+     * before would over-count on a registry rollback, with no idempotency key to dedupe on:
+     * silent corruption. Under-counting is the better failure.
+     */
+    public void saveEvents(List<DownloadEvent> events) {
+        if (events.isEmpty()) {
+            return;
+        }
+
+        analyticsRepository.ifAvailable(repository -> {
+            try {
+                repository.save(events);
+            } catch (Exception e) {
+                logger.error("could not store {} download events for analytics", events.size(), e);
+                metrics.recordFailedEvents(events.size());
+            }
         });
     }
 
     /**
      * Records a single request-path download of a file that no {@link DownloadRecordSource}
-     * covers. Client IP and user agent are taken from the current HTTP request, if any. The
-     * event save participates in the caller's transaction, so it commits atomically with the
-     * download counter.
+     * covers. Client IP and user agent are taken from the current HTTP request, if any.
      */
     public void captureDownload(FileResource resource) {
         analyticsRepository.ifAvailable(repository -> {
@@ -159,8 +184,14 @@ public class DownloadIngestionProcessor {
                     clientIp(request),
                     userAgent,
                     1);
-            repository.save(List.of(event));
-            metrics.recordLoaded(1, 1);
+            try {
+                repository.save(List.of(event));
+                metrics.recordLoaded(1, 1);
+            } catch (Exception e) {
+                // the caller is serving a download; an analytics outage must not fail it
+                logger.error("could not record the download of {} for analytics", resource.getName(), e);
+                metrics.recordFailedEvents(1);
+            }
         });
     }
 

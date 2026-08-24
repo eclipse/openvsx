@@ -136,6 +136,25 @@ class TimescaleDownloadAnalyticsRepositoryTest extends AbstractTimeseriesContain
     }
 
     @Test
+    void testSaveIsAtomicAcrossItsBatches() {
+        // version is VARCHAR(255), so the 501st event lands in a second batch and fails it
+        var overlongVersion = "1.0.0-" + "x".repeat(300);
+        var events = IntStream.rangeClosed(0, 500)
+                .mapToObj(
+                        i -> event(
+                                Instant.parse("2026-07-01T00:00:00Z").plusSeconds(i * 60L),
+                                1L,
+                                i == 500 ? overlongVersion : "1.0.0",
+                                "US",
+                                1))
+                .toList();
+
+        assertThrows(DataAccessException.class, () -> repository.save(events));
+
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM download_event", Integer.class));
+    }
+
+    @Test
     void testFindSeriesByDay() {
         repository.save(
                 List.of(

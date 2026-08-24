@@ -90,13 +90,16 @@ public class DownloadIngestionRunner {
                     var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
                     if (records != null) {
                         try {
-                            // saves analytics events, increments download counters and writes the
-                            // download ingestion entry in one transaction
-                            var updatedExtensions = processor
+                            // increments download counters and writes the download ingestion entry
+                            // in one transaction
+                            var processed = processor
                                     .process(storageType, name, processedOn, executionTime, records);
-                            updatedExtensions
+                            processed.extensions()
                                     .forEach(extension -> allUpdatedExtensions.put(extension.getId(), extension));
                             success = true;
+                            // and only then hands the events to the analytics database, which
+                            // cannot join that transaction
+                            processor.saveEvents(processed.events());
                         } catch (Exception e) {
                             logger.error("failed to process item: {}", name, e);
                         }

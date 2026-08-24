@@ -20,8 +20,10 @@ import java.util.List;
 public interface DownloadAnalyticsRepository {
 
     /**
-     * Persists the given events. Implementations must participate in the caller's transaction,
-     * so that events, the extension download counter and the download ingestion entry commit atomically.
+     * Persists the given events atomically: either all of them are stored or none are.
+     * Implementations live in their own database and therefore cannot join the caller's registry
+     * transaction, so the extension download counter and the download ingestion entry commit
+     * independently of these events.
      */
     void save(List<DownloadEvent> events);
 

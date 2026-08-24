@@ -36,8 +36,9 @@ import org.eclipse.openvsx.analytics.DownloadSeriesRow;
  * separate time-series database, addressed by name rather than through generated jOOQ classes
  * (codegen runs against the registry database, which no longer holds these tables).
  * <p>
- * Writes run on the time-series connection pool, so they cannot join a caller's registry
- * transaction: an event is persisted independently of whatever the registry does afterwards.
+ * Writes run on the time-series connection pool and cannot join a caller's registry transaction:
+ * one {@link #save(List)} call is one transaction of its own, atomic across its batches and
+ * independent of whatever the registry does afterwards.
  */
 public class TimescaleDownloadAnalyticsRepository implements DownloadAnalyticsRepository {
 
@@ -88,37 +89,39 @@ public class TimescaleDownloadAnalyticsRepository implements DownloadAnalyticsRe
 
     @Override
     public void save(List<DownloadEvent> events) {
-        for (var batch : Lists.partition(events, BATCH_SIZE)) {
-            var insert = dsl
-                    .insertInto(
-                            EVENT,
-                            EVENT_TIME,
-                            EVENT_EXTENSION_ID,
-                            EVENT_EXTENSION_VERSION_ID,
-                            EVENT_NAMESPACE,
-                            EVENT_EXTENSION_NAME,
-                            EVENT_VERSION,
-                            EVENT_TARGET_PLATFORM,
-                            EVENT_COUNTRY,
-                            EVENT_IP,
-                            EVENT_USER_AGENT,
-                            EVENT_COUNT);
-            for (var event : batch) {
-                insert = insert.values(
-                        OffsetDateTime.ofInstant(event.time(), ZoneOffset.UTC),
-                        event.extensionId(),
-                        event.extensionVersionId(),
-                        event.namespace(),
-                        event.extensionName(),
-                        event.version(),
-                        event.targetPlatform(),
-                        event.country(),
-                        event.ip(),
-                        event.userAgent(),
-                        event.count());
+        dsl.transaction(configuration -> {
+            for (var batch : Lists.partition(events, BATCH_SIZE)) {
+                var insert = DSL.using(configuration)
+                        .insertInto(
+                                EVENT,
+                                EVENT_TIME,
+                                EVENT_EXTENSION_ID,
+                                EVENT_EXTENSION_VERSION_ID,
+                                EVENT_NAMESPACE,
+                                EVENT_EXTENSION_NAME,
+                                EVENT_VERSION,
+                                EVENT_TARGET_PLATFORM,
+                                EVENT_COUNTRY,
+                                EVENT_IP,
+                                EVENT_USER_AGENT,
+                                EVENT_COUNT);
+                for (var event : batch) {
+                    insert = insert.values(
+                            OffsetDateTime.ofInstant(event.time(), ZoneOffset.UTC),
+                            event.extensionId(),
+                            event.extensionVersionId(),
+                            event.namespace(),
+                            event.extensionName(),
+                            event.version(),
+                            event.targetPlatform(),
+                            event.country(),
+                            event.ip(),
+                            event.userAgent(),
+                            event.count());
+                }
+                insert.execute();
             }
-            insert.execute();
-        }
+        });
     }
 
     @Override

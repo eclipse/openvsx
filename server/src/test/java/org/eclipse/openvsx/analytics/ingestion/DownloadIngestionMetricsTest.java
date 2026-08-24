@@ -47,6 +47,14 @@ class DownloadIngestionMetricsTest {
     }
 
     @Test
+    void testFailedEventsCounter() {
+        metrics.recordFailedEvents(3);
+        metrics.recordFailedEvents(1);
+
+        assertEquals(4, registry.counter(DownloadIngestionMetrics.FAILED_EVENTS_METRIC).count());
+    }
+
+    @Test
     void testExtractLagTimer() {
         metrics.recordExtractLag(Duration.ofMinutes(10));
 
