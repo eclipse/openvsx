@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FunctionComponent, useContext, useRef, useState } from 'react';
+import { ChangeEvent, FunctionComponent, ReactNode, useContext, useRef, useState } from 'react';
 import {
     Box,
     Button,
@@ -23,9 +23,11 @@ import {
     IconButton,
     Menu,
     MenuItem,
+    Skeleton,
     Slider,
     Stack
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
@@ -35,9 +37,21 @@ import AvatarEditor, { Position, type AvatarEditorRef } from 'react-avatar-edito
 import { MainContext } from '../../context';
 import { Namespace } from '../../extension-registry-types';
 import { useNamespaceDetails, useUpdateNamespaceDetails, useUpdateNamespaceLogo } from './use-namespace-details';
+import { EmptyPlaceholder } from '../../pages/user/settings/settings-primitives';
+
+// Square empty state standing in for a missing logo; same footprint as the image
+// so the Edit button keeps its place.
+const LogoPlaceholder = styled(EmptyPlaceholder)({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    aspectRatio: '1 / 1',
+    padding: '1rem'
+});
 
 /**
- * Namespace logo sidebar: shows the logo (or the default placeholder) and, for
+ * Namespace logo sidebar: shows the logo (or a "no logo" placeholder) and, for
  * owners, a GitHub-style Edit menu whose upload/removal apply immediately,
  * independent of the details form.
  */
@@ -46,7 +60,8 @@ export const NamespaceLogo: FunctionComponent<NamespaceLogoProps> = props => {
     const editor = useRef<AvatarEditorRef>(null);
     const fileInput = useRef<HTMLInputElement>(null);
 
-    const details = useNamespaceDetails(props.namespace.name).data;
+    const detailsQuery = useNamespaceDetails(props.namespace.name);
+    const details = detailsQuery.data;
     const uploadLogo = useUpdateNamespaceLogo();
     const updateDetails = useUpdateNamespaceDetails();
 
@@ -134,22 +149,34 @@ export const NamespaceLogo: FunctionComponent<NamespaceLogoProps> = props => {
     const handleEditorScaleChange = (_event: Event, value: number | number[]) =>
         setEditorScale(typeof value === 'number' ? value : value[0]);
 
-    return (
-        <Box sx={{ position: 'relative' }}>
+    const renderLogo = (): ReactNode => {
+        if (detailsQuery.isLoading) {
+            return <Skeleton variant='rounded' sx={{ width: '100%', height: 'auto', aspectRatio: '1 / 1' }} />;
+        }
+        if (!details?.logo) {
+            return <LogoPlaceholder>No logo</LogoPlaceholder>;
+        }
+        return (
             <Box
                 component='img'
-                src={details?.logo ?? context.pageSettings.urls.extensionDefaultIcon}
-                alt={`${details?.displayName || props.namespace.name} logo`}
+                src={details.logo}
+                alt={`${details.displayName || props.namespace.name} logo`}
                 sx={{
                     display: 'block',
                     width: '100%',
                     aspectRatio: '1 / 1',
                     objectFit: 'contain',
-                    borderRadius: '1rem',
+                    borderRadius: theme => `${theme.shape.borderRadiusCard}px`,
                     border: '1px solid',
                     borderColor: 'divider'
                 }}
             />
+        );
+    };
+
+    return (
+        <Box sx={{ position: 'relative' }}>
+            {renderLogo()}
             {canEdit ? (
                 <>
                     <Button

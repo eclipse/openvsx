@@ -37,7 +37,7 @@ const DropzoneDiv = styled('div')(({ theme }: { theme: Theme }) => ({
     alignItems: 'center',
     padding: theme.spacing(3),
     borderWidth: 2,
-    borderRadius: 2,
+    borderRadius: theme.shape.borderRadiusCard,
     borderStyle: 'dashed',
     backgroundColor: theme.palette.background.default,
     color: theme.palette.text.primary,

@@ -16,7 +16,8 @@ import { isError } from '../../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
 import { MainContext } from '../../../context';
 import { ManageExtensionCard } from '../../../components/extension/manage-extension-card';
-import { EmptyPlaceholder, ManageExtensionGrid } from '../settings/settings-primitives';
+import { EmptyPlaceholder } from '../settings/settings-primitives';
+import { ExtensionGrid } from '../../../components/page-primitives';
 import { SettingsHeader } from '../settings/settings-header';
 import { UserSettingsRoutes } from '../user-settings-routes';
 
@@ -65,7 +66,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
             />
             <DelayedLoadIndicator loading={loading} />
             {extensions && extensions.length > 0 ? (
-                <ManageExtensionGrid>
+                <ExtensionGrid>
                     {extensions.map(extension => (
                         <ManageExtensionCard
                             key={`${extension.namespace}.${extension.name}-${extension.version}`}
@@ -73,7 +74,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
                             routePrefix={UserSettingsRoutes.EXTENSIONS}
                         />
                     ))}
-                </ManageExtensionGrid>
+                </ExtensionGrid>
             ) : !loading ? (
                 <EmptyPlaceholder>You haven&apos;t published any extensions yet.</EmptyPlaceholder>
             ) : null}

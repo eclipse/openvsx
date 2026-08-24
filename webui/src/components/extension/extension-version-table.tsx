@@ -13,7 +13,7 @@
 
 import { ChangeEvent, FunctionComponent, useState } from 'react';
 import { Box, IconButton, InputBase, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
@@ -54,6 +54,11 @@ const Row = styled(Box)(({ theme }) => ({
 const VersionChip = styled(TagChip)({
     fontSize: '0.5625rem'
 });
+
+const RemovedChip = styled(VersionChip)(({ theme }) => ({
+    backgroundColor: alpha(theme.palette.error.main, 0.12),
+    color: theme.palette.error.main
+}));
 
 /** Circular twin of {@link DeleteIconButton} for the admin-only permanent purge. */
 const PurgeIconButton = styled(IconButton)(({ theme }) => ({
@@ -110,16 +115,24 @@ interface TimelineCellProps {
     rowCount: number;
     hasPrevPage: boolean;
     hasNextPage: boolean;
-    /** Accent-colored bulb for the latest version. */
-    accent: boolean;
+    /** Palette path for the bulb; see {@link bulbColor}. */
+    color: string;
 }
+
+/** The bulb marks the latest version with the accent and a removed one in red. */
+const bulbColor = (isLatest: boolean, removed: boolean): string => {
+    if (removed) {
+        return 'error.main';
+    }
+    return isLatest ? 'secondary.main' : 'text.disabled';
+};
 
 /**
  * Leading cell of a version row: a bulb on a vertical line running through the
  * row gaps. At page boundaries the line fades out instead of ending on the
  * bulb, hinting that more versions follow.
  */
-const TimelineCell: FunctionComponent<TimelineCellProps> = ({ index, rowCount, hasPrevPage, hasNextPage, accent }) => {
+const TimelineCell: FunctionComponent<TimelineCellProps> = ({ index, rowCount, hasPrevPage, hasNextPage, color }) => {
     const isTop = index === 0;
     const isBottom = index === rowCount - 1;
     const top = isTop ? (hasPrevPage ? '-0.625rem' : '50%') : '-0.875rem';
@@ -153,7 +166,7 @@ const TimelineCell: FunctionComponent<TimelineCellProps> = ({ index, rowCount, h
                     width: '0.625rem',
                     height: '0.625rem',
                     borderRadius: '50%',
-                    bgcolor: accent ? 'secondary.main' : 'text.disabled'
+                    bgcolor: color
                 }}
             />
         </Box>
@@ -224,7 +237,7 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                             rowCount={pagedVersions.length}
                             hasPrevPage={hasPrevPage}
                             hasNextPage={hasNextPage}
-                            accent={isLatest}
+                            color={bulbColor(isLatest, removed)}
                         />
                         <Box
                             component='span'
@@ -232,11 +245,17 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                             <Typography
                                 component='code'
                                 noWrap
-                                sx={{ fontFamily: MONO_FONT, fontSize: '0.8125rem', fontWeight: 600 }}>
+                                sx={{
+                                    fontFamily: MONO_FONT,
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    color: removed ? 'error.main' : 'inherit',
+                                    textDecoration: removed ? 'line-through' : 'none'
+                                }}>
                                 {v.version}
                             </Typography>
                             {removed ? (
-                                <VersionChip>Removed</VersionChip>
+                                <RemovedChip>Removed</RemovedChip>
                             ) : isLatest ? (
                                 <VersionChip accent>Latest</VersionChip>
                             ) : preRelease ? (
@@ -251,7 +270,9 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                                         title={tp.removed ? 'Removed' : tp.active ? undefined : 'Inactive'}
                                         sx={{
                                             fontSize: 'inherit',
-                                            color: tp.removed ? 'warningAccent' : 'inherit',
+                                            // Red is carried by the version, pill and dot; the platform
+                                            // list just recedes so the struck-through text stays quiet.
+                                            color: tp.removed ? 'text.disabled' : 'inherit',
                                             textDecoration: tp.active ? 'none' : 'line-through'
                                         }}>
                                         {tp.targetPlatform}

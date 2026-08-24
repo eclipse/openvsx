@@ -48,7 +48,6 @@ export const NamespaceMemberRow: FunctionComponent<NamespaceMemberRowProps> = pr
                 sx={{
                     width: '2.5rem',
                     height: '2.5rem',
-                    borderRadius: '0.625rem',
                     fontSize: '0.875rem',
                     flexShrink: 0
                 }}

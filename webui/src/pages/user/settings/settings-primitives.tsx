@@ -52,7 +52,7 @@ export const IconTile = styled(Box)(({ theme }) => ({
     justifyContent: 'center',
     backgroundColor: theme.palette.surface3,
     color: theme.palette.text.secondary,
-    borderRadius: '0.5625rem'
+    borderRadius: theme.shape.borderRadius
 }));
 
 /** Dashed placeholder shown when a settings list has no entries. */
@@ -63,14 +63,4 @@ export const EmptyPlaceholder = styled(Box)(({ theme }) => ({
     textAlign: 'center',
     color: theme.palette.text.disabled,
     fontSize: '0.84375rem'
-}));
-
-/** Responsive grid the manage-extension cards render into. */
-export const ManageExtensionGrid = styled(Box)(({ theme }) => ({
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
-    gap: '0.875rem',
-    [theme.breakpoints.down('sm')]: {
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
-    }
 }));

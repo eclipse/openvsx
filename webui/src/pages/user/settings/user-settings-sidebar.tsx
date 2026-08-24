@@ -25,6 +25,7 @@ import { createRoute } from '../../../utils';
 import { UserSettingsRoutes } from '../user-settings-routes';
 import { CreateNamespaceDialog } from '../namespaces/create-namespace-dialog';
 import { useHandleNamespaceCreated, useUserNamespaces } from '../namespaces/use-user-namespaces';
+import { EmptyPlaceholder } from './settings-primitives';
 import { SettingsTab, useActiveSettingsTab, useSettingsTabs } from './settings-tabs';
 
 // Quiet full-width sidebar row that tints on hover/selection.
@@ -65,6 +66,14 @@ const NamespaceItem = styled(NavItem)({
     padding: '0.5rem 0.75rem'
 });
 
+// The tab-sized twin of the settings tabs' placeholder: same dashed frame, scaled to the column.
+const NamespacesPlaceholder = styled(EmptyPlaceholder)({
+    padding: '1.125rem 0.75rem',
+    fontSize: '0.78125rem',
+    lineHeight: 1.45,
+    margin: '0 0.25rem'
+});
+
 const TabNavItem: FunctionComponent<{ tab: SettingsTab }> = ({ tab }) => {
     const navigate = useNavigate();
     const activeTab = useActiveSettingsTab();
@@ -85,7 +94,8 @@ export const UserSettingsSidebar: FunctionComponent = () => {
     const activeTab = useActiveSettingsTab();
     const settingsTabs = useSettingsTabs();
     const { namespace, extension } = useParams();
-    const namespaces = useUserNamespaces().data ?? [];
+    const namespacesQuery = useUserNamespaces();
+    const namespaces = namespacesQuery.data ?? [];
     const handleNamespaceCreated = useHandleNamespaceCreated();
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -126,7 +136,6 @@ export const UserSettingsSidebar: FunctionComponent = () => {
                     sx={{
                         width: '2.75rem',
                         height: '2.75rem',
-                        borderRadius: '0.625rem',
                         fontSize: '0.9375rem'
                     }}
                 />
@@ -156,7 +165,7 @@ export const UserSettingsSidebar: FunctionComponent = () => {
                         title='Create namespace'
                         aria-label='Create namespace'
                         onClick={() => setCreateDialogOpen(true)}
-                        sx={{ p: '0.1875rem', borderRadius: '0.375rem' }}>
+                        sx={theme => ({ p: '0.1875rem', borderRadius: `${theme.shape.borderRadius}px` })}>
                         <AddIcon sx={{ fontSize: '0.875rem' }} />
                     </IconButton>
                 </Box>
@@ -176,6 +185,9 @@ export const UserSettingsSidebar: FunctionComponent = () => {
                         ) : null}
                     </NamespaceItem>
                 ))}
+                {namespaces.length === 0 && !namespacesQuery.isLoading ? (
+                    <NamespacesPlaceholder>You don&apos;t belong to any namespace yet.</NamespacesPlaceholder>
+                ) : null}
             </Box>
             <CreateNamespaceDialog
                 open={createDialogOpen}

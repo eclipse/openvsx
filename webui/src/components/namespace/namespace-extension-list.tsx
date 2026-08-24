@@ -15,11 +15,8 @@ import { Namespace, isError, Extension, ErrorResult } from '../../extension-regi
 import { MainContext } from '../../context';
 import { DelayedLoadIndicator } from '../delayed-load-indicator';
 import { ManageExtensionCard } from '../extension/manage-extension-card';
-import {
-    EmptyPlaceholder,
-    ManageExtensionGrid,
-    SettingsSectionTitle
-} from '../../pages/user/settings/settings-primitives';
+import { ExtensionGrid } from '../page-primitives';
+import { EmptyPlaceholder, SettingsSectionTitle } from '../../pages/user/settings/settings-primitives';
 
 /**
  * Retrieves the full detail for a single extension of a namespace. The caller decides which endpoint
@@ -86,7 +83,7 @@ export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListPro
             <SettingsSectionTitle component='h3'>Extensions</SettingsSectionTitle>
             <DelayedLoadIndicator loading={loading} />
             {extensions && extensions.length > 0 ? (
-                <ManageExtensionGrid>
+                <ExtensionGrid>
                     {extensions.map(extension => (
                         <ManageExtensionCard
                             key={`${extension.namespace}.${extension.name}-${extension.version}`}
@@ -98,7 +95,7 @@ export const NamespaceExtensionList: FunctionComponent<NamespaceExtensionListPro
                             }}
                         />
                     ))}
-                </ManageExtensionGrid>
+                </ExtensionGrid>
             ) : !loading ? (
                 <EmptyPlaceholder>No extensions published under this namespace yet.</EmptyPlaceholder>
             ) : null}

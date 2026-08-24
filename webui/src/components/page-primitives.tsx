@@ -97,7 +97,7 @@ export const TagChip = styled('span', { shouldForwardProp: prop => prop !== 'acc
         display: 'inline-flex',
         alignItems: 'center',
         padding: '0.38em 1.05em',
-        borderRadius: '999px',
+        borderRadius: theme.shape.borderRadiusPill,
         fontSize: '0.65625rem',
         fontWeight: 700,
         letterSpacing: '0.05em',

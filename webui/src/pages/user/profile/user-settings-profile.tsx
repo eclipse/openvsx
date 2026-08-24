@@ -58,7 +58,7 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
                             width: '100%',
                             height: 'auto',
                             aspectRatio: '1 / 1',
-                            borderRadius: '1rem',
+                            borderRadius: theme => `${theme.shape.borderRadiusCard}px`,
                             border: '1px solid',
                             borderColor: 'divider',
                             fontSize: '3.5rem'
@@ -70,7 +70,6 @@ export const UserSettingsProfile: FunctionComponent<UserSettingsProfileProps> = 
                         {user.loginName}
                     </DetailRow>
                     {user.fullName ? <DetailRow label='Full name'>{user.fullName}</DetailRow> : null}
-                    <DetailRow label='Role'>{user.role === 'admin' ? 'Admin' : 'Publisher'}</DetailRow>
                 </DetailsCard>
                 {publisherAgreementPanel}
             </MediaSidebarLayout>

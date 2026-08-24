@@ -31,7 +31,8 @@ const AddPublisherPanel = styled(Box)(({ theme }) => ({
     marginTop: theme.spacing(2),
     padding: theme.spacing(3),
     border: `2px dashed ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
+    // Card radius, not control: it alternates with the dashed EmptyPlaceholder in the same slot.
+    borderRadius: theme.shape.borderRadiusCard,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
