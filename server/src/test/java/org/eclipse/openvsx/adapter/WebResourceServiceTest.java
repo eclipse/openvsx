@@ -83,6 +83,27 @@ class WebResourceServiceTest {
     }
 
     @Test
+    void testAllowsLargeFileWhenLimitIsDisabled() throws Exception {
+        // extension/README.md declares 31781 bytes -- larger than the 8 KB limit rejected in
+        // testRejectsEntryDeclaredLargerThanLimit -- but a negative maxFileSize (the default) means
+        // no file is too large, matching the pre-existing behavior of this endpoint.
+        var extensionDownloadPath = resourcePath("wrong-size.zip");
+        var service = newService(-1L);
+
+        var cachedPath = service.getWebResource(
+                "ns",
+                "ext",
+                null,
+                "1.0.0",
+                "extension/README.md",
+                extensionDownloadPath);
+
+        assertThat(cachedPath).isNotNull();
+        assertThat(Files.size(cachedPath)).isEqualTo(31781);
+        Files.deleteIfExists(cachedPath);
+    }
+
+    @Test
     void testServesFileWithinLimit() throws Exception {
         var extensionDownloadPath = resourcePath("todo-tree.zip");
         var service = newService(33_554_432L);

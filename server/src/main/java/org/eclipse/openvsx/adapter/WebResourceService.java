@@ -51,9 +51,14 @@ public class WebResourceService {
     private final FilesCacheKeyGenerator filesCacheKeyGenerator;
     private final JsonMapper jsonMapper;
 
-    // Limit the decompressed size of a single served web resource, default 32 MB matching
-    // ArchiveUtil.MAX_ENTRY_SIZE. Without this, a small VSIX containing a highly compressed entry
-    // could exhaust the java.io.tmpdir filesystem when that entry is extracted on request.
+    // Limit the decompressed size of a single served web resource. Disabled (unbounded, matching
+    // pre-existing behavior) by default: unlike the handful of known-small metadata files bounded by
+    // ArchiveUtil.MAX_ENTRY_SIZE at publish time, an arbitrary file requested through /vscode/unpkg
+    // can legitimately be large (e.g. a bundled WASM binary), so there's no one-size-fits-all default
+    // that doesn't risk rejecting something that published successfully. A negative value disables the
+    // limit; set a positive byte value to opt into bounding it, e.g. to guard against a small VSIX
+    // containing a highly compressed entry that could exhaust the java.io.tmpdir filesystem when
+    // extracted on request.
     private final long maxFileSize;
 
     public WebResourceService(
@@ -61,7 +66,7 @@ public class WebResourceService {
             RepositoryService repositories,
             CacheService cache,
             FilesCacheKeyGenerator filesCacheKeyGenerator,
-            @Value("${ovsx.caching.files-webresource.max-file-size:33554432}") long maxFileSize
+            @Value("${ovsx.caching.files-webresource.max-file-size:-1}") long maxFileSize
     ) {
         this.storageUtil = storageUtil;
         this.repositories = repositories;
@@ -165,22 +170,30 @@ public class WebResourceService {
 
     private void writeBinaryFile(Path file, ZipFile zip, ZipEntry fileEntry) {
         var declaredSize = fileEntry.getSize();
-        if (declaredSize < 0) {
-            throw new ErrorResultException("The file " + fileEntry.getName() + " has an unknown size.");
-        }
-        if (declaredSize > maxFileSize) {
-            var maxSize = FileUtils.byteCountToDisplaySize(maxFileSize);
-            throw new ErrorResultException(
-                    "The file " + fileEntry.getName() + " exceeds the size limit of " + maxSize + ".",
-                    HttpStatus.CONTENT_TOO_LARGE);
+        if (maxFileSize >= 0) {
+            if (declaredSize < 0) {
+                throw new ErrorResultException("The file " + fileEntry.getName() + " has an unknown size.");
+            }
+            if (declaredSize > maxFileSize) {
+                var maxSize = FileUtils.byteCountToDisplaySize(maxFileSize);
+                throw new ErrorResultException(
+                        "The file " + fileEntry.getName() + " exceeds the size limit of " + maxSize + ".",
+                        HttpStatus.CONTENT_TOO_LARGE);
+            }
         }
 
         FileUtil.writeSync(file, p -> {
-            // Wrap in SizeLimitInputStream bounded to the declared size: a zip entry can lie about
-            // its uncompressed size, so this stops the copy the moment more bytes than declared
-            // have been read instead of trusting the header.
-            try (var in = zip.getInputStream(fileEntry); var limited = new SizeLimitInputStream(in, declaredSize)) {
-                Files.copy(limited, p);
+            try (var in = zip.getInputStream(fileEntry)) {
+                if (maxFileSize >= 0) {
+                    // Wrap in SizeLimitInputStream bounded to the declared size: a zip entry can lie
+                    // about its uncompressed size, so this stops the copy the moment more bytes than
+                    // declared have been read instead of trusting the header.
+                    try (var limited = new SizeLimitInputStream(in, declaredSize)) {
+                        Files.copy(limited, p);
+                    }
+                } else {
+                    Files.copy(in, p);
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
