@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class DownloadAnalyticsAPITest {
@@ -68,6 +69,15 @@ class DownloadAnalyticsAPITest {
                         content().json(
                                 "{\"points\":[{\"t\":\"2026-07-01\",\"count\":4321},{\"t\":\"2026-07-02\",\"count\":10}]}",
                                 true));
+    }
+
+    @Test
+    void testSeriesIsPubliclyCacheable() throws Exception {
+        Mockito.when(service.getSeries(any())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/foo/bar/analytics/downloads"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "max-age=600, public"));
     }
 
     @Test

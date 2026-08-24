@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.concurrent.TimeUnit;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -116,7 +118,11 @@ public class DownloadAnalyticsAPI {
                                 LocalDate.ofInstant(point.bucketStart(), ZoneOffset.UTC).toString(),
                                 point.count()))
                 .toList();
-        return ResponseEntity.ok(new DownloadSeriesJson(points));
+        // Aggregate, non-personal data that is identical for every caller, so it is publicly
+        // cacheable. Without an explicit value Spring Security defaults the response to no-store.
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES).cachePublic())
+                .body(new DownloadSeriesJson(points));
     }
 
     private DownloadSeriesRequest buildRequest(long extensionId, String from, String to, String interval) {
