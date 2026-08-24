@@ -15,9 +15,8 @@ package org.eclipse.openvsx.migration;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.annotation.PostConstruct;
 import org.jobrunr.server.BackgroundJobServer;
-import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,6 +28,13 @@ import org.springframework.stereotype.Component;
  * be done explicitly against the server's {@code JobDefaultFilters}, and via
  * {@code addAll(...)} rather than {@code setJobFilters(...)} so JobRunr's own built-in filters
  * (e.g. {@code RetryFilter}) are appended to, not replaced.
+ * <p>
+ * Registration happens in {@link PostConstruct}, i.e. as soon as this bean (and therefore its
+ * {@code Optional<BackgroundJobServer>} dependency) is constructed, rather than waiting for an
+ * application-lifecycle event: {@code BackgroundJobServer} only starts actually processing jobs
+ * once JobRunr's own {@code JobRunrStarter} calls {@code start()} on {@code ApplicationReadyEvent}
+ * -- confirmed via javap that this is strictly later than bean construction -- but there's no
+ * reason to rely on that ordering when registering earlier is just as easy and removes any doubt.
  * <p>
  * {@link BackgroundJobServer} is injected as {@link Optional} because it's only present when
  * {@code jobrunr.background-job-server.enabled=true} (e.g. it's absent on nodes that only
@@ -48,8 +54,8 @@ public class MigrationItemCleanupFilterRegistrar {
         this.migrationItemCleanupFilter = migrationItemCleanupFilter;
     }
 
-    @EventListener
-    public void applicationStarted(ApplicationStartedEvent event) {
+    @PostConstruct
+    public void registerFilter() {
         backgroundJobServer.ifPresent(server -> server.getJobFilters().addAll(List.of(migrationItemCleanupFilter)));
     }
 }

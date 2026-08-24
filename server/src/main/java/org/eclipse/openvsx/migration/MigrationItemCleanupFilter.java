@@ -21,10 +21,11 @@ import org.springframework.stereotype.Component;
 /**
  * Deletes the {@link org.eclipse.openvsx.entities.MigrationItem} row backing a migration job once
  * that job has actually finished successfully, instead of leaving completed rows in the table
- * forever (see <a href="https://github.com/eclipse-openvsx/openvsx/issues/1588">...</a>). Deletion doesn't live at
- * the end of every {@code *JobRequestHandler} because there would be a lot of them to touch and
- * to keep touching for every future migration -- a single JobRunr filter that inspects the
- * {@link MigrationJobRequest} on state transitions covers all of them at once, present and future.
+ * forever (see <a href="https://github.com/eclipse-openvsx/openvsx/issues/1588">issue #1588</a>).
+ * Deletion doesn't live at the end of every {@code *JobRequestHandler} because there would be a
+ * lot of them to touch and to keep touching for every future migration -- a single JobRunr filter
+ * that inspects the {@link MigrationJobRequest} on state transitions covers all of them at once,
+ * present and future.
  * <p>
  * On failure (even after retries are exhausted) the row is deliberately left in place: the next
  * {@link MigrationScheduler} run will pick it up again via
@@ -65,7 +66,7 @@ public class MigrationItemCleanupFilter implements JobServerFilter {
 
     private Long getMigrationItemId(Job job) {
         for (var value : job.getJobDetails().getJobParameterValues()) {
-            if (value instanceof MigrationJobRequest<?> request && request.getMigrationItemId() != 0) {
+            if (value instanceof MigrationJobRequest<?> request && request.getMigrationItemId() > 0) {
                 return request.getMigrationItemId();
             }
         }
