@@ -28,11 +28,16 @@ const removedVersion = version({
     targetPlatforms: [{ targetPlatform: 'universal', active: false, removed: true }]
 });
 
-const renderTable = (versions: VersionTargetPlatforms[], onPurgeVersion?: () => void) =>
+const renderTable = (
+    versions: VersionTargetPlatforms[],
+    onPurgeVersion?: () => void,
+    extra: { rejected?: boolean } = {}
+) =>
     renderWithProviders(
         <ExtensionVersionTable
             versions={versions}
             latestVersion='1.0.0'
+            rejected={extra.rejected}
             page={0}
             onPageChange={vi.fn()}
             onDeleteVersion={vi.fn()}
@@ -65,6 +70,20 @@ describe('ExtensionVersionTable', () => {
         renderTable([version()]);
 
         expect(screen.getByLabelText('Delete version 1.0.0')).toBeEnabled();
+    });
+
+    it('marks every version of a rejected extension', () => {
+        renderTable([version()], undefined, { rejected: true });
+
+        expect(screen.getByText('Rejected')).toBeInTheDocument();
+        expect(screen.queryByText('Latest')).not.toBeInTheDocument();
+    });
+
+    it('leaves a removed version marked as removed even when the extension is rejected', () => {
+        renderTable([removedVersion], undefined, { rejected: true });
+
+        expect(screen.getByText('Removed')).toBeInTheDocument();
+        expect(screen.queryByText('Rejected')).not.toBeInTheDocument();
     });
 
     it('offers the purge action only when a purge handler is supplied', () => {
