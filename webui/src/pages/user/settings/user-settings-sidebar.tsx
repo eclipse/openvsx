@@ -120,9 +120,9 @@ export const UserSettingsSidebar: FunctionComponent = () => {
                 minWidth: 0,
                 position: 'sticky',
                 top: `calc(${NAVBAR_HEIGHT} + 1.625rem)`,
-                // Same z as the AppBar, later in the DOM: keeps the navbar's
-                // backdrop-blur fan from blurring the sidebar's top rows.
-                zIndex: 50
+                // Below the AppBar's z-index: at the same value this sticky column comes later in
+                // the DOM and would scroll out over the navbar instead of under it.
+                zIndex: 1
             }}>
             <Box
                 sx={{

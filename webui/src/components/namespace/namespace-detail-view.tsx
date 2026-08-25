@@ -10,10 +10,11 @@
 
 import { FunctionComponent, ReactNode } from 'react';
 import { Link as RouteLink } from 'react-router';
-import { Alert, Box, Button, Link, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { FetchNamespaceExtension, NamespaceExtensionList } from './namespace-extension-list';
 import { NamespaceDetailRoutes } from '../../pages/namespace-detail/namespace-detail-routes';
+import { NamespaceClaimNotice } from './namespace-claim-notice';
 import { createRoute } from '../../utils';
 import { Namespace } from '../../extension-registry-types';
 import { NamespaceMemberList } from './namespace-member-list';
@@ -73,14 +74,17 @@ export const NamespaceDetailView: FunctionComponent<NamespaceDetailViewProps> = 
                     </Button>
                 </Box>
             </Box>
-            {!props.namespace.verified && props.namespaceAccessUrl ? (
-                <Alert severity='warning' sx={{ mb: '1.875rem' }}>
-                    This namespace is not verified.{' '}
-                    <Link href={props.namespaceAccessUrl} target='_blank' rel='noopener'>
-                        See the documentation
-                    </Link>{' '}
-                    to learn about claiming namespaces.
-                </Alert>
+            {!props.namespace.verified ? (
+                <NamespaceClaimNotice
+                    namespace={props.namespace.name}
+                    showAction={props.showClaimAction}
+                    sx={{ mb: '1.875rem' }}>
+                    Claiming{' '}
+                    <Typography component='code' sx={{ fontFamily: MONO_FONT, fontSize: 'inherit' }}>
+                        {props.namespace.name}
+                    </Typography>{' '}
+                    proves you own it. Until then extensions published here can stay inactive.
+                </NamespaceClaimNotice>
             ) : null}
             {/* All sections share the main column, the logo stands alone on the right. */}
             <MediaSidebarLayout sidebar={<NamespaceLogo namespace={props.namespace} />}>
@@ -119,6 +123,7 @@ export interface NamespaceDetailViewProps {
     // to the public registry API when omitted. The admin surface passes the admin endpoint so
     // inactive/soft-deleted extensions show up too.
     fetchExtension?: FetchNamespaceExtension;
-    // Documentation link for claiming namespaces, shown in the not-verified warning; omit to hide it.
-    namespaceAccessUrl?: string;
+    // Claiming is the publisher's action, so only the user surface offers it; the admin dashboard
+    // shows the same explanation without it.
+    showClaimAction?: boolean;
 }

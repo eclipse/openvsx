@@ -10,6 +10,8 @@
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef } from 'react';
 import {
+    Alert,
+    AlertTitle,
     Typography,
     Box,
     Button,
@@ -21,6 +23,7 @@ import {
     DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import { Link as RouteLink } from 'react-router';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
@@ -155,30 +158,32 @@ export const UserSettingsTokens: FunctionComponent = () => {
 
     const agreement = user?.publisherAgreement;
     if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
-        const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
         const publisherAgreementContact = pageSettings?.publisherAgreement?.email;
+        // The deployment may not name its agreement, so drop the empty slot rather than double-spacing.
+        const agreementName = [pageSettings?.publisherAgreement?.name, 'Publisher Agreement'].filter(Boolean).join(' ');
 
         return (
             <Box>
-                <SettingsHeader title='Access Tokens' />
-                <Typography variant='body1'>
-                    Access tokens cannot be created as you currently do not have an {publisherAgreementName} Publisher
-                    Agreement signed. Please return to your{' '}
-                    <Link color='secondary' underline='hover' component={RouteLink} to={UserSettingsRoutes.PROFILE}>
-                        Profile
-                    </Link>{' '}
-                    page to sign the Publisher Agreement.
+                <SettingsHeader
+                    title='Access Tokens'
+                    description='Personal access tokens let you publish extensions from the command line. Treat them like passwords.'
+                />
+                <Alert severity='warning'>
+                    <AlertTitle sx={{ fontWeight: 700 }}>Publisher agreement required</AlertTitle>
+                    Tokens can only be created once you have signed the {agreementName}.
+                    <Box sx={{ mt: '0.75rem' }}>
+                        <Link component={RouteLink} to={UserSettingsRoutes.PROFILE}>
+                            Sign it on your profile
+                            <ArrowForwardIcon sx={{ fontSize: '1.125rem' }} />
+                        </Link>
+                    </Box>
                     {publisherAgreementContact !== undefined && (
-                        <>
-                            {' '}
-                            Should you believe this is in error, please contact{' '}
-                            <Link color='secondary' underline='hover' href={`mailto:${publisherAgreementContact}`}>
-                                {publisherAgreementContact}
-                            </Link>
-                            .
-                        </>
+                        <Box sx={{ mt: '0.75rem', fontSize: '0.8125rem' }}>
+                            If you believe this is in error, contact{' '}
+                            <Link href={`mailto:${publisherAgreementContact}`}>{publisherAgreementContact}</Link>.
+                        </Box>
                     )}
-                </Typography>
+                </Alert>
             </Box>
         );
     }

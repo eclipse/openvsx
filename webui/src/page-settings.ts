@@ -120,7 +120,7 @@ export interface PageSettings {
         home?: HomePageSettings;
         searchHeader?: ComponentType;
         reportAbuse?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
-        claimNamespace?: ComponentType<{ extension: Extension; sx?: SxProps<Theme> }>;
+        claimNamespace?: ComponentType<{ namespace: string; extension?: Extension; sx?: SxProps<Theme> }>;
         downloadTerms?: ComponentType;
         additionalRoutes?: ReactNode;
         banner?: {

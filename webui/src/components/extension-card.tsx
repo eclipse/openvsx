@@ -14,7 +14,7 @@
 import { forwardRef, FunctionComponent, memo, ReactNode } from 'react';
 import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
-import { CSSObject, styled, Theme } from '@mui/material/styles';
+import { alpha, CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
@@ -129,11 +129,13 @@ export interface ExtensionCardProps extends Partial<Omit<GridItemProps, 'ref'>> 
     footerStart?: ReactNode;
     /** Dim and desaturate the card the way a deprecated extension is dimmed. */
     dimmed?: boolean;
+    /** Tint the card's frame and overlay to flag a state the viewer has to act on. */
+    tone?: 'warning';
 }
 
 export const ExtensionCard = memo(
     forwardRef<HTMLAnchorElement, ExtensionCardProps>(function ExtensionCard(
-        { extension, fadeDelayMs = 0, appear = true, to, linkState, overlay, footerStart, dimmed, ...linkProps },
+        { extension, fadeDelayMs = 0, appear = true, to, linkState, overlay, footerStart, dimmed, tone, ...linkProps },
         ref
     ) {
         const title = extension?.displayName ?? extension?.name;
@@ -154,11 +156,28 @@ export const ExtensionCard = memo(
                             style={{ textDecoration: 'none', height: '100%', display: 'block', outline: 'none' }}>
                             <CardRoot
                                 elevation={0}
-                                sx={
-                                    extension.deprecated || dimmed
-                                        ? { opacity: 0.5, filter: 'grayscale(100%)' }
-                                        : undefined
-                                }>
+                                sx={[
+                                    (extension.deprecated || dimmed) === true && {
+                                        opacity: 0.5,
+                                        filter: 'grayscale(100%)'
+                                    },
+                                    // The overlay is a quiet affordance by default; a toned card is
+                                    // flagging something, so it carries the tint at full strength.
+                                    tone === 'warning' &&
+                                        (theme => ({
+                                            borderColor: alpha(theme.palette.warningAccent, 0.55),
+                                            '& .extension-card-overlay': {
+                                                opacity: 1,
+                                                color: theme.palette.warningAccent
+                                            },
+                                            '@media (hover: hover)': {
+                                                '&:hover': { borderColor: theme.palette.warningAccent },
+                                                '&:hover .extension-card-overlay': {
+                                                    color: theme.palette.warningAccent
+                                                }
+                                            }
+                                        }))
+                                ]}>
                                 {overlay ? <span className='extension-card-overlay'>{overlay}</span> : null}
                                 <Box
                                     display='flex'

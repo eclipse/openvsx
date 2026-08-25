@@ -11,11 +11,9 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FunctionComponent, ReactNode, useContext, useEffect, useState } from 'react';
+import { FunctionComponent, ReactNode, useEffect, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
-import WarningIcon from '@mui/icons-material/Warning';
-import { MainContext } from '../../context';
 import { Extension, VERSION_ALIASES, VersionTargetPlatforms } from '../../extension-registry-types';
 import { ExtensionHeader } from './extension-header';
 import { ExtensionVersionTable } from './extension-version-table';
@@ -27,6 +25,8 @@ import { Eyebrow } from '../page-primitives';
 import { DetailRow, DetailsCard } from '../details-card';
 import { getExtensionStatus } from './extension-status';
 import { formatCompactNumber } from '../../utils';
+import { MONO_FONT } from '../../default/theme';
+import { NamespaceClaimNotice } from '../namespace/namespace-claim-notice';
 
 // One key/value row per line; on wide screens three cells per row with hairline separators.
 const GeneralGrid = styled(DetailsCard)(({ theme }) => ({
@@ -59,28 +59,9 @@ const DangerRow = styled(Box)({
     padding: '1rem 1.25rem'
 });
 
-// `claimNamespace` renders as a Link (its target action is pluggable, e.g. an external issue
-// template), styled here to sit as a button among the other actions in the Stack below.
-const claimNamespaceButtonStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    px: 2,
-    py: '5px',
-    border: '1px solid',
-    borderColor: 'warning.main',
-    borderRadius: 1,
-    fontWeight: 500,
-    fontSize: '0.875rem',
-    lineHeight: 1.75,
-    textTransform: 'uppercase',
-    '&:hover': { textDecoration: 'none' }
-};
-
 export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = props => {
     const { extension, actions, onRemoveVersion, onVersionDeleted, onPurgeVersion } = props;
     const canPurge = !!onPurgeVersion;
-    const { pageSettings } = useContext(MainContext);
-    const ClaimNamespace = pageSettings.elements.claimNamespace;
 
     const [page, setPage] = useState(0);
     const [deleteDialogVersion, setDeleteDialogVersion] = useState<VersionTargetPlatforms | null>(null);
@@ -103,36 +84,26 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
 
     // Single most relevant publishing state, shown with a colored dot in the general card.
     const status = getExtensionStatus(extension) ?? { label: 'Public', color: 'success.main' };
+    // "Latest" describes what the registry actually serves, so an extension the registry is holding
+    // back — inactive, or removed — has no latest version to mark.
+    const hasPublishedLatest = extension.active !== false && !extension.removed;
 
     return (
         <Box>
             <ExtensionHeader extension={extension} actions={actions} />
             {extension.namespaceOwnershipConflict && (
-                <Box sx={{ mb: '1.75rem' }}>
-                    <Typography
-                        variant='body2'
-                        sx={{ display: 'flex', alignItems: 'center', color: 'warning.main', mb: 1 }}>
-                        <WarningIcon fontSize='inherit' sx={{ mr: 0.5 }} />
-                        This namespace already exists in a referenced gallery and needs to be claimed (verified) before
-                        this extension can be activated.
-                    </Typography>
-                    {/* Claiming is the publisher's action to take, not an admin's on someone else's behalf. */}
-                    {!canPurge &&
-                        (ClaimNamespace ? (
-                            <ClaimNamespace extension={extension} sx={claimNamespaceButtonStyle} />
-                        ) : (
-                            // Fallback for a deployment that hasn't configured `elements.claimNamespace`:
-                            // point at the generic namespace-access docs instead of showing nothing.
-                            <Button
-                                variant='outlined'
-                                color='warning'
-                                href={pageSettings.urls.namespaceAccessInfo}
-                                target='_blank'
-                                rel='noopener'>
-                                Claim Namespace
-                            </Button>
-                        ))}
-                </Box>
+                <NamespaceClaimNotice
+                    namespace={extension.namespace}
+                    extension={extension}
+                    // Claiming is the publisher's action to take, not an admin's on someone else's behalf.
+                    showAction={!canPurge}
+                    sx={{ mb: '1.75rem' }}>
+                    <Typography component='code' sx={{ fontFamily: MONO_FONT, fontSize: 'inherit' }}>
+                        {extension.namespace}
+                    </Typography>{' '}
+                    already exists in another gallery, so this extension stays inactive until the namespace is claimed
+                    and ownership verified.
+                </NamespaceClaimNotice>
             )}
             <Eyebrow sx={{ mb: '0.75rem' }}>General</Eyebrow>
             <GeneralGrid>
@@ -179,7 +150,8 @@ export const ExtensionDetailView: FunctionComponent<ExtensionDetailViewProps> = 
             </Box>
             <ExtensionVersionTable
                 versions={allVersions}
-                latestVersion={extension.version}
+                latestVersion={hasPublishedLatest ? extension.version : undefined}
+                rejected={extension.reviewStatus === 'rejected'}
                 page={page}
                 onPageChange={setPage}
                 onDeleteVersion={setDeleteDialogVersion}

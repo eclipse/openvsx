@@ -77,11 +77,9 @@ const dangerButton = (name: string) => screen.getByRole('button', { name });
 const noDangerButton = (name: string) => screen.queryByRole('button', { name });
 
 // Stands in for a deployment's configured `pageSettings.elements.claimNamespace`: this component's
-// own logic is only responsible for passing `extension`/`sx` through, not for what a given
+// own logic is only responsible for passing the namespace (and extension, where it has one)
 // implementation renders.
-const ClaimNamespaceStub: FunctionComponent<{ extension: Extension }> = ({ extension: ext }) => (
-    <span>Claim {ext.namespace}</span>
-);
+const ClaimNamespaceStub: FunctionComponent<{ namespace: string }> = ({ namespace }) => <span>Claim {namespace}</span>;
 
 describe('ExtensionDetailView', () => {
     it('keeps the purge affordances out of the way without a purge handler', () => {
@@ -124,6 +122,18 @@ describe('ExtensionDetailView', () => {
         expect(screen.queryByText('Danger Zone')).not.toBeInTheDocument();
     });
 
+    it('does not call any version "Latest" while the registry is holding the extension back', () => {
+        renderDetail([version()], undefined, { extension: { active: false } });
+
+        expect(screen.queryByText('Latest')).not.toBeInTheDocument();
+    });
+
+    it('marks the latest version of a live extension', () => {
+        renderDetail([version()], undefined, { extension: { active: true } });
+
+        expect(screen.getByText('Latest')).toBeInTheDocument();
+    });
+
     describe('namespace ownership conflict', () => {
         it('renders the configured claimNamespace element when there is a conflict', () => {
             renderDetail([], undefined, {
@@ -153,7 +163,7 @@ describe('ExtensionDetailView', () => {
             });
 
             expect(screen.queryByText('Claim foo')).not.toBeInTheDocument();
-            const link = screen.getByRole('link', { name: 'Claim Namespace' });
+            const link = screen.getByRole('link', { name: 'Claim ownership' });
             expect(link).toHaveAttribute('href', 'https://example.test/namespace-access');
         });
 
@@ -165,9 +175,9 @@ describe('ExtensionDetailView', () => {
             });
 
             expect(screen.queryByText('Claim foo')).not.toBeInTheDocument();
-            expect(screen.queryByRole('link', { name: 'Claim Namespace' })).not.toBeInTheDocument();
+            expect(screen.queryByRole('link', { name: 'Claim ownership' })).not.toBeInTheDocument();
             expect(
-                screen.getByText(/needs to be claimed \(verified\) before this extension can be activated/)
+                screen.getByText(/stays inactive until the namespace is claimed and ownership verified/)
             ).toBeInTheDocument();
         });
 
@@ -178,7 +188,7 @@ describe('ExtensionDetailView', () => {
             });
 
             expect(
-                screen.getByText(/needs to be claimed \(verified\) before this extension can be activated/)
+                screen.getByText(/stays inactive until the namespace is claimed and ownership verified/)
             ).toBeInTheDocument();
         });
 

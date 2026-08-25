@@ -84,7 +84,7 @@ export const UserSettingsNamespaces: FunctionComponent<UserSettingsNamespacesPro
                 namespace={namespace}
                 setLoadingState={setDetailLoading}
                 extensionRoutePrefix={UserSettingsRoutes.EXTENSIONS}
-                namespaceAccessUrl={namespaceAccessUrl}
+                showClaimAction
                 // The public endpoint hides what a namespace member still needs to manage: an
                 // inactive extension, or one whose only versions are soft-deleted.
                 fetchExtension={(abortController, extension) =>

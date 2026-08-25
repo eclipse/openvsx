@@ -14,6 +14,7 @@
 import { FunctionComponent } from 'react';
 import { Typography } from '@mui/material';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Extension } from '../../extension-registry-types';
 import { ExtensionCard } from '../extension-card';
 import { getExtensionStatus } from './extension-status';
@@ -31,13 +32,24 @@ export const ManageExtensionCard: FunctionComponent<ManageExtensionCardProps> = 
     linkState
 }) => {
     const status = getExtensionStatus(extension);
+    // The namespace is the user's to claim, so the card flags it rather than just looking switched off.
+    const needsAttention = Boolean(extension.namespaceOwnershipConflict);
     return (
         <ExtensionCard
             extension={extension}
             to={createRoute([routePrefix, extension.namespace, extension.name])}
             linkState={linkState}
-            dimmed={extension.active === false}
-            overlay={<SettingsOutlinedIcon sx={{ fontSize: '0.9375rem' }} />}
+            // Greyscale would swallow the warning colour, and this state is the user's to fix —
+            // it reads as actionable rather than switched off.
+            dimmed={extension.active === false && !extension.namespaceOwnershipConflict}
+            tone={needsAttention ? 'warning' : undefined}
+            overlay={
+                needsAttention ? (
+                    <WarningAmberIcon titleAccess='Needs attention' sx={{ fontSize: '0.9375rem' }} />
+                ) : (
+                    <SettingsOutlinedIcon sx={{ fontSize: '0.9375rem' }} />
+                )
+            }
             footerStart={
                 status ? (
                     <Typography component='span' sx={{ fontSize: '0.75rem', fontWeight: 600, color: status.color }}>

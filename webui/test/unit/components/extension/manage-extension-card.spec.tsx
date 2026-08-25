@@ -57,6 +57,16 @@ describe('ManageExtensionCard', () => {
         expect(await screen.findByText('Deactivated')).toBeInTheDocument();
     });
 
+    it('names the unverified namespace as the cause instead of just calling it deactivated', async () => {
+        renderCard(extension({ active: false, namespaceOwnershipConflict: true }));
+
+        // The status names the actual, actionable cause rather than just "Deactivated"; the card is
+        // left in colour to match (greyscale would swallow the warning tone).
+        expect(await screen.findByText('Namespace not verified')).toBeInTheDocument();
+        expect(screen.getByTitle('Needs attention')).toBeInTheDocument();
+        expect(screen.queryByText('Deactivated')).not.toBeInTheDocument();
+    });
+
     it('leaves the footer to the shared card when the extension is public', async () => {
         renderCard(extension());
 

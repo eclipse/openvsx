@@ -55,7 +55,7 @@ const VersionChip = styled(TagChip)({
     fontSize: '0.5625rem'
 });
 
-const RemovedChip = styled(VersionChip)(({ theme }) => ({
+const ErrorChip = styled(VersionChip)(({ theme }) => ({
     backgroundColor: alpha(theme.palette.error.main, 0.12),
     color: theme.palette.error.main
 }));
@@ -176,6 +176,7 @@ const TimelineCell: FunctionComponent<TimelineCellProps> = ({ index, rowCount, h
 export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps> = ({
     versions,
     latestVersion,
+    rejected,
     page,
     onPageChange,
     onDeleteVersion,
@@ -255,7 +256,9 @@ export const ExtensionVersionTable: FunctionComponent<ExtensionVersionTableProps
                                 {v.version}
                             </Typography>
                             {removed ? (
-                                <RemovedChip>Removed</RemovedChip>
+                                <ErrorChip>Removed</ErrorChip>
+                            ) : rejected ? (
+                                <ErrorChip>Rejected</ErrorChip>
                             ) : isLatest ? (
                                 <VersionChip accent>Latest</VersionChip>
                             ) : preRelease ? (
@@ -352,6 +355,8 @@ export interface ExtensionVersionTableProps {
     versions: VersionTargetPlatforms[];
     /** Version that gets the "Latest" chip and accent bulb. */
     latestVersion?: string;
+    /** The review rejected the extension, which blocks every version it has. */
+    rejected?: boolean;
     page: number;
     onPageChange: (page: number) => void;
     onDeleteVersion: (version: VersionTargetPlatforms) => void;

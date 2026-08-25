@@ -273,6 +273,14 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                             color: theme.palette.secondary.main
                         }
                     }),
+                    outlinedWarning: ({ theme }) => ({
+                        color: theme.palette.warningAccent,
+                        borderColor: alpha(theme.palette.warningAccent, 0.5),
+                        '&:hover': {
+                            borderColor: theme.palette.warningAccent,
+                            color: theme.palette.warningAccent
+                        }
+                    }),
                     outlinedError: ({ theme }) => ({
                         backgroundColor: theme.palette.surface2,
                         borderColor: theme.palette.divider,

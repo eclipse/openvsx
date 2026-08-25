@@ -56,7 +56,10 @@ function renderView(namespace: Namespace, props: Partial<NamespaceDetailViewProp
             mainContext: {
                 service,
                 user: testUser,
-                pageSettings: { urls: { extensionDefaultIcon: '/icon.png' } } as PageSettings
+                pageSettings: {
+                    elements: {},
+                    urls: { extensionDefaultIcon: '/icon.png' }
+                } as unknown as PageSettings
             }
         }
     );
@@ -86,18 +89,25 @@ describe('NamespaceDetailView', () => {
         expect(screen.getByText('View public page')).toBeInTheDocument();
     });
 
-    it('warns about an unverified namespace only when given the documentation link', async () => {
-        renderView(testNamespace({ verified: false }), { namespaceAccessUrl: 'https://docs.test/claim' });
+    it('warns that an unverified namespace has to be claimed', async () => {
+        renderView(testNamespace({ verified: false }), { showClaimAction: true });
 
-        expect(await screen.findByText(/This namespace is not verified/)).toBeInTheDocument();
-        expect(screen.getByText('See the documentation')).toHaveAttribute('href', 'https://docs.test/claim');
+        expect(await screen.findByText('Namespace not verified')).toBeInTheDocument();
+        expect(screen.getByText(/proves you own it/)).toBeInTheDocument();
+    });
+
+    it('leaves the claim action to the publisher surface', async () => {
+        renderView(testNamespace({ verified: false }));
+
+        expect(await screen.findByText('Namespace not verified')).toBeInTheDocument();
+        expect(screen.queryByText('Claim ownership')).not.toBeInTheDocument();
     });
 
     it('stays quiet about verification when the namespace is verified', async () => {
-        renderView(testNamespace({ verified: true }), { namespaceAccessUrl: 'https://docs.test/claim' });
+        renderView(testNamespace({ verified: true }), { showClaimAction: true });
 
         expect(await screen.findByText('Extensions')).toBeInTheDocument();
-        expect(screen.queryByText(/This namespace is not verified/)).not.toBeInTheDocument();
+        expect(screen.queryByText('Namespace not verified')).not.toBeInTheDocument();
     });
 
     it('points the extension cards at the route prefix the host supplies', async () => {

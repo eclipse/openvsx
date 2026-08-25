@@ -126,3 +126,13 @@ Rules:
 
 - All new entries go under `## [next]`. Read the full section first and append to existing subsections; never duplicate them; if subsection does not exist yet add it.
 - Released version sections (e.g. `## [0.5.0]`) are immutable; never modify them.
+- **Never describe a change against something that is itself unreleased.** If your
+  work modifies behaviour introduced by an entry already under `## [next]`, edit
+  that entry to describe the final state instead of adding a second one. Readers
+  of the released notes never saw the intermediate version, so "replaced X with
+  Y" is noise when X never shipped. Adding a genuinely new behaviour still earns
+  its own entry — just phrase it as the end state, not as a delta.
+- The same test applies to public API: a signature introduced under `## [next]`
+  and changed again before release is one entry describing the final signature,
+  not a change entry. Only a signature that has actually shipped is a breaking
+  change worth calling out.
