@@ -44,6 +44,16 @@ class MigrationItemJobRequestHandlerTest {
     }
 
     @Test
+    void validateBatchSize_clampsNonPositiveValuesToOne() {
+        var handler = new MigrationItemJobRequestHandler(settings, repositories, migrations, scheduler);
+        ReflectionTestUtils.setField(handler, "batchSize", 0);
+
+        handler.validateBatchSize();
+
+        assertThat((int) ReflectionTestUtils.getField(handler, "batchSize")).isEqualTo(1);
+    }
+
+    @Test
     void run_requestsThePageSizeConfiguredAsBatchSize() throws Exception {
         when(repositories.findNotMigratedItems(any())).thenReturn(new SliceImpl<>(List.of()));
 
@@ -62,10 +72,10 @@ class MigrationItemJobRequestHandlerTest {
         newHandler(200).run(new HandlerJobRequest<>(MigrationItemJobRequestHandler.class));
 
         var scheduledAt = ArgumentCaptor.forClass(Instant.class);
-        verify(migrations, org.mockito.Mockito.times(3)).enqueueMigration(any(), scheduledAt.capture());
+        verify(migrations, org.mockito.Mockito.times(3)).scheduleMigration(any(), scheduledAt.capture());
         var times = scheduledAt.getAllValues();
         // Strictly increasing and evenly spaced, not all equal to the same "now" -- that's the whole
-        // point of staggering (see MigrationService.enqueueMigration for why).
+        // point of staggering (see MigrationService.scheduleMigration for why).
         assertThat(times.get(1)).isAfter(times.get(0));
         assertThat(times.get(2)).isAfter(times.get(1));
         var firstGap = java.time.Duration.between(times.get(0), times.get(1));

@@ -87,7 +87,7 @@ public class MigrationService {
      * same time, delaying it until the whole batch drains.
      */
     @Transactional
-    public void enqueueMigration(MigrationItem item, Instant scheduledAt) {
+    public void scheduleMigration(MigrationItem item, Instant scheduledAt) {
         item = entityManager.merge(item);
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);

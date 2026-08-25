@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
  * {@link MigrationScheduler} run will pick it up again via
  * {@code MigrationItemRepository#findByMigrationScheduledFalseOrderById}... except
  * {@code migrationScheduled} was already flipped to {@code true} in
- * {@link MigrationService#enqueueMigration}, so a permanently-failing item currently just sits
+ * {@link MigrationService#scheduleMigration}, so a permanently-failing item currently just sits
  * there for an operator to notice and investigate, the same as before this change. Fixing that
  * retry gap is out of scope for this sketch.
  */

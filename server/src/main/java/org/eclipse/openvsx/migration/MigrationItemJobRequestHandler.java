@@ -11,6 +11,7 @@ package org.eclipse.openvsx.migration;
 
 import java.time.Instant;
 
+import jakarta.annotation.PostConstruct;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
@@ -56,6 +57,17 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
         this.scheduler = scheduler;
     }
 
+    // PageRequest.ofSize(...) throws IllegalArgumentException for a size below 1, which would make
+    // the recurring job fail on every single run for a misconfigured ovsx.migrations.batch-size --
+    // clamp instead, so a bad value degrades to "very slow" rather than "never runs at all".
+    @PostConstruct
+    void validateBatchSize() {
+        if (batchSize < 1) {
+            logger.warn("ovsx.migrations.batch-size must be at least 1, but was {} -- using 1 instead", batchSize);
+            batchSize = 1;
+        }
+    }
+
     @Override
     @Job(name = "Migration item processing", retries = 0)
     public void run(HandlerJobRequest<?> jobRequest) throws Exception {
@@ -67,7 +79,7 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
         var now = Instant.now();
         var index = 0;
         for (var item : items) {
-            migrations.enqueueMigration(item, now.plusMillis(index++ * STAGGER_MILLIS));
+            migrations.scheduleMigration(item, now.plusMillis(index++ * STAGGER_MILLIS));
         }
 
         if (items.getNumberOfElements() > 0) {
