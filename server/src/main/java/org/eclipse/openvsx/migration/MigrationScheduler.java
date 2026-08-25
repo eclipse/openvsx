@@ -12,7 +12,6 @@ package org.eclipse.openvsx.migration;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
-import org.jobrunr.scheduling.cron.Cron;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +25,12 @@ public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?
 
     @Value("${ovsx.data.mirror.enabled:false}")
     boolean mirrorEnabled;
+
+    // Default matches JobRunr's Cron.every15minutes(). Configurable so a deployment that's
+    // bothered by migration-item bursts crowding out real-time jobs (see
+    // MigrationItemJobRequestHandler) can spread them out further without a code change.
+    @Value("${ovsx.migrations.cron:*/15 * * * *}")
+    String migrationItemsCron;
 
     public MigrationScheduler(
             OrphanNamespaceMigration orphanNamespaceMigration,
@@ -45,7 +50,7 @@ public class MigrationScheduler implements JobRequestHandler<HandlerJobRequest<?
 
         scheduler.scheduleRecurrently(
                 SCHEDULE_MIGRATION_ITEMS_JOB,
-                Cron.every15minutes(),
+                migrationItemsCron,
                 new HandlerJobRequest<>(MigrationItemJobRequestHandler.class));
     }
 

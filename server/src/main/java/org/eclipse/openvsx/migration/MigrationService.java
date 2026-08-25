@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.migration;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 
 import jakarta.persistence.EntityManager;
@@ -77,14 +78,22 @@ public class MigrationService {
         this.uuidService = uuidService;
     }
 
+    /**
+     * Schedules {@code item}'s job to become due at {@code scheduledAt}, rather than immediately.
+     * {@link MigrationItemJobRequestHandler} spreads a batch's items across a handful of seconds
+     * instead of making them all due at once -- JobRunr processes every ENQUEUED/due job across the
+     * whole server in one strict FIFO queue ordered by due time, so a large batch that's all due
+     * "now" would sit ahead of any real, user-triggered job that happens to get enqueued around the
+     * same time, delaying it until the whole batch drains.
+     */
     @Transactional
-    public void enqueueMigration(MigrationItem item) {
+    public void enqueueMigration(MigrationItem item, Instant scheduledAt) {
         item = entityManager.merge(item);
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());
-        scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId(), item.getId()));
-        logger.info("Enqueued migration {}", jobIdText);
+        scheduler.schedule(jobId, scheduledAt, new MigrationJobRequest<>(handler, item.getEntityId(), item.getId()));
+        logger.info("Scheduled migration {} for {}", jobIdText, scheduledAt);
         item.setMigrationScheduled(true);
     }
 

@@ -9,10 +9,13 @@
  * ****************************************************************************** */
 package org.eclipse.openvsx.migration;
 
+import java.time.Instant;
+
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
@@ -22,12 +25,24 @@ import org.eclipse.openvsx.settings.SettingsService;
 @Component
 public class MigrationItemJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
+    // How far apart consecutive items in a batch are spread out, so the batch doesn't all become
+    // due at the exact same instant -- see MigrationService.enqueueMigration for why that matters.
+    // Not configurable: it only controls how gently a single batch trickles in, whereas batchSize
+    // and the recurring schedule (see MigrationScheduler) are what actually determine throughput.
+    private static final long STAGGER_MILLIS = 200;
+
     protected final Logger logger = LoggerFactory.getLogger(MigrationItemJobRequestHandler.class);
 
     private final SettingsService settings;
     private final RepositoryService repositories;
     private final MigrationService migrations;
     private final MigrationScheduler scheduler;
+
+    // Default of 200 keeps a batch's worst-case spread (batchSize * STAGGER_MILLIS = 40s) comfortably
+    // inside the default 15-minute recurring interval, while still bounding how many migration jobs
+    // can ever be due ahead of a real, user-triggered job at once -- down from the previous 25000.
+    @Value("${ovsx.migrations.batch-size:200}")
+    int batchSize;
 
     public MigrationItemJobRequestHandler(
             SettingsService settings,
@@ -48,12 +63,24 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
             return;
         }
 
-        var items = repositories.findNotMigratedItems(PageRequest.ofSize(25000));
+        var items = repositories.findNotMigratedItems(PageRequest.ofSize(batchSize));
+        var now = Instant.now();
+        var index = 0;
         for (var item : items) {
-            migrations.enqueueMigration(item);
+            migrations.enqueueMigration(item, now.plusMillis(index++ * STAGGER_MILLIS));
         }
 
-        logger.info("Scheduled migration items: {}", items.getNumberOfElements());
+        if (items.getNumberOfElements() > 0) {
+            // With a small batchSize, draining a large backlog now takes many recurring runs instead
+            // of one -- log how much is left after this batch so that's visible across all of them,
+            // not just a repeated "scheduled N items" with no sense of overall progress until the
+            // last run. Skipped entirely when nothing was found: an empty slice means hasNext() is
+            // already false too (see below), so there's nothing to report and no remaining count
+            // worth an extra query for -- it can only be zero.
+            var remaining = repositories.countNotMigratedItems();
+            logger.info("Scheduled {} migration items ({} remaining)", items.getNumberOfElements(), remaining);
+        }
+
         if (!items.hasNext()) {
             logger.info("Migration completed, deleting recurring job");
             scheduler.deleteScheduleMigrationItemsJob();
