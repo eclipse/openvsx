@@ -365,6 +365,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findDeprecatedExtensions(extension),
                 () -> repositories.findLatestReplacement(1L, null, false, false),
                 () -> repositories.findNotMigratedItems(page),
+                () -> repositories.countNotMigratedItems(),
                 () -> repositories.findRemoveFileResourceTypeResourceMigrationItems(0, 1),
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
                 () -> repositories.findVersionPublishedWithUser(

@@ -822,6 +822,10 @@ public class RepositoryService {
         return migrationItemRepo.findByMigrationScheduledFalseOrderById(page);
     }
 
+    public long countNotMigratedItems() {
+        return migrationItemRepo.countByMigrationScheduledFalse();
+    }
+
     public double getAverageReviewRating() {
         return extensionReviewRepo.averageRatingAndActiveTrue();
     }
