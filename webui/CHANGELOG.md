@@ -14,6 +14,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Redesign the user settings: a sidebar (a pill strip below `md`) navigating profile, access tokens, trusted publishers, extensions and rate limiting, with the user's namespaces listed alongside it and each one deep-linkable at `/user-settings/namespaces/:namespace`. Every view is rebuilt on the cards, grids, placeholders and theme shape tokens the rest of the site uses, and the namespace detail is now a single component shared with the admin dashboard
 - Revoking a single access token asks for confirmation first, like every other destructive action
+- Present the unsigned publisher agreement on the access tokens page as a warning notice with a link to sign it, instead of a plain paragraph
 - Mark a removed extension version in red across its row — version number, status pill and timeline dot — and disable its delete action. Every version of a rejected extension is marked too, and "Latest" is reserved for extensions the registry actually serves, so one that is inactive or removed has no version marked latest
 - Add an `outlinedWarning` style to `MuiButton`, so a warning-toned outlined button follows the theme like the secondary and error ones instead of MUI's default half-opacity border
 - **Breaking:** `elements.claimNamespace` now receives `{ namespace, extension?, sx? }` instead of `{ extension, sx? }`. The namespace settings page offers the same claim action and has no extension to pass, so implementations must read the namespace from `namespace` rather than `extension.namespace`
