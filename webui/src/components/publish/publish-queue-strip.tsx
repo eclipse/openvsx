@@ -15,8 +15,9 @@ import { FunctionComponent, useEffect, useRef } from 'react';
 import { Box, Button, keyframes, Typography } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { isFinished, PublishItem, usePublishQueue } from '../../context/publish-queue-context';
+import { isFinished, PublishItem, PublishStatus, usePublishQueue } from '../../context/publish-queue-context';
 import { ExtensionCard } from '../extension-card';
+import { getExtensionStatus } from '../extension/extension-status';
 import { ManageExtensionCard } from '../extension/manage-extension-card';
 import { PublishRoutes } from '../../pages/publish/publish-routes';
 import { UserSettingsRoutes } from '../../pages/user/user-settings-routes';
@@ -70,24 +71,30 @@ const AcceptedGlow = styled('span')(({ theme }) => ({
     }
 }));
 
-// Loud enough to read at a glance: the registry is still checking this package.
-const ReviewChip = styled(TagChip)(({ theme }) => ({
+// Loud enough to read at a glance. Wraps because it carries whatever the extension lists call the
+// state, and the longest of those does not fit a card-width column on one line.
+const StatusChip = styled(TagChip)({
     fontSize: '0.5625rem',
-    backgroundColor: alpha(theme.palette.warningAccent, 0.16),
-    color: theme.palette.warningAccent
-}));
+    flexShrink: 1,
+    maxWidth: '100%',
+    whiteSpace: 'normal',
+    textAlign: 'center',
+    lineHeight: 1.4
+});
 
 /** What the queue as a whole is waiting on: uploads first, then the registry's checks. */
 const queueLabel = (items: PublishItem[]): string => {
-    const uploading = items.filter(item => item.status === 'uploading').length;
-    const reviewing = items.filter(item => item.status === 'reviewing').length;
+    const count = (status: PublishStatus) => items.filter(item => item.status === status).length;
+    const uploading = count('uploading');
     if (uploading > 0) {
         return `Publishing ${uploading}`;
     }
+    const reviewing = count('reviewing');
     if (reviewing > 0) {
         return `Reviewing ${reviewing}`;
     }
-    return 'Published';
+    // Nothing left in flight, so the queue reports whether it all landed or something is waiting on the user.
+    return count('published') === items.length ? 'Published' : 'Action needed';
 };
 
 /** Card-shaped stand-in for a package that never made it into the registry. */
@@ -132,6 +139,9 @@ const QueueCard: FunctionComponent<{ item: PublishItem }> = ({ item }) => {
     if (!item.extension) {
         return <ExtensionCard />;
     }
+    // The registry's own verdict, worded by the helper the extension lists use: the queue's statuses
+    // track the upload, and an extension can be held back for reasons that outlive it.
+    const status = getExtensionStatus(item.extension);
     // Once published it is the user's to manage, so it gets the gear and the settings route.
     return (
         <ManageExtensionCard
@@ -139,7 +149,7 @@ const QueueCard: FunctionComponent<{ item: PublishItem }> = ({ item }) => {
             routePrefix={UserSettingsRoutes.EXTENSIONS}
             iconPending={item.awaitingIcon}
             linkState={{ backTo: PublishRoutes.ROOT, backLabel: 'Back to publishing' }}
-            footerStart={item.status === 'reviewing' ? <ReviewChip>Under review</ReviewChip> : undefined}
+            footerStart={status ? <StatusChip sx={{ color: status.color }}>{status.label}</StatusChip> : undefined}
         />
     );
 };

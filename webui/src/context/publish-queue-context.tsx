@@ -31,7 +31,8 @@ const REVIEW_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 // them) appear after the response. Worth a short wait, but plenty of extensions have no icon.
 const ASSET_POLL_TIMEOUT_MS = 60 * 1000;
 
-export type PublishStatus = 'uploading' | 'reviewing' | 'published' | 'rejected' | 'failed';
+/** `blocked` is accepted-but-held: the registry has the package, and clearing what holds it back is the user's to do. */
+export type PublishStatus = 'uploading' | 'reviewing' | 'published' | 'blocked' | 'rejected' | 'failed';
 
 export interface PublishItem {
     id: number;
@@ -76,6 +77,11 @@ export const isFinished = (item: PublishItem): boolean => item.status !== 'uploa
 const isPublished = (result: Readonly<Extension | ErrorResult>): result is Readonly<Extension> => !isError(result);
 
 const statusOf = (extension: Readonly<Extension>): PublishStatus => {
+    // The registry parks a conflicting namespace under review, but only the user claiming it clears
+    // that, so calling it "reviewing" names neither what is happening nor what to do about it.
+    if (extension.namespaceOwnershipConflict) {
+        return 'blocked';
+    }
     switch (extension.reviewStatus) {
         case 'under_review':
             return 'reviewing';
@@ -155,7 +161,8 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
             const started = Date.now();
             const pending = (extension: Readonly<Extension>): boolean => {
                 const elapsed = Date.now() - started;
-                if (extension.reviewStatus === 'under_review') {
+                // A conflicting namespace outlives any poll (see statusOf); only its files are still coming.
+                if (extension.reviewStatus === 'under_review' && !extension.namespaceOwnershipConflict) {
                     return elapsed < REVIEW_POLL_TIMEOUT_MS;
                 }
                 return !extension.files?.icon && elapsed < ASSET_POLL_TIMEOUT_MS;

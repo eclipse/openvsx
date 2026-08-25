@@ -126,6 +126,21 @@ describe('PublishQueueStrip', () => {
         expect(screen.queryByText('Publishing 1')).not.toBeInTheDocument();
     });
 
+    it('names the unverified namespace holding a package back, rather than calling it a review', async () => {
+        const conflicted = published({ reviewStatus: 'under_review', namespaceOwnershipConflict: true });
+        const { publish } = renderStrip({
+            publishExtension: vi.fn().mockResolvedValue(conflicted),
+            getExtensions: vi.fn().mockResolvedValue([conflicted])
+        });
+
+        publish([vsix('one.vsix')]);
+
+        expect(await screen.findByText('Namespace not verified')).toBeInTheDocument();
+        expect(screen.queryByText('Under review')).not.toBeInTheDocument();
+        // And the line as a whole says something is waiting on the user, not that it all landed.
+        expect(screen.getByText('Action needed')).toBeInTheDocument();
+    });
+
     it('keeps the icon skeleton up while the package is still being processed', async () => {
         const withoutIcon = published({ files: {} as Extension['files'] });
         const { publish } = renderStrip({

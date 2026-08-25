@@ -236,6 +236,27 @@ describe('publish queue — review polling', () => {
         expect(getExtensions.mock.calls.length).toBeLessThanOrEqual(14);
     });
 
+    it('holds a package whose namespace is not verified, instead of waiting on a review', async () => {
+        const conflicted = published({ reviewStatus: 'under_review', namespaceOwnershipConflict: true });
+        const publishExtension = vi.fn().mockResolvedValue(conflicted);
+        const getExtensions = vi.fn().mockResolvedValue([conflicted]);
+        const { result } = renderQueue({ publishExtension, getExtensions });
+
+        await act(async () => {
+            result.current.publish([vsix()]);
+        });
+        expect(result.current.items[0].status).toBe('blocked');
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(60_000);
+        });
+
+        expect(result.current.items[0].status).toBe('blocked');
+        // Only the read that hydrated the card: claiming the namespace is the user's move, and no
+        // amount of polling will see it happen.
+        expect(getExtensions).toHaveBeenCalledTimes(1);
+    });
+
     it('reports a package the review rejects, with the reason', async () => {
         const publishExtension = vi.fn().mockResolvedValue(published({ reviewStatus: 'under_review' }));
         const getExtensions = vi
