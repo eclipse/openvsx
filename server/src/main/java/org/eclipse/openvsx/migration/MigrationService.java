@@ -18,6 +18,7 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Streamable;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
@@ -149,6 +150,10 @@ public class MigrationService {
 
     public FileResource getFileResource(ExtensionVersion extVersion, String type) {
         return repositories.findFileByType(extVersion, type);
+    }
+
+    public Streamable<FileResource> getFileResources(ExtensionVersion extVersion) {
+        return repositories.findFiles(extVersion);
     }
 
     public FileResource getDownload(ExtensionVersion extVersion) {
