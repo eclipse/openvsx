@@ -185,7 +185,7 @@ public class GoogleCloudStorageService implements IStorageService {
         // Storage.get is a metadata-only request; it doesn't transfer the blob's content.
         var blob = getStorage().get(BlobId.of(bucketId, getObjectKey(resource)));
         if (blob == null) {
-            throw new IOException("Blob not found: " + getObjectKey(resource));
+            throw new FileNotFoundInStorageException("Blob not found: " + getObjectKey(resource));
         }
 
         return blob.getSize();

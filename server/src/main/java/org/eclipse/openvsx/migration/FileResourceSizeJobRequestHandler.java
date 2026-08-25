@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import org.eclipse.openvsx.storage.FileNotFoundInStorageException;
 import org.eclipse.openvsx.util.NamingUtil;
 
 /**
@@ -60,7 +61,19 @@ public class FileResourceSizeJobRequestHandler implements JobRequestHandler<Migr
                 .addArgument(resource::getName)
                 .log();
 
-        resource.setSize(migrations.getFileSize(resource));
-        migrations.updateResource(resource);
+        try {
+            resource.setSize(migrations.getFileSize(resource));
+            migrations.updateResource(resource);
+        } catch (FileNotFoundInStorageException e) {
+            // The object backing this resource is confirmed gone, not just temporarily unreachable --
+            // there's nothing further this job can do about that (FixMissingFilesMigration is the
+            // mechanism for actually repairing missing files). Leave the size unset and consider this
+            // job done rather than exhausting retries on an outcome that will never change.
+            logger.atWarn()
+                    .setMessage("File missing in storage, cannot determine size for: {} ({})")
+                    .addArgument(() -> NamingUtil.toLogFormat(resource.getExtension()))
+                    .addArgument(resource::getName)
+                    .log();
+        }
     }
 }

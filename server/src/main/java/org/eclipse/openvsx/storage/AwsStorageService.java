@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
@@ -341,14 +342,28 @@ public class AwsStorageService implements IStorageService {
     }
 
     @Override
-    public long getFileSize(FileResource resource) {
+    public long getFileSize(FileResource resource) throws IOException {
         // headObject is a metadata-only request; it doesn't transfer the object's content.
+        var objectKey = getObjectKey(resource);
         var request = HeadObjectRequest.builder()
                 .bucket(bucket)
-                .key(getObjectKey(resource))
+                .key(objectKey)
                 .build();
 
-        return getS3Client().headObject(request).contentLength();
+        try {
+            return getS3Client().headObject(request).contentLength();
+        } catch (S3Exception e) {
+            // A HEAD response has no body, so S3 can't return a specific error code (e.g. NoSuchKey)
+            // the way it would for a GET -- some implementations throw the specific
+            // NoSuchKeyException regardless, but a plain S3Exception with a 404 status is what's
+            // actually guaranteed, and what e.g. LocalStack sends. Check the status code rather than
+            // the exception type to catch "not found" reliably across implementations.
+            if (e.statusCode() == 404) {
+                throw new FileNotFoundInStorageException("Object not found: " + objectKey, e);
+            }
+
+            throw e;
+        }
     }
 
     @Override
