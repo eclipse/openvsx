@@ -25,6 +25,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.storage.FileNotFoundInStorageException;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
@@ -117,7 +118,10 @@ public class MigrationService {
         return storageUtil.downloadFile(resource);
     }
 
-    @Retryable
+    // A FileNotFoundInStorageException means the object is definitively gone, not that this attempt
+    // hit a transient error -- retrying it would just spend 3 more round trips (and the accompanying
+    // delay) confirming the same absence, so it's excluded here and handled by the caller instead.
+    @Retryable(excludes = FileNotFoundInStorageException.class)
     public long getFileSize(FileResource resource) throws IOException {
         return storageUtil.getFileSize(resource);
     }

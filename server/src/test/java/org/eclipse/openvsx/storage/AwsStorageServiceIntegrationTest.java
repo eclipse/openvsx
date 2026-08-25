@@ -194,6 +194,18 @@ class AwsStorageServiceIntegrationTest {
     }
 
     @Test
+    void testGetFileSizeThrowsFileNotFoundInStorageExceptionForAMissingObject() {
+        // A name no other test in this class uploads to, so its object key is guaranteed absent --
+        // the shared `resource` field's key may already exist from another test in the same reused
+        // LocalStack container/bucket.
+        var missingResource = new FileResource();
+        missingResource.setName("never-uploaded.vsix");
+        missingResource.setExtension(extVersion);
+
+        assertThrows(FileNotFoundInStorageException.class, () -> storageService.getFileSize(missingResource));
+    }
+
+    @Test
     void testUploadAndDownloadNamespaceLogo() throws IOException {
         var logoFile = new TempFile("logo_", ".png");
         var logoContent = "fake-png-content";

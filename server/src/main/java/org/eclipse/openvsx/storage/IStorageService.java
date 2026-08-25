@@ -67,6 +67,9 @@ public interface IStorageService {
      * (e.g. a HEAD request) rather than downloading its content. Used to backfill
      * {@link FileResource#getSize()} for resources stored before that field existed, where
      * downloading every file just to measure it would be far too expensive at scale.
+     *
+     * @throws FileNotFoundInStorageException if the backing object is confirmed absent, as opposed
+     *         to some other (possibly transient) storage error
      */
     long getFileSize(FileResource resource) throws IOException;
 

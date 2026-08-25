@@ -12,6 +12,7 @@ package org.eclipse.openvsx.storage;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -159,7 +160,12 @@ public class LocalStorageService implements IStorageService {
 
     @Override
     public long getFileSize(FileResource resource) throws IOException {
-        return Files.size(getPath(resource));
+        var path = getPath(resource);
+        try {
+            return Files.size(path);
+        } catch (NoSuchFileException e) {
+            throw new FileNotFoundInStorageException("File not found: " + path, e);
+        }
     }
 
     @Override
