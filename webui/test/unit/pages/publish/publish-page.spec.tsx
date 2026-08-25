@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HelmetProvider } from 'react-helmet-async';
 import { renderWithProviders } from '../../support/test-providers';
@@ -59,6 +59,16 @@ describe('PublishPage', () => {
         await userEvent.upload(input, [vsix('one.vsix'), vsix('two.vsix')]);
 
         await waitFor(() => expect(publishExtension).toHaveBeenCalledTimes(2));
+    });
+
+    it('publishes a package dropped on its drop area', async () => {
+        const { publishExtension } = renderPage(testUser);
+
+        fireEvent.drop(screen.getByText('Drag & drop your extensions here'), {
+            dataTransfer: { types: ['Files'], files: [vsix('one.vsix')] }
+        });
+
+        await waitFor(() => expect(publishExtension).toHaveBeenCalledOnce());
     });
 
     it('asks a signed-out visitor to log in instead of offering the dropzone', () => {

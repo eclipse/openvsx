@@ -9,14 +9,15 @@
  ********************************************************************************/
 
 import { FunctionComponent, PropsWithChildren, useContext, useRef, useState } from 'react';
-import { Avatar, Button, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
-import { useLocation, useNavigate, Link as RouteLink } from 'react-router';
+import { Avatar, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
+import { useLocation, Link as RouteLink } from 'react-router';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { PublishRoutes } from '../pages/publish/publish-routes';
-import { alpha, styled, Theme } from '@mui/material/styles';
+import { styled, Theme } from '@mui/material/styles';
 import { MainContext } from '../context';
 import { KbdKey } from '../components/kbd-key';
+import { PublishButton } from '../components/publish/publish-button';
 import { useShortcut } from '../hooks/use-shortcut';
 import { focusOutline } from '../components/page-primitives';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -197,18 +198,10 @@ export const MenuRouteLink = styled(RouteLink)(headerItem);
 
 export const DefaultMenuContent: FunctionComponent = () => {
     const { user, loginProviders } = useContext(MainContext);
-    const navigate = useNavigate();
-
     // Register each shortcut next to the control it drives, sharing the same
-    // destination so the hint, the click, and the keypress stay in sync.
+    // destination so the hint, the click, and the keypress stay in sync. Publish
+    // registers its own, next to the keycap on PublishButton.
     useShortcut({ key: 'd', label: 'Documentation', order: 2, callback: () => window.location.assign(DOCS_URL) });
-    useShortcut({
-        key: 'p',
-        label: 'Publish',
-        order: 3,
-        callback: () => navigate(PublishRoutes.ROOT),
-        enabled: !!loginProviders
-    });
 
     return (
         <>
@@ -219,26 +212,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
             <MenuRouteLink to='/about'>About</MenuRouteLink>
             {loginProviders && (
                 <>
-                    <Button
-                        variant='text'
-                        color='secondary'
-                        component={RouteLink}
-                        to={PublishRoutes.ROOT}
-                        sx={theme => ({
-                            mx: 0.5,
-                            px: 2.25,
-                            py: 1,
-                            fontWeight: 600,
-                            fontSize: '0.8125rem',
-                            borderRadius: `${theme.shape.borderRadius}px`,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4375rem',
-                            '&:hover': { backgroundColor: alpha(theme.palette.secondary.main, 0.08) }
-                        })}>
-                        Publish
-                        <KbdKey>p</KbdKey>
-                    </Button>
+                    <PublishButton />
                     {user ? (
                         <UserAvatar />
                     ) : (

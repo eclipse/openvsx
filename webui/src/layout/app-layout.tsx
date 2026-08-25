@@ -27,7 +27,6 @@ import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { NamespaceDetailRoutes } from '../pages/namespace-detail/namespace-detail-routes';
 import { PublishRoutes } from '../pages/publish/publish-routes';
 import { PublishPage } from '../pages/publish/publish-page';
-import { GlobalPublishDrop } from '../components/publish/global-publish-drop';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { ExtensionDetail } from '../pages/extension-detail/extension-detail';
 import { HomePage } from '../pages/home/home-page';
@@ -145,7 +144,6 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                     </Routes>
                 </Suspense>
             </Box>
-            <GlobalPublishDrop />
             <AppFooter onOpenShortcuts={() => setShortcutsOpen(true)} />
             <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
         </Wrapper>

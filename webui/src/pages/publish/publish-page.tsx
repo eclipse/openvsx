@@ -15,11 +15,12 @@ import { ChangeEvent, FunctionComponent, useContext, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router';
 import { Box, ButtonBase, Link, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { alpha, styled } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import { MainContext } from '../../context';
 import { usePublishQueue } from '../../context/publish-queue-context';
+import { usePublishDrop } from '../../components/publish/use-publish-drop';
 import { useRegistryValue } from '../../hooks/use-registry-value';
 import { PageContainer } from '../../components/page-container';
 import { Eyebrow, cardSurface, focusOutline } from '../../components/page-primitives';
@@ -32,12 +33,12 @@ import { formatFileSize } from '../../utils';
 
 // The queue lives inside this frame, under the prompt, so everything about publishing
 // sits in one place. Only the prompt is clickable — the queue holds links of its own.
-const DropArea = styled(Box)(({ theme }) => ({
+const DropArea = styled(Box, { shouldForwardProp: prop => prop !== 'over' })<{ over?: boolean }>(({ theme, over }) => ({
     padding: '1.25rem',
-    border: `1.5px dashed ${theme.palette.divider}`,
+    border: `1.5px dashed ${over ? theme.palette.secondary.main : theme.palette.divider}`,
     borderRadius: theme.shape.borderRadiusCard,
-    backgroundColor: theme.palette.surface2,
-    transition: 'border-color 0.15s',
+    backgroundColor: over ? alpha(theme.palette.secondary.main, 0.06) : theme.palette.surface2,
+    transition: 'border-color 0.15s, background-color 0.15s',
     '@media (hover: hover)': {
         '&:hover': { borderColor: theme.palette.secondary.main }
     }
@@ -69,6 +70,7 @@ const PUBLISH_COMMANDS = 'npm install -g ovsx\novsx publish my-extension.vsix -p
 export const PublishPage: FunctionComponent = () => {
     const { pageSettings, user, loginProviders } = useContext(MainContext);
     const { publish, items } = usePublishQueue();
+    const { over, dropProps } = usePublishDrop();
     const navigate = useNavigate();
     const fileInput = useRef<HTMLInputElement>(null);
     const maxSize = useRegistryValue(version => version.maxExtensionSize);
@@ -99,13 +101,12 @@ export const PublishPage: FunctionComponent = () => {
                         Publish an extension
                     </Typography>
                     <Typography sx={{ fontSize: '0.9375rem', color: 'text.secondary', mt: '0.375rem' }}>
-                        Drop your <code>.vsix</code> packages anywhere on the site, or pick them below. Each one is
-                        uploaded straight away.
+                        Drop your <code>.vsix</code> packages here, or pick them below.
                     </Typography>
                 </Box>
                 {user ? (
                     <>
-                        <DropArea>
+                        <DropArea over={over} {...dropProps}>
                             <DropPrompt onClick={() => fileInput.current?.click()}>
                                 <IconTile sx={{ width: '3rem', height: '3rem', color: 'secondary.main' }}>
                                     <FileUploadOutlinedIcon />
