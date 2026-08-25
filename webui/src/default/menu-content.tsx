@@ -13,6 +13,7 @@ import { Avatar, Button, IconButton, Link, Menu, MenuItem, Typography } from '@m
 import { useLocation, useNavigate, Link as RouteLink } from 'react-router';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
+import { PublishRoutes } from '../pages/publish/publish-routes';
 import { alpha, styled, Theme } from '@mui/material/styles';
 import { MainContext } from '../context';
 import { KbdKey } from '../components/kbd-key';
@@ -134,8 +135,8 @@ export const MobileMenuContent: FunctionComponent = () => {
                         )}
                     />
                 ))}
-            {loginProviders && !location.pathname.startsWith(UserSettingsRoutes.ROOT) && (
-                <MenuItem component={RouteLink} to={UserSettingsRoutes.EXTENSIONS}>
+            {loginProviders && !location.pathname.startsWith(PublishRoutes.ROOT) && (
+                <MenuItem component={RouteLink} to={PublishRoutes.ROOT}>
                     <MenuItemText>
                         <PublishIcon sx={itemIcon} />
                         Publish Extension
@@ -205,7 +206,7 @@ export const DefaultMenuContent: FunctionComponent = () => {
         key: 'p',
         label: 'Publish',
         order: 3,
-        callback: () => navigate(UserSettingsRoutes.EXTENSIONS),
+        callback: () => navigate(PublishRoutes.ROOT),
         enabled: !!loginProviders
     });
 
@@ -221,7 +222,8 @@ export const DefaultMenuContent: FunctionComponent = () => {
                     <Button
                         variant='text'
                         color='secondary'
-                        href={UserSettingsRoutes.EXTENSIONS}
+                        component={RouteLink}
+                        to={PublishRoutes.ROOT}
                         sx={theme => ({
                             mx: 0.5,
                             px: 2.25,

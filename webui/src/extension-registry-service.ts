@@ -195,7 +195,7 @@ export class ExtensionRegistryService {
         abortController: AbortController,
         extension: Extension | SearchEntry
     ): Promise<string | undefined> {
-        if (!extension.files.icon) {
+        if (!extension.files?.icon) {
             return Promise.resolve(undefined);
         }
 

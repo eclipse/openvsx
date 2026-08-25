@@ -9,9 +9,10 @@
  * ****************************************************************************** */
 
 import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { Link as RouteLink } from 'react-router';
 import { Extension } from '../../../extension-registry-types';
-import { Box } from '@mui/material';
-import { PublishExtensionDialog } from './publish-extension-dialog';
+import { Box, Button } from '@mui/material';
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import { isError } from '../../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
 import { MainContext } from '../../../context';
@@ -20,6 +21,7 @@ import { EmptyPlaceholder } from '../settings/settings-primitives';
 import { ExtensionGrid } from '../../../components/page-primitives';
 import { SettingsHeader } from '../settings/settings-header';
 import { UserSettingsRoutes } from '../user-settings-routes';
+import { PublishRoutes } from '../../publish/publish-routes';
 
 export const UserSettingsExtensions: FunctionComponent = () => {
     const [loading, setLoading] = useState(true);
@@ -33,11 +35,6 @@ export const UserSettingsExtensions: FunctionComponent = () => {
             abortController.current.abort();
         };
     }, []);
-
-    const handleExtensionPublished = () => {
-        setLoading(true);
-        updateExtensions();
-    };
 
     const updateExtensions = async (): Promise<void> => {
         if (!user) {
@@ -62,7 +59,15 @@ export const UserSettingsExtensions: FunctionComponent = () => {
         <Box>
             <SettingsHeader
                 title='Extensions'
-                actions={<PublishExtensionDialog extensionPublished={handleExtensionPublished} />}
+                actions={
+                    <Button
+                        variant='outlined'
+                        component={RouteLink}
+                        to={PublishRoutes.ROOT}
+                        startIcon={<FileUploadOutlinedIcon sx={{ fontSize: '0.9375rem' }} />}>
+                        Publish extension
+                    </Button>
+                }
             />
             <DelayedLoadIndicator loading={loading} />
             {extensions && extensions.length > 0 ? (

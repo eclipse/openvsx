@@ -50,6 +50,23 @@ export function formatCompactNumber(value: number): string {
     return compactNumberFormat.format(value);
 }
 
+const FILE_SIZE_UNITS = ['B', 'kB', 'MB', 'GB', 'TB'];
+
+/** Formats a byte count for humans, e.g. 5242880 -> "5.00 MB". */
+export function formatFileSize(bytes: number): string {
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < FILE_SIZE_UNITS.length - 1) {
+        value /= 1024;
+        unitIndex++;
+    }
+    const formatted =
+        unitIndex === 0
+            ? value.toString()
+            : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${formatted} ${FILE_SIZE_UNITS[unitIndex]}`;
+}
+
 export function toLocalTime(timestamp?: string): string | undefined {
     if (!timestamp) {
         return undefined;
