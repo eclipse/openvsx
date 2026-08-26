@@ -494,6 +494,28 @@ public class RepositoryService {
         return membershipJooqRepo.isVerified(namespace, user);
     }
 
+    /**
+     * Whether {@code user} counts as a verified publisher for {@code namespace}: a privileged user
+     * bypasses per-namespace verification entirely; otherwise this defers to
+     * {@link #isVerified(Namespace, UserData)} (member of a namespace with at least one owner).
+     */
+    public boolean isVerifiedPublisher(Namespace namespace, UserData user) {
+        return user.isPrivileged() || isVerified(namespace, user);
+    }
+
+    /**
+     * Whether the version's publisher counts as verified, per {@link #isVerifiedPublisher(Namespace, UserData)}.
+     * {@code false} when the version records no publisher.
+     */
+    public boolean isVerifiedPublisher(ExtensionVersion extVersion) {
+        var publishedBy = extVersion.getPublishedBy();
+        if (publishedBy == null) {
+            return false;
+        }
+
+        return isVerifiedPublisher(extVersion.getExtension().getNamespace(), publishedBy);
+    }
+
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {
         return membershipRepo.findByNamespaceAndRoleIgnoreCase(namespace, role);
     }
@@ -794,6 +816,10 @@ public class RepositoryService {
 
     public Slice<MigrationItem> findNotMigratedItems(Pageable page) {
         return migrationItemRepo.findByMigrationScheduledFalseOrderById(page);
+    }
+
+    public long countNotMigratedItems() {
+        return migrationItemRepo.countByMigrationScheduledFalse();
     }
 
     public double getAverageReviewRating() {
@@ -1115,6 +1141,17 @@ public class RepositoryService {
                         extension.getName(),
                         version.getVersion(),
                         version.getTargetPlatform());
+    }
+
+    /**
+     * Whether the version's latest scan (if any) recorded a threat of the given type, e.g. an
+     * unresolved {@code NamespaceOwnershipCheckScanner.TYPE} conflict. Takes the type as a plain
+     * string rather than the scanner class itself, so this repository layer doesn't have to depend
+     * on the scanning package.
+     */
+    public boolean hasThreatOfType(ExtensionVersion version, String type) {
+        var scan = findLatestExtensionScan(version);
+        return scan != null && findExtensionThreats(scan, type).stream().findAny().isPresent();
     }
 
     public Streamable<ExtensionScan> findExtensionScans(Extension extension) {

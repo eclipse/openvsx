@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -177,6 +178,31 @@ class AwsStorageServiceIntegrationTest {
 
         tempFile.close();
         downloadedFile.close();
+    }
+
+    @Test
+    void testGetFileSizeWithoutDownloading() throws IOException {
+        var tempFile = new TempFile("test_", ".vsix");
+        var testContent = "This is test extension content";
+        var testContentBytes = testContent.getBytes(StandardCharsets.UTF_8);
+        Files.write(tempFile.getPath(), testContentBytes, StandardOpenOption.CREATE);
+        tempFile.setResource(resource);
+        storageService.uploadFile(tempFile);
+        tempFile.close();
+
+        assertEquals(testContentBytes.length, storageService.getFileSize(resource));
+    }
+
+    @Test
+    void testGetFileSizeThrowsFileNotFoundInStorageExceptionForAMissingObject() {
+        // A name no other test in this class uploads to, so its object key is guaranteed absent --
+        // the shared `resource` field's key may already exist from another test in the same reused
+        // LocalStack container/bucket.
+        var missingResource = new FileResource();
+        missingResource.setName("never-uploaded.vsix");
+        missingResource.setExtension(extVersion);
+
+        assertThrows(FileNotFoundInStorageException.class, () -> storageService.getFileSize(missingResource));
     }
 
     @Test

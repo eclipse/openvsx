@@ -8,142 +8,122 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, ReactNode, createContext } from 'react';
-import { Box, Link, Paper, Grid, Typography } from '@mui/material';
-import { styled, Theme } from '@mui/material/styles';
-import WarningIcon from '@mui/icons-material/Warning';
-import { NamespaceExtensionList, FetchNamespaceExtension } from './namespace-extension-list';
+import { FunctionComponent, ReactNode } from 'react';
+import { Link as RouteLink } from 'react-router';
+import { Box, Button, Typography } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { FetchNamespaceExtension, NamespaceExtensionList } from './namespace-extension-list';
+import { NamespaceDetailRoutes } from '../../pages/namespace-detail/namespace-detail-routes';
+import { NamespaceClaimNotice } from './namespace-claim-notice';
+import { createRoute } from '../../utils';
+import { Namespace } from '../../extension-registry-types';
 import { NamespaceMemberList } from './namespace-member-list';
-import { NamespaceDetails } from './namespace-details';
-import { Namespace, UserData } from '../../extension-registry-types';
+import { NamespaceDetailsForm } from './namespace-details-form';
+import { NamespaceLogo } from './namespace-logo';
+import { MediaSidebarLayout } from '../media-sidebar-layout';
 import { UserNamespaceTrustedPublishers } from '../../pages/user/trusted-publishing/trusted-publishers-section';
-import { useTrustedPublishingStatus } from '../../pages/user/trusted-publishing/use-trusted-publishers';
-
-export interface NamespaceDetailConfig {
-    defaultMemberRole?: 'contributor' | 'owner';
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const NamespaceDetailConfigContext = createContext<NamespaceDetailConfig>({});
-
-const NamespaceDetailContainer = styled(Grid)(({ theme }: { theme: Theme }) => ({
-    flex: 5,
-    padding: theme.spacing(0, 1),
-    [theme.breakpoints.only('md')]: {
-        width: '80%'
-    },
-    [theme.breakpoints.down('sm')]: {
-        width: '100%'
-    }
-}));
-
-const WarningPaper = styled(Paper)(({ theme }: { theme: Theme }) => ({
-    maxWidth: '800px',
-    margin: `0 ${theme.spacing(6)} ${theme.spacing(4)} ${theme.spacing(6)}`,
-    padding: theme.spacing(2),
-    display: 'flex',
-    [theme.breakpoints.down('sm')]: {
-        margin: `0 0 ${theme.spacing(2)} 0`
-    }
-}));
-
-const NamespaceHeader = styled(Box)(({ theme }: { theme: Theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing(1),
-    [theme.breakpoints.down('sm')]: {
-        flexDirection: 'column',
-        alignItems: 'center'
-    }
-}));
+import { VerifiedBadge } from '../verified-badge';
+import { MONO_FONT } from '../../default/theme';
 
 /**
- * Reusable view of a namespace: its optional not-verified warning, header, member list, details and
- * extension list. It is page-agnostic — page-specific concerns are injected:
- *  - `headerActions` lets a host render extra buttons in the header (e.g. the admin
- *    "Change Namespace"/"Delete" actions together with their dialogs).
- *  - `fetchExtension` selects the endpoint used to load each extension (public vs. admin).
+ * Reusable view of a namespace: header, details form, member list, trusted publishers and extension
+ * list, with the logo in the media sidebar. Page-specific concerns are injected — `headerActions` for
+ * extra header buttons (e.g. the admin change/delete actions), `extensionRoutePrefix` and
+ * `fetchExtension` for where the extension cards link and which endpoint loads them. Member roles and
+ * the add-member search are configured through {@link NamespaceDetailConfigContext}.
  */
 export const NamespaceDetailView: FunctionComponent<NamespaceDetailViewProps> = props => {
-    const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
-    const warningColor = props.theme === 'dark' ? '#fff' : '#151515';
     return (
-        <NamespaceDetailContainer container direction='column' spacing={4}>
-            {!props.namespace.verified && props.namespaceAccessUrl ? (
-                <Grid item>
-                    <WarningPaper
+        <>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                    mb: '1.875rem'
+                }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                    <Typography
+                        component='h2'
+                        noWrap
                         sx={{
-                            backgroundColor: `warning.${props.theme}`,
-                            color: warningColor,
-                            '& a': {
-                                color: warningColor,
-                                textDecoration: 'underline'
-                            }
+                            fontFamily: MONO_FONT,
+                            fontSize: '1.75rem',
+                            fontWeight: 800,
+                            letterSpacing: '-0.02em',
+                            minWidth: 0
                         }}>
-                        <WarningIcon fontSize='large' />
-                        <Box ml={1}>
-                            This namespace is not verified.{' '}
-                            <Link href={props.namespaceAccessUrl} target='_blank'>
-                                See the documentation
-                            </Link>{' '}
-                            to learn about claiming namespaces.
-                        </Box>
-                    </WarningPaper>
-                </Grid>
-            ) : null}
-            <Grid item>
-                <NamespaceHeader>
-                    <Typography variant='h4'>{props.namespace.name}</Typography>
+                        {props.namespace.name}
+                    </Typography>
+                    {props.namespace.verified ? (
+                        <VerifiedBadge title='Verified namespace' sx={{ fontSize: '1.1875rem' }} />
+                    ) : null}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5625rem', flexWrap: 'wrap' }}>
                     {props.headerActions}
-                </NamespaceHeader>
-            </Grid>
-            {props.namespace.membersUrl ? (
-                <Grid item>
-                    <NamespaceMemberList
-                        setLoadingState={props.setLoadingState}
-                        namespace={props.namespace}
-                        filterUsers={props.filterUsers}
-                        fixSelf={props.fixSelf}
-                    />
-                </Grid>
+                    <Button
+                        variant='outlined'
+                        component={RouteLink}
+                        to={createRoute([NamespaceDetailRoutes.ROOT, props.namespace.name])}
+                        target='_blank'
+                        rel='noopener'
+                        startIcon={<OpenInNewIcon />}>
+                        View public page
+                    </Button>
+                </Box>
+            </Box>
+            {!props.namespace.verified ? (
+                <NamespaceClaimNotice
+                    namespace={props.namespace.name}
+                    showAction={props.showClaimAction}
+                    sx={{ mb: '1.875rem' }}>
+                    Claiming{' '}
+                    <Typography component='code' sx={{ fontFamily: MONO_FONT, fontSize: 'inherit' }}>
+                        {props.namespace.name}
+                    </Typography>{' '}
+                    proves you own it. Until then extensions published here can stay inactive.
+                </NamespaceClaimNotice>
             ) : null}
-            {props.namespace.detailsUrl ? (
-                <Grid item>
-                    <NamespaceDetails namespace={props.namespace} />
-                </Grid>
-            ) : null}
-            {props.namespace.trustedPublishingUrl && trustedPublishingStatus?.enabled ? (
-                <Grid item>
-                    <UserNamespaceTrustedPublishers namespace={props.namespace} />
-                </Grid>
-            ) : null}
-            <Grid item>
+            {/* All sections share the main column, the logo stands alone on the right. */}
+            <MediaSidebarLayout sidebar={<NamespaceLogo namespace={props.namespace} />}>
+                {props.namespace.detailsUrl ? (
+                    <Box sx={{ mb: '2.375rem' }}>
+                        <NamespaceDetailsForm namespace={props.namespace} />
+                    </Box>
+                ) : null}
+                {props.namespace.membersUrl ? (
+                    <Box sx={{ mb: '2.375rem' }}>
+                        <NamespaceMemberList setLoadingState={props.setLoadingState} namespace={props.namespace} />
+                    </Box>
+                ) : null}
+                <UserNamespaceTrustedPublishers namespace={props.namespace} />
                 <NamespaceExtensionList
                     namespace={props.namespace}
-                    fetchExtension={props.fetchExtension}
                     routePrefix={props.extensionRoutePrefix}
+                    fetchExtension={props.fetchExtension}
                 />
-            </Grid>
-        </NamespaceDetailContainer>
+            </MediaSidebarLayout>
+        </>
     );
 };
 
 export interface NamespaceDetailViewProps {
     namespace: Namespace;
-    filterUsers: (user: UserData) => boolean;
-    fixSelf: boolean;
     setLoadingState: (loading: boolean) => void;
-    namespaceAccessUrl?: string;
-    theme?: string;
-    // Extra actions rendered in the header (e.g. the admin "Change Namespace"/"Delete" buttons and
-    // their dialogs). Supplied by the host page so this view stays free of page-specific concerns.
+    // Extra actions rendered in the header, before the public-page link (e.g. the admin
+    // "Change Namespace"/"Delete" buttons). Supplied by the host page so this view stays
+    // free of page-specific concerns.
     headerActions?: ReactNode;
-    // Endpoint used to retrieve each extension's detail; forwarded to the extension list. Defaults to
-    // the public registry API when omitted (e.g. the user surface). The admin surface passes the admin
-    // endpoint so inactive/soft-deleted extensions are shown too.
-    fetchExtension?: FetchNamespaceExtension;
-    // Base route each extension card links to. Supplied by the host: the user surface passes the user
-    // settings extension route, the admin surface passes the admin extension route.
+    // Base route each extension card links to: the user settings extension route on the user
+    // surface, the admin extension route on the admin dashboard.
     extensionRoutePrefix: string;
+    // Endpoint used to retrieve each extension's detail; forwarded to the extension list. Defaults
+    // to the public registry API when omitted. The admin surface passes the admin endpoint so
+    // inactive/soft-deleted extensions show up too.
+    fetchExtension?: FetchNamespaceExtension;
+    // Claiming is the publisher's action, so only the user surface offers it; the admin dashboard
+    // shows the same explanation without it.
+    showClaimAction?: boolean;
 }

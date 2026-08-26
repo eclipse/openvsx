@@ -412,7 +412,11 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         </Box>
                     ) : null}
                     <Box mt={2}>
-                        {ClaimNamespace ? <ClaimNamespace extension={extension} sx={resourceLink} /> : ''}
+                        {ClaimNamespace ? (
+                            <ClaimNamespace namespace={extension.namespace} extension={extension} sx={resourceLink} />
+                        ) : (
+                            ''
+                        )}
                         {ReportAbuse ? <ReportAbuse extension={extension} sx={resourceLink} /> : ''}
                     </Box>
                 </Box>

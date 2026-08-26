@@ -87,6 +87,20 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
         return (String) get(4);
     }
 
+    /**
+     * Setter for <code>public.file_resource.size</code>.
+     */
+    public void setSize(Long value) {
+        set(5, value);
+    }
+
+    /**
+     * Getter for <code>public.file_resource.size</code>.
+     */
+    public Long getSize() {
+        return (Long) get(5);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -110,7 +124,7 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
     /**
      * Create a detached, initialised FileResourceRecord
      */
-    public FileResourceRecord(Long id, String type, Long extensionId, String name, String storageType) {
+    public FileResourceRecord(Long id, String type, Long extensionId, String name, String storageType, Long size) {
         super(FileResource.FILE_RESOURCE);
 
         setId(id);
@@ -118,6 +132,7 @@ public class FileResourceRecord extends UpdatableRecordImpl<FileResourceRecord> 
         setExtensionId(extensionId);
         setName(name);
         setStorageType(storageType);
+        setSize(size);
         resetChangedOnNotNull();
     }
 }

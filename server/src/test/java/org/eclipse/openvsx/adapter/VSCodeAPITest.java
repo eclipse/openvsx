@@ -1478,7 +1478,7 @@ class VSCodeAPITest {
                 CacheService cache,
                 FilesCacheKeyGenerator filesCacheKeyGenerator
         ) {
-            return new WebResourceService(storageUtil, repositories, cache, filesCacheKeyGenerator);
+            return new WebResourceService(storageUtil, repositories, cache, filesCacheKeyGenerator, 33_554_432L);
         }
 
         @Bean

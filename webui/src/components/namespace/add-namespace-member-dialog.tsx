@@ -9,16 +9,14 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useRef } from 'react';
-import { UserData } from '../..';
-import { Namespace, NamespaceMembership, isError } from '../../extension-registry-types';
-import { NamespaceDetailConfigContext } from './namespace-detail-view';
+import { Namespace, NamespaceMembership, UserData, isError } from '../../extension-registry-types';
+import { NamespaceDetailConfigContext } from './namespace-detail-config';
 import { MainContext } from '../../context';
 import { AddUserDialog } from '../add-user-dialog';
 
 export interface AddMemberDialogProps {
     open: boolean;
     onClose: () => void;
-    filterUsers: (user: UserData) => boolean;
     namespace: Namespace;
     members: NamespaceMembership[];
     setLoadingState: (loading: boolean) => void;
@@ -61,7 +59,7 @@ export const AddMemberDialog: FunctionComponent<AddMemberDialogProps> = props =>
             title='Add Member'
             description='Enter the Login Name of the User you want to add.'
             existingUsers={existingUsers}
-            filterUsers={props.filterUsers}
+            filterUsers={config.filterUsers}
             onClose={props.onClose}
             onAddUser={handleAddUser}
         />

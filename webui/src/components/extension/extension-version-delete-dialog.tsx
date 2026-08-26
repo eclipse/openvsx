@@ -132,9 +132,7 @@ export const DeleteVersionDialog: FunctionComponent<DeleteVersionDialogProps> = 
                 </FormGroup>
             </DialogContent>
             <DialogActions>
-                <Button variant='contained' onClick={props.onClose}>
-                    Cancel
-                </Button>
+                <Button onClick={props.onClose}>Cancel</Button>
                 <Box sx={{ ml: 1, position: 'relative', display: 'inline-flex' }}>
                     <Button
                         variant='contained'

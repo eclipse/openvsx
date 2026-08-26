@@ -78,6 +78,11 @@ public class FileResource extends TableImpl<FileResourceRecord> {
      */
     public final TableField<FileResourceRecord, String> STORAGE_TYPE = createField(DSL.name("storage_type"), SQLDataType.VARCHAR(32), this, "");
 
+    /**
+     * The column <code>public.file_resource.size</code>.
+     */
+    public final TableField<FileResourceRecord, Long> SIZE = createField(DSL.name("size"), SQLDataType.BIGINT, this, "");
+
     private FileResource(Name alias, Table<FileResourceRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

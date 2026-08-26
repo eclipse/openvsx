@@ -48,6 +48,8 @@ public class FileResource {
     @Column(length = 32)
     private String storageType;
 
+    private Long size;
+
     public long getId() {
         return id;
     }
@@ -86,5 +88,17 @@ public class FileResource {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    /**
+     * The size of the file in bytes, or {@code null} if it hasn't been determined yet
+     * (e.g. for resources created before this field was introduced, pending backfill).
+     */
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }

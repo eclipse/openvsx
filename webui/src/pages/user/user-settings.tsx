@@ -10,35 +10,38 @@
 
 import { FunctionComponent, ReactNode, useContext } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Grid, Box, Typography, Link } from '@mui/material';
+import { Box, Typography, Link } from '@mui/material';
 import { useParams } from 'react-router';
 import { PageContainer } from '../../components/page-container';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
-import { UserSettingTabs } from './user-setting-tabs';
-import { UserSettingsTokens } from './user-settings-tokens';
+import { UserSettingsSidebar } from './settings/user-settings-sidebar';
+import { UserSettingsMobileNav } from './settings/user-settings-mobile-nav';
+import { useActiveSettingsTab } from './settings/settings-tabs';
+import { UserSettingsTokens } from './tokens/user-settings-tokens';
 import { UserSettingsTrustedPublishers } from './trusted-publishing/user-settings-trusted-publishers';
 import { useTrustedPublishingStatus } from './trusted-publishing/use-trusted-publishers';
-import { UserSettingsProfile } from './user-settings-profile';
-import { UserSettingsNamespaces } from './user-settings-namespaces';
-import { UserSettingsExtensions } from './user-settings-extensions';
-import { UserSettingsCustomers } from './user-settings-customers';
+import { UserSettingsProfile } from './profile/user-settings-profile';
+import { UserSettingsNamespaces } from './namespaces/user-settings-namespaces';
+import { UserSettingsExtensions } from './extensions/user-settings-extensions';
+import { UserSettingsCustomers } from './customers/user-settings-customers';
 import { MainContext } from '../../context';
 import { UserData } from '../../extension-registry-types';
 import { LoginComponent } from '../../default/login';
-import { UserSettingsExtensionSettings } from './user-settings-extension';
+import { ExtensionSettings } from './extensions/extension-settings';
 
 export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
     const { pageSettings, user, loginProviders } = useContext(MainContext);
     const { tab, namespace, extension } = useParams();
+    const activeTab = useActiveSettingsTab();
     const { data: trustedPublishingStatus } = useTrustedPublishingStatus();
     const trustedPublishingEnabled = trustedPublishingStatus?.enabled ?? false;
 
-    const renderTab = (user: UserData, tab?: string, namespace?: string, extension?: string): ReactNode => {
+    const renderTab = (user: UserData): ReactNode => {
         if (tab == null && namespace != null && extension != null) {
-            return <UserSettingsExtensionSettings namespace={namespace} extension={extension} />;
+            return <ExtensionSettings namespace={namespace} extension={extension} />;
         }
 
-        switch (tab) {
+        switch (activeTab) {
             case 'profile':
                 return <UserSettingsProfile user={user} />;
             case 'tokens':
@@ -46,7 +49,7 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
             case 'trusted-publishers':
                 return trustedPublishingEnabled ? <UserSettingsTrustedPublishers /> : null;
             case 'namespaces':
-                return <UserSettingsNamespaces />;
+                return <UserSettingsNamespaces selectedName={namespace} />;
             case 'extensions':
                 return <UserSettingsExtensions />;
             case 'customers':
@@ -86,24 +89,21 @@ export const UserSettings: FunctionComponent<UserSettingsProps> = props => {
         }
 
         return (
-            <PageContainer>
-                <Grid
-                    container
-                    sx={{ flexDirection: { xs: 'column', sm: 'column', md: 'column', lg: 'row', xl: 'row' } }}>
-                    <Grid item sx={{ mb: { xs: '3rem', sm: '3rem', md: '3rem', lg: '3rem', xl: 0 } }}>
-                        <UserSettingTabs />
-                    </Grid>
-                    <Grid
-                        item
-                        sx={{
-                            pt: { xs: 0, sm: 0, md: 0, lg: '.5rem', xl: '.5rem' },
-                            pl: { xs: 0, sm: 0, md: 0, lg: '3rem', xl: '3rem' },
-                            flex: { xs: 'none', sm: 'none', md: 'none', lg: '1', xl: '1' },
-                            width: { xs: '100%', sm: '100%', md: '100%', lg: 'auto', xl: 'auto' }
-                        }}>
-                        <Box>{renderTab(user, tab, namespace, extension)}</Box>
-                    </Grid>
-                </Grid>
+            <PageContainer
+                sx={{
+                    // No mobile padding: the sticky tab pills sit directly below the navbar.
+                    pt: { xs: 0, md: '2.625rem' },
+                    display: 'grid',
+                    gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: '14.75rem minmax(0, 1fr)' },
+                    gap: { xs: '1.5rem', md: '2.5rem' },
+                    alignItems: 'start'
+                }}>
+                <UserSettingsSidebar />
+                <Box sx={{ minWidth: 0 }}>
+                    {/* Inside the content column so the sticky row can travel its full height. */}
+                    <UserSettingsMobileNav />
+                    {renderTab(user)}
+                </Box>
             </PageContainer>
         );
     };

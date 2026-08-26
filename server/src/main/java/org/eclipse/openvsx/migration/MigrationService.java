@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.migration;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 
 import jakarta.persistence.EntityManager;
@@ -18,6 +19,7 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.util.Streamable;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.storage.FileNotFoundInStorageException;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
@@ -47,7 +50,9 @@ public class MigrationService {
             "RemoveFileResourceTypeResourceMigration",
             RemoveFileResourceTypeResourceJobRequestHandler.class,
             "FixMissingFilesMigration",
-            FixMissingFilesJobRequestHandler.class);
+            FixMissingFilesJobRequestHandler.class,
+            "FileResourceSizeMigration",
+            FileResourceSizeJobRequestHandler.class);
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationService.class);
 
@@ -71,22 +76,43 @@ public class MigrationService {
         this.uuidService = uuidService;
     }
 
+    /**
+     * Schedules {@code item}'s job to become due at {@code scheduledAt}, rather than immediately.
+     * {@link MigrationItemJobRequestHandler} spreads a batch's items across a handful of seconds
+     * instead of making them all due at once -- JobRunr processes every ENQUEUED/due job across the
+     * whole server in one strict FIFO queue ordered by due time, so a large batch that's all due
+     * "now" would sit ahead of any real, user-triggered job that happens to get enqueued around the
+     * same time, delaying it until the whole batch drains.
+     */
     @Transactional
-    public void enqueueMigration(MigrationItem item) {
+    public void scheduleMigration(MigrationItem item, Instant scheduledAt) {
         item = entityManager.merge(item);
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());
-        scheduler.enqueue(jobId, new MigrationJobRequest<>(handler, item.getEntityId()));
-        logger.info("Enqueued migration {}", jobIdText);
+        scheduler.schedule(jobId, scheduledAt, new MigrationJobRequest<>(handler, item.getEntityId(), item.getId()));
+        logger.info("Scheduled migration {} for {}", jobIdText, scheduledAt);
         item.setMigrationScheduled(true);
+    }
+
+    /**
+     * Deletes the {@link MigrationItem} row identified by {@code id}, if it still exists. Called by
+     * {@link MigrationItemCleanupFilter} once the job it scheduled has actually completed -- see that
+     * class for why this isn't just done inline at the end of every job handler.
+     */
+    @Transactional
+    public void deleteMigrationItem(long id) {
+        var item = entityManager.find(MigrationItem.class, id);
+        if (item != null) {
+            entityManager.remove(item);
+        }
     }
 
     public ExtensionVersion getExtension(long entityId) {
         return entityManager.find(ExtensionVersion.class, entityId);
     }
 
-    public FileResource getResource(MigrationJobRequest jobRequest) {
+    public FileResource getResource(MigrationJobRequest<?> jobRequest) {
         return entityManager.find(FileResource.class, jobRequest.getEntityId());
     }
 
@@ -98,6 +124,14 @@ public class MigrationService {
     @Retryable
     public TempFile getExtensionFile(FileResource resource) throws IOException {
         return storageUtil.downloadFile(resource);
+    }
+
+    // A FileNotFoundInStorageException means the object is definitively gone, not that this attempt
+    // hit a transient error -- retrying it would just spend 3 more round trips (and the accompanying
+    // delay) confirming the same absence, so it's excluded here and handled by the caller instead.
+    @Retryable(excludes = FileNotFoundInStorageException.class)
+    public long getFileSize(FileResource resource) throws IOException {
+        return storageUtil.getFileSize(resource);
     }
 
     @Retryable
@@ -123,6 +157,10 @@ public class MigrationService {
 
     public FileResource getFileResource(ExtensionVersion extVersion, String type) {
         return repositories.findFileByType(extVersion, type);
+    }
+
+    public Streamable<FileResource> getFileResources(ExtensionVersion extVersion) {
+        return repositories.findFiles(extVersion);
     }
 
     public FileResource getDownload(ExtensionVersion extVersion) {

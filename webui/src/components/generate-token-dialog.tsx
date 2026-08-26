@@ -154,9 +154,7 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
                         )}
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={handleClose} color='secondary'>
-                            {tokenValue ? 'Close' : 'Cancel'}
-                        </Button>
+                        <Button onClick={handleClose}>{tokenValue ? 'Close' : 'Cancel'}</Button>
                         {!tokenValue && (
                             <Button
                                 variant='contained'

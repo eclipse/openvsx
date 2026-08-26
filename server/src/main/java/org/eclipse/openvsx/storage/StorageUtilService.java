@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
@@ -214,6 +215,15 @@ public class StorageUtilService implements IStorageService {
         var storageType = getStorageTypeForResource(resource);
         getStorageService(storageType).uploadFile(tempFile);
         resource.setStorageType(storageType);
+        resource.setSize(getFileSize(tempFile));
+    }
+
+    private long getFileSize(TempFile tempFile) {
+        try {
+            return Files.size(tempFile.getPath());
+        } catch (IOException e) {
+            throw new ServerErrorException("Failed to determine file size", e);
+        }
     }
 
     @Override
@@ -272,6 +282,19 @@ public class StorageUtilService implements IStorageService {
     public TempFile downloadFile(FileResource resource) throws IOException {
         var storageService = getStorageServiceForRetrieval(resource.getStorageType());
         return storageService != null ? storageService.downloadFile(resource) : null;
+    }
+
+    /**
+     * Returns the size in bytes of {@code resource} as already stored, via a metadata-only lookup
+     * rather than downloading its content -- see {@link IStorageService#getFileSize(FileResource)}.
+     */
+    public long getFileSize(FileResource resource) throws IOException {
+        var storageService = getStorageServiceForRetrieval(resource.getStorageType());
+        if (storageService == null) {
+            throw new IOException("Storage '" + resource.getStorageType() + "' is not available.");
+        }
+
+        return storageService.getFileSize(resource);
     }
 
     /**

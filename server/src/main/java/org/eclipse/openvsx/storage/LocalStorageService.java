@@ -12,6 +12,7 @@ package org.eclipse.openvsx.storage;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -155,6 +156,16 @@ public class LocalStorageService implements IStorageService {
         Files.copy(getPath(resource), file.getPath(), StandardCopyOption.REPLACE_EXISTING);
         file.setResource(resource);
         return file;
+    }
+
+    @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        var path = getPath(resource);
+        try {
+            return Files.size(path);
+        } catch (NoSuchFileException e) {
+            throw new FileNotFoundInStorageException("File not found: " + path, e);
+        }
     }
 
     @Override

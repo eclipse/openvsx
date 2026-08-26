@@ -7,6 +7,18 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Added
 
 - Add a "Data Consistency" page to the admin dashboard (#1622): a live overview of every registered consistency check's finding count, with actions to refresh it and to fix findings one at a time or all at once
+- Show a "Namespace not verified" state on an extension card when it can't be activated because its namespace already exists in a referenced external gallery and hasn't been verified, in both the "My Extensions" and namespace member extension lists. The card keeps its colour and takes a warning-toned frame and icon, since this is the publisher's to fix rather than an extension that is simply switched off
+- Show a warning notice with a claim action wherever an unverified namespace is holding something back — the extension settings page when the extension has a namespace ownership conflict, and the namespace settings page for any unverified namespace — making clear the namespace must be claimed (verified) first. The action is the deployment's configured `elements.claimNamespace`, falling back to the namespace access documentation when none is configured. The admin dashboard's extension and namespace views show the same explanation without the claim action, since claiming is the publisher's action to take, not an admin's on someone else's behalf
+
+### Changed
+
+- Redesign the user settings: a sidebar (a pill strip below `md`) navigating profile, access tokens, trusted publishers, extensions and rate limiting, with the user's namespaces listed alongside it and each one deep-linkable at `/user-settings/namespaces/:namespace`. Every view is rebuilt on the cards, grids, placeholders and theme shape tokens the rest of the site uses, and the namespace detail is now a single component shared with the admin dashboard
+- Revoking a single access token asks for confirmation first, like every other destructive action
+- Present the unsigned publisher agreement on the access tokens page as a warning notice with a link to sign it, instead of a plain paragraph
+- Mark a removed extension version in red across its row — version number, status pill and timeline dot — and disable its delete action. Every version of a rejected extension is marked too, and "Latest" is reserved for extensions the registry actually serves, so one that is inactive or removed has no version marked latest
+- Add an `outlinedWarning` style to `MuiButton`, so a warning-toned outlined button follows the theme like the secondary and error ones instead of MUI's default half-opacity border
+- **Breaking:** `elements.claimNamespace` now receives `{ namespace, extension?, sx? }` instead of `{ extension, sx? }`. The namespace settings page offers the same claim action and has no extension to pass, so implementations must read the namespace from `namespace` rather than `extension.namespace`
+- `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart` and `dimmed` props so other surfaces can reuse it instead of copying it
 
 ### Fixed
 

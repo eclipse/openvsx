@@ -19,5 +19,7 @@ public interface MigrationItemRepository extends Repository<MigrationItem, Long>
 
     Slice<MigrationItem> findByMigrationScheduledFalseOrderById(Pageable page);
 
+    long countByMigrationScheduledFalse();
+
     Slice<MigrationItem> findByJobName(String jobName, Pageable page);
 }

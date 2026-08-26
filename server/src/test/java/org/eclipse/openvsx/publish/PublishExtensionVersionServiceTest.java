@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publish;
 
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.EntityManager;
@@ -27,10 +28,12 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
+import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -157,6 +160,23 @@ class PublishExtensionVersionServiceTest {
         assertThat(extVersion.isActive()).isFalse();
         verify(extensions, never()).updateExtension(any());
         verify(repositories, never()).recordExtensionVersionChange(any(), any(), any());
+    }
+
+    @Test
+    void mirrorResource_recordsTheSizeOfTheExtractedBytes() throws Exception {
+        // Mirror mode doesn't upload the bytes to storage -- they're served on the fly from the
+        // origin registry instead -- but the TempFile still holds real bytes extracted from the
+        // mirrored package, so the size is there for the taking.
+        var resource = new FileResource();
+        try (var tempFile = new TempFile("mirror_", ".tmp")) {
+            tempFile.setResource(resource);
+            Files.writeString(tempFile.getPath(), "package contents");
+
+            svc.mirrorResource(tempFile);
+
+            assertThat(resource.getSize()).isEqualTo(Files.size(tempFile.getPath()));
+        }
+        verify(entityManager).persist(resource);
     }
 
     private ExtensionVersion version(long id, boolean removed) {

@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { Box, Typography } from '@mui/material';
-import { alpha, styled, Theme } from '@mui/material/styles';
+import { alpha, CSSObject, styled, Theme } from '@mui/material/styles';
 
 /** Normalized gap between stacked sections; the owl selector skips the first (and any null) child. */
 export const SectionStack = styled(Box)(({ theme }) => ({
@@ -58,7 +58,8 @@ export const Eyebrow = styled(Typography)(({ theme }) => ({
 export const cardSurface = (theme: Theme) => ({
     backgroundColor: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadiusCard
+    // px string: the sx system scales bare numbers by the theme's base radius
+    borderRadius: `${theme.shape.borderRadiusCard}px`
 });
 
 /** Accent focus ring shared by the search fields and card links. */
@@ -78,6 +79,34 @@ export const focusOutline = (theme: Theme) => ({
     }
 });
 
+/** Pill anatomy shared by the tab strips and pill buttons; callers add their own fill and active state. */
+export const pillSurface = (theme: Theme) => ({
+    padding: '0.4375rem 0.8125rem',
+    borderRadius: theme.shape.borderRadiusPill,
+    border: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.secondary,
+    fontSize: '0.8125rem',
+    fontWeight: 500,
+    transition: 'border-color 0.14s, color 0.14s, background 0.14s'
+});
+
+/** Tiny uppercase tag (member roles, version states); sized by `fontSize`, tinted with the accent when `accent`. */
+export const TagChip = styled('span', { shouldForwardProp: prop => prop !== 'accent' })<{ accent?: boolean }>(
+    ({ theme, accent }) => ({
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '0.38em 1.05em',
+        borderRadius: theme.shape.borderRadiusPill,
+        fontSize: '0.65625rem',
+        fontWeight: 700,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        backgroundColor: accent ? theme.palette.accentSoft : theme.palette.surface3,
+        color: accent ? theme.palette.secondary.light : theme.palette.text.disabled
+    })
+);
+
 /** Hover treatment for chips and pills: accent border and text color. Suppressed on touch devices. */
 export const accentHover = (theme: Theme) => ({
     '@media (hover: hover)': {
@@ -89,12 +118,15 @@ export const accentHover = (theme: Theme) => ({
 });
 
 /** Hover treatment for interactive cards: accent border, shadow and lift. Suppressed on touch devices. */
-export const cardHoverLift = (theme: Theme) => ({
+export const cardHoverLift = (theme: Theme, extra?: CSSObject) => ({
+    // `extra` joins this block rather than the caller adding its own: a second
+    // '@media (hover: hover)' key in the same object replaces this one instead of merging.
     '@media (hover: hover)': {
         '&:hover': {
             borderColor: theme.palette.secondary.main,
             boxShadow: 'var(--shadow)',
             transform: 'translateY(-2px)'
-        }
+        },
+        ...extra
     }
 });

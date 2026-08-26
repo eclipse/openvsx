@@ -62,6 +62,17 @@ public interface IStorageService {
 
     TempFile downloadFile(FileResource resource) throws IOException;
 
+    /**
+     * Returns the size in bytes of {@code resource} as already stored, via a metadata-only lookup
+     * (e.g. a HEAD request) rather than downloading its content. Used to backfill
+     * {@link FileResource#getSize()} for resources stored before that field existed, where
+     * downloading every file just to measure it would be far too expensive at scale.
+     *
+     * @throws FileNotFoundInStorageException if the backing object is confirmed absent, as opposed
+     *         to some other (possibly transient) storage error
+     */
+    long getFileSize(FileResource resource) throws IOException;
+
     void copyFiles(List<Pair<FileResource, FileResource>> pairs);
 
     void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace);

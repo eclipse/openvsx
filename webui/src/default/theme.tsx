@@ -17,6 +17,26 @@ export const NAVBAR_HEIGHT = '3.875rem';
 // Pixel twin for scroll math (rem values assume the 16px root font size).
 export const NAVBAR_HEIGHT_PX = parseFloat(NAVBAR_HEIGHT) * 16;
 
+// Shared look of alerts (see also components/banner.tsx): soft tinted surface
+// with accent icon and links.
+const alertTone = (theme: Theme, accent: string, background?: string) => ({
+    padding: theme.spacing(1, 2),
+    backgroundColor: background ?? alpha(accent, 0.1),
+    color: theme.palette.text.primary,
+    border: `1px solid ${alpha(accent, 0.25)}`,
+    borderRadius: theme.shape.borderRadiusCard,
+    '& .MuiAlert-icon': { color: accent },
+    '& a': {
+        color: accent,
+        fontWeight: 700,
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: theme.spacing(0.75),
+        '&:hover': { textDecoration: 'underline' }
+    }
+});
+
 // Shared look of floating surfaces (menus, popovers, dialogs). The nested selector
 // outranks MuiPaper's own rounded style, so no !important is needed.
 const floatingPaper = (theme: Theme) => ({
@@ -218,34 +238,62 @@ export default function createDefaultTheme(themeType: 'light' | 'dark'): Theme {
                     }
                 }
             },
-            // Info alerts follow the app's info tone (see components/banner.tsx):
-            // soft accent surface, accent icon, and accent links.
             MuiAlert: {
                 styleOverrides: {
-                    standardInfo: ({ theme }) => ({
-                        padding: theme.spacing(1, 2),
-                        backgroundColor: theme.palette.accentSoft,
-                        color: theme.palette.text.primary,
-                        border: `1px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-                        borderRadius: theme.shape.borderRadiusCard,
-                        '& .MuiAlert-icon': { color: theme.palette.secondary.light },
-                        '& a': {
-                            color: theme.palette.secondary.light,
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: theme.spacing(0.75),
-                            '&:hover': { textDecoration: 'underline' }
-                        }
-                    })
+                    standardInfo: ({ theme }) =>
+                        alertTone(theme, theme.palette.secondary.light, theme.palette.accentSoft),
+                    standardWarning: ({ theme }) =>
+                        alertTone(theme, theme.palette.warningAccent, theme.palette.warningSoft),
+                    standardError: ({ theme }) => alertTone(theme, theme.palette.error.main),
+                    standardSuccess: ({ theme }) => alertTone(theme, theme.palette.success.main)
                 }
             },
             // VS Code buttons are flat and compact (~24px page actions), with corners
             // a touch softer than inputs; outlined trims 1px per side so the border
             // doesn't add height.
             MuiButton: {
-                defaultProps: { disableElevation: true }
+                defaultProps: { disableElevation: true },
+                styleOverrides: {
+                    // Neutral outlined buttons use the hairline divider instead of MUI's
+                    // half-opacity primary border, darkening on hover like the card borders.
+                    outlined: ({ theme }) => ({
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.text.secondary,
+                        '&:hover': {
+                            backgroundColor: 'transparent',
+                            borderColor: theme.palette.text.secondary,
+                            color: theme.palette.text.primary
+                        }
+                    }),
+                    outlinedSecondary: ({ theme }) => ({
+                        color: theme.palette.secondary.main,
+                        borderColor: alpha(theme.palette.secondary.main, 0.5),
+                        '&:hover': {
+                            borderColor: theme.palette.secondary.main,
+                            color: theme.palette.secondary.main
+                        }
+                    }),
+                    outlinedWarning: ({ theme }) => ({
+                        color: theme.palette.warningAccent,
+                        borderColor: alpha(theme.palette.warningAccent, 0.5),
+                        '&:hover': {
+                            borderColor: theme.palette.warningAccent,
+                            color: theme.palette.warningAccent
+                        }
+                    }),
+                    outlinedError: ({ theme }) => ({
+                        backgroundColor: theme.palette.surface2,
+                        borderColor: theme.palette.divider,
+                        color: theme.palette.error.main,
+                        // Background only: transitioning color/border makes the disabled→enabled swap look like a fade.
+                        transition: 'background-color 0.15s',
+                        '&:hover': {
+                            backgroundColor: theme.palette.error.main,
+                            borderColor: theme.palette.error.main,
+                            color: theme.palette.common.white
+                        }
+                    })
+                }
             },
             // MUI X derives the grid's borders from `divider` via lighten/darken, which
             // almost erases our already-light opaque divider. Feed the grid's design

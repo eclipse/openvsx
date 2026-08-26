@@ -74,9 +74,7 @@ export const DeleteAllVersionsDialog: FunctionComponent<DeleteAllVersionsDialogP
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button variant='contained' onClick={props.onClose}>
-                    Cancel
-                </Button>
+                <Button onClick={props.onClose}>Cancel</Button>
                 <ButtonWithProgress sx={{ ml: 1 }} color='error' working={working} onClick={handleRemove}>
                     {isPurge ? 'Purge All Versions' : 'Delete All Versions'}
                 </ButtonWithProgress>

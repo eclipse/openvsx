@@ -11,9 +11,8 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react';
-import CheckIcon from '@mui/icons-material/Check';
-import SaveIcon from '@mui/icons-material/Save';
+import { ChangeEvent, FC, useCallback, useEffect, useState } from 'react';
+import { SaveButton } from '../../components/save-button';
 import {
     Alert,
     Box,
@@ -29,6 +28,7 @@ import {
 } from '@mui/material';
 import type { Settings } from '../../extension-registry-types';
 import { handleError } from '../../utils';
+import { useSavedFlash } from '../../hooks/use-saved-flash';
 import { SettingsItem } from './settings-item';
 import { useSettings, useUpdateSettings } from './use-settings';
 
@@ -56,8 +56,7 @@ export const RuntimeSettingsPage: FC = () => {
     const [errorDismissed, setErrorDismissed] = useState(false);
     const [notifications, setNotifications] = useState<NotificationState[]>([]);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [saveSuccess, setSaveSuccess] = useState(false);
-    const saveSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { saved: saveSuccess, flash: flashSaved, clear: clearSaved } = useSavedFlash(2000);
 
     // Keep the editable draft in sync with the loaded (and freshly saved) settings.
     useEffect(() => {
@@ -74,13 +73,6 @@ export const RuntimeSettingsPage: FC = () => {
     useEffect(
         () => () => {
             notifications.forEach(n => clearTimeout(n.timeout));
-        },
-        []
-    );
-
-    useEffect(
-        () => () => {
-            if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
         },
         []
     );
@@ -106,9 +98,9 @@ export const RuntimeSettingsPage: FC = () => {
     const handleFlagChange = useCallback(
         (key: keyof Settings) => (_event: ChangeEvent<HTMLInputElement>, checked: boolean) => {
             setDraftSettings(current => (current ? { ...current, [key]: checked } : current));
-            setSaveSuccess(false);
+            clearSaved();
         },
-        []
+        [clearSaved]
     );
 
     const hasChanges =
@@ -124,18 +116,14 @@ export const RuntimeSettingsPage: FC = () => {
         if (!draftSettings) return;
         setConfirmOpen(false);
         saveSettings(draftSettings, {
-            onSuccess: () => {
-                setSaveSuccess(true);
-                if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current);
-                saveSuccessTimer.current = setTimeout(() => setSaveSuccess(false), 2000);
-            },
+            onSuccess: flashSaved,
             onError: err => {
                 addNotification({
                     message: `Failed to save runtime settings. ${handleError(err as Error)}`
                 });
             }
         });
-    }, [draftSettings, saveSettings, addNotification]);
+    }, [draftSettings, saveSettings, addNotification, flashSaved]);
 
     return (
         <>
@@ -175,22 +163,12 @@ export const RuntimeSettingsPage: FC = () => {
                 </Paper>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                        variant='contained'
+                    <SaveButton
                         size='large'
-                        disabled={!hasChanges || saving || saveSuccess}
+                        saved={saveSuccess}
+                        disabled={!hasChanges || saving}
                         onClick={handleSaveClick}
-                        startIcon={saveSuccess ? <CheckIcon /> : <SaveIcon />}
-                        sx={{
-                            transition: 'background-color 0.5s ease',
-                            ...(saveSuccess && {
-                                backgroundColor: 'success.main',
-                                '&:hover': { backgroundColor: 'success.dark' },
-                                '&.Mui-disabled': { backgroundColor: 'success.main', color: 'white', opacity: 0.9 }
-                            })
-                        }}>
-                        {saveSuccess ? 'Saved' : 'Save'}
-                    </Button>
+                    />
                 </Box>
             </Box>
 

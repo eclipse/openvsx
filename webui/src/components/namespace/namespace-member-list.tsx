@@ -9,11 +9,13 @@
  ********************************************************************************/
 
 import { FunctionComponent, useEffect, useState, useContext, useRef } from 'react';
-import { Box, Typography, Button, Paper } from '@mui/material';
-import { NamespaceMember } from './namespace-member-component';
-import { Namespace, NamespaceMembership, MembershipRole, isError, UserData } from '../../extension-registry-types';
+import { Button, Divider, Paper, Stack } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { NamespaceMemberRow } from './namespace-member-row';
+import { Namespace, NamespaceMembership, MembershipRole, isError } from '../../extension-registry-types';
 import { AddMemberDialog } from './add-namespace-member-dialog';
 import { MainContext } from '../../context';
+import { EmptyPlaceholder, SectionTitleRow, SettingsSectionTitle } from '../../pages/user/settings/settings-primitives';
 
 export const NamespaceMemberList: FunctionComponent<NamespaceMemberListProps> = props => {
     const { service, user, handleError } = useContext(MainContext);
@@ -70,37 +72,29 @@ export const NamespaceMemberList: FunctionComponent<NamespaceMemberListProps> = 
     }
     return (
         <>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 1,
-                    flexDirection: { xs: 'column', sm: 'column', md: 'row', lg: 'row', xl: 'row' }
-                }}>
-                <Typography variant='h5'>Members</Typography>
-                <Button
-                    sx={{ ml: { xs: 2, sm: 2, md: 2, lg: 0, xl: 0 } }}
-                    variant='outlined'
-                    onClick={handleOpenAddDialog}>
-                    Add Namespace Member
+            <SectionTitleRow>
+                <SettingsSectionTitle component='h3' sx={{ m: 0 }}>
+                    Members
+                </SettingsSectionTitle>
+                <Button variant='outlined' startIcon={<AddIcon />} onClick={handleOpenAddDialog}>
+                    Add member
                 </Button>
-            </Box>
+            </SectionTitleRow>
             {members.length ? (
-                <Paper elevation={3}>
-                    {members.map(member => (
-                        <NamespaceMember
-                            key={'nspcmbr-' + member.user.loginName + member.user.provider}
-                            namespace={props.namespace}
-                            member={member}
-                            fixSelf={props.fixSelf}
-                            onChangeRole={role => changeRole(member, role)}
-                            onRemoveUser={() => changeRole(member, 'remove')}
-                        />
-                    ))}
+                <Paper variant='outlined'>
+                    <Stack divider={<Divider />}>
+                        {members.map(member => (
+                            <NamespaceMemberRow
+                                key={'nspcmbr-' + member.user.loginName + member.user.provider}
+                                member={member}
+                                onChangeRole={role => changeRole(member, role)}
+                                onRemoveUser={() => changeRole(member, 'remove')}
+                            />
+                        ))}
+                    </Stack>
                 </Paper>
             ) : (
-                <Typography variant='body1'>There are no members assigned yet.</Typography>
+                <EmptyPlaceholder>There are no members assigned yet.</EmptyPlaceholder>
             )}
             <AddMemberDialog
                 members={members}
@@ -108,7 +102,6 @@ export const NamespaceMemberList: FunctionComponent<NamespaceMemberListProps> = 
                 onClose={handleCloseAddDialog}
                 open={addDialogIsOpen}
                 setLoadingState={props.setLoadingState}
-                filterUsers={props.filterUsers}
             />
         </>
     );
@@ -117,6 +110,4 @@ export const NamespaceMemberList: FunctionComponent<NamespaceMemberListProps> = 
 export interface NamespaceMemberListProps {
     namespace: Namespace;
     setLoadingState: (loadingState: boolean) => void;
-    filterUsers: (user: UserData) => boolean;
-    fixSelf: boolean;
 }

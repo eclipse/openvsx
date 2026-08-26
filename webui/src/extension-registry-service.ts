@@ -95,14 +95,14 @@ export class ExtensionRegistryService {
 
     async getNamespaceDetails(abortController: AbortController, name: string): Promise<Readonly<NamespaceDetails>> {
         const endpoint = createAbsoluteURL([this.serverUrl, 'api', name, 'details']);
-        return sendRequest({ abortController, endpoint });
+        return sendStrictRequest({ abortController, endpoint });
     }
 
     async setNamespaceDetails(
         abortController: AbortController,
         endpoint: string,
         details: NamespaceDetails
-    ): Promise<Readonly<SuccessResult | ErrorResult>> {
+    ): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -112,7 +112,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest({
+        return sendStrictRequest({
             abortController,
             method: 'POST',
             payload: details,
@@ -127,7 +127,7 @@ export class ExtensionRegistryService {
         endpoint: string,
         logoFile: Blob,
         logoName: string
-    ): Promise<Readonly<SuccessResult | ErrorResult>> {
+    ): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.getCsrfToken(abortController);
         const headers: Record<string, string> = {};
         if (!isError(csrfResponse)) {
@@ -138,7 +138,7 @@ export class ExtensionRegistryService {
         const form = new FormData();
         form.append('file', logoFile, logoName);
         endpoint = createAbsoluteURL([endpoint, 'logo']);
-        return sendRequest({
+        return sendStrictRequest({
             abortController,
             method: 'POST',
             payload: form,

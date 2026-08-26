@@ -22,6 +22,7 @@ import com.azure.core.util.polling.SyncPoller;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobCopyInfo;
+import com.azure.storage.blob.models.BlobErrorCode;
 import com.azure.storage.blob.models.BlobHttpHeaders;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.CopyStatusType;
@@ -191,6 +192,25 @@ public class AzureBlobStorageService implements IStorageService {
                 .downloadToFile(tempFile.getPath().toAbsolutePath().toString(), true);
         tempFile.setResource(resource);
         return tempFile;
+    }
+
+    @Override
+    public long getFileSize(FileResource resource) throws IOException {
+        var blobName = getObjectKey(resource);
+        if (StringUtils.isEmpty(serviceEndpoint)) {
+            throw new IllegalStateException(missingEndpointMessage(blobName));
+        }
+
+        try {
+            // getProperties is a metadata-only request; it doesn't transfer the blob's content.
+            return getContainerClient().getBlobClient(blobName).getProperties().getBlobSize();
+        } catch (BlobStorageException e) {
+            if (e.getErrorCode() == BlobErrorCode.BLOB_NOT_FOUND) {
+                throw new FileNotFoundInStorageException("Blob not found: " + blobName, e);
+            }
+
+            throw new IOException("Failed to determine file size for " + blobName, e);
+        }
     }
 
     @Override
