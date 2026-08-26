@@ -44,15 +44,15 @@ export const ExtensionDetailDownloadsMenu: FunctionComponent<ExtensionDetailDown
                 {Object.keys(props.downloads).map(targetPlatform => {
                     const downloadLink = props.downloads[targetPlatform];
                     return (
-                        <MenuItem key={targetPlatform} sx={{ cursor: 'auto' }}>
-                            <Link
-                                onClick={handleClose}
-                                href={downloadLink}
-                                sx={{ cursor: 'pointer', textDecoration: 'none' }}>
-                                <Typography variant='body2' color='text.primary'>
-                                    {getTargetPlatformDisplayName(targetPlatform)}
-                                </Typography>
-                            </Link>
+                        <MenuItem
+                            key={targetPlatform}
+                            component={Link}
+                            href={downloadLink}
+                            onClick={handleClose}
+                            sx={{ textDecoration: 'none' }}>
+                            <Typography variant='body2' color='text.primary'>
+                                {getTargetPlatformDisplayName(targetPlatform)}
+                            </Typography>
                         </MenuItem>
                     );
                 })}
