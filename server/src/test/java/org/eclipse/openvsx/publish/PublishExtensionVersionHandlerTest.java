@@ -39,6 +39,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,6 +145,40 @@ class PublishExtensionVersionHandlerTest {
             assertThat(result.getPublishedBy()).isEqualTo(user);
             assertThat(result.getExtension()).isSameAs(capturedExtension.getValue());
             assertThat(result.getExtension().getNamespace()).isSameAs(namespace);
+        }
+    }
+
+    @Test
+    void shouldRecordTheTokenTypeUsedToPublish() throws IOException {
+        // The trusted-publisher badge (ExtensionVersion#toExtensionVersionJson) is driven off
+        // publishedWithTt, so it must actually be set from whatever token type authenticated the
+        // publish request, not silently dropped.
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            when(processor.getExtensionDependencies()).thenReturn(List.of());
+            when(processor.getBundledExtensions()).thenReturn(List.of());
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"));
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var ata = new AccessTokenAuthentication(user, PersonalAccessTokenType.TPT);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(validator.validateMetadata(metadata)).thenReturn(List.of());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+
+            var result = handler.createExtensionVersion(processor, ata, LocalDateTime.now(), false);
+
+            assertThat(result.getPublishedWithTt()).isEqualTo(PersonalAccessTokenType.TPT);
         }
     }
 

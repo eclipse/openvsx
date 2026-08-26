@@ -196,6 +196,14 @@ public class AccessTokenService {
         if (token == null || !token.isActive()) {
             return null;
         }
+        // personal_access_token.user_data has no NOT NULL constraint at the schema level, so a
+        // legacy/corrupt row could in principle have no user attached. Callers treat a non-null
+        // AccessTokenAuthentication as a fully authenticated request and dereference userData()
+        // unguarded, so surface that here as "no valid authentication" rather than handing out a
+        // token authentication for nobody and letting it NPE further down.
+        if (token.getUser() == null) {
+            return null;
+        }
         // expiration - <=, not <, to match expireAccessTokens' "expires_timestamp <= ?1" and
         // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
         LocalDateTime now = TimeUtil.getCurrentUTC();
@@ -217,7 +225,7 @@ public class AccessTokenService {
         if (accessTokenAction.isUsing()) {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
-                token.setActive(false);
+                // Deleted outright rather than deactivated: nothing reads the row again afterwards.
                 entityManager.remove(token);
             }
         }

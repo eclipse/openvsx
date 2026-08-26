@@ -640,7 +640,14 @@ public class AdminService {
         // Namespace and customer memberships are already fully removed above. If nothing else in
         // the database still refers to this user either, delete the row outright instead of
         // anonymizing it.
-        var canDeleteUser = repositories.countReviews(user) == 0
+        //
+        // extension_version.published_by_id is documented as permanent - it is never cleared, not
+        // even once the version itself is soft-deleted - so a user who has ever published a version
+        // can never be row-deleted, only anonymized: allVersions above already holds every version
+        // this user ever published (active or not), and that FK has no ON DELETE clause, so leaving
+        // even one of those rows behind would make entityManager.remove(user) fail outright.
+        var canDeleteUser = allVersions.isEmpty()
+                && repositories.countReviews(user) == 0
                 && repositories.countVersionsRemovedBy(user) == 0
                 && repositories.countAdminScanDecisions(user) == 0
                 && repositories.countFileDecisions(user) == 0

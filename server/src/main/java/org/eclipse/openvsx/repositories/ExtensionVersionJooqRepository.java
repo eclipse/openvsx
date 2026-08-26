@@ -553,6 +553,9 @@ public class ExtensionVersionJooqRepository {
         user.setProvider(row.get(USER_DATA.PROVIDER));
 
         extVersion.setPublishedBy(user);
+        var publishedWithTt = row.get(extensionVersionMapper.map(EXTENSION_VERSION.PUBLISHED_WITH_TT));
+        extVersion
+                .setPublishedWithTt(publishedWithTt != null ? PersonalAccessTokenType.valueOf(publishedWithTt) : null);
         extVersion.setType(ExtensionVersion.Type.REGULAR);
         return extVersion;
     }
@@ -1030,6 +1033,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1148,6 +1152,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
                 EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
@@ -1196,6 +1201,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1301,6 +1307,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
