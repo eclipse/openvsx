@@ -52,6 +52,7 @@ describe('ExtensionDetailDownloadsMenu', () => {
 
         await user.click(screen.getByRole('menuitem', { name: 'Universal' }));
 
-        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        const { waitFor } = await import('@testing-library/react');
+        await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
     });
 });
