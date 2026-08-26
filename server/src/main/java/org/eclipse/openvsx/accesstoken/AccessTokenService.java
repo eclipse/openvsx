@@ -38,6 +38,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
 import static jakarta.transaction.Transactional.TxType;
 import static java.util.Objects.requireNonNull;

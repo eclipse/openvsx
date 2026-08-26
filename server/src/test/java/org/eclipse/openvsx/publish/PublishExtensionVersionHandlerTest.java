@@ -39,6 +39,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -124,6 +125,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -134,7 +136,7 @@ class PublishExtensionVersionHandlerTest {
 
             var capturedExtension = ArgumentCaptor.forClass(Extension.class);
 
-            var result = handler.createExtensionVersion(processor, user, LocalDateTime.now(), false);
+            var result = handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false);
 
             verify(entityManager).persist(capturedExtension.capture());
             verify(entityManager).persist(metadata);
@@ -159,6 +161,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -181,7 +184,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining(maliciousName);
 
@@ -201,6 +204,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -227,7 +231,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("CHANGELOG.md");
         }
@@ -247,6 +251,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -278,7 +283,7 @@ class PublishExtensionVersionHandlerTest {
                 return null;
             }).when(processor).getFileResources(any(), any());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Multiple file name collisions")
                     .hasMessageContaining(maliciousName)
@@ -293,10 +298,11 @@ class PublishExtensionVersionHandlerTest {
             when(processor.getNamespace()).thenReturn("unknown");
 
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("unknown")).thenReturn(null);
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Unknown publisher");
         }
@@ -316,13 +322,14 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
             when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
             when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("uses an unsupported icon format");
         }
@@ -345,13 +352,14 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
             when(validator.validateExtensionVersion(metadata.getVersion())).thenReturn(Optional.empty());
             when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
 
-            var ev = handler.createExtensionVersion(processor, user, LocalDateTime.now(), false);
+            var ev = handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false);
             assertThat(ev).isNotNull();
         } finally {
             config.setUnsupportedIconFormats(previousUnsupportedIconFormats);
@@ -365,6 +373,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
+            var liu = new LoggedInAuthentication(user);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);
@@ -378,7 +387,7 @@ class PublishExtensionVersionHandlerTest {
                             "2.0.0",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Publisher in extension.vsixmanifest");
 
@@ -389,7 +398,7 @@ class PublishExtensionVersionHandlerTest {
                             "2.0.0",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Extension name in extension.vsixmanifest");
 
@@ -400,7 +409,7 @@ class PublishExtensionVersionHandlerTest {
                             "9.9.9",
                             "Demo OK"));
 
-            assertThatThrownBy(() -> handler.createExtensionVersion(processor, user, LocalDateTime.now(), false))
+            assertThatThrownBy(() -> handler.createExtensionVersion(processor, liu, LocalDateTime.now(), false))
                     .isInstanceOf(ErrorResultException.class)
                     .hasMessageContaining("Extension version in extension.vsixmanifest");
         }

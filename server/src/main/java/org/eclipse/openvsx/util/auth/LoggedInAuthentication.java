@@ -10,14 +10,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.accesstoken;
+package org.eclipse.openvsx.util.auth;
 
-import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.jspecify.annotations.NonNull;
+
 import org.eclipse.openvsx.entities.UserData;
 
 /**
- * Represents "successful authentication using token".
- * Carries {@link UserData} to whom token belong and the {@link PersonalAccessTokenType} type of
- * the token used for authentication.
+ * Represents successfully logged-in user.
  */
-public record AccessTokenAuthentication(UserData userData, PersonalAccessTokenType type) {}
+public record LoggedInAuthentication(UserData userData) implements AuthenticatedUser {
+    @Override
+    public @NonNull AuthenticationType authenticationType() {
+        return AuthenticationType.LOGGED_IN;
+    }
+}

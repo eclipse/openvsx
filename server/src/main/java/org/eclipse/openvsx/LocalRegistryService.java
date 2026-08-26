@@ -60,6 +60,8 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.util.auth.AuthenticatedUser;
+import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -818,15 +820,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Valid token");
     }
 
-    public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        return publish(content, null, user);
+    public ExtensionJson publish(InputStream content, LoggedInAuthentication liu) throws ErrorResultException {
+        return doPublish(content, null, liu);
     }
 
     public ExtensionJson publish(InputStream rawContent, String tokenValue) throws ErrorResultException {
-        return publish(rawContent, tokenValue, null);
+        return doPublish(rawContent, tokenValue, null);
     }
 
-    private ExtensionJson publish(InputStream rawContent, String tokenValue, UserData user)
+    private ExtensionJson doPublish(InputStream rawContent, String tokenValue, AuthenticatedUser auth)
             throws ErrorResultException {
         // A rejection anywhere below - invalid/expired token, missing publisher agreement, or
         // (pre-existing, inside extensions.publishVersion) an oversized package - can happen before
@@ -839,26 +841,24 @@ public class LocalRegistryService implements IExtensionRegistry {
         try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
             var tempFile = extensions.createExtensionFile(content);
             try {
+                AuthenticatedUser au = auth;
                 ExtensionVersion extVersion;
                 try (var processor = new ExtensionProcessor(tempFile)) {
                     // now that we know the details, ensure token is still fine
-                    if (user == null) {
-                        var tau = tokens.useAccessToken(
+                    if (au == null) {
+                        au = tokens.useAccessToken(
                                 tokenValue,
                                 new AccessTokenAction.PublishVersion(
                                         processor.getNamespace(),
                                         processor.getExtensionName()));
-                        if (tau != null) {
-                            user = tau.userData();
-                        }
                     }
-                    if (user == null) {
+                    if (au == null) {
                         throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
                     }
                     // Check whether the user has a valid publisher agreement
-                    eclipse.checkPublisherAgreement(user);
+                    eclipse.checkPublisherAgreement(au.userData());
 
-                    extVersion = extensions.publishVersion(processor, user);
+                    extVersion = extensions.publishVersion(processor, au);
                 }
 
                 var json = toExtensionVersionJson(extVersion, null, true);

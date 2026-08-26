@@ -41,6 +41,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.DrainOnCloseInputStream;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -316,7 +317,8 @@ class ExtensionServiceTest {
         var token = mockToken();
         var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
 
-        assertThatThrownBy(() -> svc.publishVersion(content, token.getUser()))
+        assertThatThrownBy(
+                () -> svc.publishVersion(content, new AccessTokenAuthentication(token.getUser(), token.getType())))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("Insufficient access rights");
 
@@ -341,7 +343,8 @@ class ExtensionServiceTest {
         // this code path in production.
         var content = new DrainOnCloseInputStream(raw, maxContentSize);
 
-        assertThatThrownBy(() -> svc.publishVersion(content, token.getUser()))
+        assertThatThrownBy(
+                () -> svc.publishVersion(content, new AccessTokenAuthentication(token.getUser(), token.getType())))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the size limit")
                 .extracting(exc -> ((ErrorResultException) exc).getStatus())
@@ -442,6 +445,7 @@ class ExtensionServiceTest {
         token.setId(1L);
         token.setValue("token");
         token.setUser(mockUser());
+        token.setType(PersonalAccessTokenType.LLT);
         return token;
     }
 }
