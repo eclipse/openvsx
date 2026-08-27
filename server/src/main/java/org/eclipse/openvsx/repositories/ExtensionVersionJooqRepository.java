@@ -110,8 +110,7 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS.as("extension_version_bundled_extensions"),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID.as("signature_key_pair_public_id"),
                 denseRank().over(
-                        partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
-                                EXTENSION_VERSION.EXTENSION_ID,
+                        partitionBy(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.PRE_RELEASE).orderBy(
                                 EXTENSION_VERSION.SEMVER_MAJOR.desc(),
                                 EXTENSION_VERSION.SEMVER_MINOR.desc(),
                                 EXTENSION_VERSION.SEMVER_PATCH.desc()))
@@ -132,7 +131,7 @@ public class ExtensionVersionJooqRepository {
                     .select()
                     .from(table(name("ranked_extension_version")))
                     .where(
-                            field(name("extension_version_pre_release")).isFalse()
+                            field(name("extension_version_pre_release")).eq(false)
                                     .or(field(name("rank")).lessOrEqual(maxPreReleaseVersions)));
         }
 
