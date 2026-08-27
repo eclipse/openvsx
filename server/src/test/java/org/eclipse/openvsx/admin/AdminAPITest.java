@@ -2357,8 +2357,6 @@ class AdminAPITest {
             when(
                     repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
-            when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
-                    .thenReturn(Streamable.of(versions));
             versions.add(extVersion);
         }
 

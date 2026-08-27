@@ -425,7 +425,6 @@ class ScanAPITest {
     @Test
     void getScans_rejects_unknown_sort_field() throws Exception {
         when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
-        when(repositories.findAllExtensionScans()).thenReturn(Streamable.empty());
 
         mockMvc.perform(
                 get("/admin/scans")

@@ -47,12 +47,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
-            String version,
-            String extensionName,
-            String namespace
-    );
-
     Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
 
     long countByPublishedWith(PersonalAccessToken publishedWith);
