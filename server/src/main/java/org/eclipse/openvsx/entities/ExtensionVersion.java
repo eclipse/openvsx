@@ -20,6 +20,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
@@ -80,8 +82,15 @@ public class ExtensionVersion implements Serializable {
 
     private LocalDateTime timestamp;
 
+    /**
+     * Who published this version.
+     */
     @ManyToOne
-    private PersonalAccessToken publishedWith;
+    private UserData publishedBy;
+
+    @Column(nullable = true)
+    @Enumerated(EnumType.STRING)
+    private PersonalAccessTokenType publishedWithTt;
 
     private boolean active;
 
@@ -197,10 +206,10 @@ public class ExtensionVersion implements Serializable {
         json.setGalleryTheme(this.getGalleryTheme());
         json.setLocalizedLanguages(this.getLocalizedLanguages());
         json.setQna(this.getQna());
-        if (this.getPublishedWith() != null) {
-            json.setPublishedBy(this.getPublishedWith().getUser().toUserJson());
-            json.setTrustedPublisher(this.getPublishedWith().getType() == PersonalAccessTokenType.TPT);
+        if (this.getPublishedBy() != null) {
+            json.setPublishedBy(this.getPublishedBy().toUserJson());
         }
+        json.setTrustedPublisher(getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
@@ -329,12 +338,20 @@ public class ExtensionVersion implements Serializable {
         this.timestamp = timestamp;
     }
 
-    public PersonalAccessToken getPublishedWith() {
-        return publishedWith;
+    public UserData getPublishedBy() {
+        return publishedBy;
     }
 
-    public void setPublishedWith(PersonalAccessToken publishedWith) {
-        this.publishedWith = publishedWith;
+    public void setPublishedBy(UserData publishedBy) {
+        this.publishedBy = publishedBy;
+    }
+
+    public PersonalAccessTokenType getPublishedWithTt() {
+        return publishedWithTt;
+    }
+
+    public void setPublishedWithTt(PersonalAccessTokenType publishedWithTt) {
+        this.publishedWithTt = publishedWithTt;
     }
 
     public boolean isActive() {
@@ -570,7 +587,9 @@ public class ExtensionVersion implements Serializable {
                 && Objects.equals(version, that.version)
                 && Objects.equals(targetPlatform, that.targetPlatform)
                 && Objects.equals(timestamp, that.timestamp)
-                && Objects.equals(getId(publishedWith), getId(that.publishedWith)) // use id to prevent infinite recursion                && Objects.equals(displayName, that.displayName)
+                && Objects.equals(getId(publishedBy), getId(that.publishedBy)) // use id to prevent infinite recursion
+                && Objects.equals(publishedWithTt, that.publishedWithTt)
+                && Objects.equals(displayName, that.displayName)
                 && Objects.equals(description, that.description)
                 && Objects.equals(engines, that.engines)
                 && Objects.equals(categories, that.categories)
@@ -603,7 +622,8 @@ public class ExtensionVersion implements Serializable {
                 preRelease,
                 preview,
                 timestamp,
-                getId(publishedWith),
+                getId(publishedBy),
+                publishedWithTt,
                 active,
                 potentiallyMalicious,
                 removed,
@@ -633,10 +653,6 @@ public class ExtensionVersion implements Serializable {
 
     private Long getId(Extension extension) {
         return Optional.ofNullable(extension).map(Extension::getId).orElse(null);
-    }
-
-    private Long getId(PersonalAccessToken token) {
-        return Optional.ofNullable(token).map(PersonalAccessToken::getId).orElse(null);
     }
 
     private Long getId(UserData user) {

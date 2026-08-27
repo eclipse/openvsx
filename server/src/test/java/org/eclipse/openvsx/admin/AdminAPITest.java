@@ -931,8 +931,10 @@ class AdminAPITest {
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setActive(true);
+        versions.forEach(v -> {
+            v.setPublishedBy(user);
+        });
         token.setType(PersonalAccessTokenType.LLT);
-        versions.forEach(v -> v.setPublishedWith(token));
 
         when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
         when(repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT))
@@ -991,7 +993,9 @@ class AdminAPITest {
         token.setType(PersonalAccessTokenType.LLT);
         when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(token));
-        versions.forEach(v -> v.setPublishedWith(token));
+        versions.forEach(v -> {
+            v.setPublishedBy(user);
+        });
         when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions));
 
@@ -1120,12 +1124,11 @@ class AdminAPITest {
         customerMembership.setUser(user);
         Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.of(customerMembership));
 
-        // A token not referenced by any retained version must be deleted outright.
+        // Personal access tokens are always deleted outright.
         var unreferenced = new PersonalAccessToken();
         unreferenced.setUser(user);
         unreferenced.setActive(true);
         Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
-        Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
 
         // The version just removed above still holds a removedBy reference to the user, so the
         // row must be anonymized rather than deleted.
@@ -1141,7 +1144,7 @@ class AdminAPITest {
                 .andExpect(
                         content().json(
                                 successJson(
-                                        "Forgot user deleted-user-7: deleted 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
+                                        "Forgot user deleted-user-7: deleted 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens.")));
 
         // The extension and its version are deactivated but kept in the database.
         assertThat(version.isActive()).isFalse();
@@ -1149,7 +1152,7 @@ class AdminAPITest {
         Mockito.verify(entityManager, Mockito.never()).remove(extension);
         Mockito.verify(entityManager, Mockito.never()).remove(version);
 
-        // Memberships, the customer membership, and the unreferenced token are removed.
+        // Memberships, the customer membership, and the token are removed.
         Mockito.verify(entityManager).remove(membership);
         Mockito.verify(entityManager).remove(customerMembership);
         Mockito.verify(entityManager).remove(unreferenced);
@@ -1192,12 +1195,11 @@ class AdminAPITest {
         customerMembership.setUser(user);
         Mockito.when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.of(customerMembership));
 
-        // A token not referenced by any retained version must be deleted outright.
+        // Personal access tokens are always deleted outright.
         var unreferenced = new PersonalAccessToken();
         unreferenced.setUser(user);
         unreferenced.setActive(true);
         Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(unreferenced));
-        Mockito.when(repositories.countVersionsByAccessToken(unreferenced)).thenReturn(0L);
 
         // The version just removed above still holds a removedBy reference to the user, so the
         // row must be anonymized rather than deleted.
@@ -1213,7 +1215,7 @@ class AdminAPITest {
                 .andExpect(
                         content().json(
                                 successJson(
-                                        "Forgot user deleted-user-7: deleted 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens, scrubbed 0 tokens.")));
+                                        "Forgot user deleted-user-7: deleted 1 extensions, removed 1 namespace memberships, removed 1 customer memberships, deleted 1 tokens.")));
 
         // The extension and its version are deactivated but kept in the database.
         assertThat(version.isActive()).isFalse();
@@ -1221,7 +1223,7 @@ class AdminAPITest {
         Mockito.verify(entityManager, Mockito.never()).remove(extension);
         Mockito.verify(entityManager, Mockito.never()).remove(version);
 
-        // Memberships, the customer membership, and the unreferenced token are removed.
+        // Memberships, the customer membership, and the token are removed.
         Mockito.verify(entityManager).remove(membership);
         Mockito.verify(entityManager).remove(customerMembership);
         Mockito.verify(entityManager).remove(unreferenced);
@@ -1238,7 +1240,7 @@ class AdminAPITest {
     }
 
     @Test
-    void testForgetUserScrubsReferencedToken() throws Exception {
+    void testForgetUserDeletesTokenAndUser() throws Exception {
         var token = mockAdminToken();
         var user = mockForgettableUser();
         Mockito.when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
@@ -1246,14 +1248,14 @@ class AdminAPITest {
         Mockito.when(repositories.findVersionsByUser(user, false)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
 
-        // A token still referenced by a retained version must be scrubbed and kept, not deleted.
-        var referenced = new PersonalAccessToken();
-        referenced.setUser(user);
-        referenced.setActive(true);
-        referenced.setValue("secret-value");
-        referenced.setDescription("my token");
-        Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(referenced));
-        Mockito.when(repositories.countVersionsByAccessToken(referenced)).thenReturn(2L);
+        // Personal access tokens are no longer referenced by extension versions, so they are
+        // always deleted outright and never block deletion of the user row itself.
+        var personalAccessToken = new PersonalAccessToken();
+        personalAccessToken.setUser(user);
+        personalAccessToken.setActive(true);
+        personalAccessToken.setValue("secret-value");
+        personalAccessToken.setDescription("my token");
+        Mockito.when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.of(personalAccessToken));
 
         mockMvc.perform(
                 post(
@@ -1265,11 +1267,10 @@ class AdminAPITest {
                 .andExpect(
                         content().json(
                                 successJson(
-                                        "Forgot user deleted-user-7: deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 1 tokens.")));
+                                        "Forgot user deleted-user-7: deleted user record, deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 1 tokens.")));
 
-        Mockito.verify(entityManager, Mockito.never()).remove(referenced);
-        assertThat(referenced.isActive()).isFalse();
-        assertThat(referenced.getDescription()).isNull();
+        Mockito.verify(entityManager).remove(personalAccessToken);
+        Mockito.verify(entityManager).remove(user);
     }
 
     @Test
@@ -1299,7 +1300,7 @@ class AdminAPITest {
                 .andExpect(
                         content().json(
                                 successJson(
-                                        "Forgot user deleted-user-7: deleted user record, deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 0 tokens.")));
+                                        "Forgot user deleted-user-7: deleted user record, deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens.")));
 
         Mockito.verify(entityManager).remove(user);
         // The row is gone, so there is nothing left to anonymize.
@@ -1329,7 +1330,7 @@ class AdminAPITest {
                 .andExpect(
                         content().json(
                                 successJson(
-                                        "Forgot user deleted-user-7: deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens, scrubbed 0 tokens.")));
+                                        "Forgot user deleted-user-7: deleted 0 extensions, removed 0 namespace memberships, removed 0 customer memberships, deleted 0 tokens.")));
 
         Mockito.verify(entityManager, Mockito.never()).remove(user);
         assertThat(user.getLoginName()).isEqualTo("deleted-user-7");
@@ -2040,7 +2041,7 @@ class AdminAPITest {
         userToken.setType(PersonalAccessTokenType.LLT);
         when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
-        versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
@@ -2058,7 +2059,7 @@ class AdminAPITest {
         user2Token.setType(PersonalAccessTokenType.LLT);
         when(repositories.findPersonalAccessTokens(user2))
                 .thenReturn(Streamable.of(user2Token));
-        versions.get(1).setPublishedWith(user2Token);
+        versions.get(1).setPublishedBy(user2);
         when(repositories.findVersionsByUser(user2, true))
                 .thenReturn(Streamable.of(versions.get(1)));
 
@@ -2129,7 +2130,7 @@ class AdminAPITest {
         userToken.setType(PersonalAccessTokenType.LLT);
         when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
-        versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 
@@ -2178,7 +2179,7 @@ class AdminAPITest {
         userToken.setType(PersonalAccessTokenType.LLT);
         when(repositories.findPersonalAccessTokens(user))
                 .thenReturn(Streamable.of(userToken));
-        versions.getFirst().setPublishedWith(userToken);
+        versions.getFirst().setPublishedBy(user);
         when(repositories.findVersionsByUser(user, true))
                 .thenReturn(Streamable.of(versions.getFirst()));
 

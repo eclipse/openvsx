@@ -47,7 +47,6 @@ import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.extension_control.ExtensionControlService;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -56,6 +55,8 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
+import org.eclipse.openvsx.util.auth.AuthenticatedUser;
 
 @Component
 public class PublishExtensionVersionHandler {
@@ -133,12 +134,12 @@ public class PublishExtensionVersionHandler {
     @Transactional(rollbackOn = ErrorResultException.class)
     public ExtensionVersion createExtensionVersion(
             ExtensionProcessor processor,
-            PersonalAccessToken token,
+            AuthenticatedUser au,
             LocalDateTime timestamp,
             boolean checkDependencies
     ) {
         // Extract extension metadata from its manifest
-        var extVersion = createExtensionVersion(processor, token.getUser(), token, timestamp);
+        var extVersion = createExtensionVersion(processor, au, timestamp);
         var dependencies = processor.getExtensionDependencies();
         var bundledExtensions = processor.getBundledExtensions();
         if (checkDependencies) {
@@ -168,13 +169,13 @@ public class PublishExtensionVersionHandler {
      * <p>
      * Callers publishing with scanning enabled have to invoke this before validating or scanning the
      * package, as neither is of any use for a package that can not be published in the first place.
-     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, PersonalAccessToken,
+     * The checks are repeated by {@link #createExtensionVersion(ExtensionProcessor, AuthenticatedUser,
      * LocalDateTime, boolean)}, which enforces them while holding the extension lock.
      *
      * @throws ErrorResultException if the extension version can not be published
      */
-    public void checkPublishPreconditions(ExtensionProcessor processor, PersonalAccessToken token) {
-        var namespace = checkPublishPermission(processor, token.getUser());
+    public void checkPublishPreconditions(ExtensionProcessor processor, UserData userData) {
+        var namespace = checkPublishPermission(processor, userData);
         var extensionName = processor.getExtensionName();
         var existingVersion = repositories
                 .findVersion(processor.getVersion(), processor.getTargetPlatform(), extensionName, namespace.getName());
@@ -225,11 +226,10 @@ public class PublishExtensionVersionHandler {
 
     private ExtensionVersion createExtensionVersion(
             ExtensionProcessor processor,
-            UserData user,
-            PersonalAccessToken token,
+            AuthenticatedUser au,
             LocalDateTime timestamp
     ) {
-        var namespace = checkPublishPermission(processor, user);
+        var namespace = checkPublishPermission(processor, au.userData());
         var namespaceName = processor.getNamespace();
 
         var extensionName = processor.getExtensionName();
@@ -239,7 +239,7 @@ public class PublishExtensionVersionHandler {
         // honour the configured tag limits.
         var extVersion = processor.getMetadata(config.getMaxTags(), config.getMaxInternalTags());
         var displayName = extVersion.getDisplayName();
-        validateExtensionName(namespaceName, extensionName, displayName, user);
+        validateExtensionName(namespaceName, extensionName, displayName, au.userData());
 
         // Check that the metadata contained in package.json matches the one extracted from extension.vsixmanifest
         // Open VSX uses the metadata from extension.vsixmanifest as the source of truth, but VS Code
@@ -247,7 +247,10 @@ public class PublishExtensionVersionHandler {
         validatePackageMetadata(processor, namespaceName, extensionName, extVersion);
 
         extVersion.setTimestamp(timestamp);
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(au.userData());
+        if (au instanceof AccessTokenAuthentication ata) {
+            extVersion.setPublishedWithTt(ata.type());
+        }
         extVersion.setActive(false);
 
         // Lock the extension row while adding a version so a concurrent delete-all serializes

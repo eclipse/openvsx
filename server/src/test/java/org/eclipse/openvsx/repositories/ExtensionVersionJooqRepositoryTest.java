@@ -27,7 +27,6 @@ import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -55,22 +54,66 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
     @Autowired
     EntityManager em;
 
-    private PersonalAccessToken token;
+    private UserData owner;
 
     @BeforeEach
     void setUp() {
-        var owner = new UserData();
+        owner = new UserData();
         owner.setLoginName("jooq-repo-test-owner");
         em.persist(owner);
-
-        token = new PersonalAccessToken();
-        token.setUser(owner);
-        token.setValue("jooq-repo-test-owner-token");
-        token.setCreatedTimestamp(LocalDateTime.now());
-        token.setActive(true);
-        token.setType(PersonalAccessTokenType.LLT);
-        em.persist(token);
         em.flush();
+    }
+
+    // The PUBLISHED_WITH_TT column is selected by several findLatest(...) queries, but was never
+    // actually read back into ExtensionVersion#publishedWithTt (and, for the two-stage "latest"
+    // subquery variants, wasn't even selected by the outer query) - so the trusted-publisher flag
+    // silently came back null regardless of what was stored. These pin down that it now round-trips
+    // through each of the three findLatest(...) overloads that build a full ExtensionVersion off a
+    // "latest" subquery.
+    @Test
+    void mapsPublishedWithTtOnFindLatestForNamespaceAndExtension() {
+        var extension = persistExtension("ns-tt-1", "ext-tt-1");
+        persistVersionWithTokenType(extension, "1.0.0", PersonalAccessTokenType.TPT);
+
+        var extVersion = repo.findLatest(owner, "ns-tt-1", "ext-tt-1");
+
+        assertThat(extVersion.getPublishedWithTt()).isEqualTo(PersonalAccessTokenType.TPT);
+    }
+
+    @Test
+    void mapsPublishedWithTtOnFindLatestByExtensionIds() {
+        var extension = persistExtension("ns-tt-2", "ext-tt-2");
+        persistVersionWithTokenType(extension, "1.0.0", PersonalAccessTokenType.TPT);
+
+        var versions = repo.findLatest(List.of(extension.getId()));
+
+        assertThat(versions).singleElement()
+                .extracting(ExtensionVersion::getPublishedWithTt)
+                .isEqualTo(PersonalAccessTokenType.TPT);
+    }
+
+    @Test
+    void mapsPublishedWithTtOnFindLatestByUser() {
+        var extension = persistExtension("ns-tt-3", "ext-tt-3");
+        persistVersionWithTokenType(extension, "1.0.0", PersonalAccessTokenType.TPT);
+
+        var versions = repo.findLatest(owner);
+
+        assertThat(versions).singleElement()
+                .extracting(ExtensionVersion::getPublishedWithTt)
+                .isEqualTo(PersonalAccessTokenType.TPT);
+    }
+
+    // A version published without a token (e.g. via a logged-in web session) must not be reported
+    // as trusted-publisher just because the column is nullable.
+    @Test
+    void publishedWithTtIsNullWhenNotPublishedViaAToken() {
+        var extension = persistExtension("ns-tt-4", "ext-tt-4");
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_UNIVERSAL, true);
+
+        var extVersion = repo.findLatest(owner, "ns-tt-4", "ext-tt-4");
+
+        assertThat(extVersion.getPublishedWithTt()).isNull();
     }
 
     @Test
@@ -320,12 +363,24 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setVersion(version);
         extVersion.setTargetPlatform(targetPlatform);
         extVersion.setActive(active);
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(owner);
         em.persist(extVersion);
 
         // ExtensionVersionJooqRepository queries run over the transaction's raw JDBC connection,
         // bypassing the persistence context, so pending inserts must be flushed before they become
         // visible to it.
+        em.flush();
+    }
+
+    private void persistVersionWithTokenType(Extension extension, String version, PersonalAccessTokenType tokenType) {
+        var extVersion = new ExtensionVersion();
+        extVersion.setExtension(extension);
+        extVersion.setVersion(version);
+        extVersion.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        extVersion.setActive(true);
+        extVersion.setPublishedBy(owner);
+        extVersion.setPublishedWithTt(tokenType);
+        em.persist(extVersion);
         em.flush();
     }
 
@@ -347,7 +402,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
             extVersion.setTargetPlatform(targetPlatform);
             extVersion.setActive(true);
             extVersion.setPreRelease(true);
-            extVersion.setPublishedWith(token);
+            extVersion.setPublishedBy(owner);
             em.persist(extVersion);
         }
         em.flush();
@@ -370,7 +425,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         extVersion.setActive(true);
         extVersion.setPreRelease(true);
         extVersion.setTimestamp(timestamp);
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(owner);
         em.persist(extVersion);
     }
 }

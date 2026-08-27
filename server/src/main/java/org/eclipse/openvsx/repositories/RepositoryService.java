@@ -293,7 +293,7 @@ public class RepositoryService {
                         namespace);
     }
 
-    public ExtensionVersion findVersionPublishedWithUser(
+    public ExtensionVersion findVersionPublishedByUser(
             UserData user,
             String version,
             String targetPlatform,
@@ -301,7 +301,7 @@ public class RepositoryService {
             String namespace
     ) {
         return extensionVersionRepo
-                .findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+                .findByPublishedByAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
                         user,
                         version,
                         targetPlatform,
@@ -372,19 +372,15 @@ public class RepositoryService {
     }
 
     public Streamable<Extension> findExtensions(UserData user) {
-        return extensionRepo.findDistinctByVersionsPublishedWithUser(user);
-    }
-
-    public Streamable<ExtensionVersion> findVersionsByAccessToken(PersonalAccessToken publishedWith, boolean active) {
-        return extensionVersionRepo.findByPublishedWithAndActive(publishedWith, active);
-    }
-
-    public long countVersionsByAccessToken(PersonalAccessToken publishedWith) {
-        return extensionVersionRepo.countByPublishedWith(publishedWith);
+        return extensionRepo.findDistinctByVersionsPublishedBy(user);
     }
 
     public Streamable<ExtensionVersion> findVersionsByUser(UserData user, boolean active) {
-        return extensionVersionRepo.findByPublishedWithUserAndActive(user, active);
+        return extensionVersionRepo.findByPublishedByAndActive(user, active);
+    }
+
+    public Streamable<UserData> findPublishersWithActiveVersions() {
+        return extensionVersionRepo.findPublishersWithActiveVersions();
     }
 
     public long countVersionsRemovedBy(UserData user) {
@@ -515,12 +511,12 @@ public class RepositoryService {
      * {@code false} when the version records no publisher.
      */
     public boolean isVerifiedPublisher(ExtensionVersion extVersion) {
-        var publishedWith = extVersion.getPublishedWith();
-        if (publishedWith == null) {
+        var publishedBy = extVersion.getPublishedBy();
+        if (publishedBy == null) {
             return false;
         }
 
-        return isVerifiedPublisher(extVersion.getExtension().getNamespace(), publishedWith.getUser());
+        return isVerifiedPublisher(extVersion.getExtension().getNamespace(), publishedBy);
     }
 
     public Streamable<NamespaceMembership> findMemberships(Namespace namespace, String role) {

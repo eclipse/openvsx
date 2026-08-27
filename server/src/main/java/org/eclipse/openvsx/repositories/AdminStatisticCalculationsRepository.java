@@ -48,11 +48,10 @@ public class AdminStatisticCalculationsRepository {
     }
 
     public int countActiveExtensionPublishers() {
-        var publishers = DSL.countDistinct(PERSONAL_ACCESS_TOKEN.USER_DATA);
+        var publishers = DSL.countDistinct(EXTENSION_VERSION.PUBLISHED_BY_ID);
         return dsl.select(publishers)
                 .from(EXTENSION)
                 .join(EXTENSION_VERSION).on(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID))
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .where(EXTENSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
                 .fetchOne(publishers);
@@ -62,14 +61,13 @@ public class AdminStatisticCalculationsRepository {
         var aliasPublisher = "publisher";
         var aliasExtensionCount = "extension_count";
         var extensionCountsByPublisher = dsl.select(
-                PERSONAL_ACCESS_TOKEN.USER_DATA.as(aliasPublisher),
+                EXTENSION_VERSION.PUBLISHED_BY_ID.as(aliasPublisher),
                 DSL.countDistinct(EXTENSION.ID).as(aliasExtensionCount))
                 .from(EXTENSION)
                 .join(EXTENSION_VERSION).on(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID))
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .where(EXTENSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
-                .groupBy(PERSONAL_ACCESS_TOKEN.USER_DATA)
+                .groupBy(EXTENSION_VERSION.PUBLISHED_BY_ID)
                 .asTable("aep");
 
         return dsl.select(
@@ -130,10 +128,9 @@ public class AdminStatisticCalculationsRepository {
         return dsl.select(count)
                 .from(EXTENSION)
                 .join(EXTENSION_VERSION).on(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID))
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .join(NAMESPACE_MEMBERSHIP)
                 .on(
-                        NAMESPACE_MEMBERSHIP.USER_DATA.eq(PERSONAL_ACCESS_TOKEN.USER_DATA)
+                        NAMESPACE_MEMBERSHIP.USER_DATA.eq(EXTENSION_VERSION.PUBLISHED_BY_ID)
                                 .and(NAMESPACE_MEMBERSHIP.NAMESPACE.eq(EXTENSION.NAMESPACE_ID)))
                 .where(EXTENSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.ACTIVE.eq(true))
@@ -145,8 +142,7 @@ public class AdminStatisticCalculationsRepository {
         var count = DSL.count(EXTENSION_VERSION.ID).as("extension_version_count");
         return dsl.select(USER_DATA.ID, USER_DATA.LOGIN_NAME, count)
                 .from(EXTENSION_VERSION)
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
-                .join(USER_DATA).on(USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA))
+                .join(USER_DATA).on(USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID))
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .groupBy(USER_DATA.ID)
                 .orderBy(count.desc())

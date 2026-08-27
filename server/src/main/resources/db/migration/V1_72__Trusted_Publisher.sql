@@ -1,4 +1,4 @@
--- trusted_publisher table
+-- trusted_publisher new table
 
 CREATE SEQUENCE IF NOT EXISTS trusted_publisher_seq START WITH 1 INCREMENT BY 1;
 
@@ -33,19 +33,59 @@ ALTER TABLE ONLY public.personal_access_token
 
 -- set OTT based on description (is hardwired in codebase)
 UPDATE public.personal_access_token
-SET type = 'OTT'
-WHERE personal_access_token.description = 'One time use publish token';
+    SET type = 'OTT'
+    WHERE personal_access_token.description = 'One time use publish token';
 
 -- set LLT for all other tokens
 UPDATE public.personal_access_token
-SET type = 'LLT'
-WHERE personal_access_token.type IS NULL;
+    SET type = 'LLT'
+    WHERE personal_access_token.type IS NULL;
 
 -- set version = 0 on all
 UPDATE public.personal_access_token
-SET version = 0;
+    SET version = 0;
 
 -- type is required for all tokens
 ALTER TABLE ONLY public.personal_access_token
     ALTER COLUMN version SET NOT NULL,
     ALTER COLUMN type SET NOT NULL;
+
+-- detaching extension_version from personal_access_token
+
+-- Who published a version and what token type was used, recorded directly instead of being reached through the token
+-- that was used for the upload. A token is a credential with its own lifecycle -- it can be revoked, expire, or (in
+-- future) be deleted -- while the authorship of a version is permanent and has to outlive all three.
+-- Every read path that asks "who published this?" uses this column from now on.
+ALTER TABLE public.extension_version
+    ADD COLUMN published_by_id BIGINT,
+    ADD COLUMN published_with_tt CHARACTER VARYING(32);
+
+-- Backfill from the only place the answer exists today. Rows whose published_with_id is already NULL
+-- have nothing to derive it from and stay NULL, which is why this column is deliberately left nullable:
+-- every read path has always had to treat an unknown publisher as "not verified" / omitted from JSON,
+-- and they keep doing exactly that.
+UPDATE public.extension_version ev
+    SET published_by_id = pat.user_data,
+        published_with_tt = pat.type
+    FROM public.personal_access_token pat
+    WHERE pat.id = ev.published_with_id;
+
+ALTER TABLE public.extension_version
+    ADD CONSTRAINT extension_version_published_by_id_fkey FOREIGN KEY (published_by_id) REFERENCES public.user_data(id);
+
+-- Publisher-keyed lookups (a user's own versions, the publisher compliance check, admin statistics)
+-- now filter on this column instead of joining through the token.
+CREATE INDEX extension_version__published_by_id__idx ON public.extension_version (published_by_id);
+
+-- published_with_id keeps recording which credential was used, but as best-effort provenance rather
+-- than a hard dependency: deleting a token in future clears the reference instead of being refused by
+-- the database. The base migration left this constraint named by Hibernate; drop it by that generated
+-- name and recreate under the naming convention used everywhere else on this table.
+ALTER TABLE public.extension_version
+    DROP CONSTRAINT fk70khj8pm0vacasuiiaq0w0r80;
+ALTER TABLE public.extension_version
+    DROP COLUMN published_with_id;
+
+-- and now we can delete all inactive one-time-usable personal access tokens
+DELETE FROM public.personal_access_token pat
+    WHERE pat.active = false AND pat.type != 'LLT';

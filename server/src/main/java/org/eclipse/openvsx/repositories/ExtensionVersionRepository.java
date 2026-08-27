@@ -22,6 +22,15 @@ import org.eclipse.openvsx.entities.*;
 
 public interface ExtensionVersionRepository extends Repository<ExtensionVersion, Long> {
 
+    /**
+     * Finds all distinct publishers who are enlisted as publisher in the extension_version table for active extension.
+     * In other words, returns distinct {@link UserData} for all users who published a currently active extension.
+     */
+    @Query(
+        "select distinct ev.publishedBy from ExtensionVersion ev where ev.active = true and ev.publishedBy is not null"
+    )
+    Streamable<UserData> findPublishersWithActiveVersions();
+
     Streamable<ExtensionVersion> findByExtension(Extension extension);
 
     Streamable<ExtensionVersion> findByExtensionAndActiveTrue(Extension extension);
@@ -39,7 +48,7 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    ExtensionVersion findByPublishedWithUserAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+    ExtensionVersion findByPublishedByAndVersionAndTargetPlatformAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
             UserData user,
             String version,
             String targetPlatform,
@@ -47,11 +56,13 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    Streamable<ExtensionVersion> findByPublishedWithAndActive(PersonalAccessToken publishedWith, boolean active);
+    Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
+            String version,
+            String extensionName,
+            String namespace
+    );
 
-    long countByPublishedWith(PersonalAccessToken publishedWith);
-
-    Streamable<ExtensionVersion> findByPublishedWithUserAndActive(UserData user, boolean active);
+    Streamable<ExtensionVersion> findByPublishedByAndActive(UserData user, boolean active);
 
     long countByRemovedBy(UserData removedBy);
 

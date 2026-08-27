@@ -251,8 +251,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),
                 () -> repositories.findVersions(extension),
-                () -> repositories.findVersionsByAccessToken(personalAccessToken, true),
-                () -> repositories.countVersionsByAccessToken(personalAccessToken),
                 () -> repositories.getMaxExtensionDownloadCount(),
                 () -> repositories.getOldestExtensionTimestamp(),
                 () -> repositories.findExtensions(LONG_LIST),
@@ -334,6 +332,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findFileByName("namespaceName", "extensionName", "targetPlatform", "version", "name"),
                 () -> repositories.findVersionsByUser(userData, false),
+                () -> repositories.findPublishersWithActiveVersions(),
                 () -> repositories.countVersionsRemovedBy(userData),
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
@@ -364,7 +363,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findNotMigratedItems(page),
                 () -> repositories.countNotMigratedItems(),
                 () -> repositories.findTargetPlatformsGroupedByVersion(extension, userData),
-                () -> repositories.findVersionPublishedWithUser(
+                () -> repositories.findVersionPublishedByUser(
                         userData,
                         "version",
                         "targetPlatform",

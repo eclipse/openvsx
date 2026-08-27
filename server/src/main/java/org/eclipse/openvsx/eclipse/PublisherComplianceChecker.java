@@ -10,9 +10,7 @@
 package org.eclipse.openvsx.eclipse;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
@@ -25,9 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -67,14 +63,11 @@ public class PublisherComplianceChecker {
             return;
         }
 
-        var publisherTokens = repositories.findAllPersonalAccessTokens().stream()
-                .collect(Collectors.groupingBy(PersonalAccessToken::getUser));
-        publisherTokens.keySet().forEach(user -> {
-            var accessTokens = publisherTokens.get(user);
-            if (!accessTokens.isEmpty() && !isCompliant(user)) {
+        repositories.findPublishersWithActiveVersions().forEach(user -> {
+            if (!isCompliant(user)) {
                 // Found a non-compliant publisher: deactivate all extension versions
                 transactions.<Void>execute(status -> {
-                    deactivateExtensions(accessTokens);
+                    deactivateExtensions(user);
                     return null;
                 });
             }
@@ -100,25 +93,23 @@ public class PublisherComplianceChecker {
                 .isPresent();
     }
 
-    private void deactivateExtensions(List<PersonalAccessToken> accessTokens) {
+    private void deactivateExtensions(UserData user) {
         var affectedExtensions = new LinkedHashSet<Extension>();
         var now = TimeUtil.getCurrentUTC();
-        for (var accessToken : accessTokens) {
-            var versions = repositories.findVersionsByAccessToken(accessToken, true);
-            for (var version : versions) {
-                version.setActive(false);
-                // the version stops being publicly visible here, which the changes feed reports at
-                // this instant rather than at the one it was published at
-                repositories.recordExtensionVersionChange(version, ExtensionVersionState.INACTIVE, now);
-                entityManager.merge(version);
-                var extension = version.getExtension();
-                affectedExtensions.add(extension);
-                logger.atInfo()
-                        .setMessage("Deactivated: {} - {}")
-                        .addArgument(() -> accessToken.getUser().getLoginName())
-                        .addArgument(() -> NamingUtil.toLogFormat(version))
-                        .log();
-            }
+        var versions = repositories.findVersionsByUser(user, true);
+        for (var version : versions) {
+            version.setActive(false);
+            // the version stops being publicly visible here, which the changes feed reports at
+            // this instant rather than at the one it was published at
+            repositories.recordExtensionVersionChange(version, ExtensionVersionState.INACTIVE, now);
+            entityManager.merge(version);
+            var extension = version.getExtension();
+            affectedExtensions.add(extension);
+            logger.atInfo()
+                    .setMessage("Deactivated: {} - {}")
+                    .addArgument(user::getLoginName)
+                    .addArgument(() -> NamingUtil.toLogFormat(version))
+                    .log();
         }
 
         // Update affected extensions
