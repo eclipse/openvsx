@@ -162,7 +162,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extensionsMap.put(name, url);
         }
         json.setExtensions(extensionsMap);
-        json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
+        json.setVerified(repositories.isVerified(namespace));
         return json;
     }
 
@@ -578,7 +578,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 : null;
 
         var json = namespace.toNamespaceDetailsJson();
-        json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
+        json.setVerified(repositories.isVerified(namespace));
         json.setLogo(logo);
 
         var serverUrl = UrlUtil.getBaseUrl();

@@ -134,9 +134,7 @@ public class NamespaceOwnershipCheckScanner implements Scanner {
             }
         }
 
-        var publishedWith = extVersion.getPublishedWith();
-        var user = publishedWith != null ? publishedWith.getUser() : null;
-        if (user != null && repositories.isVerifiedPublisher(namespace, user)) {
+        if (repositories.isVerified(namespace)) {
             return new Scanner.Invocation.Completed(
                     Scanner.Result.clean(
                             "Namespace '" + namespace.getName()

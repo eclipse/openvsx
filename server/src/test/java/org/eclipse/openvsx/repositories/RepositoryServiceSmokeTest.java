@@ -198,7 +198,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.countReviews(userData),
                 () -> repositories.countExtensions(),
                 () -> repositories.hasMemberships(namespace, "role"),
-                () -> repositories.isVerified(namespace, userData),
+                () -> repositories.isVerified(namespace),
                 () -> repositories.isVerifiedPublisher(namespace, userData),
                 () -> repositories.isVerifiedPublisher(extVersion),
                 () -> repositories.countNamespaces(),

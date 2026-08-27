@@ -270,7 +270,7 @@ class ElasticSearchServiceTest {
         extVer.setPublishedWith(token);
         Mockito.when(repositories.findLatestVersion(extension, null, false, true))
                 .thenReturn(extVer);
-        Mockito.when(repositories.isVerified(namespace, user))
+        Mockito.when(repositories.isVerifiedPublisher(extVer))
                 .thenReturn(!isUnverified && !isUnrelated);
         return extension;
     }
