@@ -10,12 +10,27 @@
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.JoinType;
 import org.jooq.Record;
+import org.jooq.ResultQuery;
+import org.jooq.Row1;
+import org.jooq.Row2;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectQuery;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,7 +38,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import org.eclipse.openvsx.entities.*;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.ListOfStringConverter;
+import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.eclipse.openvsx.entities.SignatureKeyPair;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ChangeEntryJson;
 import org.eclipse.openvsx.json.QueryRequest;
 import org.eclipse.openvsx.json.TargetPlatformActiveJson;
@@ -35,6 +57,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
+import static org.jooq.impl.DSL.*;
 
 @Component
 public class ExtensionVersionJooqRepository {
@@ -60,44 +83,86 @@ public class ExtensionVersionJooqRepository {
             String targetPlatform,
             int maxPreReleaseVersions
     ) {
-        var query = dsl.select(
-                NAMESPACE.ID,
-                NAMESPACE.NAME,
-                EXTENSION.ID,
-                EXTENSION.NAME,
-                EXTENSION_VERSION.ID,
-                EXTENSION_VERSION.VERSION,
-                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
-                EXTENSION_VERSION.REMOVED,
-                EXTENSION_VERSION.TARGET_PLATFORM,
-                EXTENSION_VERSION.PREVIEW,
-                EXTENSION_VERSION.PRE_RELEASE,
-                EXTENSION_VERSION.TIMESTAMP,
-                EXTENSION_VERSION.DISPLAY_NAME,
-                EXTENSION_VERSION.DESCRIPTION,
-                EXTENSION_VERSION.ENGINES,
-                EXTENSION_VERSION.CATEGORIES,
-                EXTENSION_VERSION.TAGS,
-                EXTENSION_VERSION.EXTENSION_KIND,
-                EXTENSION_VERSION.REPOSITORY,
-                EXTENSION_VERSION.SPONSOR_LINK,
-                EXTENSION_VERSION.GALLERY_COLOR,
-                EXTENSION_VERSION.GALLERY_THEME,
-                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
-                EXTENSION_VERSION.DEPENDENCIES,
-                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
-                SIGNATURE_KEY_PAIR.PUBLIC_ID)
-                .from(EXTENSION_VERSION)
-                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
-                .where(EXTENSION_VERSION.ACTIVE.eq(true))
-                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
-
-        if (maxPreReleaseVersions >= 0) {
-            query = query.and(
-                    EXTENSION_VERSION.PRE_RELEASE.isFalse()
-                            .or(isAmongLatestPreReleases(maxPreReleaseVersions)));
+        SelectConditionStep<Record> query;
+        if (maxPreReleaseVersions < 0) {
+            query = dsl.select(
+                    NAMESPACE.ID,
+                    NAMESPACE.NAME,
+                    EXTENSION.ID,
+                    EXTENSION.NAME,
+                    EXTENSION_VERSION.ID,
+                    EXTENSION_VERSION.VERSION,
+                    EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                    EXTENSION_VERSION.REMOVED,
+                    EXTENSION_VERSION.TARGET_PLATFORM,
+                    EXTENSION_VERSION.PREVIEW,
+                    EXTENSION_VERSION.PRE_RELEASE,
+                    EXTENSION_VERSION.TIMESTAMP,
+                    EXTENSION_VERSION.DISPLAY_NAME,
+                    EXTENSION_VERSION.DESCRIPTION,
+                    EXTENSION_VERSION.ENGINES,
+                    EXTENSION_VERSION.CATEGORIES,
+                    EXTENSION_VERSION.TAGS,
+                    EXTENSION_VERSION.EXTENSION_KIND,
+                    EXTENSION_VERSION.REPOSITORY,
+                    EXTENSION_VERSION.SPONSOR_LINK,
+                    EXTENSION_VERSION.GALLERY_COLOR,
+                    EXTENSION_VERSION.GALLERY_THEME,
+                    EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                    EXTENSION_VERSION.DEPENDENCIES,
+                    EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                    SIGNATURE_KEY_PAIR.PUBLIC_ID)
+                    .from(EXTENSION_VERSION)
+                    .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                    .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                    .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                    .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                    .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
+        } else {
+            query = dsl.with("ranked_extension_version").as(
+                    dsl.select(
+                            NAMESPACE.ID,
+                            NAMESPACE.NAME,
+                            EXTENSION.ID,
+                            EXTENSION.NAME,
+                            EXTENSION_VERSION.ID,
+                            EXTENSION_VERSION.VERSION,
+                            EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                            EXTENSION_VERSION.REMOVED,
+                            EXTENSION_VERSION.TARGET_PLATFORM,
+                            EXTENSION_VERSION.PREVIEW,
+                            EXTENSION_VERSION.PRE_RELEASE,
+                            EXTENSION_VERSION.TIMESTAMP,
+                            EXTENSION_VERSION.DISPLAY_NAME,
+                            EXTENSION_VERSION.DESCRIPTION,
+                            EXTENSION_VERSION.ENGINES,
+                            EXTENSION_VERSION.CATEGORIES,
+                            EXTENSION_VERSION.TAGS,
+                            EXTENSION_VERSION.EXTENSION_KIND,
+                            EXTENSION_VERSION.REPOSITORY,
+                            EXTENSION_VERSION.SPONSOR_LINK,
+                            EXTENSION_VERSION.GALLERY_COLOR,
+                            EXTENSION_VERSION.GALLERY_THEME,
+                            EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                            EXTENSION_VERSION.DEPENDENCIES,
+                            EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                            SIGNATURE_KEY_PAIR.PUBLIC_ID,
+                            rowNumber().over(
+                                    partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
+                                            EXTENSION_VERSION.EXTENSION_ID,
+                                            EXTENSION_VERSION.VERSION,
+                                            EXTENSION_VERSION.TARGET_PLATFORM))
+                                    .as("rank"))
+                            .from(EXTENSION_VERSION)
+                            .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                            .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                            .leftJoin(SIGNATURE_KEY_PAIR)
+                            .on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                            .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                            .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds)))
+                    .select()
+                    .from(table(name("ranked_extension_version")))
+                    .where(EXTENSION_VERSION.PRE_RELEASE.isFalse().or(field(name("rank")).le(maxPreReleaseVersions)));
         }
 
         if (targetPlatform != null) {
@@ -105,46 +170,6 @@ public class ExtensionVersionJooqRepository {
         }
 
         return query.fetch().map(this::toExtensionVersion);
-    }
-
-    /**
-     * True for an active pre-release version if fewer than {@code limit} other active pre-releases
-     * of the same extension - regardless of target platform - outrank it.
-     * <p>
-     * Ranking is (major, minor, patch) first, same as everywhere else, but that triple alone ties
-     * for any two rows that don't happen to differ in it - which is the common case, not an edge
-     * case: the same version published across several target platforms shares one (major, minor,
-     * patch) by construction, and a pre-release channel that republishes without bumping semver
-     * (relying on timestamp/build metadata to distinguish builds) produces the same tie. Neither of
-     * two tied rows outranks the other, so on a (major, minor, patch)-only comparison *neither*
-     * counts against the cap - ties can grow without bound and the cap stops capping. Falling back
-     * to {@code timestamp} (as {@code ExtensionVersion.SORT_COMPARATOR} and every DB sort index in
-     * this class already do) breaks most ties; the final {@code id} tiebreaker guarantees a strict
-     * total order so the cap always keeps exactly {@code min(limit, total)} rows, never more.
-     */
-    private Condition isAmongLatestPreReleases(int limit) {
-        var rank = EXTENSION_VERSION.as("ev_pre_release_rank");
-        return DSL.field(
-                dsl.selectCount()
-                        .from(rank)
-                        .where(rank.EXTENSION_ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                        .and(rank.ACTIVE.isTrue())
-                        .and(rank.PRE_RELEASE.isTrue())
-                        .and(
-                                DSL.row(
-                                        rank.SEMVER_MAJOR,
-                                        rank.SEMVER_MINOR,
-                                        rank.SEMVER_PATCH,
-                                        rank.TIMESTAMP,
-                                        rank.ID)
-                                        .gt(
-                                                DSL.row(
-                                                        EXTENSION_VERSION.SEMVER_MAJOR,
-                                                        EXTENSION_VERSION.SEMVER_MINOR,
-                                                        EXTENSION_VERSION.SEMVER_PATCH,
-                                                        EXTENSION_VERSION.TIMESTAMP,
-                                                        EXTENSION_VERSION.ID))))
-                .lt(limit);
     }
 
     public Page<String> findActiveVersionStringsSorted(
