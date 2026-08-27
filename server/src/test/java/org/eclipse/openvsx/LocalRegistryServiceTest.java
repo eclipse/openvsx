@@ -42,6 +42,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.ExtensionReferenceJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishingConfig;
@@ -265,6 +266,39 @@ class LocalRegistryServiceTest {
         assertThat(persistedMembership.getNamespace()).isSameAs(persistedNamespace);
         assertThat(persistedMembership.getUser()).isSameAs(user);
         assertThat(persistedMembership.getRole()).isEqualTo(NamespaceMembership.ROLE_CONTRIBUTOR);
+    }
+
+    /**
+     * Regression coverage for eclipse-openvsx/openvsx#224: extension packs (and dependency lists) may
+     * legitimately reference extensions that are not, or not yet, published here - publishing them is
+     * not blocked on it - so the API needs to say which references actually resolve rather than just
+     * handing out a URL that may 404.
+     */
+    @Test
+    void shouldFlagWhetherEachExtensionReferenceIsAvailable() {
+        var published = new ExtensionReferenceJson();
+        published.setNamespace("foo");
+        published.setExtension("published-one");
+        var unpublished = new ExtensionReferenceJson();
+        unpublished.setNamespace("foo");
+        unpublished.setExtension("not-here-yet");
+
+        when(repositories.findActiveExtension("published-one", "foo")).thenReturn(new Extension());
+        when(repositories.findActiveExtension("not-here-yet", "foo")).thenReturn(null);
+
+        registryService.resolveExtensionReferences(List.of(published, unpublished), "https://open-vsx.org");
+
+        assertThat(published.getUrl()).isEqualTo("https://open-vsx.org/api/foo/published-one");
+        assertThat(published.isAvailable()).isTrue();
+        assertThat(unpublished.getUrl()).isEqualTo("https://open-vsx.org/api/foo/not-here-yet");
+        assertThat(unpublished.isAvailable()).isFalse();
+    }
+
+    @Test
+    void shouldTolerateNullExtensionReferenceList() {
+        // getDependencies()/getBundledExtensions() are null whenever the version records none - must
+        // be a no-op rather than a NullPointerException.
+        registryService.resolveExtensionReferences(null, "https://open-vsx.org");
     }
 
     @Test

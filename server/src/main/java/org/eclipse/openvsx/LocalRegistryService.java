@@ -1230,18 +1230,29 @@ public class LocalRegistryService implements IExtensionRegistry {
                 json.getTargetPlatform(),
                 json.getVersion());
         json.setFiles(toFilesJson(extVersion, resources, fileBaseUrl));
-        setExtensionReferenceUrls(json.getDependencies(), serverUrl);
-        setExtensionReferenceUrls(json.getBundledExtensions(), serverUrl);
+        resolveExtensionReferences(json.getDependencies(), serverUrl);
+        resolveExtensionReferences(json.getBundledExtensions(), serverUrl);
         return json;
     }
 
-    private void setExtensionReferenceUrls(List<ExtensionReferenceJson> refs, String serverUrl) {
+    /**
+     * Fills in the URL and {@code available} flag of every extension-pack / dependency reference.
+     * These are free-form {@code namespace.extension} strings recorded at publish time with no
+     * existence check against the registry (unlike regular dependencies, an extension pack may
+     * legitimately reference extensions that are not, or not yet, published here), so the URL alone
+     * cannot tell a caller whether following it will actually resolve.
+     * <p>
+     * Package-private so a test can exercise it directly rather than mocking everything else
+     * {@link #toExtensionVersionJsonV2} needs just to reach it.
+     */
+    void resolveExtensionReferences(List<ExtensionReferenceJson> refs, String serverUrl) {
         if (refs == null) {
             return;
         }
 
         for (var ref : refs) {
             ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
+            ref.setAvailable(repositories.findActiveExtension(ref.getExtension(), ref.getNamespace()) != null);
         }
     }
 

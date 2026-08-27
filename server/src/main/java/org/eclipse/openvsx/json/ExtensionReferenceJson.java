@@ -38,6 +38,14 @@ public class ExtensionReferenceJson {
     @Schema(hidden = true)
     private String version;
 
+    @Schema(
+        description = "Whether the referenced extension currently exists in the registry. An extension "
+                + "pack or dependency list may reference extensions that have not been published here (yet), "
+                + "or have since been removed - the URL above still points at where it would be, but following "
+                + "it returns a 404 while this is false."
+    )
+    private boolean available;
+
     public String getUrl() {
         return url;
     }
@@ -70,6 +78,14 @@ public class ExtensionReferenceJson {
         this.version = version;
     }
 
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -79,7 +95,8 @@ public class ExtensionReferenceJson {
             return false;
         }
         ExtensionReferenceJson that = (ExtensionReferenceJson) o;
-        return Objects.equals(url, that.url)
+        return available == that.available
+                && Objects.equals(url, that.url)
                 && Objects.equals(namespace, that.namespace)
                 && Objects.equals(extension, that.extension)
                 && Objects.equals(version, that.version);
@@ -87,6 +104,6 @@ public class ExtensionReferenceJson {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, namespace, extension, version);
+        return Objects.hash(url, namespace, extension, version, available);
     }
 }

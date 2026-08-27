@@ -273,10 +273,23 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
     }));
 
     const renderExtensionRef = (ref: ExtensionReference): ReactNode => {
+        const label = `${ref.namespace}.${ref.extension}`;
+        // A pack/dependency may name an extension that isn't published here (yet) - publishing
+        // isn't blocked on it - so a link would just 404. Say so instead of linking out. Absent
+        // (older registry, field not yet sent) is treated as available, same as the field's own docs.
+        if (ref.available === false) {
+            return (
+                <Box key={label}>
+                    <Typography component='span' variant='body2' color='text.disabled'>
+                        {label} (not available)
+                    </Typography>
+                </Box>
+            );
+        }
         return (
-            <Box key={`${ref.namespace}.${ref.extension}`}>
+            <Box key={label}>
                 <StyledRouteLink to={createRoute([ExtensionDetailRoutes.ROOT, ref.namespace, ref.extension])}>
-                    {ref.namespace}.{ref.extension}
+                    {label}
                 </StyledRouteLink>
             </Box>
         );

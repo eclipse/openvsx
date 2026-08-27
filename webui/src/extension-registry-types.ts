@@ -135,6 +135,11 @@ export interface ExtensionReference {
     namespace: string;
     extension: string;
     version?: string;
+    // Whether the referenced extension currently exists in the registry. An extension pack or
+    // dependency list may reference extensions that have not been published here (yet), or have
+    // since been removed. Absent is treated the same as available, for compatibility with older
+    // registries that don't send this field.
+    available?: boolean;
 }
 
 export interface TargetPlatformActive {
