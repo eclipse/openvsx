@@ -2292,12 +2292,12 @@ class AdminAPITest {
         when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
         if (numberOfMembers == 0) {
-            when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            when(repositories.isVerified(namespace))
                     .thenReturn(false);
             when(repositories.findMemberships(namespace))
                     .thenReturn(Streamable.empty());
         } else {
-            when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            when(repositories.isVerified(namespace))
                     .thenReturn(true);
             var memberships = new ArrayList<NamespaceMembership>(numberOfMembers);
 
@@ -2358,8 +2358,6 @@ class AdminAPITest {
             when(
                     repositories.findVersion(extVersion.getVersion(), TargetPlatform.NAME_UNIVERSAL, "baz", "foobar"))
                     .thenReturn(extVersion);
-            when(repositories.findTargetPlatformVersions(extVersion.getVersion(), "baz", "foobar"))
-                    .thenReturn(Streamable.of(versions));
             versions.add(extVersion);
         }
 

@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -46,40 +45,15 @@ public interface ExtensionThreatRepository extends Repository<ExtensionThreat, L
     /** Find all threats with a specific file hash */
     Streamable<ExtensionThreat> findByFileHash(String fileHash);
 
-    /** Count all threats for a scan */
-    long countByScan(ExtensionScan scan);
-
-    /** Check if any threats exist for a scan */
-    boolean existsByScan(ExtensionScan scan);
-
-    /** Check if threats from a specific scanner type exist for a scan */
-    boolean existsByScanAndType(ExtensionScan scan, String type);
-
     /** Find all threats for a scan with a specific scanner type */
     Streamable<ExtensionThreat> findByScanAndType(ExtensionScan scan, String type);
-
-    /** Find all threats detected after a specific date */
-    Streamable<ExtensionThreat> findByDetectedAtAfter(LocalDateTime date);
-
-    /** Count all threats by scanner type */
-    long countByType(String type);
-
-    /** Find all threats for a scan, ordered by detection time */
-    Streamable<ExtensionThreat> findByScanOrderByDetectedAtAsc(ExtensionScan scan);
 
     /** Find distinct scanner types from all threats (for filter options) */
     @Query("SELECT DISTINCT t.type FROM ExtensionThreat t ORDER BY t.type")
     List<String> findDistinctScannerTypes();
 
-    /** Find distinct rule names from all threats (for filter options) */
-    @Query("SELECT DISTINCT t.ruleName FROM ExtensionThreat t ORDER BY t.ruleName")
-    List<String> findDistinctRuleNames();
-
     /** Delete a threat by ID */
     void deleteById(long id);
-
-    /** Delete all threats for a scan */
-    void deleteByScan(ExtensionScan scan);
 
     /** Find all threats for a specific scan job */
     List<ExtensionThreat> findByJobId(long jobId);

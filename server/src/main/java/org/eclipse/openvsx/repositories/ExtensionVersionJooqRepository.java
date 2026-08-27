@@ -435,16 +435,6 @@ public class ExtensionVersionJooqRepository {
                 total != null ? total : 0);
     }
 
-    public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
-        var query = findAllActive();
-        query.addConditions(EXTENSION.NAME.equalIgnoreCase(extensionName));
-        if (targetPlatform != null) {
-            query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
-        }
-
-        return fetch(query);
-    }
-
     private SelectQuery<Record> findAllActive() {
         var query = dsl.selectQuery();
         query.addSelect(

@@ -12,15 +12,17 @@
     }
 }
 
-html,
-body {
+html {
     height: 100%;
+
+    overflow-x: clip;
+    overflow-y: scroll;
 }
 
-/* Full-bleed rules (e.g. the search header divider) may overshoot by the classic
-   scrollbar's half-width; clip instead of growing a horizontal scrollbar. */
-html {
-    overflow-x: clip;
+/* `min-height`, not `height`: a viewport-tall <body> has nothing left to scroll the
+   moment anything sets `overflow: hidden` on it, so the browser resets the offset to 0. */
+body {
+    min-height: 100%;
 }
 
 img {

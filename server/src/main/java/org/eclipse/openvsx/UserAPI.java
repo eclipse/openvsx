@@ -517,7 +517,7 @@ public class UserAPI {
             json.setName(namespace.getName());
             json.setExtensions(extensions);
             var isOwner = membership.getRole().equals(NamespaceMembership.ROLE_OWNER);
-            json.setVerified(isOwner || repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
+            json.setVerified(isOwner || repositories.isVerified(namespace));
             if (isOwner) {
                 json.setMembersUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "members"));
                 json.setRoleUrl(createApiUrl(serverUrl, "user", "namespace", namespace.getName(), "role"));

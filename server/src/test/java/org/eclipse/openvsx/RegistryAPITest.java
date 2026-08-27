@@ -168,7 +168,7 @@ class RegistryAPITest {
     @Test
     void testPublicNamespace() throws Exception {
         var namespace = mockNamespace();
-        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+        Mockito.when(repositories.isVerified(namespace))
                 .thenReturn(false);
 
         mockMvc.perform(get("/api/{namespace}", "foobar"))
@@ -182,7 +182,7 @@ class RegistryAPITest {
     @Test
     void testVerifiedNamespace() throws Exception {
         var namespace = mockNamespace();
-        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+        Mockito.when(repositories.isVerified(namespace))
                 .thenReturn(true);
 
         mockMvc.perform(get("/api/{namespace}", "foobar"))
@@ -3006,7 +3006,7 @@ class RegistryAPITest {
                 .thenReturn(Streamable.of(extVersion));
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.of(extension));
-        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+        Mockito.when(repositories.isVerified(namespace))
                 .thenReturn(false);
         Mockito.when(repositories.countActiveReviews(extension))
                 .thenReturn(0L);
@@ -3389,7 +3389,7 @@ class RegistryAPITest {
             ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
-            Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            Mockito.when(repositories.isVerified(namespace))
                     .thenReturn(true);
             Mockito.when(repositories.canPublishInNamespace(token.getUser(), namespace))
                     .thenReturn(true);
@@ -3443,7 +3443,7 @@ class RegistryAPITest {
             ownerMem.setRole(NamespaceMembership.ROLE_OWNER);
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.of(ownerMem));
-            Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            Mockito.when(repositories.isVerified(namespace))
                     .thenReturn(true);
             if (mode.equals("privileged")) {
                 token.getUser().setRole(UserData.Role.PRIVILEGED);
@@ -3462,7 +3462,7 @@ class RegistryAPITest {
         } else {
             Mockito.when(repositories.findMemberships(namespace, NamespaceMembership.ROLE_OWNER))
                     .thenReturn(Streamable.empty());
-            Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+            Mockito.when(repositories.isVerified(namespace))
                     .thenReturn(false);
             // Mock findMemberships(user) for similarity check - default to empty
             Mockito.when(repositories.findMemberships(token.getUser()))

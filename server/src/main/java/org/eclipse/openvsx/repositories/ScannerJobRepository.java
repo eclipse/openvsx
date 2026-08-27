@@ -61,13 +61,6 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
     List<ScannerJob> findByStatusIn(List<ScannerJob.JobStatus> statuses);
 
     /**
-     * Find scan job by external job ID.
-     *
-     * Used to look up async jobs by their external scanner job ID.
-     */
-    Optional<ScannerJob> findByExternalJobId(String externalJobId);
-
-    /**
      * Find all scan jobs for a specific extension version.
      *
      * @param extensionVersionId The extension version ID
@@ -83,11 +76,6 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
      * rather than creating a new one.
      */
     Optional<ScannerJob> findByScanIdAndScannerType(String scanId, String scannerType);
-
-    /**
-     * Count jobs by status and scanner type.
-     */
-    long countByStatusAndScannerType(ScannerJob.JobStatus status, String scannerType);
 
     /**
      * Count jobs matching any of the given statuses for a scanner type.
@@ -145,8 +133,4 @@ public interface ScannerJobRepository extends Repository<ScannerJob, Long> {
      */
     void deleteByExtensionVersionId(Long extensionVersionId);
 
-    /**
-     * Delete all scan jobs for a specific scan ID.
-     */
-    void deleteByScanId(String scanId);
 }
