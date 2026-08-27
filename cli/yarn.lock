@@ -1422,12 +1422,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.14.8":
-  version: 20.16.7
-  resolution: "@types/node@npm:20.16.7"
+"@types/node@npm:^22.0.0":
+  version: 22.20.1
+  resolution: "@types/node@npm:22.20.1"
   dependencies:
-    undici-types: "npm:~6.19.2"
-  checksum: 10/931d6689af8d02b578a1490475df025063ca1f1c7c064ce891f7ac4da38f28bfda949e79569ac49cb5cf492b2caf91d31aecda6a4efc099e4af4be42ae7315e5
+    undici-types: "npm:~6.21.0"
+  checksum: 10/0949e49d0383569ebd1222a2f65a9adb9328a6a6dbed459a02cdb37c61147755386c004c4ffbe436de59f5859df1774b1dd6bf168f7aeee46884bb190e0c384f
   languageName: node
   linkType: hard
 
@@ -1465,6 +1465,15 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10/9b3b65c51878a82f2775d6b1f106b72495355af9ef28e2211dca2bab4c6a0d25f3bf91f5176b8b9e8bc6f1259c4c7f3b800d3e88df01c4cd9f94e5493ac3b27e
+  languageName: node
+  linkType: hard
+
+"@types/yazl@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "@types/yazl@npm:3.3.1"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/86e3ca32ea38332019bef4836b6be2b1970f7a8f16be1eb8c9d2c3dd26cfc4990af9d5bc56c176f3f8286a5b79458a24ed77db209359638cd1cd947fc0f9485a
   languageName: node
   linkType: hard
 
@@ -2058,6 +2067,13 @@ __metadata:
   dependencies:
     fill-range: "npm:^7.1.1"
   checksum: 10/fad11a0d4697a27162840b02b1fad249c1683cbc510cd5bf1a471f2f8085c046d41094308c577a50a03a579dd99d5a6b3724c4b5e8b14df2c4443844cfcda2c6
+  languageName: node
+  linkType: hard
+
+"buffer-crc32@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "buffer-crc32@npm:1.0.0"
+  checksum: 10/ef3b7c07622435085c04300c9a51e850ec34a27b2445f758eef69b859c7827848c2282f3840ca6c1eef3829145a1580ce540cab03ccf4433827a2b95d3b09ca7
   languageName: node
   linkType: hard
 
@@ -4356,10 +4372,11 @@ __metadata:
     "@stylistic/eslint-plugin": "npm:^2.11.0"
     "@types/follow-redirects": "npm:^1.13.1"
     "@types/is-ci": "npm:^2.0.0"
-    "@types/node": "npm:^20.14.8"
+    "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.5.8"
     "@types/tmp": "npm:^0.2.2"
     "@types/yauzl-promise": "npm:^4"
+    "@types/yazl": "npm:^3.3.1"
     "@typescript-eslint/eslint-plugin": "npm:^8.15.0"
     "@typescript-eslint/parser": "npm:^8.15.0"
     "@vscode/vsce": "npm:^3.7.1"
@@ -4376,6 +4393,7 @@ __metadata:
     typescript: "npm:^5.6.3"
     vitest: "npm:^4.1.10"
     yauzl-promise: "npm:^4.0.0"
+    yazl: "npm:^3.3.1"
   bin:
     ovsx: bin/ovsx
   languageName: unknown
@@ -5453,10 +5471,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~6.19.2":
-  version: 6.19.8
-  resolution: "undici-types@npm:6.19.8"
-  checksum: 10/cf0b48ed4fc99baf56584afa91aaffa5010c268b8842f62e02f752df209e3dea138b372a60a963b3b2576ed932f32329ce7ddb9cb5f27a6c83040d8cd74b7a70
+"undici-types@npm:~6.21.0":
+  version: 6.21.0
+  resolution: "undici-types@npm:6.21.0"
+  checksum: 10/ec8f41aa4359d50f9b59fa61fe3efce3477cc681908c8f84354d8567bb3701fafdddf36ef6bff307024d3feb42c837cf6f670314ba37fc8145e219560e473d14
   languageName: node
   linkType: hard
 
@@ -5805,6 +5823,15 @@ __metadata:
   dependencies:
     buffer-crc32: "npm:~0.2.3"
   checksum: 10/498ea4c6bca26130608c44db166e2f63b3437b94b7ad020ca0c161268d29517e8517146e91e51b78da100ad62feadc1a1a85aaa94aab0b2dc29b355ec75bc8f0
+  languageName: node
+  linkType: hard
+
+"yazl@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "yazl@npm:3.3.1"
+  dependencies:
+    buffer-crc32: "npm:^1.0.0"
+  checksum: 10/021e6c553ea826b90bd20a109ec293f2c2a02ac7c3c361f637e49c4c746b554a0c8e9380b984e12dfee66ca40894836dd8389bec83de2224eafa2eee8cf7be42
   languageName: node
   linkType: hard
 

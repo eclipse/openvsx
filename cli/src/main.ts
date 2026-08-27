@@ -16,6 +16,8 @@ import { publish } from './publish';
 import { unpublish } from './unpublish';
 import { handleError } from './util';
 import { getExtension } from './get';
+import { verify } from './verify';
+import { verifySignature } from './verify-signature';
 import login from './login';
 import logout from './logout';
 import { LIB_VERSION } from './version';
@@ -123,6 +125,26 @@ module.exports = function (argv: string[]): void {
         .action((extensionId: string, { target, versionRange, output, metadata }) => {
             const { registryUrl } = program.opts();
             getExtension({ extensionId, target: target, version: versionRange, registryUrl, output, metadata })
+                .catch(handleError(program.debug));
+        });
+
+    const verifyCmd = program.command('verify <extension.vsix>');
+    verifyCmd.description('Verify a downloaded package\'s signature against the registry\'s public key.')
+        .option('-t, --target <target>', 'Target architecture')
+        .action((packagePath: string, { target }) => {
+            const { registryUrl } = program.opts();
+            verify({ packagePath, target, registryUrl })
+                .catch(handleError(program.debug));
+        });
+
+    const verifySignatureCmd = program.command('verify-signature');
+    verifySignatureCmd.description('Verify a signature file against a package and manifest, entirely offline - like `vsce verify-signature`.')
+        .requiredOption('-i, --packagePath <path>', 'Path to the .vsix package.')
+        .requiredOption('-m, --manifestPath <path>', 'Path to the signature manifest file.')
+        .requiredOption('-s, --signaturePath <path>', 'Path to the signature file.')
+        .requiredOption('-k, --publicKeyPath <path>', 'Path to the registry\'s public key file.')
+        .action(({ packagePath, manifestPath, signaturePath, publicKeyPath }) => {
+            verifySignature({ packagePath, manifestPath, signaturePath, publicKeyPath })
                 .catch(handleError(program.debug));
         });
 
