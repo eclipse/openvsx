@@ -109,8 +109,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.DEPENDENCIES.as("extension_version_dependencies"),
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS.as("extension_version_bundled_extensions"),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID.as("signature_key_pair_public_id"),
-                rowNumber().over(
+                denseRank().over(
                         partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
+                                EXTENSION_VERSION.EXTENSION_ID,
                                 EXTENSION_VERSION.SEMVER_MAJOR.desc(),
                                 EXTENSION_VERSION.SEMVER_MINOR.desc(),
                                 EXTENSION_VERSION.SEMVER_PATCH.desc()))
@@ -501,7 +502,7 @@ public class ExtensionVersionJooqRepository {
             FieldMapper extensionVersionMapper
     ) {
         if (extensionVersionMapper == null) {
-            extensionVersionMapper = new DefaultFieldMapper();
+            extensionVersionMapper = new IdentityFieldMapper();
         }
 
         var extVersion = toExtensionVersionCommon(row, extension, extensionVersionMapper);
@@ -542,7 +543,7 @@ public class ExtensionVersionJooqRepository {
     }
 
     private ExtensionVersion toExtensionVersion(Record row) {
-        var extVersion = toExtensionVersionCommon(row, null, new DefaultFieldMapper());
+        var extVersion = toExtensionVersionCommon(row, null, new IdentityFieldMapper());
         extVersion.setType(ExtensionVersion.Type.MINIMAL);
         return extVersion;
     }
@@ -1710,7 +1711,11 @@ public class ExtensionVersionJooqRepository {
         <T> Field<T> map(Field<T> field);
     }
 
+    /**
+     * Maps field onto provided table field.
+     */
     private record TableFieldMapper(Table<Record> table) implements FieldMapper {
+        @Override
         public <T> Field<T> map(Field<T> field) {
             if (field instanceof TableField<?, ?> tableField && tableField.getTable() != table) {
                 return field;
@@ -1719,17 +1724,25 @@ public class ExtensionVersionJooqRepository {
         }
     }
 
-    private static class DefaultFieldMapper implements FieldMapper {
+    /**
+     * The identity field mapper: maps field onto itself.
+     */
+    private static class IdentityFieldMapper implements FieldMapper {
+        @Override
         public <T> Field<T> map(Field<T> field) {
             return field;
         }
     }
 
+    /**
+     * Mapper that converts {@code "table"."field"} to {@code "table_field"} named fields, retaining type.
+     */
     private static class RankedFieldMapper implements FieldMapper {
+        @Override
         public <T> Field<T> map(Field<T> field) {
             return field(
                     name(field.getQualifiedName().toString().replace("\"", "").replace(".", "_")),
-                    field.getType());
+                    field.getDataType());
         }
     }
 }
