@@ -125,6 +125,15 @@ describe('verify-signature', () => {
         await expect(verifySignature(fixture)).rejects.toThrow('the package digest does not match the manifest');
     });
 
+    it('distinguishes a missing package digest from a mismatched one', async () => {
+        const fixture = await givenSignedPackage({ 'extension/package.json': Buffer.from('{"name":"bar"}') });
+        const manifest = JSON.parse(fs.readFileSync(fixture.manifestPath, 'utf-8'));
+        delete manifest.package.digests.sha256;
+        fs.writeFileSync(fixture.manifestPath, JSON.stringify(manifest));
+
+        await expect(verifySignature(fixture)).rejects.toThrow('the manifest does not record a package digest');
+    });
+
     it('identifies which entry does not match its digest', async () => {
         const fixture = await givenSignedPackage({
             'extension/package.json': Buffer.from('{"name":"bar"}'),
@@ -136,6 +145,19 @@ describe('verify-signature', () => {
         fs.writeFileSync(fixture.manifestPath, JSON.stringify(manifest));
 
         await expect(verifySignature(fixture)).rejects.toThrow("'extension/README.md' does not match its digest in the manifest");
+    });
+
+    it('distinguishes an entry with no recorded digest from one with a mismatched digest', async () => {
+        const fixture = await givenSignedPackage({
+            'extension/package.json': Buffer.from('{"name":"bar"}'),
+            'extension/README.md': Buffer.from('hello')
+        });
+        const manifest = JSON.parse(fs.readFileSync(fixture.manifestPath, 'utf-8'));
+        const key = Buffer.from('extension/README.md', 'utf-8').toString('base64');
+        delete manifest.entries[key].digests.sha256;
+        fs.writeFileSync(fixture.manifestPath, JSON.stringify(manifest));
+
+        await expect(verifySignature(fixture)).rejects.toThrow("'extension/README.md' has no recorded digest in the manifest");
     });
 
     it('identifies an entry present in the package but missing from the manifest', async () => {

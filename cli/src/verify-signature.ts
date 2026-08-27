@@ -13,7 +13,7 @@
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import { readAllZipEntries } from './zip';
+import { hashAllZipEntries } from './zip';
 import { VerifySignatureOptions } from './verify-signature-options';
 
 interface DigestEntry {
@@ -84,16 +84,20 @@ function sha256Base64(content: Buffer): string {
 async function checkManifest(packagePath: string, packageBytes: Buffer, manifest: SignatureManifest): Promise<string[]> {
     const issues: string[] = [];
 
-    const actualPackageDigest = sha256Base64(packageBytes);
-    if (manifest.package?.digests?.sha256 !== actualPackageDigest) {
+    const packageDigest = manifest.package?.digests?.sha256;
+    if (packageDigest === undefined) {
+        issues.push('the manifest does not record a package digest');
+    } else if (packageDigest !== sha256Base64(packageBytes)) {
         issues.push('the package digest does not match the manifest');
     }
 
     const manifestEntries = manifest.entries ?? {};
     const seenKeys = new Set<string>();
 
-    const packageEntries = await readAllZipEntries(packagePath);
-    for (const [name, content] of packageEntries) {
+    // Streamed straight into a digest one entry at a time, rather than buffering every entry's
+    // full content into memory alongside the already-loaded package bytes.
+    const packageEntryDigests = await hashAllZipEntries(packagePath);
+    for (const [name, actualDigest] of packageEntryDigests) {
         const key = Buffer.from(name, 'utf-8').toString('base64');
         seenKeys.add(key);
         const entry = manifestEntries[key];
@@ -101,7 +105,10 @@ async function checkManifest(packagePath: string, packageBytes: Buffer, manifest
             issues.push(`'${name}' is present in the package but missing from the manifest`);
             continue;
         }
-        if (entry.digests?.sha256 !== sha256Base64(content)) {
+        const entryDigest = entry.digests?.sha256;
+        if (entryDigest === undefined) {
+            issues.push(`'${name}' has no recorded digest in the manifest`);
+        } else if (entryDigest !== actualDigest) {
             issues.push(`'${name}' does not match its digest in the manifest`);
         }
     }
