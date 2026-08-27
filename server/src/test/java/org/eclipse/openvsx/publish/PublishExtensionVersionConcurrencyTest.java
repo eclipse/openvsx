@@ -42,6 +42,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.TargetPlatform;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -282,7 +283,12 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
 
     private ExtensionVersion publish(String targetPlatform) {
         try (var processor = mockProcessor(targetPlatform)) {
-            return publishHandler.createExtensionVersion(processor, publishToken(), LocalDateTime.now(), false);
+            return publishHandler
+                    .createExtensionVersion(
+                            processor,
+                            new AccessTokenAuthentication(publishToken().getUser(), publishToken().getType()),
+                            LocalDateTime.now(),
+                            false);
         }
     }
 
@@ -318,6 +324,7 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
         var token = new PersonalAccessToken();
         token.setId(tokenId);
         token.setUser(user);
+        token.setType(PersonalAccessTokenType.LLT);
         return token;
     }
 

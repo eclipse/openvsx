@@ -476,12 +476,11 @@ class ExtensionSoftDeleteTest extends AbstractPostgresContainerTest {
     private void persistVersion(String version, String targetPlatform, boolean active, boolean removed) {
         new TransactionTemplate(txManager).executeWithoutResult(status -> {
             var extension = em.find(Extension.class, extensionId);
-            var token = em.getReference(PersonalAccessToken.class, ownerTokenId);
             var extVersion = new ExtensionVersion();
             extVersion.setVersion(version);
             extVersion.setTargetPlatform(targetPlatform);
             extVersion.setExtension(extension);
-            extVersion.setPublishedWith(token);
+            extVersion.setPublishedBy(em.getReference(UserData.class, ownerId));
             extVersion.setActive(active);
             extVersion.setRemoved(removed);
             if (removed) {

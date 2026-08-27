@@ -45,6 +45,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 import org.eclipse.openvsx.web.PreviewOperation;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
@@ -1493,7 +1494,7 @@ public class RegistryAPI {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
 
-            var json = local.publish(content, user);
+            var json = local.publish(content, new LoggedInAuthentication(user));
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), json.getVersion());
             return ResponseEntity.status(HttpStatus.CREATED)

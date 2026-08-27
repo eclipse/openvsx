@@ -17,7 +17,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import org.eclipse.openvsx.entities.ExtensionScan;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 
 /**
@@ -28,41 +27,14 @@ import org.eclipse.openvsx.entities.ScanCheckResult;
 public interface ScanCheckResultRepository extends JpaRepository<ScanCheckResult, Long> {
 
     /**
-     * Find all check results for a scan, ordered by start time.
-     */
-    List<ScanCheckResult> findByScanOrderByStartedAtAsc(ExtensionScan scan);
-
-    /**
      * Find all check results for a scan ID, ordered by start time.
      */
     List<ScanCheckResult> findByScanIdOrderByStartedAtAsc(long scanId);
 
     /**
-     * Find check results by scan and category.
-     */
-    List<ScanCheckResult> findByScanAndCategoryOrderByStartedAtAsc(
-            ExtensionScan scan,
-            ScanCheckResult.CheckCategory category
-    );
-
-    /**
-     * Find check result by scan and check type.
-     * Returns the most recent result if multiple exist.
-     */
-    ScanCheckResult findFirstByScanAndCheckTypeOrderByStartedAtDesc(
-            ExtensionScan scan,
-            String checkType
-    );
-
-    /**
      * Check if a check result exists for a scan and check type.
      */
     boolean existsByScanIdAndCheckType(long scanId, String checkType);
-
-    /**
-     * Delete all check results for a scan.
-     */
-    void deleteByScan(ExtensionScan scan);
 
     /**
      * Delete the check result recorded for a specific scanner job.

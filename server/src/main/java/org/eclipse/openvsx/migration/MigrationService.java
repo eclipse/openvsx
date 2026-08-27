@@ -43,8 +43,6 @@ public class MigrationService {
             RenameDownloadsJobRequestHandler.class,
             "ExtractVsixManifestMigration",
             ExtractVsixManifestsJobRequestHandler.class,
-            "FixTargetPlatformMigration",
-            FixTargetPlatformsJobRequestHandler.class,
             "GenerateSha256ChecksumMigration",
             GenerateSha256ChecksumJobRequestHandler.class,
             "CheckPotentiallyMaliciousExtensionVersions",

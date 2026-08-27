@@ -38,6 +38,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
 import static jakarta.transaction.Transactional.TxType;
 import static java.util.Objects.requireNonNull;
@@ -80,18 +81,6 @@ public class AccessTokenService {
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
         return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.LLT);
-    }
-
-    /**
-     * Creates a one-time usable token for user. Depending on configuration, the token expiration may be set as well.
-     */
-    @Transactional
-    public AccessTokenJson createOneTimeAccessToken(UserData user, String description) {
-        requireNonNull(user);
-        final LocalDateTime expiresTimestamp = config.isOttTokenExpiryEnabled()
-                ? TimeUtil.getCurrentUTC().plus(config.getOttExpiration())
-                : null;
-        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.OTT);
     }
 
     /**
@@ -193,7 +182,7 @@ public class AccessTokenService {
     // throws once this method returns null - silently discarding the fact that the token was touched
     // or found expired.
     @Transactional(TxType.REQUIRES_NEW)
-    public PersonalAccessToken useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
+    public AccessTokenAuthentication useAccessToken(String tokenValue, AccessTokenAction accessTokenAction) {
         var token = repositories.findPersonalAccessToken(hashTokenValue(tokenValue));
         if (token == null) {
             // assume DB contains token v0; fetch and upgrade if found active token
@@ -205,6 +194,14 @@ public class AccessTokenService {
         }
         // existence + active
         if (token == null || !token.isActive()) {
+            return null;
+        }
+        // personal_access_token.user_data has no NOT NULL constraint at the schema level, so a
+        // legacy/corrupt row could in principle have no user attached. Callers treat a non-null
+        // AccessTokenAuthentication as a fully authenticated request and dereference userData()
+        // unguarded, so surface that here as "no valid authentication" rather than handing out a
+        // token authentication for nobody and letting it NPE further down.
+        if (token.getUser() == null) {
             return null;
         }
         // expiration - <=, not <, to match expireAccessTokens' "expires_timestamp <= ?1" and
@@ -228,10 +225,11 @@ public class AccessTokenService {
         if (accessTokenAction.isUsing()) {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
-                token.setActive(false);
+                // Deleted outright rather than deactivated: nothing reads the row again afterwards.
+                entityManager.remove(token);
             }
         }
-        return token;
+        return new AccessTokenAuthentication(token.getUser(), token.getType());
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {

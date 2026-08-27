@@ -83,8 +83,8 @@ public class OrphanNamespaceMigration {
         var publishers = new LinkedHashSet<UserData>();
         for (var extension : extensions) {
             for (var extVersion : repositories.findActiveVersions(extension)) {
-                if (extVersion.getPublishedWith() != null) {
-                    publishers.add(extVersion.getPublishedWith().getUser());
+                if (extVersion.getPublishedBy() != null) {
+                    publishers.add(extVersion.getPublishedBy());
                 }
             }
         }

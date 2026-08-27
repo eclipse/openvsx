@@ -459,16 +459,6 @@ public class ExtensionVersionJooqRepository {
                 total != null ? total : 0);
     }
 
-    public List<ExtensionVersion> findAllActiveByExtensionName(String targetPlatform, String extensionName) {
-        var query = findAllActive();
-        query.addConditions(EXTENSION.NAME.equalIgnoreCase(extensionName));
-        if (targetPlatform != null) {
-            query.addConditions(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
-        }
-
-        return fetch(query);
-    }
-
     private SelectQuery<Record> findAllActive() {
         var query = dsl.selectQuery();
         query.addSelect(
@@ -490,7 +480,6 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -517,15 +506,12 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
         query.addFrom(EXTENSION_VERSION);
         query.addJoin(EXTENSION, EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID));
         query.addJoin(NAMESPACE, NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID));
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
@@ -580,11 +566,10 @@ public class ExtensionVersionJooqRepository {
         user.setProviderUrl(row.get(USER_DATA.PROVIDER_URL));
         user.setProvider(row.get(USER_DATA.PROVIDER));
 
-        var token = new PersonalAccessToken();
-        token.setUser(user);
-        token.setType(PersonalAccessTokenType.valueOf(row.get(PERSONAL_ACCESS_TOKEN.TYPE)));
-
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(user);
+        var publishedWithTt = row.get(extensionVersionMapper.map(EXTENSION_VERSION.PUBLISHED_WITH_TT));
+        extVersion
+                .setPublishedWithTt(publishedWithTt != null ? PersonalAccessTokenType.valueOf(publishedWithTt) : null);
         extVersion.setType(ExtensionVersion.Type.REGULAR);
         return extVersion;
     }
@@ -730,9 +715,8 @@ public class ExtensionVersionJooqRepository {
                 targetPlatformsActive,
                 targetPlatformsRemoved)
                 .from(EXTENSION_VERSION)
-                .join(PERSONAL_ACCESS_TOKEN).on(PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID))
                 .where(EXTENSION_VERSION.EXTENSION_ID.eq(extension.getId()))
-                .and(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()))
+                .and(EXTENSION_VERSION.PUBLISHED_BY_ID.eq(user.getId()))
                 .groupBy(
                         EXTENSION_VERSION.SEMVER_MAJOR,
                         EXTENSION_VERSION.SEMVER_MINOR,
@@ -852,7 +836,6 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -879,12 +862,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
@@ -923,7 +903,6 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE,
                 EXTENSION_VERSION.ID,
                 EXTENSION_VERSION.VERSION,
                 EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
@@ -950,12 +929,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
@@ -1025,8 +1001,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
-                EXTENSION_VERSION.PUBLISHED_WITH_ID);
+                EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
         var latest = latestQuery.asTable();
 
@@ -1070,6 +1047,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1077,8 +1055,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE);
+                USER_DATA.PROVIDER);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1086,11 +1063,7 @@ public class ExtensionVersionJooqRepository {
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
                 SIGNATURE_KEY_PAIR.ID.eq(latest.field(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID)));
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_BY_ID)));
         query.addConditions(EXTENSION.ID.in(extensionIds));
         return query.fetch(row -> {
             var extVersion = toExtensionVersionFull(row, null, new TableFieldMapper(latest));
@@ -1193,8 +1166,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
-                EXTENSION_VERSION.PUBLISHED_WITH_ID);
+                EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
         var latest = latestQuery.asTable();
 
@@ -1241,6 +1215,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1248,8 +1223,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE);
+                USER_DATA.PROVIDER);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1257,12 +1231,8 @@ public class ExtensionVersionJooqRepository {
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
                 SIGNATURE_KEY_PAIR.ID.eq(latest.field(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID)));
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
-        query.addConditions(PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_BY_ID)));
+        query.addConditions(USER_DATA.ID.eq(user.getId()));
         return query.fetch(row -> {
             var extVersion = toExtensionVersionFull(row, null, new TableFieldMapper(latest));
             extVersion.getExtension().getNamespace().setDisplayName(row.get(NAMESPACE.DISPLAY_NAME));
@@ -1302,8 +1272,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID,
-                EXTENSION_VERSION.PUBLISHED_WITH_ID);
+                EXTENSION_VERSION.PUBLISHED_BY_ID);
         latestQuery.addConditions(EXTENSION_VERSION.EXTENSION_ID.eq(EXTENSION.ID));
         var latest = latestQuery.asTable();
 
@@ -1350,6 +1321,7 @@ public class ExtensionVersionJooqRepository {
                 latest.field(EXTENSION_VERSION.QNA),
                 latest.field(EXTENSION_VERSION.DEPENDENCIES),
                 latest.field(EXTENSION_VERSION.BUNDLED_EXTENSIONS),
+                latest.field(EXTENSION_VERSION.PUBLISHED_WITH_TT),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID,
                 USER_DATA.ID,
                 USER_DATA.ROLE,
@@ -1357,8 +1329,7 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.FULL_NAME,
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
-                USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE);
+                USER_DATA.PROVIDER);
         query.addFrom(NAMESPACE);
         query.addJoin(EXTENSION, EXTENSION.NAMESPACE_ID.eq(NAMESPACE.ID));
         query.addJoin(latest, JoinType.CROSS_APPLY, DSL.condition(true));
@@ -1366,13 +1337,9 @@ public class ExtensionVersionJooqRepository {
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,
                 SIGNATURE_KEY_PAIR.ID.eq(latest.field(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID)));
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_WITH_ID)));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(latest.field(EXTENSION_VERSION.PUBLISHED_BY_ID)));
         query.addConditions(
-                PERSONAL_ACCESS_TOKEN.USER_DATA.eq(user.getId()),
+                USER_DATA.ID.eq(user.getId()),
                 NAMESPACE.NAME.equalIgnoreCase(namespace),
                 EXTENSION.NAME.equalIgnoreCase(extension));
         return query.fetchOne(row -> {
@@ -1538,7 +1505,6 @@ public class ExtensionVersionJooqRepository {
                 USER_DATA.AVATAR_URL,
                 USER_DATA.PROVIDER_URL,
                 USER_DATA.PROVIDER,
-                PERSONAL_ACCESS_TOKEN.TYPE,
                 NAMESPACE.ID,
                 NAMESPACE.NAME,
                 NAMESPACE.DISPLAY_NAME,
@@ -1580,12 +1546,9 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.QNA,
                 EXTENSION_VERSION.DEPENDENCIES,
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                EXTENSION_VERSION.PUBLISHED_WITH_TT,
                 SIGNATURE_KEY_PAIR.PUBLIC_ID);
-        query.addJoin(
-                PERSONAL_ACCESS_TOKEN,
-                JoinType.LEFT_OUTER_JOIN,
-                PERSONAL_ACCESS_TOKEN.ID.eq(EXTENSION_VERSION.PUBLISHED_WITH_ID));
-        query.addJoin(USER_DATA, USER_DATA.ID.eq(PERSONAL_ACCESS_TOKEN.USER_DATA));
+        query.addJoin(USER_DATA, USER_DATA.ID.eq(EXTENSION_VERSION.PUBLISHED_BY_ID));
         query.addJoin(
                 SIGNATURE_KEY_PAIR,
                 JoinType.LEFT_OUTER_JOIN,

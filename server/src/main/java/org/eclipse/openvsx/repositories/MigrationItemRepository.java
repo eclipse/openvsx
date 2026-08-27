@@ -21,5 +21,4 @@ public interface MigrationItemRepository extends Repository<MigrationItem, Long>
 
     long countByMigrationScheduledFalse();
 
-    Slice<MigrationItem> findByJobName(String jobName, Pageable page);
 }

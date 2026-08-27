@@ -346,9 +346,7 @@ class UserAPITest {
         extension.setActive(false);
         var namespace = extension.getNamespace();
 
-        var token = new PersonalAccessToken();
-        token.setUser(userData);
-        latest.setPublishedWith(token);
+        latest.setPublishedBy(userData);
 
         var membership = new NamespaceMembership();
         membership.setNamespace(namespace);
@@ -1079,7 +1077,7 @@ class UserAPITest {
             Mockito.when(repositories.findFiles(extVersion))
                     .thenReturn(Streamable.empty());
             Mockito.when(
-                    repositories.findVersionPublishedWithUser(
+                    repositories.findVersionPublishedByUser(
                             user,
                             extVersion.getVersion(),
                             TargetPlatform.NAME_UNIVERSAL,

@@ -313,7 +313,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
 
             var newVersion = "0.2.0";
             var oldVersion = extVersion.getVersion();
-            try (var newTempFile = insertNewVersion(extension, extVersion.getPublishedWith(), newVersion)) {
+            try (var newTempFile = insertNewVersion(extension, extVersion.getPublishedBy(), newVersion)) {
 
                 var json = registry.getExtension(
                         namespace.getName(),
@@ -368,7 +368,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
 
             var newVersion = "0.2.0";
             var oldVersion = extVersion.getVersion();
-            try (var newTempFile = insertNewVersion(extension, extVersion.getPublishedWith(), newVersion)) {
+            try (var newTempFile = insertNewVersion(extension, extVersion.getPublishedBy(), newVersion)) {
                 newTempFile.getResource().getExtension().setPreRelease(true);
                 extensions.updateExtension(extension);
                 assertNull(getCache(CACHE_EXTENSION_JSON).get(cacheKey, ExtensionJson.class));
@@ -443,7 +443,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         return admin;
     }
 
-    private TempFile insertNewVersion(Extension extension, PersonalAccessToken token, String newVersion)
+    private TempFile insertNewVersion(Extension extension, UserData user, String newVersion)
             throws IOException {
         var extVersion = new ExtensionVersion();
         extVersion.setPreview(false);
@@ -456,7 +456,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         extVersion.setCategories(Collections.emptyList());
         extVersion.setTags(Collections.emptyList());
         extVersion.setExtension(extension);
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(user);
         entityManager.persist(extVersion);
 
         // populate extension versions list
@@ -520,7 +520,7 @@ class CacheServiceTest extends AbstractPostgresContainerTest {
         extVersion.setCategories(Collections.emptyList());
         extVersion.setTags(Collections.emptyList());
         extVersion.setExtension(extension);
-        extVersion.setPublishedWith(token);
+        extVersion.setPublishedBy(user);
         entityManager.persist(extVersion);
 
         // populate extension versions list

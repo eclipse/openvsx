@@ -222,7 +222,7 @@ class ExtensionActiveFlagCheckTest extends AbstractPostgresContainerTest {
             extVersion.setVersion(version);
             extVersion.setTargetPlatform(targetPlatform);
             extVersion.setExtension(extension);
-            extVersion.setPublishedWith(token);
+            extVersion.setPublishedBy(token.getUser());
             extVersion.setActive(active);
             extVersion.setRemoved(removed);
             if (removed) {

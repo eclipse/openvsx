@@ -19,7 +19,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.AdminScanDecision;
 import org.eclipse.openvsx.entities.ExtensionScan;
@@ -44,16 +43,6 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
     @Query("SELECT d FROM AdminScanDecision d JOIN FETCH d.decidedBy WHERE d.scan.id = :scanId")
     AdminScanDecision findByScanId(long scanId);
 
-    /** Check if a decision exists for a scan */
-    boolean existsByScan(ExtensionScan scan);
-
-    /** Check if a decision exists for a scan by ID */
-    @Query("SELECT CASE WHEN COUNT(d) > 0 THEN true ELSE false END FROM AdminScanDecision d WHERE d.scan.id = :scanId")
-    boolean existsByScanId(long scanId);
-
-    /** Find all decisions with a specific decision value */
-    Streamable<AdminScanDecision> findByDecision(String decision);
-
     /** Count all ALLOWED decisions */
     long countByDecision(String decision);
 
@@ -69,21 +58,6 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
               AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR decided_at <= :startedTo)
             """, nativeQuery = true)
     long countByDecisionAndDateRange(String decision, LocalDateTime startedFrom, LocalDateTime startedTo);
-
-    /**
-     * Count decisions filtered by enforcement status of the associated scan's validation failures/threats.
-     * Used when enforcement filter is applied to scan counts.
-     */
-    @Query(
-        value = """
-                SELECT COUNT(*) FROM admin_scan_decision d
-                WHERE d.decision = :decision
-                  AND (EXISTS (SELECT 1 FROM extension_validation_failure f WHERE f.scan_id = d.scan_id AND f.enforced = :enforcedOnly)
-                       OR EXISTS (SELECT 1 FROM extension_threat t WHERE t.scan_id = d.scan_id AND t.enforced = :enforcedOnly))
-                """,
-        nativeQuery = true
-    )
-    long countByDecisionAndEnforcement(String decision, boolean enforcedOnly);
 
     /**
      * Counts decisions where the associated scan has matching validation failures or threats.
@@ -131,6 +105,4 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
     /** Delete a decision by ID */
     void deleteById(long id);
 
-    /** Delete the decision for a scan */
-    void deleteByScan(ExtensionScan scan);
 }

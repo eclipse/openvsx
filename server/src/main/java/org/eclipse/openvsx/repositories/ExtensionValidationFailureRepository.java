@@ -12,7 +12,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -36,41 +35,11 @@ public interface ExtensionValidationFailureRepository extends Repository<Extensi
     /** Find all validation failures for a specific scan */
     Streamable<ExtensionValidationFailure> findByScan(ExtensionScan scan);
 
-    /** Find all validation failures of a specific check type */
-    Streamable<ExtensionValidationFailure> findByCheckType(String checkType);
-
     /** Find all validation failures for a scan with a specific check type */
     Streamable<ExtensionValidationFailure> findByScanAndCheckType(ExtensionScan scan, String checkType);
 
-    /** Find all validation failures detected after a specific date */
-    Streamable<ExtensionValidationFailure> findByDetectedAtAfter(LocalDateTime date);
-
-    /** Count all validation failures for a specific scan */
-    long countByScan(ExtensionScan scan);
-
-    /** Count all validation failures of a specific check type */
-    long countByCheckType(String checkType);
-
-    /** Check if any validation failures exist for a scan */
-    boolean existsByScan(ExtensionScan scan);
-
-    /** Check if validation failures of a specific type exist for a scan */
-    boolean existsByScanAndCheckType(ExtensionScan scan, String checkType);
-
-    /** Delete all validation failures for a scan */
-    void deleteByScan(ExtensionScan scan);
-
     /** Delete a validation failure by ID */
     void deleteById(long id);
-
-    /** Find all validation failures for a scan, ordered by detection time */
-    Streamable<ExtensionValidationFailure> findByScanOrderByDetectedAtAsc(ExtensionScan scan);
-
-    /**
-     * Returns a sorted list of distinct rule names.
-     */
-    @Query("select distinct f.ruleName from ExtensionValidationFailure f order by f.ruleName")
-    List<String> findDistinctRuleNames();
 
     /**
      * Returns a sorted list of distinct check types.

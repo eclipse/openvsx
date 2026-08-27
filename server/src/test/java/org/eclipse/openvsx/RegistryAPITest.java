@@ -2300,7 +2300,7 @@ class RegistryAPITest {
         // the version lookup is scoped to the caller, so it is not found.
         var token = mockForDelete(false, true);
         Mockito.when(
-                repositories.findVersionPublishedWithUser(
+                repositories.findVersionPublishedByUser(
                         token.getUser(),
                         "1.0.0",
                         TargetPlatform.NAME_UNIVERSAL,
@@ -3331,7 +3331,7 @@ class RegistryAPITest {
             Mockito.when(repositories.findVersion(versionName, TargetPlatform.NAME_UNIVERSAL, "bar", "foo"))
                     .thenReturn(extVersion);
             Mockito.when(
-                    repositories.findVersionPublishedWithUser(
+                    repositories.findVersionPublishedByUser(
                             user,
                             versionName,
                             TargetPlatform.NAME_UNIVERSAL,
