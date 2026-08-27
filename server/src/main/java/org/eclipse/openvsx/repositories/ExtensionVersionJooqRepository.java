@@ -113,7 +113,9 @@ public class ExtensionVersionJooqRepository {
                         partitionBy(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.PRE_RELEASE).orderBy(
                                 EXTENSION_VERSION.SEMVER_MAJOR.desc(),
                                 EXTENSION_VERSION.SEMVER_MINOR.desc(),
-                                EXTENSION_VERSION.SEMVER_PATCH.desc()))
+                                EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                                EXTENSION_VERSION.TIMESTAMP.desc(),
+                                EXTENSION_VERSION.ID.desc()))
                         .as("rank"))
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
@@ -123,12 +125,15 @@ public class ExtensionVersionJooqRepository {
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
         if (maxPreReleaseVersions >= 0) {
-            query = dsl.with("ranked_extension_version").as(query)
+            var rankedExtensionVersion = name("ranked_extension_version").as(query);
+            query = dsl.with(rankedExtensionVersion)
                     .select()
-                    .from(table(name("ranked_extension_version")))
+                    .from(rankedExtensionVersion)
                     .where(
-                            field(name("extension_version_pre_release")).eq(false)
-                                    .or(field(name("rank")).lessOrEqual(maxPreReleaseVersions)));
+                            rankedExtensionVersion.field("extension_version_pre_release", Boolean.class).eq(false)
+                                    .or(
+                                            rankedExtensionVersion.field("rank", Integer.class)
+                                                    .lessOrEqual(maxPreReleaseVersions)));
         }
 
         if (targetPlatform != null) {
