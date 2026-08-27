@@ -122,10 +122,6 @@ public class ExtensionVersionJooqRepository {
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
-        if (targetPlatform != null) {
-            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
-        }
-
         if (maxPreReleaseVersions >= 0) {
             query = dsl.with("ranked_extension_version").as(query)
                     .select()
@@ -133,6 +129,10 @@ public class ExtensionVersionJooqRepository {
                     .where(
                             field(name("extension_version_pre_release")).eq(false)
                                     .or(field(name("rank")).lessOrEqual(maxPreReleaseVersions)));
+        }
+
+        if (targetPlatform != null) {
+            query = query.and(field(name("extension_version_target_platform")).eq(targetPlatform));
         }
 
         return query.fetch().map(this::toRankedExtensionVersion);
