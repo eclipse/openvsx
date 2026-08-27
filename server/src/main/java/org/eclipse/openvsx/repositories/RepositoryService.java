@@ -494,17 +494,23 @@ public class RepositoryService {
         return membershipJooqRepo.hasMembership(user, namespace);
     }
 
-    public boolean isVerified(Namespace namespace, UserData user) {
-        return membershipJooqRepo.isVerified(namespace, user);
+    /**
+     * Whether {@code namespace} itself is verified, i.e. has at least one owner. Unlike
+     * {@link #isVerifiedPublisher(Namespace, UserData)}, this says nothing about any particular user.
+     */
+    public boolean isVerified(Namespace namespace) {
+        return hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
     }
 
     /**
      * Whether {@code user} counts as a verified publisher for {@code namespace}: a privileged user
-     * bypasses per-namespace verification entirely; otherwise this defers to
-     * {@link #isVerified(Namespace, UserData)} (member of a namespace with at least one owner).
+     * bypasses per-namespace verification entirely; otherwise they must currently be a member of the
+     * namespace (any role) and the namespace itself must have at least one owner. Namespace ownership
+     * alone does not make every user a verified publisher for it, only members of it (or the
+     * privileged).
      */
     public boolean isVerifiedPublisher(Namespace namespace, UserData user) {
-        return user.isPrivileged() || isVerified(namespace, user);
+        return user.isPrivileged() || membershipJooqRepo.isVerified(namespace, user);
     }
 
     /**

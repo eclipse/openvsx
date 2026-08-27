@@ -1043,7 +1043,7 @@ class UserAPITest {
                 .thenReturn(namespace);
         Mockito.when(repositories.findActiveExtensions(namespace))
                 .thenReturn(Streamable.empty());
-        Mockito.when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER))
+        Mockito.when(repositories.isVerified(namespace))
                 .thenReturn(false);
         return namespace;
     }

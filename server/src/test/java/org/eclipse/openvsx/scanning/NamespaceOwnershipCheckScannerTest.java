@@ -26,8 +26,6 @@ import org.eclipse.openvsx.adapter.ExtensionQueryResult;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
-import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,7 +113,7 @@ class NamespaceOwnershipCheckScannerTest {
                 scannerRegistry);
     }
 
-    private ExtensionVersion extensionVersion(UserData publisher) {
+    private ExtensionVersion extensionVersion() {
         var namespace = new Namespace();
         namespace.setName("acme");
 
@@ -125,17 +123,12 @@ class NamespaceOwnershipCheckScannerTest {
 
         var extVersion = new ExtensionVersion();
         extVersion.setExtension(extension);
-        if (publisher != null) {
-            var token = new PersonalAccessToken();
-            token.setUser(publisher);
-            extVersion.setPublishedWith(token);
-        }
         return extVersion;
     }
 
     @Test
     void startScan_throws_whenEnforcedAndUpstreamIsDown() {
-        var extVersion = extensionVersion(new UserData());
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenThrow(new RestClientException("whatever"));
 
@@ -144,7 +137,7 @@ class NamespaceOwnershipCheckScannerTest {
 
     @Test
     void startScan_isClean_whenNotEnforcedAndUpstreamIsDown() throws Exception {
-        var extVersion = extensionVersion(new UserData());
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenThrow(new RestClientException("whatever"));
 
@@ -155,7 +148,7 @@ class NamespaceOwnershipCheckScannerTest {
 
     @Test
     void startScan_isClean_whenNamespaceDoesNotExistUpstream() throws Exception {
-        var extVersion = extensionVersion(new UserData());
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(EMPTY);
 
@@ -163,14 +156,14 @@ class NamespaceOwnershipCheckScannerTest {
                 .startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
-        verify(repositories, never()).isVerifiedPublisher(any(), any());
+        verify(repositories, never()).isVerified(any(Namespace.class));
     }
 
     @Test
     void startScan_isClean_whenSearchHitsAreFromUnrelatedPublishers() throws Exception {
         // The upstream search is loose (free text), so it may return extensions that merely mention
         // the namespace name without actually being published under it - those must not count.
-        var extVersion = extensionVersion(new UserData());
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(UNRELATED_PUBLISHERS);
 
@@ -178,16 +171,15 @@ class NamespaceOwnershipCheckScannerTest {
                 .startScan(new Scanner.Command(1L, "scan-1"));
 
         assertTrue(invocation.result().isClean());
-        verify(repositories, never()).isVerifiedPublisher(any(), any());
+        verify(repositories, never()).isVerified(any(Namespace.class));
     }
 
     @Test
     void startScan_raisesThreat_whenNamespaceExistsUpstreamAndIsNotVerified() throws Exception {
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
+        when(repositories.isVerified(extVersion.getExtension().getNamespace())).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -198,11 +190,10 @@ class NamespaceOwnershipCheckScannerTest {
 
     @Test
     void startScan_isClean_whenNamespaceExistsUpstreamAndIsVerified() throws Exception {
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
+        when(repositories.isVerified(extVersion.getExtension().getNamespace())).thenReturn(true);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -215,11 +206,10 @@ class NamespaceOwnershipCheckScannerTest {
     void startScan_raisesThreat_whenNamespaceExistsUpstreamWithDifferentCasing() throws Exception {
         // Upstream publisher ids are case-insensitive, so "ACME" must still be recognized as a match
         // for the "acme" namespace being published to.
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH_DIFFERENT_CASE);
-        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(false);
+        when(repositories.isVerified(extVersion.getExtension().getNamespace())).thenReturn(false);
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
                 .startScan(new Scanner.Command(1L, "scan-1"));
@@ -229,25 +219,11 @@ class NamespaceOwnershipCheckScannerTest {
     }
 
     @Test
-    void startScan_raisesThreat_whenExistsUpstreamAndNoPublishingUserIsAttributed() throws Exception {
-        var extVersion = extensionVersion(null);
-        when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
-        when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-
-        var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
-                .startScan(new Scanner.Command(1L, "scan-1"));
-
-        assertFalse(invocation.result().isClean());
-        verify(repositories, never()).isVerifiedPublisher(any(), any());
-    }
-
-    @Test
     void startScan_isClean_isActiveAndCheckActiveExtensions() throws Exception {
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(restTemplate.postForObject(anyString(), any(), any())).thenReturn(NAMESPACE_MATCH);
-        when(repositories.isVerifiedPublisher(extVersion.getExtension().getNamespace(), user)).thenReturn(true);
+        when(repositories.isVerified(extVersion.getExtension().getNamespace())).thenReturn(true);
         when(repositories.findActiveExtension(anyString(), anyString())).thenReturn(extVersion.getExtension());
 
         var invocation = (Scanner.Invocation.Completed) newScanner(true, true)
@@ -259,8 +235,7 @@ class NamespaceOwnershipCheckScannerTest {
 
     @Test
     void startScan_isClean_isActiveAndNotCheckActiveExtensions() throws Exception {
-        var user = new UserData();
-        var extVersion = extensionVersion(user);
+        var extVersion = extensionVersion();
         when(entityManager.find(ExtensionVersion.class, 1L)).thenReturn(extVersion);
         when(repositories.findActiveExtension(anyString(), anyString())).thenReturn(extVersion.getExtension());
 

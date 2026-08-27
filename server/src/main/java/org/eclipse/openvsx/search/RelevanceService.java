@@ -104,7 +104,7 @@ public class RelevanceService {
         logger.debug("[{}] VALUES: {} | {} | {}", extensionId, ratingValue, downloadsValue, timestampValue);
 
         // Reduce the relevance value of unverified extensions
-        if (!isVerified(latest)) {
+        if (!repositories.isVerifiedPublisher(latest)) {
             relevance *= unverifiedRelevance;
             logger.debug("[{}] UNVERIFIED: {} * {}", extensionId, relevance, unverifiedRelevance);
         }
@@ -133,15 +133,6 @@ public class RelevanceService {
 
     private double limit(double value) {
         return Math.clamp(value, 0.0, 1.0);
-    }
-
-    private boolean isVerified(ExtensionVersion extVersion) {
-        if (extVersion.getPublishedWith() == null) {
-            return false;
-        }
-        var user = extVersion.getPublishedWith().getUser();
-        var namespace = extVersion.getExtension().getNamespace();
-        return repositories.isVerified(namespace, user);
     }
 
     public static class SearchStats {
