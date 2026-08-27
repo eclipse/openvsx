@@ -25,7 +25,6 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.JoinType;
 import org.jooq.Record;
-import org.jooq.ResultQuery;
 import org.jooq.Row1;
 import org.jooq.Row2;
 import org.jooq.SelectConditionStep;
@@ -149,9 +148,9 @@ public class ExtensionVersionJooqRepository {
                             SIGNATURE_KEY_PAIR.PUBLIC_ID,
                             rowNumber().over(
                                     partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
-                                            EXTENSION_VERSION.EXTENSION_ID,
-                                            EXTENSION_VERSION.VERSION,
-                                            EXTENSION_VERSION.TARGET_PLATFORM))
+                                            EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                                            EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                                            EXTENSION_VERSION.SEMVER_PATCH.desc()))
                                     .as("rank"))
                             .from(EXTENSION_VERSION)
                             .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
