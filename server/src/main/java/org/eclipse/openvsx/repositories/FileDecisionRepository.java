@@ -20,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.UserData;
@@ -45,9 +44,6 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
     @Query("SELECT f FROM FileDecision f JOIN FETCH f.decidedBy WHERE f.id IN :ids")
     List<FileDecision> findByIdIn(@Param("ids") List<Long> ids);
 
-    /** Check if a decision exists for a file hash */
-    boolean existsByFileHash(String fileHash);
-
     /**
      * Find all blocked decisions for a set of file hashes.
      * Used by BlocklistCheckService for efficient batch lookups during publishing.
@@ -56,9 +52,6 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
         "SELECT f FROM FileDecision f JOIN FETCH f.decidedBy WHERE f.fileHash IN :fileHashes AND f.decision = 'BLOCKED'"
     )
     List<FileDecision> findBlockedByFileHashIn(@Param("fileHashes") java.util.Set<String> fileHashes);
-
-    /** Find all decisions with a specific decision value */
-    Streamable<FileDecision> findByDecision(String decision);
 
     /** Count all decisions with a specific decision value */
     long countByDecision(String decision);
@@ -71,9 +64,6 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
 
     /** Delete a decision by ID */
     void deleteById(long id);
-
-    /** Delete a decision by file hash */
-    void deleteByFileHash(String fileHash);
 
     /**
      * Paginated query with optional filters for decision, publisher, namespace, name, and date range.
