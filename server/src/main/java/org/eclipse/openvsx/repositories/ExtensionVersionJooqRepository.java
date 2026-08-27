@@ -30,6 +30,7 @@ import org.jooq.Row2;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectQuery;
 import org.jooq.Table;
+import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -41,7 +42,6 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ListOfStringConverter;
 import org.eclipse.openvsx.entities.Namespace;
-import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
 import org.eclipse.openvsx.entities.UserData;
@@ -82,93 +82,60 @@ public class ExtensionVersionJooqRepository {
             String targetPlatform,
             int maxPreReleaseVersions
     ) {
-        SelectConditionStep<Record> query;
-        if (maxPreReleaseVersions < 0) {
-            query = dsl.select(
-                    NAMESPACE.ID,
-                    NAMESPACE.NAME,
-                    EXTENSION.ID,
-                    EXTENSION.NAME,
-                    EXTENSION_VERSION.ID,
-                    EXTENSION_VERSION.VERSION,
-                    EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
-                    EXTENSION_VERSION.REMOVED,
-                    EXTENSION_VERSION.TARGET_PLATFORM,
-                    EXTENSION_VERSION.PREVIEW,
-                    EXTENSION_VERSION.PRE_RELEASE,
-                    EXTENSION_VERSION.TIMESTAMP,
-                    EXTENSION_VERSION.DISPLAY_NAME,
-                    EXTENSION_VERSION.DESCRIPTION,
-                    EXTENSION_VERSION.ENGINES,
-                    EXTENSION_VERSION.CATEGORIES,
-                    EXTENSION_VERSION.TAGS,
-                    EXTENSION_VERSION.EXTENSION_KIND,
-                    EXTENSION_VERSION.REPOSITORY,
-                    EXTENSION_VERSION.SPONSOR_LINK,
-                    EXTENSION_VERSION.GALLERY_COLOR,
-                    EXTENSION_VERSION.GALLERY_THEME,
-                    EXTENSION_VERSION.LOCALIZED_LANGUAGES,
-                    EXTENSION_VERSION.DEPENDENCIES,
-                    EXTENSION_VERSION.BUNDLED_EXTENSIONS,
-                    SIGNATURE_KEY_PAIR.PUBLIC_ID)
-                    .from(EXTENSION_VERSION)
-                    .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                    .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                    .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
-                    .where(EXTENSION_VERSION.ACTIVE.eq(true))
-                    .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
-        } else {
-            query = dsl.with("ranked_extension_version").as(
-                    dsl.select(
-                            NAMESPACE.ID,
-                            NAMESPACE.NAME,
-                            EXTENSION.ID,
-                            EXTENSION.NAME,
-                            EXTENSION_VERSION.ID,
-                            EXTENSION_VERSION.VERSION,
-                            EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
-                            EXTENSION_VERSION.REMOVED,
-                            EXTENSION_VERSION.TARGET_PLATFORM,
-                            EXTENSION_VERSION.PREVIEW,
-                            EXTENSION_VERSION.PRE_RELEASE,
-                            EXTENSION_VERSION.TIMESTAMP,
-                            EXTENSION_VERSION.DISPLAY_NAME,
-                            EXTENSION_VERSION.DESCRIPTION,
-                            EXTENSION_VERSION.ENGINES,
-                            EXTENSION_VERSION.CATEGORIES,
-                            EXTENSION_VERSION.TAGS,
-                            EXTENSION_VERSION.EXTENSION_KIND,
-                            EXTENSION_VERSION.REPOSITORY,
-                            EXTENSION_VERSION.SPONSOR_LINK,
-                            EXTENSION_VERSION.GALLERY_COLOR,
-                            EXTENSION_VERSION.GALLERY_THEME,
-                            EXTENSION_VERSION.LOCALIZED_LANGUAGES,
-                            EXTENSION_VERSION.DEPENDENCIES,
-                            EXTENSION_VERSION.BUNDLED_EXTENSIONS,
-                            SIGNATURE_KEY_PAIR.PUBLIC_ID,
-                            rowNumber().over(
-                                    partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
-                                            EXTENSION_VERSION.SEMVER_MAJOR.desc(),
-                                            EXTENSION_VERSION.SEMVER_MINOR.desc(),
-                                            EXTENSION_VERSION.SEMVER_PATCH.desc()))
-                                    .as("rank"))
-                            .from(EXTENSION_VERSION)
-                            .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
-                            .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
-                            .leftJoin(SIGNATURE_KEY_PAIR)
-                            .on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
-                            .where(EXTENSION_VERSION.ACTIVE.eq(true))
-                            .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds)))
-                    .select()
-                    .from(table(name("ranked_extension_version")))
-                    .where(EXTENSION_VERSION.PRE_RELEASE.isFalse().or(field(name("rank")).le(maxPreReleaseVersions)));
-        }
+        SelectConditionStep<Record> query = dsl.select(
+                NAMESPACE.ID.as("namespace_id"),
+                NAMESPACE.NAME.as("namespace_name"),
+                EXTENSION.ID.as("extension_id"),
+                EXTENSION.NAME.as("extension_name"),
+                EXTENSION_VERSION.ID.as("extension_version_id"),
+                EXTENSION_VERSION.VERSION.as("extension_version_version"),
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS.as("extension_version_potentially_malicious"),
+                EXTENSION_VERSION.REMOVED.as("extension_version_removed"),
+                EXTENSION_VERSION.TARGET_PLATFORM.as("extension_version_target_platform"),
+                EXTENSION_VERSION.PREVIEW.as("extension_version_preview"),
+                EXTENSION_VERSION.PRE_RELEASE.as("extension_version_pre_release"),
+                EXTENSION_VERSION.TIMESTAMP.as("extension_version_timestamp"),
+                EXTENSION_VERSION.DISPLAY_NAME.as("extension_version_display_name"),
+                EXTENSION_VERSION.DESCRIPTION.as("extension_version_description"),
+                EXTENSION_VERSION.ENGINES.as("extension_version_engines"),
+                EXTENSION_VERSION.CATEGORIES.as("extension_version_categories"),
+                EXTENSION_VERSION.TAGS.as("extension_version_tags"),
+                EXTENSION_VERSION.EXTENSION_KIND.as("extension_version_extension_kind"),
+                EXTENSION_VERSION.REPOSITORY.as("extension_version_repository"),
+                EXTENSION_VERSION.SPONSOR_LINK.as("extension_version_sponsor_link"),
+                EXTENSION_VERSION.GALLERY_COLOR.as("extension_version_gallery_color"),
+                EXTENSION_VERSION.GALLERY_THEME.as("extension_version_gallery_theme"),
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES.as("extension_version_localized_languages"),
+                EXTENSION_VERSION.DEPENDENCIES.as("extension_version_dependencies"),
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS.as("extension_version_bundled_extensions"),
+                SIGNATURE_KEY_PAIR.PUBLIC_ID.as("signature_key_pair_public_id"),
+                rowNumber().over(
+                        partitionBy(EXTENSION_VERSION.EXTENSION_ID).orderBy(
+                                EXTENSION_VERSION.SEMVER_MAJOR.desc(),
+                                EXTENSION_VERSION.SEMVER_MINOR.desc(),
+                                EXTENSION_VERSION.SEMVER_PATCH.desc()))
+                        .as("rank"))
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
         if (targetPlatform != null) {
             query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
-        return query.fetch().map(this::toExtensionVersion);
+        if (maxPreReleaseVersions >= 0) {
+            query = dsl.with("ranked_extension_version").as(query)
+                    .select()
+                    .from(table(name("ranked_extension_version")))
+                    .where(
+                            field(name("extension_version_pre_release")).isFalse()
+                                    .or(field(name("rank")).lessOrEqual(maxPreReleaseVersions)));
+        }
+
+        return query.fetch().map(this::toRankedExtensionVersion);
     }
 
     public Page<String> findActiveVersionStringsSorted(
@@ -580,6 +547,12 @@ public class ExtensionVersionJooqRepository {
         return extVersion;
     }
 
+    private ExtensionVersion toRankedExtensionVersion(Record row) {
+        var extVersion = toExtensionVersionCommon(row, null, new RankedFieldMapper());
+        extVersion.setType(ExtensionVersion.Type.MINIMAL);
+        return extVersion;
+    }
+
     private ExtensionVersion toExtensionVersionCommon(
             Record row,
             Extension extension,
@@ -624,19 +597,19 @@ public class ExtensionVersionJooqRepository {
 
         if (extension == null) {
             var namespace = new Namespace();
-            namespace.setId(row.get(NAMESPACE.ID));
-            namespace.setName(row.get(NAMESPACE.NAME));
+            namespace.setId(row.get(extensionVersionMapper.map(NAMESPACE.ID)));
+            namespace.setName(row.get(extensionVersionMapper.map(NAMESPACE.NAME)));
 
             extension = new Extension();
-            extension.setId(row.get(EXTENSION.ID));
-            extension.setName(row.get(EXTENSION.NAME));
+            extension.setId(row.get(extensionVersionMapper.map(EXTENSION.ID)));
+            extension.setName(row.get(extensionVersionMapper.map(EXTENSION.NAME)));
             extension.setNamespace(namespace);
         }
 
         extVersion.setExtension(extension);
 
         var keyPair = new SignatureKeyPair();
-        keyPair.setPublicId(row.get(SIGNATURE_KEY_PAIR.PUBLIC_ID));
+        keyPair.setPublicId(row.get(extensionVersionMapper.map(SIGNATURE_KEY_PAIR.PUBLIC_ID)));
         extVersion.setSignatureKeyPair(keyPair);
         return extVersion;
     }
@@ -1739,6 +1712,9 @@ public class ExtensionVersionJooqRepository {
 
     private record TableFieldMapper(Table<Record> table) implements FieldMapper {
         public <T> Field<T> map(Field<T> field) {
+            if (field instanceof TableField<?, ?> tableField && tableField.getTable() != table) {
+                return field;
+            }
             return table.field(field);
         }
     }
@@ -1746,6 +1722,14 @@ public class ExtensionVersionJooqRepository {
     private static class DefaultFieldMapper implements FieldMapper {
         public <T> Field<T> map(Field<T> field) {
             return field;
+        }
+    }
+
+    private static class RankedFieldMapper implements FieldMapper {
+        public <T> Field<T> map(Field<T> field) {
+            return field(
+                    name(field.getQualifiedName().toString().replace("\"", "").replace(".", "_")),
+                    field.getType());
         }
     }
 }
