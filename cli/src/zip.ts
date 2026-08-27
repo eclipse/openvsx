@@ -20,7 +20,7 @@ async function bufferStream(stream: Readable): Promise<Buffer> {
 	});
 }
 
-async function readZip(packagePath: string, filter: (name: string) => boolean): Promise<Map<string, Buffer>> {
+export async function readZip(packagePath: string, filter: (name: string) => boolean): Promise<Map<string, Buffer>> {
 	const result = new Map<string, Buffer>();
 	const zipfile = await yauzl.open(packagePath);
 	try {
@@ -31,6 +31,31 @@ async function readZip(packagePath: string, filter: (name: string) => boolean): 
 				const buffer = await bufferStream(stream);
 				result.set(name, buffer);
 			}
+		}
+	} finally {
+		await zipfile.close();
+	}
+
+	return result;
+}
+
+/**
+ * Reads every non-directory entry of a zip file, keyed by its exact (case-preserving) name -
+ * unlike {@link readZip}, which lowercases names for its case-insensitive-filter callers. Used
+ * where entry names are later compared byte-for-byte against another source of truth, such as a
+ * signature manifest that records the original names.
+ */
+export async function readAllZipEntries(packagePath: string): Promise<Map<string, Buffer>> {
+	const result = new Map<string, Buffer>();
+	const zipfile = await yauzl.open(packagePath);
+	try {
+		for await (const entry of zipfile) {
+			if (entry.filename.endsWith('/')) {
+				continue;
+			}
+			const stream = await zipfile.openReadStream(entry);
+			const buffer = await bufferStream(stream);
+			result.set(entry.filename, buffer);
 		}
 	} finally {
 		await zipfile.close();
