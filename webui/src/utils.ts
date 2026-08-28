@@ -161,7 +161,8 @@ export function toCompactRelativeTime(timestamp?: string): string | undefined {
     }
 }
 
-export function handleError(err?: Error | Partial<ErrorResponse>): string {
+/** Takes whatever was thrown or returned — callers rarely know the shape — and narrows it here. */
+export function handleError(err?: unknown): string {
     if (err) {
         if (err instanceof Error && err.name === 'AbortError') {
             return '';
@@ -174,12 +175,15 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
                 return 'Something went wrong while fetching data. Please contact the site administrators.';
             }
             return `An unexpected error occurred: ${err.message}`;
-        } else if (err.error && err.message) {
-            return `${err.error} (${err.message})`;
-        } else if (err.error) {
-            return err.error;
-        } else if (err.message) {
-            return err.message;
+        }
+        // A failed request rejects with the parsed server body, not an Error.
+        const { error, message } = (typeof err === 'object' ? err : {}) as Partial<ErrorResponse>;
+        if (error && message) {
+            return `${error} (${message})`;
+        } else if (error) {
+            return error;
+        } else if (message) {
+            return message;
         }
     }
     return 'An unexpected error occurred.';

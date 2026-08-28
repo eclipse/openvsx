@@ -17,7 +17,7 @@ import { renderHookWithProviders } from '../support/test-providers';
 import { testUser } from '../support/trusted-publishing';
 import { usePublishQueue } from '../../../src/context/publish-queue-context';
 import { ExtensionRegistryService } from '../../../src/extension-registry-service';
-import { Extension } from '../../../src/extension-registry-types';
+import { Extension, RegistryVersion } from '../../../src/extension-registry-types';
 
 const vsix = (name = 'bar.vsix') => new File(['package'], name, { type: 'application/vsix' });
 
@@ -32,7 +32,11 @@ const published = (overrides: Partial<Extension> = {}): Extension =>
         ...overrides
     }) as Extension;
 
-function renderQueue(service: Partial<ExtensionRegistryService>, loggedIn = true) {
+function renderQueue(
+    service: Partial<ExtensionRegistryService>,
+    options: { loggedIn?: boolean; version?: RegistryVersion } = {}
+) {
+    const { loggedIn = true, version } = options;
     const handleError = vi.fn();
     return {
         handleError,
@@ -40,6 +44,7 @@ function renderQueue(service: Partial<ExtensionRegistryService>, loggedIn = true
             mainContext: {
                 service: service as ExtensionRegistryService,
                 user: loggedIn ? testUser : undefined,
+                version,
                 handleError
             }
         })
@@ -57,19 +62,29 @@ describe('publish queue', () => {
         await waitFor(() => expect(result.current.items.map(item => item.status)).toEqual(['published', 'published']));
     });
 
-    it('ignores files that are not .vsix packages', () => {
+    it('ignores files that are not .vsix packages, and says so', () => {
         const publishExtension = vi.fn().mockResolvedValue(published());
-        const { result } = renderQueue({ publishExtension });
+        const { result, handleError } = renderQueue({ publishExtension });
 
         act(() => result.current.publish([new File([''], 'notes.txt')]));
 
         expect(publishExtension).not.toHaveBeenCalled();
         expect(result.current.items).toHaveLength(0);
+        expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('.vsix') }));
+    });
+
+    it('says nothing when the file picker comes back empty', () => {
+        const publishExtension = vi.fn().mockResolvedValue(published());
+        const { result, handleError } = renderQueue({ publishExtension });
+
+        act(() => result.current.publish([]));
+
+        expect(handleError).not.toHaveBeenCalled();
     });
 
     it('publishes nothing without a logged-in user', () => {
         const publishExtension = vi.fn().mockResolvedValue(published());
-        const { result } = renderQueue({ publishExtension }, false);
+        const { result } = renderQueue({ publishExtension }, { loggedIn: false });
 
         act(() => result.current.publish([vsix()]));
 
@@ -83,7 +98,7 @@ describe('publish queue', () => {
             .mockRejectedValueOnce({
                 error: "Unknown publisher: foo\nUse the 'create-namespace' command to create a namespace."
             })
-            .mockResolvedValueOnce([published()]);
+            .mockResolvedValueOnce(published());
         const createNamespace = vi.fn().mockResolvedValue({ success: 'ok' });
         const { result } = renderQueue({ publishExtension, createNamespace });
 
@@ -98,7 +113,7 @@ describe('publish queue', () => {
         const publishExtension = vi
             .fn()
             .mockResolvedValueOnce({ error: 'Unknown publisher: foo\nUse the CLI to create it' })
-            .mockResolvedValueOnce([published()]);
+            .mockResolvedValueOnce(published());
         const createNamespace = vi.fn().mockResolvedValue({ success: 'ok' });
         const { result } = renderQueue({ publishExtension, createNamespace });
 
@@ -112,7 +127,7 @@ describe('publish queue', () => {
         const publishExtension = vi
             .fn()
             .mockRejectedValueOnce({ error: 'Unknown publisher: foo' })
-            .mockResolvedValueOnce([published()]);
+            .mockResolvedValueOnce(published());
         const createNamespace = vi.fn().mockResolvedValue({ success: 'ok' });
         const { result } = renderQueue({ publishExtension, createNamespace });
 
@@ -135,6 +150,30 @@ describe('publish queue', () => {
         expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ error: 'Extension too large' }));
     });
 
+    it('words a failed card the way the error dialog words it', async () => {
+        const publishExtension = vi.fn().mockRejectedValue({ error: 'Bad Request', message: 'Unsupported manifest' });
+        const { result } = renderQueue({ publishExtension });
+
+        act(() => result.current.publish([vsix()]));
+
+        await waitFor(() => expect(result.current.items[0].status).toBe('failed'));
+        expect(result.current.items[0].error).toBe('Bad Request (Unsupported manifest)');
+    });
+
+    it('fails an oversized package on its card instead of uploading it', () => {
+        const publishExtension = vi.fn().mockResolvedValue(published());
+        const { result } = renderQueue({ publishExtension }, { version: { version: '1.0.0', maxExtensionSize: 4 } });
+
+        act(() => result.current.publish([vsix('big.vsix'), new File(['x'], 'small.vsix')]));
+
+        const oversized = result.current.items.find(item => item.fileName === 'big.vsix');
+        expect(oversized?.status).toBe('failed');
+        expect(oversized?.error).toBe('Larger than the 4 B limit.');
+        // The rest of the drop is unaffected.
+        expect(publishExtension).toHaveBeenCalledOnce();
+        expect(result.current.items.find(item => item.fileName === 'small.vsix')?.status).toBe('uploading');
+    });
+
     it('lists the newest upload first, so a fresh one always lands in the same place', () => {
         const publishExtension = vi.fn().mockReturnValue(new Promise(() => {}));
         const { result } = renderQueue({ publishExtension });
@@ -148,7 +187,7 @@ describe('publish queue', () => {
     it('drops finished entries on clear, leaving work in flight alone', async () => {
         const publishExtension = vi
             .fn()
-            .mockResolvedValueOnce([published()])
+            .mockResolvedValueOnce(published())
             .mockReturnValueOnce(new Promise(() => {}));
         const { result } = renderQueue({ publishExtension });
 
@@ -234,6 +273,76 @@ describe('publish queue — review polling', () => {
         expect(result.current.items[0].status).toBe('published');
         // 60s of 5s polls, and then it stops.
         expect(getExtensions.mock.calls.length).toBeLessThanOrEqual(14);
+    });
+
+    it('keeps reading when the read-back after publish did not land', async () => {
+        // The publish response carries no reviewStatus, so taking it at face value settles the card
+        // as published — even for a package the registry has actually parked under review.
+        const publishExtension = vi.fn().mockResolvedValue(published());
+        const getExtensions = vi
+            .fn()
+            .mockRejectedValueOnce(new Error('Failed to fetch'))
+            .mockResolvedValue([published({ reviewStatus: 'under_review' })]);
+        const { result } = renderQueue({ publishExtension, getExtensions });
+
+        await act(async () => {
+            result.current.publish([vsix()]);
+        });
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+
+        expect(result.current.items[0].status).toBe('reviewing');
+    });
+
+    it('waits for the icon from the end of the review, not from the upload', async () => {
+        const reviewing = published({ reviewStatus: 'under_review', files: {} as Extension['files'] });
+        const withoutIcon = published({ files: {} as Extension['files'] });
+        const publishExtension = vi.fn().mockResolvedValue(reviewing);
+        const getExtensions = vi.fn().mockResolvedValue([reviewing]);
+        const { result } = renderQueue({ publishExtension, getExtensions });
+
+        await act(async () => {
+            result.current.publish([vsix()]);
+        });
+        // Longer under review than the whole icon budget, which only starts once it is through.
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(90_000);
+        });
+        expect(result.current.items[0].status).toBe('reviewing');
+
+        getExtensions.mockResolvedValue([withoutIcon]);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+        expect(result.current.items[0].status).toBe('published');
+        expect(result.current.items[0].awaitingIcon).toBe(true);
+
+        getExtensions.mockResolvedValue([published()]);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+        expect(result.current.items[0].extension?.files.icon).toBe('https://registry.test/icon.png');
+    });
+
+    it('reads the registry once for the packages polling together', async () => {
+        const one = published({ name: 'one', files: {} as Extension['files'] });
+        const two = published({ name: 'two', files: {} as Extension['files'] });
+        const publishExtension = vi.fn().mockResolvedValueOnce(one).mockResolvedValueOnce(two);
+        const getExtensions = vi.fn().mockResolvedValue([one, two]);
+        const { result } = renderQueue({ publishExtension, getExtensions });
+
+        await act(async () => {
+            result.current.publish([vsix('one.vsix'), vsix('two.vsix')]);
+        });
+        // Both cards hydrate from the same list.
+        expect(getExtensions).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(5000);
+        });
+
+        expect(getExtensions).toHaveBeenCalledTimes(2);
     });
 
     it('holds a package whose namespace is not verified, instead of waiting on a review', async () => {

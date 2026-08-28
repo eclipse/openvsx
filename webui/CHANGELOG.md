@@ -21,7 +21,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Publish from the navbar's Publish button, the `p` shortcut and the settings Extensions tab through the new publish page, replacing the one-file-at-a-time publish dialog
 - Add an `outlinedWarning` style to `MuiButton`, so a warning-toned outlined button follows the theme like the secondary and error ones instead of MUI's default half-opacity border
 - **Breaking:** `elements.claimNamespace` now receives `{ namespace, extension?, sx? }` instead of `{ extension, sx? }`. The namespace settings page offers the same claim action and has no extension to pass, so implementations must read the namespace from `namespace` rather than `extension.namespace`
-- `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart` and `dimmed` props so other surfaces can reuse it instead of copying it
+- `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 
 ### Fixed
 
@@ -29,6 +29,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Fix the admin dashboard Scan tab getting stuck on the loading spinner after switching tabs, even though the new tab's data had already loaded successfully
 - Fix the page jumping to the top whenever a menu, select or dialog opens.
 - Fix the extension detail page's download menu so each target-platform option is clickable across its whole row, not just its text: the option was an inline link nested inside a non-interactive menu item, rather than the menu item itself being the link
+
+### Dependencies
+
+- Remove the `react-dropzone` dependency; the publish page and the navbar's drop target handle their own drag events, and nothing else imports it
 
 ## [v1.1.2] (20/08/2026)
 

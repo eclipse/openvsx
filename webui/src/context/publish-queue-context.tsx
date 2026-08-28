@@ -23,6 +23,8 @@ import {
 } from 'react';
 import { MainContext } from '../context';
 import { ErrorResult, Extension, isError } from '../extension-registry-types';
+import { useRegistryValue } from '../hooks/use-registry-value';
+import { formatFileSize, handleError as formatError } from '../utils';
 
 /** How often a freshly published package is re-read, and for how long. */
 const POLL_INTERVAL_MS = 5000;
@@ -51,7 +53,6 @@ export interface PublishQueue {
     items: PublishItem[];
     /** Uploads every package straight away — there is no confirmation step. */
     publish: (files: File[]) => void;
-    dismiss: (id: number) => void;
     /** Drops everything that has finished, leaving work in flight alone. */
     clearFinished: () => void;
 }
@@ -59,7 +60,6 @@ export interface PublishQueue {
 const PublishQueueContext = createContext<PublishQueue>({
     items: [],
     publish: () => {},
-    dismiss: () => {},
     clearFinished: () => {}
 });
 
@@ -92,13 +92,6 @@ const statusOf = (extension: Readonly<Extension>): PublishStatus => {
     }
 };
 
-const errorMessage = (err: unknown): string => {
-    if (isError(err)) {
-        return err.error;
-    }
-    return err instanceof Error ? err.message : 'Publishing failed.';
-};
-
 /**
  * The name of the namespace the registry does not know yet, or undefined when the
  * failure was something else. The server answers `Unknown publisher: <name>\n…`.
@@ -125,6 +118,7 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
     const [items, setItems] = useState<PublishItem[]>([]);
     const nextId = useRef(0);
     const abortController = useRef(new AbortController());
+    const maxSize = useRegistryValue(version => version.maxExtensionSize);
 
     useEffect(() => {
         const controller = abortController.current;
@@ -139,10 +133,18 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
      * Reads a just-published extension back. It has to be the list endpoint: only that one reports
      * `reviewStatus` (the single-extension endpoint leaves it unset, so a package awaiting a scan
      * would look merely inactive), and it carries the extracted files too.
+     *
+     * Every package in the queue reads that same list, so one read is shared by whichever of them
+     * poll around the same moment — a verdict arriving up to half a poll late costs nothing, where
+     * a full list request per package per tick does.
      */
+    const lastRead = useRef<{ at: number; extensions: Promise<Readonly<Extension[] | ErrorResult>> }>(undefined);
     const readPublished = useCallback(
         async (namespace: string, name: string): Promise<Readonly<Extension> | undefined> => {
-            const result = await service.getExtensions(abortController.current);
+            if (!lastRead.current || Date.now() - lastRead.current.at >= POLL_INTERVAL_MS / 2) {
+                lastRead.current = { at: Date.now(), extensions: service.getExtensions(abortController.current) };
+            }
+            const result = await lastRead.current.extensions;
             if (!Array.isArray(result)) {
                 return undefined;
             }
@@ -157,15 +159,23 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
      * the icon appears as soon as the pipeline has stored it.
      */
     const pollUntilSettled = useCallback(
-        async (id: number, initial: Readonly<Extension>) => {
+        async (id: number, initial: Readonly<Extension>, options: { readBack: boolean }) => {
             const started = Date.now();
+            // The two budgets need their own clocks: the files are only extracted once the package is
+            // through, so a review lasting longer than the icon's budget would spend it before it began.
+            let iconWaitFrom = started;
+            let readBack = options.readBack;
             const pending = (extension: Readonly<Extension>): boolean => {
-                const elapsed = Date.now() - started;
-                // A conflicting namespace outlives any poll (see statusOf); only its files are still coming.
-                if (extension.reviewStatus === 'under_review' && !extension.namespaceOwnershipConflict) {
-                    return elapsed < REVIEW_POLL_TIMEOUT_MS;
+                // Without a read the publish response is all there is, and it says nothing about the
+                // review, so it is as unresolved as an actual review. A conflicting namespace outlives
+                // any poll (see statusOf); only its files are still coming.
+                const unresolved =
+                    !readBack || (extension.reviewStatus === 'under_review' && !extension.namespaceOwnershipConflict);
+                if (unresolved) {
+                    iconWaitFrom = Date.now();
+                    return Date.now() - started < REVIEW_POLL_TIMEOUT_MS;
                 }
-                return !extension.files?.icon && elapsed < ASSET_POLL_TIMEOUT_MS;
+                return !extension.files?.icon && Date.now() - iconWaitFrom < ASSET_POLL_TIMEOUT_MS;
             };
 
             let current = initial;
@@ -180,6 +190,7 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
                         continue;
                     }
                     current = fresh;
+                    readBack = true;
                 } catch {
                     // A failed read says nothing about the package; wait for the next one.
                     continue;
@@ -197,13 +208,13 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
         [readPublished, update]
     );
 
-    /** The publish response carries none of that, so fall back to it only if the read fails. */
+    /** The publish response carries none of that, so read the extension back; undefined if that fails. */
     const hydrate = useCallback(
-        async (extension: Readonly<Extension>): Promise<Readonly<Extension>> => {
+        async (extension: Readonly<Extension>): Promise<Readonly<Extension> | undefined> => {
             try {
-                return (await readPublished(extension.namespace, extension.name)) ?? extension;
+                return await readPublished(extension.namespace, extension.name);
             } catch {
-                return extension;
+                return undefined;
             }
         },
         [readPublished]
@@ -240,20 +251,21 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
                     }
                     result = await publishOnce(file);
                 }
-                const extension = await hydrate(result);
+                const fresh = await hydrate(result);
+                const extension = fresh ?? result;
                 update(id, {
                     extension,
                     status: statusOf(extension),
                     error: extension.reviewStatus === 'rejected' ? extension.reviewMessage : undefined,
                     awaitingIcon: !extension.files?.icon
                 });
-                await pollUntilSettled(id, extension);
+                await pollUntilSettled(id, extension, { readBack: fresh !== undefined });
             } catch (err) {
                 if (!abortController.current.signal.aborted) {
-                    update(id, { status: 'failed', error: errorMessage(err) });
+                    update(id, { status: 'failed', error: formatError(err) });
                     // The card keeps the record, but a rejected publish is worth interrupting for:
                     // this is the same dialog every other failed request in the app raises.
-                    handleError(err as Error);
+                    handleError(err);
                 }
             }
         },
@@ -265,27 +277,41 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
             if (!user) {
                 return;
             }
-            const queued = files.filter(isVsixFile).map(file => ({
-                id: nextId.current++,
-                fileName: file.name,
-                size: file.size,
-                status: 'uploading' as const,
-                file
-            }));
+            const queued = files.filter(isVsixFile).map(file => {
+                // The registry rejects an oversized package anyway, and uploading it first only wastes
+                // the user's bandwidth. Unknown limit (the version has not loaded): let the server say.
+                const tooLarge = maxSize !== undefined && file.size > maxSize;
+                return {
+                    id: nextId.current++,
+                    fileName: file.name,
+                    size: file.size,
+                    status: tooLarge ? ('failed' as const) : ('uploading' as const),
+                    error: tooLarge ? `Larger than the ${formatFileSize(maxSize)} limit.` : undefined,
+                    file
+                };
+            });
             if (queued.length === 0) {
+                // Dropping a folder, or anything else that is not a package, would otherwise look
+                // like the app simply ignored the drop.
+                if (files.length > 0) {
+                    handleError({ error: 'Only .vsix packages can be published.' });
+                }
                 return;
             }
             setItems(current => [...queued.map(({ file: _file, ...item }) => item), ...current]);
-            queued.forEach(({ id, file }) => upload(id, file));
+            queued.forEach(({ id, file, status }) => {
+                if (status === 'uploading') {
+                    upload(id, file);
+                }
+            });
         },
-        [user, upload]
+        [user, upload, handleError, maxSize]
     );
 
-    const dismiss = useCallback((id: number) => setItems(current => current.filter(item => item.id !== id)), []);
     const clearFinished = useCallback(() => setItems(current => current.filter(item => !isFinished(item))), []);
 
     return (
-        <PublishQueueContext.Provider value={{ items, publish, dismiss, clearFinished }}>
+        <PublishQueueContext.Provider value={{ items, publish, clearFinished }}>
             {children}
         </PublishQueueContext.Provider>
     );

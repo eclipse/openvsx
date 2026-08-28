@@ -66,6 +66,9 @@ export const usePublishDrop = (): PublishDrop => {
             depth.current = Math.max(0, depth.current - 1);
             if (depth.current === 0) {
                 setDragging(false);
+                // Dragging back out of the window fires no dragleave on the target itself, so the
+                // target would stay lit up until the next drop.
+                setOver(false);
             }
         };
         // Anything that gets this far missed the target. Claiming it leaves the drag with nowhere
