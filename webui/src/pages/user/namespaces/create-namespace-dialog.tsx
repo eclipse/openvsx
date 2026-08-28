@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
+import { ChangeEvent, FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../../components/button-with-progress';
 import { MainContext } from '../../../context';
@@ -48,17 +48,26 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
         setNameError(nameError);
     };
 
+    // The Enter shortcut reaches this straight from the document, so whatever disables the button
+    // has to be checked here as well. Held keys repeat faster than a render, so the in-flight check
+    // is a ref rather than the mutation's pending flag, which only turns the spinner on.
+    const invalidName = Boolean(nameError) || !name;
+    const submitting = useRef(false);
+
     const handleCreateNamespace = async () => {
-        if (!context.user) {
+        if (!context.user || invalidName || submitting.current) {
             return;
         }
 
+        submitting.current = true;
         try {
             await createNamespace(name);
             props.onClose();
             props.namespaceCreated(name);
         } catch (err) {
             context.handleError(err);
+        } finally {
+            submitting.current = false;
         }
     };
 
@@ -87,7 +96,7 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
                 <ButtonWithProgress
                     autoFocus
                     sx={{ ml: 1 }}
-                    error={Boolean(nameError) || !name}
+                    error={invalidName}
                     working={creating}
                     onClick={handleCreateNamespace}>
                     Create Namespace

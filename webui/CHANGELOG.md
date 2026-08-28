@@ -30,6 +30,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Fix the admin dashboard Scan tab getting stuck on the loading spinner after switching tabs, even though the new tab's data had already loaded successfully
 - Fix the page jumping to the top whenever a menu, select or dialog opens.
 - Fix the extension detail page's download menu so each target-platform option is clickable across its whole row, not just its text: the option was an inline link nested inside a non-interactive menu item, rather than the menu item itself being the link
+- Fix the create-namespace dialog acting on Enter when its button is disabled: an empty or over-long name was submitted anyway, and a held key sent the request more than once
 
 ### Dependencies
 
