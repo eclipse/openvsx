@@ -14,7 +14,6 @@
 import { useContext } from 'react';
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../context';
-import { isError } from '../../extension-registry-types';
 import { controllerFromSignal } from '../../query-client';
 
 export type PublisherRole = 'admin' | 'privileged' | 'none';
@@ -67,20 +66,15 @@ export const useInfinitePublishers = (search: string, role: string) => {
 
 /**
  * Updates a publisher's role and refreshes the publisher list on success so the
- * new role is reflected. Throws on an error result so the caller's catch path runs.
+ * new role is reflected.
  */
 export const useUpdatePublisherRole = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
         mutationKey: [...publisherMutationKey, 'role'],
-        mutationFn: async ({ provider, login, role }: { provider: string; login: string; role: PublisherRole }) => {
-            const result = await service.admin.updateUserRole(provider, login, role);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        mutationFn: ({ provider, login, role }: { provider: string; login: string; role: PublisherRole }) =>
+            service.admin.updateUserRole(provider, login, role),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'publishers'] });
         }
@@ -88,55 +82,37 @@ export const useUpdatePublisherRole = () => {
 };
 
 /**
- * Revokes all contributions of a publisher. Throws on an error result so the
- * caller's catch path runs.
+ * Revokes all contributions of a publisher.
  */
 export const useRevokePublisherContributions = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationKey: [...publisherMutationKey, 'revoke-contributions'],
-        mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
-            const result = await service.admin.revokePublisherContributions(provider, login);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        }
+        mutationFn: ({ provider, login }: { provider: string; login: string }) =>
+            service.admin.revokePublisherContributions(provider, login)
     });
 };
 
 /**
- * Revokes the access tokens of a publisher. Throws on an error result so the
- * caller's catch path runs.
+ * Revokes the access tokens of a publisher.
  */
 export const useRevokeAccessTokens = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationKey: [...publisherMutationKey, 'revoke-tokens'],
-        mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
-            const result = await service.admin.revokeAccessTokens(provider, login);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        }
+        mutationFn: ({ provider, login }: { provider: string; login: string }) =>
+            service.admin.revokeAccessTokens(provider, login)
     });
 };
 
 /**
- * Forgets a user in response to a data-protection erasure request. Throws on
- * an error result so the caller's catch path runs.
+ * Forgets a user in response to a data-protection erasure request.
  */
 export const useForgetUser = () => {
     const { service } = useContext(MainContext);
     return useMutation({
         mutationKey: [...publisherMutationKey, 'forget-user'],
-        mutationFn: async ({ provider, login }: { provider: string; login: string }) => {
-            const result = await service.admin.forgetUser(provider, login);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        }
+        mutationFn: ({ provider, login }: { provider: string; login: string }) =>
+            service.admin.forgetUser(provider, login)
     });
 };

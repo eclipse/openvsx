@@ -84,8 +84,9 @@ describe('PublisherForgetUserButton', () => {
         expect(handleUserDeleted).toHaveBeenCalled();
     });
 
-    it('reports an error result to the page and leaves the dialog open', async () => {
-        const forgetUser = vi.fn().mockResolvedValue({ error: 'boom' });
+    it('reports a rejected request to the page and leaves the dialog open', async () => {
+        // The service rejects on failure (`sendStrictRequest`), including a 200 carrying an error body.
+        const forgetUser = vi.fn().mockRejectedValue({ error: 'boom' });
         const handleError = vi.fn();
         const handleUserDeleted = vi.fn();
         renderWithProviders(

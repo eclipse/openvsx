@@ -21,7 +21,7 @@ import {
     TextField
 } from '@mui/material';
 import { ButtonWithProgress } from '../../components/button-with-progress';
-import { Namespace, SuccessResult } from '../../extension-registry-types';
+import { Namespace } from '../../extension-registry-types';
 import { MainContext } from '../../context';
 import { InfoDialog } from '../../components/info-dialog';
 import { useChangeNamespace } from './use-namespace-admin';
@@ -78,10 +78,9 @@ export const NamespaceChangeDialog: FunctionComponent<NamespaceChangeDialogProps
                 mergeIfNewNamespaceAlreadyExists
             });
 
-            const successResult = result as SuccessResult;
             props.setLoadingState(false);
             setInfoDialogIsOpen(true);
-            setInfoDialogMessage(successResult.success);
+            setInfoDialogMessage(result.success);
         } catch (err) {
             props.setLoadingState(false);
             handleError(err);
