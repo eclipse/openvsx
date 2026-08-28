@@ -16,6 +16,7 @@ import { act, waitFor } from '@testing-library/react';
 import { renderHookWithProviders } from '../support/test-providers';
 import { testUser } from '../support/trusted-publishing';
 import { usePublishQueue } from '../../../src/context/publish-queue-context';
+import { useUserExtensions } from '../../../src/hooks/use-user-extensions';
 import { ExtensionRegistryService } from '../../../src/extension-registry-service';
 import { Extension, RegistryVersion } from '../../../src/extension-registry-types';
 
@@ -172,6 +173,29 @@ describe('publish queue', () => {
         // The rest of the drop is unaffected.
         await waitFor(() => expect(publishExtension).toHaveBeenCalledOnce());
         expect(publishExtension).toHaveBeenCalledWith(expect.objectContaining({ name: 'small.vsix' }));
+    });
+
+    it('leaves the extension list holding what it read while following the package', async () => {
+        const publishExtension = vi.fn().mockResolvedValue(published());
+        const getExtensions = vi.fn().mockResolvedValueOnce([]).mockResolvedValue([published()]);
+        const handleError = vi.fn();
+        const { result } = renderHookWithProviders(
+            // Both read the same cache entry, so the settings list does not fetch again of its own.
+            () => ({ queue: usePublishQueue(), extensions: useUserExtensions() }),
+            {
+                mainContext: {
+                    service: { publishExtension, getExtensions } as unknown as ExtensionRegistryService,
+                    user: testUser,
+                    handleError
+                }
+            }
+        );
+        await waitFor(() => expect(result.current.extensions.data).toEqual([]));
+
+        act(() => result.current.queue.publish([vsix()]));
+
+        await waitFor(() => expect(result.current.extensions.data).toEqual([published()]));
+        expect(getExtensions).toHaveBeenCalledTimes(2);
     });
 
     it('lists the newest upload first, so a fresh one always lands in the same place', () => {

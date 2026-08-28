@@ -597,7 +597,7 @@ export class ExtensionRegistryService {
     async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
         const headers: Record<string, string> = {};
 
-        return sendRequest<Extension[] | ErrorResult>({
+        return sendNonRetriableRequest<Extension[] | ErrorResult>({
             abortController,
             method: 'GET',
             credentials: true,

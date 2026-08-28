@@ -21,15 +21,20 @@ import {
     useRef,
     useState
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../context';
-import { ErrorResult, Extension, isError } from '../extension-registry-types';
+import { Extension, isError } from '../extension-registry-types';
 import { useRegistryValue } from '../hooks/use-registry-value';
+import { userExtensionsQuery } from '../hooks/use-user-extensions';
 import { usePublishExtension } from '../components/publish/use-publish-extension';
 import { useCreateNamespace } from '../pages/user/namespaces/use-user-namespaces';
 import { formatFileSize, handleError as formatError } from '../utils';
 
 /** How often a freshly published package is re-read, and for how long. */
 const POLL_INTERVAL_MS = 5000;
+// Every package in the queue reads the same list, so a poll takes whatever another package read a
+// moment ago: a verdict arriving up to half a poll late costs nothing, a request per package does.
+const READ_SHARE_MS = POLL_INTERVAL_MS / 2;
 const REVIEW_POLL_TIMEOUT_MS = 5 * 60 * 1000;
 // Publishing hands the package to an async pipeline, so the extracted files (the icon among
 // them) appear after the response. Worth a short wait, but plenty of extensions have no icon.
@@ -116,14 +121,19 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
     const { service, user, handleError } = useContext(MainContext);
     const { mutateAsync: publishPackage } = usePublishExtension();
     const { mutateAsync: createNamespace } = useCreateNamespace();
+    const queryClient = useQueryClient();
     const [items, setItems] = useState<PublishItem[]>([]);
     const nextId = useRef(0);
-    const abortController = useRef(new AbortController());
     const maxSize = useRegistryValue(version => version.maxExtensionSize);
+    // A poll outlives the provider only if the app is being torn down; stop it rather than
+    // carrying on against a queue nobody can see.
+    const stopped = useRef(false);
 
     useEffect(() => {
-        const controller = abortController.current;
-        return () => controller.abort();
+        stopped.current = false;
+        return () => {
+            stopped.current = true;
+        };
     }, []);
 
     const update = useCallback((id: number, patch: Partial<PublishItem>) => {
@@ -133,25 +143,21 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
     /**
      * Reads a just-published extension back. It has to be the list endpoint: only that one reports
      * `reviewStatus` (the single-extension endpoint leaves it unset, so a package awaiting a scan
-     * would look merely inactive), and it carries the extracted files too.
+     * would look merely inactive), and it carries the extracted files too. Reading it through the
+     * query cache also keeps the settings list in step, since it reads the same entry.
      *
-     * Every package in the queue reads that same list, so one read is shared by whichever of them
-     * poll around the same moment — a verdict arriving up to half a poll late costs nothing, where
-     * a full list request per package per tick does.
+     * `maxAgeMs` is how old a read may be to be taken as it is — zero right after publishing, where
+     * the list has to include the package that was just uploaded.
      */
-    const lastRead = useRef<{ at: number; extensions: Promise<Readonly<Extension[] | ErrorResult>> }>(undefined);
     const readPublished = useCallback(
-        async (namespace: string, name: string): Promise<Readonly<Extension> | undefined> => {
-            if (!lastRead.current || Date.now() - lastRead.current.at >= POLL_INTERVAL_MS / 2) {
-                lastRead.current = { at: Date.now(), extensions: service.getExtensions(abortController.current) };
-            }
-            const result = await lastRead.current.extensions;
-            if (!Array.isArray(result)) {
-                return undefined;
-            }
-            return result.find((entry: Readonly<Extension>) => entry.namespace === namespace && entry.name === name);
+        async (namespace: string, name: string, maxAgeMs: number): Promise<Readonly<Extension> | undefined> => {
+            const extensions = await queryClient.fetchQuery({
+                ...userExtensionsQuery(service),
+                staleTime: maxAgeMs
+            });
+            return extensions.find(entry => entry.namespace === namespace && entry.name === name);
         },
-        [service]
+        [queryClient, service]
     );
 
     /**
@@ -180,13 +186,13 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
             };
 
             let current = initial;
-            while (pending(current) && !abortController.current.signal.aborted) {
+            while (pending(current) && !stopped.current) {
                 await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-                if (abortController.current.signal.aborted) {
+                if (stopped.current) {
                     return;
                 }
                 try {
-                    const fresh = await readPublished(initial.namespace, initial.name);
+                    const fresh = await readPublished(initial.namespace, initial.name, READ_SHARE_MS);
                     if (!fresh) {
                         continue;
                     }
@@ -213,7 +219,7 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
     const hydrate = useCallback(
         async (extension: Readonly<Extension>): Promise<Readonly<Extension> | undefined> => {
             try {
-                return await readPublished(extension.namespace, extension.name);
+                return await readPublished(extension.namespace, extension.name, 0);
             } catch {
                 return undefined;
             }
@@ -246,7 +252,7 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
                 });
                 await pollUntilSettled(id, extension, { readBack: fresh !== undefined });
             } catch (err) {
-                if (!abortController.current.signal.aborted) {
+                if (!stopped.current) {
                     update(id, { status: 'failed', error: formatError(err) });
                     // The card keeps the record, but a rejected publish is worth interrupting for:
                     // this is the same dialog every other failed request in the app raises.

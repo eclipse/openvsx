@@ -8,52 +8,24 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import { FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { FunctionComponent } from 'react';
 import { Link as RouteLink } from 'react-router';
-import { Extension } from '../../../extension-registry-types';
 import { Box, Button } from '@mui/material';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
-import { isError } from '../../../extension-registry-types';
 import { DelayedLoadIndicator } from '../../../components/delayed-load-indicator';
-import { MainContext } from '../../../context';
 import { ManageExtensionCard } from '../../../components/extension/manage-extension-card';
 import { EmptyPlaceholder } from '../settings/settings-primitives';
 import { ExtensionGrid } from '../../../components/page-primitives';
 import { SettingsHeader } from '../settings/settings-header';
 import { UserSettingsRoutes } from '../user-settings-routes';
 import { PublishRoutes } from '../../publish/publish-routes';
+import { useReportedQuery } from '../../../hooks/use-reported-query';
+import { useUserExtensions } from '../../../hooks/use-user-extensions';
 
 export const UserSettingsExtensions: FunctionComponent = () => {
-    const [loading, setLoading] = useState(true);
-    const [extensions, setExtensions] = useState(Array<Extension>());
-    const { user, service, handleError } = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        updateExtensions();
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
-
-    const updateExtensions = async (): Promise<void> => {
-        if (!user) {
-            return;
-        }
-        try {
-            const response = await service.getExtensions(abortController.current);
-            if (isError(response)) {
-                throw response;
-            }
-
-            const extensions = response as Extension[];
-            setExtensions(extensions);
-            setLoading(false);
-        } catch (err) {
-            handleError(err);
-            setLoading(false);
-        }
-    };
+    // The publish queue reads the same entry as it follows a package, so a card lands here as soon
+    // as the registry has the package, without this page fetching again.
+    const { data: extensions, isLoading } = useReportedQuery(useUserExtensions());
 
     return (
         <Box>
@@ -69,7 +41,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
                     </Button>
                 }
             />
-            <DelayedLoadIndicator loading={loading} />
+            <DelayedLoadIndicator loading={isLoading} />
             {extensions && extensions.length > 0 ? (
                 <ExtensionGrid>
                     {extensions.map(extension => (
@@ -80,7 +52,7 @@ export const UserSettingsExtensions: FunctionComponent = () => {
                         />
                     ))}
                 </ExtensionGrid>
-            ) : !loading ? (
+            ) : !isLoading ? (
                 <EmptyPlaceholder>You haven&apos;t published any extensions yet.</EmptyPlaceholder>
             ) : null}
         </Box>
