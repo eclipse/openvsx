@@ -633,7 +633,7 @@ export class ExtensionRegistryService {
         namespace: string;
         extension: string;
         targetPlatformVersions?: object[];
-    }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    }): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -643,7 +643,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'extension', req.namespace, req.extension, 'delete']),
@@ -664,14 +664,14 @@ export interface AdminService {
         namespace: string;
         extension: string;
         targetPlatformVersions?: object[];
-    }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    }): Promise<Readonly<SuccessResult>>;
     purgeExtensions(req: {
         namespace: string;
         extension: string;
         targetPlatformVersions?: object[];
-    }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    }): Promise<Readonly<SuccessResult>>;
     getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>>;
-    createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>>;
+    createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult>>;
     deleteNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult>>;
     changeNamespace(req: {
         oldNamespace: string;
@@ -752,12 +752,12 @@ export interface AdminService {
     getTiers(abortController: AbortController): Promise<Readonly<TierList>>;
     createTier(tier: Tier): Promise<Readonly<Tier>>;
     updateTier(name: string, tier: Tier): Promise<Readonly<Tier>>;
-    deleteTier(name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    deleteTier(name: string): Promise<Readonly<SuccessResult>>;
     getCustomers(abortController: AbortController): Promise<Readonly<CustomerList>>;
     getCustomer(abortController: AbortController, name: string): Promise<Readonly<Customer>>;
     createCustomer(customer: Customer): Promise<Readonly<Customer>>;
     updateCustomer(name: string, customer: Customer): Promise<Readonly<Customer>>;
-    deleteCustomer(name: string): Promise<Readonly<SuccessResult | ErrorResult>>;
+    deleteCustomer(name: string): Promise<Readonly<SuccessResult>>;
     getCustomerMembers(abortController: AbortController, name: string): Promise<Readonly<CustomerMembershipList>>;
     addCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult>>;
     removeCustomerMember(name: string, user: UserData): Promise<Readonly<SuccessResult>>;
@@ -785,8 +785,8 @@ export interface AdminService {
         abortController: AbortController,
         checkId: string
     ): Promise<Readonly<ConsistencyFindingList>>;
-    fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>>;
-    fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>>;
+    fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult>>;
+    fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult>>;
 }
 
 export interface AdminServiceConstructor {
@@ -812,7 +812,7 @@ export class AdminServiceImpl implements AdminService {
         namespace: string;
         extension: string;
         targetPlatformVersions?: object[];
-    }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    }): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -822,7 +822,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([
@@ -842,7 +842,7 @@ export class AdminServiceImpl implements AdminService {
         namespace: string;
         extension: string;
         targetPlatformVersions?: object[];
-    }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    }): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -852,7 +852,7 @@ export class AdminServiceImpl implements AdminService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([
@@ -876,7 +876,7 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async createNamespace(namespace: { name: string }): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -885,7 +885,7 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'create-namespace']),
             method: 'POST',
@@ -1306,7 +1306,7 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteTier(name: string): Promise<SuccessResult | ErrorResult> {
+    async deleteTier(name: string): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -1315,7 +1315,7 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'tiers', name]),
@@ -1375,7 +1375,7 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async deleteCustomer(name: string): Promise<SuccessResult | ErrorResult> {
+    async deleteCustomer(name: string): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.registry.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -1384,7 +1384,7 @@ export class AdminServiceImpl implements AdminService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'DELETE',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'ratelimit', 'customers', name]),
@@ -1603,9 +1603,9 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async fixConsistencyFindings(checkId: string): Promise<Readonly<SuccessResult>> {
         const headers = await this.csrfHeaders();
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'consistency', checkId, 'fix']),
@@ -1613,9 +1613,9 @@ export class AdminServiceImpl implements AdminService {
         });
     }
 
-    async fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async fixConsistencyFinding(checkId: string, entityId: number): Promise<Readonly<SuccessResult>> {
         const headers = await this.csrfHeaders();
-        return sendNonRetriableRequest({
+        return sendStrictRequest({
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([

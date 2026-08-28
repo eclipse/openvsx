@@ -45,9 +45,7 @@ export const useAdminExtension = (target: ExtensionTarget | null) => {
 };
 
 /**
- * Deletes extension versions. Mirrors the previous behaviour of not throwing on
- * an error result; thrown (network/server) errors reject so the caller's catch
- * path runs.
+ * Deletes extension versions.
  */
 export const useDeleteExtension = () => {
     const { service } = useContext(MainContext);
