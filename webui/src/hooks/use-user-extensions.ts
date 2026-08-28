@@ -15,11 +15,7 @@ import { useContext } from 'react';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../context';
 import { ExtensionRegistryService } from '../extension-registry-service';
-import { ErrorResult, Extension, isError } from '../extension-registry-types';
 import { controllerFromSignal } from '../query-client';
-
-/** `isError` narrows to `ErrorResult`, which does not subtract from a `Readonly<…>` union. */
-const isList = (result: Readonly<Extension[] | ErrorResult>): result is Readonly<Extension[]> => !isError(result);
 
 export const USER_EXTENSIONS_QUERY_KEY = ['user', 'extensions'];
 
@@ -31,13 +27,7 @@ export const USER_EXTENSIONS_QUERY_KEY = ['user', 'extensions'];
 export const userExtensionsQuery = (service: ExtensionRegistryService) =>
     queryOptions({
         queryKey: USER_EXTENSIONS_QUERY_KEY,
-        queryFn: async ({ signal }) => {
-            const result = await service.getExtensions(controllerFromSignal(signal));
-            if (!isList(result)) {
-                throw result;
-            }
-            return result;
-        }
+        queryFn: ({ signal }) => service.getExtensions(controllerFromSignal(signal))
     });
 
 /** Lists the current user's published extensions; idle until there is a user to list them for. */

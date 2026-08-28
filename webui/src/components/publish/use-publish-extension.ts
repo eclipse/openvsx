@@ -14,25 +14,12 @@
 import { useContext } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { MainContext } from '../../context';
-import { Extension, ErrorResult, isError } from '../../extension-registry-types';
-
-/** `isError` narrows to `ErrorResult`, which does not subtract from a `Readonly<…>` union. */
-const isPublished = (result: Readonly<Extension | ErrorResult>): result is Readonly<Extension> => !isError(result);
 
 /**
- * Uploads one `.vsix` package. The registry answers a package it turned down either by
- * rejecting with the parsed body or by returning an `ErrorResult`; both become a rejection
- * here, so the queue has one shape to catch.
+ * Uploads one `.vsix` package. A package the registry turns down rejects with its reason,
+ * whether the server said so with a status or with an error body.
  */
 export const usePublishExtension = () => {
     const { service } = useContext(MainContext);
-    return useMutation<Readonly<Extension>, Readonly<ErrorResult> | Error, File>({
-        mutationFn: async (extensionPackage: File) => {
-            const result = await service.publishExtension(extensionPackage);
-            if (!isPublished(result)) {
-                throw result;
-            }
-            return result;
-        }
-    });
+    return useMutation({ mutationFn: (extensionPackage: File) => service.publishExtension(extensionPackage) });
 };

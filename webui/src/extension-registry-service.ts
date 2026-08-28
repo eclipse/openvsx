@@ -555,7 +555,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async publishExtension(extensionPackage: File): Promise<Readonly<Extension | ErrorResult>> {
+    async publishExtension(extensionPackage: File): Promise<Readonly<Extension>> {
         const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream'
@@ -566,7 +566,7 @@ export class ExtensionRegistryService {
         }
 
         // Never retried: an upload the registry turned down has an explicit reason to show.
-        return sendNonRetriableRequest<Extension | ErrorResult>({
+        return sendStrictRequest<Extension>({
             method: 'POST',
             credentials: true,
             payload: extensionPackage,
@@ -575,7 +575,7 @@ export class ExtensionRegistryService {
         });
     }
 
-    async createNamespace(name: string): Promise<Readonly<SuccessResult | ErrorResult>> {
+    async createNamespace(name: string): Promise<Readonly<SuccessResult>> {
         const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
@@ -585,7 +585,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendNonRetriableRequest<SuccessResult | ErrorResult>({
+        return sendStrictRequest<SuccessResult>({
             method: 'POST',
             credentials: true,
             payload: { name: name },
@@ -594,10 +594,10 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
+    async getExtensions(abortController: AbortController): Promise<Readonly<Extension[]>> {
         const headers: Record<string, string> = {};
 
-        return sendNonRetriableRequest<Extension[] | ErrorResult>({
+        return sendStrictRequest<Extension[]>({
             abortController,
             method: 'GET',
             credentials: true,

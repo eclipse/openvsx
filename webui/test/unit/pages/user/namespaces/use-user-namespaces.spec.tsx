@@ -77,7 +77,7 @@ describe('useCreateNamespace', () => {
     });
 
     it('rejects when the registry turns the name down, leaving the list alone', async () => {
-        const createNamespace = vi.fn().mockResolvedValue({ error: 'Namespace already exists' });
+        const createNamespace = vi.fn().mockRejectedValue({ error: 'Namespace already exists' });
         const { getNamespaces, result } = renderCreate(createNamespace);
         await waitFor(() => expect(getNamespaces).toHaveBeenCalledTimes(1));
 

@@ -15,7 +15,6 @@ import { useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
-import { isError } from '../../../extension-registry-types';
 import { controllerFromSignal, NO_CACHE } from '../../../query-client';
 import { createRoute } from '../../../utils';
 import { UserSettingsRoutes } from '../user-settings-routes';
@@ -44,13 +43,7 @@ export const useCreateNamespace = () => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (name: string) => {
-            const result = await service.createNamespace(name);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        mutationFn: (name: string) => service.createNamespace(name),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: NAMESPACES_QUERY_KEY })
     });
 };

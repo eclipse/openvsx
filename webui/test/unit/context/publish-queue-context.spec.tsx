@@ -110,20 +110,6 @@ describe('publish queue', () => {
         expect(publishExtension).toHaveBeenCalledTimes(2);
     });
 
-    it('creates the namespace when the error comes back as a value instead of a throw', async () => {
-        const publishExtension = vi
-            .fn()
-            .mockResolvedValueOnce({ error: 'Unknown publisher: foo\nUse the CLI to create it' })
-            .mockResolvedValueOnce(published());
-        const createNamespace = vi.fn().mockResolvedValue({ success: 'ok' });
-        const { result } = renderQueue({ publishExtension, createNamespace });
-
-        act(() => result.current.publish([vsix()]));
-
-        await waitFor(() => expect(result.current.items[0].status).toBe('published'));
-        expect(createNamespace).toHaveBeenCalledWith('foo');
-    });
-
     it('reads the namespace even when the message carries no second line', async () => {
         const publishExtension = vi
             .fn()
