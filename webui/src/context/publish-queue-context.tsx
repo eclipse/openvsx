@@ -24,6 +24,8 @@ import {
 import { MainContext } from '../context';
 import { ErrorResult, Extension, isError } from '../extension-registry-types';
 import { useRegistryValue } from '../hooks/use-registry-value';
+import { usePublishExtension } from '../components/publish/use-publish-extension';
+import { useCreateNamespace } from '../pages/user/namespaces/use-user-namespaces';
 import { formatFileSize, handleError as formatError } from '../utils';
 
 /** How often a freshly published package is re-read, and for how long. */
@@ -73,9 +75,6 @@ export const isVsixFile = (file: File): boolean => file.name.toLowerCase().endsW
 // eslint-disable-next-line react-refresh/only-export-components
 export const isFinished = (item: PublishItem): boolean => item.status !== 'uploading' && item.status !== 'reviewing';
 
-/** `isError` narrows to `ErrorResult`, which does not subtract from a `Readonly<…>` union. */
-const isPublished = (result: Readonly<Extension | ErrorResult>): result is Readonly<Extension> => !isError(result);
-
 const statusOf = (extension: Readonly<Extension>): PublishStatus => {
     // The registry parks a conflicting namespace under review, but only the user claiming it clears
     // that, so calling it "reviewing" names neither what is happening nor what to do about it.
@@ -115,6 +114,8 @@ const unknownNamespace = (err: unknown): string | undefined => {
  */
 export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     const { service, user, handleError } = useContext(MainContext);
+    const { mutateAsync: publishPackage } = usePublishExtension();
+    const { mutateAsync: createNamespace } = useCreateNamespace();
     const [items, setItems] = useState<PublishItem[]>([]);
     const nextId = useRef(0);
     const abortController = useRef(new AbortController());
@@ -220,36 +221,20 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
         [readPublished]
     );
 
-    // A rejected publish arrives as a thrown error (`sendRequest` throws the parsed body) but the
-    // signature also allows an ErrorResult return; normalise both to a throw so callers catch one shape.
-    const publishOnce = useCallback(
-        async (file: File): Promise<Readonly<Extension>> => {
-            const result = await service.publishExtension(abortController.current, file);
-            if (!isPublished(result)) {
-                throw result;
-            }
-            return result;
-        },
-        [service]
-    );
-
     const upload = useCallback(
         async (id: number, file: File) => {
             try {
                 let result: Readonly<Extension>;
                 try {
-                    result = await publishOnce(file);
+                    result = await publishPackage(file);
                 } catch (err) {
                     // A first-time publisher has no namespace yet; create it and publish again.
                     const namespace = unknownNamespace(err);
                     if (!namespace) {
                         throw err;
                     }
-                    const created = await service.createNamespace(abortController.current, namespace);
-                    if (isError(created)) {
-                        throw created;
-                    }
-                    result = await publishOnce(file);
+                    await createNamespace(namespace);
+                    result = await publishPackage(file);
                 }
                 const fresh = await hydrate(result);
                 const extension = fresh ?? result;
@@ -269,7 +254,7 @@ export const PublishQueueProvider: FunctionComponent<{ children: ReactNode }> = 
                 }
             }
         },
-        [update, pollUntilSettled, publishOnce, hydrate, handleError]
+        [update, pollUntilSettled, publishPackage, createNamespace, hydrate, handleError]
     );
 
     const publish = useCallback(

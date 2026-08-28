@@ -13,8 +13,9 @@
 
 import { useContext } from 'react';
 import { useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
+import { isError } from '../../../extension-registry-types';
 import { controllerFromSignal, NO_CACHE } from '../../../query-client';
 import { createRoute } from '../../../utils';
 import { UserSettingsRoutes } from '../user-settings-routes';
@@ -35,18 +36,27 @@ export const useUserNamespaces = () => {
     });
 };
 
-/** Returns a callback that re-fetches the namespace list, e.g. after creating a namespace. */
-export const useRefreshUserNamespaces = () => {
+/**
+ * Claims a namespace for the current user. Also reached from publishing, where a first-time
+ * publisher's namespace does not exist yet, so the list is refreshed here rather than by each caller.
+ */
+export const useCreateNamespace = () => {
+    const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
-    return () => queryClient.invalidateQueries({ queryKey: NAMESPACES_QUERY_KEY });
+    return useMutation({
+        mutationFn: async (name: string) => {
+            const result = await service.createNamespace(name);
+            if (isError(result)) {
+                throw result;
+            }
+            return result;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: NAMESPACES_QUERY_KEY })
+    });
 };
 
-/** `CreateNamespaceDialog` callback that refreshes the list and opens the new namespace. */
+/** `CreateNamespaceDialog` callback that opens the namespace just created. */
 export const useHandleNamespaceCreated = () => {
-    const refreshNamespaces = useRefreshUserNamespaces();
     const navigate = useNavigate();
-    return (name: string) => {
-        refreshNamespaces();
-        navigate(createRoute([UserSettingsRoutes.NAMESPACES, name]));
-    };
+    return (name: string) => navigate(createRoute([UserSettingsRoutes.NAMESPACES, name]));
 };

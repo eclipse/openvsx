@@ -58,7 +58,7 @@ describe('publish queue', () => {
 
         act(() => result.current.publish([vsix('one.vsix'), vsix('two.vsix')]));
 
-        expect(publishExtension).toHaveBeenCalledTimes(2);
+        await waitFor(() => expect(publishExtension).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(result.current.items.map(item => item.status)).toEqual(['published', 'published']));
     });
 
@@ -105,7 +105,7 @@ describe('publish queue', () => {
         act(() => result.current.publish([vsix()]));
 
         await waitFor(() => expect(result.current.items[0].status).toBe('published'));
-        expect(createNamespace).toHaveBeenCalledWith(expect.anything(), 'foo');
+        expect(createNamespace).toHaveBeenCalledWith('foo');
         expect(publishExtension).toHaveBeenCalledTimes(2);
     });
 
@@ -120,7 +120,7 @@ describe('publish queue', () => {
         act(() => result.current.publish([vsix()]));
 
         await waitFor(() => expect(result.current.items[0].status).toBe('published'));
-        expect(createNamespace).toHaveBeenCalledWith(expect.anything(), 'foo');
+        expect(createNamespace).toHaveBeenCalledWith('foo');
     });
 
     it('reads the namespace even when the message carries no second line', async () => {
@@ -133,7 +133,7 @@ describe('publish queue', () => {
 
         act(() => result.current.publish([vsix()]));
 
-        await waitFor(() => expect(createNamespace).toHaveBeenCalledWith(expect.anything(), 'foo'));
+        await waitFor(() => expect(createNamespace).toHaveBeenCalledWith('foo'));
     });
 
     it('surfaces the registry error when publishing fails for another reason', async () => {
@@ -160,7 +160,7 @@ describe('publish queue', () => {
         expect(result.current.items[0].error).toBe('Bad Request (Unsupported manifest)');
     });
 
-    it('fails an oversized package on its card instead of uploading it', () => {
+    it('fails an oversized package on its card instead of uploading it', async () => {
         const publishExtension = vi.fn().mockResolvedValue(published());
         const { result } = renderQueue({ publishExtension }, { version: { version: '1.0.0', maxExtensionSize: 4 } });
 
@@ -170,8 +170,8 @@ describe('publish queue', () => {
         expect(oversized?.status).toBe('failed');
         expect(oversized?.error).toBe('Larger than the 4 B limit.');
         // The rest of the drop is unaffected.
-        expect(publishExtension).toHaveBeenCalledOnce();
-        expect(result.current.items.find(item => item.fileName === 'small.vsix')?.status).toBe('uploading');
+        await waitFor(() => expect(publishExtension).toHaveBeenCalledOnce());
+        expect(publishExtension).toHaveBeenCalledWith(expect.objectContaining({ name: 'small.vsix' }));
     });
 
     it('lists the newest upload first, so a fresh one always lands in the same place', () => {

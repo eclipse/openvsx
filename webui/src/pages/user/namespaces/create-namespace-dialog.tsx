@@ -8,31 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, useContext, useEffect, useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../../components/button-with-progress';
-import { isError } from '../../../extension-registry-types';
 import { MainContext } from '../../../context';
+import { useCreateNamespace } from './use-user-namespaces';
 
 const NAMESPACE_NAME_SIZE = 255;
 
 export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps> = props => {
-    const [posted, setPosted] = useState<boolean>(false);
     const [name, setName] = useState<string>('');
     const [nameError, setNameError] = useState<string>();
 
     const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const { mutateAsync: createNamespace, isPending: creating } = useCreateNamespace();
 
     useEffect(() => {
         if (props.open) {
-            setPosted(false);
             setName('');
             setNameError(undefined);
         }
@@ -61,20 +53,13 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
             return;
         }
 
-        setPosted(true);
         try {
-            const response = await context.service.createNamespace(abortController.current, name);
-            if (isError(response)) {
-                throw response;
-            }
-
+            await createNamespace(name);
             props.onClose();
             props.namespaceCreated(name);
         } catch (err) {
             context.handleError(err);
         }
-
-        setPosted(false);
     };
 
     const handleEnter = (e: KeyboardEvent) => {
@@ -103,7 +88,7 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
                     autoFocus
                     sx={{ ml: 1 }}
                     error={Boolean(nameError) || !name}
-                    working={posted}
+                    working={creating}
                     onClick={handleCreateNamespace}>
                     Create Namespace
                 </ButtonWithProgress>
