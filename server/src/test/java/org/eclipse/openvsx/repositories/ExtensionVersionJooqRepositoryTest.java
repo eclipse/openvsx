@@ -319,6 +319,31 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
                                 .contains(ev.getTargetPlatform()));
     }
 
+    // Regression test: the target-platform filter used to be applied via field(name("...")) against
+    // whatever query shape was built, unconditionally - which happens to be valid SQL only when the
+    // cap wraps the query in a CTE (maxPreReleaseVersions >= 0). With the cap disabled there is no CTE,
+    // so referencing that select-list alias from the plain query's own WHERE clause is invalid SQL and
+    // Postgres rejected the query outright. Since VS Code's extensionQuery always supplies a target
+    // platform, this broke essentially every request under the (uncapped) default configuration.
+    @Test
+    void targetPlatformFilterWorksWithTheCapDisabled() {
+        var extension = persistExtension("ns13", "ext13");
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_LINUX_X64, true);
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_WIN32_X64, true);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(
+                List.of(extension.getId()),
+                TargetPlatform.NAME_LINUX_X64,
+                -1);
+
+        assertThat(result)
+                .as(
+                        "the target platform filter must still apply, and must not raise a SQL error, "
+                                + "when the pre-release cap is disabled")
+                .extracting(ExtensionVersion::getTargetPlatform)
+                .containsExactly(TargetPlatform.NAME_LINUX_X64);
+    }
+
     @Test
     void negativeMaxPreReleaseVersionsDisablesTheCapEntirely() {
         // A negative "count < limit" can never hold, so a naive reading of the cap would exclude

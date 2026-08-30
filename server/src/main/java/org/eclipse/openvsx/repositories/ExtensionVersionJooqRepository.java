@@ -110,10 +110,14 @@ public class ExtensionVersionJooqRepository {
                 EXTENSION_VERSION.BUNDLED_EXTENSIONS.as("extension_version_bundled_extensions"),
                 SIGNATURE_KEY_PAIR.PUBLIC_ID.as("signature_key_pair_public_id"),
                 denseRank().over(
+                        // Rows with no parsed semver (legacy/unparseable version strings) must sort behind every
+                        // real semver version rather than in front of it - Postgres defaults DESC to NULLS FIRST,
+                        // so nullsLast() is required here to keep the "rank #1 is the true latest pre-release"
+                        // guarantee this method documents.
                         partitionBy(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.PRE_RELEASE).orderBy(
-                                EXTENSION_VERSION.SEMVER_MAJOR.desc(),
-                                EXTENSION_VERSION.SEMVER_MINOR.desc(),
-                                EXTENSION_VERSION.SEMVER_PATCH.desc(),
+                                EXTENSION_VERSION.SEMVER_MAJOR.desc().nullsLast(),
+                                EXTENSION_VERSION.SEMVER_MINOR.desc().nullsLast(),
+                                EXTENSION_VERSION.SEMVER_PATCH.desc().nullsLast(),
                                 EXTENSION_VERSION.TIMESTAMP.desc(),
                                 EXTENSION_VERSION.ID.desc()))
                         .as("rank"))
@@ -125,6 +129,10 @@ public class ExtensionVersionJooqRepository {
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
 
         if (maxPreReleaseVersions >= 0) {
+            // Wrapped in a CTE so the "rank" window-function alias computed above (over all target
+            // platforms combined, per this method's contract) can be referenced here, in the WHERE
+            // clause that applies the cap - a plain SELECT can't reference its own select-list alias
+            // from its own WHERE.
             var rankedExtensionVersion = name("ranked_extension_version").as(query);
             query = dsl.with(rankedExtensionVersion)
                     .select()
@@ -134,10 +142,16 @@ public class ExtensionVersionJooqRepository {
                                     .or(
                                             rankedExtensionVersion.field("rank", Integer.class)
                                                     .lessOrEqual(maxPreReleaseVersions)));
-        }
 
-        if (targetPlatform != null) {
-            query = query.and(field(name("extension_version_target_platform")).eq(targetPlatform));
+            if (targetPlatform != null) {
+                query = query.and(
+                        rankedExtensionVersion.field("extension_version_target_platform", String.class)
+                                .eq(targetPlatform));
+            }
+        } else if (targetPlatform != null) {
+            // No CTE in this branch - EXTENSION_VERSION.TARGET_PLATFORM is a real column of the query's
+            // own FROM clause here, not a select-list alias, so it can be used directly.
+            query = query.and(EXTENSION_VERSION.TARGET_PLATFORM.eq(targetPlatform));
         }
 
         return query.fetch().map(this::toRankedExtensionVersion);
