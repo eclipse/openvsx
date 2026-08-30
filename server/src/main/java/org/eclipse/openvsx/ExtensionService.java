@@ -229,6 +229,7 @@ public class ExtensionService {
         cache.evictNamespaceDetails(extension);
         cache.evictLatestExtensionVersion(extension);
         cache.evictExtensionJsons(extension);
+        evictReferencingExtensionJsons(extension);
 
         if (extension.getVersions().stream().anyMatch(ExtensionVersion::isActive)) {
             // There is at least one active version => activate the extension
@@ -241,6 +242,23 @@ public class ExtensionService {
         }
 
         extension.setLastUpdatedDate(TimeUtil.getCurrentUTC());
+    }
+
+    /**
+     * Evict the cached extension.json of every extension that references the given one as a bundled
+     * extension or dependency. Their cached {@code available} flag for that reference (see
+     * {@link org.eclipse.openvsx.LocalRegistryService#resolveExtensionReferences}) is derived from
+     * whether this extension currently resolves to an active extension, so it goes stale whenever
+     * this extension's own active status changes, e.g. it is published for the first time or purged.
+     */
+    private void evictReferencingExtensionJsons(Extension extension) {
+        var referencingExtensions = new LinkedHashSet<Extension>();
+        repositories.findBundledExtensionsReference(extension)
+                .forEach(version -> referencingExtensions.add(version.getExtension()));
+        repositories.findDependenciesReference(extension)
+                .forEach(version -> referencingExtensions.add(version.getExtension()));
+
+        referencingExtensions.forEach(cache::evictExtensionJsons);
     }
 
     /**

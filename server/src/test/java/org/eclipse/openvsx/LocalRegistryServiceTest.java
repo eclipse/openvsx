@@ -301,6 +301,58 @@ class LocalRegistryServiceTest {
         registryService.resolveExtensionReferences(null, "https://open-vsx.org");
     }
 
+    /**
+     * toExtensionVersionJson(ExtensionVersion, String, String) backs the v1 getExtension(...) API and
+     * used to fill in only the URL of each bundled-extension/dependency reference, duplicating (and
+     * missing half of) what resolveExtensionReferences(...) does for v2 - so a reference to an
+     * extension that is not (yet) published always came back without the {@code available} flag.
+     */
+    @Test
+    void shouldFlagAvailabilityOfReferencesInV1ExtensionJson() {
+        var extVersion = mockExtensionVersionWithBundledExtension();
+        var extension = extVersion.getExtension();
+        when(repositories.findLatestVersionForAllUrls(extension, null, false, true)).thenReturn(null);
+        when(repositories.findLatestVersionForAllUrls(extension, null, true, true)).thenReturn(null);
+        when(repositories.findVersionStringsSorted(extension, null, true)).thenReturn(List.of());
+        when(storageUtilService.getFileUrls(any(), any(), any(String[].class))).thenReturn(Map.of(1L, Map.of()));
+        when(repositories.findActiveExtension("bar", "foo")).thenReturn(null);
+
+        var json = registryService.toExtensionVersionJson(extVersion, null, true);
+
+        assertThat(json.getBundledExtensions()).hasSize(1);
+        assertThat(json.getBundledExtensions().getFirst().isAvailable()).isFalse();
+    }
+
+    /**
+     * Same regression as above, for the other v1 overload of toExtensionVersionJson(...) (the one
+     * backing the v1 query(...) API).
+     */
+    @Test
+    void shouldFlagAvailabilityOfReferencesInV1QueryExtensionJson() {
+        var extVersion = mockExtensionVersionWithBundledExtension();
+        when(repositories.findActiveExtension("bar", "foo")).thenReturn(new Extension());
+
+        var json = registryService
+                .toExtensionVersionJson(extVersion, null, null, 0L, false, null, null, List.of(), Map.of());
+
+        assertThat(json.getBundledExtensions()).hasSize(1);
+        assertThat(json.getBundledExtensions().getFirst().isAvailable()).isTrue();
+    }
+
+    private ExtensionVersion mockExtensionVersionWithBundledExtension() {
+        var namespace = new Namespace();
+        namespace.setName("foo");
+        var extension = new Extension();
+        extension.setNamespace(namespace);
+        extension.setName("baz");
+        var extVersion = new ExtensionVersion();
+        extVersion.setId(1L);
+        extVersion.setExtension(extension);
+        extVersion.setVersion("1.0.0");
+        extVersion.setBundledExtensions(List.of("foo.bar"));
+        return extVersion;
+    }
+
     @Test
     void shouldHoldBackTheMostRecentChanges() {
         // A request that reaches the present is clamped to the lag, so an entry whose transaction may

@@ -106,6 +106,16 @@ class EclipseServiceTest {
         eclipse.publisherAgreementAllowedVersions = List.of("1", "1.0", "1.1");
         eclipse.publisherAgreementVersion = "1.1";
         eclipse.eclipseApiUrl = "https://test.openvsx.eclipse.org/";
+
+        // Reactivating an extension goes through ExtensionService.updateExtension(...), which looks up
+        // extensions referencing it as a bundled extension or dependency to evict their cached
+        // extension.json; irrelevant here, so stub it leniently rather than in every affected test.
+        Mockito.lenient()
+                .when(repositories.findBundledExtensionsReference(any()))
+                .thenReturn(Streamable.empty());
+        Mockito.lenient()
+                .when(repositories.findDependenciesReference(any()))
+                .thenReturn(Streamable.empty());
     }
 
     @Test

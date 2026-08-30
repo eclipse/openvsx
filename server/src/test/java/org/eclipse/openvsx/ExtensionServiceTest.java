@@ -84,6 +84,16 @@ class ExtensionServiceTest {
                 scheduler,
                 scanService,
                 scanPersistenceService);
+
+        // updateExtension() looks up extensions referencing the given one as a bundled extension or
+        // dependency to evict their cached extension.json; irrelevant to most tests here, so stub it
+        // leniently rather than in every test that ends up calling updateExtension.
+        Mockito.lenient()
+                .when(repositories.findBundledExtensionsReference(Mockito.any()))
+                .thenReturn(Streamable.empty());
+        Mockito.lenient()
+                .when(repositories.findDependenciesReference(Mockito.any()))
+                .thenReturn(Streamable.empty());
     }
 
     @Test
@@ -346,6 +356,38 @@ class ExtensionServiceTest {
                 .hasMessageContaining("exceeds the size limit")
                 .extracting(exc -> ((ErrorResultException) exc).getStatus())
                 .isEqualTo(HttpStatus.CONTENT_TOO_LARGE);
+    }
+
+    /**
+     * The {@code available} flag cached in the extension.json of an extension pack / dependent extension
+     * is derived from whether the referenced extension currently resolves (see
+     * {@link LocalRegistryService#resolveExtensionReferences}), so it goes stale as soon as that
+     * referenced extension's own active status changes, e.g. it gets published for the first time.
+     * updateExtension(...) must therefore evict the referencing extensions' cached json too, not just
+     * the extension's own.
+     */
+    @Test
+    void shouldEvictExtensionJsonOfExtensionsReferencingThisOneAsBundledOrDependency() {
+        var extension = mockExtension();
+
+        var bundlingExtension = new Extension();
+        bundlingExtension.setId(10);
+        var bundlingVersion = plainExtensionVersion(bundlingExtension, "1.0.0");
+
+        var dependingExtension = new Extension();
+        dependingExtension.setId(20);
+        var dependingVersion = plainExtensionVersion(dependingExtension, "1.0.0");
+
+        Mockito.when(repositories.findBundledExtensionsReference(extension))
+                .thenReturn(Streamable.of(bundlingVersion));
+        Mockito.when(repositories.findDependenciesReference(extension))
+                .thenReturn(Streamable.of(dependingVersion));
+
+        svc.updateExtension(extension);
+
+        Mockito.verify(cache).evictExtensionJsons(extension);
+        Mockito.verify(cache).evictExtensionJsons(bundlingExtension);
+        Mockito.verify(cache).evictExtensionJsons(dependingExtension);
     }
 
     // ---------- UTILITY ----------//

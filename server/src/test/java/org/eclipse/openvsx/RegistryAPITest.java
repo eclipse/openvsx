@@ -3351,6 +3351,7 @@ class RegistryAPITest {
                 .then(
                         (Answer<Boolean>) invocation -> ((TargetPlatformVersion[]) invocation
                                 .getRawArguments()[2]).length == versions.size());
+        Mockito.when(repositories.findBundledExtensionsReference(extension)).thenReturn(Streamable.empty());
         Mockito.when(repositories.findDependenciesReference(extension)).thenReturn(Streamable.empty());
         return token;
     }

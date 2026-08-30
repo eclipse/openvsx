@@ -1101,16 +1101,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (json.getFiles().containsKey(DOWNLOAD_SIG)) {
             json.getFiles().put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
         }
-        if (json.getDependencies() != null) {
-            for (var ref : json.getDependencies()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
-        if (json.getBundledExtensions() != null) {
-            for (var ref : json.getBundledExtensions()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
+        resolveExtensionReferences(json.getDependencies(), serverUrl);
+        resolveExtensionReferences(json.getBundledExtensions(), serverUrl);
         return json;
     }
 
@@ -1181,16 +1173,8 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.setFiles(files);
-        if (json.getDependencies() != null) {
-            for (var ref : json.getDependencies()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
-        if (json.getBundledExtensions() != null) {
-            for (var ref : json.getBundledExtensions()) {
-                ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));
-            }
-        }
+        resolveExtensionReferences(json.getDependencies(), serverUrl);
+        resolveExtensionReferences(json.getBundledExtensions(), serverUrl);
         return json;
     }
 
