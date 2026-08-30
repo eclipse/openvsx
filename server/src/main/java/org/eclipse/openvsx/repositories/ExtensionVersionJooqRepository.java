@@ -1730,15 +1730,26 @@ public class ExtensionVersionJooqRepository {
     }
 
     /**
-     * Maps field onto provided table field.
+     * Maps a field belonging to its original (static) table onto the equivalent field of the given
+     * derived table - e.g. remaps {@code EXTENSION_VERSION.ID} onto {@code latest.field(EXTENSION_VERSION.ID)}
+     * so a caller can read a row of {@code latest} using the familiar static-table field constants.
+     * <p>
+     * {@code toExtensionVersionCommon} runs every field it reads through the same mapper, including
+     * fields of unrelated tables that were selected as-is rather than through {@code table} (e.g.
+     * {@code NAMESPACE.ID}, {@code EXTENSION.ID}) - {@link Table#field(Field)} returns {@code null}
+     * for those (they have no lineage relationship to {@code table}), so such a field is returned
+     * unchanged rather than as a null field that would blow up the subsequent {@code row.get(...)}.
+     * A field that already belongs to {@code table}, or isn't a plain table field at all (e.g. an
+     * already-computed expression), is likewise returned unchanged - remapping it would be a no-op.
      */
     private record TableFieldMapper(Table<Record> table) implements FieldMapper {
         @Override
         public <T> Field<T> map(Field<T> field) {
             if (field instanceof TableField<?, ?> tableField && tableField.getTable() != table) {
-                return field;
+                var remapped = table.field(field);
+                return remapped != null ? remapped : field;
             }
-            return table.field(field);
+            return field;
         }
     }
 

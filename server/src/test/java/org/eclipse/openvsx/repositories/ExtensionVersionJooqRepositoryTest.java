@@ -108,6 +108,33 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
                 .isEqualTo(PersonalAccessTokenType.TPT);
     }
 
+    // TableFieldMapper remaps a field belonging to the original EXTENSION_VERSION table onto the
+    // "latest" derived table's equivalent field, so toExtensionVersionCommon's row.get(...) calls
+    // resolve against the row that is actually returned rather than relying on Record.get(...) to
+    // guess a match for an ambiguous column name shared with e.g. NAMESPACE.ID/EXTENSION.ID, which
+    // are also selected here. Persisting several earlier versions of the same extension first pushes
+    // the extension_version id sequence well ahead of the namespace/extension ids, so a wrong column
+    // being picked up would return a clearly different (wrong) id rather than coincidentally matching.
+    @Test
+    void findLatestByExtensionIdsMapsTheExtensionVersionIdRatherThanAnUnrelatedSameNamedColumn() {
+        var extension = persistExtension("ns-tt-id", "ext-tt-id");
+        for (var i = 0; i < 20; i++) {
+            persistVersion(extension, "0.0." + i, TargetPlatform.NAME_UNIVERSAL, true);
+        }
+        var latest = new ExtensionVersion();
+        latest.setExtension(extension);
+        latest.setVersion("1.0.0");
+        latest.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        latest.setActive(true);
+        latest.setPublishedBy(owner);
+        em.persist(latest);
+        em.flush();
+
+        var versions = repo.findLatest(List.of(extension.getId()));
+
+        assertThat(versions).singleElement().extracting(ExtensionVersion::getId).isEqualTo(latest.getId());
+    }
+
     @Test
     void mapsPublishedWithTtOnFindLatestByUser() {
         var extension = persistExtension("ns-tt-3", "ext-tt-3");
