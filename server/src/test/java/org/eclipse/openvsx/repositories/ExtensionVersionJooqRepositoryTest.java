@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * namespace/extension and excludes inactive versions - so a future change to the join structure is
  * caught if it ever changes the result.
  */
-@SpringBootTest
+@SpringBootTest(classes = JooqOnlyTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Transactional
 class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
 

@@ -25,7 +25,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
@@ -49,10 +52,24 @@ import static org.mockito.Mockito.when;
  * instances (re-enqueueing the same stuck job twice submits it for scanning twice). These tests cover
  * both halves of the fix: the advisory lock's actual mutual-exclusion semantics against real Postgres
  * connections, and that {@code recoverOnStartup()} correctly skips/proceeds based on it.
+ * <p>
+ * The service under test is constructed by hand from plain Mockito mocks ({@link #newService}) rather
+ * than autowired, and the tests exercise the advisory lock through {@link #dataSource} directly - the
+ * only real Spring bean this needs is a {@code DataSource}. A bare {@code @SpringBootTest} would still
+ * boot the entire {@code RegistryApplication} regardless (every Spring Data JPA repository, JobRunr,
+ * the web layer, and more), so this uses a minimal context that imports just that.
  */
 @ExtendWith(MockitoExtension.class)
-@SpringBootTest
+@SpringBootTest(
+    classes = ExtensionScanJobRecoveryServiceTest.DataSourceOnlyTestConfig.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE
+)
 class ExtensionScanJobRecoveryServiceTest extends AbstractPostgresContainerTest {
+
+    @Configuration(proxyBeanMethods = false)
+    @ImportAutoConfiguration(DataSourceAutoConfiguration.class)
+    static class DataSourceOnlyTestConfig {
+    }
 
     @Autowired
     DataSource dataSource;
