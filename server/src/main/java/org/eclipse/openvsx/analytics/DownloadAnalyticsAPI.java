@@ -92,7 +92,7 @@ public class DownloadAnalyticsAPI {
             @Parameter(description = "Extension name", example = "java") String extension,
             @RequestParam(required = false)
             @Parameter(
-                description = "UTC start date (inclusive), defaults to 30 buckets before 'to'",
+                description = "UTC start date (inclusive), defaults to 30 days before 'to' whatever the interval",
                 example = "2026-06-16"
             ) String from,
             @RequestParam(required = false)

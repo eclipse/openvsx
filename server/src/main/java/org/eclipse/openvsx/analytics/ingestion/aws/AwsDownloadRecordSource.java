@@ -143,18 +143,21 @@ public class AwsDownloadRecordSource implements DownloadRecordSource {
 
     @Override
     public List<RawDownloadRecord> read(String name) throws IOException {
-        var inputStream = getS3Client().getObject(
-                GetObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(name)
-                        .build(),
-                ResponseTransformer.toInputStream());
+        try (
+                // the response keeps an HTTP connection checked out until it is closed; leaking one
+                // per log object exhausts the S3 client's pool and stalls ingestion
+                var inputStream = getS3Client().getObject(
+                        GetObjectRequest.builder()
+                                .bucket(bucket)
+                                .key(name)
+                                .build(),
+                        ResponseTransformer.toInputStream());
+                var downloadsTempFile = new TempFile("aws-downloads-", ".gz");
+        ) {
+            // records without their own timestamp fall back to the log file's date
+            var lastModified = inputStream.response().lastModified();
+            var fallbackTime = lastModified != null ? lastModified : Instant.now();
 
-        // records without their own timestamp fall back to the log file's date
-        var lastModified = inputStream.response().lastModified();
-        var fallbackTime = lastModified != null ? lastModified : Instant.now();
-
-        try (var downloadsTempFile = new TempFile("aws-downloads-", ".gz")) {
             Files.copy(inputStream, downloadsTempFile.getPath(), StandardCopyOption.REPLACE_EXISTING);
             try (
                     var fileStream = new FileInputStream(downloadsTempFile.getPath().toFile());

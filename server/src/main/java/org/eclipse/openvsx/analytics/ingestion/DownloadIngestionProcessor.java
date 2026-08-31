@@ -127,7 +127,6 @@ public class DownloadIngestionProcessor {
                     : increaseDownloadCounts(extensionDownloads);
             persistIngestion(fileName, storageType, processedOn, executionTime, true);
 
-            metrics.recordLoaded(events.size(), events.stream().mapToInt(DownloadEvent::count).sum());
             records.stream().map(RawDownloadRecord::time).max(Instant::compareTo).ifPresent(
                     latest -> metrics.recordExtractLag(Duration.between(latest, Instant.now())));
             return new ProcessedFile(extensions, events);
@@ -149,6 +148,9 @@ public class DownloadIngestionProcessor {
         analyticsRepository.ifAvailable(repository -> {
             try {
                 repository.save(events);
+                // counted here rather than in process(): with analytics disabled or the write
+                // failing, nothing was loaded and the counter must not say otherwise
+                metrics.recordLoaded(events.size(), events.stream().mapToInt(DownloadEvent::count).sum());
             } catch (Exception e) {
                 logger.error("could not store {} download events for analytics", events.size(), e);
                 metrics.recordFailedEvents(events.size());

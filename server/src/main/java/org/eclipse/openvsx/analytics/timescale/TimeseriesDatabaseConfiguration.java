@@ -38,6 +38,11 @@ class TimeseriesDatabaseConfiguration {
 
     private static final int DEFAULT_POOL_SIZE = 5;
 
+    // A download records its event on the request path, so an unreachable time-series database has
+    // to surface as a fast failure the caller can swallow. Hikari's 30 second default would hold a
+    // request thread for that long on every download until the outage ends.
+    private static final long DEFAULT_CONNECTION_TIMEOUT_MS = 2_000L;
+
     // defaultCandidate = false keeps these beans invisible to @ConditionalOnMissingBean and to
     // plain by-type injection, so Boot still auto-configures the primary DataSource, the main
     // Flyway chain and the primary DSLContext; only an explicit @Qualifier reaches them.
@@ -53,6 +58,13 @@ class TimeseriesDatabaseConfiguration {
                         "ovsx.analytics.datasource.maximum-pool-size",
                         Integer.class,
                         DEFAULT_POOL_SIZE));
+        var connectionTimeout = environment.getProperty(
+                "ovsx.analytics.datasource.connection-timeout",
+                Long.class,
+                DEFAULT_CONNECTION_TIMEOUT_MS);
+        config.setConnectionTimeout(connectionTimeout);
+        // Hikari rejects a validation timeout that is not below the connection timeout
+        config.setValidationTimeout(Math.max(250L, connectionTimeout / 2));
         return new HikariDataSource(config);
     }
 
