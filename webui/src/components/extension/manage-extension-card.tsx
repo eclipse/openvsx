@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent } from 'react';
+import { FunctionComponent, ReactNode } from 'react';
 import { Typography } from '@mui/material';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -29,7 +29,9 @@ import { ExtensionSettingsBackState } from '../../pages/user/extensions/extensio
 export const ManageExtensionCard: FunctionComponent<ManageExtensionCardProps> = ({
     extension,
     routePrefix,
-    linkState
+    linkState,
+    iconPending,
+    footerStart
 }) => {
     const status = getExtensionStatus(extension);
     // The namespace is the user's to claim, so the card flags it rather than just looking switched off.
@@ -42,6 +44,7 @@ export const ManageExtensionCard: FunctionComponent<ManageExtensionCardProps> = 
             // Greyscale would swallow the warning colour, and this state is the user's to fix —
             // it reads as actionable rather than switched off.
             dimmed={extension.active === false && !extension.namespaceOwnershipConflict}
+            iconPending={iconPending}
             tone={needsAttention ? 'warning' : undefined}
             overlay={
                 needsAttention ? (
@@ -51,11 +54,12 @@ export const ManageExtensionCard: FunctionComponent<ManageExtensionCardProps> = 
                 )
             }
             footerStart={
-                status ? (
+                footerStart ??
+                (status ? (
                     <Typography component='span' sx={{ fontSize: '0.75rem', fontWeight: 600, color: status.color }}>
                         {status.label}
                     </Typography>
-                ) : undefined
+                ) : undefined)
             }
         />
     );
@@ -67,4 +71,8 @@ export interface ManageExtensionCardProps {
     routePrefix: string;
     /** Router state passed to the extension settings page, e.g. its back-navigation target. */
     linkState?: ExtensionSettingsBackState;
+    /** The icon is still being produced (e.g. a just-published package), so keep its skeleton. */
+    iconPending?: boolean;
+    /** Replaces the publishing-state footer, e.g. while a package is still being reviewed. */
+    footerStart?: ReactNode;
 }

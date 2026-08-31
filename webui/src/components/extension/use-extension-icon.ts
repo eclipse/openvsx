@@ -33,7 +33,7 @@ export const useExtensionIcon = (extension: Extension | SearchEntry) => {
             extension.name,
             extension.version,
             targetPlatform,
-            extension.files.icon
+            extension.files?.icon
         ],
         queryFn: async ({ signal }) => {
             const icon = await service.getExtensionIcon(controllerFromSignal(signal), extension);

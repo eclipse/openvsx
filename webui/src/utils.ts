@@ -50,6 +50,23 @@ export function formatCompactNumber(value: number): string {
     return compactNumberFormat.format(value);
 }
 
+const FILE_SIZE_UNITS = ['B', 'kB', 'MB', 'GB', 'TB'];
+
+/** Formats a byte count for humans, e.g. 5242880 -> "5.00 MB". */
+export function formatFileSize(bytes: number): string {
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < FILE_SIZE_UNITS.length - 1) {
+        value /= 1024;
+        unitIndex++;
+    }
+    const formatted =
+        unitIndex === 0
+            ? value.toString()
+            : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${formatted} ${FILE_SIZE_UNITS[unitIndex]}`;
+}
+
 export function toLocalTime(timestamp?: string): string | undefined {
     if (!timestamp) {
         return undefined;
@@ -144,7 +161,8 @@ export function toCompactRelativeTime(timestamp?: string): string | undefined {
     }
 }
 
-export function handleError(err?: Error | Partial<ErrorResponse>): string {
+/** Takes whatever was thrown or returned — callers rarely know the shape — and narrows it here. */
+export function handleError(err?: unknown): string {
     if (err) {
         if (err instanceof Error && err.name === 'AbortError') {
             return '';
@@ -157,12 +175,15 @@ export function handleError(err?: Error | Partial<ErrorResponse>): string {
                 return 'Something went wrong while fetching data. Please contact the site administrators.';
             }
             return `An unexpected error occurred: ${err.message}`;
-        } else if (err.error && err.message) {
-            return `${err.error} (${err.message})`;
-        } else if (err.error) {
-            return err.error;
-        } else if (err.message) {
-            return err.message;
+        }
+        // A failed request rejects with the parsed server body, not an Error.
+        const { error, message } = (typeof err === 'object' ? err : {}) as Partial<ErrorResponse>;
+        if (error && message) {
+            return `${error} (${message})`;
+        } else if (error) {
+            return error;
+        } else if (message) {
+            return message;
         }
     }
     return 'An unexpected error occurred.';

@@ -18,11 +18,11 @@ import { Extension, SearchEntry } from '../../extension-registry-types';
 import { useExtensionIcon } from './use-extension-icon';
 
 /** Renders an extension's icon: a skeleton while loading, then the icon or the configured default. */
-export const ExtensionIcon: FunctionComponent<ExtensionIconProps> = ({ extension, alt, sx }) => {
+export const ExtensionIcon: FunctionComponent<ExtensionIconProps> = ({ extension, alt, sx, pending }) => {
     const { pageSettings } = useContext(MainContext);
     const { data: icon, isLoading } = useExtensionIcon(extension);
 
-    if (isLoading) {
+    if (isLoading || pending) {
         // Reset the Skeleton's default height so `aspectRatio` squares it from
         // the width; an explicit height in `sx` still wins.
         return (
@@ -45,6 +45,8 @@ export const ExtensionIcon: FunctionComponent<ExtensionIconProps> = ({ extension
 
 export interface ExtensionIconProps {
     extension: Extension | SearchEntry;
+    /** Keep the skeleton up even though the lookup finished: the icon does not exist yet. */
+    pending?: boolean;
     alt?: string;
     sx?: SxProps<Theme>;
 }

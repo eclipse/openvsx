@@ -25,6 +25,8 @@ import { getCookieValueByKey, setCookie } from '../utils';
 import { ExtensionListRoutes } from '../pages/extension-list/extension-list-routes';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { NamespaceDetailRoutes } from '../pages/namespace-detail/namespace-detail-routes';
+import { PublishRoutes } from '../pages/publish/publish-routes';
+import { PublishPage } from '../pages/publish/publish-page';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { ExtensionDetail } from '../pages/extension-detail/extension-detail';
 import { HomePage } from '../pages/home/home-page';
@@ -133,6 +135,7 @@ const AppLayoutContent: FunctionComponent<AppLayoutProps> = props => {
                             path={UserSettingsRoutes.NAMESPACE_DETAIL}
                             element={<UserSettings userLoading={props.userLoading} />}
                         />
+                        <Route path={PublishRoutes.ROOT} element={<PublishPage />} />
                         <Route path={NamespaceDetailRoutes.MAIN} element={<NamespaceDetail />} />
                         <Route path={ExtensionDetailRoutes.MAIN} element={<ExtensionDetail />} />
                         <Route path={ExtensionDetailRoutes.MAIN_TARGET} element={<ExtensionDetail />} />

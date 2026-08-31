@@ -12,14 +12,21 @@
  *****************************************************************************/
 package org.eclipse.openvsx.repositories;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -33,6 +40,10 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.openvsx.jooq.Tables.EXTENSION;
+import static org.eclipse.openvsx.jooq.Tables.EXTENSION_VERSION;
+import static org.eclipse.openvsx.jooq.Tables.NAMESPACE;
+import static org.eclipse.openvsx.jooq.Tables.SIGNATURE_KEY_PAIR;
 
 /**
  * {@code isDeleteAllActiveVersions} builds its "all active versions" count query by chaining
@@ -44,15 +55,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * namespace/extension and excludes inactive versions - so a future change to the join structure is
  * caught if it ever changes the result.
  */
-@SpringBootTest
+@SpringBootTest(classes = JooqOnlyTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Transactional
 class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExtensionVersionJooqRepositoryTest.class);
 
     @Autowired
     ExtensionVersionJooqRepository repo;
 
     @Autowired
     EntityManager em;
+
+    @Autowired
+    DSLContext dsl;
 
     private UserData owner;
 
@@ -90,6 +106,33 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         assertThat(versions).singleElement()
                 .extracting(ExtensionVersion::getPublishedWithTt)
                 .isEqualTo(PersonalAccessTokenType.TPT);
+    }
+
+    // TableFieldMapper remaps a field belonging to the original EXTENSION_VERSION table onto the
+    // "latest" derived table's equivalent field, so toExtensionVersionCommon's row.get(...) calls
+    // resolve against the row that is actually returned rather than relying on Record.get(...) to
+    // guess a match for an ambiguous column name shared with e.g. NAMESPACE.ID/EXTENSION.ID, which
+    // are also selected here. Persisting several earlier versions of the same extension first pushes
+    // the extension_version id sequence well ahead of the namespace/extension ids, so a wrong column
+    // being picked up would return a clearly different (wrong) id rather than coincidentally matching.
+    @Test
+    void findLatestByExtensionIdsMapsTheExtensionVersionIdRatherThanAnUnrelatedSameNamedColumn() {
+        var extension = persistExtension("ns-tt-id", "ext-tt-id");
+        for (var i = 0; i < 20; i++) {
+            persistVersion(extension, "0.0." + i, TargetPlatform.NAME_UNIVERSAL, true);
+        }
+        var latest = new ExtensionVersion();
+        latest.setExtension(extension);
+        latest.setVersion("1.0.0");
+        latest.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+        latest.setActive(true);
+        latest.setPublishedBy(owner);
+        em.persist(latest);
+        em.flush();
+
+        var versions = repo.findLatest(List.of(extension.getId()));
+
+        assertThat(versions).singleElement().extracting(ExtensionVersion::getId).isEqualTo(latest.getId());
     }
 
     @Test
@@ -319,6 +362,31 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
                                 .contains(ev.getTargetPlatform()));
     }
 
+    // Regression test: the target-platform filter used to be applied via field(name("...")) against
+    // whatever query shape was built, unconditionally - which happens to be valid SQL only when the
+    // cap wraps the query in a CTE (maxPreReleaseVersions >= 0). With the cap disabled there is no CTE,
+    // so referencing that select-list alias from the plain query's own WHERE clause is invalid SQL and
+    // Postgres rejected the query outright. Since VS Code's extensionQuery always supplies a target
+    // platform, this broke essentially every request under the (uncapped) default configuration.
+    @Test
+    void targetPlatformFilterWorksWithTheCapDisabled() {
+        var extension = persistExtension("ns13", "ext13");
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_LINUX_X64, true);
+        persistVersion(extension, "1.0.0", TargetPlatform.NAME_WIN32_X64, true);
+
+        var result = repo.findAllActiveByExtensionIdAndTargetPlatform(
+                List.of(extension.getId()),
+                TargetPlatform.NAME_LINUX_X64,
+                -1);
+
+        assertThat(result)
+                .as(
+                        "the target platform filter must still apply, and must not raise a SQL error, "
+                                + "when the pre-release cap is disabled")
+                .extracting(ExtensionVersion::getTargetPlatform)
+                .containsExactly(TargetPlatform.NAME_LINUX_X64);
+    }
+
     @Test
     void negativeMaxPreReleaseVersionsDisablesTheCapEntirely() {
         // A negative "count < limit" can never hold, so a naive reading of the cap would exclude
@@ -332,6 +400,185 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         var result = repo.findAllActiveByExtensionIdAndTargetPlatform(List.of(extension.getId()), null, -1);
 
         assertThat(result).as("a negative cap must return every active pre-release, uncapped").hasSize(105);
+    }
+
+    /**
+     * The method this reworks ranked pre-releases via a correlated {@code COUNT(*)} subquery
+     * ({@link #oldIsAmongLatestPreReleases}): for every pre-release row, count how many other
+     * pre-releases of the <em>same extension</em> outrank it, an O(k^2) comparison for an extension
+     * with k pre-releases, with no index supporting the multi-column row comparison. The rework
+     * ranks with a single {@code denseRank()} window function instead, an O(k log k) sort. This pins
+     * down that the rework is a wash or a win, not a regression, at the pre-release volumes this
+     * method's own doc comment is written around ("one build per commit... accumulate thousands of
+     * entries") - the volume the correlated subquery approach scaled worst for.
+     * <p>
+     * It also compares against a third baseline: {@link #noLimitFindAllActive}, a port of the method
+     * as it existed before pre-release limiting existed at all (before #2062) - a bare filtered
+     * SELECT with no ranking whatsoever. The uncapped path (the default, since {@code
+     * ovsx.extension-query.max-pre-release-versions} defaults to {@code -1}) now skips building the
+     * {@code denseRank()} window function entirely, so this pins down that it stays a wash against
+     * the simplest query that could possibly answer the same question. It wasn't always a wash: an
+     * earlier version of this method computed the window function unconditionally, and separately its
+     * {@code RankedFieldMapper} resolved each mapped column by handing jOOQ a freshly-constructed,
+     * unrelated {@code Field} object - which forces a slow fallback lookup - instead of the row's own
+     * indexed {@code Field(String)} lookup. Both are fixed now; this test guards against either
+     * regressing.
+     * <p>
+     * Both comparisons are necessarily coarse (real wall-clock time against a real Postgres instance,
+     * not a controlled microbenchmark), so each allows the new query a generous margin rather than
+     * asserting it is strictly faster - the point is to catch a severe regression, not to chase a
+     * precise ratio.
+     */
+    @Test
+    void newRankingApproachIsNotSlowerThanTheOldCorrelatedSubqueryApproach() {
+        var preReleaseCount = 3000;
+        var maxPreReleaseVersions = 100;
+        var extension = persistExtension("perf-ns", "perf-ext");
+        persistPreReleaseVersions(extension, TargetPlatform.NAME_UNIVERSAL, 1, preReleaseCount);
+        var extensionIds = List.of(extension.getId());
+
+        // Warm up the connection, query plan cache, and JIT with one untimed run of each shape
+        // before measuring, so a one-off first-call cost doesn't skew the comparison.
+        oldFindAllActive(extensionIds, maxPreReleaseVersions);
+        repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, maxPreReleaseVersions);
+        noLimitFindAllActive(extensionIds);
+        repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, -1);
+
+        var oldDuration = time(() -> oldFindAllActive(extensionIds, maxPreReleaseVersions));
+        var newCappedDuration = time(
+                () -> repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, maxPreReleaseVersions));
+        var noLimitDuration = time(() -> noLimitFindAllActive(extensionIds));
+        var newUncappedDuration = time(
+                () -> repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, -1));
+
+        logger.info(
+                "for {} pre-release versions: old capped (correlated subquery) took {}ms, new capped (window "
+                        + "function) took {}ms, no-limit-at-all baseline (pre-#2062, no ranking) took {}ms, "
+                        + "new uncapped took {}ms",
+                preReleaseCount,
+                oldDuration.toMillis(),
+                newCappedDuration.toMillis(),
+                noLimitDuration.toMillis(),
+                newUncappedDuration.toMillis());
+
+        assertThat(newCappedDuration)
+                .as(
+                        "the reworked window-function query must not be dramatically slower than the old "
+                                + "correlated-subquery query it replaces, at a pre-release volume this method's "
+                                + "own doc comment is written around")
+                .isLessThanOrEqualTo(oldDuration.multipliedBy(3).plus(Duration.ofMillis(500)));
+
+        assertThat(newUncappedDuration)
+                .as(
+                        "the uncapped (default) path must not be a meaningful regression against the simplest "
+                                + "query with no ranking capability at all - the baseline every caller got before "
+                                + "pre-release limiting existed")
+                .isLessThanOrEqualTo(noLimitDuration.multipliedBy(3).plus(Duration.ofMillis(500)));
+    }
+
+    private Duration time(Runnable action) {
+        var start = Instant.now();
+        action.run();
+        return Duration.between(start, Instant.now());
+    }
+
+    /**
+     * A faithful port of {@code findAllActiveByExtensionIdAndTargetPlatform} as it existed before
+     * this rework (no target-platform filtering needed for this comparison), kept here only so the
+     * performance test above has something to compare the reworked query against - the original
+     * method itself is gone.
+     */
+    private int oldFindAllActive(List<Long> extensionIds, int maxPreReleaseVersions) {
+        var query = dsl.select(EXTENSION_VERSION.ID)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds));
+
+        if (maxPreReleaseVersions >= 0) {
+            query = query.and(
+                    EXTENSION_VERSION.PRE_RELEASE.isFalse().or(oldIsAmongLatestPreReleases(maxPreReleaseVersions)));
+        }
+
+        return query.fetch().size();
+    }
+
+    /**
+     * A faithful port of {@code findAllActiveByExtensionIdAndTargetPlatform} as it existed before
+     * #2062 introduced any pre-release limiting at all: no ranking, no cap parameter, just the active
+     * versions of the given extensions. Kept here only as a performance baseline - the original
+     * two-argument method itself is gone.
+     * <p>
+     * Selects the full column list and maps every row via {@link ExtensionVersionJooqRepository#toExtensionVersion}
+     * (not just an id, unlike {@link #oldFindAllActive}) so the comparison in
+     * {@link #newRankingApproachIsNotSlowerThanTheOldCorrelatedSubqueryApproach} is fair: the reworked
+     * method always maps every row to a full {@link ExtensionVersion}, so a baseline that skipped
+     * mapping would make the SQL-only saving from dropping the unused {@code denseRank()} look far
+     * smaller than it is against the dominant, unavoidable mapping cost both approaches pay equally.
+     */
+    private List<ExtensionVersion> noLimitFindAllActive(List<Long> extensionIds) {
+        return dsl.select(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                EXTENSION.ID,
+                EXTENSION.NAME,
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
+                EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.PREVIEW,
+                EXTENSION_VERSION.PRE_RELEASE,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                EXTENSION_VERSION.ENGINES,
+                EXTENSION_VERSION.CATEGORIES,
+                EXTENSION_VERSION.TAGS,
+                EXTENSION_VERSION.EXTENSION_KIND,
+                EXTENSION_VERSION.REPOSITORY,
+                EXTENSION_VERSION.SPONSOR_LINK,
+                EXTENSION_VERSION.GALLERY_COLOR,
+                EXTENSION_VERSION.GALLERY_THEME,
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                EXTENSION_VERSION.DEPENDENCIES,
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                SIGNATURE_KEY_PAIR.PUBLIC_ID)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds))
+                .fetch()
+                .map(repo::toExtensionVersion);
+    }
+
+    private Condition oldIsAmongLatestPreReleases(int limit) {
+        var rank = EXTENSION_VERSION.as("ev_pre_release_rank_perf");
+        return DSL.field(
+                dsl.selectCount()
+                        .from(rank)
+                        .where(rank.EXTENSION_ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                        .and(rank.ACTIVE.isTrue())
+                        .and(rank.PRE_RELEASE.isTrue())
+                        .and(
+                                DSL.row(
+                                        rank.SEMVER_MAJOR,
+                                        rank.SEMVER_MINOR,
+                                        rank.SEMVER_PATCH,
+                                        rank.TIMESTAMP,
+                                        rank.ID)
+                                        .gt(
+                                                DSL.row(
+                                                        EXTENSION_VERSION.SEMVER_MAJOR,
+                                                        EXTENSION_VERSION.SEMVER_MINOR,
+                                                        EXTENSION_VERSION.SEMVER_PATCH,
+                                                        EXTENSION_VERSION.TIMESTAMP,
+                                                        EXTENSION_VERSION.ID))))
+                .lt(limit);
     }
 
     private Namespace persistNamespace(String namespaceName) {

@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * namespace that does not contain the named extension, where that extension name exists under a
  * different namespace, was therefore incorrectly reported as resolved.
  */
-@SpringBootTest
+@SpringBootTest(classes = JooqOnlyTestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Transactional
 class ExtensionJooqRepositoryTest extends AbstractPostgresContainerTest {
 

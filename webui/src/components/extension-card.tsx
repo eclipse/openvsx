@@ -131,11 +131,25 @@ export interface ExtensionCardProps extends Partial<Omit<GridItemProps, 'ref'>> 
     dimmed?: boolean;
     /** Tint the card's frame and overlay to flag a state the viewer has to act on. */
     tone?: 'warning';
+    /** The icon is still being produced (e.g. a just-published package), so keep its skeleton. */
+    iconPending?: boolean;
 }
 
 export const ExtensionCard = memo(
     forwardRef<HTMLAnchorElement, ExtensionCardProps>(function ExtensionCard(
-        { extension, fadeDelayMs = 0, appear = true, to, linkState, overlay, footerStart, dimmed, tone, ...linkProps },
+        {
+            extension,
+            fadeDelayMs = 0,
+            appear = true,
+            to,
+            linkState,
+            overlay,
+            footerStart,
+            dimmed,
+            tone,
+            iconPending,
+            ...linkProps
+        },
         ref
     ) {
         const title = extension?.displayName ?? extension?.name;
@@ -192,6 +206,7 @@ export const ExtensionCard = memo(
                                     <ExtensionIcon
                                         extension={extension}
                                         alt={title}
+                                        pending={iconPending}
                                         sx={{ width: 54, maxHeight: 54, objectFit: 'contain' }}
                                     />
                                 </Box>

@@ -192,7 +192,7 @@ export class ExtensionRegistryService {
         abortController: AbortController,
         extension: Extension | SearchEntry
     ): Promise<string | undefined> {
-        if (!extension.files.icon) {
+        if (!extension.files?.icon) {
             return Promise.resolve(undefined);
         }
 
@@ -552,11 +552,8 @@ export class ExtensionRegistryService {
         });
     }
 
-    async publishExtension(
-        abortController: AbortController,
-        extensionPackage: File
-    ): Promise<Readonly<Extension | ErrorResult>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
+    async publishExtension(extensionPackage: File): Promise<Readonly<Extension>> {
+        const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/octet-stream'
         };
@@ -565,24 +562,18 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest<Extension | ErrorResult>(
-            {
-                abortController,
-                method: 'POST',
-                credentials: true,
-                payload: extensionPackage,
-                headers: headers,
-                endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
-            },
-            false
-        ); // do not retry publishing an extension but show the explicit error received
+        // Never retried: an upload the registry turned down has an explicit reason to show.
+        return sendStrictRequest<Extension>({
+            method: 'POST',
+            credentials: true,
+            payload: extensionPackage,
+            headers: headers,
+            endpoint: createAbsoluteURL([this.serverUrl, 'api', 'user', 'publish'])
+        });
     }
 
-    async createNamespace(
-        abortController: AbortController,
-        name: string
-    ): Promise<Readonly<SuccessResult | ErrorResult>> {
-        const csrfResponse = await this.getCsrfToken(abortController);
+    async createNamespace(name: string): Promise<Readonly<SuccessResult>> {
+        const csrfResponse = await this.getCsrfToken();
         const headers: Record<string, string> = {
             'Content-Type': 'application/json;charset=UTF-8'
         };
@@ -591,8 +582,7 @@ export class ExtensionRegistryService {
             headers[csrfToken.header] = csrfToken.value;
         }
 
-        return sendRequest<SuccessResult | ErrorResult>({
-            abortController,
+        return sendStrictRequest<SuccessResult>({
             method: 'POST',
             credentials: true,
             payload: { name: name },
@@ -601,10 +591,10 @@ export class ExtensionRegistryService {
         });
     }
 
-    async getExtensions(abortController: AbortController): Promise<Readonly<Extension[] | ErrorResult>> {
+    async getExtensions(abortController: AbortController): Promise<Readonly<Extension[]>> {
         const headers: Record<string, string> = {};
 
-        return sendRequest<Extension[] | ErrorResult>({
+        return sendStrictRequest<Extension[]>({
             abortController,
             method: 'GET',
             credentials: true,
