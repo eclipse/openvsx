@@ -76,7 +76,7 @@ Variants:
 The `publisher` field of your extension's package.json defines the namespace into which the extension will be published. Before you publish the first extension in a namespace, you must create it. This requires an access token as described above.
 
  * `ovsx create-namespace <name>`
-   creates the specifed namespace. The name must correspond to the `publisher` of your extension.
+   creates the specified namespace. The name must correspond to the `publisher` of your extension.
 
 Creating a namespace does _not_ automatically give you the exclusive publishing rights. Initially, everyone will be able to publish an extension with the new namespace. If you want exclusive publishing rights, you can [claim ownership of a namespace](https://github.com/eclipse/openvsx/wiki/Namespace-Access).
 
