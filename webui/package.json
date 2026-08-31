@@ -66,7 +66,6 @@
         "react": "^18.2.0",
         "react-avatar-editor": "^15.0.0",
         "react-dom": "^18.2.0",
-        "react-dropzone": "^14.2.3",
         "react-helmet-async": "^2.0.5",
         "react-infinite-scroller": "^1.2.6",
         "react-router": "^7.18.2"

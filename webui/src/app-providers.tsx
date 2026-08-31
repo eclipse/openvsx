@@ -18,6 +18,7 @@ import { queryClient as defaultQueryClient } from './query-client';
 import { MainContext } from './context';
 import { KeyboardShortcutsProvider } from './context/keyboard-shortcuts-context';
 import { SearchProvider } from './context/search/search-context';
+import { PublishQueueProvider } from './context/publish-queue-context';
 
 interface AppProvidersProps {
     /** Built by `Main` from its props and state; supplied here so this stays the one provider site. */
@@ -42,7 +43,9 @@ export const AppProviders: FunctionComponent<AppProvidersProps> = ({
     <QueryClientProvider client={queryClient}>
         <MainContext.Provider value={mainContext}>
             <KeyboardShortcutsProvider>
-                <SearchProvider>{children}</SearchProvider>
+                <SearchProvider>
+                    <PublishQueueProvider>{children}</PublishQueueProvider>
+                </SearchProvider>
             </KeyboardShortcutsProvider>
         </MainContext.Provider>
         <ReactQueryDevtools initialIsOpen={false} />

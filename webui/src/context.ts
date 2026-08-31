@@ -12,12 +12,11 @@ import { createContext } from 'react';
 import { PageSettings } from './page-settings';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { UserData, RegistryVersion } from './extension-registry-types';
-import { ErrorResponse } from './server-request';
 
 export interface MainContext {
     service: ExtensionRegistryService;
     pageSettings: PageSettings;
-    handleError: (err: Error | Partial<ErrorResponse>, options?: { onClose?: () => void }) => void;
+    handleError: (err: unknown, options?: { onClose?: () => void }) => void;
     user?: UserData;
     updateUser: () => void;
     loginProviders?: Record<string, string>;

@@ -6,6 +6,8 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Added
 
+- Add a `/publish` page and turn the navbar's Publish button into a drop target: a file drag anywhere in the app turns the button into a drop area, and every `.vsix` package dropped on it — or on the publish page's own drop area — is queued and uploaded straight away, with no confirmation dialog. The page shows the queue as a line of extension cards — a skeleton while a package uploads, the real card once the registry accepts it, labelled with whatever the registry did with it — and keeps polling anything left under review or still missing its icon
+- Export `PublishButton`, which carries the publish link, its `p` shortcut and the app's `.vsix` drop target in one component, so a deployment with its own menu content keeps drag-and-drop publishing
 - Add a "Data Consistency" page to the admin dashboard (#1622): a live overview of every registered consistency check's finding count, with actions to refresh it and to fix findings one at a time or all at once
 - Show a "Namespace not verified" state on an extension card when it can't be activated because its namespace already exists in a referenced external gallery and hasn't been verified, in both the "My Extensions" and namespace member extension lists. The card keeps its colour and takes a warning-toned frame and icon, since this is the publisher's to fix rather than an extension that is simply switched off
 - Show a warning notice with a claim action wherever an unverified namespace is holding something back — the extension settings page when the extension has a namespace ownership conflict, and the namespace settings page for any unverified namespace — making clear the namespace must be claimed (verified) first. The action is the deployment's configured `elements.claimNamespace`, falling back to the namespace access documentation when none is configured. The admin dashboard's extension and namespace views show the same explanation without the claim action, since claiming is the publisher's action to take, not an admin's on someone else's behalf
@@ -16,9 +18,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Revoking a single access token asks for confirmation first, like every other destructive action
 - Present the unsigned publisher agreement on the access tokens page as a warning notice with a link to sign it, instead of a plain paragraph
 - Mark a removed extension version in red across its row — version number, status pill and timeline dot — and disable its delete action. Every version of a rejected extension is marked too, and "Latest" is reserved for extensions the registry actually serves, so one that is inactive or removed has no version marked latest
+- Publish from the navbar's Publish button, the `p` shortcut and the settings Extensions tab through the new publish page, replacing the one-file-at-a-time publish dialog
 - Add an `outlinedWarning` style to `MuiButton`, so a warning-toned outlined button follows the theme like the secondary and error ones instead of MUI's default half-opacity border
 - **Breaking:** `elements.claimNamespace` now receives `{ namespace, extension?, sx? }` instead of `{ extension, sx? }`. The namespace settings page offers the same claim action and has no extension to pass, so implementations must read the namespace from `namespace` rather than `extension.namespace`
-- `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart` and `dimmed` props so other surfaces can reuse it instead of copying it
+- Publishing goes through TanStack Query: `publishExtension` and `createNamespace` are mutation hooks (`usePublishExtension`, `useCreateNamespace`), and both service methods lose their `AbortController` parameter — writes are no longer aborted, and retries are the query client's to own. The user's extension list is a query too (`useUserExtensions`), read by the settings tab and by the publish queue as it follows a package, so a card appears in the list as soon as the registry has the package
+- `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 
 ### Fixed
 
@@ -26,6 +30,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Fix the admin dashboard Scan tab getting stuck on the loading spinner after switching tabs, even though the new tab's data had already loaded successfully
 - Fix the page jumping to the top whenever a menu, select or dialog opens.
 - Fix the extension detail page's download menu so each target-platform option is clickable across its whole row, not just its text: the option was an inline link nested inside a non-interactive menu item, rather than the menu item itself being the link
+- Fix the create-namespace dialog acting on Enter when its button is disabled: an empty or over-long name was submitted anyway, and a held key sent the request more than once
+
+### Dependencies
+
+- Remove the `react-dropzone` dependency; the publish page and the navbar's drop target handle their own drag events, and nothing else imports it
 
 ## [v1.1.2] (20/08/2026)
 

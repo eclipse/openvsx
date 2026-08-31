@@ -32,6 +32,9 @@ export {
     DEFAULT_CURATED_SECTIONS
 } from './pages/home/use-home-data';
 export { ExtensionCard, type ExtensionCardProps } from './components/extension-card';
+// The nav's Publish button: the link to the publish page, the keyboard shortcut behind it, and the
+// app's drop target for .vsix packages, so a custom menu keeps drag-and-drop publishing.
+export { PublishButton, type PublishButtonProps } from './components/publish/publish-button';
 export * from './components/page-primitives';
 export * from './components/page-container';
 // Leaf hook modules keep their helpers private, so `export *` exposes only the
