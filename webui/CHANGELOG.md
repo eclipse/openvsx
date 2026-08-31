@@ -26,6 +26,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Fix the admin dashboard Scan tab getting stuck on the loading spinner after switching tabs, even though the new tab's data had already loaded successfully
 - Fix the page jumping to the top whenever a menu, select or dialog opens.
 - Fix the extension detail page's download menu so each target-platform option is clickable across its whole row, not just its text: the option was an inline link nested inside a non-interactive menu item, rather than the menu item itself being the link
+- Fix `sendRequest` re-enabling fetch-retry's own retries for the request that follows a 429 wait, because the recursive call didn't forward the original `retry` flag. A `sendStrictRequest`/`sendNonRetriableRequest` call that hit a 429 could end up having its follow-up request retried twice - once by fetch-retry and once by the query client
 
 ## [v1.1.2] (20/08/2026)
 

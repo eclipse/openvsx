@@ -63,6 +63,26 @@ describe('sendStrictRequest', () => {
         });
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
+
+    // Regression test: sendRequest re-invokes itself on 429 without forwarding the original `retry`
+    // flag, so it used to fall back to the default `retry = true` - re-enabling fetch-retry's own
+    // retries for the follow-up request even though sendStrictRequest asked for none. A 500 after the
+    // 429 would then be retried by fetch-retry itself instead of surfacing as a single rejection.
+    it('does not re-enable retries for the request that follows a 429', async () => {
+        vi.useFakeTimers();
+        const fetchMock = stubFetch(jsonResponse({}, 429), jsonResponse({ error: 'boom' }, 500));
+
+        // Attach the rejection assertion before letting the fake 429 delay elapse, so the rejection it
+        // triggers is never briefly unhandled.
+        const assertion = expect(
+            sendStrictRequest({ endpoint: 'https://open-vsx.org/api/-/search' })
+        ).rejects.toMatchObject({ status: 500 });
+        await vi.runAllTimersAsync();
+        await assertion;
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        vi.useRealTimers();
+    });
 });
 
 describe('sendNonRetriableRequest', () => {
