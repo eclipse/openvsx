@@ -412,8 +412,17 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
      * method's own doc comment is written around ("one build per commit... accumulate thousands of
      * entries") - the volume the correlated subquery approach scaled worst for.
      * <p>
-     * The comparison is necessarily coarse (real wall-clock time against a real Postgres instance,
-     * not a controlled microbenchmark), so it allows the new query a generous margin rather than
+     * It also compares against a third baseline: {@link #noLimitFindAllActive}, a port of the method
+     * as it existed before pre-release limiting existed at all (before #2062) - a bare filtered
+     * SELECT with no ranking whatsoever. The reworked query computes its {@code denseRank()} window
+     * function unconditionally, even on the uncapped path where nothing reads it (see the "computed
+     * even when the cap is disabled" review note on this class), so this checks that unconditional
+     * computation isn't a meaningful regression against the simplest query that could possibly answer
+     * this question - the uncapped path being, per {@code ovsx.extension-query.max-pre-release-versions}'s
+     * default of {@code -1}, the one every request takes unless an operator opts into the cap.
+     * <p>
+     * Both comparisons are necessarily coarse (real wall-clock time against a real Postgres instance,
+     * not a controlled microbenchmark), so each allows the new query a generous margin rather than
      * asserting it is strictly faster - the point is to catch a severe regression, not to chase a
      * precise ratio.
      */
@@ -429,23 +438,40 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         // before measuring, so a one-off first-call cost doesn't skew the comparison.
         oldFindAllActive(extensionIds, maxPreReleaseVersions);
         repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, maxPreReleaseVersions);
+        noLimitFindAllActive(extensionIds);
+        repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, -1);
 
         var oldDuration = time(() -> oldFindAllActive(extensionIds, maxPreReleaseVersions));
-        var newDuration = time(
+        var newCappedDuration = time(
                 () -> repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, maxPreReleaseVersions));
+        var noLimitDuration = time(() -> noLimitFindAllActive(extensionIds));
+        var newUncappedDuration = time(
+                () -> repo.findAllActiveByExtensionIdAndTargetPlatform(extensionIds, null, -1));
 
         logger.info(
-                "old (correlated subquery) took {}ms, new (window function) took {}ms, for {} pre-release versions",
+                "for {} pre-release versions: old capped (correlated subquery) took {}ms, new capped (window "
+                        + "function) took {}ms, no-limit-at-all baseline (pre-#2062, no ranking) took {}ms, "
+                        + "new uncapped (still computes the unused window function) took {}ms",
+                preReleaseCount,
                 oldDuration.toMillis(),
-                newDuration.toMillis(),
-                preReleaseCount);
+                newCappedDuration.toMillis(),
+                noLimitDuration.toMillis(),
+                newUncappedDuration.toMillis());
 
-        assertThat(newDuration)
+        assertThat(newCappedDuration)
                 .as(
                         "the reworked window-function query must not be dramatically slower than the old "
                                 + "correlated-subquery query it replaces, at a pre-release volume this method's "
                                 + "own doc comment is written around")
                 .isLessThanOrEqualTo(oldDuration.multipliedBy(3).plus(Duration.ofMillis(500)));
+
+        assertThat(newUncappedDuration)
+                .as(
+                        "computing an unused denseRank() window function on the uncapped (default) path must not "
+                                + "be a meaningful regression against the simplest query with no ranking "
+                                + "capability at all - the baseline every caller got before pre-release limiting "
+                                + "existed")
+                .isLessThanOrEqualTo(noLimitDuration.multipliedBy(3).plus(Duration.ofMillis(500)));
     }
 
     private Duration time(Runnable action) {
@@ -475,6 +501,24 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         }
 
         return query.fetch().size();
+    }
+
+    /**
+     * A faithful port of {@code findAllActiveByExtensionIdAndTargetPlatform} as it existed before
+     * #2062 introduced any pre-release limiting at all: no ranking, no cap parameter, just the active
+     * versions of the given extensions. Kept here only as a performance baseline - the original
+     * two-argument method itself is gone.
+     */
+    private int noLimitFindAllActive(List<Long> extensionIds) {
+        return dsl.select(EXTENSION_VERSION.ID)
+                .from(EXTENSION_VERSION)
+                .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
+                .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
+                .leftJoin(SIGNATURE_KEY_PAIR).on(SIGNATURE_KEY_PAIR.ID.eq(EXTENSION_VERSION.SIGNATURE_KEY_PAIR_ID))
+                .where(EXTENSION_VERSION.ACTIVE.eq(true))
+                .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds))
+                .fetch()
+                .size();
     }
 
     private Condition oldIsAmongLatestPreReleases(int limit) {
