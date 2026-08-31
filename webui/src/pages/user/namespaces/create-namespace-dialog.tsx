@@ -8,31 +8,23 @@
  * SPDX-License-Identifier: EPL-2.0
  * ****************************************************************************** */
 
-import { ChangeEvent, FunctionComponent, useContext, useEffect, useState, useRef } from 'react';
+import { ChangeEvent, FunctionComponent, useContext, useEffect, useRef, useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, Box, TextField, DialogActions } from '@mui/material';
 import { ButtonWithProgress } from '../../../components/button-with-progress';
-import { isError } from '../../../extension-registry-types';
 import { MainContext } from '../../../context';
+import { useCreateNamespace } from './use-user-namespaces';
 
 const NAMESPACE_NAME_SIZE = 255;
 
 export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps> = props => {
-    const [posted, setPosted] = useState<boolean>(false);
     const [name, setName] = useState<string>('');
     const [nameError, setNameError] = useState<string>();
 
     const context = useContext(MainContext);
-    const abortController = useRef<AbortController>(new AbortController());
-
-    useEffect(() => {
-        return () => {
-            abortController.current.abort();
-        };
-    }, []);
+    const { mutateAsync: createNamespace, isPending: creating } = useCreateNamespace();
 
     useEffect(() => {
         if (props.open) {
-            setPosted(false);
             setName('');
             setNameError(undefined);
         }
@@ -56,25 +48,27 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
         setNameError(nameError);
     };
 
+    // The Enter shortcut reaches this straight from the document, so whatever disables the button
+    // has to be checked here as well. Held keys repeat faster than a render, so the in-flight check
+    // is a ref rather than the mutation's pending flag, which only turns the spinner on.
+    const invalidName = Boolean(nameError) || !name;
+    const submitting = useRef(false);
+
     const handleCreateNamespace = async () => {
-        if (!context.user) {
+        if (!context.user || invalidName || submitting.current) {
             return;
         }
 
-        setPosted(true);
+        submitting.current = true;
         try {
-            const response = await context.service.createNamespace(abortController.current, name);
-            if (isError(response)) {
-                throw response;
-            }
-
+            await createNamespace(name);
             props.onClose();
             props.namespaceCreated(name);
         } catch (err) {
             context.handleError(err);
+        } finally {
+            submitting.current = false;
         }
-
-        setPosted(false);
     };
 
     const handleEnter = (e: KeyboardEvent) => {
@@ -102,8 +96,8 @@ export const CreateNamespaceDialog: FunctionComponent<CreateNamespaceDialogProps
                 <ButtonWithProgress
                     autoFocus
                     sx={{ ml: 1 }}
-                    error={Boolean(nameError) || !name}
-                    working={posted}
+                    error={invalidName}
+                    working={creating}
                     onClick={handleCreateNamespace}>
                     Create Namespace
                 </ButtonWithProgress>

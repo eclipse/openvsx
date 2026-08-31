@@ -169,13 +169,6 @@ public class ExtensionJooqRepository {
         return extension;
     }
 
-    public void updatePublicId(long id, String publicId) {
-        dsl.update(EXTENSION)
-                .set(EXTENSION.PUBLIC_ID, publicId)
-                .where(EXTENSION.ID.eq(id))
-                .execute();
-    }
-
     public void updatePublicIds(Map<Long, String> publicIds) {
         if (publicIds.isEmpty()) {
             return;

@@ -91,7 +91,7 @@ public class SimilarityCheckService implements PublishCheck {
 
         if (config.isSkipIfPublisherVerified()) {
             var namespace = repositories.findNamespace(namespaceName);
-            if (namespace != null && repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)) {
+            if (namespace != null && repositories.isVerified(namespace)) {
                 return PublishCheck.Result.pass();
             }
         }

@@ -195,19 +195,19 @@ class SimilarityCheckServiceTest {
 
     @Test
     void shouldSkipCheckForVerifiedPublisherWhenConfigured() {
-        // When configured to skip verified publishers, check if namespace has owner memberships.
+        // When configured to skip verified publishers, check if the namespace is verified.
         when(config.isOnlyCheckNewExtensions()).thenReturn(false);
         when(config.isSkipIfPublisherVerified()).thenReturn(true);
         var namespace = new Namespace();
         when(repositories.findNamespace("ns")).thenReturn(namespace);
-        when(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER)).thenReturn(true);
+        when(repositories.isVerified(namespace)).thenReturn(true);
 
         var context = createContext("ns", "ext", "Display");
         var result = similarityCheckService.check(context);
 
         assertThat(result.passed()).isTrue();
         verify(repositories).findNamespace("ns");
-        verify(repositories).hasMemberships(namespace, NamespaceMembership.ROLE_OWNER);
+        verify(repositories).isVerified(namespace);
         verifyNoInteractions(similarityService);
     }
 

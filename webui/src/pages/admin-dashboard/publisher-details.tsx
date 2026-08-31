@@ -31,7 +31,7 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import GavelIcon from '@mui/icons-material/Gavel';
-import { UserRelationships, SuccessResult } from '../../extension-registry-types';
+import { UserRelationships } from '../../extension-registry-types';
 import { ErrorResponse } from '../../server-request';
 import { MainContext } from '../../context';
 import { ExtensionCardList } from '../../components/extension/extension-card-list';
@@ -197,7 +197,7 @@ export const PublisherDetails: FunctionComponent<{ entry: UserRelationships }> =
 
             {updateRole.isSuccess && (
                 <Alert severity='success' sx={{ mb: 2 }}>
-                    {(updateRole.data as Partial<SuccessResult>).success ?? ''}
+                    {updateRole.data.success}
                 </Alert>
             )}
 

@@ -14,7 +14,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.google.common.io.ByteStreams;
@@ -45,6 +49,7 @@ import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.util.auth.AuthenticatedUser;
 
 import static java.util.Objects.requireNonNull;
 
@@ -96,12 +101,12 @@ public class ExtensionService {
     public ExtensionVersion mirrorVersion(
             TempFile extensionFile,
             String signatureName,
-            PersonalAccessToken token,
+            AuthenticatedUser au,
             String binaryName,
             String timestamp
     ) {
         try (var processor = new ExtensionProcessor(extensionFile)) {
-            doPublish(processor, binaryName, token, TimeUtil.fromUTCString(timestamp), false);
+            doPublish(processor, binaryName, au, TimeUtil.fromUTCString(timestamp), false);
         }
         publishHandler.mirror(extensionFile, signatureName);
         return extensionFile.getResource().getExtension();
@@ -131,28 +136,28 @@ public class ExtensionService {
         }
     }
 
-    public ExtensionVersion publishVersion(InputStream inputStream, PersonalAccessToken token)
+    public ExtensionVersion publishVersion(InputStream inputStream, AuthenticatedUser au)
             throws ErrorResultException {
         try (
                 TempFile tempFile = createExtensionFile(inputStream);
                 ExtensionProcessor processor = new ExtensionProcessor(tempFile)
         ) {
-            return publishVersion(processor, token);
+            return publishVersion(processor, au);
         } catch (IOException e) {
             throw new ErrorResultException("Failed to read extension file", e);
         }
     }
 
-    public ExtensionVersion publishVersion(ExtensionProcessor processor, PersonalAccessToken token)
+    public ExtensionVersion publishVersion(ExtensionProcessor processor, AuthenticatedUser au)
             throws ErrorResultException {
         requireNonNull(processor);
-        requireNonNull(token);
+        requireNonNull(au);
         var content = processor.getExtensionFile();
         if (scanService.isEnabled()) {
-            return publishVersionWithScan(processor, token);
+            return publishVersionWithScan(processor, au);
         } else {
             try {
-                doPublish(processor, null, token, TimeUtil.getCurrentUTC(), true);
+                doPublish(processor, null, au, TimeUtil.getCurrentUTC(), true);
             } catch (ErrorResultException exc) {
                 // In case publication fails early on we need to
                 // delete the temporary extension file, otherwise
@@ -167,7 +172,7 @@ public class ExtensionService {
         }
     }
 
-    private ExtensionVersion publishVersionWithScan(ExtensionProcessor processor, PersonalAccessToken token)
+    private ExtensionVersion publishVersionWithScan(ExtensionProcessor processor, AuthenticatedUser au)
             throws ErrorResultException {
         var extensionFile = processor.getExtensionFile();
         ExtensionScan scan = null;
@@ -176,13 +181,13 @@ public class ExtensionService {
             // Fail before any validation or scanning happens (and before a scan record is stored) if the
             // extension version can not be published anyway, e.g. because the publisher lacks the access
             // rights for the namespace or the version is published already.
-            publishHandler.checkPublishPreconditions(processor, token);
+            publishHandler.checkPublishPreconditions(processor, au.userData());
 
-            scan = scanService.initializeScan(processor, token.getUser());
+            scan = scanService.initializeScan(processor, au.userData());
 
-            scanService.runValidation(scan, extensionFile, token.getUser());
+            scanService.runValidation(scan, extensionFile, au.userData());
 
-            doPublish(processor, null, token, TimeUtil.getCurrentUTC(), true);
+            doPublish(processor, null, au, TimeUtil.getCurrentUTC(), true);
 
             // Publish async handles requesting the long-running scans
             publishHandler.publishAsync(extensionFile, this, scan);
@@ -211,11 +216,12 @@ public class ExtensionService {
     private void doPublish(
             ExtensionProcessor processor,
             String binaryName,
-            PersonalAccessToken token,
+            AuthenticatedUser au,
             LocalDateTime timestamp,
             boolean checkDependencies
     ) {
-        var extVersion = publishHandler.createExtensionVersion(processor, token, timestamp, checkDependencies);
+        var extVersion = publishHandler
+                .createExtensionVersion(processor, au, timestamp, checkDependencies);
         var download = processor.getBinary(extVersion, binaryName);
         processor.getExtensionFile().setResource(download);
     }
@@ -509,7 +515,7 @@ public class ExtensionService {
         var versions = Arrays.stream(targetVersions)
                 .map(target -> {
                     var extVersion = restrictedToUser
-                            ? repositories.findVersionPublishedWithUser(
+                            ? repositories.findVersionPublishedByUser(
                                     user,
                                     target.version(),
                                     target.targetPlatform(),

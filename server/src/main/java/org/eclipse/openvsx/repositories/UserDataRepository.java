@@ -9,8 +9,6 @@
  ********************************************************************************/
 package org.eclipse.openvsx.repositories;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.Repository;
 
 import org.eclipse.openvsx.entities.UserData;
@@ -18,8 +16,6 @@ import org.eclipse.openvsx.entities.UserData;
 public interface UserDataRepository extends Repository<UserData, Long> {
 
     UserData findByProviderAndLoginName(String provider, String loginName);
-
-    Page<UserData> findByLoginNameStartingWith(String loginNameStart, Pageable page);
 
     long count();
 

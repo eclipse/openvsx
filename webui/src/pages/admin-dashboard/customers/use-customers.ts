@@ -14,7 +14,7 @@
 import { useContext } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
-import { type Customer, isError, type UserData } from '../../../extension-registry-types';
+import { type Customer, type UserData } from '../../../extension-registry-types';
 import { controllerFromSignal } from '../../../query-client';
 
 export const customerKeys = {
@@ -123,13 +123,7 @@ export const useDeleteCustomerToken = (name: string) => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (tokenId: number) => {
-            const result = await service.admin.deleteCustomerRateLimitToken(name, tokenId);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        mutationFn: (tokenId: number) => service.admin.deleteCustomerRateLimitToken(name, tokenId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.tokens(name) });
         }
@@ -154,13 +148,7 @@ export const useAddCustomerMember = (name: string) => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (user: UserData) => {
-            const result = await service.admin.addCustomerMember(name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        mutationFn: (user: UserData) => service.admin.addCustomerMember(name, user),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.members(name) });
         }
@@ -174,13 +162,7 @@ export const useRemoveCustomerMember = (name: string) => {
     const { service } = useContext(MainContext);
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (user: UserData) => {
-            const result = await service.admin.removeCustomerMember(name, user);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        mutationFn: (user: UserData) => service.admin.removeCustomerMember(name, user),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: customerKeys.members(name) });
         }

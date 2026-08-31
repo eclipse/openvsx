@@ -230,269 +230,255 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     }
 
     /**
-     * Setter for <code>public.extension_version.published_with_id</code>.
-     */
-    public void setPublishedWithId(Long value) {
-        set(15, value);
-    }
-
-    /**
-     * Getter for <code>public.extension_version.published_with_id</code>.
-     */
-    public Long getPublishedWithId() {
-        return (Long) get(15);
-    }
-
-    /**
      * Setter for <code>public.extension_version.active</code>.
      */
     public void setActive(Boolean value) {
-        set(16, value);
+        set(15, value);
     }
 
     /**
      * Getter for <code>public.extension_version.active</code>.
      */
     public Boolean getActive() {
-        return (Boolean) get(16);
+        return (Boolean) get(15);
     }
 
     /**
      * Setter for <code>public.extension_version.dependencies</code>.
      */
     public void setDependencies(String value) {
-        set(17, value);
+        set(16, value);
     }
 
     /**
      * Getter for <code>public.extension_version.dependencies</code>.
      */
     public String getDependencies() {
-        return (String) get(17);
+        return (String) get(16);
     }
 
     /**
      * Setter for <code>public.extension_version.bundled_extensions</code>.
      */
     public void setBundledExtensions(String value) {
-        set(18, value);
+        set(17, value);
     }
 
     /**
      * Getter for <code>public.extension_version.bundled_extensions</code>.
      */
     public String getBundledExtensions() {
-        return (String) get(18);
+        return (String) get(17);
     }
 
     /**
      * Setter for <code>public.extension_version.engines</code>.
      */
     public void setEngines(String value) {
-        set(19, value);
+        set(18, value);
     }
 
     /**
      * Getter for <code>public.extension_version.engines</code>.
      */
     public String getEngines() {
-        return (String) get(19);
+        return (String) get(18);
     }
 
     /**
      * Setter for <code>public.extension_version.categories</code>.
      */
     public void setCategories(String value) {
-        set(20, value);
+        set(19, value);
     }
 
     /**
      * Getter for <code>public.extension_version.categories</code>.
      */
     public String getCategories() {
-        return (String) get(20);
+        return (String) get(19);
     }
 
     /**
      * Setter for <code>public.extension_version.tags</code>.
      */
     public void setTags(String value) {
-        set(21, value);
+        set(20, value);
     }
 
     /**
      * Getter for <code>public.extension_version.tags</code>.
      */
     public String getTags() {
-        return (String) get(21);
+        return (String) get(20);
     }
 
     /**
      * Setter for <code>public.extension_version.extension_kind</code>.
      */
     public void setExtensionKind(String value) {
-        set(22, value);
+        set(21, value);
     }
 
     /**
      * Getter for <code>public.extension_version.extension_kind</code>.
      */
     public String getExtensionKind() {
-        return (String) get(22);
+        return (String) get(21);
     }
 
     /**
      * Setter for <code>public.extension_version.pre_release</code>.
      */
     public void setPreRelease(Boolean value) {
-        set(23, value);
+        set(22, value);
     }
 
     /**
      * Getter for <code>public.extension_version.pre_release</code>.
      */
     public Boolean getPreRelease() {
-        return (Boolean) get(23);
+        return (Boolean) get(22);
     }
 
     /**
      * Setter for <code>public.extension_version.target_platform</code>.
      */
     public void setTargetPlatform(String value) {
-        set(24, value);
+        set(23, value);
     }
 
     /**
      * Getter for <code>public.extension_version.target_platform</code>.
      */
     public String getTargetPlatform() {
-        return (String) get(24);
+        return (String) get(23);
     }
 
     /**
      * Setter for <code>public.extension_version.localized_languages</code>.
      */
     public void setLocalizedLanguages(String value) {
-        set(25, value);
+        set(24, value);
     }
 
     /**
      * Getter for <code>public.extension_version.localized_languages</code>.
      */
     public String getLocalizedLanguages() {
-        return (String) get(25);
+        return (String) get(24);
     }
 
     /**
      * Setter for <code>public.extension_version.sponsor_link</code>.
      */
     public void setSponsorLink(String value) {
-        set(26, value);
+        set(25, value);
     }
 
     /**
      * Getter for <code>public.extension_version.sponsor_link</code>.
      */
     public String getSponsorLink() {
-        return (String) get(26);
+        return (String) get(25);
     }
 
     /**
      * Setter for <code>public.extension_version.signature_key_pair_id</code>.
      */
     public void setSignatureKeyPairId(Long value) {
-        set(27, value);
+        set(26, value);
     }
 
     /**
      * Getter for <code>public.extension_version.signature_key_pair_id</code>.
      */
     public Long getSignatureKeyPairId() {
-        return (Long) get(27);
+        return (Long) get(26);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_major</code>.
      */
     public void setSemverMajor(Integer value) {
-        set(28, value);
+        set(27, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_major</code>.
      */
     public Integer getSemverMajor() {
-        return (Integer) get(28);
+        return (Integer) get(27);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_minor</code>.
      */
     public void setSemverMinor(Integer value) {
-        set(29, value);
+        set(28, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_minor</code>.
      */
     public Integer getSemverMinor() {
-        return (Integer) get(29);
+        return (Integer) get(28);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_patch</code>.
      */
     public void setSemverPatch(Integer value) {
-        set(30, value);
+        set(29, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_patch</code>.
      */
     public Integer getSemverPatch() {
-        return (Integer) get(30);
+        return (Integer) get(29);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_pre_release</code>.
      */
     public void setSemverPreRelease(String value) {
-        set(31, value);
+        set(30, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_pre_release</code>.
      */
     public String getSemverPreRelease() {
-        return (String) get(31);
+        return (String) get(30);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_is_pre_release</code>.
      */
     public void setSemverIsPreRelease(Boolean value) {
-        set(32, value);
+        set(31, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_is_pre_release</code>.
      */
     public Boolean getSemverIsPreRelease() {
-        return (Boolean) get(32);
+        return (Boolean) get(31);
     }
 
     /**
      * Setter for <code>public.extension_version.semver_build_metadata</code>.
      */
     public void setSemverBuildMetadata(String value) {
-        set(33, value);
+        set(32, value);
     }
 
     /**
      * Getter for <code>public.extension_version.semver_build_metadata</code>.
      */
     public String getSemverBuildMetadata() {
-        return (String) get(33);
+        return (String) get(32);
     }
 
     /**
@@ -500,7 +486,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
      * <code>public.extension_version.universal_target_platform</code>.
      */
     public void setUniversalTargetPlatform(Boolean value) {
-        set(34, value);
+        set(33, value);
     }
 
     /**
@@ -508,63 +494,91 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
      * <code>public.extension_version.universal_target_platform</code>.
      */
     public Boolean getUniversalTargetPlatform() {
-        return (Boolean) get(34);
+        return (Boolean) get(33);
     }
 
     /**
      * Setter for <code>public.extension_version.potentially_malicious</code>.
      */
     public void setPotentiallyMalicious(Boolean value) {
-        set(35, value);
+        set(34, value);
     }
 
     /**
      * Getter for <code>public.extension_version.potentially_malicious</code>.
      */
     public Boolean getPotentiallyMalicious() {
-        return (Boolean) get(35);
+        return (Boolean) get(34);
     }
 
     /**
      * Setter for <code>public.extension_version.removed</code>.
      */
     public void setRemoved(Boolean value) {
-        set(36, value);
+        set(35, value);
     }
 
     /**
      * Getter for <code>public.extension_version.removed</code>.
      */
     public Boolean getRemoved() {
-        return (Boolean) get(36);
+        return (Boolean) get(35);
     }
 
     /**
      * Setter for <code>public.extension_version.removed_timestamp</code>.
      */
     public void setRemovedTimestamp(LocalDateTime value) {
-        set(37, value);
+        set(36, value);
     }
 
     /**
      * Getter for <code>public.extension_version.removed_timestamp</code>.
      */
     public LocalDateTime getRemovedTimestamp() {
-        return (LocalDateTime) get(37);
+        return (LocalDateTime) get(36);
     }
 
     /**
      * Setter for <code>public.extension_version.removed_by_id</code>.
      */
     public void setRemovedById(Long value) {
-        set(38, value);
+        set(37, value);
     }
 
     /**
      * Getter for <code>public.extension_version.removed_by_id</code>.
      */
     public Long getRemovedById() {
+        return (Long) get(37);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.published_by_id</code>.
+     */
+    public void setPublishedById(Long value) {
+        set(38, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.published_by_id</code>.
+     */
+    public Long getPublishedById() {
         return (Long) get(38);
+    }
+
+    /**
+     * Setter for <code>public.extension_version.published_with_tt</code>.
+     */
+    public void setPublishedWithTt(String value) {
+        set(39, value);
+    }
+
+    /**
+     * Getter for <code>public.extension_version.published_with_tt</code>.
+     */
+    public String getPublishedWithTt() {
+        return (String) get(39);
     }
 
     // -------------------------------------------------------------------------
@@ -590,7 +604,7 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
     /**
      * Create a detached, initialised ExtensionVersionRecord
      */
-    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Long publishedWithId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious, Boolean removed, LocalDateTime removedTimestamp, Long removedById) {
+    public ExtensionVersionRecord(Long id, String bugs, String description, String displayName, String galleryColor, String galleryTheme, String homepage, String license, String markdown, Boolean preview, String qna, String repository, LocalDateTime timestamp, String version, Long extensionId, Boolean active, String dependencies, String bundledExtensions, String engines, String categories, String tags, String extensionKind, Boolean preRelease, String targetPlatform, String localizedLanguages, String sponsorLink, Long signatureKeyPairId, Integer semverMajor, Integer semverMinor, Integer semverPatch, String semverPreRelease, Boolean semverIsPreRelease, String semverBuildMetadata, Boolean universalTargetPlatform, Boolean potentiallyMalicious, Boolean removed, LocalDateTime removedTimestamp, Long removedById, Long publishedById, String publishedWithTt) {
         super(ExtensionVersion.EXTENSION_VERSION);
 
         setId(id);
@@ -608,7 +622,6 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setTimestamp(timestamp);
         setVersion(version);
         setExtensionId(extensionId);
-        setPublishedWithId(publishedWithId);
         setActive(active);
         setDependencies(dependencies);
         setBundledExtensions(bundledExtensions);
@@ -632,6 +645,8 @@ public class ExtensionVersionRecord extends UpdatableRecordImpl<ExtensionVersion
         setRemoved(removed);
         setRemovedTimestamp(removedTimestamp);
         setRemovedById(removedById);
+        setPublishedById(publishedById);
+        setPublishedWithTt(publishedWithTt);
         resetChangedOnNotNull();
     }
 }

@@ -11,6 +11,7 @@ package org.eclipse.openvsx.admin;
 
 import java.util.Set;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -62,6 +63,9 @@ class AdminServiceTest {
 
     @Mock
     LogService logs;
+
+    @Mock
+    EntityManager entityManager;
 
     @InjectMocks
     AdminService adminService;
@@ -167,6 +171,56 @@ class AdminServiceTest {
         verify(eclipse, never()).revokePublisherAgreement(any(), any());
         assertThat(result.getError()).isNull();
         assertThat(result.getWarning()).isNull();
+    }
+
+    @Test
+    void forgetUserDeletesTheUserRowWhenNothingElseReferencesThem() {
+        var user = new UserData();
+        user.setLoginName("amy");
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, false)).thenReturn(Streamable.empty());
+        when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.empty());
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
+
+        adminService.forgetUser("github", "amy", admin);
+
+        verify(entityManager).remove(user);
+    }
+
+    // Regression: extension_version.published_by_id is documented as permanent - it is never
+    // cleared, not even once the version itself is soft-deleted - and has a foreign key with no ON
+    // DELETE clause. A version this user published, but which was already removed by someone else
+    // (e.g. an admin) before this call, is not touched by the delete-all-versions loop above (it
+    // early-returns for already-removed versions without reassigning removedBy), so it must still
+    // block a hard delete of the row, or entityManager.remove(user) would violate that FK.
+    @Test
+    void forgetUserAnonymizesInsteadOfDeletingWhenAVersionWasAlreadyRemovedBySomeoneElse() {
+        var user = new UserData();
+        user.setLoginName("amy");
+        var admin2 = new UserData();
+        admin2.setLoginName("staff");
+
+        var extVersion = version(extension("ext"));
+        extVersion.setPublishedBy(user);
+        extVersion.setActive(false);
+        extVersion.setRemoved(true);
+        extVersion.setRemovedBy(admin2);
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findMemberships(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, false)).thenReturn(Streamable.of(extVersion));
+        when(repositories.findCustomerMemberships(user)).thenReturn(Streamable.empty());
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
+
+        adminService.forgetUser("github", "amy", admin);
+
+        verify(entityManager, never()).remove(user);
+        assertThat(user.getLoginName()).isEqualTo("deleted-user-" + user.getId());
+        assertThat(user.getFullName()).isNull();
     }
 
     @Test

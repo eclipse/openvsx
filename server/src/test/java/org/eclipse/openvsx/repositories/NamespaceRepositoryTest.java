@@ -17,16 +17,55 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
+import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.transaction.autoconfigure.TransactionAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.entities.Namespace;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+/**
+ * {@link NamespaceRepository} is the only Spring Data JPA repository interface this test needs, but a
+ * bare {@code @SpringBootTest} would still boot the entire {@code RegistryApplication} regardless -
+ * every one of the app's ~30 JPA repository interfaces (each one's derived query methods individually
+ * parsed and validated against the Hibernate metamodel - the dominant cost of a full context in this
+ * project), JobRunr, the web layer, and more. {@link NamespaceRepositoryTestConfig}'s
+ * {@code includeFilters} restricts {@code @EnableJpaRepositories} to just this one interface instead of
+ * every repository interface {@code org.eclipse.openvsx.repositories} (its base package) contains.
+ */
+@SpringBootTest(
+    classes = NamespaceRepositoryTest.NamespaceRepositoryTestConfig.class,
+    webEnvironment = SpringBootTest.WebEnvironment.NONE
+)
 @Transactional
 class NamespaceRepositoryTest extends AbstractPostgresContainerTest {
+
+    @Configuration(proxyBeanMethods = false)
+    @ImportAutoConfiguration(
+        {
+            DataSourceAutoConfiguration.class,
+            FlywayAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            TransactionAutoConfiguration.class
+        }
+    )
+    @EntityScan("org.eclipse.openvsx.entities")
+    @EnableJpaRepositories(
+        basePackageClasses = NamespaceRepository.class,
+        includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = NamespaceRepository.class)
+    )
+    static class NamespaceRepositoryTestConfig {
+    }
 
     @Autowired
     NamespaceRepository repo;

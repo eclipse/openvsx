@@ -26,7 +26,6 @@ import {
 } from './extension-registry-types';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
-import { ErrorResponse } from './server-request';
 import { AppLayout } from './layout/app-layout';
 
 import '../src/main.css';
@@ -96,7 +95,7 @@ export const Main: FunctionComponent<MainProps> = props => {
         }
     };
 
-    const onError = (err: Error | Partial<ErrorResponse> | ReportedError, options?: { onClose?: () => void }) => {
+    const onError = (err: unknown, options?: { onClose?: () => void }) => {
         if (err instanceof DOMException && err.message.trim() === 'The operation was aborted.') {
             // ignore error caused by AbortController.abort()
             return;

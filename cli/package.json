@@ -31,7 +31,7 @@
     "types": "lib/index",
     "bin": "bin/ovsx",
     "engines": {
-        "node": ">= 20"
+        "node": ">=22.0.0"
     },
     "dependencies": {
         "@inquirer/prompts": "^7.10.1",
@@ -51,17 +51,19 @@
         "@stylistic/eslint-plugin": "^2.11.0",
         "@types/follow-redirects": "^1.13.1",
         "@types/is-ci": "^2.0.0",
-        "@types/node": "^20.14.8",
+        "@types/node": "^22.0.0",
         "@types/semver": "^7.5.8",
         "@types/tmp": "^0.2.2",
         "@types/yauzl-promise": "^4",
+        "@types/yazl": "^3.3.1",
         "@typescript-eslint/eslint-plugin": "^8.15.0",
         "@typescript-eslint/parser": "^8.15.0",
         "eslint": "^9.15.0",
         "limiter": "^2.1.0",
         "rimraf": "^6.0.1",
         "typescript": "^5.6.3",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.10",
+        "yazl": "^3.3.1"
     },
     "scripts": {
         "clean": "rimraf lib",

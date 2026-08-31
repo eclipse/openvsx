@@ -80,7 +80,7 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
     /**
      * The column <code>public.personal_access_token.value</code>.
      */
-    public final TableField<PersonalAccessTokenRecord, String> VALUE = createField(DSL.name("value"), SQLDataType.VARCHAR(64), this, "");
+    public final TableField<PersonalAccessTokenRecord, String> VALUE = createField(DSL.name("value"), SQLDataType.VARCHAR(128), this, "");
 
     /**
      * The column <code>public.personal_access_token.user_data</code>.
@@ -96,6 +96,11 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
      * The column <code>public.personal_access_token.notified</code>.
      */
     public final TableField<PersonalAccessTokenRecord, Boolean> NOTIFIED = createField(DSL.name("notified"), SQLDataType.BOOLEAN, this, "");
+
+    /**
+     * The column <code>public.personal_access_token.version</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, Short> VERSION = createField(DSL.name("version"), SQLDataType.SMALLINT.nullable(false), this, "");
 
     /**
      * The column <code>public.personal_access_token.type</code>.

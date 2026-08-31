@@ -76,7 +76,7 @@ Variants:
 The `publisher` field of your extension's package.json defines the namespace into which the extension will be published. Before you publish the first extension in a namespace, you must create it. This requires an access token as described above.
 
  * `ovsx create-namespace <name>`
-   creates the specifed namespace. The name must correspond to the `publisher` of your extension.
+   creates the specified namespace. The name must correspond to the `publisher` of your extension.
 
 Creating a namespace does _not_ automatically give you the exclusive publishing rights. Initially, everyone will be able to publish an extension with the new namespace. If you want exclusive publishing rights, you can [claim ownership of a namespace](https://github.com/eclipse/openvsx/wiki/Namespace-Access).
 
@@ -93,6 +93,18 @@ Variants:
    downloads the JSON metadata of an extension and prints it to the standard output.
  * `ovsx get <extension> --metadata -o <path>`
    downloads the JSON metadata of an extension and saves it in the specified file or directory.
+
+### Verify a Downloaded Package
+
+If the registry signs published packages, `ovsx verify <path>` checks a downloaded `.vsix` file's signature against the registry's public key - the same check VS Code itself performs when installing a signed extension. The namespace, extension name and version are read from the package itself, so no extra arguments are needed beyond the file path (and `-t`/`--target` for a [target platform specific extension](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions)).
+
+ * `ovsx verify <extension.vsix>`
+   verifies the package's signature and exits with an error if it is missing, invalid, or does not match - meaning the package was not published by, or was tampered with after being published by, the registry it was downloaded from.
+
+If you already have the package, manifest and signature files on disk - e.g. extracted from a registry's signature archive - and don't want `ovsx` to talk to a registry at all, `ovsx verify-signature` verifies that trio entirely offline, mirroring `vsce verify-signature`:
+
+ * `ovsx verify-signature -i <package.vsix> -m <manifest> -s <signature> -k <publicKey>`
+   verifies the signature against the package, and cross-checks the manifest's recorded digests against the package's actual contents - reporting which entry doesn't match, if any. Unlike `vsce verify-signature`, a public key must be supplied explicitly (`-k`/`--publicKeyPath`): Open VSX registries each hold their own signing key, rather than trusting a single baked-in Marketplace key the way VS Code's own verifier does.
 
 ### Store Access Tokens
 

@@ -60,6 +60,8 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.util.auth.AuthenticatedUser;
+import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 
 import static org.eclipse.openvsx.cache.CacheService.*;
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -165,7 +167,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             extensionsMap.put(name, url);
         }
         json.setExtensions(extensionsMap);
-        json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
+        json.setVerified(repositories.isVerified(namespace));
         return json;
     }
 
@@ -581,7 +583,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                 : null;
 
         var json = namespace.toNamespaceDetailsJson();
-        json.setVerified(repositories.hasMemberships(namespace, NamespaceMembership.ROLE_OWNER));
+        json.setVerified(repositories.isVerified(namespace));
         json.setLogo(logo);
 
         var serverUrl = UrlUtil.getBaseUrl();
@@ -725,12 +727,12 @@ public class LocalRegistryService implements IExtensionRegistry {
 
     @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson createNamespace(NamespaceJson json, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
-        if (token == null) {
+        var tau = tokens.useAccessToken(tokenValue, new AccessTokenAction.CreateNamespace(json.getName()));
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
-        return createNamespace(json, token.getUser());
+        return createNamespace(json, tau.userData());
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -793,18 +795,18 @@ public class LocalRegistryService implements IExtensionRegistry {
             @Nullable List<TargetPlatformVersionJson> targetVersions,
             String tokenValue
     ) {
-        var token = tokens
+        var tau = tokens
                 .useAccessToken(tokenValue, new AccessTokenAction.DeleteVersion(namespaceName, extensionName));
-        if (token == null || token.getUser() == null) {
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR);
         }
 
-        return extensions.deleteExtensionAsUser(token.getUser(), namespaceName, extensionName, targetVersions);
+        return extensions.deleteExtensionAsUser(tau.userData(), namespaceName, extensionName, targetVersions);
     }
 
     public ResultJson verifyToken(String namespaceName, String tokenValue) {
-        var token = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
-        if (token == null) {
+        var tau = tokens.useAccessToken(tokenValue, new AccessTokenAction.Verify());
+        if (tau == null) {
             throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
         }
 
@@ -812,9 +814,7 @@ public class LocalRegistryService implements IExtensionRegistry {
         if (namespace == null) {
             throw new NotFoundException();
         }
-
-        var user = token.getUser();
-        if (!users.hasPublishPermission(user, namespace)) {
+        if (!users.hasPublishPermission(tau.userData(), namespace)) {
             throw new ErrorResultException(
                     "Insufficient access rights for namespace: " + namespace.getName(),
                     HttpStatus.FORBIDDEN);
@@ -823,11 +823,16 @@ public class LocalRegistryService implements IExtensionRegistry {
         return ResultJson.success("Valid token");
     }
 
-    public ExtensionJson publish(InputStream content, UserData user) throws ErrorResultException {
-        return publish(content, tokens.createOneTimeAccessToken(user, "One time use publish token").getValue());
+    public ExtensionJson publish(InputStream content, LoggedInAuthentication liu) throws ErrorResultException {
+        return doPublish(content, null, liu);
     }
 
     public ExtensionJson publish(InputStream rawContent, String tokenValue) throws ErrorResultException {
+        return doPublish(rawContent, tokenValue, null);
+    }
+
+    private ExtensionJson doPublish(InputStream rawContent, String tokenValue, AuthenticatedUser auth)
+            throws ErrorResultException {
         // A rejection anywhere below - invalid/expired token, missing publisher agreement, or
         // (pre-existing, inside extensions.publishVersion) an oversized package - can happen before
         // the request body has been fully read. Wrapping it once here and relying on
@@ -839,21 +844,24 @@ public class LocalRegistryService implements IExtensionRegistry {
         try (var content = new DrainOnCloseInputStream(rawContent, publishingConfig.getMaxContentSize())) {
             var tempFile = extensions.createExtensionFile(content);
             try {
+                AuthenticatedUser au = auth;
                 ExtensionVersion extVersion;
                 try (var processor = new ExtensionProcessor(tempFile)) {
                     // now that we know the details, ensure token is still fine
-                    var token = tokens.useAccessToken(
-                            tokenValue,
-                            new AccessTokenAction.PublishVersion(
-                                    processor.getNamespace(),
-                                    processor.getExtensionName()));
-                    if (token == null || token.getUser() == null) {
+                    if (au == null) {
+                        au = tokens.useAccessToken(
+                                tokenValue,
+                                new AccessTokenAction.PublishVersion(
+                                        processor.getNamespace(),
+                                        processor.getExtensionName()));
+                    }
+                    if (au == null) {
                         throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
                     }
                     // Check whether the user has a valid publisher agreement
-                    eclipse.checkPublisherAgreement(token.getUser());
+                    eclipse.checkPublisherAgreement(au.userData());
 
-                    extVersion = extensions.publishVersion(processor, token);
+                    extVersion = extensions.publishVersion(processor, au);
                 }
 
                 var json = toExtensionVersionJson(extVersion, null, true);
@@ -1346,11 +1354,11 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersion extVersion,
             Map<Long, List<NamespaceMembership>> membershipsByNamespaceId
     ) {
-        if (extVersion.getPublishedWith() == null) {
+        if (extVersion.getPublishedBy() == null) {
             return false;
         }
 
-        var user = extVersion.getPublishedWith().getUser();
+        var user = extVersion.getPublishedBy();
         if (user.isPrivileged()) {
             return true;
         }

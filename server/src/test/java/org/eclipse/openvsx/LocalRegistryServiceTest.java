@@ -41,6 +41,7 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
+import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
@@ -53,6 +54,7 @@ import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -150,6 +152,7 @@ class LocalRegistryServiceTest {
 
         var token = new PersonalAccessToken();
         token.setUser(new UserData());
+        token.setType(PersonalAccessTokenType.LLT);
 
         var namespace = new Namespace();
         namespace.setName("foo");
@@ -161,9 +164,11 @@ class LocalRegistryServiceTest {
         extVersion.setExtension(extension);
         extVersion.setVersion("1.0.0");
 
+        var tau = new AccessTokenAuthentication(token.getUser(), token.getType());
+
         when(extensions.createExtensionFile(any())).thenReturn(tempFile);
-        when(tokens.useAccessToken(eq("tok"), any())).thenReturn(token);
-        when(extensions.publishVersion(any(ExtensionProcessor.class), eq(token))).thenReturn(extVersion);
+        when(tokens.useAccessToken(eq("tok"), any())).thenReturn(tau);
+        when(extensions.publishVersion(any(ExtensionProcessor.class), eq(tau))).thenReturn(extVersion);
         when(storageUtilService.getFileUrls(any(), any(), any(String[].class))).thenReturn(Map.of(42L, Map.of()));
 
         registryService.publish(new ByteArrayInputStream(new byte[0]), "tok");

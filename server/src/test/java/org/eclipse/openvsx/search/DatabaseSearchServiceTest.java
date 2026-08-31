@@ -403,8 +403,8 @@ class DatabaseSearchServiceTest {
         var user = new UserData();
         var token = new PersonalAccessToken();
         token.setUser(user);
-        extVer.setPublishedWith(token);
-        Mockito.when(repositories.isVerified(namespace, user)).thenReturn(false);
+        extVer.setPublishedWithTt(token.getType());
+        Mockito.when(repositories.isVerifiedPublisher(extVer)).thenReturn(false);
         Mockito.when(repositories.findLatestVersion(extension, null, false, true)).thenReturn(extVer);
         return extension;
     }

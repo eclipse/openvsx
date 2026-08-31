@@ -8,6 +8,12 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - Add `unpublish` command to delete an extension or some of its versions, mirroring `vsce unpublish` ([#1958](https://github.com/eclipse-openvsx/openvsx/issues/1958)); requires a registry running version 1.2.0 or later, which `unpublish` checks for before deleting
 - `publish` checks the packaged extension's size against the limit reported by the registry's `/api/version` endpoint before uploading, instead of failing only after the upload completes ([#1953](https://github.com/eclipse-openvsx/openvsx/issues/1953))
+- Add `verify` command to check a downloaded `.vsix` package's signature against the registry's public key, mirroring `vsce verify-signature` ([#993](https://github.com/eclipse-openvsx/openvsx/issues/993))
+- Add `verify-signature` command, verifying an already-extracted package/manifest/signature file trio entirely offline (no registry involved), matching `vsce verify-signature`'s own command shape ([#993](https://github.com/eclipse-openvsx/openvsx/issues/993))
+
+#### Changed
+
+- Bump minimum supported Node.js version to 22, matching the webui component
 
 ### [v1.1.1] (09/08/2026)
 

@@ -20,6 +20,8 @@ import java.util.List;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -50,6 +52,11 @@ public class ExtensionScanJobRecoveryService implements JobRequestHandler<Handle
     // Max jobs to process per watchdog cycle
     private static final int MAX_PER_CYCLE = 20;
 
+    // Arbitrary, fixed key for the Postgres advisory lock guarding startup recovery below. Only
+    // needs to be distinct from any other advisory lock key this application uses - there are none
+    // today.
+    private static final long RECOVERY_LOCK_KEY = 891_234_567_890_123L;
+
     private final ScannerJobRepository scanJobRepository;
     private final ScannerRegistry scannerRegistry;
     private final RepositoryService repositories;
@@ -60,6 +67,7 @@ public class ExtensionScanJobRecoveryService implements JobRequestHandler<Handle
     private final PublishExtensionVersionService publishService;
     private final ExtensionService extensionService;
     private final JobRequestScheduler jobScheduler;
+    private final DSLContext dsl;
 
     public ExtensionScanJobRecoveryService(
             ScannerJobRepository scanJobRepository,
@@ -71,7 +79,8 @@ public class ExtensionScanJobRecoveryService implements JobRequestHandler<Handle
             PublishCheckRunner publishCheckRunner,
             PublishExtensionVersionService publishService,
             ExtensionService extensionService,
-            JobRequestScheduler jobScheduler
+            JobRequestScheduler jobScheduler,
+            DSLContext dsl
     ) {
         this.scanJobRepository = scanJobRepository;
         this.scannerRegistry = scannerRegistry;
@@ -83,10 +92,21 @@ public class ExtensionScanJobRecoveryService implements JobRequestHandler<Handle
         this.publishService = publishService;
         this.extensionService = extensionService;
         this.jobScheduler = jobScheduler;
+        this.dsl = dsl;
     }
 
     /**
      * Recover all scan state on server startup.
+     * <p>
+     * {@code ApplicationReadyEvent} fires independently, un-coordinated, in every instance's own JVM -
+     * with multiple pods (e.g. during a rolling update) several of them can be starting up within the
+     * same window, each running this whole pass against the same database rows. Beyond the merely
+     * confusing duplicate log lines that produces, some of what recovery does is not idempotent across
+     * instances (e.g. re-enqueueing the same stuck job from two pods submits it for scanning twice), so
+     * a transaction-scoped Postgres advisory lock ensures only one instance actually performs recovery
+     * per acquisition window. {@code pg_try_advisory_xact_lock} never blocks - it returns immediately -
+     * and Postgres releases the lock automatically when this method's transaction ends (commit or
+     * rollback), so there is no explicit unlock and no risk of a lock leaking onto a pooled connection.
      */
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
@@ -95,11 +115,26 @@ public class ExtensionScanJobRecoveryService implements JobRequestHandler<Handle
             return;
         }
 
+        if (!tryAcquireRecoveryLock()) {
+            logger.debug("Another instance already holds the scan recovery lock, skipping");
+            return;
+        }
+
         logger.info("Starting scan recovery on server startup");
 
         recoverPendingJobs();
         recoverValidatingScans();
         recoverStaleScans();
+    }
+
+    // Package-private so a test can stub it via a spy without needing two real database connections
+    // to exercise recoverOnStartup()'s branching; the lock's own semantics are covered separately by
+    // ExtensionScanJobRecoveryServiceTest against a real Postgres instance.
+    boolean tryAcquireRecoveryLock() {
+        return Boolean.TRUE.equals(
+                dsl.fetchValue(
+                        DSL.select(
+                                DSL.function("pg_try_advisory_xact_lock", Boolean.class, DSL.val(RECOVERY_LOCK_KEY)))));
     }
 
     /**
