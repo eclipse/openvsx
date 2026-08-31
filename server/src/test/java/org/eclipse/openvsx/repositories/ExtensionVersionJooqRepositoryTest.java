@@ -414,12 +414,15 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
      * <p>
      * It also compares against a third baseline: {@link #noLimitFindAllActive}, a port of the method
      * as it existed before pre-release limiting existed at all (before #2062) - a bare filtered
-     * SELECT with no ranking whatsoever. The reworked query computes its {@code denseRank()} window
-     * function unconditionally, even on the uncapped path where nothing reads it (see the "computed
-     * even when the cap is disabled" review note on this class), so this checks that unconditional
-     * computation isn't a meaningful regression against the simplest query that could possibly answer
-     * this question - the uncapped path being, per {@code ovsx.extension-query.max-pre-release-versions}'s
-     * default of {@code -1}, the one every request takes unless an operator opts into the cap.
+     * SELECT with no ranking whatsoever. The uncapped path (the default, since {@code
+     * ovsx.extension-query.max-pre-release-versions} defaults to {@code -1}) now skips building the
+     * {@code denseRank()} window function entirely, so this pins down that it stays a wash against
+     * the simplest query that could possibly answer the same question. It wasn't always a wash: an
+     * earlier version of this method computed the window function unconditionally, and separately its
+     * {@code RankedFieldMapper} resolved each mapped column by handing jOOQ a freshly-constructed,
+     * unrelated {@code Field} object - which forces a slow fallback lookup - instead of the row's own
+     * indexed {@code Field(String)} lookup. Both are fixed now; this test guards against either
+     * regressing.
      * <p>
      * Both comparisons are necessarily coarse (real wall-clock time against a real Postgres instance,
      * not a controlled microbenchmark), so each allows the new query a generous margin rather than
@@ -451,7 +454,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
         logger.info(
                 "for {} pre-release versions: old capped (correlated subquery) took {}ms, new capped (window "
                         + "function) took {}ms, no-limit-at-all baseline (pre-#2062, no ranking) took {}ms, "
-                        + "new uncapped (still computes the unused window function) took {}ms",
+                        + "new uncapped took {}ms",
                 preReleaseCount,
                 oldDuration.toMillis(),
                 newCappedDuration.toMillis(),
@@ -467,10 +470,9 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
 
         assertThat(newUncappedDuration)
                 .as(
-                        "computing an unused denseRank() window function on the uncapped (default) path must not "
-                                + "be a meaningful regression against the simplest query with no ranking "
-                                + "capability at all - the baseline every caller got before pre-release limiting "
-                                + "existed")
+                        "the uncapped (default) path must not be a meaningful regression against the simplest "
+                                + "query with no ranking capability at all - the baseline every caller got before "
+                                + "pre-release limiting existed")
                 .isLessThanOrEqualTo(noLimitDuration.multipliedBy(3).plus(Duration.ofMillis(500)));
     }
 
@@ -508,9 +510,42 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
      * #2062 introduced any pre-release limiting at all: no ranking, no cap parameter, just the active
      * versions of the given extensions. Kept here only as a performance baseline - the original
      * two-argument method itself is gone.
+     * <p>
+     * Selects the full column list and maps every row via {@link ExtensionVersionJooqRepository#toExtensionVersion}
+     * (not just an id, unlike {@link #oldFindAllActive}) so the comparison in
+     * {@link #newRankingApproachIsNotSlowerThanTheOldCorrelatedSubqueryApproach} is fair: the reworked
+     * method always maps every row to a full {@link ExtensionVersion}, so a baseline that skipped
+     * mapping would make the SQL-only saving from dropping the unused {@code denseRank()} look far
+     * smaller than it is against the dominant, unavoidable mapping cost both approaches pay equally.
      */
-    private int noLimitFindAllActive(List<Long> extensionIds) {
-        return dsl.select(EXTENSION_VERSION.ID)
+    private List<ExtensionVersion> noLimitFindAllActive(List<Long> extensionIds) {
+        return dsl.select(
+                NAMESPACE.ID,
+                NAMESPACE.NAME,
+                EXTENSION.ID,
+                EXTENSION.NAME,
+                EXTENSION_VERSION.ID,
+                EXTENSION_VERSION.VERSION,
+                EXTENSION_VERSION.POTENTIALLY_MALICIOUS,
+                EXTENSION_VERSION.REMOVED,
+                EXTENSION_VERSION.TARGET_PLATFORM,
+                EXTENSION_VERSION.PREVIEW,
+                EXTENSION_VERSION.PRE_RELEASE,
+                EXTENSION_VERSION.TIMESTAMP,
+                EXTENSION_VERSION.DISPLAY_NAME,
+                EXTENSION_VERSION.DESCRIPTION,
+                EXTENSION_VERSION.ENGINES,
+                EXTENSION_VERSION.CATEGORIES,
+                EXTENSION_VERSION.TAGS,
+                EXTENSION_VERSION.EXTENSION_KIND,
+                EXTENSION_VERSION.REPOSITORY,
+                EXTENSION_VERSION.SPONSOR_LINK,
+                EXTENSION_VERSION.GALLERY_COLOR,
+                EXTENSION_VERSION.GALLERY_THEME,
+                EXTENSION_VERSION.LOCALIZED_LANGUAGES,
+                EXTENSION_VERSION.DEPENDENCIES,
+                EXTENSION_VERSION.BUNDLED_EXTENSIONS,
+                SIGNATURE_KEY_PAIR.PUBLIC_ID)
                 .from(EXTENSION_VERSION)
                 .join(EXTENSION).on(EXTENSION.ID.eq(EXTENSION_VERSION.EXTENSION_ID))
                 .join(NAMESPACE).on(NAMESPACE.ID.eq(EXTENSION.NAMESPACE_ID))
@@ -518,7 +553,7 @@ class ExtensionVersionJooqRepositoryTest extends AbstractPostgresContainerTest {
                 .where(EXTENSION_VERSION.ACTIVE.eq(true))
                 .and(EXTENSION_VERSION.EXTENSION_ID.in(extensionIds))
                 .fetch()
-                .size();
+                .map(repo::toExtensionVersion);
     }
 
     private Condition oldIsAmongLatestPreReleases(int limit) {
