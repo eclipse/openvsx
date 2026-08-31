@@ -196,7 +196,11 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
 
     const adminPages = pageSettings.elements.adminPages;
     const contributed = useMemo(
-        () => (adminPages ?? []).filter(page => !builtInSegments.has(page.path.split('/')[0])),
+        () =>
+            (adminPages ?? []).filter(page => {
+                const segment = page.path.split('/')[0].toLowerCase();
+                return segment.length > 0 && !builtInSegments.has(segment);
+            }),
         [adminPages]
     );
     const navItems = useMemo(() => withContributedPages(contributed), [contributed]);
