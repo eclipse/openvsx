@@ -93,7 +93,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         const jitter = Math.floor(Math.random() * 100);
         const timeoutMillis = (Number(retrySeconds) + 1) * 1000 + jitter;
         return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req)).then(request =>
-            sendRequest(request)
+            sendRequest(request, retry)
         );
     } else {
         let err: ErrorResponse;

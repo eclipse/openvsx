@@ -18,15 +18,13 @@ export const useUserExtension = (target: UserExtensionTarget) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: ['user', 'extension', target.namespace, target.extension],
-        queryFn: async ({ signal }) => {
-            const result = await service.getExtension(controllerFromSignal(signal), target.namespace, target.extension);
-            if (isError(result)) throw result; // let errors reach TanStack
-            return result;
-        }
+        queryFn: ({ signal }) =>
+            service.getExtension(controllerFromSignal(signal), target.namespace, target.extension)
     });
 };
 ```
 
+- The `queryFn` is a one-liner because the service method rejects on failure — see "Errors belong to the service" below. Never re-check `isError` in a hook.
 - `controllerFromSignal(signal)` (`query-client.ts`) bridges TanStack's `AbortSignal` to the `AbortController` the service expects — service signatures stay untouched, component-level `AbortController` refs go away.
 - `useQuery` forbids `undefined`; normalise a "no result" case to `null`.
 - Query keys are hierarchical arrays (`['admin', 'namespace', name]`). When a key is reused for invalidation, export a small `*Keys` helper next to the hook.
@@ -46,12 +44,28 @@ export const useCreateNamespace = () => {
 
 - **No `AbortController` / signal in mutations** — we don't abort writes anymore.
 - Mutations don't retry (TanStack's default `retry: 0`), which is correct for non-idempotent writes.
-- `throw` on an error result when the caller relies on a `catch` / `onError` path.
+- The `mutationFn` forwards the service call directly; the service rejects on failure, so `mutateAsync` callers get their `catch` / `onError` path for free.
 - Invalidate or remove affected queries in `onSuccess`.
+
+## Errors belong to the service, not the hook
+
+The registry answers some failures with a `200` carrying an `{ error: '…' }` body instead of a non-2xx status. `sendStrictRequest` (`server-request.ts`) is the single place that normalises this: it is non-retriable *and* rejects on such a body, so a migrated service method resolves with data or rejects — never both.
+
+```ts
+// extension-registry-service.ts — migrated methods
+async getNamespace(abortController: AbortController, name: string): Promise<Readonly<Namespace>> {
+    return sendStrictRequest({ abortController, credentials: true, endpoint: /* … */ });
+}
+```
+
+- A migrated method's return type **drops `| ErrorResult`** — that union is what forced the `isError` check on every caller.
+- Hooks therefore never contain `if (isError(result)) throw result`. If you find yourself writing one, the service method still needs migrating.
+- `sendRequest` / `sendNonRetriableRequest` keep resolving error bodies; legacy, un-migrated consumers check `isError` themselves. Don't change their behaviour.
+- Same rule in tests: stub a failing service method with `mockRejectedValue({ error: '…' })`, not `mockResolvedValue`.
 
 ## Retries and caching are owned by the shared client
 
-- One singleton `queryClient` (`query-client.ts`) retries network/5xx with backoff, never 4xx; 429s are waited out inside `sendRequest`. Migrated service methods use `sendNonRetriableRequest`, so this is the only retry layer.
+- One singleton `queryClient` (`query-client.ts`) retries network/5xx with backoff, never 4xx; 429s are waited out inside `sendRequest`. Migrated service methods use `sendStrictRequest` (fetch-retry disabled for non-429 responses), so TanStack should remain the only layer retrying network/5xx.
 - Defaults: `refetchOnWindowFocus: false`, `staleTime: 60s`. Override per hook only with reason — `staleTime: 0` / `gcTime: 0` when data must always be fresh (right after publish/delete), `retry: false` to let a 404 surface immediately.
 
 ## Options objects, not positional flags

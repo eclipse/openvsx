@@ -14,7 +14,6 @@
 import { useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MainContext } from '../../../context';
-import { isError } from '../../../extension-registry-types';
 import { controllerFromSignal, NO_CACHE } from '../../../query-client';
 
 interface UserExtensionTarget {
@@ -35,21 +34,13 @@ export const useUserExtension = (target: UserExtensionTarget) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: ['user', 'extension', target.namespace, target.extension],
-        queryFn: async ({ signal }) => {
-            const result = await service.getExtension(controllerFromSignal(signal), target.namespace, target.extension);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        },
+        queryFn: ({ signal }) => service.getExtension(controllerFromSignal(signal), target.namespace, target.extension),
         ...NO_CACHE
     });
 };
 
 /**
- * Deletes extension versions. Mirrors the previous behaviour of not throwing on
- * an error result; thrown (network/server) errors reject so the caller's catch
- * path runs.
+ * Deletes extension versions.
  */
 export const useDeleteUserExtensionVersions = () => {
     const { service } = useContext(MainContext);

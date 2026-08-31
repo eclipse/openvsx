@@ -14,7 +14,7 @@
 import { useContext, useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { MainContext } from '../../context';
-import { SearchEntry, SearchResult, SortOrder, isError } from '../../extension-registry-types';
+import { SearchEntry, SortOrder } from '../../extension-registry-types';
 import { ExtensionCategory } from '../../extension-registry-types';
 import { useCategories } from '../../components/categories';
 import { HomeCuratedSection } from '../../page-settings';
@@ -80,10 +80,7 @@ export function useCuratedRows(curatedSections: HomeCuratedSection[]): CuratedRo
                     sortBy: section.sortBy,
                     sortOrder: 'desc' as SortOrder
                 });
-                if (isError(result)) {
-                    throw result;
-                }
-                return (result as SearchResult).extensions;
+                return result.extensions;
             }
         }))
     });

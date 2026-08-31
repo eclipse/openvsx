@@ -14,7 +14,7 @@
 import { useContext } from 'react';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { MainContext } from '../context';
-import { isError, SearchResult } from '../extension-registry-types';
+import { SearchResult } from '../extension-registry-types';
 import { ExtensionFilter } from '../extension-registry-service';
 import { controllerFromSignal } from '../query-client';
 
@@ -37,20 +37,15 @@ export const useInfiniteSearch = (filter: ExtensionFilter) => {
     const { query, category, size, sortBy, sortOrder } = filter;
     return useInfiniteQuery({
         queryKey: searchKeys.list({ query, category, size, sortBy, sortOrder }),
-        queryFn: async ({ pageParam, signal }): Promise<SearchResult> => {
-            const result = await service.search(controllerFromSignal(signal), {
+        queryFn: ({ pageParam, signal }): Promise<SearchResult> =>
+            service.search(controllerFromSignal(signal), {
                 query,
                 category,
                 size,
                 sortBy,
                 sortOrder,
                 offset: pageParam
-            });
-            if (isError(result)) {
-                throw result;
-            }
-            return result as SearchResult;
-        },
+            }),
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
             const loaded = allPages.reduce((sum, page) => sum + page.extensions.length, 0);

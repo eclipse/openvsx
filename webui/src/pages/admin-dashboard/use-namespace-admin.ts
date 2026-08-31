@@ -14,7 +14,6 @@
 import { useContext } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainContext } from '../../context';
-import { isError } from '../../extension-registry-types';
 import { controllerFromSignal } from '../../query-client';
 
 interface ChangeNamespaceRequest {
@@ -37,13 +36,7 @@ export const useAdminNamespace = (name: string) => {
     const { service } = useContext(MainContext);
     return useQuery({
         queryKey: namespaceAdminKeys.detail(name),
-        queryFn: async ({ signal }) => {
-            const namespace = await service.admin.getNamespace(controllerFromSignal(signal), name);
-            if (isError(namespace)) {
-                throw namespace;
-            }
-            return namespace;
-        },
+        queryFn: ({ signal }) => service.admin.getNamespace(controllerFromSignal(signal), name),
         enabled: !!name,
         retry: false,
         staleTime: 0
@@ -65,36 +58,22 @@ export const useCreateNamespace = () => {
 };
 
 /**
- * Renames (and optionally merges) a namespace. Throws on an error result so the
- * caller's catch / onError path runs.
+ * Renames (and optionally merges) a namespace.
  */
 export const useChangeNamespace = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: async (req: ChangeNamespaceRequest) => {
-            const result = await service.admin.changeNamespace(req);
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        }
+        mutationFn: (req: ChangeNamespaceRequest) => service.admin.changeNamespace(req)
     });
 };
 
 /**
- * Deletes a namespace. Throws on an error result so the caller's catch /
- * onError path runs.
+ * Deletes a namespace.
  */
 export const useDeleteNamespace = () => {
     const { service } = useContext(MainContext);
     return useMutation({
-        mutationFn: async (name: string) => {
-            const result = await service.admin.deleteNamespace({ name });
-            if (isError(result)) {
-                throw result;
-            }
-            return result;
-        }
+        mutationFn: (name: string) => service.admin.deleteNamespace({ name })
     });
 };
 

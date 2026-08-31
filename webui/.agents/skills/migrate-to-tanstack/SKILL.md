@@ -11,15 +11,16 @@ description: Migrate a data-fetching endpoint from the legacy ExtensionRegistryS
 
 `src/extension-registry-service.ts` (`ExtensionRegistryService`, plus `service.admin.*`) holds every server call. Legacy, un-migrated consumers call these methods straight from a component, passing an `AbortController` and relying on `fetch-retry`'s 10-attempt backoff inside `sendRequest`. That drags along per-component `AbortController` refs, `useEffect` fetch-on-mount wiring, and hand-rolled loading/error state.
 
-Migrated endpoints instead go through a `use*` hook wrapping `useQuery`/`useMutation`, and retries move to the shared query client (`src/query-client.ts`). Roughly half the service is migrated — grep before assuming either state.
+Migrated endpoints instead go through a `use*` hook wrapping `useQuery`/`useMutation`, retries move to the shared query client (`src/query-client.ts`), and error handling moves into the transport via `sendStrictRequest`. Roughly half the service is migrated — grep before assuming either state.
 
 ## Steps
 
 1. **Find every consumer** of the method you're migrating: `grep -rn "service\.<method>\|\.<method>(" src`. List them — you'll migrate all of them or a named subset.
 
-2. **Decide the retry scope — ask if unsure.** Ideally the service method flips from `sendRequest` (retriable) to `sendNonRetriableRequest`, handing retries to TanStack. Only do that when **every** consumer is moving to a hook — a legacy consumer still calling the method directly would silently lose its retry. If you're migrating just one of several consumers, either leave the method retriable (the query then double-retries, tolerated in the interim) or confirm scope with the user. When the request doesn't make the consumer scope clear, ask.
+2. **Decide the retry scope — ask if unsure.** Ideally the service method flips from `sendRequest` (retriable) to `sendStrictRequest`, handing retries to TanStack. Only do that when **every** consumer is moving to a hook — a legacy consumer still calling the method directly would silently lose its retry *and* start seeing rejections where it used to get a resolved error result. If you're migrating just one of several consumers, either leave the method retriable (the query then double-retries, tolerated in the interim) or confirm scope with the user. When the request doesn't make the consumer scope clear, ask.
 
 3. **Adjust the service method.**
+   - Switch it to `sendStrictRequest` and **drop `| ErrorResult` from its return type** (`Promise<Readonly<SuccessResult | ErrorResult>>` → `Promise<Readonly<SuccessResult>>`). The method now resolves with data or rejects; the hook needs no `isError` check, and consumers lose their `as SuccessResult` casts.
    - Query methods: keep the `AbortController` param — the hook passes `controllerFromSignal(signal)`.
    - Mutation methods: **drop the `AbortController` param** — we no longer abort writes.
 
@@ -27,7 +28,9 @@ Migrated endpoints instead go through a `use*` hook wrapping `useQuery`/`useMuta
 
 5. **Update the consumers.** Replace the `AbortController` / `useEffect` / manual-state boilerplate with the hook, destructuring and renaming its result (`const { data: user, error: userError } = ...`; `const { mutateAsync, isPending } = ...`). Delete the dead boilerplate.
 
-6. **Finish per the `write-code` skill:** add or update tests (`write-tests`), add a changelog entry, and pass `yarn lint`.
+6. **Fix the tests that stubbed the old contract.** A spec stubbing the service method with `mockResolvedValue({ error: '…' })` was standing in for the old resolve-an-error-result behaviour — flip it to `mockRejectedValue({ error: '…' })`. `sendStrictRequest` itself is covered once, in `test/unit/server-request.spec.ts`; don't re-test it per endpoint.
+
+7. **Finish per the `write-code` skill:** add or update tests (`write-tests`), add a changelog entry, and pass `yarn lint`.
 
 ## Don't
 
