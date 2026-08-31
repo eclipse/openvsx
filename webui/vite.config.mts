@@ -24,7 +24,12 @@ export default defineConfig(() => ({
     test: {
         include: ['test/unit/**/*.spec.{ts,tsx}'],
         environment: 'jsdom',
-        setupFiles: ['./test/setup.ts']
+        setupFiles: ['./test/setup.ts'],
+        // Give userEvent/waitFor-heavy tests more room than the 5s default on a loaded machine.
+        testTimeout: 15000,
+        // Spawning a fork per CPU all at once (each booting jsdom + React) can itself blow past
+        // vitest's own worker-startup timeout under load; capping concurrency avoids that pileup.
+        maxWorkers: '50%'
     },
     // lightningcss (Vite 8's default CSS transformer) ships no prebuilt binary for ppc64le,
     // and its minifier isn't needed once postcss is handling transforms - see
