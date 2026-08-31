@@ -35,8 +35,19 @@ FROM download_event
 GROUP BY time_bucket('1 day', time), extension_id, extension_version_id, version, target_platform, country
 WITH NO DATA;
 
+-- Materialize what is already there before the policy takes over. Until its first run the
+-- watermark sits at -infinity and real-time aggregation answers everything, so the gap only
+-- opens once the policy advances it: from then on buckets below the watermark are served from
+-- the materialization alone, and anything never materialized reads as zero.
+CALL refresh_continuous_aggregate('download_stats_daily', NULL, NULL);
+
+-- start_offset tracks the raw retention below rather than the schedule. Log ingestion applies no
+-- date filter, so a delayed or backfilled file writes events well outside a short window, and
+-- once the watermark has passed them they would never materialize while the raw rows are dropped
+-- at 90 days. A refresh only reprocesses invalidated ranges, so the wider window costs nothing
+-- when nothing old changed.
 SELECT add_continuous_aggregate_policy('download_stats_daily',
-    start_offset => INTERVAL '3 days',
+    start_offset => INTERVAL '90 days',
     end_offset => INTERVAL '1 hour',
     schedule_interval => INTERVAL '1 hour');
 
