@@ -17,6 +17,8 @@ import java.util.List;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -25,13 +27,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import org.eclipse.openvsx.UserService;
+import org.eclipse.openvsx.analytics.ingestion.DownloadIngestionProcessor;
+import org.eclipse.openvsx.analytics.ingestion.DownloadRecordSource;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.log.DownloadCountService;
 
 import static org.eclipse.openvsx.entities.FileResource.README;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         EntityManager.class,
         SearchUtilService.class,
         GoogleCloudStorageService.class,
-        DownloadCountService.class,
+        DownloadIngestionProcessor.class,
         ExtensionDownloadMetrics.class,
         CacheService.class,
         UserService.class,
@@ -63,6 +66,15 @@ public class StorageUtilServiceTest {
 
     @Autowired
     StorageUtilService storageUtilService;
+
+    @Autowired
+    EntityManager entityManager;
+
+    @Autowired
+    TestIngestionSource ingestionSource;
+
+    @Autowired
+    DownloadIngestionProcessor ingestionProcessor;
 
     @Test
     public void testCdnEnabled() {
@@ -107,6 +119,48 @@ public class StorageUtilServiceTest {
         } finally {
             cdnServiceConfig.setEnabled(false);
         }
+    }
+
+    /**
+     * When a {@link DownloadRecordSource} covers a resource, its downloads are counted from
+     * access logs, so the request path must not count them a second time. This replaces the
+     * removed {@code DownloadCountService.isEnabled(resource)} check.
+     */
+    @Test
+    public void testIncreaseDownloadCountSkipsResourcesCoveredByIngestionSource() {
+        var extension = mockExtension();
+        var extensionVersion = mockExtensionVersion(extension, 1, "1.0.0", "universal");
+        var resource = mockFileResource(
+                1,
+                extensionVersion,
+                "ext.vsix",
+                FileResource.DOWNLOAD,
+                FileResource.STORAGE_AWS);
+        Mockito.when(entityManager.find(FileResource.class, 1L)).thenReturn(resource);
+
+        ingestionSource.coveredStorageType = FileResource.STORAGE_AWS;
+        storageUtilService.increaseDownloadCount(resource);
+        assertEquals(100, extension.getDownloadCount());
+        Mockito.verify(ingestionProcessor, Mockito.never()).captureDownload(resource);
+    }
+
+    @Test
+    public void testIncreaseDownloadCountCountsUncoveredResources() {
+        var extension = mockExtension();
+        var extensionVersion = mockExtensionVersion(extension, 1, "1.0.0", "universal");
+        var resource = mockFileResource(
+                1,
+                extensionVersion,
+                "ext.vsix",
+                FileResource.DOWNLOAD,
+                FileResource.STORAGE_AWS);
+        Mockito.when(entityManager.find(FileResource.class, 1L)).thenReturn(resource);
+
+        ingestionSource.coveredStorageType = null;
+        storageUtilService.increaseDownloadCount(resource);
+        assertEquals(101, extension.getDownloadCount());
+        // the request-path download also produces an analytics event
+        Mockito.verify(ingestionProcessor).captureDownload(resource);
     }
 
     @Test
@@ -185,8 +239,54 @@ public class StorageUtilServiceTest {
         return resource;
     }
 
+    /**
+     * A minimal ingestion source stub whose coverage can be flipped per test.
+     */
+    static class TestIngestionSource implements DownloadRecordSource {
+        String coveredStorageType;
+
+        @Override
+        public String getStorageType() {
+            return coveredStorageType;
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return coveredStorageType != null;
+        }
+
+        @Override
+        public String getCronSchedule() {
+            return "0 0 * * * *";
+        }
+
+        @Override
+        public boolean covers(FileResource resource) {
+            return coveredStorageType != null && coveredStorageType.equals(resource.getStorageType());
+        }
+
+        @Override
+        public java.util.Iterator<java.util.List<String>> listBatches() {
+            return java.util.Collections.emptyIterator();
+        }
+
+        @Override
+        public java.util.List<org.eclipse.openvsx.analytics.ingestion.RawDownloadRecord> read(String name) {
+            return java.util.List.of();
+        }
+
+        @Override
+        public void finish(String name) {
+        }
+    }
+
     @TestConfiguration
     static class TestConfig {
+
+        @Bean
+        TestIngestionSource testIngestionSource() {
+            return new TestIngestionSource();
+        }
 
         @Bean
         public CdnServiceConfig cdnServiceConfiguration() {
@@ -219,7 +319,8 @@ public class StorageUtilServiceTest {
                 AzureBlobStorageService azureStorage,
                 LocalStorageService localStorage,
                 AwsStorageService awsStorage,
-                DownloadCountService downloadCountService,
+                ObjectProvider<DownloadRecordSource> ingestionSources,
+                DownloadIngestionProcessor ingestionProcessor,
                 ExtensionDownloadMetrics downloadMetrics,
                 SearchUtilService search,
                 CacheService cache,
@@ -233,7 +334,8 @@ public class StorageUtilServiceTest {
                     azureStorage,
                     localStorage,
                     awsStorage,
-                    downloadCountService,
+                    ingestionSources,
+                    ingestionProcessor,
                     downloadMetrics,
                     search,
                     cache,

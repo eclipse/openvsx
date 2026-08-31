@@ -15,6 +15,26 @@ services:
       - db
       - debug
 
+  postgres-timeseries:
+    # download analytics only: PostgreSQL plus the timescaledb extension, kept apart from the
+    # registry database so the registry never needs the extension
+    image: timescale/timescaledb:2.17.2-pg16
+    environment:
+      - POSTGRES_USER=openvsx
+      - POSTGRES_PASSWORD=openvsx
+      - POSTGRES_DB=openvsx_timeseries
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres-timeseries-data:/var/lib/postgresql/data
+    profiles:
+      - db
+      - debug
+
   elasticsearch:
     image: elasticsearch:9.2.8
     environment:
@@ -213,6 +233,7 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+      - postgres-timeseries
       - elasticsearch
     healthcheck:
       test: "curl --fail --silent localhost:8081/actuator/health | grep UP || exit 1"
@@ -285,3 +306,6 @@ services:
       "
     profiles:
       - minio
+
+volumes:
+  postgres-timeseries-data:
