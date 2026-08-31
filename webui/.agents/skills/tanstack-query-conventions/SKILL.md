@@ -65,7 +65,7 @@ async getNamespace(abortController: AbortController, name: string): Promise<Read
 
 ## Retries and caching are owned by the shared client
 
-- One singleton `queryClient` (`query-client.ts`) retries network/5xx with backoff, never 4xx; 429s are waited out inside `sendRequest`. Migrated service methods use `sendStrictRequest` (retries disabled), so this is the only retry layer.
+- One singleton `queryClient` (`query-client.ts`) retries network/5xx with backoff, never 4xx; 429s are waited out inside `sendRequest`. Migrated service methods use `sendStrictRequest` (fetch-retry disabled for non-429 responses), so TanStack should remain the only layer retrying network/5xx.
 - Defaults: `refetchOnWindowFocus: false`, `staleTime: 60s`. Override per hook only with reason — `staleTime: 0` / `gcTime: 0` when data must always be fresh (right after publish/delete), `retry: false` to let a 404 surface immediately.
 
 ## Options objects, not positional flags
