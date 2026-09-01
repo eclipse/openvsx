@@ -235,9 +235,10 @@ public class AccessTokenService {
         }
         // Deleting a registration takes its tokens with it, so this should not be reachable; kept as a
         // guard, because a TPT that lost its registration may only ever publish an extension it can no
-        // longer be checked against.
+        // longer be checked against. Removed rather than deactivated: it can never become valid again,
+        // and nothing reads the row afterwards - the same reasoning as for a one-time token below.
         if (token.getType() == PersonalAccessTokenType.TPT && token.getTrustedPublisher() == null) {
-            token.setActive(false);
+            entityManager.remove(token);
             return null;
         }
         // scope
