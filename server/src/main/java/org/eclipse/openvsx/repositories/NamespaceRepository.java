@@ -34,8 +34,6 @@ public interface NamespaceRepository extends Repository<Namespace, Long> {
     )
     List<Namespace> findConflictingNamespaces(String displayName, @Param("namespace") Namespace excludeNamespace);
 
-    Namespace findByPublicId(String publicId);
-
     // Publish takes this lock before creating a new extension. A SELECT ... FOR UPDATE on an
     // extension that does not exist yet locks nothing — there is no row to lock and PostgreSQL has no
     // gap locking — so two publishes racing for the first version of a new extension would both miss

@@ -547,10 +547,6 @@ public class RepositoryService {
         return personalAccessTokenRepo.findByUser(user);
     }
 
-    public Streamable<PersonalAccessToken> findAllPersonalAccessTokens() {
-        return personalAccessTokenRepo.findAll();
-    }
-
     public Streamable<PersonalAccessToken> findAllPersonalAccessTokensByVersion(int version) {
         return personalAccessTokenRepo.findByVersion(version);
     }
@@ -1262,16 +1258,8 @@ public class RepositoryService {
         return extensionValidationFailureRepo.findDistinctCheckTypes();
     }
 
-    public Streamable<ExtensionValidationFailure> findValidationFailures(ExtensionScan scan, String checkType) {
-        return extensionValidationFailureRepo.findByScanAndCheckType(scan, checkType);
-    }
-
     public AdminScanDecision saveAdminScanDecision(AdminScanDecision decision) {
         return adminScanDecisionRepo.save(decision);
-    }
-
-    public AdminScanDecision findAdminScanDecision(long id) {
-        return adminScanDecisionRepo.findById(id);
     }
 
     public AdminScanDecision findAdminScanDecision(ExtensionScan scan) {

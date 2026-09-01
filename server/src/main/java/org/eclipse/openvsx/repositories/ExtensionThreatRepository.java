@@ -29,21 +29,8 @@ public interface ExtensionThreatRepository extends Repository<ExtensionThreat, L
     /** Save a new or update an existing threat */
     ExtensionThreat save(ExtensionThreat threat);
 
-    /** Find a threat by its ID */
-    ExtensionThreat findById(long id);
-
     /** Find all threats for a specific scan */
     Streamable<ExtensionThreat> findByScan(ExtensionScan scan);
-
-    /** Find all threats for a scan by scan ID */
-    @Query("SELECT t FROM ExtensionThreat t WHERE t.scan.id = :scanId")
-    Streamable<ExtensionThreat> findByScanId(long scanId);
-
-    /** Find all threats detected by a specific scanner type */
-    Streamable<ExtensionThreat> findByType(String type);
-
-    /** Find all threats with a specific file hash */
-    Streamable<ExtensionThreat> findByFileHash(String fileHash);
 
     /** Find all threats for a scan with a specific scanner type */
     Streamable<ExtensionThreat> findByScanAndType(ExtensionScan scan, String type);
@@ -51,9 +38,6 @@ public interface ExtensionThreatRepository extends Repository<ExtensionThreat, L
     /** Find distinct scanner types from all threats (for filter options) */
     @Query("SELECT DISTINCT t.type FROM ExtensionThreat t ORDER BY t.type")
     List<String> findDistinctScannerTypes();
-
-    /** Delete a threat by ID */
-    void deleteById(long id);
 
     /** Find all threats for a specific scan job */
     List<ExtensionThreat> findByJobId(long jobId);

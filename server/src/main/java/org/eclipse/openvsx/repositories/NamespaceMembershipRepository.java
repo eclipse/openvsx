@@ -28,5 +28,4 @@ public interface NamespaceMembershipRepository extends Repository<NamespaceMembe
 
     NamespaceMembership findFirstByNamespaceNameIgnoreCase(String namespaceName);
 
-    void deleteByUser(UserData user);
 }

@@ -20,8 +20,6 @@ import org.eclipse.openvsx.entities.RateLimitToken;
 
 public interface RateLimitTokenRepository extends Repository<RateLimitToken, Long> {
 
-    Streamable<RateLimitToken> findByCustomer(Customer customer);
-
     Streamable<RateLimitToken> findByCustomerAndActiveTrue(Customer customer);
 
     RateLimitToken findById(long id);

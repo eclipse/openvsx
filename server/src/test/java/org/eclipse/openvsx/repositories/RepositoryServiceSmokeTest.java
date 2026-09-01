@@ -349,7 +349,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.hasMembership(userData, namespace),
                 () -> repositories
                         .findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
-                () -> repositories.findAllPersonalAccessTokens(),
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
@@ -390,7 +389,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.countExtensionScansByStatus(ScanStatus.STARTED),
                 () -> repositories.findExtensionScan(1L),
                 () -> repositories.findValidationFailures(scan),
-                () -> repositories.findValidationFailures(scan, validationFailure.getCheckType()),
                 () -> repositories.findDistinctValidationFailureCheckTypes(),
                 () -> repositories.saveExtensionScan(scan),
                 () -> repositories.saveValidationFailure(validationFailure),
@@ -425,7 +423,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                         true),
                 // Admin scan decision methods
                 () -> repositories.findAdminScanDecision(scan),
-                () -> repositories.findAdminScanDecision(1L),
                 () -> repositories.saveAdminScanDecision(adminDecision),
                 () -> repositories.countAdminScanDecisions("ALLOWED"),
                 () -> repositories.countAdminScanDecisions(userData),
