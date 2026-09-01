@@ -249,10 +249,15 @@ const ExtensionHeaderInfo: FunctionComponent<{
                 <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                     Published by&nbsp;
                     <UserPopover user={extension.publishedBy} color={headerTextColor} />
-                    <TrustedPublishingIcon
-                        publishedWithTrustedPublishing={extension.publishedWithTrustedPublishing}
-                        color={headerTextColor}
-                    />
+                    {extension.publishedWithTrustedPublishing && (
+                        <>
+                            <TextDivider backgroundColor={headerTextColor} collapseSmall />
+                            <TrustedPublishingIcon
+                                publishedWithTrustedPublishing={extension.publishedWithTrustedPublishing}
+                                color={headerTextColor}
+                            />
+                        </>
+                    )}
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} collapseSmall />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>

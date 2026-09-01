@@ -14,8 +14,8 @@
 import { FunctionComponent, useContext } from 'react';
 import { Link } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { MainContext } from '../../context';
+import VerifiedIcon from '@mui/icons-material/Verified';
 
 const IconLink = styled(Link)(({ theme }) => ({
     display: 'flex',
@@ -37,16 +37,12 @@ const IconBadge = styled('span')(({ theme }) => ({
 export const TrustedPublishingIcon: FunctionComponent<{
     publishedWithTrustedPublishing?: boolean;
     color: string;
-}> = ({ publishedWithTrustedPublishing, color }) => {
+}> = ({ color }) => {
     const { pageSettings } = useContext(MainContext);
-
-    if (!publishedWithTrustedPublishing) {
-        return null;
-    }
 
     const title = 'Published via trusted publishing';
     const url = pageSettings.urls.trustedPublishing;
-    const icon = <RocketLaunchIcon fontSize='small' />;
+    const icon = <VerifiedIcon fontSize='small' />;
 
     // a plain badge when this instance configures no documentation URL to link to
     return url ? (
