@@ -351,7 +351,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
                 () -> repositories.findAllPersonalAccessTokens(),
-                () -> repositories.hasPersonalAccessToken("tokenValue"),
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),

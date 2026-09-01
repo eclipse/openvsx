@@ -39,7 +39,9 @@ import org.eclipse.openvsx.util.UUIDService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,8 +67,9 @@ class AccessTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(config.getTokenHashAlgorithm()).thenReturn("SHA-256");
-        when(config.getTokenHashSalt()).thenReturn("salt");
+        // lenient: generateTokenValue does not hash anything, so it needs neither of these
+        lenient().when(config.getTokenHashAlgorithm()).thenReturn("SHA-256");
+        lenient().when(config.getTokenHashSalt()).thenReturn("salt");
     }
 
     private PersonalAccessToken activeUnrestrictedToken() {
@@ -105,6 +108,22 @@ class AccessTokenServiceTest {
         var tau = accessTokenService.useAccessToken("tok", new AccessTokenAction.Verify());
 
         assertThat(tau).isNull();
+    }
+
+    // The old implementation regenerated until repositories.hasPersonalAccessToken(value) came back
+    // false, comparing a raw value against a column that stores salted hashes - it could never match for
+    // a current token, so it only cost a query per token created. Uniqueness is UNIQUE (value)'s job, and
+    // only it can work across pods anyway.
+    @Test
+    void generatesATokenValueWithoutAskingTheDatabase() {
+        var uuid = UUID.randomUUID();
+        when(config.getPrefix()).thenReturn("ovsxat_");
+        when(uuidService.generateRandom()).thenReturn(uuid);
+
+        var value = accessTokenService.generateTokenValue();
+
+        assertThat(value).isEqualTo("ovsxat_" + uuid);
+        verifyNoInteractions(repositories);
     }
 
     // How long a publishing token lives is the trusted publishing configuration's to decide, so this

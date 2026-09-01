@@ -598,10 +598,6 @@ public class RepositoryService {
         return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
     }
 
-    public boolean hasPersonalAccessToken(String value) {
-        return personalAccessTokenRepo.findByValue(value) != null;
-    }
-
     public PersonalAccessToken findPersonalAccessToken(UserData user, String description) {
         return personalAccessTokenRepo.findByUserAndDescriptionAndActiveTrue(user, description);
     }

@@ -155,13 +155,14 @@ public class AccessTokenService {
         return json;
     }
 
+    /**
+     * Uniqueness is the {@code UNIQUE (value)} constraint's to enforce, not this method's. It is the only
+     * check that can work: it applies to the hash that actually gets stored, and it holds across every pod
+     * writing to the database, which a check-then-insert here could not.
+     */
     // public to be accessible from tests
     public String generateTokenValue() {
-        String value;
-        do {
-            value = config.getPrefix() + uuidService.generateRandom();
-        } while (repositories.hasPersonalAccessToken(value));
-        return value;
+        return config.getPrefix() + uuidService.generateRandom();
     }
 
     @Transactional
