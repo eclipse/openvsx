@@ -225,6 +225,43 @@ class AdminAPITest {
     }
 
     @Test
+    void testUpdateSearchIndex() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.ELASTICSEARCH, true, 1200L, 1234L, 10000L));
+
+        mockMvc.perform(
+                post("/admin/update-search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value("Updated search index"));
+
+        Mockito.verify(search).updateSearchIndex(true);
+    }
+
+    // The endpoint is reachable whatever the dashboard offers, and SearchUtilService falls back to
+    // elasticsearch when nothing is enabled - so without this it would drive an engine the registry is
+    // not using, or claim to have rebuilt an index the database engine does not have.
+    @Test
+    void testUpdateSearchIndexWithoutAnIndexToRebuild() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.DATABASE, false, null, 1234L, null));
+
+        mockMvc.perform(
+                post("/admin/update-search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.error")
+                                .value("There is no search index to rebuild: searches are answered by 'database'."));
+
+        Mockito.verify(search, Mockito.never()).updateSearchIndex(Mockito.anyBoolean());
+    }
+
+    @Test
     void testGetSearchIndexNotAdmin() throws Exception {
         mockNormalUser();
         mockMvc.perform(

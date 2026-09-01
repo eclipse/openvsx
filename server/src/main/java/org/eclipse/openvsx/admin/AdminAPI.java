@@ -63,6 +63,7 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
@@ -377,6 +378,17 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> updateSearchIndex() {
         try {
             var adminUser = admins.checkAdminUser();
+
+            // Only elasticsearch has an index to rebuild. Without this the call falls through to
+            // SearchUtilService's default implementation, which is elasticsearch, and attempts index
+            // operations against an engine this registry is not using - or reports having rebuilt the
+            // database engine's index, which does not exist.
+            var stats = search.getIndexStats();
+            if (!SearchIndexStats.ELASTICSEARCH.equals(stats.implementation()) || !stats.enabled()) {
+                throw new ErrorResultException(
+                        "There is no search index to rebuild: searches are answered by '"
+                                + stats.implementation() + "'.");
+            }
 
             search.updateSearchIndex(true);
 

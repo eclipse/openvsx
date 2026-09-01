@@ -18,7 +18,8 @@ import org.jspecify.annotations.Nullable;
  * What the registry can say about its search index without querying it as a user would.
  *
  * @param enabled          whether searching is available at all
- * @param implementation   which engine is answering searches, {@code elasticsearch} or {@code database}
+ * @param implementation   which engine is answering searches: {@code elasticsearch}, {@code database},
+ *                         or {@code none} when searching is switched off entirely
  * @param indexExists      whether the index has been created; only meaningful for elasticsearch
  * @param indexedDocuments how many extensions the index holds, or {@code null} when there is no index to
  *                         count - the database engine searches the tables directly
