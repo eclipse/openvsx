@@ -56,12 +56,6 @@ public interface ExtensionVersionRepository extends Repository<ExtensionVersion,
             String namespace
     );
 
-    Streamable<ExtensionVersion> findByVersionAndExtensionNameIgnoreCaseAndExtensionNamespaceNameIgnoreCase(
-            String version,
-            String extensionName,
-            String namespace
-    );
-
     Streamable<ExtensionVersion> findByPublishedByAndActive(UserData user, boolean active);
 
     long countByRemovedBy(UserData removedBy);

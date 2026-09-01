@@ -29,9 +29,6 @@ public interface ExtensionValidationFailureRepository extends Repository<Extensi
     /** Save a new or update an existing validation failure */
     ExtensionValidationFailure save(ExtensionValidationFailure failure);
 
-    /** Find a validation failure by its ID */
-    ExtensionValidationFailure findById(long id);
-
     /** Find all validation failures for a specific scan */
     Streamable<ExtensionValidationFailure> findByScan(ExtensionScan scan);
 

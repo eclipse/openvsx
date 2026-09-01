@@ -40,10 +40,6 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
     @Query("SELECT f FROM FileDecision f JOIN FETCH f.decidedBy WHERE f.fileHash = :fileHash")
     FileDecision findByFileHash(@Param("fileHash") String fileHash);
 
-    /** Find multiple decisions by IDs (eagerly fetches admin users in a single query) */
-    @Query("SELECT f FROM FileDecision f JOIN FETCH f.decidedBy WHERE f.id IN :ids")
-    List<FileDecision> findByIdIn(@Param("ids") List<Long> ids);
-
     /**
      * Find all blocked decisions for a set of file hashes.
      * Used by BlocklistCheckService for efficient batch lookups during publishing.
@@ -58,9 +54,6 @@ public interface FileDecisionRepository extends Repository<FileDecision, Long> {
 
     /** Count decisions made by a given admin user */
     long countByDecidedBy(UserData decidedBy);
-
-    /** Count total file decisions */
-    long count();
 
     /** Delete a decision by ID */
     void deleteById(long id);

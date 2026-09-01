@@ -29,9 +29,6 @@ public interface ExtensionThreatRepository extends Repository<ExtensionThreat, L
     /** Save a new or update an existing threat */
     ExtensionThreat save(ExtensionThreat threat);
 
-    /** Find a threat by its ID */
-    ExtensionThreat findById(long id);
-
     /** Find all threats for a specific scan */
     Streamable<ExtensionThreat> findByScan(ExtensionScan scan);
 
