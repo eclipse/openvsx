@@ -66,20 +66,22 @@ class ExtensionVersionJooqRepositoryIdMappingTest extends AbstractPostgresContai
     void findLatestByUserReportsTheRealNamespaceAndExtensionIds() {
         var ids = persistOneVersionWithDistinctIds();
 
-        new TransactionTemplate(txManager).executeWithoutResult(status -> {
-            var user = em.find(UserData.class, ids.user());
-            var found = repositories.findLatestVersions(user);
+        try {
+            new TransactionTemplate(txManager).executeWithoutResult(status -> {
+                var user = em.find(UserData.class, ids.user());
+                var found = repositories.findLatestVersions(user);
 
-            assertThat(found).hasSize(1);
-            var version = found.getFirst();
-            assertThat(version.getId()).isEqualTo(ids.version());
-            // these two used to come back as the version's id, which made UserAPI's namespace membership
-            // filter match nothing and emptied the user's extension list
-            assertThat(version.getExtension().getId()).isEqualTo(ids.extension());
-            assertThat(version.getExtension().getNamespace().getId()).isEqualTo(ids.namespace());
-        });
-
-        cleanUp(ids);
+                assertThat(found).hasSize(1);
+                var version = found.getFirst();
+                assertThat(version.getId()).isEqualTo(ids.version());
+                // these two used to come back as the version's id, which made UserAPI's namespace membership
+                // filter match nothing and emptied the user's extension list
+                assertThat(version.getExtension().getId()).isEqualTo(ids.extension());
+                assertThat(version.getExtension().getNamespace().getId()).isEqualTo(ids.namespace());
+            });
+        } finally {
+            cleanUp(ids);
+        }
     }
 
     @Test
