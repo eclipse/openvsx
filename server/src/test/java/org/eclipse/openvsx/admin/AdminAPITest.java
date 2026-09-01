@@ -87,6 +87,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.search.SimilarityConfig;
@@ -179,6 +180,96 @@ class AdminAPITest {
 
     @Autowired
     MockMvc mockMvc;
+
+    // registered as a mock through the @MockitoBean types list above
+    @Autowired
+    SearchUtilService search;
+
+    // The document count next to the number of extensions it is built from is the point of this page:
+    // an index that quietly lost entries looks exactly like a registry with nothing in it otherwise.
+    @Test
+    void testGetSearchIndex() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.ELASTICSEARCH, true, 1200L, 1234L, 10000L));
+
+        mockMvc.perform(
+                get("/admin/search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true))
+                .andExpect(jsonPath("$.implementation").value("elasticsearch"))
+                .andExpect(jsonPath("$.indexExists").value(true))
+                .andExpect(jsonPath("$.indexedDocuments").value(1200))
+                .andExpect(jsonPath("$.activeExtensions").value(1234))
+                .andExpect(jsonPath("$.maxResultWindow").value(10000));
+    }
+
+    @Test
+    void testGetSearchIndexWithoutAnIndex() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.DATABASE, false, null, 1234L, null));
+
+        mockMvc.perform(
+                get("/admin/search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.implementation").value("database"))
+                .andExpect(jsonPath("$.indexExists").value(false))
+                // omitted rather than zero: there is no index to have counted
+                .andExpect(jsonPath("$.indexedDocuments").doesNotExist())
+                .andExpect(jsonPath("$.activeExtensions").value(1234));
+    }
+
+    @Test
+    void testUpdateSearchIndex() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.ELASTICSEARCH, true, 1200L, 1234L, 10000L));
+
+        mockMvc.perform(
+                post("/admin/update-search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value("Updated search index"));
+
+        Mockito.verify(search).updateSearchIndex(true);
+    }
+
+    // The endpoint is reachable whatever the dashboard offers, and SearchUtilService falls back to
+    // elasticsearch when nothing is enabled - so without this it would drive an engine the registry is
+    // not using, or claim to have rebuilt an index the database engine does not have.
+    @Test
+    void testUpdateSearchIndexWithoutAnIndexToRebuild() throws Exception {
+        mockAdminUser();
+        Mockito.when(search.getIndexStats())
+                .thenReturn(new SearchIndexStats(true, SearchIndexStats.DATABASE, false, null, 1234L, null));
+
+        mockMvc.perform(
+                post("/admin/update-search-index")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.error")
+                                .value("There is no search index to rebuild: searches are answered by 'database'."));
+
+        Mockito.verify(search, Mockito.never()).updateSearchIndex(Mockito.anyBoolean());
+    }
+
+    @Test
+    void testGetSearchIndexNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(
+                get("/admin/search-index")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     void testGetExtensionNotLoggedIn() throws Exception {

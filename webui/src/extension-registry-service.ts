@@ -57,7 +57,8 @@ import {
     TrustedPublisherRequest,
     TrustedPublisherStatus,
     ConsistencyCheckList,
-    ConsistencyFindingList
+    ConsistencyFindingList,
+    SearchIndex
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
 import { sendRequest, ErrorResponse, sendNonRetriableRequest, sendStrictRequest } from './server-request';
@@ -770,6 +771,8 @@ export interface AdminService {
     deleteCustomerRateLimitToken(customerName: string, tokenId: number): Promise<Readonly<SuccessResult>>;
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
     updateSettings(settings: Settings): Promise<Readonly<Settings>>;
+    getSearchIndex(abortController: AbortController): Promise<Readonly<SearchIndex>>;
+    updateSearchIndex(): Promise<Readonly<SuccessResult>>;
     getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>>;
     getConsistencyFindings(
         abortController: AbortController,
@@ -1570,6 +1573,24 @@ export class AdminServiceImpl implements AdminService {
             payload: settings,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'settings']),
+            headers
+        });
+    }
+
+    async getSearchIndex(abortController: AbortController): Promise<Readonly<SearchIndex>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'search-index'])
+        });
+    }
+
+    async updateSearchIndex(): Promise<Readonly<SuccessResult>> {
+        const headers = await this.csrfHeaders();
+        return sendStrictRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'update-search-index']),
             headers
         });
     }

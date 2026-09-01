@@ -15,6 +15,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.repositories.RepositoryService;
 
 /**
  * Wrap all available implementations and redirect to the implementation pickup
@@ -25,13 +26,16 @@ public class SearchUtilService implements ISearchService {
 
     private final DatabaseSearchService databaseSearchService;
     private final ElasticSearchService elasticSearchService;
+    private final RepositoryService repositories;
 
     public SearchUtilService(
             DatabaseSearchService databaseSearchService,
-            ElasticSearchService elasticSearchService
+            ElasticSearchService elasticSearchService,
+            RepositoryService repositories
     ) {
         this.databaseSearchService = databaseSearchService;
         this.elasticSearchService = elasticSearchService;
+        this.repositories = repositories;
     }
 
     public boolean isEnabled() {
@@ -61,7 +65,24 @@ public class SearchUtilService implements ISearchService {
         return options.requestedSize() > 0 ? getImplementation().search(options) : new SearchResult();
     }
 
-    @Override
+    /**
+     * Reports on the search index for the engine that is actually answering searches.
+     */
+    public SearchIndexStats getIndexStats() {
+        if (elasticSearchService.isEnabled()) {
+            return elasticSearchService.getIndexStats();
+        }
+        // the database engine searches the tables directly, so there is no index to report on
+        var implementation = databaseSearchService.isEnabled() ? SearchIndexStats.DATABASE : SearchIndexStats.NONE;
+        return new SearchIndexStats(
+                isEnabled(),
+                implementation,
+                false,
+                null,
+                repositories.countActiveExtensions(),
+                null);
+    }
+
     public void updateSearchIndex(boolean clear) {
         getImplementation().updateSearchIndex(clear);
     }

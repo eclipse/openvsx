@@ -55,6 +55,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.PersistedLogJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SearchIndexJson;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.StatsJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
@@ -62,6 +63,7 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
@@ -324,6 +326,37 @@ public class AdminAPI {
         return timestamp + "\t" + log.getUser().getLoginName() + "\t" + log.getMessage();
     }
 
+    @GetMapping(
+        path = "/search-index",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Report the state of the search index")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The state of the search index is returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = SearchIndexJson.class)
+        )
+    )
+    public ResponseEntity<SearchIndexJson> getSearchIndex() {
+        try {
+            admins.checkAdminUser();
+
+            var stats = search.getIndexStats();
+            var json = new SearchIndexJson();
+            json.setEnabled(stats.enabled());
+            json.setImplementation(stats.implementation());
+            json.setIndexExists(stats.indexExists());
+            json.setIndexedDocuments(stats.indexedDocuments());
+            json.setActiveExtensions(stats.activeExtensions());
+            json.setMaxResultWindow(stats.maxResultWindow());
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(SearchIndexJson.class);
+        }
+    }
+
     @PostMapping(
         path = "/update-search-index",
         produces = MediaType.APPLICATION_JSON_VALUE
@@ -345,6 +378,17 @@ public class AdminAPI {
     public ResponseEntity<ResultJson> updateSearchIndex() {
         try {
             var adminUser = admins.checkAdminUser();
+
+            // Only elasticsearch has an index to rebuild. Without this the call falls through to
+            // SearchUtilService's default implementation, which is elasticsearch, and attempts index
+            // operations against an engine this registry is not using - or reports having rebuilt the
+            // database engine's index, which does not exist.
+            var stats = search.getIndexStats();
+            if (!SearchIndexStats.ELASTICSEARCH.equals(stats.implementation()) || !stats.enabled()) {
+                throw new ErrorResultException(
+                        "There is no search index to rebuild: searches are answered by '"
+                                + stats.implementation() + "'.");
+            }
 
             search.updateSearchIndex(true);
 
