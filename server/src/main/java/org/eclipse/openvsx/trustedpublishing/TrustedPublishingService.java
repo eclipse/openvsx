@@ -314,7 +314,8 @@ public class TrustedPublishingService {
         // The issued token is TPT personal access token of the registering user scoped for selected namespace
         return tokens.createTrustedPublishingAccessToken(
                 match,
-                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()));
+                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
+                config.getTokenExpiration());
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

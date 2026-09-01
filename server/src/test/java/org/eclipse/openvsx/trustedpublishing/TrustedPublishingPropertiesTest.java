@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -88,6 +89,40 @@ class TrustedPublishingPropertiesTest {
         assertThat(properties.getGitlab().get(GitLabTrustedPublishingProvider.PROVIDER_ID).getName()).isNull();
         assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
                 .withMessageContaining("no name or no URL");
+    }
+
+    @Test
+    void issuedTokensExpireAfterFiveMinutesByDefault() {
+        assertThat(new TrustedPublishingProperties().getTokenExpiration()).isEqualTo(Duration.ofMinutes(5));
+    }
+
+    @Test
+    void tokenExpirationIsConfigurable() {
+        var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT30S"));
+
+        assertThat(properties.getTokenExpiration()).isEqualTo(Duration.ofSeconds(30));
+    }
+
+    // A token that never expires is a long-lived credential, which is what trusted publishing exists to
+    // avoid, so "0 means no expiry" is not on offer here the way it is for personal access tokens.
+    @Test
+    void configRejectsANonPositiveTokenExpiration() {
+        for (var value : List.of("PT0S", "PT-5M")) {
+            var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", value));
+
+            assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
+                    .withMessageContaining("token-expiration must be a positive duration");
+        }
+    }
+
+    // ... and it is checked whether or not the feature is switched on, so a typo cannot lie in wait
+    @Test
+    void aBrokenTokenExpirationIsRejectedEvenWhileDisabled() {
+        var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT0S"));
+        var config = new TrustedPublishingConfig(properties);
+
+        assertThatIllegalStateException().isThrownBy(config::validate)
+                .withMessageContaining("token-expiration must be a positive duration");
     }
 
     @Test

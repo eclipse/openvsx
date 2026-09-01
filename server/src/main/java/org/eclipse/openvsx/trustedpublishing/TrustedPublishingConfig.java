@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.trustedpublishing;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -91,8 +92,22 @@ public class TrustedPublishingConfig {
         return properties.getGitlab();
     }
 
+    /**
+     * How long an issued publishing token is valid, {@code ovsx.trusted-publishing.token-expiration}.
+     */
+    @NonNull
+    public Duration getTokenExpiration() {
+        return properties.getTokenExpiration();
+    }
+
     @PostConstruct
     public void validate() {
+        // checked whether or not the feature is on, so a typo does not lie in wait until it is turned on
+        var tokenExpiration = getTokenExpiration();
+        if (tokenExpiration == null || !tokenExpiration.isPositive()) {
+            throw new IllegalStateException(
+                    "ovsx.trusted-publishing.token-expiration must be a positive duration, got: " + tokenExpiration);
+        }
         if (enabled) {
             if (audience == null || audience.isBlank()) {
                 throw new IllegalStateException("Trusted publishing is enabled, but audience is not configured");

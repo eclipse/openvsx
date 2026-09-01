@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -52,8 +53,24 @@ import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvi
 @Validated
 public class TrustedPublishingProperties {
 
+    /**
+     * How long an issued publishing token is valid. Must be positive: a token that does not expire is a
+     * long-lived credential, which is the very thing trusted publishing exists to avoid. The lifetime of
+     * ordinary personal access tokens is {@code ovsx.access-token.expiration} instead.
+     */
+    private Duration tokenExpiration = Duration.ofMinutes(5);
+
     @Valid
     private Map<String, GitLabInstance> gitlab = defaultGitLabInstances();
+
+    @NonNull
+    public Duration getTokenExpiration() {
+        return tokenExpiration;
+    }
+
+    public void setTokenExpiration(Duration tokenExpiration) {
+        this.tokenExpiration = tokenExpiration;
+    }
 
     /**
      * The known GitLab instances, keyed by provider id. Configured instances are added to the public

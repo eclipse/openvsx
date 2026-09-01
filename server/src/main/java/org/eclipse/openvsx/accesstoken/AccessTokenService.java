@@ -15,6 +15,7 @@ package org.eclipse.openvsx.accesstoken;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.EntityManager;
@@ -85,14 +86,18 @@ public class AccessTokenService {
 
     /**
      * Creates a trusted publishing token for a trusted publisher. The token is scoped to given trusted publisher
-     * associated extension only. Depending on configuration, the token expiration may be set as well.
+     * associated extension only. How long it lives is the trusted publishing configuration's to decide, so the
+     * caller passes it in rather than this service reading it.
      */
     @Transactional
-    public AccessTokenJson createTrustedPublishingAccessToken(TrustedPublisher trustedPublisher, String description) {
+    public AccessTokenJson createTrustedPublishingAccessToken(
+            TrustedPublisher trustedPublisher,
+            String description,
+            Duration expiration
+    ) {
         requireNonNull(trustedPublisher);
-        final LocalDateTime expiresTimestamp = config.isTptTokenExpiryEnabled()
-                ? TimeUtil.getCurrentUTC().plus(config.getTptExpiration())
-                : null;
+        requireNonNull(expiration);
+        final LocalDateTime expiresTimestamp = TimeUtil.getCurrentUTC().plus(expiration);
         return createAccessToken(
                 trustedPublisher.getCreatedBy(),
                 description,
