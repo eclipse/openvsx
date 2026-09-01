@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.trustedpublishing;
 
 import java.util.Objects;
 
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.json.AccessTokenJson;
@@ -35,7 +36,6 @@ import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
 import org.eclipse.openvsx.json.TrustedPublisherStatusJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 
