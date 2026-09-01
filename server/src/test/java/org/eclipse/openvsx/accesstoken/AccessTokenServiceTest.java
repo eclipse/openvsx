@@ -193,7 +193,8 @@ class AccessTokenServiceTest {
                 .createTrustedPublishingAccessToken(
                         trustedPublisher,
                         "Trusted publishing (github)",
-                        Duration.ofMinutes(7));
+                        Duration.ofMinutes(7),
+                        Map.of("repository_id", "74"));
         var after = LocalDateTime.now(ZoneId.of("UTC"));
 
         var persisted = ArgumentCaptor.forClass(PersonalAccessToken.class);
@@ -203,6 +204,8 @@ class AccessTokenServiceTest {
                 .isBetween(before.plusMinutes(7), after.plusMinutes(7));
         // the token is scoped to the registration's extension, whatever its lifetime
         assertThat(persisted.getValue().getScopeExtension()).isSameAs(extension);
+        // carried to the publish that uses this token, which copies them onto the version
+        assertThat(persisted.getValue().getClaims()).containsEntry("repository_id", "74");
         assertThat(json.getValue()).isNotNull();
     }
 }

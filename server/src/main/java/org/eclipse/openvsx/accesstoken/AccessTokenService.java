@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -109,7 +110,15 @@ public class AccessTokenService {
         final LocalDateTime expiresTimestamp = config.isTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
-        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.LLT);
+        return createAccessToken(
+                user,
+                description,
+                expiresTimestamp,
+                null,
+                null,
+                null,
+                null,
+                PersonalAccessTokenType.LLT);
     }
 
     /**
@@ -121,16 +130,19 @@ public class AccessTokenService {
     public AccessTokenJson createTrustedPublishingAccessToken(
             TrustedPublisher trustedPublisher,
             String description,
-            Duration expiration
+            Duration expiration,
+            Map<String, String> claims
     ) {
         requireNonNull(trustedPublisher);
         requireNonNull(expiration);
+        requireNonNull(claims);
         final LocalDateTime expiresTimestamp = TimeUtil.getCurrentUTC().plus(expiration);
         return createAccessToken(
                 trustedPublisher.getCreatedBy(),
                 description,
                 expiresTimestamp,
                 trustedPublisher,
+                claims,
                 null,
                 null,
                 PersonalAccessTokenType.TPT);
@@ -141,6 +153,7 @@ public class AccessTokenService {
             String description,
             @Nullable LocalDateTime expiresTimestamp,
             @Nullable TrustedPublisher trustedPublisher,
+            @Nullable Map<String, String> claims,
             @Nullable Extension scopeExtension,
             @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
@@ -160,8 +173,9 @@ public class AccessTokenService {
             if (type != PersonalAccessTokenType.TPT) {
                 throw new IllegalArgumentException("Only TPT token may be created with TP");
             }
-            // link TP and scope to TP.ext
+            // link TP and scope to TP.ext, and carry the exchange's claims to the publish that uses this
             token.setTrustedPublisher(trustedPublisher);
+            token.setClaims(claims);
             token.setScopeExtension(trustedPublisher.getExtension());
         } else if (scopeExtension != null) {
             // scope to ext
@@ -277,7 +291,7 @@ public class AccessTokenService {
                 entityManager.remove(token);
             }
         }
-        return new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId());
+        return new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId(), token.getClaims());
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {

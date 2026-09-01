@@ -289,7 +289,8 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
                             new AccessTokenAuthentication(
                                     publishToken().getUser(),
                                     publishToken().getType(),
-                                    publishToken().getId()),
+                                    publishToken().getId(),
+                                    null),
                             LocalDateTime.now(),
                             false);
         }

@@ -251,6 +251,7 @@ public class PublishExtensionVersionHandler {
         if (au instanceof AccessTokenAuthentication ata) {
             extVersion.setPublishedWithTt(ata.type());
             extVersion.setPublishedWithId(ata.tokenId());
+            extVersion.setPublishedProvenance(ata.claims());
         }
         extVersion.setActive(false);
 

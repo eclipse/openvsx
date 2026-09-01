@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.accesstoken;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -138,16 +139,46 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         cleanUpUser("provenance-user");
     }
 
+    // The link from a published artifact back to the workflow run is most of what trusted publishing buys
+    // over a token pasted into CI, and the token that carried it is deleted the moment it is used.
+    @Test
+    void aVersionKeepsItsTrustedPublishingProvenanceAfterTheTokenIsGone() {
+        var claims = Map.of(
+                "repository_id",
+                "74",
+                "repository_owner_id",
+                "65",
+                "workflow_ref",
+                "octo-org/octo-repo/.github/workflows/publish.yml@refs/tags/v1.2.0");
+        var tokenId = persistToken("provenance-tpt", PersonalAccessTokenType.TPT, 1, null);
+        new TransactionTemplate(txManager)
+                .executeWithoutResult(status -> em.find(PersonalAccessToken.class, tokenId).setClaims(claims));
+        var versionId = persistVersionPublishedWith(tokenId);
+
+        // using a one-time token deletes it, so the copy is the only thing left
+        new TransactionTemplate(txManager)
+                .executeWithoutResult(status -> em.remove(em.find(PersonalAccessToken.class, tokenId)));
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            var version = em.find(ExtensionVersion.class, versionId);
+            assertThat(version.getPublishedProvenance()).isEqualTo(claims);
+            assertThat(version.getPublishedWithId()).isNull();
+        });
+
+        cleanUpVersion(versionId);
+        cleanUpUser("provenance-tpt-user");
+    }
+
     private long persistVersionPublishedWith(long tokenId) {
         return new TransactionTemplate(txManager).execute(status -> {
             var token = em.find(PersonalAccessToken.class, tokenId);
 
             var namespace = new Namespace();
-            namespace.setName("provenance-ns");
+            namespace.setName("provenance-ns-" + tokenId);
             em.persist(namespace);
 
             var extension = new Extension();
-            extension.setName("provenance-ext");
+            extension.setName("provenance-ext-" + tokenId);
             extension.setNamespace(namespace);
             extension.setActive(true);
             em.persist(extension);
@@ -160,6 +191,7 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
             version.setPublishedBy(token.getUser());
             version.setPublishedWithTt(token.getType());
             version.setPublishedWithId(token.getId());
+            version.setPublishedProvenance(token.getClaims());
             em.persist(version);
             em.flush();
             return version.getId();

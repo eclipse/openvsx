@@ -312,7 +312,8 @@ public class TrustedPublishingService {
         return tokens.createTrustedPublishingAccessToken(
                 match,
                 TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
-                config.getTokenExpiration());
+                config.getTokenExpiration(),
+                claims);
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

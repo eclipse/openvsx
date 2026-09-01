@@ -41,7 +41,11 @@ ALTER TABLE ONLY public.personal_access_token
     -- optional; the trusted publisher that the token was created for. Deleting a registration retires the
     -- tokens issued under it: they may only ever publish the one extension it was made for, so once it is
     -- gone they can authorize nothing.
-    ADD COLUMN IF NOT EXISTS trusted_publisher_id BIGINT REFERENCES public.trusted_publisher(id) ON DELETE CASCADE;
+    ADD COLUMN IF NOT EXISTS trusted_publisher_id BIGINT REFERENCES public.trusted_publisher(id) ON DELETE CASCADE,
+    -- optional; the OIDC claims the token was exchanged for, carried from the exchange to the publish that
+    -- uses it. This row does not keep them - a one-time token is deleted as it is used - it hands them to
+    -- the version being published, see extension_version.published_provenance below.
+    ADD COLUMN IF NOT EXISTS claims JSONB;
 
 -- set OTT based on description (is hardwired in codebase)
 UPDATE public.personal_access_token
@@ -70,7 +74,14 @@ ALTER TABLE ONLY public.personal_access_token
 -- Every read path that asks "who published this?" uses this column from now on.
 ALTER TABLE public.extension_version
     ADD COLUMN published_by_id BIGINT,
-    ADD COLUMN published_with_tt CHARACTER VARYING(32);
+    ADD COLUMN published_with_tt CHARACTER VARYING(32),
+    -- The OIDC identity that produced this version, for versions published through trusted publishing:
+    -- the immutable repository and owner ids and the workflow reference including the ref it ran on, as
+    -- the provider asserted them at the exchange. Copied rather than referenced for the usual reason -
+    -- the token is deleted as it is used, and the registration can be revoked - and this link from a
+    -- published artifact back to the workflow run is most of what trusted publishing buys over a token
+    -- somebody pasted into CI.
+    ADD COLUMN published_provenance JSONB;
 
 -- Backfill from the only place the answer exists today. Rows whose published_with_id is already NULL
 -- have nothing to derive it from and stay NULL, which is why this column is deliberately left nullable:

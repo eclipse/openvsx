@@ -12,10 +12,14 @@ package org.eclipse.openvsx.entities;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -77,6 +81,15 @@ public class PersonalAccessToken implements Serializable {
     @ManyToOne
     @JoinColumn(name = "trusted_publisher_id")
     private TrustedPublisher trustedPublisher;
+
+    /**
+     * The OIDC claims this token was exchanged for, carried from the exchange to the publish that uses it
+     * and copied onto the version there. Null for every token that is not a trusted publishing one.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Nullable
+    private Map<String, String> claims;
 
     /**
      * Convert to a JSON object.
@@ -201,6 +214,15 @@ public class PersonalAccessToken implements Serializable {
 
     public void setScopeNamespace(Namespace scopeNamespace) {
         this.scopeNamespace = scopeNamespace;
+    }
+
+    @Nullable
+    public Map<String, String> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(@Nullable Map<String, String> claims) {
+        this.claims = claims;
     }
 
     public TrustedPublisher getTrustedPublisher() {

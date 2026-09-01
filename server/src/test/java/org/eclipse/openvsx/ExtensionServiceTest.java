@@ -320,7 +320,7 @@ class ExtensionServiceTest {
         assertThatThrownBy(
                 () -> svc.publishVersion(
                         content,
-                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId())))
+                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId(), null)))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("Insufficient access rights");
 
@@ -348,7 +348,7 @@ class ExtensionServiceTest {
         assertThatThrownBy(
                 () -> svc.publishVersion(
                         content,
-                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId())))
+                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId(), null)))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the size limit")
                 .extracting(exc -> ((ErrorResultException) exc).getStatus())
