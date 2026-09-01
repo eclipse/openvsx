@@ -15,8 +15,10 @@ package org.eclipse.openvsx.accesstoken;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -41,7 +43,6 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
@@ -60,28 +61,31 @@ public class AccessTokenService {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessTokenService.class);
 
+    /** 256 bits; far beyond guessing, and the encoded form is still shorter than a UUID. */
+    private static final int TOKEN_BYTES = 32;
+
+    private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
+
     private static final int TOKEN_VERSION_0 = 0;
     private static final int TOKEN_VERSION_1 = 1;
     private static final int[] ALL_TOKEN_VERSIONS = { TOKEN_VERSION_0, TOKEN_VERSION_1 };
     private static final int TOKEN_CURRENT_VERSION = TOKEN_VERSION_1;
 
     private final AccessTokenConfig config;
-    private final UUIDService uuidService;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final MailService mail;
     private final DSLContext dsl;
+    private final SecureRandom random = new SecureRandom();
 
     public AccessTokenService(
             AccessTokenConfig config,
-            UUIDService uuidService,
             EntityManager entityManager,
             RepositoryService repositories,
             MailService mail,
             DSLContext dsl
     ) {
         this.config = config;
-        this.uuidService = uuidService;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.mail = mail;
@@ -133,7 +137,7 @@ public class AccessTokenService {
             @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
     ) {
-        var rawValue = generateTokenValue();
+        var rawValue = generateTokenValue(type);
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(hashTokenValue(rawValue));
@@ -172,13 +176,20 @@ public class AccessTokenService {
     }
 
     /**
+     * Generates a token value: the deployment's prefix, the marker saying which kind of token this is, and
+     * 32 bytes from a CSPRNG. A UUID would be the wrong shape here - it is an identifier type, and the
+     * time-ordered v7 this application generates elsewhere spends 48 of its bits on a readable timestamp,
+     * leaving 74 random ones where raw bytes give 256.
+     * <p>
      * Uniqueness is the {@code UNIQUE (value)} constraint's to enforce, not this method's. It is the only
      * check that can work: it applies to the hash that actually gets stored, and it holds across every pod
      * writing to the database, which a check-then-insert here could not.
      */
     // public to be accessible from tests
-    public String generateTokenValue() {
-        return config.getPrefix() + uuidService.generateRandom();
+    public String generateTokenValue(PersonalAccessTokenType type) {
+        var bytes = new byte[TOKEN_BYTES];
+        random.nextBytes(bytes);
+        return config.getPrefix() + type.getTokenMarker() + TOKEN_ENCODER.encodeToString(bytes);
     }
 
     @Transactional

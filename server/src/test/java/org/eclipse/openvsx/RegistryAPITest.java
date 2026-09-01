@@ -3677,13 +3677,12 @@ class RegistryAPITest {
         @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
-                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService,
                 DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService, dsl);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

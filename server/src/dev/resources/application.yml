@@ -150,7 +150,8 @@ ovsx:
     local:
       directory: /tmp/ovsx
   access-token:
-    prefix: dev_ovsxat_ # use a token prefix that clearly indicates that it's for development
+    prefix: dev_ovsx_ # use a token prefix that clearly indicates that it's for development; the kind
+                      # of token (at_, tp_) is appended by the code
     expiration: 0       # do not expire tokens in a dev environment
     notification: 0
   mail:

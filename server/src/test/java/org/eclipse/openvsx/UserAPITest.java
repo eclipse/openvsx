@@ -186,7 +186,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue();
+        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue(any());
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -1189,13 +1189,12 @@ class UserAPITest {
         @Bean
         AccessTokenService accessTokenService(
                 AccessTokenConfig config,
-                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService,
                 DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService, dsl);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

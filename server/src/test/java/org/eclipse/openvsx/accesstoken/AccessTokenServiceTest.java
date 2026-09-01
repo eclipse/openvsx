@@ -16,7 +16,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Map;
-import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 import org.jooq.DSLContext;
@@ -38,7 +37,6 @@ import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.util.UUIDService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -52,9 +50,6 @@ class AccessTokenServiceTest {
 
     @Mock
     AccessTokenConfig config;
-
-    @Mock
-    UUIDService uuidService;
 
     @Mock
     EntityManager entityManager;
@@ -149,14 +144,32 @@ class AccessTokenServiceTest {
     // only it can work across pods anyway.
     @Test
     void generatesATokenValueWithoutAskingTheDatabase() {
-        var uuid = UUID.randomUUID();
-        when(config.getPrefix()).thenReturn("ovsxat_");
-        when(uuidService.generateRandom()).thenReturn(uuid);
+        when(config.getPrefix()).thenReturn("ovsx_");
 
-        var value = accessTokenService.generateTokenValue();
+        var value = accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT);
 
-        assertThat(value).isEqualTo("ovsxat_" + uuid);
+        // prefix, then the marker saying what kind of token this is, then 256 bits base64url encoded
+        assertThat(value).startsWith("ovsx_at_");
+        assertThat(value.substring("ovsx_at_".length())).hasSize(43).doesNotContain("=", "+", "/");
         verifyNoInteractions(repositories);
+    }
+
+    @Test
+    void marksEachKindOfTokenDistinctly() {
+        when(config.getPrefix()).thenReturn("ovsx_");
+
+        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.TPT)).startsWith("ovsx_tp_");
+        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT)).startsWith("ovsx_at_");
+    }
+
+    @Test
+    void generatesADifferentValueEveryTime() {
+        when(config.getPrefix()).thenReturn("");
+
+        var values = java.util.stream.Stream.generate(
+                () -> accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT)).limit(100).toList();
+
+        assertThat(values).doesNotHaveDuplicates();
     }
 
     // How long a publishing token lives is the trusted publishing configuration's to decide, so this
@@ -173,8 +186,7 @@ class AccessTokenServiceTest {
         trustedPublisher.setExtension(extension);
         trustedPublisher.setCreatedBy(user);
         trustedPublisher.setRegistration(Map.of());
-        when(config.getPrefix()).thenReturn("ovsxat_");
-        when(uuidService.generateRandom()).thenReturn(UUID.randomUUID());
+        when(config.getPrefix()).thenReturn("ovsx_");
 
         var before = LocalDateTime.now(ZoneId.of("UTC"));
         var json = accessTokenService
