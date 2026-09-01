@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.nimbusds.jwt.JWTParser;
 import jakarta.persistence.EntityManager;
@@ -85,7 +86,7 @@ public class TrustedPublishingService {
         // GitLab instances as configured. An unordered map would reshuffle the list on every restart.
         var providers = new LinkedHashMap<String, TrustedPublishingProviderSupport>();
         providers.put(GitHubTrustedPublishingProvider.PROVIDER_ID, new GitHubTrustedPublishingProvider(config));
-        config.getGitLabInstances()
+        config.getGitlab()
                 .forEach(
                         (providerId, instance) -> providers.put(
                                 providerId,
@@ -245,15 +246,8 @@ public class TrustedPublishingService {
         ensureEnabled();
         return providers.entrySet().stream()
                 .filter(e -> e.getValue().isActive())
-                .collect(LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), LinkedHashMap::putAll);
-    }
-
-    /**
-     * Lists all trusted publisher providers.
-     */
-    public Map<String, TrustedPublishingProviderSupport> getAllTrustedPublisherProviders() {
-        ensureEnabled();
-        return providers;
+                .collect(
+                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
 
     /**

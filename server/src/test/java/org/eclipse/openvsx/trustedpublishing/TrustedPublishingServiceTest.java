@@ -29,7 +29,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties.GitLabInstance;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig.GitLabInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -102,13 +102,11 @@ class TrustedPublishingServiceTest {
         var instances = new LinkedHashMap<String, GitLabInstance>();
         instances.put("gitlab", new GitLabInstance("GitLab", "https://gitlab.com"));
         instances.put("eclipse-gitlab", new GitLabInstance("Eclipse GitLab", "https://gitlab.eclipse.org"));
-        when(config.getGitLabInstances()).thenReturn(instances);
+        when(config.getGitlab()).thenReturn(instances);
 
         var service = new TrustedPublishingService(config, repositories, tokens, entityManager);
 
         assertThat(service.getTrustedPublisherProviders().keySet())
-                .containsExactly("github", "gitlab", "eclipse-gitlab");
-        assertThat(service.getAllTrustedPublisherProviders().keySet())
                 .containsExactly("github", "gitlab", "eclipse-gitlab");
     }
 

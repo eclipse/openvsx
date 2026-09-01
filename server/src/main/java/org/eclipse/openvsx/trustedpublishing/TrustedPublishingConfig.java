@@ -14,28 +14,54 @@ package org.eclipse.openvsx.trustedpublishing;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.annotation.Validated;
 
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties.GitLabInstance;
 import org.eclipse.openvsx.trustedpublishing.github.GitHubTrustedPublishingProvider;
+import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvider;
 
+/**
+ * The trusted publishing configuration.
+ * <p>
+ * The scalar settings are read with {@code @Value}; the two that need a typed value - the token lifetime
+ * and the GitLab instance map - are bound by {@code @ConfigurationProperties}, whose binder converts them
+ * natively. Only fields with a setter are bound, so the two sets do not overlap.
+ * <p>
+ * Every GitLab instance behaves the same way, differing only in id, name, URL and OIDC issuer, so instances
+ * are configured rather than coded. Only the public instance is configured out of the box; any other one -
+ * the Eclipse Foundation instance included - is added by configuration, and becomes usable once its id is
+ * listed in {@code ovsx.trusted-publishing.active-providers}:
+ *
+ * <pre>
+ * ovsx:
+ *   trusted-publishing:
+ *     active-providers: github,eclipse-gitlab
+ *     gitlab:
+ *       eclipse-gitlab:
+ *         name: Eclipse GitLab
+ *         url: https://gitlab.eclipse.org
+ *         issuer: https://gitlab.eclipse.org   # optional, defaults to the URL
+ * </pre>
+ *
+ * The id is persisted with every registration, so renaming it hides the registrations made for it.
+ * Configuring the id of the default instance replaces it as a whole rather than patching single fields,
+ * so such an entry has to carry the name and the URL itself.
+ */
 @Configuration
-@EnableConfigurationProperties(TrustedPublishingProperties.class)
+@ConfigurationProperties(prefix = "ovsx.trusted-publishing")
+@Validated
 public class TrustedPublishingConfig {
-
-    private final TrustedPublishingProperties properties;
-
-    public TrustedPublishingConfig(TrustedPublishingProperties properties) {
-        this.properties = properties;
-    }
 
     /**
      * Whether trusted publishing is enabled at all.
@@ -58,11 +84,25 @@ public class TrustedPublishingConfig {
 
     /**
      * The comma separated list of active trusted publishing providers. An id listed here must be
-     * {@code github} or one of the configured GitLab instances, see {@link TrustedPublishingProperties}.
+     * {@code github} or one of the configured GitLab instances.
      * Default: {@code github}.
      */
     @Value("${ovsx.trusted-publishing.active-providers:github}")
     private List<String> activeProviders;
+
+    /**
+     * How long an issued publishing token is valid. Must be positive: a token that does not expire is a
+     * long-lived credential, which is the very thing trusted publishing exists to avoid. The lifetime of
+     * ordinary personal access tokens is {@code ovsx.access-token.expiration} instead.
+     */
+    private Duration tokenExpiration = Duration.ofMinutes(5);
+
+    /**
+     * The known GitLab instances, keyed by provider id. Configured instances are added to the public
+     * instance, which stays available unless its id is redefined.
+     */
+    @Valid
+    private Map<String, GitLabInstance> gitlab = defaultGitLabInstances();
 
     public boolean isEnabled() {
         return enabled;
@@ -88,8 +128,12 @@ public class TrustedPublishingConfig {
      * is decided by {@link #getActiveProviders()}.
      */
     @NonNull
-    public Map<String, GitLabInstance> getGitLabInstances() {
-        return properties.getGitlab();
+    public Map<String, GitLabInstance> getGitlab() {
+        return gitlab;
+    }
+
+    public void setGitlab(Map<String, GitLabInstance> gitlab) {
+        this.gitlab = gitlab;
     }
 
     /**
@@ -97,7 +141,19 @@ public class TrustedPublishingConfig {
      */
     @NonNull
     public Duration getTokenExpiration() {
-        return properties.getTokenExpiration();
+        return tokenExpiration;
+    }
+
+    public void setTokenExpiration(Duration tokenExpiration) {
+        this.tokenExpiration = tokenExpiration;
+    }
+
+    private static Map<String, GitLabInstance> defaultGitLabInstances() {
+        var instances = new LinkedHashMap<String, GitLabInstance>();
+        instances.put(
+                GitLabTrustedPublishingProvider.PROVIDER_ID,
+                new GitLabInstance("GitLab", GitLabTrustedPublishingProvider.PROVIDER_URL));
+        return instances;
     }
 
     @PostConstruct
@@ -125,7 +181,7 @@ public class TrustedPublishingConfig {
     }
 
     private void validateGitLabInstances() {
-        for (var entry : getGitLabInstances().entrySet()) {
+        for (var entry : getGitlab().entrySet()) {
             var id = entry.getKey();
             var instance = entry.getValue();
             if (GitHubTrustedPublishingProvider.PROVIDER_ID.equals(id)) {
@@ -151,6 +207,64 @@ public class TrustedPublishingConfig {
             return URI.create(url).getHost();
         } catch (IllegalArgumentException exc) {
             return null;
+        }
+    }
+
+    /**
+     * A single GitLab instance.
+     */
+    public static class GitLabInstance {
+
+        @NotBlank
+        private String name;
+
+        @NotBlank
+        private String url;
+
+        @Nullable
+        private String issuer;
+
+        public GitLabInstance() {
+            // for configuration property binding
+        }
+
+        public GitLabInstance(String name, String url) {
+            this.name = name;
+            this.url = url;
+        }
+
+        /**
+         * The instance name, for human consumption.
+         */
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        /**
+         * The base URL of the instance; the API and the {@code ci_config_ref_uri} claim are derived from it.
+         */
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        /**
+         * The issuer to expect in the {@code iss} claim of issued OIDC ID tokens. GitLab issues tokens
+         * under its own base URL, so this defaults to {@link #getUrl()}.
+         */
+        public String getIssuer() {
+            return issuer == null || issuer.isBlank() ? url : issuer;
+        }
+
+        public void setIssuer(@Nullable String issuer) {
+            this.issuer = issuer;
         }
     }
 }

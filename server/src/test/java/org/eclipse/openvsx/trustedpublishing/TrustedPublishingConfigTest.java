@@ -32,11 +32,11 @@ import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
  * The GitLab instances are configuration rather than code, so what matters is that the public instance
  * is there, that configured instances are added to it, and that a broken instance is caught at startup.
  */
-class TrustedPublishingPropertiesTest {
+class TrustedPublishingConfigTest {
 
     @Test
     void onlyThePublicInstanceIsConfiguredByDefault() {
-        var instances = new TrustedPublishingProperties().getGitlab();
+        var instances = new TrustedPublishingConfig().getGitlab();
 
         assertThat(instances).containsOnlyKeys(GitLabTrustedPublishingProvider.PROVIDER_ID);
         var gitlab = instances.get(GitLabTrustedPublishingProvider.PROVIDER_ID);
@@ -83,24 +83,24 @@ class TrustedPublishingPropertiesTest {
     @Test
     void redefiningTheDefaultInstanceReplacesItAsAWhole() {
         // only the URL is given, so the default name is gone rather than kept - and startup says so
-        var properties = bind(
+        var config = bind(
                 Map.of("ovsx.trusted-publishing.gitlab.gitlab.url", "https://gitlab.staging.example"));
 
-        assertThat(properties.getGitlab().get(GitLabTrustedPublishingProvider.PROVIDER_ID).getName()).isNull();
-        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
+        assertThat(config.getGitlab().get(GitLabTrustedPublishingProvider.PROVIDER_ID).getName()).isNull();
+        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(config).validate())
                 .withMessageContaining("no name or no URL");
     }
 
     @Test
     void issuedTokensExpireAfterFiveMinutesByDefault() {
-        assertThat(new TrustedPublishingProperties().getTokenExpiration()).isEqualTo(Duration.ofMinutes(5));
+        assertThat(new TrustedPublishingConfig().getTokenExpiration()).isEqualTo(Duration.ofMinutes(5));
     }
 
     @Test
     void tokenExpirationIsConfigurable() {
-        var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT30S"));
+        var config = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT30S"));
 
-        assertThat(properties.getTokenExpiration()).isEqualTo(Duration.ofSeconds(30));
+        assertThat(config.getTokenExpiration()).isEqualTo(Duration.ofSeconds(30));
     }
 
     // A token that never expires is a long-lived credential, which is what trusted publishing exists to
@@ -108,9 +108,9 @@ class TrustedPublishingPropertiesTest {
     @Test
     void configRejectsANonPositiveTokenExpiration() {
         for (var value : List.of("PT0S", "PT-5M")) {
-            var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", value));
+            var config = bind(Map.of("ovsx.trusted-publishing.token-expiration", value));
 
-            assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
+            assertThatIllegalStateException().isThrownBy(() -> enabledConfig(config).validate())
                     .withMessageContaining("token-expiration must be a positive duration");
         }
     }
@@ -118,8 +118,7 @@ class TrustedPublishingPropertiesTest {
     // ... and it is checked whether or not the feature is switched on, so a typo cannot lie in wait
     @Test
     void aBrokenTokenExpirationIsRejectedEvenWhileDisabled() {
-        var properties = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT0S"));
-        var config = new TrustedPublishingConfig(properties);
+        var config = bind(Map.of("ovsx.trusted-publishing.token-expiration", "PT0S"));
 
         assertThatIllegalStateException().isThrownBy(config::validate)
                 .withMessageContaining("token-expiration must be a positive duration");
@@ -127,45 +126,43 @@ class TrustedPublishingPropertiesTest {
 
     @Test
     void enabledConfigAcceptsTheDefaultInstance() {
-        assertThatCode(() -> enabledConfig(new TrustedPublishingProperties()).validate()).doesNotThrowAnyException();
+        assertThatCode(() -> enabledConfig(new TrustedPublishingConfig()).validate()).doesNotThrowAnyException();
     }
 
     @Test
     void enabledConfigRejectsAnInstanceTakingTheGitHubProviderId() {
-        var properties = bind(
+        var config = bind(
                 Map.of(
                         "ovsx.trusted-publishing.gitlab.github.name",
                         "Not GitHub",
                         "ovsx.trusted-publishing.gitlab.github.url",
                         "https://gitlab.acme.example"));
 
-        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
+        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(config).validate())
                 .withMessageContaining("provider id of the GitHub provider");
     }
 
     @Test
     void enabledConfigRejectsAMalformedInstanceUrl() {
-        var properties = bind(
+        var config = bind(
                 Map.of(
                         "ovsx.trusted-publishing.gitlab.acme-gitlab.name",
                         "ACME GitLab",
                         "ovsx.trusted-publishing.gitlab.acme-gitlab.url",
                         "gitlab.acme.example"));
 
-        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(properties).validate())
+        assertThatIllegalStateException().isThrownBy(() -> enabledConfig(config).validate())
                 .withMessageContaining("malformed URL");
     }
 
-    private static TrustedPublishingProperties bind(Map<String, Object> properties) {
+    private static TrustedPublishingConfig bind(Map<String, Object> properties) {
         return new Binder(new MapConfigurationPropertySource(properties))
-                .bind(
-                        "ovsx.trusted-publishing",
-                        Bindable.ofInstance(new TrustedPublishingProperties()))
-                .orElseGet(TrustedPublishingProperties::new);
+                .bind("ovsx.trusted-publishing", Bindable.ofInstance(new TrustedPublishingConfig()))
+                .orElseGet(TrustedPublishingConfig::new);
     }
 
-    private static TrustedPublishingConfig enabledConfig(TrustedPublishingProperties properties) {
-        var config = new TrustedPublishingConfig(properties);
+    // @Value is not resolved for a hand-built instance, so the scalar settings are set directly
+    private static TrustedPublishingConfig enabledConfig(TrustedPublishingConfig config) {
         ReflectionTestUtils.setField(config, "enabled", true);
         ReflectionTestUtils.setField(config, "audience", "https://open-vsx.org");
         ReflectionTestUtils.setField(config, "forbiddenJwtHeaders", List.of("x5u"));

@@ -12,7 +12,11 @@ CREATE TABLE IF NOT EXISTS public.trusted_publisher
     provider CHARACTER VARYING(32) NOT NULL,
     registration JSONB NOT NULL,
     claims JSONB NOT NULL,
-    created_by BIGINT NOT NULL REFERENCES public.user_data(id),
+    -- Only a namespace owner may register a trusted publisher, so a registration cannot outlive its
+    -- author any more than it outlives their ownership. Deleting a user already revokes their
+    -- registrations by way of their memberships; this is the constraint saying the same thing, and keeps
+    -- this reference consistent with the others in this migration.
+    created_by BIGINT NOT NULL REFERENCES public.user_data(id) ON DELETE CASCADE,
     created_timestamp TIMESTAMP without time zone NOT NULL
 );
 

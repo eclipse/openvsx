@@ -65,7 +65,6 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -1255,7 +1254,7 @@ class UserAPITest {
                     integrityService,
                     similarityCheckService,
                     new PublishingConfig(),
-                    new TrustedPublishingConfig(new TrustedPublishingProperties()),
+                    new TrustedPublishingConfig(),
                     Duration.ofSeconds(30));
         }
 

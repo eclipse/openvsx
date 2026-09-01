@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * Every instance - the public one, the Eclipse Foundation one, any self-hosted one - is served by this
  * class: they only differ in id, name, URL and OIDC issuer, which are configured through
- * {@link org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties.GitLabInstance}.
+ * {@link org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig.GitLabInstance}.
  *
  * @see <a href="https://docs.gitlab.com/ci/secrets/id_token_authentication/">GitLab OpenID Connect</a>
  */
