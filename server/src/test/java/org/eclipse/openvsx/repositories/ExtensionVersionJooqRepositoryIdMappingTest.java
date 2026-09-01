@@ -164,7 +164,9 @@ class ExtensionVersionJooqRepositoryIdMappingTest extends AbstractPostgresContai
                     .executeUpdate();
             em.createQuery("delete from Extension e where e.namespace.id = :id").setParameter("id", ids.namespace())
                     .executeUpdate();
-            em.createQuery("delete from Namespace n where n.name like 'id-mapping-%'").executeUpdate();
+            em.createQuery("delete from Namespace n where n.id = :nsId or n.name like 'id-mapping-filler-ns-%'")
+                    .setParameter("nsId", ids.namespace())
+                    .executeUpdate();
             em.createQuery("delete from UserData u where u.id = :id").setParameter("id", ids.user()).executeUpdate();
         });
     }
