@@ -31,11 +31,10 @@ const IconBadge = styled('span')(({ theme }) => ({
 
 /**
  * Marks a version that was published from a trusted publishing workflow instead of with a
- * personal access token. Nothing is rendered for the ordinary case, so the icon's presence
- * carries the whole signal. The same rocket stands for trusted publishing in the user settings.
+ * personal access token. Whether a version qualifies is the caller's to decide, since the
+ * header pairs the icon with a divider.
  */
 export const TrustedPublishingIcon: FunctionComponent<{
-    publishedWithTrustedPublishing?: boolean;
     color: string;
 }> = ({ color }) => {
     const { pageSettings } = useContext(MainContext);

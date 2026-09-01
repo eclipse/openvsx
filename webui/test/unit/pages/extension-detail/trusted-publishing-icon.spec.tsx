@@ -22,16 +22,8 @@ const TITLE = 'Published via trusted publishing';
 const pageSettings = (trustedPublishing?: string) => ({ elements: {}, urls: { trustedPublishing } }) as PageSettings;
 
 describe('TrustedPublishingIcon', () => {
-    it('renders nothing for a version published with an access token', () => {
-        renderWithProviders(<TrustedPublishingIcon color='#fff' />, {
-            mainContext: { pageSettings: pageSettings('https://example.com/trusted-publishing') }
-        });
-
-        expect(screen.queryByLabelText(TITLE)).not.toBeInTheDocument();
-    });
-
     it('links to the documentation when the instance configures a URL for it', () => {
-        renderWithProviders(<TrustedPublishingIcon publishedWithTrustedPublishing color='#fff' />, {
+        renderWithProviders(<TrustedPublishingIcon color='#fff' />, {
             mainContext: { pageSettings: pageSettings('https://example.com/trusted-publishing') }
         });
 
@@ -42,7 +34,7 @@ describe('TrustedPublishingIcon', () => {
     });
 
     it('still shows the icon when no documentation URL is configured', () => {
-        renderWithProviders(<TrustedPublishingIcon publishedWithTrustedPublishing color='#fff' />, {
+        renderWithProviders(<TrustedPublishingIcon color='#fff' />, {
             mainContext: { pageSettings: pageSettings() }
         });
 

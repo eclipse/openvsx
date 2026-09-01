@@ -206,7 +206,7 @@ export default function createPageSettings(prefersDarkMode: boolean, serverUrl: 
             extensionDefaultIcon: '/default-icon.png',
             namespaceAccessInfo: 'https://github.com/eclipse/openvsx/wiki/Namespace-Access',
             publisherAgreement: createAbsoluteURL([serverUrl, 'documents', 'publisher-agreement.md']),
-            trustedPublishing: 'https://repos.openssf.org/trusted-publishers-for-all-package-repositories'
+            trustedPublishing: 'https://github.com/eclipse-openvsx/openvsx/wiki/Trusted-Publishing'
         }
     };
 }

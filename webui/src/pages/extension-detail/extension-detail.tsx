@@ -188,7 +188,7 @@ const LicenseLink: FunctionComponent<{
     return <>{extension.license || 'Unlicensed'}</>;
 };
 
-const ExtensionHeaderInfo: FunctionComponent<{
+export const ExtensionHeaderInfo: FunctionComponent<{
     extension: Extension;
     headerTextColor: string;
 }> = ({ extension, headerTextColor }) => {
@@ -252,10 +252,7 @@ const ExtensionHeaderInfo: FunctionComponent<{
                     {extension.publishedWithTrustedPublishing && (
                         <>
                             <TextDivider backgroundColor={headerTextColor} collapseSmall />
-                            <TrustedPublishingIcon
-                                publishedWithTrustedPublishing={extension.publishedWithTrustedPublishing}
-                                color={headerTextColor}
-                            />
+                            <TrustedPublishingIcon color={headerTextColor} />
                         </>
                     )}
                 </Box>
