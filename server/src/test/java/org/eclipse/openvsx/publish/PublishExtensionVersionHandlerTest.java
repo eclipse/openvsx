@@ -179,6 +179,43 @@ class PublishExtensionVersionHandlerTest {
             var result = handler.createExtensionVersion(processor, ata, LocalDateTime.now(), false);
 
             assertThat(result.getPublishedWithTt()).isEqualTo(PersonalAccessTokenType.TPT);
+            // A one-time token is deleted as it is used, before this row is written, so referencing it
+            // makes the insert fail on extension_version_published_with_id_fkey. The publish is
+            // identified by the workflow claims in published_provenance instead.
+            assertThat(result.getPublishedWithId()).isNull();
+        }
+    }
+
+    // A long-lived token is only ever deactivated, never deleted, so the reference is safe to record and
+    // is what answers "what did this credential publish" after it leaks.
+    @Test
+    void recordsTheTokenALongLivedPublishUsed() throws IOException {
+        try (var processor = org.mockito.Mockito.mock(ExtensionProcessor.class)) {
+            var metadata = mockExtensionVersion("publisher", "demo", "2.0.0", null, processor);
+
+            when(processor.getExtensionDependencies()).thenReturn(List.of());
+            when(processor.getBundledExtensions()).thenReturn(List.of());
+            when(processor.getPackageMetadata()).thenReturn(
+                    new ExtensionProcessor.PackageMetadata(
+                            "publisher",
+                            "demo",
+                            "2.0.0",
+                            "Demo OK"));
+
+            var namespace = buildNamespace("publisher");
+            var user = new UserData();
+            var ata = new AccessTokenAuthentication(user, PersonalAccessTokenType.LLT, 42L, null);
+
+            when(repositories.findNamespace("publisher")).thenReturn(namespace);
+            when(users.hasPublishPermission(user, namespace)).thenReturn(true);
+            when(validator.validateExtensionVersion("2.0.0")).thenReturn(Optional.empty());
+            when(validator.validateExtensionName("demo")).thenReturn(Optional.empty());
+            when(validator.validateMetadata(metadata)).thenReturn(List.of());
+            when(repositories.findExtensionForUpdate("demo", "publisher")).thenReturn(null);
+
+            var result = handler.createExtensionVersion(processor, ata, LocalDateTime.now(), false);
+
+            assertThat(result.getPublishedWithId()).isEqualTo(42L);
         }
     }
 

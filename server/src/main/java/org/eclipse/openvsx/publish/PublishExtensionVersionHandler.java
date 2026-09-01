@@ -250,7 +250,12 @@ public class PublishExtensionVersionHandler {
         extVersion.setPublishedBy(au.userData());
         if (au instanceof AccessTokenAuthentication ata) {
             extVersion.setPublishedWithTt(ata.type());
-            extVersion.setPublishedWithId(ata.tokenId());
+            // A one-time token is deleted as it is used, which happens before this row is written, so
+            // the reference could never be satisfied and the foreign key rejects the insert outright.
+            // What identifies such a publish is the workflow it came from, held in published_provenance.
+            if (!ata.type().isOneTime()) {
+                extVersion.setPublishedWithId(ata.tokenId());
+            }
             extVersion.setPublishedProvenance(ata.claims());
         }
         extVersion.setActive(false);
