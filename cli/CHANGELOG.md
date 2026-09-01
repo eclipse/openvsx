@@ -13,6 +13,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Changed
 
+- `publish --trusted-publishing` retries the token exchange when the registry answers that it could not verify the ID token (502, 503, 504), rather than failing the build on a blip reaching the identity provider. A refusal is never retried
 - Bump minimum supported Node.js version to 22, matching the webui component
 
 ### [v1.1.1] (09/08/2026)

@@ -381,6 +381,20 @@ class TrustedPublishingAPITest {
                 .andExpect(jsonPath("$.error").value("No trusted publisher matches the presented token."));
     }
 
+    // A refusal tells a publishing workflow never to come back, so the registry being unable to reach the
+    // provider must not look like one - the CI job should retry instead of failing the build.
+    @Test
+    void requestPublishToken_returns503_whenTheTokenCouldNotBeVerified() throws Exception {
+        when(trustedPublishing.requestPublishToken(NAMESPACE, EXTENSION, "the-token")).thenThrow(
+                new ErrorResultException(
+                        "Could not verify the token with GitHub, please retry.",
+                        HttpStatus.SERVICE_UNAVAILABLE));
+
+        mockMvc.perform(tokenRequest(tokenRequestBody(NAMESPACE, EXTENSION, "the-token")))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("Could not verify the token with GitHub, please retry."));
+    }
+
     @Test
     void requestPublishToken_returns400_whenTokenIsNotAcceptable() throws Exception {
         when(trustedPublishing.requestPublishToken(NAMESPACE, EXTENSION, "the-token"))
