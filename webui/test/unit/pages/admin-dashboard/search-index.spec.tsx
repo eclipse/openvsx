@@ -88,6 +88,29 @@ describe('SearchIndexAdmin', () => {
         expect(await screen.findByText('Searching is disabled on this registry.')).toBeInTheDocument();
     });
 
+    // The database engine's updateSearchIndex only evicts a cache, so the button would report a rebuild
+    // that never happened - right next to a banner saying there is no index to rebuild.
+    it('offers no rebuild when searches come from the database', async () => {
+        mountPage(index({ implementation: 'database', indexExists: false, indexedDocuments: undefined }));
+
+        await screen.findByText(/no index to report on or rebuild/);
+        expect(screen.queryByRole('button', { name: 'Update search index' })).not.toBeInTheDocument();
+    });
+
+    it('offers no rebuild when searching is switched off entirely', async () => {
+        mountPage(index({ enabled: false }));
+
+        await screen.findByText('Searching is disabled on this registry.');
+        expect(screen.queryByRole('button', { name: 'Update search index' })).not.toBeInTheDocument();
+    });
+
+    // A missing index is the one case where rebuilding is exactly the remedy, so it stays on offer.
+    it('still offers the rebuild when the index is missing', async () => {
+        mountPage(index({ indexExists: false, indexedDocuments: undefined }));
+
+        expect(await screen.findByRole('button', { name: 'Update search index' })).toBeInTheDocument();
+    });
+
     it('rebuilds the index and refetches the statistics afterwards', async () => {
         const user = userEvent.setup();
         const adminService = mountPage(index({ indexedDocuments: 1200, activeExtensions: 1234 }));

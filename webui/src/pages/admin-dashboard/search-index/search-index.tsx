@@ -71,24 +71,31 @@ export const SearchIndexAdmin: FC = () => {
                 <>
                     <SearchIndexHealth index={data} />
                     <SearchIndexStatistics index={data} />
-                    <Paper sx={{ p: 3 }}>
-                        <Typography variant='subtitle1'>Rebuild the index</Typography>
-                        <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
-                            Deletes the index and builds it again from every active extension. Searching keeps working
-                            while it runs, but returns incomplete results until it finishes.
-                        </Typography>
-                        <ButtonWithProgress
-                            working={update.isPending}
-                            onClick={() => update.mutate()}
-                            title='Delete and rebuild the search index'>
-                            Update search index
-                        </ButtonWithProgress>
-                    </Paper>
+                    {/* Only elasticsearch has an index to rebuild. The database engine's updateSearchIndex
+                        merely evicts a cache, so offering the button there would report a rebuild that did
+                        not happen. */}
+                    {canRebuild(data) && (
+                        <Paper sx={{ p: 3 }}>
+                            <Typography variant='subtitle1'>Rebuild the index</Typography>
+                            <Typography variant='body2' color='text.secondary' sx={{ mb: 2 }}>
+                                Deletes the index and builds it again from every active extension. Searching keeps
+                                working while it runs, but returns incomplete results until it finishes.
+                            </Typography>
+                            <ButtonWithProgress
+                                working={update.isPending}
+                                onClick={() => update.mutate()}
+                                title='Delete and rebuild the search index'>
+                                Update search index
+                            </ButtonWithProgress>
+                        </Paper>
+                    )}
                 </>
             )}
         </Box>
     );
 };
+
+const canRebuild = (index: SearchIndex) => index.enabled && index.implementation === 'elasticsearch';
 
 /**
  * Says whether the two counts agree, so nobody has to subtract them by eye. Only elasticsearch has an
