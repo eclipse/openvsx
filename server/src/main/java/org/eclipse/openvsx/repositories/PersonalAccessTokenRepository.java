@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
@@ -61,4 +62,15 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
         nativeQuery = true
     )
     List<PersonalAccessToken> expireAccessTokens(LocalDateTime timestamp);
+
+    /**
+     * Deletes the expired tokens of the given types outright. A one-time token that expired unused can
+     * never be used, and nothing reads the row afterwards - the same reason using one deletes it.
+     */
+    @Modifying
+    @Query(
+        value = "delete from personal_access_token where expires_timestamp <= ?1 and type in ?2 returning *",
+        nativeQuery = true
+    )
+    List<PersonalAccessToken> deleteExpiredAccessTokens(LocalDateTime timestamp, Collection<String> types);
 }

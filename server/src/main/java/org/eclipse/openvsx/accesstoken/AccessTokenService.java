@@ -18,7 +18,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -65,6 +67,12 @@ public class AccessTokenService {
     private static final int TOKEN_BYTES = 32;
 
     private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
+
+    /** The token types that are retired by deleting the row rather than deactivating it. */
+    private static final List<PersonalAccessTokenType> ONE_TIME_TOKEN_TYPES = Arrays
+            .stream(PersonalAccessTokenType.values())
+            .filter(PersonalAccessTokenType::isOneTime)
+            .toList();
 
     private static final int TOKEN_VERSION_0 = 0;
     private static final int TOKEN_VERSION_1 = 1;
@@ -241,7 +249,11 @@ public class AccessTokenService {
         // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
         LocalDateTime now = TimeUtil.getCurrentUTC();
         if (token.getExpiresTimestamp() != null && !token.getExpiresTimestamp().isAfter(now)) {
-            token.setActive(false);
+            if (token.getType().isOneTime()) {
+                entityManager.remove(token);
+            } else {
+                token.setActive(false);
+            }
             return null;
         }
         // Deleting a registration takes its tokens with it, so this should not be reachable; kept as a
@@ -278,9 +290,22 @@ public class AccessTokenService {
         }
     }
 
+    /**
+     * Retires every token that has expired.
+     * <p>
+     * A one-time token is deleted rather than deactivated, the same as when one is used, when its trusted
+     * publisher registration goes, or when its extension is purged: it can never be used again, nothing
+     * reads the row afterwards, and one is minted per exchange. Keeping the unused ones while deleting the
+     * used ones would retain exactly the rows nobody has a question about.
+     * <p>
+     * Long-lived tokens stay as deactivated rows: a user is shown their own expired tokens, and the
+     * expiry notification mails read them.
+     */
     @Transactional
     public int expireAccessTokens() {
-        var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
+        var now = TimeUtil.getCurrentUTC();
+        var deletedAccessTokens = repositories.deleteExpiredPersonalAccessTokens(now, ONE_TIME_TOKEN_TYPES);
+        var expiredAccessTokens = repositories.expirePersonalAccessTokens(now);
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {
                 if (token.getType().isNotify()) {
@@ -288,7 +313,7 @@ public class AccessTokenService {
                 }
             }
         }
-        return expiredAccessTokens.size();
+        return deletedAccessTokens.size() + expiredAccessTokens.size();
     }
 
     @Transactional

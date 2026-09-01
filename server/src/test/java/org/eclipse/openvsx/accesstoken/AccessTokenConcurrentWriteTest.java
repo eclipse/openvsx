@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
@@ -32,12 +34,15 @@ import org.eclipse.openvsx.util.TimeUtil;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The paths that write a token row each touch a different column, so one must not carry the others back
- * to whatever it happened to load. Only a real database shows this: it is Hibernate's generated UPDATE
- * that decides, and with the default full-row update the loser's stale columns win.
+ * Token rows against a real database: what a write actually sends, and what expiry actually leaves behind.
+ * Neither is visible without one - the first is decided by Hibernate's generated UPDATE, the second by a
+ * native query.
  */
 @SpringBootTest
 class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
+
+    @Autowired
+    AccessTokenService accessTokens;
 
     @Autowired
     EntityManager em;
@@ -80,6 +85,51 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         cleanUp(tokenId);
     }
 
+    // Using a one-time token deletes it, so keeping the ones that expired unused would retain exactly the
+    // rows nobody has a question about - and one is minted per trusted publishing exchange.
+    @Test
+    void expiryDeletesAOneTimeTokenAndOnlyDeactivatesALongLivedOne() {
+        var expired = TimeUtil.getCurrentUTC().minusMinutes(1);
+        var oneTime = persistToken("expiry-tpt", PersonalAccessTokenType.TPT, 1, expired);
+        var longLived = persistToken("expiry-llt", PersonalAccessTokenType.LLT, 1, expired);
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> accessTokens.expireAccessTokens());
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            assertThat(em.find(PersonalAccessToken.class, oneTime)).isNull();
+            var kept = em.find(PersonalAccessToken.class, longLived);
+            // a user is shown their own expired tokens, and the notification mails read them
+            assertThat(kept).isNotNull();
+            assertThat(kept.isActive()).isFalse();
+        });
+
+        cleanUp(longLived);
+        // the one-time token's own row is gone, but its user is not
+        cleanUpUser("expiry-tpt-user");
+    }
+
+    private long persistToken(String name, PersonalAccessTokenType type, int version, LocalDateTime expires) {
+        return new TransactionTemplate(txManager).execute(status -> {
+            var user = new UserData();
+            user.setLoginName(name + "-user");
+            user.setProvider("github");
+            em.persist(user);
+
+            var token = new PersonalAccessToken();
+            token.setUser(user);
+            token.setValue(name + "-token-value");
+            token.setActive(true);
+            token.setCreatedTimestamp(TimeUtil.getCurrentUTC());
+            token.setExpiresTimestamp(expires);
+            token.setVersion(version);
+            token.setType(type);
+            token.setDescription(name);
+            em.persist(token);
+            em.flush();
+            return token.getId();
+        });
+    }
+
     private long persistLegacyToken() {
         return new TransactionTemplate(txManager).execute(status -> {
             var user = new UserData();
@@ -107,6 +157,13 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         requiresNew.executeWithoutResult(
                 status -> em.createNativeQuery("UPDATE personal_access_token SET active = false WHERE id = :id")
                         .setParameter("id", tokenId)
+                        .executeUpdate());
+    }
+
+    private void cleanUpUser(String loginName) {
+        new TransactionTemplate(txManager).executeWithoutResult(
+                status -> em.createQuery("delete from UserData u where u.loginName = :name")
+                        .setParameter("name", loginName)
                         .executeUpdate());
     }
 

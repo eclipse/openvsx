@@ -590,6 +590,14 @@ public class RepositoryService {
         return personalAccessTokenRepo.expireAccessTokens(timestamp);
     }
 
+    public List<PersonalAccessToken> deleteExpiredPersonalAccessTokens(
+            LocalDateTime timestamp,
+            Collection<PersonalAccessTokenType> types
+    ) {
+        return personalAccessTokenRepo
+                .deleteExpiredAccessTokens(timestamp, types.stream().map(Enum::name).toList());
+    }
+
     public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
         return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
     }
