@@ -20,12 +20,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.ExtensionVersionChange;
 import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.LogService;
@@ -65,6 +67,9 @@ class AdminServiceTest {
     LogService logs;
 
     @Mock
+    UserService users;
+
+    @Mock
     EntityManager entityManager;
 
     @InjectMocks
@@ -95,6 +100,30 @@ class AdminServiceTest {
     private void mockNoReferences(Extension extension) {
         when(repositories.findBundledExtensionsReference(extension)).thenReturn(Streamable.empty());
         when(repositories.findDependenciesReference(extension)).thenReturn(Streamable.empty());
+    }
+
+    @Test
+    void revokingPublisherContributionsRemovesEachMembershipThroughUserService() {
+        var user = new UserData();
+        user.setLoginName("amy");
+        var namespace = new Namespace();
+        namespace.setName(NAMESPACE);
+        var membership = new NamespaceMembership();
+        membership.setUser(user);
+        membership.setNamespace(namespace);
+        membership.setRole(NamespaceMembership.ROLE_OWNER);
+
+        when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
+        when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
+        when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.empty());
+        when(repositories.findMemberships(user)).thenReturn(Streamable.of(membership));
+
+        var result = adminService.revokePublisherContributions("github", "amy", admin);
+
+        // handing over the row we already hold is what keeps one unremovable membership from aborting the
+        // whole revoke, and going through UserService is what deletes the trusted publishers with it
+        verify(users).removeNamespaceMembership(membership);
+        assertThat(result.getSuccess()).contains("removed 1 namespace memberships");
     }
 
     @Test

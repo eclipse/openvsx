@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
@@ -103,7 +104,14 @@ public abstract class TrustedPublishingProviderSupport {
                                         "The token does not contain the expected audience.",
                                         null));
                     };
-                    NimbusJwtDecoder nimbusDecoder = JwtDecoders.fromIssuerLocation(oidcIssuer);
+                    // Discovery is a network call, and this is the first exchange after every restart. A
+                    // failure here says nothing about the token, so it must not be reported as a refusal.
+                    NimbusJwtDecoder nimbusDecoder;
+                    try {
+                        nimbusDecoder = JwtDecoders.fromIssuerLocation(oidcIssuer);
+                    } catch (RuntimeException e) {
+                        throw unverifiable(e);
+                    }
                     nimbusDecoder.setJwtValidator(
                             JwtValidators.createDefaultWithValidators(
                                     List.of(issuerValidator, audienceValidator, forbiddenHeadersValidator)));
@@ -184,10 +192,23 @@ public abstract class TrustedPublishingProviderSupport {
             // missing claims we expect; lack of information
             logger.warn("Trusted Publishing OIDC ID token lack of information: {}", e.getClaim(), e);
         } catch (JwtException e) {
-            // everything else; like JWK or network issues
-            logger.warn("Error processing Trusted Publishing OIDC ID token", e);
+            // Everything else: fetching the JWK set, connectivity, the provider being down. We could not
+            // check the token, which is not the same as deciding against it.
+            throw unverifiable(e);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Reports that the token could not be checked at all, as distinct from being checked and rejected.
+     * A refusal tells a publishing workflow never to come back; this asks it to try again, which is what
+     * a provider outage or a JWK set that could not be fetched actually warrants.
+     */
+    private ErrorResultException unverifiable(RuntimeException cause) {
+        logger.warn("Could not verify Trusted Publishing OIDC ID token with {}", providerName, cause);
+        return new ErrorResultException(
+                "Could not verify the token with " + providerName + ", please retry.",
+                HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     protected static String mustRegister(Map<String, String> registration, String key) throws ErrorResultException {

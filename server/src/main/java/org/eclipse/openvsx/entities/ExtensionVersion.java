@@ -29,6 +29,9 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
@@ -91,6 +94,28 @@ public class ExtensionVersion implements Serializable {
     @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private PersonalAccessTokenType publishedWithTt;
+
+    /**
+     * The token this version was published with, as best-effort provenance: it answers "what did this
+     * credential publish" after a leak. Nullable and allowed to decay - the token row is deleted when a
+     * one-time token is used or a forgotten user's tokens go - which is why authorship is recorded
+     * separately in {@link #publishedBy} and {@link #publishedWithTt} instead of being read through it.
+     */
+    @Column(name = "published_with_id")
+    @Nullable
+    private Long publishedWithId;
+
+    /**
+     * The OIDC identity that produced this version, for versions published through trusted publishing: the
+     * immutable repository and owner ids and the workflow reference including the ref it ran on, as the
+     * provider asserted them at the exchange. Null for everything published with an ordinary token.
+     * <p>
+     * Copied at publish time rather than reached through the token, which is deleted as it is used.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "published_provenance", columnDefinition = "jsonb")
+    @Nullable
+    private Map<String, String> publishedProvenance;
 
     private boolean active;
 
@@ -209,7 +234,8 @@ public class ExtensionVersion implements Serializable {
         if (this.getPublishedBy() != null) {
             json.setPublishedBy(this.getPublishedBy().toUserJson());
         }
-        json.setTrustedPublisher(getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
+        json.setPublishedWithTrustedPublishing(
+                getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
@@ -348,6 +374,24 @@ public class ExtensionVersion implements Serializable {
 
     public PersonalAccessTokenType getPublishedWithTt() {
         return publishedWithTt;
+    }
+
+    @Nullable
+    public Map<String, String> getPublishedProvenance() {
+        return publishedProvenance;
+    }
+
+    public void setPublishedProvenance(@Nullable Map<String, String> publishedProvenance) {
+        this.publishedProvenance = publishedProvenance;
+    }
+
+    @Nullable
+    public Long getPublishedWithId() {
+        return publishedWithId;
+    }
+
+    public void setPublishedWithId(@Nullable Long publishedWithId) {
+        this.publishedWithId = publishedWithId;
     }
 
     public void setPublishedWithTt(PersonalAccessTokenType publishedWithTt) {

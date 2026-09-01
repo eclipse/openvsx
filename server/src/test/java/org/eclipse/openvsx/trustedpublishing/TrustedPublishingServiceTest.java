@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -28,6 +29,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig.GitLabInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -89,6 +91,23 @@ class TrustedPublishingServiceTest {
 
         assertThat(result.publishers()).containsExactlyInAnyOrder(registeredPublisher, gonePublisher);
         assertThat(result.registrableExtensions()).containsExactly("free");
+    }
+
+    // The status endpoint hands this list straight to the client, so an unordered map would reshuffle
+    // the providers offered in the registration dialog on every restart.
+    @Test
+    void offersProvidersInAStableOrderGitHubFirst() {
+        when(config.isEnabled()).thenReturn(true);
+        when(config.getActiveProviders()).thenReturn(List.of("github", "gitlab", "eclipse-gitlab"));
+        var instances = new LinkedHashMap<String, GitLabInstance>();
+        instances.put("gitlab", new GitLabInstance("GitLab", "https://gitlab.com"));
+        instances.put("eclipse-gitlab", new GitLabInstance("Eclipse GitLab", "https://gitlab.eclipse.org"));
+        when(config.getGitlab()).thenReturn(instances);
+
+        var service = new TrustedPublishingService(config, repositories, tokens, entityManager);
+
+        assertThat(service.getTrustedPublisherProviders().keySet())
+                .containsExactly("github", "gitlab", "eclipse-gitlab");
     }
 
     private Extension extension(long id, String name) {

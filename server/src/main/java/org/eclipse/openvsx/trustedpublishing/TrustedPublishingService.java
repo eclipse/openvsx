@@ -14,11 +14,13 @@ package org.eclipse.openvsx.trustedpublishing;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.nimbusds.jwt.JWTParser;
 import jakarta.persistence.EntityManager;
@@ -38,9 +40,7 @@ import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.trustedpublishing.github.GitHubTrustedPublishingProvider;
-import org.eclipse.openvsx.trustedpublishing.gitlab.EclipseGitLabTrustedPublishingProvider;
 import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvider;
-import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProviderSupport;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -71,15 +71,44 @@ public class TrustedPublishingService {
         this.entityManager = requireNonNull(entityManager);
 
         if (config.isEnabled()) {
-            this.providers = Map.of(
-                    GitHubTrustedPublishingProvider.PROVIDER_ID,
-                    new GitHubTrustedPublishingProvider(config),
-                    GitLabTrustedPublishingProvider.PROVIDER_ID,
-                    new GitLabTrustedPublishingProvider(config),
-                    EclipseGitLabTrustedPublishingProvider.PROVIDER_ID,
-                    new EclipseGitLabTrustedPublishingProvider(config));
+            this.providers = createProviders(config);
+            warnAboutUnknownActiveProviders(config);
         } else {
             this.providers = Map.of();
+        }
+    }
+
+    /**
+     * GitHub is a single, hard-wired provider; every configured GitLab instance becomes one of its own.
+     */
+    private static Map<String, TrustedPublishingProviderSupport> createProviders(TrustedPublishingConfig config) {
+        // insertion-ordered, so the providers are always offered in the same order: GitHub first, then the
+        // GitLab instances as configured. An unordered map would reshuffle the list on every restart.
+        var providers = new LinkedHashMap<String, TrustedPublishingProviderSupport>();
+        providers.put(GitHubTrustedPublishingProvider.PROVIDER_ID, new GitHubTrustedPublishingProvider(config));
+        config.getGitlab()
+                .forEach(
+                        (providerId, instance) -> providers.put(
+                                providerId,
+                                new GitLabTrustedPublishingProvider(
+                                        config,
+                                        providerId,
+                                        instance.getName(),
+                                        instance.getUrl(),
+                                        instance.getIssuer())));
+        return Collections.unmodifiableMap(providers);
+    }
+
+    /**
+     * An active provider without a matching definition is silently unusable, which is hard to tell apart
+     * from a working setup, so say so at startup.
+     */
+    private void warnAboutUnknownActiveProviders(TrustedPublishingConfig config) {
+        var unknown = config.getActiveProviders().stream().filter(id -> !providers.containsKey(id)).toList();
+        if (!unknown.isEmpty()) {
+            logger.warn(
+                    "Trusted publishing lists active providers that are not configured and stay unusable: {}",
+                    unknown);
         }
     }
 
@@ -217,15 +246,8 @@ public class TrustedPublishingService {
         ensureEnabled();
         return providers.entrySet().stream()
                 .filter(e -> e.getValue().isActive())
-                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), HashMap::putAll);
-    }
-
-    /**
-     * Lists all trusted publisher providers.
-     */
-    public Map<String, TrustedPublishingProviderSupport> getAllTrustedPublisherProviders() {
-        ensureEnabled();
-        return providers;
+                .collect(
+                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
 
     /**
@@ -289,7 +311,9 @@ public class TrustedPublishingService {
         // The issued token is TPT personal access token of the registering user scoped for selected namespace
         return tokens.createTrustedPublishingAccessToken(
                 match,
-                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()));
+                TOKEN_DESCRIPTION_TEMPLATE.formatted(provider.getProviderId()),
+                config.getTokenExpiration(),
+                claims);
     }
 
     private Namespace requireOwnedNamespace(UserData user, String namespaceName) {

@@ -240,7 +240,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findMembership(userData, namespace),
                 () -> repositories.findMemberships(namespace),
                 () -> repositories.findMemberships(namespace, "role"),
-                () -> repositories.deleteMemberships(userData),
                 () -> repositories.findNamespace("name"),
                 () -> repositories.lockNamespace(namespace),
                 () -> repositories.findConflictingNamespaces("displayName", namespace),
@@ -351,7 +350,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findFirstUnresolvedDependency(List.of(new ExtensionId("namespaceName", "extensionName"))),
                 () -> repositories.findAllPersonalAccessTokens(),
-                () -> repositories.hasPersonalAccessToken("tokenValue"),
                 () -> repositories
                         .findSignatureKeyPairPublicId("namespaceName", "extensionName", "targetPlatform", "version"),
                 () -> repositories.findFirstMembership("namespaceName"),
@@ -373,6 +371,8 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.isDeleteAllActiveVersions("namespaceName", "extensionName"),
                 () -> repositories.deactivatePersonalAccessTokens(userData),
                 () -> repositories.expirePersonalAccessTokens(NOW),
+                () -> repositories
+                        .deleteExpiredPersonalAccessTokens(NOW, List.of(PersonalAccessTokenType.TPT)),
                 () -> repositories.findExpiringPersonalAccessTokensWithoutNotification(NOW, page),
                 () -> repositories.updateExpiresTimeForLegacyPersonalAccessTokens(NOW, PersonalAccessTokenType.LLT),
                 () -> repositories.findSimilarExtensionsByLevenshtein(
@@ -490,6 +490,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findUnprocessedDaysForDailyUsage(customer),
                 () -> repositories.saveDailyUsageStats(dailyUsageStats),
                 () -> repositories.findTrustedPublishersByExtension(extension),
+                () -> repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, userData),
                 () -> repositories.findTrustedPublisher(1L),
                 () -> repositories.deleteTrustedPublisher(trustedPublisher),
                 () -> repositories.deleteTier(tier),

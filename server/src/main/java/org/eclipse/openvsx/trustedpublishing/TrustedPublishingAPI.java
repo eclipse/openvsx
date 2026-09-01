@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx;
+package org.eclipse.openvsx.trustedpublishing;
 
 import java.util.Objects;
 
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.eclipse.EclipseService;
 import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.json.AccessTokenJson;
@@ -35,7 +36,6 @@ import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
 import org.eclipse.openvsx.json.TrustedPublisherStatusJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
 import org.eclipse.openvsx.settings.MutatingOperation;
-import org.eclipse.openvsx.trustedpublishing.TrustedPublishingService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 
@@ -69,20 +69,21 @@ public class TrustedPublishingAPI {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        eclipseService.checkPublisherAgreement(user);
-        if (!StringUtils.hasText(request.getProvider())
-                || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
-                || request.getRegistration() == null || request.getRegistration().isEmpty()) {
-            var json = TrustedPublisherJson
-                    .error("The fields provider, namespace, extension and registration are mandatory.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-        if (!Objects.equals(namespace, request.getNamespace())) {
-            var json = TrustedPublisherJson.error("The namespace in the path and in the request body must match.");
-            return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
-        }
-
         try {
+            // throws when the user has no signed publisher agreement, and so has to be caught below
+            eclipseService.checkPublisherAgreement(user);
+            if (!StringUtils.hasText(request.getProvider())
+                    || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
+                    || request.getRegistration() == null || request.getRegistration().isEmpty()) {
+                var json = TrustedPublisherJson
+                        .error("The fields provider, namespace, extension and registration are mandatory.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
+            if (!Objects.equals(namespace, request.getNamespace())) {
+                var json = TrustedPublisherJson.error("The namespace in the path and in the request body must match.");
+                return new ResponseEntity<>(json, HttpStatus.BAD_REQUEST);
+            }
+
             var publisher = trustedPublishing.registerTrustedPublisher(
                     user,
                     request.getNamespace(),

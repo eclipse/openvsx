@@ -15,13 +15,23 @@ package org.eclipse.openvsx.accesstoken;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -36,7 +46,6 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
-import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
 
@@ -46,29 +55,50 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
 public class AccessTokenService {
+    /**
+     * Arbitrary, fixed key for the Postgres advisory lock guarding the token upgrade below. Must stay
+     * distinct from every other advisory lock key this application uses; see
+     * {@code ExtensionScanJobRecoveryService.RECOVERY_LOCK_KEY} for the other one.
+     */
+    private static final long UPGRADE_LOCK_KEY = 891_234_567_890_124L;
+
+    private static final Logger logger = LoggerFactory.getLogger(AccessTokenService.class);
+
+    /** 256 bits; far beyond guessing, and the encoded form is still shorter than a UUID. */
+    private static final int TOKEN_BYTES = 32;
+
+    private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
+
+    /** The token types that are retired by deleting the row rather than deactivating it. */
+    private static final List<PersonalAccessTokenType> ONE_TIME_TOKEN_TYPES = Arrays
+            .stream(PersonalAccessTokenType.values())
+            .filter(PersonalAccessTokenType::isOneTime)
+            .toList();
+
     private static final int TOKEN_VERSION_0 = 0;
     private static final int TOKEN_VERSION_1 = 1;
     private static final int[] ALL_TOKEN_VERSIONS = { TOKEN_VERSION_0, TOKEN_VERSION_1 };
     private static final int TOKEN_CURRENT_VERSION = TOKEN_VERSION_1;
 
     private final AccessTokenConfig config;
-    private final UUIDService uuidService;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final MailService mail;
+    private final DSLContext dsl;
+    private final SecureRandom random = new SecureRandom();
 
     public AccessTokenService(
             AccessTokenConfig config,
-            UUIDService uuidService,
             EntityManager entityManager,
             RepositoryService repositories,
-            MailService mail
+            MailService mail,
+            DSLContext dsl
     ) {
         this.config = config;
-        this.uuidService = uuidService;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.mail = mail;
+        this.dsl = dsl;
     }
 
     /**
@@ -80,24 +110,39 @@ public class AccessTokenService {
         final LocalDateTime expiresTimestamp = config.isTokenExpiryEnabled()
                 ? TimeUtil.getCurrentUTC().plus(config.getExpiration())
                 : null;
-        return createAccessToken(user, description, expiresTimestamp, null, null, null, PersonalAccessTokenType.LLT);
+        return createAccessToken(
+                user,
+                description,
+                expiresTimestamp,
+                null,
+                null,
+                null,
+                null,
+                PersonalAccessTokenType.LLT);
     }
 
     /**
      * Creates a trusted publishing token for a trusted publisher. The token is scoped to given trusted publisher
-     * associated extension only. Depending on configuration, the token expiration may be set as well.
+     * associated extension only. How long it lives is the trusted publishing configuration's to decide, so the
+     * caller passes it in rather than this service reading it.
      */
     @Transactional
-    public AccessTokenJson createTrustedPublishingAccessToken(TrustedPublisher trustedPublisher, String description) {
+    public AccessTokenJson createTrustedPublishingAccessToken(
+            TrustedPublisher trustedPublisher,
+            String description,
+            Duration expiration,
+            Map<String, String> claims
+    ) {
         requireNonNull(trustedPublisher);
-        final LocalDateTime expiresTimestamp = config.isTptTokenExpiryEnabled()
-                ? TimeUtil.getCurrentUTC().plus(config.getTptExpiration())
-                : null;
+        requireNonNull(expiration);
+        requireNonNull(claims);
+        final LocalDateTime expiresTimestamp = TimeUtil.getCurrentUTC().plus(expiration);
         return createAccessToken(
                 trustedPublisher.getCreatedBy(),
                 description,
                 expiresTimestamp,
                 trustedPublisher,
+                claims,
                 null,
                 null,
                 PersonalAccessTokenType.TPT);
@@ -108,11 +153,12 @@ public class AccessTokenService {
             String description,
             @Nullable LocalDateTime expiresTimestamp,
             @Nullable TrustedPublisher trustedPublisher,
+            @Nullable Map<String, String> claims,
             @Nullable Extension scopeExtension,
             @Nullable Namespace scopeNamespace,
             PersonalAccessTokenType type
     ) {
-        var rawValue = generateTokenValue();
+        var rawValue = generateTokenValue(type);
         var token = new PersonalAccessToken();
         token.setUser(user);
         token.setValue(hashTokenValue(rawValue));
@@ -127,8 +173,9 @@ public class AccessTokenService {
             if (type != PersonalAccessTokenType.TPT) {
                 throw new IllegalArgumentException("Only TPT token may be created with TP");
             }
-            // link TP and scope to TP.ext
+            // link TP and scope to TP.ext, and carry the exchange's claims to the publish that uses this
             token.setTrustedPublisher(trustedPublisher);
+            token.setClaims(claims);
             token.setScopeExtension(trustedPublisher.getExtension());
         } else if (scopeExtension != null) {
             // scope to ext
@@ -150,13 +197,21 @@ public class AccessTokenService {
         return json;
     }
 
+    /**
+     * Generates a token value: the deployment's prefix, the marker saying which kind of token this is, and
+     * 32 bytes from a CSPRNG. A UUID would be the wrong shape here - it is an identifier type, and the
+     * time-ordered v7 this application generates elsewhere spends 48 of its bits on a readable timestamp,
+     * leaving 74 random ones where raw bytes give 256.
+     * <p>
+     * Uniqueness is the {@code UNIQUE (value)} constraint's to enforce, not this method's. It is the only
+     * check that can work: it applies to the hash that actually gets stored, and it holds across every pod
+     * writing to the database, which a check-then-insert here could not.
+     */
     // public to be accessible from tests
-    public String generateTokenValue() {
-        String value;
-        do {
-            value = config.getPrefix() + uuidService.generateRandom();
-        } while (repositories.hasPersonalAccessToken(value));
-        return value;
+    public String generateTokenValue(PersonalAccessTokenType type) {
+        var bytes = new byte[TOKEN_BYTES];
+        random.nextBytes(bytes);
+        return config.getPrefix() + type.getTokenMarker() + TOKEN_ENCODER.encodeToString(bytes);
     }
 
     @Transactional
@@ -208,12 +263,19 @@ public class AccessTokenService {
         // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
         LocalDateTime now = TimeUtil.getCurrentUTC();
         if (token.getExpiresTimestamp() != null && !token.getExpiresTimestamp().isAfter(now)) {
-            token.setActive(false);
+            if (token.getType().isOneTime()) {
+                entityManager.remove(token);
+            } else {
+                token.setActive(false);
+            }
             return null;
         }
-        // TPT without TP => registration was deleted
+        // Deleting a registration takes its tokens with it, so this should not be reachable; kept as a
+        // guard, because a TPT that lost its registration may only ever publish an extension it can no
+        // longer be checked against. Removed rather than deactivated: it can never become valid again,
+        // and nothing reads the row afterwards - the same reasoning as for a one-time token below.
         if (token.getType() == PersonalAccessTokenType.TPT && token.getTrustedPublisher() == null) {
-            token.setActive(false);
+            entityManager.remove(token);
             return null;
         }
         // scope
@@ -229,7 +291,7 @@ public class AccessTokenService {
                 entityManager.remove(token);
             }
         }
-        return new AccessTokenAuthentication(token.getUser(), token.getType());
+        return new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId(), token.getClaims());
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {
@@ -242,9 +304,22 @@ public class AccessTokenService {
         }
     }
 
+    /**
+     * Retires every token that has expired.
+     * <p>
+     * A one-time token is deleted rather than deactivated, the same as when one is used, when its trusted
+     * publisher registration goes, or when its extension is purged: it can never be used again, nothing
+     * reads the row afterwards, and one is minted per exchange. Keeping the unused ones while deleting the
+     * used ones would retain exactly the rows nobody has a question about.
+     * <p>
+     * Long-lived tokens stay as deactivated rows: a user is shown their own expired tokens, and the
+     * expiry notification mails read them.
+     */
     @Transactional
     public int expireAccessTokens() {
-        var expiredAccessTokens = repositories.expirePersonalAccessTokens(TimeUtil.getCurrentUTC());
+        var now = TimeUtil.getCurrentUTC();
+        var deletedAccessTokens = repositories.deleteExpiredPersonalAccessTokens(now, ONE_TIME_TOKEN_TYPES);
+        var expiredAccessTokens = repositories.expirePersonalAccessTokens(now);
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {
                 if (token.getType().isNotify()) {
@@ -252,7 +327,7 @@ public class AccessTokenService {
                 }
             }
         }
-        return expiredAccessTokens.size();
+        return deletedAccessTokens.size() + expiredAccessTokens.size();
     }
 
     @Transactional
@@ -272,8 +347,24 @@ public class AccessTokenService {
         return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime, PersonalAccessTokenType.LLT);
     }
 
+    /**
+     * Upgrades every token still stored in a legacy format.
+     * <p>
+     * The job that calls this is enqueued from {@code ApplicationStartedEvent}, which fires in every
+     * instance's own JVM: during a rolling update several pods run this against the same rows. The work
+     * itself is idempotent - each row is hashed from the raw value it still holds, and the row stops
+     * matching once upgraded - but there is no point in every pod scanning and rewriting the whole set,
+     * so a transaction-scoped advisory lock lets one of them do it. {@code pg_try_advisory_xact_lock}
+     * returns immediately rather than blocking, and Postgres drops the lock when this method's
+     * transaction ends, so there is no unlock to forget and none can leak onto a pooled connection.
+     */
     @Transactional
     public int upgradeTokens() {
+        if (!tryAcquireUpgradeLock()) {
+            logger.debug("Another instance already holds the token upgrade lock, skipping");
+            return 0;
+        }
+
         int upgradedCount = 0;
         for (int version : ALL_TOKEN_VERSIONS) {
             if (version == TOKEN_CURRENT_VERSION) {
@@ -287,6 +378,14 @@ public class AccessTokenService {
             }
         }
         return upgradedCount;
+    }
+
+    // Package-private so a test can stub it via a spy without needing two real database connections.
+    boolean tryAcquireUpgradeLock() {
+        return Boolean.TRUE.equals(
+                dsl.fetchValue(
+                        DSL.select(
+                                DSL.function("pg_try_advisory_xact_lock", Boolean.class, DSL.val(UPGRADE_LOCK_KEY)))));
     }
 
     private boolean upgradeToken(PersonalAccessToken token) {

@@ -161,7 +161,22 @@ public class UserService {
             throw new ErrorResultException(
                     "User " + user.getLoginName() + " is not a member of " + namespace.getName() + ".");
         }
+        return removeNamespaceMembership(membership);
+    }
+
+    /**
+     * Removes a membership that the caller already holds, for callers walking a user's memberships rather
+     * than naming one. Nothing here can fail on a row that has since gone or been duplicated, which matters
+     * for {@code AdminService#revokePublisherContributions}: it revokes a whole publisher in one
+     * transaction, and one unremovable membership must not take the token and version deactivations with it.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key = "#membership.namespace.name")
+    public ResultJson removeNamespaceMembership(NamespaceMembership membership) {
+        var namespace = membership.getNamespace();
+        var user = membership.getUser();
         entityManager.remove(membership);
+        revokeTrustedPublishers(namespace, user);
         return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName() + ".");
     }
 
@@ -177,7 +192,11 @@ public class UserService {
             if (role.equals(membership.getRole())) {
                 throw new ErrorResultException("User " + user.getLoginName() + " already has the role " + role + ".");
             }
+            var wasOwner = NamespaceMembership.ROLE_OWNER.equals(membership.getRole());
             membership.setRole(role);
+            if (wasOwner) {
+                revokeTrustedPublishers(namespace, user);
+            }
             return ResultJson.success(
                     "Changed role of " + user.getLoginName() + " in " + namespace.getName() + " to " + role + ".");
         }
@@ -187,6 +206,24 @@ public class UserService {
         membership.setRole(role);
         entityManager.persist(membership);
         return ResultJson.success("Added " + user.getLoginName() + " as " + role + " of " + namespace.getName() + ".");
+    }
+
+    /**
+     * Only a namespace owner may register a trusted publisher, so a registration must not outlive the ownership
+     * it was made under: whoever stops being an owner - by demotion or by leaving the namespace - loses the
+     * registrations they created there. Deleting them also invalidates the publishing tokens already issued
+     * under them, which a mere loss of publishing rights would not.
+     */
+    private void revokeTrustedPublishers(Namespace namespace, UserData user) {
+        var trustedPublishers = repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, user).toList();
+        trustedPublishers.forEach(repositories::deleteTrustedPublisher);
+        if (!trustedPublishers.isEmpty()) {
+            logger.info(
+                    "Deleted {} trusted publisher(s) of {} in namespace {}, who is no longer an owner of it",
+                    trustedPublishers.size(),
+                    user.getLoginName(),
+                    namespace.getName());
+        }
     }
 
     @Transactional(rollbackOn = { ErrorResultException.class, NotFoundException.class })

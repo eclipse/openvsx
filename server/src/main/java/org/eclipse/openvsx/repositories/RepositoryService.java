@@ -195,6 +195,13 @@ public class RepositoryService {
         return trustedPublisherRepo.findTrustedPublishersByExtension(extension);
     }
 
+    public Streamable<TrustedPublisher> findTrustedPublishersByNamespaceAndCreatedBy(
+            Namespace namespace,
+            UserData createdBy
+    ) {
+        return trustedPublisherRepo.findByExtension_NamespaceAndCreatedBy(namespace, createdBy);
+    }
+
     public TrustedPublisher findTrustedPublisher(long id) {
         return trustedPublisherRepo.findById(id);
     }
@@ -479,10 +486,6 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
-    public void deleteMemberships(UserData user) {
-        membershipRepo.deleteByUser(user);
-    }
-
     public boolean hasMembership(UserData user, Namespace namespace) {
         return membershipJooqRepo.hasMembership(user, namespace);
     }
@@ -587,12 +590,16 @@ public class RepositoryService {
         return personalAccessTokenRepo.expireAccessTokens(timestamp);
     }
 
-    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
-        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
+    public List<PersonalAccessToken> deleteExpiredPersonalAccessTokens(
+            LocalDateTime timestamp,
+            Collection<PersonalAccessTokenType> types
+    ) {
+        return personalAccessTokenRepo
+                .deleteExpiredAccessTokens(timestamp, types.stream().map(Enum::name).toList());
     }
 
-    public boolean hasPersonalAccessToken(String value) {
-        return personalAccessTokenRepo.findByValue(value) != null;
+    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
+        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
     }
 
     public PersonalAccessToken findPersonalAccessToken(UserData user, String description) {

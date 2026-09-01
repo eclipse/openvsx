@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jooq.DSLContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -127,6 +129,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AdminAPI.class)
 @MockitoBean(
     types = {
+        DSLContext.class,
         ClientRegistrationRepository.class,
         UpstreamRegistryService.class,
         GoogleCloudStorageService.class,
@@ -150,6 +153,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 class AdminAPITest {
+
+    @BeforeEach
+    void noTrustedPublishersByDefault() {
+        // the real repository hands back an empty Streamable rather than null; only the trusted
+        // publishing tests care what it actually holds
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(any(), any()))
+                .thenReturn(Streamable.empty());
+    }
 
     @MockitoSpyBean
     UserService users;
@@ -2079,6 +2090,9 @@ class AdminAPITest {
         membership2.setUser(user2);
         when(repositories.findMemberships(user2))
                 .thenReturn(Streamable.of(membership2));
+        // revoking goes through UserService.removeNamespaceMember, which looks the membership up again
+        when(repositories.findMembership(user, namespace)).thenReturn(membership);
+        when(repositories.findMembership(user2, namespace)).thenReturn(membership2);
 
         var baseRequest = """
                 {
@@ -2547,12 +2561,12 @@ class AdminAPITest {
         @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
-                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
-                MailService mailService
+                MailService mailService,
+                DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

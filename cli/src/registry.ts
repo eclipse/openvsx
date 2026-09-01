@@ -12,7 +12,7 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
-import { rejectError, statusError } from './util';
+import { rejectError, statusError, withStatus } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
@@ -241,7 +241,8 @@ export class Registry {
                             const parsed = JSON.parse(json) as ErrorResponse;
                             const message = parsed.message || parsed.error;
                             if (message) {
-                                reject(new Error(message));
+                                // keep the status: the message alone cannot say whether retrying is worth it
+                                reject(withStatus(new Error(message), response.statusCode));
                                 return;
                             }
                         } catch (err) {

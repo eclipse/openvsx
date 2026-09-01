@@ -16,10 +16,14 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.TrustedPublisher;
+import org.eclipse.openvsx.entities.UserData;
 public interface TrustedPublisherRepository extends Repository<TrustedPublisher, Long> {
 
     Streamable<TrustedPublisher> findTrustedPublishersByExtension(Extension extension);
+
+    Streamable<TrustedPublisher> findByExtension_NamespaceAndCreatedBy(Namespace namespace, UserData createdBy);
 
     TrustedPublisher findById(long id);
 

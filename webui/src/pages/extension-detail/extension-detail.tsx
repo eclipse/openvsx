@@ -38,6 +38,7 @@ import { ExtensionDetailChanges } from './extension-detail-changes';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
 
 import { ExtensionDetailRoutes } from './extension-detail-routes';
+import { TrustedPublishingIcon } from './trusted-publishing-icon';
 import { useExtensionDetail } from './use-extension-details';
 import { KbdKey } from '../../components/kbd-key';
 import { useShortcut } from '../../hooks/use-shortcut';
@@ -187,7 +188,7 @@ const LicenseLink: FunctionComponent<{
     return <>{extension.license || 'Unlicensed'}</>;
 };
 
-const ExtensionHeaderInfo: FunctionComponent<{
+export const ExtensionHeaderInfo: FunctionComponent<{
     extension: Extension;
     headerTextColor: string;
 }> = ({ extension, headerTextColor }) => {
@@ -248,6 +249,12 @@ const ExtensionHeaderInfo: FunctionComponent<{
                 <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                     Published by&nbsp;
                     <UserPopover user={extension.publishedBy} color={headerTextColor} />
+                    {extension.publishedWithTrustedPublishing && (
+                        <>
+                            <TextDivider backgroundColor={headerTextColor} collapseSmall />
+                            <TrustedPublishingIcon color={headerTextColor} />
+                        </>
+                    )}
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} collapseSmall />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>

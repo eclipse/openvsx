@@ -19,6 +19,8 @@ import java.util.function.Consumer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jooq.DSLContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -83,6 +85,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserAPI.class)
 @MockitoBean(
     types = {
+        DSLContext.class,
         EclipseService.class,
         ClientRegistrationRepository.class,
         StorageUtilService.class,
@@ -101,6 +104,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 class UserAPITest {
+
+    @BeforeEach
+    void noTrustedPublishersByDefault() {
+        // the real repository hands back an empty Streamable rather than null; only the trusted
+        // publishing tests care what it actually holds
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(any(), any()))
+                .thenReturn(Streamable.empty());
+    }
 
     @MockitoSpyBean
     UserService users;
@@ -175,7 +186,7 @@ class UserAPITest {
     @Test
     void testCreateAccessToken() throws Exception {
         mockUserData();
-        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue();
+        Mockito.doReturn("foobar").when(accessTokenService).generateTokenValue(any());
         mockMvc.perform(
                 post("/user/token/create?description={description}", "This is my token")
                         .with(user("test_user"))
@@ -1178,12 +1189,12 @@ class UserAPITest {
         @Bean
         AccessTokenService accessTokenService(
                 AccessTokenConfig config,
-                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
-                MailService mailService
+                MailService mailService,
+                DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

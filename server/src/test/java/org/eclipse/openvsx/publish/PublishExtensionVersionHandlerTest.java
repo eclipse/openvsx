@@ -167,7 +167,7 @@ class PublishExtensionVersionHandlerTest {
 
             var namespace = buildNamespace("publisher");
             var user = new UserData();
-            var ata = new AccessTokenAuthentication(user, PersonalAccessTokenType.TPT);
+            var ata = new AccessTokenAuthentication(user, PersonalAccessTokenType.TPT, 1L, null);
 
             when(repositories.findNamespace("publisher")).thenReturn(namespace);
             when(users.hasPublishPermission(user, namespace)).thenReturn(true);

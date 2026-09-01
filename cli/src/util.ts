@@ -115,11 +115,25 @@ export function formatBytes(bytes: number): string {
     return `${Math.floor(size)} ${units[unit]}`;
 }
 
-export function statusError(response: http.IncomingMessage): Error {
-    if (response.statusMessage)
-        return new Error(`The server responded with status ${response.statusCode}: ${response.statusMessage}`);
-    else
-        return new Error(`The server responded with status ${response.statusCode}.`);
+/**
+ * An error carrying the HTTP status that produced it, so a caller can tell "the registry refused this"
+ * from "the registry could not answer right now" without matching on the message.
+ */
+export interface StatusError extends Error {
+    status?: number;
+}
+
+export function withStatus(error: Error, status?: number): StatusError {
+    const withStatusCode = error as StatusError;
+    withStatusCode.status = status;
+    return withStatusCode;
+}
+
+export function statusError(response: http.IncomingMessage): StatusError {
+    const message = response.statusMessage
+        ? `The server responded with status ${response.statusCode}: ${response.statusMessage}`
+        : `The server responded with status ${response.statusCode}.`;
+    return withStatus(new Error(message), response.statusCode);
 }
 
 export function readFile(name: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<string> {

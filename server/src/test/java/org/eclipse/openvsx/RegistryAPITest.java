@@ -27,6 +27,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -109,6 +110,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(RegistryAPI.class)
 @MockitoBean(
     types = {
+        DSLContext.class,
         ClientRegistrationRepository.class,
         UpstreamRegistryService.class,
         GoogleCloudStorageService.class,
@@ -3675,12 +3677,12 @@ class RegistryAPITest {
         @Bean
         AccessTokenService tokenService(
                 AccessTokenConfig config,
-                UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
-                MailService mailService
+                MailService mailService,
+                DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

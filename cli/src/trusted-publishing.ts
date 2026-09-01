@@ -13,6 +13,7 @@
 
 import { getIdToken, hasIdTokenSource } from './oidc';
 import { AccessToken, Registry } from './registry';
+import { StatusError } from './util';
 import { TrustedPublishingOptions } from './trusted-publishing-options';
 
 const tokens = new Map<string, Promise<string>>();
@@ -46,6 +47,12 @@ export function getTrustedPublishingToken(
     return token;
 }
 
+// The registry answers 503 when it could not reach the identity provider to check the token, as opposed
+// to checking it and refusing. That is worth another go: publishing runs unattended on CI, and a blip
+// reaching GitHub or GitLab should not fail a release build. A refusal is never retried.
+const RETRYABLE_STATUS = [502, 503, 504];
+const RETRY_DELAYS_MS = [1000, 4000];
+
 async function requestToken(
     registry: Registry,
     namespace: string,
@@ -57,7 +64,7 @@ async function requestToken(
 
     let result: AccessToken;
     try {
-        result = await registry.requestTrustedPublishingToken(namespace, extension, idToken);
+        result = await exchangeWithRetry(registry, namespace, extension, idToken);
     } catch (err) {
         throw new Error(`${err.message}\n${registrationHint(registry, namespace, extension)}`);
     }
@@ -71,6 +78,27 @@ async function requestToken(
     const expires = result.expiresTimestamp ? `, expires at ${result.expiresTimestamp}` : '';
     console.log(`\ud83d\udd10  Trusted publishing token issued for ${namespace}.${extension}${expires}`);
     return result.value;
+}
+
+async function exchangeWithRetry(
+    registry: Registry,
+    namespace: string,
+    extension: string,
+    idToken: string
+): Promise<AccessToken> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await registry.requestTrustedPublishingToken(namespace, extension, idToken);
+        } catch (err) {
+            const status = (err as StatusError)?.status;
+            if (attempt >= RETRY_DELAYS_MS.length || status === undefined || !RETRYABLE_STATUS.includes(status)) {
+                throw err;
+            }
+            const delay = RETRY_DELAYS_MS[attempt];
+            console.log(`The registry could not verify the token (${status}), retrying in ${delay / 1000}s`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
 }
 
 function registrationHint(registry: Registry, namespace: string, extension: string): string {
