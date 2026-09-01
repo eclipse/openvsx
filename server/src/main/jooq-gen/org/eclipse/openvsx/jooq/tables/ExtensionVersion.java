@@ -17,6 +17,7 @@ import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Index;
+import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
@@ -128,6 +129,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      * The column <code>public.extension_version.extension_id</code>.
      */
     public final TableField<ExtensionVersionRecord, Long> EXTENSION_ID = createField(DSL.name("extension_id"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>public.extension_version.published_with_id</code>.
+     */
+    public final TableField<ExtensionVersionRecord, Long> PUBLISHED_WITH_ID = createField(DSL.name("published_with_id"), SQLDataType.BIGINT, this, "");
 
     /**
      * The column <code>public.extension_version.active</code>.
@@ -255,6 +261,11 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
      */
     public final TableField<ExtensionVersionRecord, String> PUBLISHED_WITH_TT = createField(DSL.name("published_with_tt"), SQLDataType.VARCHAR(32), this, "");
 
+    /**
+     * The column <code>public.extension_version.published_provenance</code>.
+     */
+    public final TableField<ExtensionVersionRecord, JSONB> PUBLISHED_PROVENANCE = createField(DSL.name("published_provenance"), SQLDataType.JSONB, this, "");
+
     private ExtensionVersion(Name alias, Table<ExtensionVersionRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -291,7 +302,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_BY_ID__IDX, Indexes.EXTENSION_VERSION_BY_TARGET_PLATFORM_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_LATEST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_LIST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_MAP_ORDER_BY_IDX);
+        return Arrays.asList(Indexes.EXTENSION_VERSION__EXTENSION_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_BY_ID__IDX, Indexes.EXTENSION_VERSION__PUBLISHED_WITH_ID__IDX, Indexes.EXTENSION_VERSION_BY_TARGET_PLATFORM_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_LATEST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_LIST_ORDER_BY_IDX, Indexes.EXTENSION_VERSION_VERSION_MAP_ORDER_BY_IDX);
     }
 
     @Override
@@ -306,7 +317,7 @@ public class ExtensionVersion extends TableImpl<ExtensionVersionRecord> {
 
     @Override
     public List<ForeignKey<ExtensionVersionRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.EXTENSION_VERSION__EXTENSION_VERSION_PUBLISHED_BY_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_REMOVED_BY_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
+        return Arrays.asList(Keys.EXTENSION_VERSION__EXTENSION_VERSION_PUBLISHED_BY_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_PUBLISHED_WITH_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_REMOVED_BY_ID_FKEY, Keys.EXTENSION_VERSION__EXTENSION_VERSION_SIGNATURE_KEY_PAIR_FKEY, Keys.EXTENSION_VERSION__FKKHS1EC9S9J08FGICQ9PMWU6BT);
     }
 
     @Override

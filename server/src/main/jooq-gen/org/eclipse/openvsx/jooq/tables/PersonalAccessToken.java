@@ -15,6 +15,7 @@ import org.eclipse.openvsx.jooq.tables.records.PersonalAccessTokenRecord;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.PlainSQL;
 import org.jooq.QueryPart;
@@ -122,6 +123,11 @@ public class PersonalAccessToken extends TableImpl<PersonalAccessTokenRecord> {
      * <code>public.personal_access_token.trusted_publisher_id</code>.
      */
     public final TableField<PersonalAccessTokenRecord, Long> TRUSTED_PUBLISHER_ID = createField(DSL.name("trusted_publisher_id"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>public.personal_access_token.claims</code>.
+     */
+    public final TableField<PersonalAccessTokenRecord, JSONB> CLAIMS = createField(DSL.name("claims"), SQLDataType.JSONB, this, "");
 
     private PersonalAccessToken(Name alias, Table<PersonalAccessTokenRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

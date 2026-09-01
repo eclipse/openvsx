@@ -7,6 +7,7 @@ package org.eclipse.openvsx.jooq.tables.records;
 import java.time.LocalDateTime;
 
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
+import org.jooq.JSONB;
 import org.jooq.Record1;
 import org.jooq.impl.UpdatableRecordImpl;
 
@@ -217,6 +218,20 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         return (Long) get(13);
     }
 
+    /**
+     * Setter for <code>public.personal_access_token.claims</code>.
+     */
+    public void setClaims(JSONB value) {
+        set(14, value);
+    }
+
+    /**
+     * Getter for <code>public.personal_access_token.claims</code>.
+     */
+    public JSONB getClaims() {
+        return (JSONB) get(14);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -240,7 +255,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
     /**
      * Create a detached, initialised PersonalAccessTokenRecord
      */
-    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified, Short version, String type, Long scopeExtensionId, Long scopeNamespaceId, Long trustedPublisherId) {
+    public PersonalAccessTokenRecord(Long id, LocalDateTime accessedTimestamp, Boolean active, LocalDateTime createdTimestamp, String description, String value, Long userData, LocalDateTime expiresTimestamp, Boolean notified, Short version, String type, Long scopeExtensionId, Long scopeNamespaceId, Long trustedPublisherId, JSONB claims) {
         super(PersonalAccessToken.PERSONAL_ACCESS_TOKEN);
 
         setId(id);
@@ -257,6 +272,7 @@ public class PersonalAccessTokenRecord extends UpdatableRecordImpl<PersonalAcces
         setScopeExtensionId(scopeExtensionId);
         setScopeNamespaceId(scopeNamespaceId);
         setTrustedPublisherId(trustedPublisherId);
+        setClaims(claims);
         resetChangedOnNotNull();
     }
 }
