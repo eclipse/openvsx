@@ -28,40 +28,36 @@ import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvi
  * The trusted publishing provider instances that are known to this registry.
  * <p>
  * Every GitLab instance behaves the same way, it only differs in its id, name, URL and OIDC issuer,
- * so instances are configured rather than coded. Configured instances are merged into the defaults
- * below, and become usable once their id is listed in {@code ovsx.trusted-publishing.active-providers}:
+ * so instances are configured rather than coded. Only the public instance is configured out of the box;
+ * any other one - the Eclipse Foundation instance included - is added by configuration, and becomes
+ * usable once its id is listed in {@code ovsx.trusted-publishing.active-providers}:
  *
  * <pre>
  * ovsx:
  *   trusted-publishing:
- *     active-providers: github,eclipse-gitlab,acme-gitlab
+ *     active-providers: github,eclipse-gitlab
  *     gitlab:
- *       acme-gitlab:
- *         name: ACME GitLab
- *         url: https://gitlab.acme.example
- *         issuer: https://gitlab.acme.example   # optional, defaults to the URL
+ *       eclipse-gitlab:
+ *         name: Eclipse GitLab
+ *         url: https://gitlab.eclipse.org
+ *         issuer: https://gitlab.eclipse.org   # optional, defaults to the URL
  * </pre>
  *
  * The id is persisted with every registration, so renaming it hides the registrations made for it.
  * <p>
- * Configuring an id that is already a default replaces that instance as a whole rather than patching
- * single fields, so such an entry has to carry the name and the URL itself.
+ * Configuring the id of the default instance replaces it as a whole rather than patching single fields,
+ * so such an entry has to carry the name and the URL itself.
  */
 @ConfigurationProperties(prefix = "ovsx.trusted-publishing")
 @Validated
 public class TrustedPublishingProperties {
 
-    /**
-     * The id of the Eclipse Foundation GitLab instance, configured out of the box.
-     */
-    public static final String ECLIPSE_GITLAB_PROVIDER_ID = "eclipse-gitlab";
-
     @Valid
     private Map<String, GitLabInstance> gitlab = defaultGitLabInstances();
 
     /**
-     * The known GitLab instances, keyed by provider id. Configured instances are merged into the
-     * defaults, so the public and the Eclipse instance stay available unless their id is redefined.
+     * The known GitLab instances, keyed by provider id. Configured instances are added to the public
+     * instance, which stays available unless its id is redefined.
      */
     @NonNull
     public Map<String, GitLabInstance> getGitlab() {
@@ -77,7 +73,6 @@ public class TrustedPublishingProperties {
         instances.put(
                 GitLabTrustedPublishingProvider.PROVIDER_ID,
                 new GitLabInstance("GitLab", GitLabTrustedPublishingProvider.PROVIDER_URL));
-        instances.put(ECLIPSE_GITLAB_PROVIDER_ID, new GitLabInstance("Eclipse GitLab", "https://gitlab.eclipse.org"));
         return instances;
     }
 
