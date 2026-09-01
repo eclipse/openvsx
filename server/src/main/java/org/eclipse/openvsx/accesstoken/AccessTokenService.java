@@ -211,7 +211,9 @@ public class AccessTokenService {
             token.setActive(false);
             return null;
         }
-        // TPT without TP => registration was deleted
+        // Deleting a registration takes its tokens with it, so this should not be reachable; kept as a
+        // guard, because a TPT that lost its registration may only ever publish an extension it can no
+        // longer be checked against.
         if (token.getType() == PersonalAccessTokenType.TPT && token.getTrustedPublisher() == null) {
             token.setActive(false);
             return null;

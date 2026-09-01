@@ -5,7 +5,10 @@ CREATE SEQUENCE IF NOT EXISTS trusted_publisher_seq START WITH 1 INCREMENT BY 1;
 CREATE TABLE IF NOT EXISTS public.trusted_publisher
 (
     id BIGINT NOT NULL PRIMARY KEY DEFAULT nextval('trusted_publisher_seq'),
-    extension_id BIGINT NOT NULL REFERENCES public.extension(id),
+    -- A registration only means anything for the extension it points at, so it goes when that extension
+    -- is purged. Cascading rather than restricting, because purging is an administrative action that has
+    -- to succeed: without this, an extension that ever had a trusted publisher could never be purged.
+    extension_id BIGINT NOT NULL REFERENCES public.extension(id) ON DELETE CASCADE,
     provider CHARACTER VARYING(32) NOT NULL,
     registration JSONB NOT NULL,
     claims JSONB NOT NULL,
@@ -24,12 +27,17 @@ ALTER TABLE ONLY public.personal_access_token
     ADD COLUMN IF NOT EXISTS version SMALLINT,
     -- the type column LLT, OTT or TPT
     ADD COLUMN IF NOT EXISTS type CHARACTER VARYING(32),
-    -- optional; the extension that the token is scoped to
-    ADD COLUMN IF NOT EXISTS scope_extension_id BIGINT REFERENCES public.extension(id),
-    -- optional; the namespace that the token is scoped to
-    ADD COLUMN IF NOT EXISTS scope_namespace_id BIGINT REFERENCES public.namespace(id),
-    -- optional; the trusted publisher that the token was created for (token must remain; registration may be deleted)
-    ADD COLUMN IF NOT EXISTS trusted_publisher_id BIGINT REFERENCES public.trusted_publisher(id) ON DELETE SET NULL;
+    -- optional; the extension that the token is scoped to. Deleted with it rather than detached from
+    -- it: AccessTokenService.getScope treats a token with neither scope set as unrestricted, so setting
+    -- this to NULL would silently widen a scoped token instead of retiring it. A token scoped to an
+    -- extension that no longer exists can authorize nothing anyway.
+    ADD COLUMN IF NOT EXISTS scope_extension_id BIGINT REFERENCES public.extension(id) ON DELETE CASCADE,
+    -- optional; the namespace that the token is scoped to. Cascaded for the same reason.
+    ADD COLUMN IF NOT EXISTS scope_namespace_id BIGINT REFERENCES public.namespace(id) ON DELETE CASCADE,
+    -- optional; the trusted publisher that the token was created for. Deleting a registration retires the
+    -- tokens issued under it: they may only ever publish the one extension it was made for, so once it is
+    -- gone they can authorize nothing.
+    ADD COLUMN IF NOT EXISTS trusted_publisher_id BIGINT REFERENCES public.trusted_publisher(id) ON DELETE CASCADE;
 
 -- set OTT based on description (is hardwired in codebase)
 UPDATE public.personal_access_token
