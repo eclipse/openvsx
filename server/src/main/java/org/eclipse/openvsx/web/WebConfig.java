@@ -30,7 +30,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${ovsx.webui.url:}")
     String webuiUrl;
 
-    @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/admin-dashboard/**}")
+    @Value("${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/user-settings/**,/publish,/admin-dashboard/**}")
     String[] frontendRoutes;
 
     public WebConfig(Optional<MirrorExtensionHandlerInterceptor> mirrorExtensionHandlerInterceptor) {
