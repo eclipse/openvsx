@@ -15,13 +15,20 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.util.TimeUtil;
 
 import static java.util.Objects.requireNonNull;
 
+// Same reasoning as on Extension: the paths that write a token row each touch a different column -
+// the upgrade job rewrites `value` and `version`, using a token writes `accessed_timestamp`, revoking
+// one writes `active`. Without @DynamicUpdate, Hibernate's full-row UPDATE would rewrite all of them
+// from whatever the writing transaction happened to load, so an upgrade or a token use running
+// alongside a revoke could silently put `active` back to true.
 @Entity
+@DynamicUpdate
 @Table(name = "personal_access_token")
 public class PersonalAccessToken implements Serializable {
 
