@@ -289,7 +289,9 @@ public class PublishExtensionVersionHandler {
         }
 
         extension.setLastUpdatedDate(extVersion.getTimestamp());
-        extension.getVersions().add(extVersion);
+        // Only the owning side is set. Extension.versions is mappedBy this field and has no cascade, so
+        // adding to it persists nothing; on an existing extension the collection is lazy and untouched,
+        // making the add a queued operation Hibernate discards at commit (HHH90030005).
         extVersion.setExtension(extension);
 
         validateLicense(processor, extVersion);
