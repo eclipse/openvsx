@@ -51,6 +51,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.VersionService;
@@ -128,7 +129,7 @@ class LocalRegistryServiceTest {
                 integrityService,
                 similarityCheckService,
                 new PublishingConfig(),
-                new TrustedPublishingConfig(),
+                new TrustedPublishingConfig(new TrustedPublishingProperties()),
                 Duration.ofSeconds(30));
 
         // A permissive default for a void method rather than a per-test expectation: the tests of

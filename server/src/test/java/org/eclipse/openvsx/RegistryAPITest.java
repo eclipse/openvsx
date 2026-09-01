@@ -80,6 +80,7 @@ import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -3747,7 +3748,7 @@ class RegistryAPITest {
 
         @Bean
         TrustedPublishingConfig trustedPublishingConfig() {
-            return new TrustedPublishingConfig();
+            return new TrustedPublishingConfig(new TrustedPublishingProperties());
         }
 
         @Bean

@@ -23,9 +23,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
@@ -57,7 +59,18 @@ class GitLabTrustedPublishingProviderTest {
     }
 
     private static GitLabTrustedPublishingProvider newProvider(TrustedPublishingConfig config) {
-        return new GitLabTrustedPublishingProvider(config) {
+        return newProvider(
+                config,
+                GitLabTrustedPublishingProvider.PROVIDER_ID,
+                GitLabTrustedPublishingProvider.PROVIDER_URL);
+    }
+
+    private static GitLabTrustedPublishingProvider newProvider(
+            TrustedPublishingConfig config,
+            String providerId,
+            String providerUrl
+    ) {
+        return new GitLabTrustedPublishingProvider(config, providerId, "GitLab", providerUrl, providerUrl) {
             @Override
             protected Map<String, Object> resolve(String projectPath) {
                 return Map.of(
@@ -151,11 +164,47 @@ class GitLabTrustedPublishingProviderTest {
         assertTrue(gl.matches(registeredClaims(), token));
     }
 
+    @Test
+    void selfHostedInstanceIsAddressedByItsOwnUrl() throws Exception {
+        GitLabTrustedPublishingProvider gl = newProvider(config, "acme-gitlab", "https://gitlab.acme.example");
+        Map<String, String> data = gl.extractRequest(
+                Map.of(
+                        "namespace",
+                        "gitlab-org",
+                        "project",
+                        "gitlab",
+                        "workflow",
+                        ".gitlab-ci.yml"));
+        assertEquals("gitlab.acme.example/gitlab-org/gitlab//.gitlab-ci.yml", data.get("ci_config_ref_uri"));
+        assertEquals("acme-gitlab", gl.getProviderId());
+    }
+
+    @Test
+    void instanceServedUnderARelativeUrlRootKeepsItsPath() throws Exception {
+        GitLabTrustedPublishingProvider gl = newProvider(config, "acme-gitlab", "https://acme.example/gitlab/");
+        Map<String, String> data = gl.extractRequest(
+                Map.of(
+                        "namespace",
+                        "gitlab-org",
+                        "project",
+                        "gitlab",
+                        "workflow",
+                        ".gitlab-ci.yml"));
+        assertEquals("acme.example/gitlab/gitlab-org/gitlab//.gitlab-ci.yml", data.get("ci_config_ref_uri"));
+    }
+
+    @Test
+    void malformedInstanceUrlIsRejected() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> newProvider(config, "acme-gitlab", "not-a-url"));
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
         TrustedPublishingConfig trustedPublishingConfig() {
-            return new TrustedPublishingConfig();
+            return new TrustedPublishingConfig(new TrustedPublishingProperties());
         }
     }
 }

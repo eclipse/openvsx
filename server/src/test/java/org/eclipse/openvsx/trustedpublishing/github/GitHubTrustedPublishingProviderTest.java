@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -155,7 +156,7 @@ class GitHubTrustedPublishingProviderTest {
     static class TestConfig {
         @Bean
         TrustedPublishingConfig trustedPublishingConfig() {
-            return new TrustedPublishingConfig();
+            return new TrustedPublishingConfig(new TrustedPublishingProperties());
         }
     }
 }

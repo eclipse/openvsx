@@ -12,15 +12,30 @@
  *****************************************************************************/
 package org.eclipse.openvsx.trustedpublishing;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.annotation.PostConstruct;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties.GitLabInstance;
+import org.eclipse.openvsx.trustedpublishing.github.GitHubTrustedPublishingProvider;
+
 @Configuration
+@EnableConfigurationProperties(TrustedPublishingProperties.class)
 public class TrustedPublishingConfig {
+
+    private final TrustedPublishingProperties properties;
+
+    public TrustedPublishingConfig(TrustedPublishingProperties properties) {
+        this.properties = properties;
+    }
+
     /**
      * Whether trusted publishing is enabled at all.
      */
@@ -41,7 +56,8 @@ public class TrustedPublishingConfig {
     private List<String> forbiddenJwtHeaders;
 
     /**
-     * The comma separated list of active trusted publishing providers.
+     * The comma separated list of active trusted publishing providers. An id listed here must be
+     * {@code github} or one of the configured GitLab instances, see {@link TrustedPublishingProperties}.
      * Default: {@code github}.
      */
     @Value("${ovsx.trusted-publishing.active-providers:github}")
@@ -66,6 +82,15 @@ public class TrustedPublishingConfig {
         return activeProviders;
     }
 
+    /**
+     * The configured GitLab instances, keyed by provider id. Whether an instance can actually be used
+     * is decided by {@link #getActiveProviders()}.
+     */
+    @NonNull
+    public Map<String, GitLabInstance> getGitLabInstances() {
+        return properties.getGitlab();
+    }
+
     @PostConstruct
     public void validate() {
         if (enabled) {
@@ -80,6 +105,37 @@ public class TrustedPublishingConfig {
                 throw new IllegalStateException(
                         "Trusted publishing is enabled, but there are no active providers configured");
             }
+            validateGitLabInstances();
+        }
+    }
+
+    private void validateGitLabInstances() {
+        for (var entry : getGitLabInstances().entrySet()) {
+            var id = entry.getKey();
+            var instance = entry.getValue();
+            if (GitHubTrustedPublishingProvider.PROVIDER_ID.equals(id)) {
+                throw new IllegalStateException(
+                        "GitLab instance '" + id + "' uses the provider id of the GitHub provider");
+            }
+            // a configured instance replaces a default one as a whole, so it must carry every field itself
+            if (instance.getName() == null || instance.getName().isBlank()
+                    || instance.getUrl() == null || instance.getUrl().isBlank()) {
+                throw new IllegalStateException("GitLab instance '" + id + "' has no name or no URL configured");
+            }
+            for (var url : List.of(instance.getUrl(), instance.getIssuer())) {
+                if (hostOf(url) == null) {
+                    throw new IllegalStateException("GitLab instance '" + id + "' has a malformed URL: " + url);
+                }
+            }
+        }
+    }
+
+    @Nullable
+    private static String hostOf(String url) {
+        try {
+            return URI.create(url).getHost();
+        } catch (IllegalArgumentException exc) {
+            return null;
         }
     }
 }

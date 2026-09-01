@@ -102,6 +102,7 @@ import org.eclipse.openvsx.storage.LocalStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
+import org.eclipse.openvsx.trustedpublishing.TrustedPublishingProperties;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
@@ -2638,7 +2639,7 @@ class AdminAPITest {
                     integrityService,
                     similarityCheckService,
                     new PublishingConfig(),
-                    new TrustedPublishingConfig(),
+                    new TrustedPublishingConfig(new TrustedPublishingProperties()),
                     Duration.ofSeconds(30));
         }
 

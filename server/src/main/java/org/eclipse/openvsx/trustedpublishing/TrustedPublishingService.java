@@ -38,9 +38,7 @@ import org.eclipse.openvsx.json.AccessTokenJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.trustedpublishing.github.GitHubTrustedPublishingProvider;
-import org.eclipse.openvsx.trustedpublishing.gitlab.EclipseGitLabTrustedPublishingProvider;
 import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProvider;
-import org.eclipse.openvsx.trustedpublishing.gitlab.GitLabTrustedPublishingProviderSupport;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 import org.eclipse.openvsx.util.TimeUtil;
@@ -71,15 +69,42 @@ public class TrustedPublishingService {
         this.entityManager = requireNonNull(entityManager);
 
         if (config.isEnabled()) {
-            this.providers = Map.of(
-                    GitHubTrustedPublishingProvider.PROVIDER_ID,
-                    new GitHubTrustedPublishingProvider(config),
-                    GitLabTrustedPublishingProvider.PROVIDER_ID,
-                    new GitLabTrustedPublishingProvider(config),
-                    EclipseGitLabTrustedPublishingProvider.PROVIDER_ID,
-                    new EclipseGitLabTrustedPublishingProvider(config));
+            this.providers = createProviders(config);
+            warnAboutUnknownActiveProviders(config);
         } else {
             this.providers = Map.of();
+        }
+    }
+
+    /**
+     * GitHub is a single, hard-wired provider; every configured GitLab instance becomes one of its own.
+     */
+    private static Map<String, TrustedPublishingProviderSupport> createProviders(TrustedPublishingConfig config) {
+        var providers = new HashMap<String, TrustedPublishingProviderSupport>();
+        providers.put(GitHubTrustedPublishingProvider.PROVIDER_ID, new GitHubTrustedPublishingProvider(config));
+        config.getGitLabInstances()
+                .forEach(
+                        (providerId, instance) -> providers.put(
+                                providerId,
+                                new GitLabTrustedPublishingProvider(
+                                        config,
+                                        providerId,
+                                        instance.getName(),
+                                        instance.getUrl(),
+                                        instance.getIssuer())));
+        return Map.copyOf(providers);
+    }
+
+    /**
+     * An active provider without a matching definition is silently unusable, which is hard to tell apart
+     * from a working setup, so say so at startup.
+     */
+    private void warnAboutUnknownActiveProviders(TrustedPublishingConfig config) {
+        var unknown = config.getActiveProviders().stream().filter(id -> !providers.containsKey(id)).toList();
+        if (!unknown.isEmpty()) {
+            logger.warn(
+                    "Trusted publishing lists active providers that are not configured and stay unusable: {}",
+                    unknown);
         }
     }
 
