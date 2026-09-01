@@ -102,7 +102,4 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
             @Param("enforcedOnly") Boolean enforcedOnly
     );
 
-    /** Delete a decision by ID */
-    void deleteById(long id);
-
 }

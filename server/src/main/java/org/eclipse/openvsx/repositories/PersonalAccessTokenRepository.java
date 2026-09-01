@@ -25,8 +25,6 @@ import org.eclipse.openvsx.entities.UserData;
 
 public interface PersonalAccessTokenRepository extends Repository<PersonalAccessToken, Long> {
 
-    Streamable<PersonalAccessToken> findAll();
-
     Streamable<PersonalAccessToken> findByUser(UserData user);
 
     Streamable<PersonalAccessToken> findByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);

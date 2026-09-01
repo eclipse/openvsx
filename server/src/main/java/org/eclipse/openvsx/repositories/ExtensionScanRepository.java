@@ -46,9 +46,6 @@ public interface ExtensionScanRepository extends Repository<ExtensionScan, Long>
             String targetPlatform
     );
 
-    /** Find all scans for a namespace */
-    Streamable<ExtensionScan> findByNamespaceName(String namespaceName);
-
     /** Find all scans with a specific status */
     Streamable<ExtensionScan> findByStatus(ScanStatus status);
 
