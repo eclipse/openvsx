@@ -161,6 +161,20 @@ public class UserService {
             throw new ErrorResultException(
                     "User " + user.getLoginName() + " is not a member of " + namespace.getName() + ".");
         }
+        return removeNamespaceMembership(membership);
+    }
+
+    /**
+     * Removes a membership that the caller already holds, for callers walking a user's memberships rather
+     * than naming one. Nothing here can fail on a row that has since gone or been duplicated, which matters
+     * for {@code AdminService#revokePublisherContributions}: it revokes a whole publisher in one
+     * transaction, and one unremovable membership must not take the token and version deactivations with it.
+     */
+    @Transactional(rollbackOn = ErrorResultException.class)
+    @CacheEvict(value = { CACHE_NAMESPACE_DETAILS_JSON }, key = "#membership.namespace.name")
+    public ResultJson removeNamespaceMembership(NamespaceMembership membership) {
+        var namespace = membership.getNamespace();
+        var user = membership.getUser();
         entityManager.remove(membership);
         revokeTrustedPublishers(namespace, user);
         return ResultJson.success("Removed " + user.getLoginName() + " from namespace " + namespace.getName() + ".");

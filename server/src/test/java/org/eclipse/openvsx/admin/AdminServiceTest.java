@@ -120,10 +120,9 @@ class AdminServiceTest {
 
         var result = adminService.revokePublisherContributions("github", "amy", admin);
 
-        // going through UserService is what deletes the trusted publishers the revoked owner registered;
-        // deleting the membership rows in bulk would leave those registrations behind
-        verify(users).removeNamespaceMember(namespace, user);
-        verify(repositories, never()).deleteMemberships(user);
+        // handing over the row we already hold is what keeps one unremovable membership from aborting the
+        // whole revoke, and going through UserService is what deletes the trusted publishers with it
+        verify(users).removeNamespaceMembership(membership);
         assertThat(result.getSuccess()).contains("removed 1 namespace memberships");
     }
 

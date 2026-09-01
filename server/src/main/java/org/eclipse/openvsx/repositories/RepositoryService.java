@@ -486,10 +486,6 @@ public class RepositoryService {
         return membershipRepo.findByUserAndNamespace(user, namespace);
     }
 
-    public void deleteMemberships(UserData user) {
-        membershipRepo.deleteByUser(user);
-    }
-
     public boolean hasMembership(UserData user, Namespace namespace) {
         return membershipJooqRepo.hasMembership(user, namespace);
     }
