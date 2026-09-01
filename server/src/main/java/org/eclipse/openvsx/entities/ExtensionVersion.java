@@ -209,7 +209,8 @@ public class ExtensionVersion implements Serializable {
         if (this.getPublishedBy() != null) {
             json.setPublishedBy(this.getPublishedBy().toUserJson());
         }
-        json.setTrustedPublisher(getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
+        json.setPublishedWithTrustedPublishing(
+                getPublishedWithTt() != null && getPublishedWithTt() == PersonalAccessTokenType.TPT);
         if (this.getDependencies() != null) {
             json.setDependencies(toExtensionReferenceJson(this.getDependencies()));
         }
