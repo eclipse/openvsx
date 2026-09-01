@@ -75,6 +75,8 @@ export interface Extension {
     targetPlatform: string;
     preRelease?: boolean;
     publishedBy: UserData;
+    /** True when this version was published through a trusted publishing workflow. */
+    publishedWithTrustedPublishing?: boolean;
     verified: boolean;
     // key: version, value: url
     allVersions: { [version: string]: UrlString };

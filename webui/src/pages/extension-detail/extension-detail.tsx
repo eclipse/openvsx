@@ -38,6 +38,7 @@ import { ExtensionDetailChanges } from './extension-detail-changes';
 import { ExtensionDetailReviews } from './extension-detail-reviews';
 
 import { ExtensionDetailRoutes } from './extension-detail-routes';
+import { TrustedPublishingIcon } from './trusted-publishing-icon';
 import { useExtensionDetail } from './use-extension-details';
 import { KbdKey } from '../../components/kbd-key';
 import { useShortcut } from '../../hooks/use-shortcut';
@@ -248,6 +249,10 @@ const ExtensionHeaderInfo: FunctionComponent<{
                 <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                     Published by&nbsp;
                     <UserPopover user={extension.publishedBy} color={headerTextColor} />
+                    <TrustedPublishingIcon
+                        publishedWithTrustedPublishing={extension.publishedWithTrustedPublishing}
+                        color={headerTextColor}
+                    />
                 </Box>
                 <TextDivider backgroundColor={headerTextColor} collapseSmall />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
