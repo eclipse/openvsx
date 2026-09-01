@@ -29,6 +29,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.ExtensionReferenceJson;
@@ -91,6 +92,16 @@ public class ExtensionVersion implements Serializable {
     @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private PersonalAccessTokenType publishedWithTt;
+
+    /**
+     * The token this version was published with, as best-effort provenance: it answers "what did this
+     * credential publish" after a leak. Nullable and allowed to decay - the token row is deleted when a
+     * one-time token is used or a forgotten user's tokens go - which is why authorship is recorded
+     * separately in {@link #publishedBy} and {@link #publishedWithTt} instead of being read through it.
+     */
+    @Column(name = "published_with_id")
+    @Nullable
+    private Long publishedWithId;
 
     private boolean active;
 
@@ -349,6 +360,15 @@ public class ExtensionVersion implements Serializable {
 
     public PersonalAccessTokenType getPublishedWithTt() {
         return publishedWithTt;
+    }
+
+    @Nullable
+    public Long getPublishedWithId() {
+        return publishedWithId;
+    }
+
+    public void setPublishedWithId(@Nullable Long publishedWithId) {
+        this.publishedWithId = publishedWithId;
     }
 
     public void setPublishedWithTt(PersonalAccessTokenType publishedWithTt) {

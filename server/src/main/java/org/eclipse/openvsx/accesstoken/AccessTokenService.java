@@ -277,7 +277,7 @@ public class AccessTokenService {
                 entityManager.remove(token);
             }
         }
-        return new AccessTokenAuthentication(token.getUser(), token.getType());
+        return new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId());
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {

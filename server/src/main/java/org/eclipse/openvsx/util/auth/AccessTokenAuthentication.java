@@ -20,7 +20,14 @@ import org.eclipse.openvsx.entities.UserData;
 /**
  * Represents user who presented a valid access token.
  */
-public record AccessTokenAuthentication(UserData userData, PersonalAccessTokenType type) implements AuthenticatedUser {
+/**
+ * @param tokenId the token that authenticated this request, recorded on whatever it publishes as
+ *                best-effort provenance. Kept as an id rather than the entity: nothing here should hold
+ *                a credential open, and the reference is allowed to decay when the token row goes.
+ */
+public record AccessTokenAuthentication(UserData userData, PersonalAccessTokenType type, long tokenId)
+        implements
+            AuthenticatedUser {
     @Override
     public @NonNull AuthenticationType authenticationType() {
         return AuthenticationType.TOKEN;

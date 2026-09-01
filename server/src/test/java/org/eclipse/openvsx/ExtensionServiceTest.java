@@ -318,7 +318,9 @@ class ExtensionServiceTest {
         var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
 
         assertThatThrownBy(
-                () -> svc.publishVersion(content, new AccessTokenAuthentication(token.getUser(), token.getType())))
+                () -> svc.publishVersion(
+                        content,
+                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId())))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("Insufficient access rights");
 
@@ -344,7 +346,9 @@ class ExtensionServiceTest {
         var content = new DrainOnCloseInputStream(raw, maxContentSize);
 
         assertThatThrownBy(
-                () -> svc.publishVersion(content, new AccessTokenAuthentication(token.getUser(), token.getType())))
+                () -> svc.publishVersion(
+                        content,
+                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId())))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the size limit")
                 .extracting(exc -> ((ErrorResultException) exc).getStatus())

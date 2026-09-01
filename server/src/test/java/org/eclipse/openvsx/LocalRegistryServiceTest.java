@@ -164,7 +164,7 @@ class LocalRegistryServiceTest {
         extVersion.setExtension(extension);
         extVersion.setVersion("1.0.0");
 
-        var tau = new AccessTokenAuthentication(token.getUser(), token.getType());
+        var tau = new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId());
 
         when(extensions.createExtensionFile(any())).thenReturn(tempFile);
         when(tokens.useAccessToken(eq("tok"), any())).thenReturn(tau);

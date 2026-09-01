@@ -286,7 +286,10 @@ class PublishExtensionVersionConcurrencyTest extends AbstractPostgresContainerTe
             return publishHandler
                     .createExtensionVersion(
                             processor,
-                            new AccessTokenAuthentication(publishToken().getUser(), publishToken().getType()),
+                            new AccessTokenAuthentication(
+                                    publishToken().getUser(),
+                                    publishToken().getType(),
+                                    publishToken().getId()),
                             LocalDateTime.now(),
                             false);
         }

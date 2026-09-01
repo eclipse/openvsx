@@ -25,10 +25,14 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
+import org.eclipse.openvsx.entities.Extension;
+import org.eclipse.openvsx.entities.ExtensionVersion;
+import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,6 +110,74 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         cleanUp(longLived);
         // the one-time token's own row is gone, but its user is not
         cleanUpUser("expiry-tpt-user");
+    }
+
+    // Best-effort provenance: it answers "what did this credential publish" after a leak, and must give
+    // way rather than stand in the way when the token itself is deleted.
+    @Test
+    void aVersionRemembersTheTokenItWasPublishedWithUntilThatTokenIsDeleted() {
+        var tokenId = persistToken("provenance", PersonalAccessTokenType.LLT, 1, null);
+        var versionId = persistVersionPublishedWith(tokenId);
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            assertThat(em.find(ExtensionVersion.class, versionId).getPublishedWithId()).isEqualTo(tokenId);
+        });
+
+        new TransactionTemplate(txManager)
+                .executeWithoutResult(status -> em.remove(em.find(PersonalAccessToken.class, tokenId)));
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            var version = em.find(ExtensionVersion.class, versionId);
+            // the reference decays, the authorship does not
+            assertThat(version.getPublishedWithId()).isNull();
+            assertThat(version.getPublishedBy()).isNotNull();
+            assertThat(version.getPublishedWithTt()).isEqualTo(PersonalAccessTokenType.LLT);
+        });
+
+        cleanUpVersion(versionId);
+        cleanUpUser("provenance-user");
+    }
+
+    private long persistVersionPublishedWith(long tokenId) {
+        return new TransactionTemplate(txManager).execute(status -> {
+            var token = em.find(PersonalAccessToken.class, tokenId);
+
+            var namespace = new Namespace();
+            namespace.setName("provenance-ns");
+            em.persist(namespace);
+
+            var extension = new Extension();
+            extension.setName("provenance-ext");
+            extension.setNamespace(namespace);
+            extension.setActive(true);
+            em.persist(extension);
+
+            var version = new ExtensionVersion();
+            version.setExtension(extension);
+            version.setVersion("1.0.0");
+            version.setTargetPlatform(TargetPlatform.NAME_UNIVERSAL);
+            version.setTimestamp(TimeUtil.getCurrentUTC());
+            version.setPublishedBy(token.getUser());
+            version.setPublishedWithTt(token.getType());
+            version.setPublishedWithId(token.getId());
+            em.persist(version);
+            em.flush();
+            return version.getId();
+        });
+    }
+
+    private void cleanUpVersion(long versionId) {
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            var version = em.find(ExtensionVersion.class, versionId);
+            var extension = version.getExtension();
+            var namespaceId = extension.getNamespace().getId();
+            em.remove(version);
+            em.flush();
+            em.createQuery("delete from Extension e where e.id = :id").setParameter("id", extension.getId())
+                    .executeUpdate();
+            em.createQuery("delete from Namespace n where n.id = :id").setParameter("id", namespaceId)
+                    .executeUpdate();
+        });
     }
 
     private long persistToken(String name, PersonalAccessTokenType type, int version, LocalDateTime expires) {

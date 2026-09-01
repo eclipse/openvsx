@@ -90,13 +90,17 @@ ALTER TABLE public.extension_version
 CREATE INDEX extension_version__published_by_id__idx ON public.extension_version (published_by_id);
 
 -- published_with_id keeps recording which credential was used, but as best-effort provenance rather
--- than a hard dependency: deleting a token in future clears the reference instead of being refused by
--- the database. The base migration left this constraint named by Hibernate; drop it by that generated
--- name and recreate under the naming convention used everywhere else on this table.
+-- than a hard dependency: it answers "what did this token publish" after a leak, while authorship is
+-- recorded permanently in published_by_id above. Deleting a token clears the reference instead of being
+-- refused by the database, so a one-time token used up, or a forgotten user's tokens, simply leave it
+-- null. The base migration left this constraint named by Hibernate; drop it by that generated name and
+-- recreate under the naming convention used everywhere else on this table.
 ALTER TABLE public.extension_version
     DROP CONSTRAINT fk70khj8pm0vacasuiiaq0w0r80;
 ALTER TABLE public.extension_version
-    DROP COLUMN published_with_id;
+    ADD CONSTRAINT extension_version_published_with_id_fkey
+        FOREIGN KEY (published_with_id) REFERENCES public.personal_access_token(id) ON DELETE SET NULL;
+
 
 -- and now we can delete all inactive one-time-usable personal access tokens
 DELETE FROM public.personal_access_token pat
