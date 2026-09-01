@@ -45,6 +45,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -152,6 +153,27 @@ class TrustedPublishingAPITest {
                 .andExpect(jsonPath("$.error").doesNotExist());
 
         verify(eclipseService).checkPublisherAgreement(user);
+    }
+
+    @Test
+    void createTrustedPublisher_returns403_whenPublisherAgreementIsMissing() throws Exception {
+        var user = mockLoggedInUser();
+        doThrow(
+                new ErrorResultException(
+                        "You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.",
+                        HttpStatus.FORBIDDEN))
+                .when(eclipseService)
+                .checkPublisherAgreement(user);
+
+        mockMvc.perform(createRequest(NAMESPACE, registrationBody(NAMESPACE, EXTENSION, PROVIDER, REGISTRATION)))
+                .andExpect(status().isForbidden())
+                .andExpect(
+                        jsonPath("$.error")
+                                .value(
+                                        "You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension."));
+
+        verify(trustedPublishing, never())
+                .registerTrustedPublisher(any(), anyString(), anyString(), anyString(), any());
     }
 
     @Test
