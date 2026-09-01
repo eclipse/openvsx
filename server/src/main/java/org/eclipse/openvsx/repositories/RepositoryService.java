@@ -195,6 +195,13 @@ public class RepositoryService {
         return trustedPublisherRepo.findTrustedPublishersByExtension(extension);
     }
 
+    public Streamable<TrustedPublisher> findTrustedPublishersByNamespaceAndCreatedBy(
+            Namespace namespace,
+            UserData createdBy
+    ) {
+        return trustedPublisherRepo.findByExtension_NamespaceAndCreatedBy(namespace, createdBy);
+    }
+
     public TrustedPublisher findTrustedPublisher(long id) {
         return trustedPublisherRepo.findById(id);
     }

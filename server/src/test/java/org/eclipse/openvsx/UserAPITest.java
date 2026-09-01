@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -102,6 +103,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     }
 )
 class UserAPITest {
+
+    @BeforeEach
+    void noTrustedPublishersByDefault() {
+        // the real repository hands back an empty Streamable rather than null; only the trusted
+        // publishing tests care what it actually holds
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(any(), any()))
+                .thenReturn(Streamable.empty());
+    }
 
     @MockitoSpyBean
     UserService users;

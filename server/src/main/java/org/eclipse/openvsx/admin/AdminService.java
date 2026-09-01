@@ -536,13 +536,17 @@ public class AdminService {
             extensions.updateExtension(extension);
         }
 
-        // revoke namespace memberships
+        // Revoke namespace memberships one by one through UserService rather than deleting them in bulk:
+        // that is what deletes the trusted publishers registered under an ownership being revoked here, and
+        // what evicts the namespace details cache - same as when an owner removes a member themselves.
         var namespaceMemberships = repositories.findMemberships(user);
         var numberOfNamespaceMemberships = 0L;
         // add a null check due to tests using mocks which return null
         if (namespaceMemberships != null) {
-            numberOfNamespaceMemberships = namespaceMemberships.stream().count();
-            repositories.deleteMemberships(user);
+            for (var membership : namespaceMemberships.toList()) {
+                users.removeNamespaceMember(membership.getNamespace(), user);
+                numberOfNamespaceMemberships++;
+            }
         }
 
         var message = "Deactivated " + deactivatedTokenCount + " tokens, "

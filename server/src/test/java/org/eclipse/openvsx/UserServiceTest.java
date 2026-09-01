@@ -21,13 +21,17 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.util.Streamable;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import org.eclipse.openvsx.cache.CacheService;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
+import org.eclipse.openvsx.entities.NamespaceMembership;
+import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.NamespaceDetailsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
@@ -153,6 +157,97 @@ class UserServiceTest {
         users.updateNamespaceDetails(details, user);
 
         verify(repositories, never()).findConflictingNamespaces(anyString(), any(Namespace.class));
+    }
+
+    // A trusted publisher may only be registered by a namespace owner, so it must not survive the
+    // ownership it was created under - the publishing tokens issued under it would outlive it otherwise.
+
+    @Test
+    void shouldDeleteTrustedPublishersWhenAnOwnerLeavesTheNamespace() {
+        var user = mockUser("auth");
+        var namespace = mockNamespace();
+        var membership = mockMembership(user, namespace, NamespaceMembership.ROLE_OWNER);
+        var trustedPublisher = mockTrustedPublisher(namespace);
+        Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, user))
+                .thenReturn(Streamable.of(trustedPublisher));
+
+        users.removeNamespaceMember(namespace, user);
+
+        verify(repositories).deleteTrustedPublisher(trustedPublisher);
+    }
+
+    @Test
+    void shouldDeleteTrustedPublishersWhenAnOwnerIsDemotedToContributor() {
+        var user = mockUser("auth");
+        var namespace = mockNamespace();
+        var membership = mockMembership(user, namespace, NamespaceMembership.ROLE_OWNER);
+        var trustedPublisher = mockTrustedPublisher(namespace);
+        Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, user))
+                .thenReturn(Streamable.of(trustedPublisher));
+
+        users.addNamespaceMember(namespace, user, NamespaceMembership.ROLE_CONTRIBUTOR);
+
+        assertEquals(NamespaceMembership.ROLE_CONTRIBUTOR, membership.getRole());
+        verify(repositories).deleteTrustedPublisher(trustedPublisher);
+    }
+
+    @Test
+    void shouldKeepTrustedPublishersWhenAContributorIsPromotedToOwner() {
+        var user = mockUser("auth");
+        var namespace = mockNamespace();
+        var membership = mockMembership(user, namespace, NamespaceMembership.ROLE_CONTRIBUTOR);
+        Mockito.when(repositories.findMembership(user, namespace)).thenReturn(membership);
+
+        users.addNamespaceMember(namespace, user, NamespaceMembership.ROLE_OWNER);
+
+        assertEquals(NamespaceMembership.ROLE_OWNER, membership.getRole());
+        verify(repositories, never()).findTrustedPublishersByNamespaceAndCreatedBy(any(), any());
+        verify(repositories, never()).deleteTrustedPublisher(any());
+    }
+
+    @Test
+    void shouldKeepTrustedPublishersOfEveryOtherOwner() {
+        var leaving = mockUser(1, "leaving_user", "auth-1");
+        var namespace = mockNamespace();
+        var membership = mockMembership(leaving, namespace, NamespaceMembership.ROLE_OWNER);
+        Mockito.when(repositories.findMembership(leaving, namespace)).thenReturn(membership);
+        // only the registrations this user created are looked up, so the other owners' ones stay
+        Mockito.when(repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, leaving))
+                .thenReturn(Streamable.empty());
+
+        users.removeNamespaceMember(namespace, leaving);
+
+        verify(repositories, never()).deleteTrustedPublisher(any());
+    }
+
+    private Namespace mockNamespace() {
+        var namespace = new Namespace();
+        namespace.setId(1);
+        namespace.setName("my-ns");
+        return namespace;
+    }
+
+    private NamespaceMembership mockMembership(UserData user, Namespace namespace, String role) {
+        var membership = new NamespaceMembership();
+        membership.setUser(user);
+        membership.setNamespace(namespace);
+        membership.setRole(role);
+        return membership;
+    }
+
+    private TrustedPublisher mockTrustedPublisher(Namespace namespace) {
+        var extension = new Extension();
+        extension.setId(2);
+        extension.setName("my-ext");
+        extension.setNamespace(namespace);
+
+        var trustedPublisher = new TrustedPublisher();
+        trustedPublisher.setId(3);
+        trustedPublisher.setExtension(extension);
+        trustedPublisher.setProvider("github");
+        return trustedPublisher;
     }
 
     private UserData mockUser(String authId) {
