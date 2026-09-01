@@ -41,6 +41,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.DeleteQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -193,6 +194,33 @@ public class ElasticSearchService implements ISearchService {
                 rwLock.writeLock().unlock();
             }
         }
+    }
+
+    /**
+     * Reports on the index itself rather than on what a search returns. The document count next to the
+     * number of extensions the index is built from is the useful part: the two drifting apart is how a
+     * half-populated or partly purged index shows itself, which searching for something and not finding
+     * it does not distinguish from the extension simply not existing.
+     */
+    public SearchIndexStats getIndexStats() {
+        var activeExtensions = repositories.countActiveExtensions();
+        if (!isEnabled()) {
+            return new SearchIndexStats(false, SearchIndexStats.ELASTICSEARCH, false, null, activeExtensions, null);
+        }
+
+        var indexOps = searchOperations.indexOps(ExtensionSearch.class);
+        if (!indexOps.exists()) {
+            return new SearchIndexStats(true, SearchIndexStats.ELASTICSEARCH, false, null, activeExtensions, null);
+        }
+
+        var documents = searchOperations.count(Query.findAll(), ExtensionSearch.class);
+        return new SearchIndexStats(
+                true,
+                SearchIndexStats.ELASTICSEARCH,
+                true,
+                documents,
+                activeExtensions,
+                maxResultWindow);
     }
 
     @Async

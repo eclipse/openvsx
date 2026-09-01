@@ -590,6 +590,16 @@ export interface Settings {
     readOnly: boolean;
 }
 
+export interface SearchIndex {
+    enabled: boolean;
+    implementation: 'elasticsearch' | 'database' | 'none';
+    indexExists: boolean;
+    /** Absent when there is no index to count - the database engine searches the tables directly. */
+    indexedDocuments?: number;
+    activeExtensions: number;
+    maxResultWindow?: number;
+}
+
 export interface ConsistencyCheck {
     id: string;
     name: string;

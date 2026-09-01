@@ -55,6 +55,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.PersistedLogJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SearchIndexJson;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.StatsJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
@@ -322,6 +323,37 @@ public class AdminAPI {
     private String toString(PersistedLog log) {
         var timestamp = log.getTimestamp().minusNanos(log.getTimestamp().getNano());
         return timestamp + "\t" + log.getUser().getLoginName() + "\t" + log.getMessage();
+    }
+
+    @GetMapping(
+        path = "/search-index",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Report the state of the search index")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The state of the search index is returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = SearchIndexJson.class)
+        )
+    )
+    public ResponseEntity<SearchIndexJson> getSearchIndex() {
+        try {
+            admins.checkAdminUser();
+
+            var stats = search.getIndexStats();
+            var json = new SearchIndexJson();
+            json.setEnabled(stats.enabled());
+            json.setImplementation(stats.implementation());
+            json.setIndexExists(stats.indexExists());
+            json.setIndexedDocuments(stats.indexedDocuments());
+            json.setActiveExtensions(stats.activeExtensions());
+            json.setMaxResultWindow(stats.maxResultWindow());
+            return ResponseEntity.ok(json);
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(SearchIndexJson.class);
+        }
     }
 
     @PostMapping(

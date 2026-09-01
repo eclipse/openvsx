@@ -17,6 +17,7 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ExtensionSharpIcon from '@mui/icons-material/ExtensionSharp';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import HistoryIcon from '@mui/icons-material/History';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
@@ -44,6 +45,7 @@ import { Welcome } from './welcome';
 const ExtensionAdmin = lazy(() => import('./extension-admin').then(m => ({ default: m.ExtensionAdmin })));
 const UsageStatsView = lazy(() => import('./usage-stats/usage-stats').then(m => ({ default: m.UsageStatsView })));
 const DataConsistency = lazy(() => import('./consistency/consistency').then(m => ({ default: m.DataConsistency })));
+const SearchIndexAdmin = lazy(() => import('./search-index/search-index').then(m => ({ default: m.SearchIndexAdmin })));
 
 const navConfig: NavEntry[] = [
     {
@@ -106,6 +108,12 @@ const navConfig: NavEntry[] = [
         name: 'Data Consistency',
         icon: <FactCheckIcon />,
         description: 'Check the database for known inconsistencies and fix them'
+    },
+    {
+        path: AdminDashboardRoutes.SEARCH_INDEX,
+        name: 'Search Index',
+        icon: <ManageSearchIcon />,
+        description: 'Inspect the search index and rebuild it'
     }
 ];
 
@@ -188,6 +196,7 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
                                     <Route path='/settings' element={<RuntimeSettingsPage />} />
                                     <Route path='/logs' element={<Logs />} />
                                     <Route path='/consistency' element={<DataConsistency />} />
+                                    <Route path='/search-index' element={<SearchIndexAdmin />} />
                                     <Route path='*' element={<Welcome items={navConfig} />} />
                                 </Routes>
                             </Suspense>
