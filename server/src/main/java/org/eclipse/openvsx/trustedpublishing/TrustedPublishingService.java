@@ -14,7 +14,8 @@ package org.eclipse.openvsx.trustedpublishing;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +81,9 @@ public class TrustedPublishingService {
      * GitHub is a single, hard-wired provider; every configured GitLab instance becomes one of its own.
      */
     private static Map<String, TrustedPublishingProviderSupport> createProviders(TrustedPublishingConfig config) {
-        var providers = new HashMap<String, TrustedPublishingProviderSupport>();
+        // insertion-ordered, so the providers are always offered in the same order: GitHub first, then the
+        // GitLab instances as configured. An unordered map would reshuffle the list on every restart.
+        var providers = new LinkedHashMap<String, TrustedPublishingProviderSupport>();
         providers.put(GitHubTrustedPublishingProvider.PROVIDER_ID, new GitHubTrustedPublishingProvider(config));
         config.getGitLabInstances()
                 .forEach(
@@ -92,7 +95,7 @@ public class TrustedPublishingService {
                                         instance.getName(),
                                         instance.getUrl(),
                                         instance.getIssuer())));
-        return Map.copyOf(providers);
+        return Collections.unmodifiableMap(providers);
     }
 
     /**
@@ -242,7 +245,7 @@ public class TrustedPublishingService {
         ensureEnabled();
         return providers.entrySet().stream()
                 .filter(e -> e.getValue().isActive())
-                .collect(HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), HashMap::putAll);
+                .collect(LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), LinkedHashMap::putAll);
     }
 
     /**
