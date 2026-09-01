@@ -144,22 +144,22 @@ class AccessTokenServiceTest {
     // only it can work across pods anyway.
     @Test
     void generatesATokenValueWithoutAskingTheDatabase() {
-        when(config.getPrefix()).thenReturn("ovsx_");
+        when(config.getPrefix()).thenReturn("ovsx");
 
         var value = accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT);
 
         // prefix, then the marker saying what kind of token this is, then 256 bits base64url encoded
-        assertThat(value).startsWith("ovsx_at_");
-        assertThat(value.substring("ovsx_at_".length())).hasSize(43).doesNotContain("=", "+", "/");
+        assertThat(value).startsWith("ovsxat_");
+        assertThat(value.substring("ovsxat_".length())).hasSize(43).doesNotContain("=", "+", "/");
         verifyNoInteractions(repositories);
     }
 
     @Test
     void marksEachKindOfTokenDistinctly() {
-        when(config.getPrefix()).thenReturn("ovsx_");
+        when(config.getPrefix()).thenReturn("ovsx");
 
-        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.TPT)).startsWith("ovsx_tp_");
-        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT)).startsWith("ovsx_at_");
+        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.TPT)).startsWith("ovsxtp_");
+        assertThat(accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT)).startsWith("ovsxat_");
     }
 
     @Test
@@ -186,7 +186,7 @@ class AccessTokenServiceTest {
         trustedPublisher.setExtension(extension);
         trustedPublisher.setCreatedBy(user);
         trustedPublisher.setRegistration(Map.of());
-        when(config.getPrefix()).thenReturn("ovsx_");
+        when(config.getPrefix()).thenReturn("ovsx");
 
         var before = LocalDateTime.now(ZoneId.of("UTC"));
         var json = accessTokenService
