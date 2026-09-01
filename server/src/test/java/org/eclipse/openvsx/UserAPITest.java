@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -85,6 +86,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(UserAPI.class)
 @MockitoBean(
     types = {
+        DSLContext.class,
         EclipseService.class,
         ClientRegistrationRepository.class,
         StorageUtilService.class,
@@ -1191,9 +1193,10 @@ class UserAPITest {
                 UUIDService uuidService,
                 EntityManager entityManager,
                 RepositoryService repositories,
-                MailService mailService
+                MailService mailService,
+                DSLContext dsl
         ) {
-            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService);
+            return new AccessTokenService(config, uuidService, entityManager, repositories, mailService, dsl);
         }
 
         @Bean

@@ -19,13 +19,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.util.Streamable;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
@@ -61,6 +64,9 @@ class AccessTokenServiceTest {
 
     @Mock
     MailService mail;
+
+    @Mock
+    DSLContext dsl;
 
     @InjectMocks
     AccessTokenService accessTokenService;
@@ -108,6 +114,33 @@ class AccessTokenServiceTest {
         var tau = accessTokenService.useAccessToken("tok", new AccessTokenAction.Verify());
 
         assertThat(tau).isNull();
+    }
+
+    // The upgrade job is enqueued from every pod's own ApplicationStartedEvent, so the advisory lock is
+    // what keeps one rolling update from having each of them scan and rewrite the same rows.
+    @Test
+    void skipsTheTokenUpgradeWhenAnotherInstanceHoldsTheLock() {
+        var service = Mockito.spy(accessTokenService);
+        Mockito.doReturn(false).when(service).tryAcquireUpgradeLock();
+
+        assertThat(service.upgradeTokens()).isZero();
+
+        verifyNoInteractions(repositories);
+    }
+
+    @Test
+    void upgradesTokensWhenItWinsTheLock() {
+        var service = Mockito.spy(accessTokenService);
+        Mockito.doReturn(true).when(service).tryAcquireUpgradeLock();
+        var legacy = new PersonalAccessToken();
+        legacy.setVersion(0);
+        legacy.setValue("raw");
+        when(repositories.findAllPersonalAccessTokensByVersion(0)).thenReturn(Streamable.of(legacy));
+
+        assertThat(service.upgradeTokens()).isEqualTo(1);
+
+        assertThat(legacy.getVersion()).isEqualTo(1);
+        assertThat(legacy.getValue()).isNotEqualTo("raw");
     }
 
     // The old implementation regenerated until repositories.hasPersonalAccessToken(value) came back

@@ -22,7 +22,11 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -47,6 +51,15 @@ import static org.eclipse.openvsx.util.UrlUtil.createApiUrl;
 
 @Service
 public class AccessTokenService {
+    /**
+     * Arbitrary, fixed key for the Postgres advisory lock guarding the token upgrade below. Must stay
+     * distinct from every other advisory lock key this application uses; see
+     * {@code ExtensionScanJobRecoveryService.RECOVERY_LOCK_KEY} for the other one.
+     */
+    private static final long UPGRADE_LOCK_KEY = 891_234_567_890_124L;
+
+    private static final Logger logger = LoggerFactory.getLogger(AccessTokenService.class);
+
     private static final int TOKEN_VERSION_0 = 0;
     private static final int TOKEN_VERSION_1 = 1;
     private static final int[] ALL_TOKEN_VERSIONS = { TOKEN_VERSION_0, TOKEN_VERSION_1 };
@@ -57,19 +70,22 @@ public class AccessTokenService {
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final MailService mail;
+    private final DSLContext dsl;
 
     public AccessTokenService(
             AccessTokenConfig config,
             UUIDService uuidService,
             EntityManager entityManager,
             RepositoryService repositories,
-            MailService mail
+            MailService mail,
+            DSLContext dsl
     ) {
         this.config = config;
         this.uuidService = uuidService;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.mail = mail;
+        this.dsl = dsl;
     }
 
     /**
@@ -280,8 +296,24 @@ public class AccessTokenService {
         return repositories.updateExpiresTimeForLegacyPersonalAccessTokens(expirationTime, PersonalAccessTokenType.LLT);
     }
 
+    /**
+     * Upgrades every token still stored in a legacy format.
+     * <p>
+     * The job that calls this is enqueued from {@code ApplicationStartedEvent}, which fires in every
+     * instance's own JVM: during a rolling update several pods run this against the same rows. The work
+     * itself is idempotent - each row is hashed from the raw value it still holds, and the row stops
+     * matching once upgraded - but there is no point in every pod scanning and rewriting the whole set,
+     * so a transaction-scoped advisory lock lets one of them do it. {@code pg_try_advisory_xact_lock}
+     * returns immediately rather than blocking, and Postgres drops the lock when this method's
+     * transaction ends, so there is no unlock to forget and none can leak onto a pooled connection.
+     */
     @Transactional
     public int upgradeTokens() {
+        if (!tryAcquireUpgradeLock()) {
+            logger.debug("Another instance already holds the token upgrade lock, skipping");
+            return 0;
+        }
+
         int upgradedCount = 0;
         for (int version : ALL_TOKEN_VERSIONS) {
             if (version == TOKEN_CURRENT_VERSION) {
@@ -295,6 +327,14 @@ public class AccessTokenService {
             }
         }
         return upgradedCount;
+    }
+
+    // Package-private so a test can stub it via a spy without needing two real database connections.
+    boolean tryAcquireUpgradeLock() {
+        return Boolean.TRUE.equals(
+                dsl.fetchValue(
+                        DSL.select(
+                                DSL.function("pg_try_advisory_xact_lock", Boolean.class, DSL.val(UPGRADE_LOCK_KEY)))));
     }
 
     private boolean upgradeToken(PersonalAccessToken token) {
