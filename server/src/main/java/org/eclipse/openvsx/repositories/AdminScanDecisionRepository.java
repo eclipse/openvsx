@@ -33,9 +33,6 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
     /** Save a new or update an existing decision */
     AdminScanDecision save(AdminScanDecision decision);
 
-    /** Find a decision by its ID */
-    AdminScanDecision findById(long id);
-
     /** Find the decision for a specific scan */
     AdminScanDecision findByScan(ExtensionScan scan);
 
@@ -48,16 +45,6 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
 
     /** Count decisions made by a given admin user */
     long countByDecidedBy(UserData decidedBy);
-
-    /** Count ALLOWED decisions within a date range.
-     *  Uses native query to handle nullable timestamp parameters correctly with PostgreSQL. */
-    @Query(value = """
-            SELECT COUNT(*) FROM admin_scan_decision
-            WHERE decision = :decision
-              AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR decided_at >= :startedFrom)
-              AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR decided_at <= :startedTo)
-            """, nativeQuery = true)
-    long countByDecisionAndDateRange(String decision, LocalDateTime startedFrom, LocalDateTime startedTo);
 
     /**
      * Counts decisions where the associated scan has matching validation failures or threats.

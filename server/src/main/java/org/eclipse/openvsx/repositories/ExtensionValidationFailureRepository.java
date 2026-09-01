@@ -35,9 +35,6 @@ public interface ExtensionValidationFailureRepository extends Repository<Extensi
     /** Find all validation failures for a specific scan */
     Streamable<ExtensionValidationFailure> findByScan(ExtensionScan scan);
 
-    /** Find all validation failures for a scan with a specific check type */
-    Streamable<ExtensionValidationFailure> findByScanAndCheckType(ExtensionScan scan, String checkType);
-
     /**
      * Returns a sorted list of distinct check types.
      */
