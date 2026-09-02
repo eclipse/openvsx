@@ -32,6 +32,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.analytics.DownloadAnalyticsRepository;
 import org.eclipse.openvsx.analytics.DownloadEvent;
+import org.eclipse.openvsx.analytics.DownloadSeriesRequest;
+import org.eclipse.openvsx.analytics.DownloadSeriesRow;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
@@ -298,6 +300,11 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
             }
 
             saved.addAll(events);
+        }
+
+        @Override
+        public List<DownloadSeriesRow> findSeries(DownloadSeriesRequest request) {
+            return List.of();
         }
     }
 }
