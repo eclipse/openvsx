@@ -90,8 +90,10 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         cleanUp(tokenId);
     }
 
-    // Using a one-time token deletes it, so keeping the ones that expired unused would retain exactly the
-    // rows nobody has a question about - and one is minted per trusted publishing exchange.
+    // A trusted publishing token is reusable within its lifetime but never past it, and nothing shows it
+    // to its owner, so there is no expired row for anyone to read - unlike a long-lived token, whose
+    // expired rows a user is shown and the notification mails read. One is minted per exchange, so keeping
+    // them would retain exactly the rows nobody has a question about.
     @Test
     void expiryDeletesAnEphemeralTokenAndOnlyDeactivatesALongLivedOne() {
         var expired = TimeUtil.getCurrentUTC().minusMinutes(1);
