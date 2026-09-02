@@ -78,4 +78,19 @@ describe('AdminDashboard contributed pages', () => {
         // The built-in entry is untouched.
         expect(screen.getAllByText('Customers').length).toBeGreaterThan(0);
     });
+
+    // adminPages is consumer-provided, and a leading slash used to leave the shadowing check looking
+    // at an empty first segment, so this slipped past it and sat in the nav beside the built-in page.
+    it('ignores a shadowing page however its path is written', () => {
+        renderDashboard([{ ...agentsPage, path: '/customers/', name: 'Not Customers' }]);
+
+        expect(screen.queryByText('Not Customers')).not.toBeInTheDocument();
+        expect(screen.getAllByText('Customers').length).toBeGreaterThan(0);
+    });
+
+    it('ignores a contributed page with an empty path', () => {
+        renderDashboard([{ ...agentsPage, path: '/', name: 'Rootless' }]);
+
+        expect(screen.queryByText('Rootless')).not.toBeInTheDocument();
+    });
 });

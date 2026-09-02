@@ -71,7 +71,9 @@ export function useNavbarBlurExtent(): number {
 /**
  * Extends the navbar's blur fan by the given depth (px) while the calling component is mounted —
  * for page sections pinned under the navbar (sticky headers, tab rows) that float on the fan.
- * Last writer wins: at most one mounted component may extend the fan at a time.
+ * Only one mounted component may extend the fan at a time. There is no ownership stack: the last
+ * writer sets the depth, and whichever writer unmounts first resets it to 0, so a second concurrent
+ * writer would lose the fan while still mounted.
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useExtendNavbarBlur(depth: number): void {

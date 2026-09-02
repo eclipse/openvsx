@@ -130,7 +130,8 @@ export const glassSurface = (theme: Theme, opacity = 0.7) => ({
 /**
  * Compact toolbar control (the "Sort by" select, filter autocompletes): one 30px text row on a
  * paper fill. Selects take it directly via sx; composite inputs spread it into their outlined
- * root. Plain CSS properties only, so it also works outside sx.
+ * root. It carries nested selectors for the select's inner slots, so it belongs in sx (or another
+ * emotion context) and will not work in a plain style prop.
  */
 export const compactControl = (theme: Theme) => ({
     fontSize: '0.8125rem',

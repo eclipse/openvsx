@@ -125,6 +125,14 @@ const builtInSegments = new Set(
         .map(entry => entry.path.slice(AdminDashboardRoutes.MAIN.length + 1).split('/')[0])
 );
 
+/**
+ * Contributed paths come from a consumer, so they are normalized before anything derives a route or a
+ * nav link from them. A leading slash would leave the shadowing check below inspecting an empty first
+ * segment - so '/customers' would pass it and sit in the nav next to the built-in page it names - and
+ * createRoute would join it into '/admin-dashboard//customers'.
+ */
+const normalizePagePath = (path: string) => path.replace(/^\/+/, '').replace(/\/+$/, '');
+
 const toRouteEntry = (page: AdminPage): RouteEntry => ({
     path: createRoute([AdminDashboardRoutes.ROOT, page.path]),
     name: page.name,
@@ -204,7 +212,10 @@ export const AdminDashboard: FunctionComponent<AdminDashboardProps> = props => {
 
     const adminPages = pageSettings.elements.adminPages;
     const contributed = useMemo(
-        () => (adminPages ?? []).filter(page => !builtInSegments.has(page.path.split('/')[0])),
+        () =>
+            (adminPages ?? [])
+                .map(page => ({ ...page, path: normalizePagePath(page.path) }))
+                .filter(page => page.path.length > 0 && !builtInSegments.has(page.path.split('/')[0])),
         [adminPages]
     );
     const navItems = useMemo(() => withContributedPages(contributed), [contributed]);
