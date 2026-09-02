@@ -628,11 +628,25 @@ public class ExtensionService {
      */
     private ResultJson combineResults(List<ResultJson> results) {
         var result = new ResultJson();
-        result.setError(
-                results.stream().map(ResultJson::getError).filter(Objects::nonNull).collect(Collectors.joining("\n")));
-        result.setSuccess(
-                results.stream().map(ResultJson::getSuccess).filter(Objects::nonNull)
-                        .collect(Collectors.joining("\n")));
+        var errors = new ArrayList<String>();
+        var successes = new ArrayList<String>();
+
+        for (var r : results) {
+            if (r.getError() != null) {
+                errors.add(r.getError());
+            }
+            if (r.getSuccess() != null) {
+                successes.add(r.getSuccess());
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            result.setError(errors.stream().collect(Collectors.joining("\n")));
+        }
+        if (!successes.isEmpty()) {
+            result.setSuccess(successes.stream().collect(Collectors.joining("\n")));
+        }
+
         return result;
     }
 

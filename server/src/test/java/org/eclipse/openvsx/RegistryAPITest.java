@@ -2242,7 +2242,9 @@ class RegistryAPITest {
                         .content("[]")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("")));
+                // Nothing was deleted, so the result reports neither a success nor an error.
+                .andExpect(jsonPath("$.success").doesNotExist())
+                .andExpect(jsonPath("$.error").doesNotExist());
     }
 
     @Test
