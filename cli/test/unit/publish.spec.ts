@@ -246,4 +246,29 @@ describe('publish', () => {
         expect(registry.publishRequests).toHaveLength(2);
         expect(registry.tokenRequests).toBe(2);
     });
+
+    // What a multi target release looks like: one package per target platform, published in a single
+    // invocation. The point is the token - the identity is exchanged once and every package publishes
+    // with it, which is what the registry has to accept.
+    it('publishes every package of a release with one exchanged token', async () => {
+        const registry = await givenRegistry();
+        const packagePath = await Promise.all([
+            givenVsixFile('foo', 'fanned-out'),
+            givenVsixFile('foo', 'fanned-out'),
+            givenVsixFile('foo', 'fanned-out')
+        ]);
+
+        const results = await publish({
+            packagePath,
+            registryUrl: registry.url,
+            trustedPublishing: true,
+            idToken: 'an-id-token'
+        });
+
+        expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled', 'fulfilled']);
+        expect(registry.publishRequests).toHaveLength(3);
+        expect(registry.tokenRequests).toBe(1);
+        expect(registry.publishRequests.map(request => request.query.get('token')))
+            .toEqual(['token-1', 'token-1', 'token-1']);
+    });
 });
