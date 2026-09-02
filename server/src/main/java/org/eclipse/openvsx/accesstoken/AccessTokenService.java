@@ -70,9 +70,9 @@ public class AccessTokenService {
     private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
 
     /** The token types that are retired by deleting the row rather than deactivating it. */
-    private static final List<PersonalAccessTokenType> ONE_TIME_TOKEN_TYPES = Arrays
+    private static final List<PersonalAccessTokenType> EPHEMERAL_TOKEN_TYPES = Arrays
             .stream(PersonalAccessTokenType.values())
-            .filter(PersonalAccessTokenType::isOneTime)
+            .filter(PersonalAccessTokenType::isEphemeral)
             .toList();
 
     private static final int TOKEN_VERSION_0 = 0;
@@ -189,7 +189,7 @@ public class AccessTokenService {
         var json = token.toAccessTokenJson();
         // Include the token raw value after creation so the user can copy it
         json.setValue(rawValue);
-        if (!type.isOneTime()) {
+        if (!type.isEphemeral()) {
             json.setDeleteTokenUrl(
                     createApiUrl(UrlUtil.getBaseUrl(), "user", "token", "delete", Long.toString(token.getId())));
         }
@@ -263,7 +263,7 @@ public class AccessTokenService {
         // findByExpiresTimestampLessThanEqual...: a token expiring at exactly `now` is expired.
         LocalDateTime now = TimeUtil.getCurrentUTC();
         if (token.getExpiresTimestamp() != null && !token.getExpiresTimestamp().isAfter(now)) {
-            if (token.getType().isOneTime()) {
+            if (token.getType().isEphemeral()) {
                 entityManager.remove(token);
             } else {
                 token.setActive(false);
@@ -273,7 +273,7 @@ public class AccessTokenService {
         // Deleting a registration takes its tokens with it, so this should not be reachable; kept as a
         // guard, because a TPT that lost its registration may only ever publish an extension it can no
         // longer be checked against. Removed rather than deactivated: it can never become valid again,
-        // and nothing reads the row afterwards - the same reasoning as for a one-time token below.
+        // and nothing reads the row afterwards - the same reasoning as for any ephemeral token.
         if (token.getType() == PersonalAccessTokenType.TPT && token.getTrustedPublisher() == null) {
             entityManager.remove(token);
             return null;
@@ -288,6 +288,9 @@ public class AccessTokenService {
             token.setAccessedTimestamp(now);
             if (token.getType().isOneTime()) {
                 // Deleted outright rather than deactivated: nothing reads the row again afterwards.
+                // A trusted publishing token is deliberately not one of these - it stays usable until it
+                // expires, so that the target platforms of one release can share the token they were
+                // issued rather than exchanging the CI identity again for each of them.
                 entityManager.remove(token);
             }
         }
@@ -307,10 +310,10 @@ public class AccessTokenService {
     /**
      * Retires every token that has expired.
      * <p>
-     * A one-time token is deleted rather than deactivated, the same as when one is used, when its trusted
-     * publisher registration goes, or when its extension is purged: it can never be used again, nothing
-     * reads the row afterwards, and one is minted per exchange. Keeping the unused ones while deleting the
-     * used ones would retain exactly the rows nobody has a question about.
+     * An ephemeral token is deleted rather than deactivated, the same as when a one-time one is used, when
+     * a trusted publisher registration goes, or when an extension is purged: it can never be used again,
+     * nothing reads the row afterwards, and one is minted per exchange. Keeping the expired ones while
+     * deleting the used ones would retain exactly the rows nobody has a question about.
      * <p>
      * Long-lived tokens stay as deactivated rows: a user is shown their own expired tokens, and the
      * expiry notification mails read them.
@@ -318,7 +321,7 @@ public class AccessTokenService {
     @Transactional
     public int expireAccessTokens() {
         var now = TimeUtil.getCurrentUTC();
-        var deletedAccessTokens = repositories.deleteExpiredPersonalAccessTokens(now, ONE_TIME_TOKEN_TYPES);
+        var deletedAccessTokens = repositories.deleteExpiredPersonalAccessTokens(now, EPHEMERAL_TOKEN_TYPES);
         var expiredAccessTokens = repositories.expirePersonalAccessTokens(now);
         if (config.isSendExpiredMailEnabled()) {
             for (var token : expiredAccessTokens) {

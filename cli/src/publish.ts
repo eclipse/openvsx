@@ -10,12 +10,12 @@
 import * as fs from 'fs';
 import { createVSIX, IPackageOptions } from '@vscode/vsce';
 import { getPAT } from './pat';
-import { createTempFile, addEnvOptions, addTrustedPublishingEnvOptions, formatBytes } from './util';
+import { createTempFile, addEnvOptions, addTrustedPublishingEnvOptions, formatBytes, StatusError } from './util';
 import { Extension, Registry } from './registry';
 import { checkLicense } from './check-license';
 import { readVSIXPackage } from './zip';
 import { PublishOptions, PublishCommonOptions } from './publish-options';
-import { getTrustedPublishingToken, useTrustedPublishing } from './trusted-publishing';
+import { getTrustedPublishingToken, refreshTrustedPublishingToken, useTrustedPublishing } from './trusted-publishing';
 
 /**
  * Publishes an extension.
@@ -71,16 +71,22 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
 
     await ensureWithinSizeLimit(options.extensionFile!, options.maxExtensionSize, registry.url);
 
+    // Set only when this publish obtained the token itself through trusted publishing, which is the one
+    // case where a refusal can be answered by asking for a new token.
+    let exchanged: { namespace: string; extension: string } | undefined;
     if (!options.pat) {
         const manifest = await readVSIXPackage(options.extensionFile!);
-        options.pat = useTrustedPublishing(options)
-            ? await getTrustedPublishingToken(registry, manifest.publisher, manifest.name, options)
-            : await getPAT(manifest.publisher, options);
+        if (useTrustedPublishing(options)) {
+            exchanged = { namespace: manifest.publisher, extension: manifest.name };
+            options.pat = await getTrustedPublishingToken(registry, manifest.publisher, manifest.name, options);
+        } else {
+            options.pat = await getPAT(manifest.publisher, options);
+        }
     }
 
     let extension: Extension | undefined;
     try {
-        extension = await registry.publish(options.extensionFile!, options.pat);
+        extension = await doRegistryPublish(registry, options, exchanged);
     } catch (err) {
         if (options.skipDuplicate && err.message.endsWith('is already published.')) {
             console.log(err.message + ' Skipping publish.');
@@ -102,6 +108,39 @@ async function doPublish(options: InternalPublishOptions = {}): Promise<void> {
     console.log(`\ud83d\ude80  Published ${description}`);
     if (extension.warning) {
         console.log(`\n!!  ${extension.warning}`);
+    }
+}
+
+/**
+ * Publishes the package, exchanging the ID token again if the registry refuses the trusted publishing
+ * token this was using. The issued token is short-lived and shared by every target platform of a
+ * release, so publishing a wide fan-out of large packages can outlive it and be refused partway
+ * through - having authorised the release and then failing it over an expiry would be the wrong call.
+ *
+ * Only ever retried once, and only for a token obtained here: nothing this can do makes a token the
+ * user supplied valid, and a second refusal means the token is not the problem.
+ */
+async function doRegistryPublish(
+    registry: Registry,
+    options: InternalPublishOptions,
+    exchanged: { namespace: string; extension: string } | undefined
+): Promise<Extension> {
+    try {
+        return await registry.publish(options.extensionFile!, options.pat!);
+    } catch (err) {
+        if (!exchanged || (err as StatusError)?.status !== 401) {
+            throw err;
+        }
+
+        console.log('The registry refused the publishing token, requesting a new one');
+        options.pat = await refreshTrustedPublishingToken(
+            registry,
+            exchanged.namespace,
+            exchanged.extension,
+            options,
+            options.pat!
+        );
+        return registry.publish(options.extensionFile!, options.pat);
     }
 }
 

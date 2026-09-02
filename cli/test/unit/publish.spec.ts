@@ -18,6 +18,7 @@ import * as path from 'path';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { publish } from '../../src/publish';
+import { buildZip } from './support/zip';
 
 interface RecordedRequest {
     pathname: string;
@@ -27,6 +28,7 @@ interface RecordedRequest {
 interface RegistryStub {
     url: string;
     publishRequests: RecordedRequest[];
+    tokenRequests: number;
     close: () => Promise<void>;
 }
 
@@ -35,7 +37,11 @@ interface RegistryStub {
  */
 async function startRegistryStub(
     version: { status?: number; body?: unknown } = {},
-    publishResponse: { status?: number; body?: unknown } = {}
+    publishResponse: {
+        status?: number;
+        body?: unknown;
+        attempts?: Array<{ status: number; body: unknown }>;
+    } = {}
 ): Promise<RegistryStub> {
     const publishRequests: RecordedRequest[] = [];
     const versionStatus = version.status ?? 200;
@@ -47,6 +53,10 @@ async function startRegistryStub(
         version: '1.0.0',
         targetPlatform: 'universal'
     };
+    // Answers the nth publish with the nth entry, the last one repeating, so a first attempt can be
+    // refused and the retry accepted.
+    const publishAttempts = publishResponse.attempts;
+    const state = { tokenRequests: 0 };
     const server = http.createServer((req, res) => {
         const url = new URL(req.url ?? '/', 'http://127.0.0.1');
         req.on('data', () => undefined);
@@ -54,10 +64,15 @@ async function startRegistryStub(
             if (url.pathname === '/api/version') {
                 res.writeHead(versionStatus, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(versionBody));
+            } else if (url.pathname === '/api/-/trusted-publishing/token') {
+                state.tokenRequests++;
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ value: `token-${state.tokenRequests}` }));
             } else {
+                const attempt = publishAttempts?.[Math.min(publishRequests.length, publishAttempts.length - 1)];
                 publishRequests.push({ pathname: url.pathname, query: url.searchParams });
-                res.writeHead(publishStatus, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(publishBody));
+                res.writeHead(attempt?.status ?? publishStatus, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(attempt?.body ?? publishBody));
             }
         });
     });
@@ -66,6 +81,9 @@ async function startRegistryStub(
     return {
         url: `http://127.0.0.1:${port}`,
         publishRequests,
+        get tokenRequests() {
+            return state.tokenRequests;
+        },
         close: () => new Promise<void>(resolve => server.close(() => resolve()))
     };
 }
@@ -88,11 +106,28 @@ describe('publish', () => {
 
     async function givenRegistry(
         version?: { status?: number; body?: unknown },
-        publishResponse?: { status?: number; body?: unknown }
+        publishResponse?: {
+            status?: number;
+            body?: unknown;
+            attempts?: Array<{ status: number; body: unknown }>;
+        }
     ): Promise<RegistryStub> {
         const stub = await startRegistryStub(version, publishResponse);
         stubs.push(stub);
         return stub;
+    }
+
+    // A real .vsix, because trusted publishing reads the manifest to learn which extension to ask a
+    // token for. The publisher/name must differ per test: the token cache is module level and lives
+    // for the process.
+    async function givenVsixFile(publisher: string, name: string): Promise<string> {
+        const zip = await buildZip({
+            'extension/package.json': Buffer.from(JSON.stringify({ publisher, name, version: '1.0.0' }))
+        });
+        const file = path.join(os.tmpdir(), `ovsx-publish-test-${Math.random().toString(36).slice(2)}.vsix`);
+        fs.writeFileSync(file, zip);
+        tmpFiles.push(file);
+        return file;
     }
 
     function givenExtensionFile(sizeInBytes: number): string {
@@ -143,5 +178,72 @@ describe('publish', () => {
 
         expect(result.status).toBe('fulfilled');
         expect(registry.publishRequests).toHaveLength(1);
+    });
+
+    // The trusted publishing token is short-lived and shared by every target platform of a release, so
+    // a slow fan-out can outlive it and be refused partway through. Failing a release that was
+    // authorised, over an expiry, would be the wrong call.
+    it('asks for a new token and retries when the registry refuses the one it was publishing with', async () => {
+        const registry = await givenRegistry(
+            {},
+            {
+                attempts: [
+                    { status: 401, body: { error: 'Invalid access token.' } },
+                    { status: 200, body: { namespace: 'foo', name: 'retried', version: '1.0.0', targetPlatform: 'universal' } }
+                ]
+            }
+        );
+        const extensionFile = await givenVsixFile('foo', 'retried');
+
+        const [result] = await publish({
+            extensionFile,
+            registryUrl: registry.url,
+            trustedPublishing: true,
+            idToken: 'an-id-token'
+        });
+
+        expect(result.status).toBe('fulfilled');
+        expect(registry.publishRequests).toHaveLength(2);
+        // the retry carries the replacement, not the token that was just refused
+        expect(registry.publishRequests[0].query.get('token')).toBe('token-1');
+        expect(registry.publishRequests[1].query.get('token')).toBe('token-2');
+        expect(registry.tokenRequests).toBe(2);
+    });
+
+    // Nothing the CLI can do makes a token the user supplied valid. An ID token is offered here as
+    // well, so that only the token's origin - not the absence of a CI identity to exchange - can be
+    // what stops the retry.
+    it('does not retry a refusal when the token came from the user', async () => {
+        const registry = await givenRegistry({}, { status: 401, body: { error: 'Invalid access token.' } });
+        const extensionFile = await givenVsixFile('foo', 'user-pat');
+
+        const [result] = await publish({
+            extensionFile,
+            pat: 'the.pat',
+            registryUrl: registry.url,
+            idToken: 'an-id-token'
+        });
+
+        expect(result.status).toBe('rejected');
+        expect(registry.publishRequests).toHaveLength(1);
+        expect(registry.tokenRequests).toBe(0);
+    });
+
+    // A second refusal is not an expiry: the token is not the problem, and retrying forever would hide
+    // whatever is.
+    it('gives up when the replacement token is refused too', async () => {
+        const registry = await givenRegistry({}, { status: 401, body: { error: 'Invalid access token.' } });
+        const extensionFile = await givenVsixFile('foo', 'refused-twice');
+
+        const [result] = await publish({
+            extensionFile,
+            registryUrl: registry.url,
+            trustedPublishing: true,
+            idToken: 'an-id-token'
+        });
+
+        expect(result.status).toBe('rejected');
+        expect(registry.publishRequests).toHaveLength(2);
+        expect(registry.tokenRequests).toBe(2);
     });
 });
