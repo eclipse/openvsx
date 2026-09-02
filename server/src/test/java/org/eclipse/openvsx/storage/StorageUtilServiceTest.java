@@ -31,7 +31,7 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.analytics.ingestion.DownloadCountService;
 
 import static org.eclipse.openvsx.entities.FileResource.README;
 import static org.junit.jupiter.api.Assertions.assertEquals;

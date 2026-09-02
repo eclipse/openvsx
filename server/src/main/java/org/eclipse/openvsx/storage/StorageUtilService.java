@@ -36,7 +36,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.analytics.ingestion.DownloadCountService;
 import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
