@@ -15,14 +15,16 @@ export interface SuccessResult {
     success: string;
 }
 export function isSuccess(obj: unknown): obj is SuccessResult {
-    return typeof obj === 'object' && typeof (obj as any).success === 'string';
+    const success = (obj as SuccessResult | null | undefined)?.success;
+    return typeof success === 'string';
 }
 
 export interface ErrorResult {
     error: string;
 }
 export function isError(obj: unknown): obj is ErrorResult {
-    return typeof obj === 'object' && typeof (obj as any).error === 'string';
+    const error = (obj as ErrorResult | null | undefined)?.error;
+    return typeof error === 'string' && Boolean(error);
 }
 
 export interface ReportedError {

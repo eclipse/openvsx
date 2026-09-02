@@ -837,6 +837,9 @@ class UserAPITest {
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
+                // The web UI reports any error in the body as a failed delete, so a delete where every
+                // version succeeded must not carry one at all.
+                .andExpect(jsonPath("$.error").doesNotExist())
                 .andExpect(content().json(successJson("Deleted foobar.baz 1.0.0\nDeleted foobar.baz 2.0.0")));
     }
 
@@ -854,7 +857,9 @@ class UserAPITest {
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk())
-                .andExpect(content().json(successJson("")));
+                // Nothing was deleted, so the result reports neither a success nor an error.
+                .andExpect(jsonPath("$.success").doesNotExist())
+                .andExpect(jsonPath("$.error").doesNotExist());
     }
 
     @Test
