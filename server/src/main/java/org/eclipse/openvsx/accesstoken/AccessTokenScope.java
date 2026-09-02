@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import org.eclipse.openvsx.entities.Extension;
@@ -25,6 +26,13 @@ public sealed interface AccessTokenScope {
      * Checks for scope applicability, and returns {@code true} if action is applicable to this scope.
      */
     boolean allowsAction(AccessTokenAction accessTokenAction);
+
+    /**
+     * Concatenates scopes into new scope, that is enforcing both this and provided scope applies.
+     */
+    default AccessTokenScope and(AccessTokenScope scope) {
+        return new AndScope(this, scope);
+    }
 
     /**
      * Unrestricted token scope; every action is applicable.
@@ -58,6 +66,26 @@ public sealed interface AccessTokenScope {
             return accessTokenAction.namespace().isPresent() && accessTokenAction.extension().isPresent() &&
                     Objects.equals(extension.getNamespace().getName(), accessTokenAction.namespace().get()) &&
                     Objects.equals(extension.getName(), accessTokenAction.extension().get());
+        }
+    }
+
+    /**
+     * Action type scope; allows only listed action types.
+     */
+    record ActionScoped(Class<?>... allowedActions) implements AccessTokenScope {
+        @Override
+        public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            return Arrays.binarySearch(allowedActions, accessTokenAction.getClass()) >= 0;
+        }
+    }
+
+    /**
+     * Concatenates scopes with logical {@code AND}. Enforces both scopes are allowing action.
+     */
+    record AndScope(AccessTokenScope one, AccessTokenScope second) implements AccessTokenScope {
+        @Override
+        public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            return one.allowsAction(accessTokenAction) && second.allowsAction(accessTokenAction);
         }
     }
 }

@@ -298,13 +298,18 @@ public class AccessTokenService {
     }
 
     private AccessTokenScope getScope(PersonalAccessToken token) {
+        AccessTokenScope scope;
         if (token.getScopeExtension() != null) {
-            return new AccessTokenScope.ExtensionScoped(token.getScopeExtension());
+            scope = new AccessTokenScope.ExtensionScoped(token.getScopeExtension());
         } else if (token.getScopeNamespace() != null) {
-            return new AccessTokenScope.NamespaceScoped(token.getScopeNamespace());
+            scope = new AccessTokenScope.NamespaceScoped(token.getScopeNamespace());
         } else {
-            return new AccessTokenScope.Unrestricted();
+            scope = new AccessTokenScope.Unrestricted();
         }
+        if (token.getType() == PersonalAccessTokenType.TPT) {
+            scope = scope.and(new AccessTokenScope.ActionScoped(AccessTokenAction.PublishVersion.class));
+        }
+        return scope;
     }
 
     /**
