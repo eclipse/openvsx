@@ -71,6 +71,8 @@ management:
 
 springdoc:
   model-and-view-allowed: true
+  api-docs:
+    version: openapi_3_0
   swagger-ui:
     path: /swagger-ui
     docExpansion: list
