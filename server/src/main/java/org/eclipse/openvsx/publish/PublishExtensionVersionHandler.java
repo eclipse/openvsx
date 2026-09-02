@@ -250,8 +250,8 @@ public class PublishExtensionVersionHandler {
         extVersion.setPublishedBy(au.userData());
         if (au instanceof AccessTokenAuthentication ata) {
             extVersion.setPublishedWithTt(ata.type());
-            // An ephemeral token's row does not outlive its use: a one-time one is deleted before this
-            // row is even written, and a trusted publishing one is deleted the moment it expires, which
+            // An ephemeral token's row does not outlive its use: a one-time token is deleted before this
+            // row is even written, and a trusted publishing token is deleted the moment it expires, which
             // for a slow publish can fall between authenticating the request and inserting this row.
             // Either way the foreign key would reject the insert, so the reference is only recorded for
             // tokens that stay. What identifies a trusted publish is the workflow it came from, held in
