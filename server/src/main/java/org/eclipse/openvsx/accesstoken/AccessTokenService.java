@@ -310,7 +310,7 @@ public class AccessTokenService {
     /**
      * Retires every token that has expired.
      * <p>
-     * An ephemeral token is deleted rather than deactivated, the same as when a one-time one is used, when
+     * An ephemeral token is deleted rather than deactivated, the same as when a one-time token is used, when
      * a trusted publisher registration goes, or when an extension is purged: it can never be used again,
      * nothing reads the row afterwards, and one is minted per exchange. Keeping the expired ones while
      * deleting the used ones would retain exactly the rows nobody has a question about.
