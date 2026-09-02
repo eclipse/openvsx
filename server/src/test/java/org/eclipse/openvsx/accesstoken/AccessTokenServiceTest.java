@@ -39,8 +39,10 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -207,5 +209,94 @@ class AccessTokenServiceTest {
         // carried to the publish that uses this token, which copies them onto the version
         assertThat(persisted.getValue().getClaims()).containsEntry("repository_id", "74");
         assertThat(json.getValue()).isNotNull();
+    }
+
+    private PersonalAccessToken trustedPublishingToken(UserData user) {
+        var namespace = new Namespace();
+        namespace.setName("foo");
+        var extension = new Extension();
+        extension.setName("bar");
+        extension.setNamespace(namespace);
+        var trustedPublisher = new TrustedPublisher();
+        trustedPublisher.setExtension(extension);
+        trustedPublisher.setCreatedBy(user);
+        trustedPublisher.setRegistration(Map.of());
+
+        var token = new PersonalAccessToken();
+        token.setActive(true);
+        token.setType(PersonalAccessTokenType.TPT);
+        token.setVersion(1);
+        token.setUser(user);
+        token.setTrustedPublisher(trustedPublisher);
+        token.setScopeExtension(extension);
+        return token;
+    }
+
+    // A release commonly publishes one version per target platform, and each is its own publish request.
+    // The CLI exchanges the CI identity once and shares the token across them (cli/src/trusted-publishing.ts
+    // caches it per extension), so consuming it on first use failed every target but one - and since the
+    // CLI publishes them concurrently, which ones failed was down to timing.
+    @Test
+    void keepsATrustedPublishingTokenUsableForEveryTargetPlatformOfARelease() {
+        var user = new UserData();
+        var token = trustedPublishingToken(user);
+        when(repositories.findPersonalAccessToken(anyString())).thenReturn(token);
+
+        for (var i = 0; i < 3; i++) {
+            var tau = accessTokenService
+                    .useAccessToken("tok", new AccessTokenAction.PublishVersion("foo", "bar"));
+
+            assertThat(tau).isNotNull();
+            assertThat(tau.type()).isEqualTo(PersonalAccessTokenType.TPT);
+        }
+
+        verify(entityManager, never()).remove(any());
+    }
+
+    // The deprecated one-time type keeps its meaning: the split of one-time from ephemeral was to let a
+    // trusted publishing token outlive a single request, not to make every machine token reusable.
+    @Test
+    void stillConsumesAOneTimeTokenOnFirstUse() {
+        var token = activeUnrestrictedToken();
+        token.setType(PersonalAccessTokenType.OTT);
+        token.setUser(new UserData());
+        when(repositories.findPersonalAccessToken(anyString())).thenReturn(token);
+
+        var tau = accessTokenService.useAccessToken("tok", new AccessTokenAction.PublishVersion("foo", "bar"));
+
+        assertThat(tau).isNotNull();
+        verify(entityManager).remove(token);
+    }
+
+    // Reusable until it expires, but not past it - and the row goes rather than lingering deactivated,
+    // because it carries the OIDC claims of the workflow that obtained it.
+    @Test
+    void deletesAnExpiredTrustedPublishingTokenRatherThanDeactivatingIt() {
+        var token = trustedPublishingToken(new UserData());
+        token.setExpiresTimestamp(LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(1));
+        when(repositories.findPersonalAccessToken(anyString())).thenReturn(token);
+
+        var tau = accessTokenService.useAccessToken("tok", new AccessTokenAction.PublishVersion("foo", "bar"));
+
+        assertThat(tau).isNull();
+        verify(entityManager).remove(token);
+        assertThat(token.isActive()).isTrue();
+    }
+
+    // Nothing ever shows a trusted publishing token to its owner, so there is no page for a revoke link
+    // to sit on. Being reusable does not make it user-managed.
+    @Test
+    void offersNoRevocationLinkForATrustedPublishingToken() {
+        var user = new UserData();
+        var trustedPublisher = trustedPublishingToken(user).getTrustedPublisher();
+        when(config.getPrefix()).thenReturn("ovsx");
+
+        var json = accessTokenService.createTrustedPublishingAccessToken(
+                trustedPublisher,
+                "Trusted publishing (github)",
+                Duration.ofMinutes(5),
+                Map.of());
+
+        assertThat(json.getDeleteTokenUrl()).isNull();
     }
 }

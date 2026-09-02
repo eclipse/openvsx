@@ -18,6 +18,10 @@ import { TrustedPublishingOptions } from './trusted-publishing-options';
 
 const tokens = new Map<string, Promise<string>>();
 
+// The value each cached exchange resolved to, so a token a publish was refused with can be told from one
+// another publish has already replaced. Cleared while an exchange is in flight.
+const issued = new Map<string, string>();
+
 /**
  * Whether the given options ask for trusted publishing. If the user did not decide explicitly,
  * it is used whenever the surrounding CI system can provide an OIDC ID token.
@@ -38,12 +42,49 @@ export function getTrustedPublishingToken(
 ): Promise<string> {
     // publishing fans out over targets and package paths, but one token is enough per extension
     const key = `${namespace}.${extension}`;
-    let token = tokens.get(key);
-    if (!token) {
-        token = requestToken(registry, namespace, extension, options);
-        tokens.set(key, token);
+    return tokens.get(key) ?? exchange(key, registry, namespace, extension, options);
+}
+
+/**
+ * Exchanges the ID token again after the registry refused the one this extension was publishing with.
+ * The issued token is short-lived and shared by every target platform of a release, so a slow fan-out
+ * can outlive it and be refused partway through.
+ *
+ * `stale` is the token that was refused. If the cache no longer holds it, another target has already
+ * replaced it and that exchange is awaited instead, so one expiry costs one exchange however many
+ * targets hit it at once.
+ */
+export function refreshTrustedPublishingToken(
+    registry: Registry,
+    namespace: string,
+    extension: string,
+    options: TrustedPublishingOptions,
+    stale: string
+): Promise<string> {
+    const key = `${namespace}.${extension}`;
+    const current = tokens.get(key);
+    if (current && issued.get(key) !== stale) {
+        return current;
     }
 
+    return exchange(key, registry, namespace, extension, options);
+}
+
+function exchange(
+    key: string,
+    registry: Registry,
+    namespace: string,
+    extension: string,
+    options: TrustedPublishingOptions
+): Promise<string> {
+    // Dropped up front, so a refresh that is still in flight does not look like the stale token to the
+    // next caller and start a second exchange of its own.
+    issued.delete(key);
+    const token = requestToken(registry, namespace, extension, options).then(value => {
+        issued.set(key, value);
+        return value;
+    });
+    tokens.set(key, token);
     return token;
 }
 

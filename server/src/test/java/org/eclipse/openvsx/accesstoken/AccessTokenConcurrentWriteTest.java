@@ -90,18 +90,20 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         cleanUp(tokenId);
     }
 
-    // Using a one-time token deletes it, so keeping the ones that expired unused would retain exactly the
-    // rows nobody has a question about - and one is minted per trusted publishing exchange.
+    // A trusted publishing token is reusable within its lifetime but never past it, and nothing shows it
+    // to its owner, so there is no expired row for anyone to read - unlike a long-lived token, whose
+    // expired rows a user is shown and the notification mails read. One is minted per exchange, so keeping
+    // them would retain exactly the rows nobody has a question about.
     @Test
-    void expiryDeletesAOneTimeTokenAndOnlyDeactivatesALongLivedOne() {
+    void expiryDeletesAnEphemeralTokenAndOnlyDeactivatesALongLivedOne() {
         var expired = TimeUtil.getCurrentUTC().minusMinutes(1);
-        var oneTime = persistToken("expiry-tpt", PersonalAccessTokenType.TPT, 1, expired);
+        var ephemeral = persistToken("expiry-tpt", PersonalAccessTokenType.TPT, 1, expired);
         var longLived = persistToken("expiry-llt", PersonalAccessTokenType.LLT, 1, expired);
 
         new TransactionTemplate(txManager).executeWithoutResult(status -> accessTokens.expireAccessTokens());
 
         new TransactionTemplate(txManager).executeWithoutResult(status -> {
-            assertThat(em.find(PersonalAccessToken.class, oneTime)).isNull();
+            assertThat(em.find(PersonalAccessToken.class, ephemeral)).isNull();
             var kept = em.find(PersonalAccessToken.class, longLived);
             // a user is shown their own expired tokens, and the notification mails read them
             assertThat(kept).isNotNull();
@@ -109,7 +111,7 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
         });
 
         cleanUp(longLived);
-        // the one-time token's own row is gone, but its user is not
+        // the ephemeral token's own row is gone, but its user is not
         cleanUpUser("expiry-tpt-user");
     }
 
@@ -140,7 +142,8 @@ class AccessTokenConcurrentWriteTest extends AbstractPostgresContainerTest {
     }
 
     // The link from a published artifact back to the workflow run is most of what trusted publishing buys
-    // over a token pasted into CI, and the token that carried it is deleted the moment it is used.
+    // over a token pasted into CI, and the token that carried it is deleted as soon as it expires - which
+    // is why the claims are copied onto the version rather than reached through the token.
     @Test
     void aVersionKeepsItsTrustedPublishingProvenanceAfterTheTokenIsGone() {
         var claims = Map.of(

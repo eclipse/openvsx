@@ -62,8 +62,9 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
     List<PersonalAccessToken> expireAccessTokens(LocalDateTime timestamp);
 
     /**
-     * Deletes the expired tokens of the given types outright. A one-time token that expired unused can
-     * never be used, and nothing reads the row afterwards - the same reason using one deletes it.
+     * Deletes the expired tokens of the given types outright. An expired machine-issued token can never
+     * be used again, and nothing reads the row afterwards - the same reason using a one-time token deletes
+     * it.
      */
     @Modifying
     @Query(

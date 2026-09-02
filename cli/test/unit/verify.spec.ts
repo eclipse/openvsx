@@ -16,10 +16,10 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
-import * as yazl from 'yazl';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { verify } from '../../src/verify';
+import { buildZip } from './support/zip';
 
 interface RegistryStub {
     url: string;
@@ -29,19 +29,6 @@ interface RegistryStub {
 /**
  * Builds a zip archive in memory from a set of entry name -> content pairs.
  */
-function buildZip(entries: Record<string, Buffer>): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-        const zipFile = new yazl.ZipFile();
-        for (const [name, content] of Object.entries(entries)) {
-            zipFile.addBuffer(content, name);
-        }
-        const chunks: Buffer[] = [];
-        zipFile.outputStream.on('data', chunk => chunks.push(chunk));
-        zipFile.outputStream.on('end', () => resolve(Buffer.concat(chunks)));
-        zipFile.outputStream.on('error', reject);
-        zipFile.end();
-    });
-}
 
 /**
  * Stands in for the registry's extension metadata endpoint plus the signature/public-key file

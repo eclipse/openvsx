@@ -19,25 +19,29 @@ public enum PersonalAccessTokenType {
     /**
      * Long-lived personal access token (classic).
      */
-    LLT("at_", false, true),
+    LLT("at_", false, false, true),
     /**
      * One time usable general personal access token.
      * Legacy: was used until 1.2.0; but is not anymore.
      */
     @Deprecated
-    OTT("ot_", true, false),
+    OTT("ot_", true, true, false),
     /**
-     * One time usable, trusted publishing issued access token.
+     * Trusted publishing issued access token. Short-lived and scoped to a single extension, but usable
+     * more than once within its lifetime: a release commonly publishes one version per target platform,
+     * and those are separate publish requests that share the one token the exchange issued.
      */
-    TPT("tp_", true, false);
+    TPT("tp_", false, true, false);
 
     private final String tokenMarker;
     private final boolean oneTime;
+    private final boolean ephemeral;
     private final boolean notify;
 
-    PersonalAccessTokenType(String tokenMarker, boolean oneTime, boolean notify) {
+    PersonalAccessTokenType(String tokenMarker, boolean oneTime, boolean ephemeral, boolean notify) {
         this.tokenMarker = tokenMarker;
         this.oneTime = oneTime;
+        this.ephemeral = ephemeral;
         this.notify = notify;
     }
 
@@ -50,8 +54,23 @@ public enum PersonalAccessTokenType {
         return tokenMarker;
     }
 
+    /**
+     * Whether using the token consumes it, so that it authenticates exactly one request.
+     */
     public boolean isOneTime() {
         return oneTime;
+    }
+
+    /**
+     * Whether the token is issued to a machine rather than managed by a user: it is deleted instead of
+     * being left as a deactivated row once it can no longer be used, and its owner is never offered a
+     * link to revoke it, because nothing shows it to them in the first place.
+     * <p>
+     * Every one-time token is ephemeral, but not every ephemeral one is single-use - a trusted
+     * publishing token may publish several times before it expires.
+     */
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 
     public boolean isNotify() {

@@ -15,7 +15,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Registry } from '../../src/registry';
-import { getTrustedPublishingToken } from '../../src/trusted-publishing';
+import { getTrustedPublishingToken, refreshTrustedPublishingToken } from '../../src/trusted-publishing';
 
 interface FakeRegistry {
     url: string;
@@ -84,5 +84,64 @@ describe('trusted publishing token exchange', () => {
         ).rejects.toThrow('No trusted publisher matches the presented token.');
 
         expect(registry.exchanges).toBe(1);
+    });
+
+    // The issued token is short-lived and shared by every target platform of a release, so a slow
+    // fan-out can outlive it. Refusing it must be answerable with a new one rather than failing a
+    // release that was authorised.
+    it('exchanges again when the token it was publishing with is refused', async () => {
+        const registry = await startRegistry(
+            { status: 201, body: { value: 'first-token' } },
+            { status: 201, body: { value: 'second-token' } }
+        );
+        const options = { idToken: 'an-id-token' };
+        const client = new Registry({ registryUrl: registry.url });
+
+        const first = await getTrustedPublishingToken(client, 'expiring', 'ext', options);
+        const second = await refreshTrustedPublishingToken(client, 'expiring', 'ext', options, first);
+
+        expect(first).toBe('first-token');
+        expect(second).toBe('second-token');
+        expect(registry.exchanges).toBe(2);
+        // and the replacement is what every later target platform picks up
+        expect(await getTrustedPublishingToken(client, 'expiring', 'ext', options)).toBe('second-token');
+    });
+
+    // Target platforms publish concurrently, so they hit one expiry together. Exchanging per refusal
+    // would ask the identity provider once per target and hand out tokens the others discard.
+    it('exchanges once when every target platform is refused at the same time', async () => {
+        const registry = await startRegistry(
+            { status: 201, body: { value: 'first-token' } },
+            { status: 201, body: { value: 'second-token' } }
+        );
+        const options = { idToken: 'an-id-token' };
+        const client = new Registry({ registryUrl: registry.url });
+
+        const stale = await getTrustedPublishingToken(client, 'concurrent', 'ext', options);
+        const refreshed = await Promise.all(
+            [0, 1, 2, 3].map(() =>
+                refreshTrustedPublishingToken(client, 'concurrent', 'ext', options, stale))
+        );
+
+        expect(refreshed).toEqual(['second-token', 'second-token', 'second-token', 'second-token']);
+        expect(registry.exchanges).toBe(2);
+    });
+
+    // A token already replaced is not stale twice: the caller that lost the race takes what is cached.
+    it('does not exchange again for a token that was already replaced', async () => {
+        const registry = await startRegistry(
+            { status: 201, body: { value: 'first-token' } },
+            { status: 201, body: { value: 'second-token' } },
+            { status: 201, body: { value: 'third-token' } }
+        );
+        const options = { idToken: 'an-id-token' };
+        const client = new Registry({ registryUrl: registry.url });
+
+        const stale = await getTrustedPublishingToken(client, 'replaced', 'ext', options);
+        await refreshTrustedPublishingToken(client, 'replaced', 'ext', options, stale);
+        const again = await refreshTrustedPublishingToken(client, 'replaced', 'ext', options, stale);
+
+        expect(again).toBe('second-token');
+        expect(registry.exchanges).toBe(2);
     });
 });
