@@ -14,7 +14,12 @@ package org.eclipse.openvsx.web;
 
 import java.lang.reflect.Method;
 
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.method.HandlerMethod;
 
@@ -57,6 +62,29 @@ class DocumentationConfigTest {
 
         assertThat(operation.getSummary()).isEqualTo("[Preview] Provides a feed");
         assertThat(operation.getDescription()).containsOnlyOnce("**Preview**");
+    }
+
+    // springdoc 3.x emits OpenAPI 3.1 by default, which does not serialize the legacy string `type` a
+    // bare `new Schema<>().type(...)` sets - the header then documents no type at all. The rate limit
+    // headers have to survive both spec versions, since which one is emitted is a springdoc default.
+    @Test
+    void shouldGiveTheRateLimitHeadersATypeInEitherSpecVersion() throws Exception {
+        var openApi = new OpenAPI().paths(
+                new Paths().addPathItem("/api/-/search", new PathItem().get(new Operation())));
+
+        new DocumentationConfig().addRateLimitResponse().customise(openApi);
+
+        var schema = openApi.getPaths()
+                .get("/api/-/search")
+                .getGet()
+                .getResponses()
+                .get("429")
+                .getHeaders()
+                .get("X-RateLimit-Limit")
+                .getSchema();
+
+        assertThat(Json.mapper().writeValueAsString(schema)).contains("\"type\":\"integer\"");
+        assertThat(Json31.mapper().writeValueAsString(schema)).contains("\"type\":\"integer\"");
     }
 
     private void customize(Operation operation, String methodName) {

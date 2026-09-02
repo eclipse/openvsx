@@ -17,6 +17,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -135,20 +136,26 @@ public class DocumentationConfig {
         };
     }
 
+    /**
+     * Schemas must be built through the typed subclasses rather than {@code new Schema<>().type(...)}.
+     * The latter only sets the legacy string {@code type}, which an OpenAPI 3.1 document does not
+     * serialize at all - springdoc 3.x emits 3.1 by default - leaving the header with no type. The
+     * typed subclasses populate both that field and the 3.1 {@code types} set.
+     */
     @Bean
     public OpenApiCustomizer addRateLimitResponse() {
         var limitLimitHeader = new Header()
                 .description("Number of requests that can be made in a given amount of time")
-                .schema(new Schema<>().type("integer").format("int32"));
+                .schema(new IntegerSchema().format("int32"));
         var limitRemainingHeader = new Header()
                 .description("Remaining number of requests left in the current time window")
-                .schema(new Schema<>().type("integer").format("int32"));
+                .schema(new IntegerSchema().format("int32"));
         var limitResetHeader = new Header()
                 .description("Number of seconds until the rate limit tokens will be fully filled to its maximum")
-                .schema(new Schema<>().type("integer").format("int32"));
+                .schema(new IntegerSchema().format("int32"));
         var retryAfterHeader = new Header()
                 .description("Number of seconds to wait after receiving a 429 response")
-                .schema(new Schema<>().type("integer").format("int32"));
+                .schema(new IntegerSchema().format("int32"));
 
         var response = new ApiResponse()
                 .description("A client has sent too many requests in a given amount of time")

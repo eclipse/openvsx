@@ -96,6 +96,10 @@ management:
 
 springdoc:
   model-and-view-allowed: true
+  api-docs:
+    # springdoc 3.x defaults to OpenAPI 3.1, whose mapper in swagger-core writes a single schema type as
+    # a bare string but cannot read one back, so springdoc warns on every schema it tries to clone.
+    version: openapi_3_0
   swagger-ui:
     path: /swagger-ui
     docExpansion: list
