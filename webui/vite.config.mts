@@ -33,7 +33,7 @@ export default defineConfig(() => ({
         server: {
             deps: {
                 // their ESM builds import directory paths Node's resolver rejects; let vite bundle them
-                inline: ['@mui/x-data-grid', '@mui/x-date-pickers']
+                inline: ['@mui/x-charts', '@mui/x-data-grid', '@mui/x-date-pickers']
             }
         }
     },
