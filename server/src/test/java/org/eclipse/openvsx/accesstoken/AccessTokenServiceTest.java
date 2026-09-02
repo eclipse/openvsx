@@ -241,7 +241,10 @@ class AccessTokenServiceTest {
         var tau = accessTokenService
                 .useAccessToken("tok", new AccessTokenAction.DeleteVersion("foo", "bar"));
 
+        // is null; while token is valid, is not allowed for delete action
         assertThat(tau).isNull();
+        // was not "used"; TPT token was not deleted
+        verify(entityManager, never()).remove(any());
     }
 
     // A release commonly publishes one version per target platform, and each is its own publish request.
