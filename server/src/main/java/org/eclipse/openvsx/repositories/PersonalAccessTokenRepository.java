@@ -63,7 +63,7 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     /**
      * Deletes the expired tokens of the given types outright. An expired machine-issued token can never
-     * be used again, and nothing reads the row afterwards - the same reason using a one-time one deletes
+     * be used again, and nothing reads the row afterwards - the same reason using a one-time token deletes
      * it.
      */
     @Modifying
