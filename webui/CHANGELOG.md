@@ -34,7 +34,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Fix the extension detail page's download menu so each target-platform option is clickable across its whole row, not just its text: the option was an inline link nested inside a non-interactive menu item, rather than the menu item itself being the link
 - Fix `sendRequest` re-enabling fetch-retry's own retries for the request that follows a 429 wait, because the recursive call didn't forward the original `retry` flag. A `sendStrictRequest`/`sendNonRetriableRequest` call that hit a 429 could end up having its follow-up request retried twice - once by fetch-retry and once by the query client
 - Fix the create-namespace dialog acting on Enter when its button is disabled: an empty or over-long name was submitted anyway, and a held key sent the request more than once
-- Fix `isError` counting an empty `error` string as an error. The registry aggregates per-version outcomes when deleting extension versions, so a delete where every version succeeded answers with an empty error next to the success message - which raised an error dialog with nothing in it
+- Fix `isError` counting an empty `error` string as an error, and make it and `isSuccess` answer a `null` response body instead of throwing on it (`typeof null === 'object'`). The registry aggregates per-version outcomes when deleting extension versions, so a delete where every version succeeded answered with an empty error next to the success message - which raised an error dialog with nothing in it
 
 ### Dependencies
 
