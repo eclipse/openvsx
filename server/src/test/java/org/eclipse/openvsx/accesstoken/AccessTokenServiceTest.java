@@ -232,6 +232,18 @@ class AccessTokenServiceTest {
         return token;
     }
 
+    @Test
+    void refusesTrustedPublishingTokenForNonPublishing() {
+        var user = new UserData();
+        var token = trustedPublishingToken(user);
+        when(repositories.findPersonalAccessToken(anyString())).thenReturn(token);
+
+        var tau = accessTokenService
+                .useAccessToken("tok", new AccessTokenAction.DeleteVersion("foo", "bar"));
+
+        assertThat(tau).isNull();
+    }
+
     // A release commonly publishes one version per target platform, and each is its own publish request.
     // The CLI exchanges the CI identity once and shares the token across them (cli/src/trusted-publishing.ts
     // caches it per extension), so consuming it on first use failed every target but one - and since the
