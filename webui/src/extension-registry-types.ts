@@ -22,7 +22,7 @@ export interface ErrorResult {
     error: string;
 }
 export function isError(obj: unknown): obj is ErrorResult {
-    return typeof obj === 'object' && typeof (obj as any).error === 'string';
+    return typeof obj === 'object' && typeof (obj as any).error === 'string' && Boolean((obj as any).error);
 }
 
 export interface ReportedError {

@@ -9,21 +9,8 @@
  ********************************************************************************/
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { jsonResponse, stubFetch } from './support/fetch';
 import { sendNonRetriableRequest, sendStrictRequest } from '../../src/server-request';
-
-function jsonResponse(body: unknown, status = 200): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'Content-Type': 'application/json' }
-    });
-}
-
-function stubFetch(...responses: Response[]) {
-    const fetchMock = vi.fn();
-    responses.forEach(response => fetchMock.mockResolvedValueOnce(response));
-    vi.stubGlobal('fetch', fetchMock);
-    return fetchMock;
-}
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -44,6 +31,17 @@ describe('sendStrictRequest', () => {
         await expect(sendStrictRequest({ endpoint: 'https://open-vsx.org/api/nope' })).rejects.toEqual({
             error: 'Namespace not found'
         });
+    });
+
+    // The registry aggregates per-version outcomes when deleting extension versions, so a fully
+    // successful delete answers 200 with an empty error next to the success message. An empty error
+    // is no error - rejecting it used to surface an error dialog with nothing in it.
+    it('resolves a result whose success is reported alongside an empty error', async () => {
+        stubFetch(jsonResponse({ success: 'Deleted 2 versions', error: '' }));
+
+        await expect(
+            sendStrictRequest({ endpoint: 'https://open-vsx.org/user/extension/foo/bar/delete', method: 'POST' })
+        ).resolves.toEqual({ success: 'Deleted 2 versions', error: '' });
     });
 
     it('rejects with the error response of a failed request', async () => {
