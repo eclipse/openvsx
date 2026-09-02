@@ -15,7 +15,7 @@ A working example is [`server/src/dev/resources/application-mirror.yml`](../serv
 | `ovsx.data.mirror.enabled` | Set to `true` to turn mirror mode on. |
 | `ovsx.data.mirror.server-url` | Upstream registry to copy from, e.g. `https://open-vsx.org`. |
 | `ovsx.data.mirror.user-name` | Local user that owns mirrored extensions. |
-| `ovsx.data.mirror.schedule` | Cron expression for the mirror job (Spring / JobRunr style). |
+| `ovsx.data.mirror.schedule` | JobRunr cron expression for the mirror job (5 fields: minute hour day month weekday; not Spring's 6-field form with seconds). |
 | `ovsx.data.mirror.requests-per-second` | Rate limit for upstream HTTP calls. |
 | `ovsx.upstream.url` | **Absolute** upstream URL used for API calls. A relative path here leads to `Target host is not specified`. |
 | `ovsx.storage.primary-service` | Blob storage backend. See [storage](#storage). |
