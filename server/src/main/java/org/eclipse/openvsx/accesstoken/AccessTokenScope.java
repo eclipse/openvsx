@@ -18,6 +18,8 @@ import java.util.Objects;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.Namespace;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Access token scope.
  */
@@ -31,6 +33,7 @@ public sealed interface AccessTokenScope {
      * Concatenates scopes into new scope, that is enforcing both this and provided scope applies.
      */
     default AccessTokenScope and(AccessTokenScope scope) {
+        requireNonNull(scope);
         return new AndScoped(this, scope);
     }
 
@@ -40,6 +43,7 @@ public sealed interface AccessTokenScope {
     record Unrestricted() implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            requireNonNull(accessTokenAction);
             return true;
         }
     }
@@ -51,6 +55,7 @@ public sealed interface AccessTokenScope {
     record NamespaceScoped(Namespace namespace) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            requireNonNull(accessTokenAction);
             return accessTokenAction.namespace().isPresent()
                     && Objects.equals(namespace.getName(), accessTokenAction.namespace().get());
         }
@@ -63,6 +68,7 @@ public sealed interface AccessTokenScope {
     record ExtensionScoped(Extension extension) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            requireNonNull(accessTokenAction);
             return accessTokenAction.namespace().isPresent() && accessTokenAction.extension().isPresent() &&
                     Objects.equals(extension.getNamespace().getName(), accessTokenAction.namespace().get()) &&
                     Objects.equals(extension.getName(), accessTokenAction.extension().get());
@@ -75,7 +81,8 @@ public sealed interface AccessTokenScope {
     record ActionScoped(Class<?>... allowedActions) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
-            return Arrays.stream(allowedActions).anyMatch(c -> c == accessTokenAction.getClass());
+            requireNonNull(accessTokenAction);
+            return Arrays.stream(allowedActions).anyMatch(c -> c.isAssignableFrom(accessTokenAction.getClass()));
         }
     }
 
@@ -85,6 +92,7 @@ public sealed interface AccessTokenScope {
     record AndScoped(AccessTokenScope one, AccessTokenScope second) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
+            requireNonNull(accessTokenAction);
             return one.allowsAction(accessTokenAction) && second.allowsAction(accessTokenAction);
         }
     }
