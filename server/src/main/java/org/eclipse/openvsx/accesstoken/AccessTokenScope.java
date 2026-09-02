@@ -31,7 +31,7 @@ public sealed interface AccessTokenScope {
      * Concatenates scopes into new scope, that is enforcing both this and provided scope applies.
      */
     default AccessTokenScope and(AccessTokenScope scope) {
-        return new AndScope(this, scope);
+        return new AndScoped(this, scope);
     }
 
     /**
@@ -75,14 +75,14 @@ public sealed interface AccessTokenScope {
     record ActionScoped(Class<?>... allowedActions) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
-            return Arrays.binarySearch(allowedActions, accessTokenAction.getClass()) >= 0;
+            return Arrays.stream(allowedActions).anyMatch(c -> c == accessTokenAction.getClass());
         }
     }
 
     /**
      * Concatenates scopes with logical {@code AND}. Enforces both scopes are allowing action.
      */
-    record AndScope(AccessTokenScope one, AccessTokenScope second) implements AccessTokenScope {
+    record AndScoped(AccessTokenScope one, AccessTokenScope second) implements AccessTokenScope {
         @Override
         public boolean allowsAction(AccessTokenAction accessTokenAction) {
             return one.allowsAction(accessTokenAction) && second.allowsAction(accessTokenAction);
