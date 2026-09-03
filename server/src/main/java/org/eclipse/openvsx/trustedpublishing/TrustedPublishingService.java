@@ -170,7 +170,13 @@ public class TrustedPublishingService {
         publisher.setClaims(claims);
         // find, not merge: this needs a managed UserData to point the new row at, and merging the
         // caller's (detached) user wrote their whole row back as a side effect - see #989.
-        publisher.setCreatedBy(entityManager.find(UserData.class, user.getId()));
+        // trusted_publisher.created_by is NOT NULL, so a user that has gone away since the request
+        // was authenticated has to fail here rather than as a constraint violation on persist.
+        var createdBy = entityManager.find(UserData.class, user.getId());
+        if (createdBy == null) {
+            throw new ErrorResultException("Cannot register a trusted publisher for an unknown user.");
+        }
+        publisher.setCreatedBy(createdBy);
         publisher.setCreatedTimestamp(TimeUtil.getCurrentUTC());
         entityManager.persist(publisher);
         return publisher;

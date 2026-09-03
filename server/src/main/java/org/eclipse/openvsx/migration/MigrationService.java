@@ -86,8 +86,16 @@ public class MigrationService {
      */
     @Transactional
     public void scheduleMigration(MigrationItem item, Instant scheduledAt) {
-        // Only read from here on, so find rather than merge - see #989.
+        // find rather than merge: only migrationScheduled below is this method's to write, and
+        // merging the whole detached item reverted anything else that had moved - see #989.
         item = entityManager.find(MigrationItem.class, item.getId());
+        if (item == null) {
+            // The row can be deleted between the caller reading its batch and this transaction
+            // (MigrationItemCleanupFilter, or one of the Delete_MigrationItems migrations). Skip it
+            // rather than dereferencing null, which would abort the rest of the batch.
+            logger.debug("Migration item is gone, nothing to schedule");
+            return;
+        }
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());
