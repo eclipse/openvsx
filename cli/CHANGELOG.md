@@ -20,6 +20,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 ### Dependencies
 
 - Bump fast-uri from 3.1.5 to 3.1.7
+- Bump qs from 6.15.2 to 6.16.0
 
 ### [v1.1.1] (09/08/2026)
 
