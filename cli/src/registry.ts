@@ -139,16 +139,15 @@ export class Registry {
     }
 
     /**
-     * Returns every published version of an extension, one entry per version and target platform.
-     * `allVersions` on the metadata response only carries version numbers and links, so this is
-     * what makes timestamps and pre-release flags available without a request per version.
+     * Returns a page of an extension's published versions, newest first, one entry per version and
+     * target platform. `allVersions` on the metadata response carries version numbers and links
+     * only, so this is what makes the target platforms of each version available.
      */
-    queryAllVersions(namespace: string, extension: string): Promise<QueryResult> {
+    getVersionReferences(namespace: string, extension: string, size: number, offset: number): Promise<VersionReferences> {
         try {
-            return this.getJson(this.getUrl(['api', 'v2', '-', 'query'], {
-                namespaceName: namespace,
-                extensionName: extension,
-                includeAllVersions: 'true'
+            return this.getJson(this.getUrl(['api', namespace, extension, 'version-references'], {
+                size: String(size),
+                offset: String(offset)
             }));
         } catch (err) {
             return rejectError(err);
@@ -381,10 +380,18 @@ export interface ExtensionReplacement {
     displayName?: string;
 }
 
-export interface QueryResult extends Response {
+export interface VersionReference {
+    url: string;
+    files: { [type: string]: string };
+    version: string;
+    targetPlatform?: string;
+    engines?: { [engine: string]: string };
+}
+
+export interface VersionReferences extends Response {
     offset: number;
     totalSize: number;
-    extensions?: Extension[];
+    versions?: VersionReference[];
 }
 
 export interface ExtensionReference {

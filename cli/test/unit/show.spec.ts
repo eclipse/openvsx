@@ -24,7 +24,7 @@ interface ShowRequest {
 interface RegistryStub {
     url: string;
     metadataRequests: ShowRequest[];
-    queryRequests: ShowRequest[];
+    versionRequests: ShowRequest[];
     close: () => Promise<void>;
 }
 
@@ -52,28 +52,29 @@ const extension = {
     preRelease: false
 };
 
-/** Stands in for `/api/{namespace}/{extension}` plus the v2 query used for version history. */
+/** Stands in for `/api/{namespace}/{extension}` plus the version-reference listing. */
 async function startRegistryStub(
     metadata: { status?: number; body?: unknown } = {},
-    query: { status?: number; body?: unknown } = {}
+    versions: { status?: number; body?: unknown } = {}
 ): Promise<RegistryStub> {
     const metadataRequests: ShowRequest[] = [];
-    const queryRequests: ShowRequest[] = [];
+    const versionRequests: ShowRequest[] = [];
+    const defaultVersions = { offset: 0, totalSize: 1, versions: [{ version: '1.2.0', targetPlatform: 'universal' }] };
     const server = http.createServer((req, res) => {
         const url = new URL(req.url ?? '/', 'http://127.0.0.1');
         const request = { pathname: url.pathname, query: url.searchParams };
-        const isQuery = url.pathname === '/api/v2/-/query';
-        (isQuery ? queryRequests : metadataRequests).push(request);
-        const stub = isQuery ? query : metadata;
+        const isVersions = url.pathname.endsWith('/version-references');
+        (isVersions ? versionRequests : metadataRequests).push(request);
+        const stub = isVersions ? versions : metadata;
         res.writeHead(stub.status ?? 200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(stub.body ?? (isQuery ? { offset: 0, totalSize: 1, extensions: [extension] } : extension)));
+        res.end(JSON.stringify(stub.body ?? (isVersions ? defaultVersions : extension)));
     });
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
     const port = (server.address() as AddressInfo).port;
     return {
         url: `http://127.0.0.1:${port}`,
         metadataRequests,
-        queryRequests,
+        versionRequests,
         close: () => new Promise<void>(resolve => server.close(() => resolve()))
     };
 }
@@ -94,9 +95,9 @@ describe('show', () => {
 
     async function givenRegistry(
         metadata?: { status?: number; body?: unknown },
-        query?: { status?: number; body?: unknown }
+        versions?: { status?: number; body?: unknown }
     ): Promise<RegistryStub> {
-        const stub = await startRegistryStub(metadata, query);
+        const stub = await startRegistryStub(metadata, versions);
         stubs.push(stub);
         return stub;
     }
@@ -174,21 +175,21 @@ describe('show', () => {
             body: {
                 offset: 0,
                 totalSize: 3,
-                extensions: [
-                    { ...extension, version: '1.2.0', targetPlatform: 'linux-x64' },
-                    { ...extension, version: '1.2.0', targetPlatform: 'win32-x64' },
-                    { ...extension, version: '1.1.0', targetPlatform: 'universal', preRelease: true }
+                versions: [
+                    { version: '1.2.0', targetPlatform: 'linux-x64' },
+                    { version: '1.2.0', targetPlatform: 'win32-x64' },
+                    { version: '1.1.0', targetPlatform: 'universal' }
                 ]
             }
         });
 
         await show({ extensionId: 'redhat.java', registryUrl: registry.url });
 
-        expect(registry.queryRequests[0].query.get('includeAllVersions')).toBe('true');
+        expect(registry.versionRequests[0].pathname).toBe('/api/redhat/java/version-references');
         const printed = output();
         expect(printed).toContain('Version History:');
         expect(printed).toContain('linux-x64, win32-x64');
-        expect(printed).toContain('pre-release');
+        expect(printed).toContain('1.1.0');
     });
 
     // The query makes no ordering promise, so the sort has to happen here - and it has to, because
@@ -198,10 +199,10 @@ describe('show', () => {
             body: {
                 offset: 0,
                 totalSize: 3,
-                extensions: [
-                    { ...extension, version: '1.9.0' },
-                    { ...extension, version: '1.10.0' },
-                    { ...extension, version: '1.2.0' }
+                versions: [
+                    { version: '1.9.0' },
+                    { version: '1.10.0' },
+                    { version: '1.2.0' }
                 ]
             }
         });
@@ -215,8 +216,8 @@ describe('show', () => {
     });
 
     it('caps the version history and says how many were left out', async () => {
-        const versions = Array.from({ length: 9 }, (_, i) => ({ ...extension, version: `1.0.${i}` }));
-        const registry = await givenRegistry({}, { body: { offset: 0, totalSize: 9, extensions: versions } });
+        const refs = Array.from({ length: 9 }, (_, i) => ({ version: `1.0.${i}` }));
+        const registry = await givenRegistry({}, { body: { offset: 0, totalSize: 9, versions: refs } });
 
         await show({ extensionId: 'redhat.java', registryUrl: registry.url });
 
@@ -224,14 +225,31 @@ describe('show', () => {
     });
 
     it('lists every version with --all-versions', async () => {
-        const versions = Array.from({ length: 9 }, (_, i) => ({ ...extension, version: `1.0.${i}` }));
-        const registry = await givenRegistry({}, { body: { offset: 0, totalSize: 9, extensions: versions } });
+        const refs = Array.from({ length: 9 }, (_, i) => ({ version: `1.0.${i}` }));
+        const registry = await givenRegistry({}, { body: { offset: 0, totalSize: 9, versions: refs } });
 
         await show({ extensionId: 'redhat.java', registryUrl: registry.url, allVersions: true });
 
         const printed = output();
         expect(printed).not.toContain('more (pass --all-versions');
         expect(printed).toContain('1.0.8');
+    });
+
+    // totalSize counts version/target-platform pairs rather than versions, so paging has to run off
+    // what actually came back. Without this the listing stopped after the first page and quietly
+    // under-reported - the reason this doesn't use the query endpoint, which caps at 100 rows.
+    it('pages to the end with --all-versions', async () => {
+        const firstPage = Array.from({ length: 100 }, (_, i) => ({ version: `1.0.${i}` }));
+        const registry = await givenRegistry({}, {
+            body: { offset: 0, totalSize: 150, versions: firstPage }
+        });
+
+        await show({ extensionId: 'redhat.java', registryUrl: registry.url, allVersions: true });
+
+        // The first page returned 100 of 150, so a second request must follow at the next offset.
+        expect(registry.versionRequests).toHaveLength(2);
+        expect(registry.versionRequests[0].query.get('offset')).toBe('0');
+        expect(registry.versionRequests[1].query.get('offset')).toBe('100');
     });
 
     it('requests the version named after @ and the given target platform', async () => {
@@ -256,12 +274,12 @@ describe('show', () => {
         await show({ extensionId: 'redhat.java', json: true, registryUrl: registry.url });
 
         expect(JSON.parse(output())).toMatchObject({ namespace: 'redhat', name: 'java', version: '1.2.0' });
-        expect(registry.queryRequests).toHaveLength(0);
+        expect(registry.versionRequests).toHaveLength(0);
     });
 
-    // The v2 query is only there for the history table, so a registry too old to serve it - or one
+    // The listing is only there for the history table, so a registry that doesn't serve it - or one
     // that errors on it - must still produce the rest of the output rather than failing outright.
-    it('still prints the summary when the version query fails', async () => {
+    it('still prints the summary when the version listing fails', async () => {
         const registry = await givenRegistry({}, { status: 404, body: { error: 'Not found' } });
 
         await show({ extensionId: 'redhat.java', registryUrl: registry.url });

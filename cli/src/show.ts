@@ -12,7 +12,7 @@
  *****************************************************************************/
 
 import * as semver from 'semver';
-import { Extension, Registry } from './registry';
+import { Extension, Registry, VersionReference } from './registry';
 import { ShowOptions } from './show-options';
 import { addEnvOptions, matchExtensionId } from './util';
 
@@ -31,10 +31,15 @@ const INTERNAL_TAG_PREFIX = '__';
 /** One row of the version history table. */
 interface VersionSummary {
     version: string;
-    timestamp?: string;
-    preRelease: boolean;
     targetPlatforms: string[];
 }
+
+/**
+ * Page size for the version-reference listing. Versions come back newest first, and each version
+ * contributes one entry per target platform, so a page has to be comfortably larger than the
+ * number of versions shown for the default table to be filled from a single request.
+ */
+const VERSION_PAGE_SIZE = 100;
 
 /**
  * Prints an extension's metadata.
@@ -59,7 +64,8 @@ export async function show(options: ShowOptions): Promise<void> {
         return;
     }
 
-    printSummary(extension, await getVersions(registry, namespace, name), options.allVersions === true);
+    const allVersions = options.allVersions === true;
+    printSummary(extension, await getVersions(registry, namespace, name, allVersions), allVersions);
 }
 
 /**
@@ -75,36 +81,49 @@ function splitVersion(extensionId: string): { id: string; version?: string } {
 }
 
 /**
- * Collects the version history, collapsing the one-entry-per-target-platform rows the query
- * returns into a single row per version. Best-effort: a registry that doesn't serve the v2 query
- * endpoint still gets everything else, just without the history table.
+ * Collects the version history, collapsing the one-entry-per-target-platform rows the registry
+ * returns into a single row per version. Fetches one page unless every version is wanted, in which
+ * case it pages to the end - `totalSize` counts version/target-platform pairs, not versions, so
+ * paging has to run on what has actually been returned rather than on a version count.
+ *
+ * Best-effort: a registry that doesn't serve this endpoint still gets everything else, just
+ * without the history table.
  */
-async function getVersions(registry: Registry, namespace: string, name: string): Promise<VersionSummary[]> {
-    let extensions: Extension[] | undefined;
+async function getVersions(
+    registry: Registry,
+    namespace: string,
+    name: string,
+    allVersions: boolean
+): Promise<VersionSummary[]> {
+    const references: VersionReference[] = [];
+    let offset = 0;
     try {
-        extensions = (await registry.queryAllVersions(namespace, name)).extensions;
+        for (;;) {
+            const page = await registry.getVersionReferences(namespace, name, VERSION_PAGE_SIZE, offset);
+            if (page.error) {
+                return [];
+            }
+            const versions = page.versions ?? [];
+            references.push(...versions);
+            offset += versions.length;
+            if (!allVersions || versions.length === 0 || offset >= page.totalSize) {
+                break;
+            }
+        }
     } catch {
-        return [];
-    }
-    if (!extensions) {
         return [];
     }
 
     const byVersion = new Map<string, VersionSummary>();
-    for (const extension of extensions) {
-        const summary = byVersion.get(extension.version);
-        if (summary) {
-            if (extension.targetPlatform && !summary.targetPlatforms.includes(extension.targetPlatform)) {
-                summary.targetPlatforms.push(extension.targetPlatform);
-            }
-            continue;
+    for (const reference of references) {
+        let summary = byVersion.get(reference.version);
+        if (!summary) {
+            summary = { version: reference.version, targetPlatforms: [] };
+            byVersion.set(reference.version, summary);
         }
-        byVersion.set(extension.version, {
-            version: extension.version,
-            timestamp: extension.timestamp,
-            preRelease: extension.preRelease === true,
-            targetPlatforms: extension.targetPlatform ? [extension.targetPlatform] : []
-        });
+        if (reference.targetPlatform && !summary.targetPlatforms.includes(reference.targetPlatform)) {
+            summary.targetPlatforms.push(reference.targetPlatform);
+        }
     }
 
     return [...byVersion.values()].sort(byNewestFirst);
@@ -186,16 +205,11 @@ function printVersionHistory(versions: VersionSummary[], allVersions: boolean): 
     }
 
     const shown = allVersions ? versions : versions.slice(0, VERSION_HISTORY_SIZE);
-    const rows = shown.map(v => [
-        v.version,
-        v.timestamp ?? '',
-        v.preRelease ? 'pre-release' : '',
-        v.targetPlatforms.join(', ')
-    ]);
+    const rows = shown.map(v => [v.version, v.targetPlatforms.join(', ')]);
 
     console.log();
     console.log('Version History:');
-    printRows([['Version', 'Last Updated', '', 'Target Platforms'], ...rows]);
+    printRows([['Version', 'Target Platforms'], ...rows]);
     const remaining = versions.length - shown.length;
     if (remaining > 0) {
         console.log(`  ... and ${remaining} more (pass --all-versions to list them)`);
