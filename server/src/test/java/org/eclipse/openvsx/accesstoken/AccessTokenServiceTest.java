@@ -150,10 +150,25 @@ class AccessTokenServiceTest {
 
         var value = accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT);
 
-        // prefix, then the marker saying what kind of token this is, then 256 bits base64url encoded
+        // prefix, then the marker saying what kind of token this is, then 256 bits base62 encoded
         assertThat(value).startsWith("ovsxat_");
-        assertThat(value.substring("ovsxat_".length())).hasSize(43).doesNotContain("=", "+", "/");
+        assertThat(value.substring("ovsxat_".length())).hasSize(43).containsPattern("^[0-9A-Za-z]+$");
         verifyNoInteractions(repositories);
+    }
+
+    // The marker ends in the only underscore a token has, so that what follows it reads as one word.
+    // Base64url put a further - or _ in about three of every four bodies, which made the marker look
+    // longer than it is.
+    @Test
+    void keepsTheBodyFreeOfTheCharactersThatMarkTheTokenType() {
+        when(config.getPrefix()).thenReturn("ovsx");
+
+        var values = java.util.stream.Stream.generate(
+                () -> accessTokenService.generateTokenValue(PersonalAccessTokenType.LLT)).limit(500).toList();
+
+        assertThat(values).allSatisfy(
+                value -> assertThat(value.substring("ovsxat_".length()))
+                        .doesNotContain("_", "-", "=", "+", "/"));
     }
 
     @Test

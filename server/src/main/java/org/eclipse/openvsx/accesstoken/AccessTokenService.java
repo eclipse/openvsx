@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.accesstoken;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -19,7 +20,6 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +67,19 @@ public class AccessTokenService {
     /** 256 bits; far beyond guessing, and the encoded form is still shorter than a UUID. */
     private static final int TOKEN_BYTES = 32;
 
-    private static final Base64.Encoder TOKEN_ENCODER = Base64.getUrlEncoder().withoutPadding();
+    /**
+     * Base62 rather than base64url, so that the only underscore in a token is the one ending the marker.
+     * Base64url would put a further {@code -} or {@code _} in roughly three of every four token bodies,
+     * which reads as though the marker were longer than it is and makes a token awkward to select as a
+     * single word. It costs nothing in length: 62^43 still exceeds 2^256, so the body stays 43 characters.
+     */
+    private static final char[] TOKEN_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            .toCharArray();
+
+    /** Characters needed for 256 bits in base62: ceil(256 / log2(62)). */
+    private static final int TOKEN_LENGTH = 43;
+
+    private static final BigInteger TOKEN_RADIX = BigInteger.valueOf(TOKEN_ALPHABET.length);
 
     /** The token types that are retired by deleting the row rather than deactivating it. */
     private static final List<PersonalAccessTokenType> EPHEMERAL_TOKEN_TYPES = Arrays
@@ -211,7 +223,26 @@ public class AccessTokenService {
     public String generateTokenValue(PersonalAccessTokenType type) {
         var bytes = new byte[TOKEN_BYTES];
         random.nextBytes(bytes);
-        return config.getPrefix() + type.getTokenMarker() + TOKEN_ENCODER.encodeToString(bytes);
+        return config.getPrefix() + type.getTokenMarker() + encodeTokenBody(bytes);
+    }
+
+    /**
+     * Renders the random bytes as a fixed-width base62 string, most significant digit first.
+     * <p>
+     * The bytes are read as one unsigned number, so no entropy is lost and none is added: 62^43 is larger
+     * than 2^256, which makes every distinct byte sequence a distinct string and leaves no room for the
+     * modulo bias that mapping each character separately onto a 62-letter alphabet would introduce. Values
+     * that need fewer digits keep the same width by carrying leading zero characters.
+     */
+    private static String encodeTokenBody(byte[] bytes) {
+        var remaining = new BigInteger(1, bytes);
+        var body = new char[TOKEN_LENGTH];
+        for (var i = TOKEN_LENGTH - 1; i >= 0; i--) {
+            var divideAndRemainder = remaining.divideAndRemainder(TOKEN_RADIX);
+            remaining = divideAndRemainder[0];
+            body[i] = TOKEN_ALPHABET[divideAndRemainder[1].intValue()];
+        }
+        return new String(body);
     }
 
     @Transactional
