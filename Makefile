@@ -26,4 +26,4 @@ server: ## Run the registry server on http://localhost:8080
 	cd server && ./scripts/generate-properties.sh && ./gradlew runServer
 
 webui: ## Run the web UI on http://localhost:3000
-	cd webui && yarn install && yarn dev
+	cd webui && yarn install --immutable && yarn dev
