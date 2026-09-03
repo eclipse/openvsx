@@ -26,4 +26,10 @@ public interface DownloadAnalyticsRepository {
      * independently of these events.
      */
     void save(List<DownloadEvent> events);
+
+    /**
+     * Returns the (sparse) aggregated download series for the given request. Buckets without
+     * downloads are absent; zero-filling is the {@link DownloadAnalyticsService}'s concern.
+     */
+    List<DownloadSeriesRow> findSeries(DownloadSeriesRequest request);
 }
