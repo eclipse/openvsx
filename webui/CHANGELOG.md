@@ -26,6 +26,20 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Publishing goes through TanStack Query: `publishExtension` and `createNamespace` are mutation hooks (`usePublishExtension`, `useCreateNamespace`), and both service methods lose their `AbortController` parameter — writes are no longer aborted, and retries are the query client's to own. The user's extension list is a query too (`useUserExtensions`), read by the settings tab and by the publish queue as it follows a package, so a card appears in the list as soon as the registry has the package
 - `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 
+### Added
+
+- Add a `Pill` component — the clickable glass pill the category pills are built on, now usable on its own — and extract the `MonoSlash`, `glassSurface` and `compactControl` page primitives out of the search field, the pills and the search header
+- Add `userLoading` to `MainContext`, so custom pages can tell "not logged in" from "still resolving the user"
+- Add a `userMenuContent` slot to `PageSettings.elements`: extra entries for the logged-in account menu, rendered above the admin entry. The slot receives a `MenuEntry` component to build entries with, so each entry is styled by the menu it appears in — the desktop and mobile menus style theirs differently, and a consumer cannot match both on its own
+- Add an `adminPages` slot to `PageSettings.elements`: extra admin dashboard pages, each declaring a name, icon, optional description and optional category, and each appearing in the side panel, as a card on the dashboard overview and as a route. Contributions are additive — a category name matching a built-in group appends to it, and a page whose path would shadow a built-in one is ignored
+- Widen the published API for consumers building their own pages: the request layer (`sendRequest`, `sendNonRetriableRequest`, `ErrorResponse`, `controllerFromSignal`), `MainContext`, `AppProviders`, `NotFound`, `createDefaultTheme` with the `MONO_FONT`/`NAVBAR_HEIGHT` tokens, the `createRoute`/`createAbsoluteURL`/`addQuery`/`formatCompactNumber`/`toRelativeTime` utils, the `useDebouncedCallback` and `useGridCursor` hooks, the navbar-chrome, search-focus and page-search-bar hooks, the category icon helpers, `ExtensionDetailRoutes`, and the `itemIcon`/`MenuItemText` building blocks for `userMenuContent` entries
+
+### Changed
+
+- Rename `ScrollToTop` to `ScrollRestoration`, matching what it does on back/forward navigation
+- Rename the extension tint context to `navbar-chrome-context` and add a second channel to it: a page with sections pinned under the navbar can extend the navbar's blur fan down to back them (`useExtendNavbarBlur`)
+- Give Popover and Autocomplete popups the same floating-paper treatment as the other menus, and stop Popovers locking body scroll — the lock jumps the scroll position on mobile and shifts the pinned chrome
+
 ### Fixed
 
 - Fix a React warning ("Received `true` for a non-boolean attribute `notched`") from the admin dashboard's publisher role filter, whose custom `InputBase` doesn't consume the `notched` prop MUI's `Select` injects for the (unused) outlined variant
