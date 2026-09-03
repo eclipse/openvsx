@@ -79,7 +79,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
-import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.analytics.ingestion.DownloadCountService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
 import org.eclipse.openvsx.util.LogService;

@@ -103,7 +103,7 @@ import org.eclipse.openvsx.storage.FileCacheDurationConfig;
 import org.eclipse.openvsx.storage.GoogleCloudStorageService;
 import org.eclipse.openvsx.storage.LocalStorageService;
 import org.eclipse.openvsx.storage.StorageUtilService;
-import org.eclipse.openvsx.storage.log.DownloadCountService;
+import org.eclipse.openvsx.analytics.ingestion.DownloadCountService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
