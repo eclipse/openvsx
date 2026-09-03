@@ -11,8 +11,10 @@ x-valkey-node: &valkey-node
     test: ["CMD", "valkey-cli", "-p", "7000", "--user", "openvsx", "ping"]
     interval: 5s
     retries: 5
+  # The admin UI depends on the cluster, so starting it starts the cluster too.
   profiles:
     - valkey
+    - valkey-admin
 
 services:
 
@@ -155,15 +157,24 @@ services:
       fi"
     profiles:
       - valkey
+      - valkey-admin
 
-  # Web UI for the cluster above; the connection is pre-configured, no manual setup in the UI.
+  # Web UI for the cluster above. Pre-configuring the connection makes Valkey Admin discover the
+  # cluster topology from node-1 on startup and spawn a metrics collector per primary, so there is
+  # no manual setup in the UI. DEPLOYMENT_MODE=Web is the image default, set here to be explicit.
   valkey-admin:
     image: valkey/valkey-admin:1.1.1
+    # Discovery is a one-shot at startup with no retry, so wait for the cluster to exist.
+    depends_on:
+      valkey-cluster-init:
+        condition: service_completed_successfully
     ports:
       - '8090:8080'
     environment:
+      - DEPLOYMENT_MODE=Web
       - VALKEY_HOST=valkey-node-1
       - VALKEY_PORT=7000
+      - VALKEY_AUTH_TYPE=password
       - VALKEY_USERNAME=openvsx
       - VALKEY_PASSWORD=openvsx
     profiles:
