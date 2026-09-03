@@ -39,6 +39,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Dependencies
 
 - Remove the `react-dropzone` dependency; the publish page and the navbar's drop target handle their own drag events, and nothing else imports it
+- Bump @humanfs/node from 0.16.6 to 0.16.8
 
 ## [v1.1.2] (20/08/2026)
 
