@@ -216,8 +216,6 @@ class UserAPITest {
         token.setType(PersonalAccessTokenType.LLT);
         Mockito.when(repositories.findPersonalAccessToken(100))
                 .thenReturn(token);
-        Mockito.when(entityManager.merge(userData))
-                .thenReturn(userData);
 
         mockMvc.perform(
                 post("/user/token/delete/{id}", 100)
@@ -258,6 +256,7 @@ class UserAPITest {
     void testDeleteAccessTokenWrongUser() throws Exception {
         mockUserData();
         var userData = new UserData();
+        userData.setId(2);
         userData.setLoginName("wrong_user");
         var token = new PersonalAccessToken();
         token.setId(100);
@@ -923,6 +922,7 @@ class UserAPITest {
 
     private UserData mockUserData() {
         var userData = new UserData();
+        userData.setId(1);
         userData.setLoginName("test_user");
         userData.setFullName("Test User");
         userData.setProviderUrl("http://example.com/test");

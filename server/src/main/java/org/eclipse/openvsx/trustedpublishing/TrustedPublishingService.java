@@ -168,7 +168,9 @@ public class TrustedPublishingService {
         publisher.setProvider(provider.getProviderId());
         publisher.setRegistration(registration);
         publisher.setClaims(claims);
-        publisher.setCreatedBy(entityManager.merge(user));
+        // find, not merge: this needs a managed UserData to point the new row at, and merging the
+        // caller's (detached) user wrote their whole row back as a side effect - see #989.
+        publisher.setCreatedBy(entityManager.find(UserData.class, user.getId()));
         publisher.setCreatedTimestamp(TimeUtil.getCurrentUTC());
         entityManager.persist(publisher);
         return publisher;

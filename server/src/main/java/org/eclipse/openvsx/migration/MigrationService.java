@@ -86,7 +86,8 @@ public class MigrationService {
      */
     @Transactional
     public void scheduleMigration(MigrationItem item, Instant scheduledAt) {
-        item = entityManager.merge(item);
+        // Only read from here on, so find rather than merge - see #989.
+        item = entityManager.find(MigrationItem.class, item.getId());
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
         var jobId = uuidService.generateFromName(jobIdText);
         var handler = JOB_HANDLERS.get(item.getJobName());

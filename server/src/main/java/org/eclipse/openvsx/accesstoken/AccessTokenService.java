@@ -255,13 +255,22 @@ public class AccessTokenService {
             throw new NotFoundException();
         }
 
-        user = entityManager.merge(user);
-        if (!token.getUser().equals(user)) {
+        // Compare identity, not whole entities. UserData#equals compares every field - tokens and
+        // memberships included - so this previously had to merge `user` purely to make it the same
+        // managed instance as token.getUser() and let equals short-circuit on ==. That merge wrote
+        // the caller's whole (possibly stale) user row back as a side effect (#989), and dropping it
+        // without switching to an id comparison would start rejecting callers holding a user that
+        // differs from the stored row in any field.
+        // The id must also be assigned on both sides: two entities that were never persisted both
+        // report id 0, and an ownership check that treats those as the same person fails open. An
+        // authenticated user always has an id, so requiring one costs nothing here.
+        var tokenUser = token.getUser();
+        if (tokenUser == null || tokenUser.getId() == 0 || tokenUser.getId() != user.getId()) {
             throw new NotFoundException();
         }
 
         token.setActive(false);
-        return ResultJson.success("Deactivated access token for user " + user.getLoginName() + ".");
+        return ResultJson.success("Deactivated access token for user " + tokenUser.getLoginName() + ".");
     }
 
     // REQUIRES_NEW: callers such as LocalRegistryService#createNamespace(NamespaceJson, String) wrap

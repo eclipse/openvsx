@@ -26,7 +26,9 @@ public class RenameDownloadsService {
 
     @Transactional
     public FileResource cloneResource(FileResource resource, String name) {
-        resource = entityManager.merge(resource);
+        // Nothing on `resource` is updated here; find still returns a managed entity, so the lazy
+        // getExtension() below resolves just the same - see #989.
+        resource = entityManager.find(FileResource.class, resource.getId());
         var clone = new FileResource();
         clone.setName(name);
         clone.setStorageType(resource.getStorageType());

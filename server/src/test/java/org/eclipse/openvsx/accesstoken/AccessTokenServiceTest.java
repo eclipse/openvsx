@@ -37,8 +37,10 @@ import org.eclipse.openvsx.entities.TrustedPublisher;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.util.NotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -81,6 +83,66 @@ class AccessTokenServiceTest {
         token.setType(PersonalAccessTokenType.LLT);
         token.setVersion(1);
         return token;
+    }
+
+    // #989: deactivateAccessToken used to call entityManager.merge(user) so that `user` became the
+    // same managed instance as token.getUser() and UserData#equals - which compares every field,
+    // tokens and memberships included - could short-circuit on ==. The merge wrote the caller's
+    // whole user row back as a side effect. These pin down that the ownership check now goes by id,
+    // so it neither writes through the EntityManager nor depends on the caller's copy of the user
+    // matching the stored row field for field.
+    @Test
+    void deactivatesATokenForItsOwnerWithoutWritingTheUserBack() {
+        var owner = new UserData();
+        owner.setId(1L);
+        owner.setLoginName("owner");
+        var token = activeUnrestrictedToken();
+        token.setUser(owner);
+        when(repositories.findPersonalAccessToken(7L)).thenReturn(token);
+
+        // The caller's copy carries stale fields, exactly what merge would have written back.
+        var stale = new UserData();
+        stale.setId(1L);
+        stale.setLoginName("owner");
+        stale.setFullName("a stale full name");
+
+        var result = accessTokenService.deactivateAccessToken(stale, 7L);
+
+        assertThat(result.getError()).isNull();
+        assertThat(token.isActive()).isFalse();
+        verifyNoInteractions(entityManager);
+    }
+
+    @Test
+    void refusesToDeactivateATokenBelongingToSomebodyElse() {
+        var owner = new UserData();
+        owner.setId(1L);
+        var token = activeUnrestrictedToken();
+        token.setUser(owner);
+        when(repositories.findPersonalAccessToken(7L)).thenReturn(token);
+
+        var other = new UserData();
+        other.setId(2L);
+
+        assertThatThrownBy(() -> accessTokenService.deactivateAccessToken(other, 7L))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(token.isActive()).isTrue();
+    }
+
+    // personal_access_token.user_data is nullable, so an ownerless row must not be deactivatable by
+    // whoever asks - and must not NPE on the way to refusing.
+    @Test
+    void refusesToDeactivateATokenWithNoUser() {
+        var token = activeUnrestrictedToken();
+        token.setUser(null);
+        when(repositories.findPersonalAccessToken(7L)).thenReturn(token);
+
+        var user = new UserData();
+        user.setId(1L);
+
+        assertThatThrownBy(() -> accessTokenService.deactivateAccessToken(user, 7L))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(token.isActive()).isTrue();
     }
 
     @Test
