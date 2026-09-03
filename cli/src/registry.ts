@@ -123,13 +123,33 @@ export class Registry {
         }
     }
 
-    getMetadata(namespace: string, extension: string, target?: string): Promise<Extension> {
+    getMetadata(namespace: string, extension: string, target?: string, version?: string): Promise<Extension> {
         try {
             const segments = ['api', namespace, extension];
             if (target) {
                 segments.push(target);
             }
+            if (version) {
+                segments.push(version);
+            }
             return this.getJson(this.getUrl(segments));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /**
+     * Returns every published version of an extension, one entry per version and target platform.
+     * `allVersions` on the metadata response only carries version numbers and links, so this is
+     * what makes timestamps and pre-release flags available without a request per version.
+     */
+    queryAllVersions(namespace: string, extension: string): Promise<QueryResult> {
+        try {
+            return this.getJson(this.getUrl(['api', 'v2', '-', 'query'], {
+                namespaceName: namespace,
+                extensionName: extension,
+                includeAllVersions: 'true'
+            }));
         } catch (err) {
             return rejectError(err);
         }
@@ -293,8 +313,18 @@ export interface Extension extends Response {
     versionAlias: string[];
     timestamp: string;
     preview?: boolean;
+    preRelease?: boolean;
     displayName?: string;
+    namespaceDisplayName?: string;
     description?: string;
+    deprecated?: boolean;
+    replacement?: ExtensionReplacement;
+    downloadable?: boolean;
+    publishedWithTrustedPublishing?: boolean;
+    namespaceOwnershipConflict?: boolean;
+    extensionKind?: string[];
+    localizedLanguages?: string[];
+    sponsorLink?: string;
 
     // key: engine, value: version constraint
     engines?: { [engine: string]: string };
@@ -344,6 +374,17 @@ export interface Badge {
     url: string;
     href: string;
     description: string;
+}
+
+export interface ExtensionReplacement {
+    url: string;
+    displayName?: string;
+}
+
+export interface QueryResult extends Response {
+    offset: number;
+    totalSize: number;
+    extensions?: Extension[];
 }
 
 export interface ExtensionReference {

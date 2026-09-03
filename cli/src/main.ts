@@ -16,6 +16,7 @@ import { publish } from './publish';
 import { unpublish } from './unpublish';
 import { handleError } from './util';
 import { getExtension } from './get';
+import { show } from './show';
 import { verify } from './verify';
 import { verifySignature } from './verify-signature';
 import login from './login';
@@ -114,6 +115,16 @@ module.exports = function (argv: string[]): void {
                 registryUrl,
                 pat
             }).catch(handleError(program.debug));
+        });
+
+    const showCmd = program.command('show <namespace.extension[@version]>');
+    showCmd.description('Show an extension\'s metadata.')
+        .option('-t, --target <target>', 'Only report on the given target architecture.')
+        .option('--all-versions', 'List every published version instead of the most recent few.')
+        .option('--json', 'Print the raw metadata as JSON.')
+        .action((extensionId: string, { target, allVersions, json }) => {
+            const { registryUrl } = program.opts();
+            show({ extensionId, target, allVersions, json, registryUrl }).catch(handleError(program.debug));
         });
 
     const getCmd = program.command('get <namespace.extension>');
