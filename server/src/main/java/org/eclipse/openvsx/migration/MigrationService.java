@@ -126,9 +126,18 @@ public class MigrationService {
         return entityManager.find(FileResource.class, jobRequest.getEntityId());
     }
 
+    /**
+     * Persists the size its caller determined for {@code resource}, and nothing else. Named for the
+     * one field it writes: a generic "update this resource" could only be implemented by merging the
+     * whole detached copy, which reverts any column that changed since it was loaded (#989).
+     */
     @Transactional
-    public void updateResource(FileResource resource) {
-        entityManager.merge(resource);
+    public void updateResourceSize(FileResource resource) {
+        var managedResource = entityManager.find(FileResource.class, resource.getId());
+        if (managedResource == null) {
+            return;
+        }
+        managedResource.setSize(resource.getSize());
     }
 
     @Retryable
@@ -161,8 +170,10 @@ public class MigrationService {
 
     @Transactional
     public void deleteFileResource(FileResource resource) {
-        resource = entityManager.merge(resource);
-        entityManager.remove(resource);
+        var managedResource = entityManager.find(FileResource.class, resource.getId());
+        if (managedResource != null) {
+            entityManager.remove(managedResource);
+        }
     }
 
     public FileResource getFileResource(ExtensionVersion extVersion, String type) {

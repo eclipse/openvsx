@@ -97,8 +97,14 @@ public class ExtensionVersionIntegrityService {
 
     @Transactional
     public void setSignatureKeyPair(ExtensionVersion extVersion, SignatureKeyPair keyPair) {
-        extVersion = entityManager.merge(extVersion);
-        extVersion.setSignatureKeyPair(keyPair);
+        // find-then-set rather than merge: merge writes every column of the detached copy, so
+        // anything that changed on the row since it was loaded gets reverted. Only the field
+        // below is this method's to change - see #989.
+        var managedVersion = entityManager.find(ExtensionVersion.class, extVersion.getId());
+        if (managedVersion == null) {
+            return;
+        }
+        managedVersion.setSignatureKeyPair(keyPair);
     }
 
     public TempFile generateSignature(TempFile extensionFile, SignatureKeyPair keyPair) throws IOException {
