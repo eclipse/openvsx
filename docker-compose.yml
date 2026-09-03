@@ -160,8 +160,12 @@ services:
       - valkey-admin
 
   # Web UI for the cluster above. Pre-configuring the connection makes Valkey Admin discover the
-  # cluster topology from node-1 on startup and spawn a metrics collector per primary, so there is
-  # no manual setup in the UI. DEPLOYMENT_MODE=Web is the image default, set here to be explicit.
+  # cluster topology from node-1 on startup and spawn a metrics collector per primary, so metrics
+  # are already being collected when you open it. In Web mode the UI still manages connections
+  # itself, so it asks you to create one on first use - enter host `valkey-node-1`, port `7000`,
+  # user `openvsx`, password `openvsx` (the admin server resolves the host inside the compose
+  # network, so the published 127.0.0.1:7001-7006 ports do not work here).
+  # DEPLOYMENT_MODE=Web is the image default, set here to be explicit.
   valkey-admin:
     image: valkey/valkey-admin:1.1.1
     # Discovery is a one-shot at startup with no retry, so wait for the cluster to exist.
