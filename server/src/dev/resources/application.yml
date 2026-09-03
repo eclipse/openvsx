@@ -16,7 +16,7 @@ spring:
     exclude: org.springframework.boot.zipkin.autoconfigure.ZipkinAutoConfiguration
   profiles:
     include: ovsx
-# connect to redis cluster configured in docker-compose.yml
+# connect to valkey cluster configured in docker-compose.yml
 #  data:
 #    redis:
 #      cluster:
