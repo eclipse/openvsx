@@ -44,7 +44,10 @@ by table count, so unrelated tables - e.g. spring_session - don't confuse it):
   - All 8 already exist: the target is assumed to already be on the current schema (the app or
     'flyway migrate' got it there), same as before. The dump's old column layout is adapted to fit
     via an explicit column list per \\copy, so newer columns the target has gained since simply
-    keep their column default (with known exceptions backfilled - see KNOWN_BACKFILLS below).
+    keep their column default (with known exceptions backfilled - see KNOWN_BACKFILLS below). A
+    column the target has *dropped* since can't be adapted that way - there's nowhere to put its
+    data - so those are detected up front and the run is refused with guidance, rather than
+    failing deep inside the \\copy with a bare 'column does not exist'.
   - Some but not all 8 exist: refused - this is neither state above, and guessing which columns
     are missing on a half-migrated schema is more likely to corrupt data than help.
 Either way, the target is only ever touched starting at the DELETE+import step (or, for a fresh
@@ -304,6 +307,43 @@ else
   echo "The target has some but not all of these 8 tables - missing: ${MISSING_TABLES[*]}." >&2
   echo "That's neither a fresh database nor a fully migrated one, so this script won't guess." >&2
   echo "Point it at an empty database, or one already fully migrated via 'flyway migrate'." >&2
+  exit 1
+fi
+
+# --- A column the dump has that the target no longer does (dropped by a migration between the
+# dump's era and the target's) has nowhere for its data to go, and naming it in the \copy column
+# list would fail with a bare 'column does not exist' well into the run. Caught here instead,
+# before anything on the target is touched, with a pointer at the import-into-empty-DB route
+# that lets the real migrations decide what becomes of those columns.
+echo "Checking that every column in the dump still exists on the target..."
+declare -a DROPPED_COLUMNS=()
+for t in "${TABLES[@]}"; do
+  IFS=',' read -r -a dump_cols <<< "${COLUMN_LISTS[${t}]}"
+  gone_cols=$(target_psql -t -c "
+    select c from unnest(array[$(printf "'%s'," "${dump_cols[@]}" | sed 's/,$//')]) as c
+    where c not in (
+      select column_name from information_schema.columns
+      where table_schema='public' and table_name='${t}'
+    );
+  " | tr -d ' ' | grep -v '^$' || true)
+  while IFS= read -r col; do
+    [ -z "${col}" ] && continue
+    DROPPED_COLUMNS+=("${t}.${col}")
+  done <<< "${gone_cols}"
+done
+
+if [ "${#DROPPED_COLUMNS[@]}" -gt 0 ]; then
+  echo "" >&2
+  echo "These columns are in the dump but no longer on the target - its schema is newer than the" >&2
+  echo "dump's and has dropped them since (user_data.eclipse_data went in V1_44, for instance," >&2
+  echo "extension.latest_id in V1_22, file_resource.content in V1_65):" >&2
+  printf '  %s\n' "${DROPPED_COLUMNS[@]}" >&2
+  echo "" >&2
+  echo "There's nowhere to import their data, and silently dropping it isn't this script's call." >&2
+  echo "Point it at an empty database instead: that gets migrated to the dump's own version" >&2
+  echo "(${FLYWAY_TARGET}) and imports cleanly, and a plain 'flyway migrate' afterwards moves it" >&2
+  echo "forward with the real migrations deciding what happens to these columns. Nothing has been" >&2
+  echo "touched on the target." >&2
   exit 1
 fi
 

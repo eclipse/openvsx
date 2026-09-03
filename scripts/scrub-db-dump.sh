@@ -229,6 +229,15 @@ SET email = 'user' || id || '@example.invalid',
     avatar_url = NULL,
     eclipse_token = NULL,
     eclipse_person_id = NULL;
+
+-- auth_id is the provider-side account identifier (GitHub's numeric user id, say). It's
+-- nullable and only set for rows that actually went through an OAuth login, so this keeps the
+-- column's null/non-null shape intact rather than filling every row - the dump then still
+-- exercises both cases. There's no unique constraint on it (unique_user_data covers
+-- (provider, login_name)), so a per-row id suffix is enough to keep it distinct.
+UPDATE user_data
+SET auth_id = 'redacted-' || id
+WHERE auth_id IS NOT NULL;
 SQL
 
 echo "Exporting redacted tables..."
