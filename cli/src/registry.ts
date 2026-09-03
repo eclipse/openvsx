@@ -143,9 +143,20 @@ export class Registry {
      * target platform. `allVersions` on the metadata response carries version numbers and links
      * only, so this is what makes the target platforms of each version available.
      */
-    getVersionReferences(namespace: string, extension: string, size: number, offset: number): Promise<VersionReferences> {
+    getVersionReferences(
+        namespace: string,
+        extension: string,
+        target: string | undefined,
+        size: number,
+        offset: number
+    ): Promise<VersionReferences> {
         try {
-            return this.getJson(this.getUrl(['api', namespace, extension, 'version-references'], {
+            const segments = ['api', namespace, extension];
+            if (target) {
+                segments.push(target);
+            }
+            segments.push('version-references');
+            return this.getJson(this.getUrl(segments, {
                 size: String(size),
                 offset: String(offset)
             }));

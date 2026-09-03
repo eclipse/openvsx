@@ -110,7 +110,7 @@ describe('show', () => {
     it('rejects a malformed extension identifier', async () => {
         const registry = await givenRegistry();
         await expect(show({ extensionId: 'not-an-id', registryUrl: registry.url }))
-            .rejects.toThrow('The extension identifier must have the form `namespace.extension`.');
+            .rejects.toThrow('The extension identifier must have the form `namespace.extension` or `namespace/extension`.');
         expect(registry.metadataRequests).toHaveLength(0);
     });
 
@@ -213,6 +213,55 @@ describe('show', () => {
         // 1.10.0 outranks 1.9.0 numerically, which a string sort would get wrong.
         expect(printed.indexOf('1.10.0')).toBeLessThan(printed.indexOf('1.9.0'));
         expect(printed.indexOf('1.9.0')).toBeLessThan(printed.indexOf('1.2.0'));
+    });
+
+    // semver.coerce would drop the prerelease identifier, making 1.2.0-alpha.1 compare equal to
+    // 1.2.0 and the order unstable. semver.valid keeps it, so the release sorts ahead of its
+    // prereleases - and inputs semver rejects still fall through to the string comparison.
+    it('orders prereleases below their release', async () => {
+        const registry = await givenRegistry({}, {
+            body: {
+                offset: 0,
+                totalSize: 4,
+                versions: [
+                    { version: '1.2.0-alpha.1' },
+                    { version: '1.2.0' },
+                    { version: '1.2.0-beta.1' },
+                    { version: 'nightly' }
+                ]
+            }
+        });
+
+        await show({ extensionId: 'redhat.java', registryUrl: registry.url });
+
+        const printed = output();
+        expect(printed.indexOf('1.2.0 ')).toBeLessThan(printed.indexOf('1.2.0-beta.1'));
+        expect(printed.indexOf('1.2.0-beta.1')).toBeLessThan(printed.indexOf('1.2.0-alpha.1'));
+        // Not valid semver, so it sorts after everything that is.
+        expect(printed.indexOf('1.2.0-alpha.1')).toBeLessThan(printed.indexOf('nightly'));
+    });
+
+    // --target says it scopes the report, so it has to scope the listing too, not just the
+    // metadata lookup. The registry serves /api/{ns}/{ext}/{target}/version-references for this.
+    it('scopes the version history to --target', async () => {
+        const registry = await givenRegistry();
+
+        await show({ extensionId: 'redhat.java', target: 'linux-x64', registryUrl: registry.url });
+
+        expect(registry.versionRequests[0].pathname).toBe('/api/redhat/java/linux-x64/version-references');
+    });
+
+    // Number(undefined) is NaN, which printed "NaN reviews".
+    it('reports a rating with no review count without printing NaN', async () => {
+        const registry = await givenRegistry({
+            body: { ...extension, averageRating: 4.25, reviewCount: undefined }
+        });
+
+        await show({ extensionId: 'redhat.java', registryUrl: registry.url });
+
+        const printed = output();
+        expect(printed).not.toContain('NaN');
+        expect(printed).toContain('0 reviews');
     });
 
     it('caps the version history and says how many were left out', async () => {

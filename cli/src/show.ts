@@ -49,7 +49,7 @@ export async function show(options: ShowOptions): Promise<void> {
     const { id, version } = splitVersion(options.extensionId);
     const match = matchExtensionId(id);
     if (!match) {
-        throw new Error('The extension identifier must have the form `namespace.extension`.');
+        throw new Error('The extension identifier must have the form `namespace.extension` or `namespace/extension`.');
     }
 
     const [, namespace, name] = match;
@@ -65,7 +65,8 @@ export async function show(options: ShowOptions): Promise<void> {
     }
 
     const allVersions = options.allVersions === true;
-    printSummary(extension, await getVersions(registry, namespace, name, allVersions), allVersions);
+    const versions = await getVersions(registry, namespace, name, options.target, allVersions);
+    printSummary(extension, versions, allVersions);
 }
 
 /**
@@ -93,13 +94,14 @@ async function getVersions(
     registry: Registry,
     namespace: string,
     name: string,
+    target: string | undefined,
     allVersions: boolean
 ): Promise<VersionSummary[]> {
     const references: VersionReference[] = [];
     let offset = 0;
     try {
         for (;;) {
-            const page = await registry.getVersionReferences(namespace, name, VERSION_PAGE_SIZE, offset);
+            const page = await registry.getVersionReferences(namespace, name, target, VERSION_PAGE_SIZE, offset);
             if (page.error) {
                 return [];
             }
@@ -132,10 +134,14 @@ async function getVersions(
 /**
  * Newest version first. Anything that isn't valid semver (the registry accepts such versions from
  * a mirror) sorts after everything that is, rather than being compared incomparably.
+ *
+ * Deliberately `valid` and not `coerce`: coerce drops prerelease identifiers, so `1.2.0-alpha.1`
+ * and `1.2.0` would compare equal and order unstably, and it accepts inputs semver itself rejects
+ * (`v1.2` becomes `1.2.0`), which would defeat the fallback below.
  */
 function byNewestFirst(a: VersionSummary, b: VersionSummary): number {
-    const left = semver.coerce(a.version);
-    const right = semver.coerce(b.version);
+    const left = semver.valid(a.version);
+    const right = semver.valid(b.version);
     if (left && right) {
         return semver.rcompare(left, right);
     }
@@ -325,7 +331,7 @@ function formatRating(extension: Extension): string {
     if (extension.averageRating === undefined) {
         return 'no ratings';
     }
-    return `${extension.averageRating.toFixed(1)}/5 from ${formatCount(Number(extension.reviewCount), 'review')}`;
+    return `${extension.averageRating.toFixed(1)}/5 from ${formatCount(extension.reviewCount, 'review')}`;
 }
 
 function yesNo(value: boolean): string {
