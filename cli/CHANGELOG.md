@@ -17,6 +17,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - `publish --trusted-publishing` requests a new token and retries once when the registry refuses the one it was publishing with. The issued token is short-lived and shared by every target platform of a release, so publishing a wide fan-out of large packages could outlive it and fail partway through. Targets that are refused together share one new token, and a token supplied with `--pat` is never retried
 - Bump minimum supported Node.js version to 22, matching the webui component
 
+### Dependencies
+
+- Bump fast-uri from 3.1.5 to 3.1.7
+
 ### [v1.1.1] (09/08/2026)
 
 ### Dependencies
