@@ -1,3 +1,21 @@
+x-valkey-image: &valkey-image valkey/valkey:9.1
+
+# The six cluster nodes below differ only in name, published port and data directory.
+x-valkey-node: &valkey-node
+  image: *valkey-image
+  command: valkey-server /etc/valkey.conf
+  environment:
+    # valkey-cli still reads the password from REDISCLI_AUTH
+    - REDISCLI_AUTH=openvsx
+  healthcheck:
+    test: ["CMD", "valkey-cli", "-p", "7000", "--user", "openvsx", "ping"]
+    interval: 5s
+    retries: 5
+  # The admin UI depends on the cluster, so starting it starts the cluster too.
+  profiles:
+    - valkey
+    - valkey-admin
+
 services:
 
   postgres:
@@ -52,156 +70,119 @@ services:
     profiles:
       - kibana
 
-  redis-node-1:
-    image: redis:7.2
-    container_name: redis-node-1
+  valkey-node-1:
+    <<: *valkey-node
+    container_name: valkey-node-1
     ports:
       - "7001:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-1:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-1:/data
 
-  redis-node-2:
-    image: redis:7.2
-    container_name: redis-node-2
-    depends_on:
-      redis-node-1:
-        condition: service_healthy
+  valkey-node-2:
+    <<: *valkey-node
+    container_name: valkey-node-2
     ports:
       - "7002:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-2:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-2:/data
 
-  redis-node-3:
-    image: redis:7.2
-    container_name: redis-node-3
-    depends_on:
-      redis-node-2:
-        condition: service_healthy
+  valkey-node-3:
+    <<: *valkey-node
+    container_name: valkey-node-3
     ports:
       - "7003:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-3:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-3:/data
 
-  redis-node-4:
-    image: redis:7.2
-    container_name: redis-node-4
-    depends_on:
-      redis-node-3:
-        condition: service_healthy
+  valkey-node-4:
+    <<: *valkey-node
+    container_name: valkey-node-4
     ports:
       - "7004:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-4:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-4:/data
 
-  redis-node-5:
-    image: redis:7.2
-    container_name: redis-node-5
-    depends_on:
-      redis-node-4:
-        condition: service_healthy
+  valkey-node-5:
+    <<: *valkey-node
+    container_name: valkey-node-5
     ports:
       - "7005:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-5:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-5:/data
 
-  redis-node-6:
-    image: redis:7.2
-    container_name: redis-node-6
-    depends_on:
-      redis-node-5:
-        condition: service_healthy
+  valkey-node-6:
+    <<: *valkey-node
+    container_name: valkey-node-6
     ports:
       - "7006:7000"
-    command: redis-server /etc/redis.conf
     volumes:
-      - ./redis.conf:/etc/redis.conf
-      - ./data/redis/node-6:/data
-    environment:
-      - REDISCLI_AUTH=openvsx
-    healthcheck:
-      test: ["CMD", "redis-cli", "-p", "7000", "--user", "openvsx", "ping"]
-      interval: 5s
-      retries: 5
-    profiles:
-      - redis
+      - ./valkey.conf:/etc/valkey.conf
+      - ./data/valkey/node-6:/data
 
-  redis-cluster-init:
-    image: redis:7.2
+  valkey-cluster-init:
+    image: *valkey-image
     depends_on:
-      - redis-node-1
-      - redis-node-2
-      - redis-node-3
-      - redis-node-4
-      - redis-node-5
-      - redis-node-6
+      valkey-node-1:
+        condition: service_healthy
+      valkey-node-2:
+        condition: service_healthy
+      valkey-node-3:
+        condition: service_healthy
+      valkey-node-4:
+        condition: service_healthy
+      valkey-node-5:
+        condition: service_healthy
+      valkey-node-6:
+        condition: service_healthy
     environment:
       - REDISCLI_AUTH=openvsx
+    # Nodes keep their nodes.conf in ./data/valkey, so on a restart the cluster is already
+    # formed and `--cluster create` would fail. Only create when node-1 still knows just itself,
+    # which keeps `up` idempotent. Checking known nodes rather than cluster_state avoids a race:
+    # nodes.conf is loaded at startup, while the state only turns ok once the nodes have gossiped.
     entrypoint: >
-      bash -c "
-      sleep 10;
-      echo yes | redis-cli --user openvsx --cluster create
-      redis-node-1:7000 redis-node-2:7000 redis-node-3:7000
-      redis-node-4:7000 redis-node-5:7000 redis-node-6:7000
-      --cluster-replicas 1"
+      sh -c "
+      if valkey-cli -h valkey-node-1 -p 7000 --user openvsx cluster info
+      | grep -qE 'cluster_known_nodes:1([^0-9]|$$)';
+      then valkey-cli --user openvsx --cluster create
+      valkey-node-1:7000 valkey-node-2:7000 valkey-node-3:7000
+      valkey-node-4:7000 valkey-node-5:7000 valkey-node-6:7000
+      --cluster-replicas 1 --cluster-yes;
+      else echo 'valkey cluster already initialized';
+      fi"
     profiles:
-      - redis
+      - valkey
+      - valkey-admin
 
-  redisinsight:
-    image: redis/redisinsight
+  # Web UI for the cluster above. Pre-configuring the connection makes Valkey Admin discover the
+  # cluster topology from node-1 on startup and spawn a metrics collector per primary, so metrics
+  # are already being collected when you open it. In Web mode the UI still manages connections
+  # itself, so it asks you to create one on first use - enter host `valkey-node-1`, port `7000`,
+  # user `openvsx`, password `openvsx` (the admin server resolves the host inside the compose
+  # network, so the published 127.0.0.1:7001-7006 ports do not work here).
+  # DEPLOYMENT_MODE=Web is the image default, set here to be explicit.
+  valkey-admin:
+    image: valkey/valkey-admin:1.1.1
+    # Discovery is a one-shot at startup with no retry, so wait for the cluster to exist.
+    depends_on:
+      valkey-cluster-init:
+        condition: service_completed_successfully
     ports:
-      - '5540:5540'
+      - '8090:8080'
+    environment:
+      - DEPLOYMENT_MODE=Web
+      - VALKEY_HOST=valkey-node-1
+      - VALKEY_PORT=7000
+      - VALKEY_AUTH_TYPE=password
+      - VALKEY_USERNAME=openvsx
+      - VALKEY_PASSWORD=openvsx
     profiles:
-      - redisinsight
+      - valkey-admin
 
   server:
     image: eclipse-temurin:25-jdk
