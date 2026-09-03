@@ -152,13 +152,15 @@ class AccessTokenServiceTest {
 
         // prefix, then the marker saying what kind of token this is, then 256 bits base62 encoded
         assertThat(value).startsWith("ovsxat_");
-        assertThat(value.substring("ovsxat_".length())).hasSize(43).containsPattern("^[0-9A-Za-z]+$");
+        assertThat(value.substring("ovsxat_".length())).matches("[0-9A-Za-z]{43}");
         verifyNoInteractions(repositories);
     }
 
-    // The marker ends in the only underscore a token has, so that what follows it reads as one word.
-    // Base64url put a further - or _ in about three of every four bodies, which made the marker look
-    // longer than it is.
+    // Nothing in the body may look like the marker's own delimiter, so that what follows the marker
+    // reads as one word. Base64url put a further - or _ at a random place in about three of every four
+    // bodies, which made the marker look longer than it is. The configured prefix ahead of the marker
+    // may contain an underscore of its own; that one is fixed and recognisable, so it does not blur
+    // where the marker ends.
     @Test
     void keepsTheBodyFreeOfTheCharactersThatMarkTheTokenType() {
         when(config.getPrefix()).thenReturn("ovsx");

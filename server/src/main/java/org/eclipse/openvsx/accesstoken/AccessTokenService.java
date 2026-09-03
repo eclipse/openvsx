@@ -68,10 +68,13 @@ public class AccessTokenService {
     private static final int TOKEN_BYTES = 32;
 
     /**
-     * Base62 rather than base64url, so that the only underscore in a token is the one ending the marker.
-     * Base64url would put a further {@code -} or {@code _} in roughly three of every four token bodies,
-     * which reads as though the marker were longer than it is and makes a token awkward to select as a
-     * single word. It costs nothing in length: 62^43 still exceeds 2^256, so the body stays 43 characters.
+     * Base62 rather than base64url, so that the body carries no {@code _} or {@code -} and the underscore
+     * ending the marker stays the last separator in the value. The deployment prefix in front of the
+     * marker may well contain one of its own - the development configuration uses {@code dev_ovsx} - but
+     * that part is fixed and recognisable, where base64url put a further {@code -} or {@code _} at a
+     * random place in roughly three of every four bodies, making the marker look longer than it is and a
+     * token awkward to select as a single word. Base62 costs nothing in length: 62^43 still exceeds
+     * 2^256, so the body stays 43 characters.
      */
     private static final char[] TOKEN_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
             .toCharArray();
