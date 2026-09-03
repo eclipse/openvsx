@@ -18,8 +18,8 @@ import {
     useRef,
     useState
 } from 'react';
-import { Avatar, Button, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
-import { useLocation, useNavigate, Link as RouteLink } from 'react-router';
+import { Avatar, IconButton, Link, Menu, MenuItem, Typography } from '@mui/material';
+import { useLocation, Link as RouteLink } from 'react-router';
 import { UserAvatar } from '../pages/user/avatar';
 import { UserSettingsRoutes } from '../pages/user/user-settings-routes';
 import { PublishRoutes } from '../pages/publish/publish-routes';
