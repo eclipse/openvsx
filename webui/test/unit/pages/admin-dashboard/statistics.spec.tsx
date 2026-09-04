@@ -43,9 +43,7 @@ const statistics = (overrides: Partial<AdminStatistics> = {}): AdminStatistics =
 
 // not named render*, so the testing-library naming rule doesn't treat the stub it returns as a
 // render result
-const mountPage = (
-    getAdminStatistics: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(statistics())
-) => {
+const mountPage = (getAdminStatistics: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(statistics())) => {
     const admin = {
         getAdminStatistics,
         getAdminStatisticsCsvUrl: (year: number, month: number) => `/admin/statistics/csv?year=${year}&month=${month}`
@@ -135,9 +133,9 @@ describe('StatisticsAdmin', () => {
     it('names the most active publishing users', async () => {
         mountPage();
 
-        // Scoped to the row: the same figure also appears among the chart's rendered values.
-        const row = (await screen.findByText('busy-bot')).closest('tr');
-        expect(row).not.toBeNull();
-        expect(within(row as HTMLElement).getByText('400')).toBeInTheDocument();
+        // Scoped to the row: the same figure also appears among the chart's rendered values. A row's
+        // accessible name comes from its cells, so this finds it without walking up from the text.
+        const row = await screen.findByRole('row', { name: /busy-bot/ });
+        expect(within(row).getByText('400')).toBeInTheDocument();
     });
 });
