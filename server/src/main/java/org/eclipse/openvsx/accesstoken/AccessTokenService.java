@@ -255,13 +255,16 @@ public class AccessTokenService {
             throw new NotFoundException();
         }
 
-        user = entityManager.merge(user);
-        if (!token.getUser().equals(user)) {
+        // Compare ids, not entities: UserData#equals compares every field - tokens and memberships
+        // included - so comparing entities rejects a caller whose user differs from the stored row in
+        // any way. Rejecting id 0 stops an entity that was never persisted from failing the check open.
+        var tokenUser = token.getUser();
+        if (tokenUser == null || tokenUser.getId() == 0 || tokenUser.getId() != user.getId()) {
             throw new NotFoundException();
         }
 
         token.setActive(false);
-        return ResultJson.success("Deactivated access token for user " + user.getLoginName() + ".");
+        return ResultJson.success("Deactivated access token for user " + tokenUser.getLoginName() + ".");
     }
 
     // REQUIRES_NEW: callers such as LocalRegistryService#createNamespace(NamespaceJson, String) wrap
@@ -374,12 +377,17 @@ public class AccessTokenService {
 
     @Transactional
     public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
-        token = entityManager.merge(token);
-        if (token.getType().isNotify() && !token.isNotified()) {
+        // find, not merge: only `notified` is this method's to change, and merging the whole
+        // detached token reverted any column that moved since it was loaded - see #989.
+        var managedToken = entityManager.find(PersonalAccessToken.class, token.getId());
+        if (managedToken == null) {
+            return;
+        }
+        if (managedToken.getType().isNotify() && !managedToken.isNotified()) {
             try {
-                mail.scheduleAccessTokenExpiryNotification(token);
+                mail.scheduleAccessTokenExpiryNotification(managedToken);
             } finally {
-                token.setNotified(true);
+                managedToken.setNotified(true);
             }
         }
     }
@@ -445,8 +453,8 @@ public class AccessTokenService {
 
     private String hashTokenValue(String tokenValue) {
         try {
-            // token hash salt must not be present in DB (is in config)
-            String payload = tokenValue + config.getTokenHashSalt();
+            // the pepper is instance wide and lives in the configuration only; it must never reach the DB
+            String payload = tokenValue + config.getTokenHashPepper();
             return Hex.encodeHexString(
                     DigestUtils.digest(
                             MessageDigest.getInstance(config.getTokenHashAlgorithm()),

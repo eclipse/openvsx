@@ -123,13 +123,83 @@ export class Registry {
         }
     }
 
-    getMetadata(namespace: string, extension: string, target?: string): Promise<Extension> {
+    getMetadata(namespace: string, extension: string, target?: string, version?: string): Promise<Extension> {
         try {
             const segments = ['api', namespace, extension];
             if (target) {
                 segments.push(target);
             }
+            if (version) {
+                segments.push(version);
+            }
             return this.getJson(this.getUrl(segments));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /**
+     * Returns a page of an extension's published versions, newest first, one entry per version and
+     * target platform. `allVersions` on the metadata response carries version numbers and links
+     * only, so this is what makes the target platforms of each version available.
+     */
+    getVersionReferences(
+        namespace: string,
+        extension: string,
+        target: string | undefined,
+        size: number,
+        offset: number
+    ): Promise<VersionReferences> {
+        try {
+            const segments = ['api', namespace, extension];
+            if (target) {
+                segments.push(target);
+            }
+            segments.push('version-references');
+            return this.getJson(this.getUrl(segments, {
+                size: String(size),
+                offset: String(offset)
+            }));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /**
+     * Full-text search across the registry. Returns the purpose-built summary shape rather than
+     * whole extension records, so a page of results stays small.
+     */
+    search(options: SearchQuery): Promise<SearchResult> {
+        try {
+            const query: Record<string, string> = {
+                size: String(options.size),
+                offset: String(options.offset)
+            };
+            if (options.query) {
+                query.query = options.query;
+            }
+            if (options.category) {
+                query.category = options.category;
+            }
+            if (options.targetPlatform) {
+                query.targetPlatform = options.targetPlatform;
+            }
+            if (options.sortBy) {
+                query.sortBy = options.sortBy;
+            }
+            if (options.sortOrder) {
+                query.sortOrder = options.sortOrder;
+            }
+            return this.getJson(this.getUrl(['api', '-', 'search'], query));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /** Returns a namespace and the extensions published in it. */
+    getNamespace(namespace: string): Promise<Namespace> {
+        try {
+            return this.getJson(this.getUrl(['api', namespace]));
         } catch (err) {
             return rejectError(err);
         }
@@ -293,8 +363,18 @@ export interface Extension extends Response {
     versionAlias: string[];
     timestamp: string;
     preview?: boolean;
+    preRelease?: boolean;
     displayName?: string;
+    namespaceDisplayName?: string;
     description?: string;
+    deprecated?: boolean;
+    replacement?: ExtensionReplacement;
+    downloadable?: boolean;
+    publishedWithTrustedPublishing?: boolean;
+    namespaceOwnershipConflict?: boolean;
+    extensionKind?: string[];
+    localizedLanguages?: string[];
+    sponsorLink?: string;
 
     // key: engine, value: version constraint
     engines?: { [engine: string]: string };
@@ -344,6 +424,64 @@ export interface Badge {
     url: string;
     href: string;
     description: string;
+}
+
+export interface ExtensionReplacement {
+    url: string;
+    displayName?: string;
+}
+
+export interface VersionReference {
+    url: string;
+    files: { [type: string]: string };
+    version: string;
+    targetPlatform?: string;
+    engines?: { [engine: string]: string };
+}
+
+export interface VersionReferences extends Response {
+    offset: number;
+    totalSize: number;
+    versions?: VersionReference[];
+}
+
+export interface SearchQuery {
+    query?: string;
+    category?: string;
+    targetPlatform?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    size: number;
+    offset: number;
+}
+
+export interface SearchEntry {
+    url: string;
+    files: { [type: string]: string };
+    name: string;
+    namespace: string;
+    version: string;
+    timestamp: string;
+    verified?: boolean;
+    averageRating?: number;
+    reviewCount?: number;
+    downloadCount: number;
+    displayName?: string;
+    description?: string;
+    deprecated?: boolean;
+}
+
+export interface SearchResult extends Response {
+    offset: number;
+    totalSize: number;
+    extensions?: SearchEntry[];
+}
+
+export interface Namespace extends Response {
+    name: string;
+    verified?: boolean;
+    // key: extension name, value: url
+    extensions?: { [name: string]: string };
 }
 
 export interface ExtensionReference {

@@ -14,8 +14,11 @@ import { createNamespace } from './create-namespace';
 import { verifyPat } from './verify-pat';
 import { publish } from './publish';
 import { unpublish } from './unpublish';
-import { handleError } from './util';
+import { handleError, parseNonNegativeInt } from './util';
 import { getExtension } from './get';
+import { list } from './list';
+import { DEFAULT_SEARCH_SIZE, SORT_KEYS, SORT_ORDERS, search } from './search';
+import { show } from './show';
 import { verify } from './verify';
 import { verifySignature } from './verify-signature';
 import login from './login';
@@ -114,6 +117,43 @@ module.exports = function (argv: string[]): void {
                 registryUrl,
                 pat
             }).catch(handleError(program.debug));
+        });
+
+    const searchCmd = program.command('search [text]');
+    searchCmd.description('Search the registry for extensions.')
+        .option('-c, --category <category>', 'Only return extensions in this category.')
+        .option('-t, --target <target>', 'Only return extensions built for this target architecture.')
+        .option(
+            '-s, --size <size>',
+            `Number of results to return (default ${DEFAULT_SEARCH_SIZE}).`,
+            parseNonNegativeInt
+        )
+        .option('-o, --offset <offset>', 'Index of the first result, for paging.', parseNonNegativeInt)
+        .option('--sort-by <key>', `Sort key: ${SORT_KEYS.join(', ')}.`)
+        .option('--sort-order <order>', `Sort order: ${SORT_ORDERS.join(', ')}.`)
+        .option('--json', 'Print the raw results as JSON.')
+        .action((text: string | undefined, { category, target, size, offset, sortBy, sortOrder, json }) => {
+            const { registryUrl } = program.opts();
+            search({ text, category, target, size, offset, sortBy, sortOrder, json, registryUrl })
+                .catch(handleError(program.debug));
+        });
+
+    const listCmd = program.command('list <namespace>');
+    listCmd.description('List the extensions published in a namespace.')
+        .option('--json', 'Print the raw namespace metadata as JSON.')
+        .action((namespace: string, { json }) => {
+            const { registryUrl } = program.opts();
+            list({ namespace, json, registryUrl }).catch(handleError(program.debug));
+        });
+
+    const showCmd = program.command('show <namespace.extension[@version]>');
+    showCmd.description('Show an extension\'s metadata.')
+        .option('-t, --target <target>', 'Only report on the given target architecture.')
+        .option('--all-versions', 'List every published version instead of the most recent few.')
+        .option('--json', 'Print the raw metadata as JSON.')
+        .action((extensionId: string, { target, allVersions, json }) => {
+            const { registryUrl } = program.opts();
+            show({ extensionId, target, allVersions, json, registryUrl }).catch(handleError(program.debug));
         });
 
     const getCmd = program.command('get <namespace.extension>');
