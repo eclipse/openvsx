@@ -347,13 +347,24 @@ if [ "${#DROPPED_COLUMNS[@]}" -gt 0 ]; then
   exit 1
 fi
 
-# --- A column the target has gained since the dump's era, if it's NOT NULL with no default,
-# can't just be left out of the \copy column list - Postgres would reject every imported row.
-# Known cases get a backfill: the constraint is dropped, the import runs, the same backfill the
-# introducing migration itself used runs, then the constraint is restored - all still inside the
-# one transaction. Add an entry here (keyed "table.column") for anything new, matching whatever
-# UPDATE the migration that introduced the column used for pre-existing rows; a gap with no entry
-# here fails the preflight check below instead of guessing.
+# --- A column the target has gained since the dump's era is left out of the \copy column list, and
+# the imported rows take whatever the target's schema gives them - its default, or NULL. Two kinds of
+# column need more than that, and both are handled by a backfill registered here.
+#
+# A column that is NOT NULL with no default can't be left out at all: Postgres would reject every
+# imported row. Those are dropped to nullable, imported, backfilled with the same UPDATE the
+# introducing migration used, and set back to NOT NULL - all inside the one transaction. A gap of
+# this kind with no entry here fails the preflight check below instead of guessing.
+#
+# A column whose default does not reproduce what the introducing migration computed needs a backfill
+# too, even though the import would succeed without one. personal_access_token.type is the case in
+# point: V1_74 defaults it to 'LLT' so hand-written INSERTs keep working, but V1_72 derived 'OTT' for
+# one-time tokens from their description, and importing those as 'LLT' would quietly turn a
+# used-once credential into a permanent one. So the gap set below is every target column the dump
+# lacks, and only the un-importable ones are *required* to have an entry.
+#
+# Add an entry (keyed "table.column") for anything new, matching whatever UPDATE the migration that
+# introduced the column used for pre-existing rows.
 declare -A KNOWN_BACKFILLS
 KNOWN_BACKFILLS["personal_access_token.version"]="UPDATE personal_access_token SET version = 0;"
 KNOWN_BACKFILLS["personal_access_token.type"]="
@@ -361,25 +372,31 @@ KNOWN_BACKFILLS["personal_access_token.type"]="
   UPDATE personal_access_token SET type = 'LLT' WHERE type IS NULL;
 "
 
-echo "Checking for target columns the dump doesn't have that require a value..."
-declare -A GAP_COLUMNS   # "table.column" -> 1, for every gap found (known or not)
+echo "Checking for target columns the dump doesn't have..."
+declare -A BACKFILL_COLUMNS   # "table.column" -> 1, for every gap that has a backfill to run
+declare -A REQUIRED_GAPS      # "table.column" -> 1, the subset that can't be imported without one
 declare -a UNKNOWN_GAPS=()
 for t in "${TABLES[@]}"; do
   IFS=',' read -r -a dump_cols <<< "${COLUMN_LISTS[${t}]}"
-  gap_cols=$(target_psql -t -c "
-    select column_name from information_schema.columns
+  gap_cols=$(target_psql -t -A -F',' -c "
+    select column_name, (is_nullable = 'NO' and column_default is null)
+    from information_schema.columns
     where table_schema='public' and table_name='${t}'
-    and is_nullable='NO' and column_default is null
     and column_name not in ($(printf "'%s'," "${dump_cols[@]}" | sed 's/,$//'));
-  " | tr -d ' ' | grep -v '^$' || true)
-  while IFS= read -r col; do
+  " | grep -v '^$' || true)
+  while IFS=',' read -r col required; do
     [ -z "${col}" ] && continue
     key="${t}.${col}"
-    GAP_COLUMNS["${key}"]=1
-    if [ -z "${KNOWN_BACKFILLS[${key}]:-}" ]; then
+    [ "${required}" = "t" ] && REQUIRED_GAPS["${key}"]=1
+    if [ -n "${KNOWN_BACKFILLS[${key}]:-}" ]; then
+      BACKFILL_COLUMNS["${key}"]=1
+      if [ "${required}" = "t" ]; then
+        echo "  ${key}: no value in the dump, not nullable, no default - will backfill (known)"
+      else
+        echo "  ${key}: no value in the dump - will backfill (known) instead of taking the default"
+      fi
+    elif [ "${required}" = "t" ]; then
       UNKNOWN_GAPS+=("${key}")
-    else
-      echo "  ${key}: no value in the dump, not nullable, no default - will backfill (known)"
     fi
   done <<< "${gap_cols}"
 done
@@ -469,16 +486,24 @@ SQL_FILE="${WORKDIR}/reload.sql"
     [ -n "${t}" ] && echo "DELETE FROM ${t};"
   done
   for t in "${IMPORT_ORDER_ARR[@]}"; do
-    gap_cols_for_table=()
-    for key in "${!GAP_COLUMNS[@]}"; do
-      [ "${key%%.*}" = "${t}" ] && gap_cols_for_table+=("${key#*.}")
+    # Only the columns the dump can't supply at all lose their NOT NULL for the duration of the
+    # import; a column that has a default imports fine as it is and just gets its backfill after.
+    required_cols_for_table=()
+    for key in "${!REQUIRED_GAPS[@]}"; do
+      [ "${key%%.*}" = "${t}" ] && required_cols_for_table+=("${key#*.}")
     done
-    for col in "${gap_cols_for_table[@]}"; do
+    backfill_cols_for_table=()
+    for key in "${!BACKFILL_COLUMNS[@]}"; do
+      [ "${key%%.*}" = "${t}" ] && backfill_cols_for_table+=("${key#*.}")
+    done
+    for col in "${required_cols_for_table[@]}"; do
       echo "ALTER TABLE ${t} ALTER COLUMN ${col} DROP NOT NULL;"
     done
     echo "\\copy ${t} (${COLUMN_LISTS[${t}]}) from '${DUMP_DIR}/${t}.csv' with (${COPY_FORMAT})"
-    for col in "${gap_cols_for_table[@]}"; do
+    for col in "${backfill_cols_for_table[@]}"; do
       echo "${KNOWN_BACKFILLS[${t}.${col}]}"
+    done
+    for col in "${required_cols_for_table[@]}"; do
       echo "ALTER TABLE ${t} ALTER COLUMN ${col} SET NOT NULL;"
     done
   done
