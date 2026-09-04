@@ -37,8 +37,10 @@ import { MainContext } from '../../../context';
 import type { AdminStatistics } from '../../../extension-registry-types';
 import { useAdminStatistics } from './use-admin-statistics';
 
-const numberFormat = Intl.NumberFormat('en-US');
-const compactFormat = Intl.NumberFormat('en-US', { notation: 'compact' });
+// No explicit locale: every other figure in the web UI is formatted with the viewer's own, from the
+// sibling search-index page to the search result count.
+const numberFormat = Intl.NumberFormat();
+const compactFormat = Intl.NumberFormat(undefined, { notation: 'compact' });
 
 /** A headline figure, laid out so a row of them reads as one band. */
 const StatCard: FunctionComponent<{ label: string; value: string; hint?: string }> = ({ label, value, hint }) => (
@@ -188,9 +190,32 @@ export const StatisticsAdmin: FunctionComponent = () => {
             </Paper>
 
             {isFetching && !data ? <CircularProgress /> : null}
-            {error && !isFetching ? <NoStatistics month={heading} /> : null}
+            {error && !isFetching && !data ? (
+                isNotFoundError(error) ? (
+                    <NoStatistics month={heading} />
+                ) : (
+                    <StatisticsError month={heading} error={error} />
+                )
+            ) : null}
             {data ? <StatisticsContent statistics={data} /> : null}
         </Box>
+    );
+};
+
+/**
+ * The request layer rejects with an error object carrying the HTTP status (see `server-request.ts`),
+ * so a month that was never archived is distinguishable from a request that failed. Only the former
+ * is normal.
+ */
+const isNotFoundError = (error: unknown): boolean => (error as { status?: number })?.status === 404;
+
+/** A request that failed, as opposed to a month that has nothing to show. */
+const StatisticsError: FunctionComponent<{ month: string; error: unknown }> = ({ month, error }) => {
+    const detail = (error as { message?: string })?.message;
+    return (
+        <Alert severity='error'>
+            The statistics for {month} could not be loaded{detail ? `: ${detail}` : '.'}
+        </Alert>
     );
 };
 

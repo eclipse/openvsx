@@ -105,11 +105,21 @@ describe('StatisticsAdmin', () => {
     });
 
     // A month that ended without the archival job running has no data and never will, so this is a
-    // normal state rather than a failure.
+    // normal state rather than a failure. The rejection carries the status the request layer sets,
+    // since that is what tells this case apart from the one below.
     it('explains an unarchived month instead of reporting an error', async () => {
-        mountPage(vi.fn().mockRejectedValue(new Error('Not Found')));
+        mountPage(vi.fn().mockRejectedValue({ status: 404, message: 'Not Found' }));
 
         expect(await screen.findByText(/No statistics were archived for/)).toBeInTheDocument();
+    });
+
+    // Reporting a failed request as "not archived" would tell an admin the data does not exist when
+    // it was never asked for successfully.
+    it('reports a failed request as an error rather than as an unarchived month', async () => {
+        mountPage(vi.fn().mockRejectedValue({ status: 500, message: 'Internal Server Error' }));
+
+        expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
+        expect(screen.queryByText(/No statistics were archived for/)).not.toBeInTheDocument();
     });
 
     it('offers the CSV export for the shown month', async () => {

@@ -108,6 +108,7 @@ import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TargetPlatformVersion;
+import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionService;
 
@@ -1513,7 +1514,7 @@ class AdminAPITest {
     @Test
     void testReportFutureYearCsv() throws Exception {
         var token = mockAdminToken();
-        var future = LocalDateTime.now().plusYears(1);
+        var future = TimeUtil.getCurrentUTC().plusYears(1);
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear())
                         .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -1524,7 +1525,7 @@ class AdminAPITest {
     @Test
     void testReportFutureYearJson() throws Exception {
         var token = mockAdminToken();
-        var future = LocalDateTime.now().plusYears(1);
+        var future = TimeUtil.getCurrentUTC().plusYears(1);
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=3", token.getValue(), future.getYear())
                         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -1535,7 +1536,7 @@ class AdminAPITest {
     @Test
     void testReportMonthLessThanOneCsv() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=0", token.getValue(), now.getYear())
                         .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -1546,7 +1547,7 @@ class AdminAPITest {
     @Test
     void testReportMonthLessThanOneJson() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=0", token.getValue(), now.getYear())
                         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -1557,7 +1558,7 @@ class AdminAPITest {
     @Test
     void testReportMonthGreaterThanTwelveCsv() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=13", token.getValue(), now.getYear())
                         .header(HttpHeaders.ACCEPT, "text/csv"))
@@ -1568,7 +1569,7 @@ class AdminAPITest {
     @Test
     void testReportMonthGreaterThanTwelveJson() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         mockMvc.perform(
                 get("/admin/report?token={token}&year={year}&month=13", token.getValue(), now.getYear())
                         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
@@ -1579,7 +1580,7 @@ class AdminAPITest {
     @Test
     void testReportFutureMonthCsv() throws Exception {
         var token = mockAdminToken();
-        var future = LocalDateTime.now().plusMonths(1);
+        var future = TimeUtil.getCurrentUTC().plusMonths(1);
         mockMvc.perform(
                 get(
                         "/admin/report?token={token}&year={year}&month={month}",
@@ -1594,7 +1595,7 @@ class AdminAPITest {
     @Test
     void testReportFutureMonthJson() throws Exception {
         var token = mockAdminToken();
-        var future = LocalDateTime.now().plusMonths(1);
+        var future = TimeUtil.getCurrentUTC().plusMonths(1);
         mockMvc.perform(
                 get(
                         "/admin/report?token={token}&year={year}&month={month}",
@@ -1609,7 +1610,7 @@ class AdminAPITest {
     @Test
     void testArchivedReportCsv() throws Exception {
         var token = mockAdminToken();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         var year = past.getYear();
         var month = past.getMonthValue();
         var extensions = 1234;
@@ -1692,7 +1693,7 @@ class AdminAPITest {
     @Test
     void testArchivedReportJson() throws Exception {
         var token = mockAdminToken();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         var year = past.getYear();
         var month = past.getMonthValue();
         var extensions = 1234;
@@ -1822,7 +1823,7 @@ class AdminAPITest {
     @Test
     void testCurrentMonthAdminReportCsv() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         var year = now.getYear();
         var month = now.getMonthValue();
         when(adminStatisticsService.computeAdminStatistics(year, month))
@@ -1838,7 +1839,7 @@ class AdminAPITest {
     @Test
     void testCurrentMonthAdminReportJson() throws Exception {
         var token = mockAdminToken();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         var year = now.getYear();
         var month = now.getMonthValue();
         when(adminStatisticsService.computeAdminStatistics(year, month))
@@ -1860,7 +1861,7 @@ class AdminAPITest {
     @Test
     void testPastMonthWithoutArchivedReportIsNotFound() throws Exception {
         var token = mockAdminToken();
-        var past = LocalDateTime.now().minusMonths(2);
+        var past = TimeUtil.getCurrentUTC().minusMonths(2);
         when(repositories.findAdminStatisticsByYearAndMonth(past.getYear(), past.getMonthValue())).thenReturn(null);
 
         mockMvc.perform(
@@ -1880,7 +1881,7 @@ class AdminAPITest {
     @Test
     void testStatisticsForAnArchivedMonth() throws Exception {
         mockAdminUser();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         var year = past.getYear();
         var month = past.getMonthValue();
         when(repositories.findAdminStatisticsByYearAndMonth(year, month))
@@ -1898,7 +1899,7 @@ class AdminAPITest {
     @Test
     void testStatisticsComputesTheCurrentMonth() throws Exception {
         mockAdminUser();
-        var now = LocalDateTime.now();
+        var now = TimeUtil.getCurrentUTC();
         var year = now.getYear();
         var month = now.getMonthValue();
         when(adminStatisticsService.computeAdminStatistics(year, month))
@@ -1916,7 +1917,7 @@ class AdminAPITest {
     @Test
     void testStatisticsNotAdmin() throws Exception {
         mockNormalUser();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         mockMvc.perform(
                 get("/admin/statistics?year={year}&month={month}", past.getYear(), past.getMonthValue())
                         .with(user("test_user"))
@@ -1929,7 +1930,7 @@ class AdminAPITest {
     @Test
     void testStatisticsCsvIsAnAttachment() throws Exception {
         mockAdminUser();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         var year = past.getYear();
         var month = past.getMonthValue();
         when(repositories.findAdminStatisticsByYearAndMonth(year, month))
@@ -1950,7 +1951,7 @@ class AdminAPITest {
     @Test
     void testStatisticsCsvNotAdmin() throws Exception {
         mockNormalUser();
-        var past = LocalDateTime.now().minusMonths(1);
+        var past = TimeUtil.getCurrentUTC().minusMonths(1);
         mockMvc.perform(
                 get("/admin/statistics/csv?year={year}&month={month}", past.getYear(), past.getMonthValue())
                         .with(user("test_user"))
