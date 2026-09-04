@@ -26,7 +26,15 @@ public class RenameDownloadsService {
 
     @Transactional
     public FileResource cloneResource(FileResource resource, String name) {
-        resource = entityManager.merge(resource);
+        // Nothing on `resource` is updated here; find still returns a managed entity, so the lazy
+        // getExtension() below resolves just the same - see #989.
+        var resourceId = resource.getId();
+        resource = entityManager.find(FileResource.class, resourceId);
+        if (resource == null) {
+            // Deleted since the job loaded it. The caller uses the clone straight away, so there is
+            // nothing to skip - fail with the id rather than an NPE on the next line.
+            throw new IllegalStateException("Cannot clone file resource " + resourceId + ": it no longer exists");
+        }
         var clone = new FileResource();
         clone.setName(name);
         clone.setStorageType(resource.getStorageType());

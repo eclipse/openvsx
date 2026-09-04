@@ -80,7 +80,9 @@ public class ChangeNamespaceService {
 
     private void changeExtensionNamespace(Streamable<Extension> extensions, Namespace newNamespace) {
         for (var extension : extensions) {
-            extension = entityManager.merge(extension);
+            // findExtensions ran inside changeNamespaceInDatabase's transaction, so these are
+            // already managed and merge just handed back the same instance; the setter is what
+            // persists the change.
             extension.setNamespace(newNamespace);
         }
     }

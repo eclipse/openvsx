@@ -255,13 +255,16 @@ public class AccessTokenService {
             throw new NotFoundException();
         }
 
-        user = entityManager.merge(user);
-        if (!token.getUser().equals(user)) {
+        // Compare ids, not entities: UserData#equals compares every field - tokens and memberships
+        // included - so comparing entities rejects a caller whose user differs from the stored row in
+        // any way. Rejecting id 0 stops an entity that was never persisted from failing the check open.
+        var tokenUser = token.getUser();
+        if (tokenUser == null || tokenUser.getId() == 0 || tokenUser.getId() != user.getId()) {
             throw new NotFoundException();
         }
 
         token.setActive(false);
-        return ResultJson.success("Deactivated access token for user " + user.getLoginName() + ".");
+        return ResultJson.success("Deactivated access token for user " + tokenUser.getLoginName() + ".");
     }
 
     // REQUIRES_NEW: callers such as LocalRegistryService#createNamespace(NamespaceJson, String) wrap
