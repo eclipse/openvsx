@@ -104,17 +104,24 @@ public class AccessTokenConfig {
     private String tokenHashAlgorithm;
 
     /**
-     * The (instance wide) hash salt string used for personal access tokens.
-     * Note: if this instance wide salt changes, all existing/active
-     * personal access tokens will become invalid. Salt exists only in configuration,
-     * should never get into database. Default is empty string, and is not recommended
-     * for production!
+     * The (instance wide) secret mixed into the hash of every personal access token.
      * <p>
-     * Property: {@code ovsx.access-token.token-hash-salt}
+     * A pepper rather than a salt: one value for the whole instance, not one per token, and it lives
+     * only in the configuration so that it is never stored next to the hashes it protects. That is what
+     * it is for - the token values are 256 random bits each, so there is nothing to precompute against
+     * and no chance of two of them colliding, and the only thing this secret can buy is making a leaked
+     * {@code personal_access_token.value} column useless to whoever holds it. Keep it out of anywhere a
+     * non-secret would go.
+     * <p>
+     * Note: because the same pepper covers every token, changing it invalidates all existing/active
+     * personal access tokens at once. Default is the empty string, which mixes in nothing and is not
+     * recommended for production!
+     * <p>
+     * Property: {@code ovsx.access-token.token-hash-pepper}
      * Default: {@code ''}
      */
-    @Value("${ovsx.access-token.token-hash-salt:}")
-    private String tokenHashSalt;
+    @Value("${ovsx.access-token.token-hash-pepper:}")
+    private String tokenHashPepper;
 
     @Value("${ovsx.data.mirror.enabled:false}")
     private boolean mirrorEnabled;
@@ -167,8 +174,8 @@ public class AccessTokenConfig {
         return tokenHashAlgorithm;
     }
 
-    public @NonNull String getTokenHashSalt() {
-        return tokenHashSalt;
+    public @NonNull String getTokenHashPepper() {
+        return tokenHashPepper;
     }
 
     @PostConstruct
@@ -201,8 +208,8 @@ public class AccessTokenConfig {
                             + tokenHashAlgorithm,
                     e);
         }
-        if (tokenHashSalt == null) {
-            throw new IllegalArgumentException("ovsx.access-token.token-hash-salt must not be null");
+        if (tokenHashPepper == null) {
+            throw new IllegalArgumentException("ovsx.access-token.token-hash-pepper must not be null");
         }
     }
 }

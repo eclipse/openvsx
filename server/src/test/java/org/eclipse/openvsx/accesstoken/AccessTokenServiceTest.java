@@ -72,7 +72,7 @@ class AccessTokenServiceTest {
     void setUp() {
         // lenient: generateTokenValue does not hash anything, so it needs neither of these
         lenient().when(config.getTokenHashAlgorithm()).thenReturn("SHA-256");
-        lenient().when(config.getTokenHashSalt()).thenReturn("salt");
+        lenient().when(config.getTokenHashPepper()).thenReturn("pepper");
     }
 
     private PersonalAccessToken activeUnrestrictedToken() {
@@ -141,9 +141,9 @@ class AccessTokenServiceTest {
     }
 
     // The old implementation regenerated until repositories.hasPersonalAccessToken(value) came back
-    // false, comparing a raw value against a column that stores salted hashes - it could never match for
-    // a current token, so it only cost a query per token created. Uniqueness is UNIQUE (value)'s job, and
-    // only it can work across pods anyway.
+    // false, comparing a raw value against a column that stores peppered hashes - it could never match
+    // for a current token, so it only cost a query per token created. Uniqueness is UNIQUE (value)'s job,
+    // and only it can work across pods anyway.
     @Test
     void generatesATokenValueWithoutAskingTheDatabase() {
         when(config.getPrefix()).thenReturn("ovsx");
