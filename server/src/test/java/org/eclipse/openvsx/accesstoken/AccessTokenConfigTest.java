@@ -120,6 +120,31 @@ class AccessTokenConfigTest {
                                 .containsExactly("old", "older"));
     }
 
+    // A blank element is what a trailing or doubled comma leaves behind, and a blank pepper *is* the
+    // unpeppered hash - which is exactly what token-hash-accept-unpeppered exists to gate. Honouring one
+    // would let a stray comma turn on acceptance of unpeppered tokens without anyone asking for it.
+    @Test
+    void ignoresBlankEntriesInThePreviousPepperList() {
+        contextRunner
+                .withPropertyValues(
+                        "ovsx.access-token.token-hash-pepper=current",
+                        "ovsx.access-token.token-hash-previous-peppers=old,")
+                .run(
+                        context -> assertThat(context.getBean(AccessTokenConfig.class).getTokenHashPepperKeyring())
+                                .containsExactly("old"));
+    }
+
+    @Test
+    void ignoresWhitespaceOnlyEntriesInThePreviousPepperList() {
+        contextRunner
+                .withPropertyValues(
+                        "ovsx.access-token.token-hash-pepper=current",
+                        "ovsx.access-token.token-hash-previous-peppers=old, ,older")
+                .run(
+                        context -> assertThat(context.getBean(AccessTokenConfig.class).getTokenHashPepperKeyring())
+                                .containsExactly("old", "older"));
+    }
+
     // Caught at startup rather than at the rotation that would silently split it into two wrong peppers
     // - by which point the tokens hashed with it are unreachable and the mistake looks like data loss.
     @Test

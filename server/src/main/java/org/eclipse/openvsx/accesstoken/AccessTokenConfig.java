@@ -148,7 +148,9 @@ public class AccessTokenConfig {
      * </ul>
      * Comma separated, and so a pepper itself must not contain a comma; {@link #validate()} rejects a
      * current pepper that does, rather than letting it split into nonsense once it is rotated out.
-     * Generating peppers with {@code openssl rand -base64 32} keeps clear of the problem entirely.
+     * Generating peppers with {@code openssl rand -base64 32} keeps clear of the problem entirely. Blank
+     * entries - what a trailing or doubled comma leaves behind - are ignored rather than read as the
+     * unpeppered hash, which has its own flag in {@link #acceptUnpepperedTokenHashes}.
      * <p>
      * Property: {@code ovsx.access-token.token-hash-previous-peppers}
      * Default: {@code ''}, no previous peppers
@@ -304,7 +306,13 @@ public class AccessTokenConfig {
         // listed twice - or listed while still current - costs a query per authentication, not a bug.
         var keyring = new LinkedHashSet<String>();
         if (previousTokenHashPeppers != null) {
-            keyring.addAll(previousTokenHashPeppers);
+            // hasText, and not merely non-null: a trailing or doubled comma leaves a blank element behind
+            // (Spring trims each one, so an all-whitespace entry arrives blank too), and a blank pepper is
+            // the unpeppered hash - the thing acceptUnpepperedTokenHashes exists to gate, kept as its own
+            // flag precisely because this list cannot express it unambiguously. Taking one at face value
+            // would let a stray comma switch on acceptance of unpeppered tokens with nobody asking for it,
+            // so a blank here means a typo and nothing else.
+            previousTokenHashPeppers.stream().filter(StringUtils::hasText).forEach(keyring::add);
         }
         if (acceptUnpepperedTokenHashes) {
             keyring.add("");
