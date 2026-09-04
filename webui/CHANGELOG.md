@@ -56,6 +56,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Remove nine dependencies that nothing imports: `clsx`, `prop-types` and `punycode` from the runtime dependencies, and `@types/d3-scale`, `@types/d3-shape`, `@types/prop-types`, `@types/punycode`, `@types/react-transition-group` and `ts-node` from the development ones. All but `@types/punycode` and `ts-node` stay in the tree through MUI or the URL parsers that actually use them, so only those two leave the install
 - Bump express from `4.22.1` to `5.2.1` and `@types/express` from `4.17` to `5.0`. Express 4 caps `qs` at `~6.14.0`, which is why a `qs` resolution was needed to move past it; Express 5 declares `^6.14.0`, so that resolution is gone and `qs` resolves to `6.16.0` on its own. The standalone frontend server's catch-all route is now `/{*splat}`, which is how Express 5 spells the `*` it no longer accepts
 - Bump @humanfs/node from 0.16.6 to 0.16.8
+- Bump js-yaml from 4.3.1 to 4.3.2
 
 ## [v1.1.2] (20/08/2026)
 
