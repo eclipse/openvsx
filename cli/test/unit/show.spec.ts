@@ -309,6 +309,16 @@ describe('show', () => {
         expect(registry.metadataRequests[0].pathname).toBe('/api/redhat/java/linux-x64/1.1.0');
     });
 
+    // A trailing `@` with nothing after it used to be read as "no version", so this silently reported
+    // the latest version - the wrong answer for `ovsx show ext@$VERSION` with the variable unset.
+    it('rejects an empty version after @', async () => {
+        const registry = await givenRegistry();
+
+        await expect(show({ extensionId: 'redhat.java@', registryUrl: registry.url }))
+            .rejects.toThrow('A version must follow `@`, as in `namespace.extension@1.2.3`.');
+        expect(registry.metadataRequests).toHaveLength(0);
+    });
+
     it('passes a version alias through as given', async () => {
         const registry = await givenRegistry();
 

@@ -72,13 +72,21 @@ export async function show(options: ShowOptions): Promise<void> {
 /**
  * Splits a trailing `@<version>` off the identifier, the way `vsce show` accepts it. Only the last
  * `@` is considered, so it stays out of the way of the identifier itself.
+ *
+ * An `@` with nothing after it is rejected rather than read as "no version given". It usually means a
+ * shell variable that did not expand - `ovsx show redhat.java@$VERSION` with `VERSION` unset - and
+ * reporting the latest version for that would answer a question the caller did not ask.
  */
 function splitVersion(extensionId: string): { id: string; version?: string } {
     const at = extensionId.lastIndexOf('@');
     if (at <= 0) {
         return { id: extensionId };
     }
-    return { id: extensionId.substring(0, at), version: extensionId.substring(at + 1) };
+    const version = extensionId.substring(at + 1);
+    if (version.length === 0) {
+        throw new Error('A version must follow `@`, as in `namespace.extension@1.2.3`.');
+    }
+    return { id: extensionId.substring(0, at), version };
 }
 
 /**
