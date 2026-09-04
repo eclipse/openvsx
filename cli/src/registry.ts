@@ -123,13 +123,43 @@ export class Registry {
         }
     }
 
-    getMetadata(namespace: string, extension: string, target?: string): Promise<Extension> {
+    getMetadata(namespace: string, extension: string, target?: string, version?: string): Promise<Extension> {
         try {
             const segments = ['api', namespace, extension];
             if (target) {
                 segments.push(target);
             }
+            if (version) {
+                segments.push(version);
+            }
             return this.getJson(this.getUrl(segments));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /**
+     * Returns a page of an extension's published versions, newest first, one entry per version and
+     * target platform. `allVersions` on the metadata response carries version numbers and links
+     * only, so this is what makes the target platforms of each version available.
+     */
+    getVersionReferences(
+        namespace: string,
+        extension: string,
+        target: string | undefined,
+        size: number,
+        offset: number
+    ): Promise<VersionReferences> {
+        try {
+            const segments = ['api', namespace, extension];
+            if (target) {
+                segments.push(target);
+            }
+            segments.push('version-references');
+            return this.getJson(this.getUrl(segments, {
+                size: String(size),
+                offset: String(offset)
+            }));
         } catch (err) {
             return rejectError(err);
         }
@@ -293,8 +323,18 @@ export interface Extension extends Response {
     versionAlias: string[];
     timestamp: string;
     preview?: boolean;
+    preRelease?: boolean;
     displayName?: string;
+    namespaceDisplayName?: string;
     description?: string;
+    deprecated?: boolean;
+    replacement?: ExtensionReplacement;
+    downloadable?: boolean;
+    publishedWithTrustedPublishing?: boolean;
+    namespaceOwnershipConflict?: boolean;
+    extensionKind?: string[];
+    localizedLanguages?: string[];
+    sponsorLink?: string;
 
     // key: engine, value: version constraint
     engines?: { [engine: string]: string };
@@ -344,6 +384,25 @@ export interface Badge {
     url: string;
     href: string;
     description: string;
+}
+
+export interface ExtensionReplacement {
+    url: string;
+    displayName?: string;
+}
+
+export interface VersionReference {
+    url: string;
+    files: { [type: string]: string };
+    version: string;
+    targetPlatform?: string;
+    engines?: { [engine: string]: string };
+}
+
+export interface VersionReferences extends Response {
+    offset: number;
+    totalSize: number;
+    versions?: VersionReference[];
 }
 
 export interface ExtensionReference {

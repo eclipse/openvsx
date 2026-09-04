@@ -6,6 +6,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Added
 
+- Add `show` command to print an extension's metadata, mirroring `vsce show`: identity, publisher, rating, notices and a version history listing each version's target platforms ([#2149](https://github.com/eclipse-openvsx/openvsx/issues/2149)). `namespace.extension@version` reports a single version, `--target` scopes the report to one target platform, `--all-versions` lists every published version instead of the most recent few, and `--json` prints the registry's raw metadata
 - Add `unpublish` command to delete an extension or some of its versions, mirroring `vsce unpublish` ([#1958](https://github.com/eclipse-openvsx/openvsx/issues/1958)); requires a registry running version 1.2.0 or later, which `unpublish` checks for before deleting
 - `publish` checks the packaged extension's size against the limit reported by the registry's `/api/version` endpoint before uploading, instead of failing only after the upload completes ([#1953](https://github.com/eclipse-openvsx/openvsx/issues/1953))
 - Add `verify` command to check a downloaded `.vsix` package's signature against the registry's public key, mirroring `vsce verify-signature` ([#993](https://github.com/eclipse-openvsx/openvsx/issues/993))
