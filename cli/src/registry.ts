@@ -165,6 +165,46 @@ export class Registry {
         }
     }
 
+    /**
+     * Full-text search across the registry. Returns the purpose-built summary shape rather than
+     * whole extension records, so a page of results stays small.
+     */
+    search(options: SearchQuery): Promise<SearchResult> {
+        try {
+            const query: Record<string, string> = {
+                size: String(options.size),
+                offset: String(options.offset)
+            };
+            if (options.query) {
+                query.query = options.query;
+            }
+            if (options.category) {
+                query.category = options.category;
+            }
+            if (options.targetPlatform) {
+                query.targetPlatform = options.targetPlatform;
+            }
+            if (options.sortBy) {
+                query.sortBy = options.sortBy;
+            }
+            if (options.sortOrder) {
+                query.sortOrder = options.sortOrder;
+            }
+            return this.getJson(this.getUrl(['api', '-', 'search'], query));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
+    /** Returns a namespace and the extensions published in it. */
+    getNamespace(namespace: string): Promise<Namespace> {
+        try {
+            return this.getJson(this.getUrl(['api', namespace]));
+        } catch (err) {
+            return rejectError(err);
+        }
+    }
+
     download(file: string, url: URL): Promise<void> {
         return new Promise((resolve, reject) => {
             const stream = fs.createWriteStream(file);
@@ -403,6 +443,45 @@ export interface VersionReferences extends Response {
     offset: number;
     totalSize: number;
     versions?: VersionReference[];
+}
+
+export interface SearchQuery {
+    query?: string;
+    category?: string;
+    targetPlatform?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    size: number;
+    offset: number;
+}
+
+export interface SearchEntry {
+    url: string;
+    files: { [type: string]: string };
+    name: string;
+    namespace: string;
+    version: string;
+    timestamp: string;
+    verified?: boolean;
+    averageRating?: number;
+    reviewCount?: number;
+    downloadCount: number;
+    displayName?: string;
+    description?: string;
+    deprecated?: boolean;
+}
+
+export interface SearchResult extends Response {
+    offset: number;
+    totalSize: number;
+    extensions?: SearchEntry[];
+}
+
+export interface Namespace extends Response {
+    name: string;
+    verified?: boolean;
+    // key: extension name, value: url
+    extensions?: { [name: string]: string };
 }
 
 export interface ExtensionReference {

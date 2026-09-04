@@ -13,6 +13,7 @@
 
 import * as semver from 'semver';
 import { Extension, Registry, VersionReference } from './registry';
+import { formatCount, formatNumber, printRows } from './table';
 import { ShowOptions } from './show-options';
 import { addEnvOptions, matchExtensionId } from './util';
 
@@ -279,11 +280,11 @@ function registryInfo(extension: Extension): string[][] {
 }
 
 function statistics(extension: Extension): string[][] {
-    const rows: string[][] = [['Downloads', (extension.downloadCount ?? 0).toLocaleString('en-US')]];
+    const rows: string[][] = [['Downloads', formatNumber(extension.downloadCount)]];
     if (extension.averageRating !== undefined) {
         rows.push(['Average Rating', `${extension.averageRating.toFixed(1)}/5`]);
     }
-    rows.push(['Reviews', Number(extension.reviewCount ?? 0).toLocaleString('en-US')]);
+    rows.push(['Reviews', formatNumber(Number(extension.reviewCount ?? 0))]);
     return rows;
 }
 
@@ -313,26 +314,6 @@ function printTable(title: string, rows: string[][]): void {
     console.log();
     console.log(`${title}:`);
     printRows(rows);
-}
-
-/** Pads every column but the last, so trailing empty cells don't leave ragged whitespace. */
-function printRows(rows: string[][]): void {
-    const widths: number[] = [];
-    for (const row of rows) {
-        row.forEach((cell, i) => widths[i] = Math.max(widths[i] ?? 0, cell.length));
-    }
-    for (const row of rows) {
-        const line = row
-            .map((cell, i) => (i === row.length - 1 ? cell : cell.padEnd(widths[i])))
-            .join('  ')
-            .trimEnd();
-        console.log(`  ${line}`);
-    }
-}
-
-function formatCount(count: number | undefined, noun: string): string {
-    const value = count ?? 0;
-    return `${value.toLocaleString('en-US')} ${value === 1 ? noun : noun + 's'}`;
 }
 
 function formatRating(extension: Extension): string {

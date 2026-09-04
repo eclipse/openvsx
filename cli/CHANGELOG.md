@@ -6,6 +6,8 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Added
 
+- Add `search` command to search the registry for extensions, mirroring the web UI's search: `--category`, `--target`, `--sort-by` and `--sort-order` narrow the query, `--size` and `--offset` page through the results, and `--json` prints the registry's raw response ([#2154](https://github.com/eclipse-openvsx/openvsx/pull/2154))
+- Add `list` command to print the extensions a namespace holds, sorted by name so the output stays stable across registries, with `--json` for the raw namespace metadata ([#2154](https://github.com/eclipse-openvsx/openvsx/pull/2154))
 - Add `show` command to print an extension's metadata, mirroring `vsce show`: identity, publisher, rating, notices and a version history listing each version's target platforms ([#2149](https://github.com/eclipse-openvsx/openvsx/issues/2149)). `namespace.extension@version` reports a single version, `--target` scopes the report to one target platform, `--all-versions` lists every published version instead of the most recent few, and `--json` prints the registry's raw metadata
 - Add `unpublish` command to delete an extension or some of its versions, mirroring `vsce unpublish` ([#1958](https://github.com/eclipse-openvsx/openvsx/issues/1958)); requires a registry running version 1.2.0 or later, which `unpublish` checks for before deleting
 - `publish` checks the packaged extension's size against the limit reported by the registry's `/api/version` endpoint before uploading, instead of failing only after the upload completes ([#1953](https://github.com/eclipse-openvsx/openvsx/issues/1953))
