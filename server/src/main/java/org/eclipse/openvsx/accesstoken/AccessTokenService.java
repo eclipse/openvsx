@@ -445,8 +445,8 @@ public class AccessTokenService {
 
     private String hashTokenValue(String tokenValue) {
         try {
-            // token hash salt must not be present in DB (is in config)
-            String payload = tokenValue + config.getTokenHashSalt();
+            // the pepper is instance wide and lives in the configuration only; it must never reach the DB
+            String payload = tokenValue + config.getTokenHashPepper();
             return Hex.encodeHexString(
                     DigestUtils.digest(
                             MessageDigest.getInstance(config.getTokenHashAlgorithm()),
