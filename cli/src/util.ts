@@ -41,7 +41,7 @@ function parseBooleanEnv(value?: string): boolean | undefined {
  * Parses a commander option that must be a non-negative whole number, so a typo is reported by the
  * CLI rather than sent to the registry as a bad request.
  */
-export function parsePositiveInt(value: string): number {
+export function parseNonNegativeInt(value: string): number {
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < 0) {
         throw new Error(`Expected a non-negative whole number, got '${value}'.`);

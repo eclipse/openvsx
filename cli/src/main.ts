@@ -14,7 +14,7 @@ import { createNamespace } from './create-namespace';
 import { verifyPat } from './verify-pat';
 import { publish } from './publish';
 import { unpublish } from './unpublish';
-import { handleError, parsePositiveInt } from './util';
+import { handleError, parseNonNegativeInt } from './util';
 import { getExtension } from './get';
 import { list } from './list';
 import { DEFAULT_SEARCH_SIZE, SORT_KEYS, SORT_ORDERS, search } from './search';
@@ -126,9 +126,9 @@ module.exports = function (argv: string[]): void {
         .option(
             '-s, --size <size>',
             `Number of results to return (default ${DEFAULT_SEARCH_SIZE}).`,
-            parsePositiveInt
+            parseNonNegativeInt
         )
-        .option('-o, --offset <offset>', 'Index of the first result, for paging.', parsePositiveInt)
+        .option('-o, --offset <offset>', 'Index of the first result, for paging.', parseNonNegativeInt)
         .option('--sort-by <key>', `Sort key: ${SORT_KEYS.join(', ')}.`)
         .option('--sort-order <order>', `Sort order: ${SORT_ORDERS.join(', ')}.`)
         .option('--json', 'Print the raw results as JSON.')

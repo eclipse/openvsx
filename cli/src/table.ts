@@ -39,8 +39,15 @@ export function formatNumber(value: number | undefined): string {
     return (value ?? 0).toLocaleString('en-US');
 }
 
-/** Shortens `text` to `max` characters, marking that it was cut. */
+/**
+ * Shortens `text` to at most `max` characters, marking that it was cut. A `max` of zero or less
+ * leaves no room for the marker either, so it yields nothing rather than an ellipsis wider than the
+ * budget it was given.
+ */
 export function truncate(text: string, max: number): string {
+    if (max <= 0) {
+        return '';
+    }
     const collapsed = text.replace(/\s+/g, ' ').trim();
     return collapsed.length <= max ? collapsed : `${collapsed.substring(0, max - 1)}…`;
 }
