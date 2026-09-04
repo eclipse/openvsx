@@ -377,12 +377,17 @@ public class AccessTokenService {
 
     @Transactional
     public void scheduleTokenExpirationNotification(PersonalAccessToken token) {
-        token = entityManager.merge(token);
-        if (token.getType().isNotify() && !token.isNotified()) {
+        // find, not merge: only `notified` is this method's to change, and merging the whole
+        // detached token reverted any column that moved since it was loaded - see #989.
+        var managedToken = entityManager.find(PersonalAccessToken.class, token.getId());
+        if (managedToken == null) {
+            return;
+        }
+        if (managedToken.getType().isNotify() && !managedToken.isNotified()) {
             try {
-                mail.scheduleAccessTokenExpiryNotification(token);
+                mail.scheduleAccessTokenExpiryNotification(managedToken);
             } finally {
-                token.setNotified(true);
+                managedToken.setNotified(true);
             }
         }
     }

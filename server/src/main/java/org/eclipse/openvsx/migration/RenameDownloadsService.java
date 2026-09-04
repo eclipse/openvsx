@@ -43,8 +43,16 @@ public class RenameDownloadsService {
         return clone;
     }
 
+    /**
+     * Persists the new name its caller set on {@code resource}, and nothing else - see
+     * {@code MigrationService#updateResourceSize} for why this is named for its field.
+     */
     @Transactional
-    public void updateResource(FileResource resource) {
-        entityManager.merge(resource);
+    public void updateResourceName(FileResource resource) {
+        var managedResource = entityManager.find(FileResource.class, resource.getId());
+        if (managedResource == null) {
+            return;
+        }
+        managedResource.setName(resource.getName());
     }
 }
