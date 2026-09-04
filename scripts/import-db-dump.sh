@@ -149,16 +149,18 @@ target_docker_host() {
 # --- Run the psql client against the target, either the host's own psql or, if that isn't
 # installed, a throwaway containerized one (see target_docker_host above for how it reaches the
 # target).
+# -X because the first branch runs the caller's own psql: a ~/.psqlrc that turns on \timing, or
+# echoes anything at all, would be read back as schema metadata by the queries below.
 target_psql() {
   if command -v psql >/dev/null 2>&1; then
-    PGPASSWORD="${TARGET_PASSWORD}" psql -h "${TARGET_HOST}" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
+    PGPASSWORD="${TARGET_PASSWORD}" psql -X -h "${TARGET_HOST}" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
   else
     # -f references a file under WORKDIR; -c/\copy reference dump files under DUMP_DIR - both
     # need to be visible inside the container at the same absolute path the SQL text uses.
     docker run --rm -i --add-host=host.docker.internal:host-gateway \
       -v "${DUMP_DIR}:${DUMP_DIR}:ro" -v "${WORKDIR}:${WORKDIR}" \
       -e PGPASSWORD="${TARGET_PASSWORD}" "${POSTGRES_IMAGE}" \
-      psql -h "$(target_docker_host)" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
+      psql -X -h "$(target_docker_host)" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
   fi
 }
 
@@ -315,6 +317,12 @@ fi
 # list would fail with a bare 'column does not exist' well into the run. Caught here instead,
 # before anything on the target is touched, with a pointer at the import-into-empty-DB route
 # that lets the real migrations decide what becomes of those columns.
+#
+# sed rather than grep to strip the blank line psql's tuples-only output leaves behind: grep exits 1
+# when it matches nothing, which under `pipefail` is indistinguishable from psql itself having
+# failed, and the `|| true` needed to tolerate the former swallowed the latter too - leaving the
+# check silently concluding that nothing was dropped. sed exits 0 either way, so a psql that cannot
+# reach the target aborts the script here instead. Same in the gap query below.
 echo "Checking that every column in the dump still exists on the target..."
 declare -a DROPPED_COLUMNS=()
 for t in "${TABLES[@]}"; do
@@ -325,7 +333,7 @@ for t in "${TABLES[@]}"; do
       select column_name from information_schema.columns
       where table_schema='public' and table_name='${t}'
     );
-  " | tr -d ' ' | grep -v '^$' || true)
+  " | tr -d ' ' | sed '/^$/d')
   while IFS= read -r col; do
     [ -z "${col}" ] && continue
     DROPPED_COLUMNS+=("${t}.${col}")
@@ -347,13 +355,24 @@ if [ "${#DROPPED_COLUMNS[@]}" -gt 0 ]; then
   exit 1
 fi
 
-# --- A column the target has gained since the dump's era, if it's NOT NULL with no default,
-# can't just be left out of the \copy column list - Postgres would reject every imported row.
-# Known cases get a backfill: the constraint is dropped, the import runs, the same backfill the
-# introducing migration itself used runs, then the constraint is restored - all still inside the
-# one transaction. Add an entry here (keyed "table.column") for anything new, matching whatever
-# UPDATE the migration that introduced the column used for pre-existing rows; a gap with no entry
-# here fails the preflight check below instead of guessing.
+# --- A column the target has gained since the dump's era is left out of the \copy column list, and
+# the imported rows take whatever the target's schema gives them - its default, or NULL. Two kinds of
+# column need more than that, and both are handled by a backfill registered here.
+#
+# A column that is NOT NULL with no default can't be left out at all: Postgres would reject every
+# imported row. Those are dropped to nullable, imported, backfilled with the same UPDATE the
+# introducing migration used, and set back to NOT NULL - all inside the one transaction. A gap of
+# this kind with no entry here fails the preflight check below instead of guessing.
+#
+# A column whose default does not reproduce what the introducing migration computed needs a backfill
+# too, even though the import would succeed without one. personal_access_token.type is the case in
+# point: V1_74 defaults it to 'LLT' so hand-written INSERTs keep working, but V1_72 derived 'OTT' for
+# one-time tokens from their description, and importing those as 'LLT' would quietly turn a
+# used-once credential into a permanent one. So the gap set below is every target column the dump
+# lacks, and only the un-importable ones are *required* to have an entry.
+#
+# Add an entry (keyed "table.column") for anything new, matching whatever UPDATE the migration that
+# introduced the column used for pre-existing rows.
 declare -A KNOWN_BACKFILLS
 KNOWN_BACKFILLS["personal_access_token.version"]="UPDATE personal_access_token SET version = 0;"
 KNOWN_BACKFILLS["personal_access_token.type"]="
@@ -361,25 +380,31 @@ KNOWN_BACKFILLS["personal_access_token.type"]="
   UPDATE personal_access_token SET type = 'LLT' WHERE type IS NULL;
 "
 
-echo "Checking for target columns the dump doesn't have that require a value..."
-declare -A GAP_COLUMNS   # "table.column" -> 1, for every gap found (known or not)
+echo "Checking for target columns the dump doesn't have..."
+declare -A BACKFILL_COLUMNS   # "table.column" -> 1, for every gap that has a backfill to run
+declare -A REQUIRED_GAPS      # "table.column" -> 1, the subset that can't be imported without one
 declare -a UNKNOWN_GAPS=()
 for t in "${TABLES[@]}"; do
   IFS=',' read -r -a dump_cols <<< "${COLUMN_LISTS[${t}]}"
-  gap_cols=$(target_psql -t -c "
-    select column_name from information_schema.columns
+  gap_cols=$(target_psql -t -A -F',' -c "
+    select column_name, (is_nullable = 'NO' and column_default is null)
+    from information_schema.columns
     where table_schema='public' and table_name='${t}'
-    and is_nullable='NO' and column_default is null
     and column_name not in ($(printf "'%s'," "${dump_cols[@]}" | sed 's/,$//'));
-  " | tr -d ' ' | grep -v '^$' || true)
-  while IFS= read -r col; do
+  " | sed '/^$/d')
+  while IFS=',' read -r col required; do
     [ -z "${col}" ] && continue
     key="${t}.${col}"
-    GAP_COLUMNS["${key}"]=1
-    if [ -z "${KNOWN_BACKFILLS[${key}]:-}" ]; then
+    [ "${required}" = "t" ] && REQUIRED_GAPS["${key}"]=1
+    if [ -n "${KNOWN_BACKFILLS[${key}]:-}" ]; then
+      BACKFILL_COLUMNS["${key}"]=1
+      if [ "${required}" = "t" ]; then
+        echo "  ${key}: no value in the dump, not nullable, no default - will backfill (known)"
+      else
+        echo "  ${key}: no value in the dump - will backfill (known) instead of taking the default"
+      fi
+    elif [ "${required}" = "t" ]; then
       UNKNOWN_GAPS+=("${key}")
-    else
-      echo "  ${key}: no value in the dump, not nullable, no default - will backfill (known)"
     fi
   done <<< "${gap_cols}"
 done
@@ -469,16 +494,24 @@ SQL_FILE="${WORKDIR}/reload.sql"
     [ -n "${t}" ] && echo "DELETE FROM ${t};"
   done
   for t in "${IMPORT_ORDER_ARR[@]}"; do
-    gap_cols_for_table=()
-    for key in "${!GAP_COLUMNS[@]}"; do
-      [ "${key%%.*}" = "${t}" ] && gap_cols_for_table+=("${key#*.}")
+    # Only the columns the dump can't supply at all lose their NOT NULL for the duration of the
+    # import; a column that has a default imports fine as it is and just gets its backfill after.
+    required_cols_for_table=()
+    for key in "${!REQUIRED_GAPS[@]}"; do
+      [ "${key%%.*}" = "${t}" ] && required_cols_for_table+=("${key#*.}")
     done
-    for col in "${gap_cols_for_table[@]}"; do
+    backfill_cols_for_table=()
+    for key in "${!BACKFILL_COLUMNS[@]}"; do
+      [ "${key%%.*}" = "${t}" ] && backfill_cols_for_table+=("${key#*.}")
+    done
+    for col in "${required_cols_for_table[@]}"; do
       echo "ALTER TABLE ${t} ALTER COLUMN ${col} DROP NOT NULL;"
     done
     echo "\\copy ${t} (${COLUMN_LISTS[${t}]}) from '${DUMP_DIR}/${t}.csv' with (${COPY_FORMAT})"
-    for col in "${gap_cols_for_table[@]}"; do
+    for col in "${backfill_cols_for_table[@]}"; do
       echo "${KNOWN_BACKFILLS[${t}.${col}]}"
+    done
+    for col in "${required_cols_for_table[@]}"; do
       echo "ALTER TABLE ${t} ALTER COLUMN ${col} SET NOT NULL;"
     done
   done

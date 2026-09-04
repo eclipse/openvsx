@@ -48,7 +48,11 @@ public class PersonalAccessToken implements Serializable {
     @JoinColumn(name = "user_data")
     private UserData user;
 
-    @Column(length = 64)
+    // 128, matching the width V1_72 gave the column: enough for the hex digest of any algorithm
+    // `ovsx.access-token.token-hash-algorithm` may name (SHA-512's is 128 characters; the default
+    // SHA-256's is 64), and for a still-unhashed version 0 value, whose 43-character body sits behind
+    // a type marker and a deployment prefix.
+    @Column(length = 128)
     private String value;
 
     private boolean active;
