@@ -52,12 +52,6 @@ const StatisticsAdmin = lazy(() => import('./statistics/statistics').then(m => (
 
 const navConfig: NavEntry[] = [
     {
-        path: AdminDashboardRoutes.STATISTICS,
-        name: 'Statistics',
-        icon: <AssessmentIcon />,
-        description: 'Registry statistics per month, with a CSV export'
-    },
-    {
         path: AdminDashboardRoutes.NAMESPACE_ADMIN,
         name: 'Namespaces',
         icon: <AssignmentIndIcon />,
@@ -123,6 +117,12 @@ const navConfig: NavEntry[] = [
         name: 'Search Index',
         icon: <ManageSearchIcon />,
         description: 'Inspect the search index and rebuild it'
+    },
+    {
+        path: AdminDashboardRoutes.STATISTICS,
+        name: 'Statistics',
+        icon: <AssessmentIcon />,
+        description: 'Registry statistics per month, with a CSV export'
     }
 ];
 
