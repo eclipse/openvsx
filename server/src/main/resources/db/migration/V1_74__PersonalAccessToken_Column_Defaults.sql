@@ -5,8 +5,10 @@
 -- without a login provider (deploy/kubernetes/README.md, and the wiki) fails on a current schema.
 --
 -- These defaults are chosen so that an INSERT written against the pre-V1_72 schema still produces a
--- working token: the row it creates is exactly the row that migration's own backfill would have left
--- behind.
+-- working token - the row that migration's own backfill would have left behind for an ordinary
+-- long-lived one. They do not reproduce that backfill in full: it also derived type = 'OTT' from the
+-- description of the one-time publish tokens the server used to create, which is a classification of
+-- rows that already existed, not something a hand-written INSERT has any reason to be creating.
 
 ALTER TABLE ONLY public.personal_access_token
     -- The oldest token format, deliberately, and it must stay pinned at 0 rather than tracking

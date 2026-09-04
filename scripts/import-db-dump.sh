@@ -149,16 +149,18 @@ target_docker_host() {
 # --- Run the psql client against the target, either the host's own psql or, if that isn't
 # installed, a throwaway containerized one (see target_docker_host above for how it reaches the
 # target).
+# -X because the first branch runs the caller's own psql: a ~/.psqlrc that turns on \timing, or
+# echoes anything at all, would be read back as schema metadata by the queries below.
 target_psql() {
   if command -v psql >/dev/null 2>&1; then
-    PGPASSWORD="${TARGET_PASSWORD}" psql -h "${TARGET_HOST}" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
+    PGPASSWORD="${TARGET_PASSWORD}" psql -X -h "${TARGET_HOST}" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
   else
     # -f references a file under WORKDIR; -c/\copy reference dump files under DUMP_DIR - both
     # need to be visible inside the container at the same absolute path the SQL text uses.
     docker run --rm -i --add-host=host.docker.internal:host-gateway \
       -v "${DUMP_DIR}:${DUMP_DIR}:ro" -v "${WORKDIR}:${WORKDIR}" \
       -e PGPASSWORD="${TARGET_PASSWORD}" "${POSTGRES_IMAGE}" \
-      psql -h "$(target_docker_host)" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
+      psql -X -h "$(target_docker_host)" -p "${TARGET_PORT}" -U "${TARGET_USER}" -d "${TARGET_DB}" -v ON_ERROR_STOP=1 "$@"
   fi
 }
 
@@ -315,6 +317,12 @@ fi
 # list would fail with a bare 'column does not exist' well into the run. Caught here instead,
 # before anything on the target is touched, with a pointer at the import-into-empty-DB route
 # that lets the real migrations decide what becomes of those columns.
+#
+# sed rather than grep to strip the blank line psql's tuples-only output leaves behind: grep exits 1
+# when it matches nothing, which under `pipefail` is indistinguishable from psql itself having
+# failed, and the `|| true` needed to tolerate the former swallowed the latter too - leaving the
+# check silently concluding that nothing was dropped. sed exits 0 either way, so a psql that cannot
+# reach the target aborts the script here instead. Same in the gap query below.
 echo "Checking that every column in the dump still exists on the target..."
 declare -a DROPPED_COLUMNS=()
 for t in "${TABLES[@]}"; do
@@ -325,7 +333,7 @@ for t in "${TABLES[@]}"; do
       select column_name from information_schema.columns
       where table_schema='public' and table_name='${t}'
     );
-  " | tr -d ' ' | grep -v '^$' || true)
+  " | tr -d ' ' | sed '/^$/d')
   while IFS= read -r col; do
     [ -z "${col}" ] && continue
     DROPPED_COLUMNS+=("${t}.${col}")
@@ -383,7 +391,7 @@ for t in "${TABLES[@]}"; do
     from information_schema.columns
     where table_schema='public' and table_name='${t}'
     and column_name not in ($(printf "'%s'," "${dump_cols[@]}" | sed 's/,$//'));
-  " | grep -v '^$' || true)
+  " | sed '/^$/d')
   while IFS=',' read -r col required; do
     [ -z "${col}" ] && continue
     key="${t}.${col}"
