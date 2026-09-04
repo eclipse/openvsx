@@ -88,12 +88,13 @@ public class MigrationService {
     public void scheduleMigration(MigrationItem item, Instant scheduledAt) {
         // find rather than merge: only migrationScheduled below is this method's to write, and
         // merging the whole detached item reverted anything else that had moved - see #989.
-        item = entityManager.find(MigrationItem.class, item.getId());
+        var itemId = item.getId();
+        item = entityManager.find(MigrationItem.class, itemId);
         if (item == null) {
             // The row can be deleted between the caller reading its batch and this transaction
             // (MigrationItemCleanupFilter, or one of the Delete_MigrationItems migrations). Skip it
             // rather than dereferencing null, which would abort the rest of the batch.
-            logger.debug("Migration item is gone, nothing to schedule");
+            logger.debug("Migration item {} is gone, nothing to schedule", itemId);
             return;
         }
         var jobIdText = item.getJobName() + "->itemId=" + item.getId();
