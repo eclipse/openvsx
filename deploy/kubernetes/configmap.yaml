@@ -23,7 +23,7 @@ data:
         name: openvsx-server
       autoconfigure:
         exclude:
-         - org.springframework.boot.actuate.autoconfigure.tracing.zipkin.ZipkinAutoConfiguration
+         - org.springframework.boot.zipkin.autoconfigure.ZipkinAutoConfiguration
       profiles:
         include: ovsx
       cache:
@@ -49,7 +49,7 @@ data:
         jdbc:
           initialize-schema: never
       thymeleaf:
-        enabled: false
+        check-template-location: false
       # Uncomment and configure to enable GitHub OAuth authentication
       # security:
       #   oauth2:
@@ -82,6 +82,9 @@ data:
                 requests: true
 
     springdoc:
+      model-and-view-allowed: true
+      api-docs:
+        version: openapi_3_0
       swagger-ui:
         path: /swagger-ui
         docExpansion: list
@@ -89,19 +92,18 @@ data:
         supportedSubmitMethods:
           - get
 
-    org:
-      jobrunr:
-        job-scheduler:
-          enabled: true
-        background-job-server:
-          enabled: true
-          worker-count: 2
-        dashboard:
-          enabled: false
-        database:
-          type: sql
-        miscellaneous:
-          allow-anonymous-data-usage: false
+    jobrunr:
+      job-scheduler:
+        enabled: true
+      background-job-server:
+        enabled: true
+        worker-count: 2
+      dashboard:
+        enabled: false
+      database:
+        type: sql
+      miscellaneous:
+        allow-anonymous-data-usage: false
 
     bucket4j:
       enabled: false
