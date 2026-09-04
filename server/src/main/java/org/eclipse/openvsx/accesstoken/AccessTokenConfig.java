@@ -20,12 +20,17 @@ import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 @Configuration
 public class AccessTokenConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(AccessTokenConfig.class);
+
     /**
      * The token prefix to use when generating a new access token.
      * <p>
@@ -278,6 +283,21 @@ public class AccessTokenConfig {
                     "ovsx.access-token.token-hash-pepper must not contain a comma, because "
                             + "ovsx.access-token.token-hash-previous-peppers is a comma separated list and "
                             + "could not carry this value once it is rotated out");
+        }
+        // hasText, not isEmpty: a pepper of blanks is not a secret either, and how whitespace survives
+        // a property source depends on how it was quoted - neither is worth staying quiet about.
+        if (!StringUtils.hasText(tokenHashPepper)) {
+            // Not an error: this is the default, and refusing to start would lock out every existing
+            // deployment. It is worth one line at boot, though, because the alternative is that the
+            // recommendation lives only in a javadoc nobody deploying the server reads.
+            logger.warn(
+                    "No ovsx.access-token.token-hash-pepper is configured, so personal access tokens "
+                            + "are stored as unkeyed hashes. Whoever obtains a copy of the database can "
+                            + "then confirm a token found elsewhere without touching this registry, and "
+                            + "match hashes across dumps and instances. Generate one with "
+                            + "'openssl rand -base64 32'; to keep the tokens that already exist working, "
+                            + "set ovsx.access-token.token-hash-accept-unpeppered=true at the same time "
+                            + "and drop it once they have expired.");
         }
 
         // LinkedHashSet: the order operators wrote decides which pepper is tried first, and a pepper

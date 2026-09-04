@@ -15,8 +15,11 @@ package org.eclipse.openvsx.accesstoken;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.convert.ApplicationConversionService;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * binding is worth asserting rather than assuming - not least because the previous-peppers list is a
  * comma separated {@code @Value}, whose behaviour for an absent property is not obvious.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class AccessTokenConfigTest {
 
     // A bare runner has no conversion service, where a real Boot context does; without it neither the
@@ -140,6 +144,28 @@ class AccessTokenConfigTest {
                 .run(context -> {
                     List<String> keyring = context.getBean(AccessTokenConfig.class).getTokenHashPepperKeyring();
                     assertThat(keyring).isUnmodifiable();
+                });
+    }
+
+    // The empty pepper is the default and no shipped configuration sets one, so without this the
+    // recommendation exists only in a javadoc that nobody deploying the server reads.
+    @Test
+    void warnsWhenNoPepperIsConfigured(CapturedOutput output) {
+        contextRunner.run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(output)
+                    .contains("No ovsx.access-token.token-hash-pepper is configured")
+                    .contains("token-hash-accept-unpeppered");
+        });
+    }
+
+    @Test
+    void staysQuietWhenAPepperIsConfigured(CapturedOutput output) {
+        contextRunner
+                .withPropertyValues("ovsx.access-token.token-hash-pepper=current")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(output).doesNotContain("token-hash-pepper is configured");
                 });
     }
 }
