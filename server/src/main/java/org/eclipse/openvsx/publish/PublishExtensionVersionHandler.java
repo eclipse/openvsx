@@ -524,11 +524,26 @@ public class PublishExtensionVersionHandler {
                     .addArgument(() -> NamingUtil.toLogFormat(extensionFile.getResource().getExtension()))
                     .setCause(failure)
                     .log();
-            // Null-safe: markScanAsErrored returns immediately when there is no scan to mark, which is
-            // every instance that does not run scanning - the case with nowhere to record this today.
+            service.recordPublishError(extensionFile.getResource().getExtension(), describe(failure));
+            // Null-safe: markScanAsErrored returns immediately when there is no scan to mark. An instance
+            // that does not run scanning has only the column above.
             scanService.markScanAsErrored(scan, "Async processing failed: " + failure);
             throw failure;
         }
+    }
+
+    /**
+     * The recorded form of a failure: its type and message, and nothing deeper.
+     * <p>
+     * A cause chain would carry file system paths, host names and connection strings out of the server
+     * and into a column that admin tooling reads back, and none of it tells an operator more than the log
+     * already has - which is where the stack trace stays.
+     */
+    private static String describe(Throwable failure) {
+        var message = failure.getMessage();
+        return message == null || message.isBlank()
+                ? failure.getClass().getName()
+                : failure.getClass().getName() + ": " + message;
     }
 
     /**

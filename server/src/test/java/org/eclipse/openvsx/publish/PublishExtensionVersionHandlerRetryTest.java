@@ -44,6 +44,7 @@ import org.eclipse.openvsx.util.TargetPlatform;
 import org.eclipse.openvsx.util.TempFile;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -140,6 +141,33 @@ class PublishExtensionVersionHandlerRetryTest {
         }
 
         verify(publishService, times(1)).storeResource(any());
+    }
+
+    // The point of #1450: an operator who finds a version stuck at active = false has, until this is
+    // recorded, no way to learn what stopped it short of correlating the row against a stack trace.
+    @Test
+    void recordsWhyThePublishDidNotFinish() throws IOException {
+        doThrow(new OutOfMemoryError("Java heap space")).when(publishService).storeResource(any());
+
+        try (var extensionFile = givenExtensionFile()) {
+            handler.publishAsync(extensionFile, extensionService);
+        }
+
+        verify(publishService)
+                .recordPublishError(any(), eq("java.lang.OutOfMemoryError: Java heap space"));
+    }
+
+    // The type alone when there is no message, rather than a bare "null" appended to it.
+    @Test
+    void recordsTheFailureTypeWhenItCarriesNoMessage() throws IOException {
+        doThrow(new IllegalStateException()).when(publishService).storeResource(any());
+
+        try (var extensionFile = givenExtensionFile()) {
+            handler.publishAsync(extensionFile, extensionService);
+        }
+
+        verify(publishService, times(ATTEMPTS))
+                .recordPublishError(any(), argThat("java.lang.IllegalStateException"::equals));
     }
 
     // The Error used to walk past a catch of Exception, so the scan of a version that died this way was
