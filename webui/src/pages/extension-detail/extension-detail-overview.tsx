@@ -16,7 +16,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MainContext } from '../../context';
-import { addQuery, createRoute, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
+import { addQuery, createRoute, formatFileSize, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -83,16 +83,17 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 </Box>
                 {Object.keys(props.extension.downloads).map((targetPlatform, index) => {
                     const displayName = getTargetPlatformDisplayName(targetPlatform);
+                    const size = props.extension.downloadSizes?.[targetPlatform];
                     return displayName ? (
                         <span key={targetPlatform}>
                             {index > 0 ? ', ' : ''}
-                            {displayName}
+                            {size === undefined ? displayName : `${displayName} (${formatFileSize(size)})`}
                         </span>
                     ) : null;
                 })}
             </Grid>
         );
-    }, [props.extension.downloads]);
+    }, [props.extension.downloads, props.extension.downloadSizes]);
 
     useEffect(() => {
         setLoading(true);

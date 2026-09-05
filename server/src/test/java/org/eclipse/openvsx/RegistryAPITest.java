@@ -150,6 +150,9 @@ class RegistryAPITest {
      */
     private static final Duration CHANGES_FEED_LAG = Duration.ofSeconds(30);
 
+    /** The size the mocked extension's .vsix reports, in bytes. */
+    private static final long DOWNLOAD_SIZE = 1_234_567L;
+
     @MockitoSpyBean
     UserService users;
 
@@ -285,6 +288,35 @@ class RegistryAPITest {
                     e.setTimestamp("2000-01-01T10:00Z");
                     e.setDisplayName("Foo Bar");
                 })));
+    }
+
+    // The size travels from file_resource.size to the JSON untouched, keyed by target platform like
+    // 'downloads', so a client can show how big each platform's download is without fetching it.
+    @Test
+    void testExtensionDownloadSizes() throws Exception {
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findVersionsForUrls(any(), any(), any())).thenReturn(List.of(extVersion));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.downloadSizes.universal").value(DOWNLOAD_SIZE))
+                .andExpect(jsonPath("$.downloadSize").doesNotExist());
+    }
+
+    // Omitted rather than sent as 0, which a client could not tell from a genuinely empty file: a package
+    // published before the size column existed has none until the backfill reaches it.
+    @Test
+    void testExtensionDownloadSizesUnknown() throws Exception {
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findVersionsForUrls(any(), any(), any())).thenReturn(List.of(extVersion));
+        repositories.findFilesByType(List.of(extVersion), List.of(DOWNLOAD)).forEach(file -> file.setSize(null));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.downloads.universal").exists())
+                .andExpect(jsonPath("$.downloadSizes.universal").doesNotExist());
     }
 
     @Test
@@ -3261,6 +3293,7 @@ class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_LOCAL);
         download.setName("extension-1.0.0.vsix");
+        download.setSize(DOWNLOAD_SIZE);
         var signature = new FileResource();
         if (withSignature) {
             signature.setExtension(extVersion);
