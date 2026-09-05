@@ -6,6 +6,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Added
 
+- Add `--follow-symlinks` to `publish`, forwarding `vsce`'s option of the same name so that the file walk recurses into symlinked directories instead of packing each symlink as a file. Needed for a `node_modules` assembled out of symlinks, as pnpm's is ([#368](https://github.com/eclipse-openvsx/openvsx/issues/368))
 - Add `search` command to search the registry for extensions, mirroring the web UI's search: `--category`, `--target`, `--sort-by` and `--sort-order` narrow the query, `--size` and `--offset` page through the results, and `--json` prints the registry's raw response ([#2154](https://github.com/eclipse-openvsx/openvsx/pull/2154))
 - Add `list` command to print the extensions a namespace holds, sorted by name so the output stays stable across registries, with `--json` for the raw namespace metadata ([#2154](https://github.com/eclipse-openvsx/openvsx/pull/2154))
 - Add `show` command to print an extension's metadata, mirroring `vsce show`: identity, publisher, rating, notices and a version history listing each version's target platforms ([#2149](https://github.com/eclipse-openvsx/openvsx/issues/2149)). `namespace.extension@version` reports a single version, `--target` scopes the report to one target platform, `--all-versions` lists every published version instead of the most recent few, and `--json` prints the registry's raw metadata
