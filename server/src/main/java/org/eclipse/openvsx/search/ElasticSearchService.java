@@ -323,10 +323,21 @@ public class ElasticSearchService implements ISearchService {
      * One page only: this answers an admin looking at a result list, not a client paging through one.
      */
     public SearchHits<ExtensionSearch> searchWithScores(Options options) {
+        // The same ceiling the real search enforces. Without it a deep enough offset reaches Elasticsearch
+        // and comes back as an engine error about the result window, which says nothing about what to do.
+        var resultWindow = options.requestedOffset() + options.requestedSize();
+        if (resultWindow > maxResultWindow) {
+            throw new ErrorResultException(
+                    "Cannot look past result " + maxResultWindow + "; the index will not serve a deeper window.");
+        }
+
         var queryBuilder = new NativeQueryBuilder();
         createQuery(queryBuilder, options);
         sortResults(queryBuilder, options.sortOrder(), options.sortBy());
-        queryBuilder.withPageable(PageRequest.of(0, options.requestedSize()));
+        // Whole pages only, which is all the one caller asks for - a partial page would need the
+        // two-page dance search() does, for an offset nothing produces.
+        queryBuilder.withPageable(
+                PageRequest.of(options.requestedOffset() / options.requestedSize(), options.requestedSize()));
         queryBuilder.withTrackTotalHits(true);
         // Elasticsearch's own account of how it arrived at each score, which is the only way to see what
         // the text half is made of - the clause that matched, and what it was worth. It makes the search

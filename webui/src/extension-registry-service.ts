@@ -776,7 +776,12 @@ export interface AdminService {
     getSearchIndex(abortController: AbortController): Promise<Readonly<SearchIndex>>;
 
     /** Runs a search and reports how each result's score was arrived at. */
-    explainSearch(abortController: AbortController, query: string, size: number): Promise<Readonly<SearchExplain>>;
+    explainSearch(
+        abortController: AbortController,
+        query: string,
+        size: number,
+        offset: number
+    ): Promise<Readonly<SearchExplain>>;
     getAdminStatistics(
         abortController: AbortController,
         year: number,
@@ -1632,7 +1637,8 @@ export class AdminServiceImpl implements AdminService {
     async explainSearch(
         abortController: AbortController,
         query: string,
-        size: number
+        size: number,
+        offset: number
     ): Promise<Readonly<SearchExplain>> {
         return sendNonRetriableRequest({
             abortController,

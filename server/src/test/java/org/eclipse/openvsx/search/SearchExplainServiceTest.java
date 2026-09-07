@@ -127,7 +127,7 @@ class SearchExplainServiceTest {
         var doc = document(1L, "yzhang", "markdown-all-in-one", 1.5);
         givenHits(hit(doc, 3.0f));
 
-        var explained = explainService.explain("markdown", 20, "relevance", "desc");
+        var explained = explainService.explain("markdown", 20, 0, "relevance", "desc");
 
         var entry = explained.entries().getFirst();
         assertThat(entry.score()).isEqualTo(3.0);
@@ -142,7 +142,7 @@ class SearchExplainServiceTest {
     void reportsNoTextScoreWhenTheRelevanceIsZero() {
         givenHits(hit(document(1L, "foo", "bar", 0.0), 0.0f));
 
-        assertThat(explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst().textScore())
+        assertThat(explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst().textScore())
                 .isNull();
     }
 
@@ -154,7 +154,7 @@ class SearchExplainServiceTest {
         givenHits(hit(document(7L, "gone", "away", 1.0), 1.0f));
         Mockito.when(repositories.findExtension(7L)).thenReturn(null);
 
-        var entry = explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst();
+        var entry = explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst();
 
         assertThat(entry.namespace()).isEqualTo("gone");
         assertThat(entry.currentRelevance()).isNull();
@@ -179,7 +179,7 @@ class SearchExplainServiceTest {
                                 step("sum of:", 2.0, step("weight(name:markdown in 1)", 2.0)),
                                 step("field value function: relevance", 1.5))));
 
-        var detail = explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst().scoreDetail();
+        var detail = explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst().scoreDetail();
 
         assertThat(detail).isNotNull();
         assertThat(detail.description()).isEqualTo("function score, product of:");
@@ -203,7 +203,7 @@ class SearchExplainServiceTest {
         }
         givenHits(hit(document(1L, "foo", "bar", 1.0), 1.0f, deep));
 
-        var detail = explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst().scoreDetail();
+        var detail = explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst().scoreDetail();
 
         var depth = 0;
         var node = detail;
@@ -215,6 +215,29 @@ class SearchExplainServiceTest {
         assertThat(node.truncated()).isTrue();
     }
 
+    // Positions have to be the ones the search gave, not the ones this page happens to be showing:
+    // "it is 767th" is the answer, and a second page restarting at 1 would report it as 17th.
+    @Test
+    @SuppressWarnings("unchecked")
+    void numbersResultsFromTheOffsetTheyStartAt() {
+        givenHits(hit(document(1L, "foo", "bar", 1.0), 1.0f));
+
+        var entry = explainService.explain("markdown", 25, 50, "relevance", "desc").entries().getFirst();
+
+        assertThat(entry.position()).isEqualTo(50);
+    }
+
+    // The caller pages in whole steps of its own size; a partial page would report positions that do not
+    // line up with the pages either side of it.
+    @Test
+    void refusesAnOffsetThatIsNotAWholeNumberOfPages() {
+        Mockito.when(elasticSearch.isEnabled()).thenReturn(true);
+
+        assertThatThrownBy(() -> explainService.explain("markdown", 25, 30, "relevance", "desc"))
+                .isInstanceOf(ErrorResultException.class)
+                .hasMessageContaining("multiple of size");
+    }
+
     // Only elasticsearch scores anything; the database engine orders rows. Reporting a breakdown of a
     // score that was never computed would be describing a search nobody ran.
     @Test
@@ -223,7 +246,7 @@ class SearchExplainServiceTest {
         Mockito.when(search.getIndexStats())
                 .thenReturn(new SearchIndexStats(true, SearchIndexStats.DATABASE, false, null, 0L, null));
 
-        assertThatThrownBy(() -> explainService.explain("markdown", 20, "relevance", "desc"))
+        assertThatThrownBy(() -> explainService.explain("markdown", 20, 0, "relevance", "desc"))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("database");
     }

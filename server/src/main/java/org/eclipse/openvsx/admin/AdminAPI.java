@@ -453,7 +453,8 @@ public class AdminAPI {
     )
     public ResponseEntity<?> searchExplain(
             @RequestParam("query") String query,
-            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "size", defaultValue = "25") int size,
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
             @RequestParam(value = "sortBy", defaultValue = "relevance") String sortBy,
             @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
             @RequestParam(value = "token", required = false) String token
@@ -465,8 +466,11 @@ public class AdminAPI {
             if (size < 1 || size > 100) {
                 throw new ErrorResultException("size must be between 1 and 100.");
             }
+            if (offset < 0) {
+                throw new ErrorResultException("offset must not be negative.");
+            }
 
-            return ResponseEntity.ok(searchExplainService.explain(query, size, sortBy, sortOrder));
+            return ResponseEntity.ok(searchExplainService.explain(query, size, offset, sortBy, sortOrder));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

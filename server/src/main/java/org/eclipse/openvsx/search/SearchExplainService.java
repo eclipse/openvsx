@@ -56,7 +56,7 @@ public class SearchExplainService {
         this.repositories = repositories;
     }
 
-    public SearchExplainJson explain(String query, int size, String sortBy, String sortOrder) {
+    public SearchExplainJson explain(String query, int size, int offset, String sortBy, String sortOrder) {
         // Only elasticsearch scores anything. The database engine orders rows, so there is no score to
         // take apart and reporting one would be inventing it.
         if (!elasticSearch.isEnabled()) {
@@ -65,14 +65,21 @@ public class SearchExplainService {
                             + search.getIndexStats().implementation() + "'.");
         }
 
-        var options = new ISearchService.Options(query, null, null, size, 0, sortOrder, sortBy, false, null);
+        if (offset % size != 0) {
+            // The caller pages in whole steps of its own size; anything else would need the two-page
+            // read that search() does, and would report positions that do not line up with the pages
+            // either side of it.
+            throw new ErrorResultException("offset must be a multiple of size.");
+        }
+
+        var options = new ISearchService.Options(query, null, null, size, offset, sortOrder, sortBy, false, null);
         var hits = elasticSearch.searchWithScores(options);
 
         // One SearchStats for the whole listing, as an indexing run would use: recomputing it per entry
         // would let the reference values drift between rows of the same table.
         var stats = new SearchStats(repositories);
         var entries = new ArrayList<SearchExplainJson.SearchExplainEntryJson>(hits.getSearchHits().size());
-        var position = 0;
+        var position = offset;
         for (var hit : hits.getSearchHits()) {
             entries.add(toEntry(position++, hit.getScore(), hit.getExplanation(), hit.getContent(), stats));
         }

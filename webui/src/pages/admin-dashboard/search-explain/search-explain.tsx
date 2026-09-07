@@ -84,7 +84,15 @@ export const SearchExplainAdmin: FC = () => {
     const [term, setTerm] = useState('');
     const [submitted, setSubmitted] = useState('');
     const [expanded, setExpanded] = useState<string | undefined>(undefined);
-    const { data, isFetching, error } = useSearchExplain(submitted, RESULT_SIZE);
+    const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useSearchExplain(
+        submitted,
+        RESULT_SIZE
+    );
+    // Every page fetched so far, in order: the point of paging here is to reach a deep result without
+    // losing sight of what is above it.
+    const pages = data?.pages ?? [];
+    const entries = pages.flatMap(page => page.entries);
+    const summary = pages[0];
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -119,16 +127,16 @@ export const SearchExplainAdmin: FC = () => {
             </Box>
 
             {error && <Alert severity='error'>{handleError(error)}</Alert>}
-            {isFetching && <LinearProgress sx={{ mb: 2 }} />}
+            {isFetching && !isFetchingNextPage && <LinearProgress sx={{ mb: 2 }} />}
 
-            {data && (
+            {summary && (
                 <>
                     <Alert severity='info' sx={{ mb: 2 }}>
-                        {data.totalHits.toLocaleString()} matches for <strong>{data.query}</strong>, showing the first{' '}
-                        {data.entries.length}. Every downloads term is measured against the registry&apos;s largest
-                        count, <strong>{formatCompactNumber(data.references.maxDownloadCount)}</strong>, and every
-                        rating is smoothed towards the registry average of{' '}
-                        <strong>{data.references.averageReviewRating.toFixed(2)}</strong> — which is why a term can
+                        {summary.totalHits.toLocaleString()} matches for <strong>{summary.query}</strong>, showing{' '}
+                        {entries.length}. Every downloads term is measured against the registry&apos;s largest count,{' '}
+                        <strong>{formatCompactNumber(summary.references.maxDownloadCount)}</strong>, and every rating is
+                        smoothed towards the registry average of{' '}
+                        <strong>{summary.references.averageReviewRating.toFixed(2)}</strong> — which is why a term can
                         contribute nothing for reasons that have nothing to do with the extension.
                     </Alert>
 
@@ -147,7 +155,7 @@ export const SearchExplainAdmin: FC = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {data.entries.map(entry => (
+                                {entries.map(entry => (
                                     <Fragment key={`${entry.namespace}.${entry.name}`}>
                                         <TableRow
                                             hover
@@ -227,6 +235,16 @@ export const SearchExplainAdmin: FC = () => {
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    {hasNextPage && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                            <Button variant='outlined' onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                                {isFetchingNextPage
+                                    ? 'Loading…'
+                                    : `Show ${Math.min(RESULT_SIZE, summary.totalHits - entries.length)} more`}
+                            </Button>
+                        </Box>
+                    )}
                 </>
             )}
         </Box>

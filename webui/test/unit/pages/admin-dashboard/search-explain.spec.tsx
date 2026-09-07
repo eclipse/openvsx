@@ -68,7 +68,7 @@ const explained: SearchExplain = {
     ]
 };
 
-const withService = (explainSearch: () => Promise<SearchExplain>) =>
+const withService = (explainSearch: (...args: never[]) => Promise<SearchExplain>) =>
     renderWithProviders(<SearchExplainAdmin />, {
         mainContext: { service: { admin: { explainSearch } } as unknown as ExtensionRegistryService }
     });
@@ -79,7 +79,7 @@ describe('SearchExplainAdmin', () => {
         withService(() => Promise.resolve(explained));
 
         await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
-        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
 
         expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
         expect(screen.getByText('1.900')).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe('SearchExplainAdmin', () => {
         withService(() => Promise.resolve(explained));
 
         await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
-        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
         expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
 
         await userEvent.click(screen.getAllByLabelText('Show the score breakdown')[0]);
@@ -112,7 +112,7 @@ describe('SearchExplainAdmin', () => {
         withService(() => Promise.resolve(explained));
 
         await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
-        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
         expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
 
         expect(screen.queryByText('0.656')).not.toBeInTheDocument();
@@ -124,10 +124,53 @@ describe('SearchExplainAdmin', () => {
         withService(() => Promise.resolve(explained));
 
         await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
-        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
 
         expect(await screen.findByText('81M')).toBeInTheDocument();
         expect(screen.getByText('0.12')).toBeInTheDocument();
+    });
+
+    /**
+     * The question is often about a result a long way down - the one that prompted this page sat at 767 -
+     * so pages accumulate rather than replace, and positions stay the ones the search gave.
+     */
+    it('adds another page to the ones already shown', async () => {
+        const page = (offset: number): SearchExplain => ({
+            ...explained,
+            entries: Array.from({ length: 25 }, (unused, index) => ({
+                ...explained.entries[0],
+                position: offset + index,
+                namespace: 'ns',
+                name: `ext-${offset + index}`
+            }))
+        });
+        const explainSearch = vi.fn((abort: never, query: never, size: never, offset: number) =>
+            Promise.resolve(page(offset))
+        );
+        withService(explainSearch as never);
+
+        await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
+        expect(await screen.findByText('ns.ext-0')).toBeInTheDocument();
+        expect(screen.queryByText('ns.ext-25')).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: /show .* more/i }));
+
+        // The first page is still there, and the second continues its numbering rather than restarting.
+        expect(await screen.findByText('ns.ext-25')).toBeInTheDocument();
+        expect(screen.getByText('ns.ext-0')).toBeInTheDocument();
+        expect(explainSearch.mock.calls[1][3]).toBe(25);
+    });
+
+    // Nothing more to ask for when the results are all on screen.
+    it('offers no further page once everything is shown', async () => {
+        withService(() => Promise.resolve({ ...explained, totalHits: 1 }));
+
+        await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
+        expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
+
+        expect(screen.queryByRole('button', { name: /show .* more/i })).not.toBeInTheDocument();
     });
 
     // An empty query matches everything, and a listing of everything in score order answers no question.
@@ -136,6 +179,6 @@ describe('SearchExplainAdmin', () => {
         withService(explainSearch);
 
         expect(explainSearch).not.toHaveBeenCalled();
-        expect(screen.getByRole('button', { name: /explain/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /^explain$/i })).toBeDisabled();
     });
 });
