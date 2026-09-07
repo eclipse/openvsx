@@ -40,11 +40,12 @@ void main() throws IOException {
     var entries = new TreeMap<String, PropertyEntry>();
     var configPropsClasses = new ArrayList<ConfigClassEntry>();
 
-    try (Stream<Path> paths = Files.walk(Path.of("src/main/java"))) {
+    var root = Path.of("src/main/java");
+    try (Stream<Path> paths = Files.walk(root)) {
         for (Path path : paths.filter(p -> p.toString().endsWith(".java")).toList()) {
             var raw = Files.readString(path, StandardCharsets.UTF_8);
-            var blanked = blankComments(blankStringLiterals(raw));
-            var file = path.getFileName().toString();
+            var blanked = blankComments(blankStringLiterals(blankTextBlocks(raw)));
+            var file = root.relativize(path).toString();
             scanValueAnnotations(raw, blanked, file, entries);
             scanConfigurationProperties(raw, blanked, file, entries, configPropsClasses);
         }
@@ -316,9 +317,16 @@ void addEntry(
         var sources = new LinkedHashSet<String>();
         sources.add(source);
         entries.put(key, new PropertyEntry(key, defaultValue, sources, note));
-    } else {
-        existing.sources().add(source);
+        return;
     }
+    existing.sources().add(source);
+    // Whichever occurrence provides a non-empty default/note wins - source order is file-walk
+    // order, not meaningful, so the first occurrence shouldn't silently shadow a later one's data.
+    var mergedDefault = existing.defaultValue() == null || existing.defaultValue().isEmpty()
+            ? defaultValue
+            : existing.defaultValue();
+    var mergedNote = existing.note() == null ? note : existing.note();
+    entries.put(key, new PropertyEntry(key, mergedDefault, existing.sources(), mergedNote));
 }
 
 // ---- small structural helpers ----
@@ -328,6 +336,39 @@ void addEntry(
  *  literal braces/parens inside a string value (e.g. a default JSON body). */
 String blankStringLiterals(String source) {
     return QUOTED_SEGMENT.matcher(source).replaceAll(m -> "\"" + "x".repeat(m.group(1).length()) + "\"");
+}
+
+/** Blanks `"""..."""` text blocks (newline-preserving), run before string/comment blanking - a text
+ *  block's content (e.g. SQL in an `@Query`) can contain braces/parens/semicolons that would
+ *  otherwise confuse the brace/paren counting below. Doesn't handle an escaped `\"""` inside a
+ *  block's content; none of this codebase's text blocks need one. */
+String blankTextBlocks(String source) {
+    var result = new StringBuilder(source.length());
+    var n = source.length();
+    var i = 0;
+    while (i < n) {
+        if (i + 2 < n && source.startsWith("\"\"\"", i)) {
+            result.append("   ");
+            i += 3;
+            while (i + 2 < n && !source.startsWith("\"\"\"", i)) {
+                result.append(source.charAt(i) == '\n' ? '\n' : ' ');
+                i++;
+            }
+            if (i + 2 < n) {
+                result.append("   ");
+                i += 3;
+            } else {
+                while (i < n) {
+                    result.append(source.charAt(i) == '\n' ? '\n' : ' ');
+                    i++;
+                }
+            }
+        } else {
+            result.append(source.charAt(i));
+            i++;
+        }
+    }
+    return result.toString();
 }
 
 /** Blanks `//` and `/* *&#47;` comments (length- and newline-preserving, so indices/line numbers
