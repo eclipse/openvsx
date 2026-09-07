@@ -9,6 +9,7 @@
  ********************************************************************************/
 package org.eclipse.openvsx.search;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +23,12 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchHitsImpl;
+import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.elasticsearch.core.index.Settings;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
@@ -169,6 +174,38 @@ class ElasticSearchServiceTest {
         assertThat(index.created).isTrue();
         assertThat(index.deleted).isFalse();
         assertThat(index.entries).hasSize(3);
+    }
+
+    /**
+     * The window is read from the index settings at startup, so before that has happened it is zero -
+     * and a zero taken literally refuses every window there is. Since a refused window is an empty result
+     * rather than an error, an instance in that state answers every search with nothing and says nothing
+     * about why.
+     */
+    @Test
+    void searchesAnOrdinaryWindowBeforeTheIndexSettingsHaveBeenRead() {
+        mockIndex(true);
+        SearchHits<ExtensionSearch> empty = new SearchHitsImpl<>(
+                0L,
+                TotalHitsRelation.EQUAL_TO,
+                0f,
+                Duration.ZERO,
+                null,
+                null,
+                List.of(),
+                null,
+                null,
+                null);
+        Mockito.when(searchOperations.search(any(NativeQuery.class), Mockito.eq(ExtensionSearch.class), any()))
+                .thenReturn(empty);
+
+        var options = new ISearchService.Options("foo", null, null, 50, 0, "desc", "relevance", false, null);
+        search.search(options);
+
+        // Reaching the engine at all is the assertion. With the window at its uninitialised zero, every
+        // window exceeded it and this returned an empty result without ever searching for anything.
+        Mockito.verify(searchOperations)
+                .search(any(NativeQuery.class), Mockito.eq(ExtensionSearch.class), any());
     }
 
     @Test

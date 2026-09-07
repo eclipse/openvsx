@@ -75,6 +75,9 @@ public class ElasticSearchService implements ISearchService {
 
     private long maxResultWindow;
 
+    /** Elasticsearch's own default, and what {@link #initSearchIndex} falls back to when the index is silent. */
+    private static final long DEFAULT_MAX_RESULT_WINDOW = 10_000;
+
     public ElasticSearchService(
             RepositoryService repositories,
             ElasticsearchOperations searchOperations,
@@ -220,7 +223,7 @@ public class ElasticSearchService implements ISearchService {
                 true,
                 documents,
                 activeExtensions,
-                maxResultWindow);
+                maxResultWindow());
     }
 
     @Async
@@ -326,9 +329,9 @@ public class ElasticSearchService implements ISearchService {
         // The same ceiling the real search enforces. Without it a deep enough offset reaches Elasticsearch
         // and comes back as an engine error about the result window, which says nothing about what to do.
         var resultWindow = options.requestedOffset() + options.requestedSize();
-        if (resultWindow > maxResultWindow) {
+        if (resultWindow > maxResultWindow()) {
             throw new ErrorResultException(
-                    "Cannot look past result " + maxResultWindow + "; the index will not serve a deeper window.");
+                    "Cannot look past result " + maxResultWindow() + "; the index will not serve a deeper window.");
         }
 
         var queryBuilder = new NativeQueryBuilder();
@@ -355,9 +358,23 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    /**
+     * The deepest window the index will serve.
+     * <p>
+     * The field behind this is read from the index settings by {@link #initSearchIndex}, which runs on
+     * {@code ApplicationStartedEvent} - so until that has happened, or if it failed short of reading them,
+     * the field is zero. Taken literally that refuses every window there is, and since a refused window is
+     * an empty result rather than an error, an instance in that state answers every search with nothing
+     * and says nothing about why. Fall back to the engine's own default instead, which is what the index
+     * would almost certainly have said.
+     */
+    private long maxResultWindow() {
+        return maxResultWindow > 0 ? maxResultWindow : DEFAULT_MAX_RESULT_WINDOW;
+    }
+
     public SearchResult search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
-        if (resultWindow > maxResultWindow) {
+        if (resultWindow > maxResultWindow()) {
             return new SearchResult(0L, Collections.emptyList());
         }
 
