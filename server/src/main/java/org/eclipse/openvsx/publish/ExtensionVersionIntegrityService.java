@@ -74,7 +74,7 @@ public class ExtensionVersionIntegrityService {
             var publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
             publicKeyParameters = PublicKeyFactory.createKey(publicKeyInfo);
         } catch (IOException e) {
-            throw new ErrorResultException("Failed to read private key file", e);
+            throw new ErrorResultException("Failed to read public key file", e);
         }
 
         // The PEM above can carry any key type; Ed25519Signer would have thrown a ClassCastException from
@@ -90,6 +90,23 @@ public class ExtensionVersionIntegrityService {
             // it in a structure that doubles as it grows.
             var message = Files.readAllBytes(extensionFile.getPath());
             var signature = Files.readAllBytes(signatureFile.getPath());
+            // Checked here because the low-level verify reads a fixed 64 bytes from the offset it is
+            // given: a truncated signature would come back out of BouncyCastle as an index out of
+            // bounds, and a padded one would verify on its first 64 bytes with the rest ignored.
+            // Ed25519Signer used to make this check itself and answer false, which is the honest answer
+            // - a signature of the wrong length does not verify - and is what the one caller, the
+            // mirror, already refuses the package on.
+            if (signature.length != Ed25519PrivateKeyParameters.SIGNATURE_SIZE) {
+                // The file, not the version it belongs to: the only caller downloads into a bare
+                // TempFile that carries no FileResource, so there is no extension to name here.
+                logger.warn(
+                        "Signature file {} is {} bytes, expected {}",
+                        signatureFile.getPath(),
+                        signature.length,
+                        Ed25519PrivateKeyParameters.SIGNATURE_SIZE);
+                return false;
+            }
+
             verified = ed25519PublicKey
                     .verify(Ed25519.Algorithm.Ed25519, null, message, 0, message.length, signature, 0);
         } catch (IOException e) {

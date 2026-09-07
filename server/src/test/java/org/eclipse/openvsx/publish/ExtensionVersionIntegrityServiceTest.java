@@ -12,6 +12,7 @@ package org.eclipse.openvsx.publish;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.zip.ZipFile;
 
@@ -148,7 +149,11 @@ class ExtensionVersionIntegrityServiceTest {
         var id = Thread.currentThread().threadId();
         var before = threads.getThreadAllocatedBytes(id);
         body.run();
-        return threads.getThreadAllocatedBytes(id) - before;
+        var after = threads.getThreadAllocatedBytes(id);
+        // -1 is what the counter reports when it is not measuring. Skipping beats letting a negative
+        // reading through, which would satisfy the "allocated little" assertion for the wrong reason.
+        assumeTrue(before >= 0 && after >= 0, "JVM stopped reporting per-thread allocation");
+        return after - before;
     }
 
     private interface ThrowingRunnable {
@@ -173,6 +178,49 @@ class ExtensionVersionIntegrityServiceTest {
     }
 
     /**
+     * A signature of the wrong length does not verify - it does not blow up.
+     * <p>
+     * The low-level verify reads a fixed 64 bytes from the offset it is handed, so a truncated file
+     * reaches BouncyCastle as an index out of bounds and a padded one verifies on its first 64 bytes with
+     * the remainder ignored. {@code Ed25519Signer}, which this replaced, checked the length itself and
+     * answered false; the mirror - the only caller - refuses the package on exactly that answer.
+     */
+    @Test
+    void refusesASignatureOfTheWrongLength() throws Exception {
+        var keyPair = keyPairService.generateKeyPair();
+        try (
+                var packageFile = givenPackageOfSize(64 * 1024);
+                var publicKeyFile = givenPublicKeyFile(keyPair);
+                var truncated = new TempFile("signature", ".sig")
+        ) {
+            try (var signatureFile = integrityService.createSignatureFile(packageFile, keyPair)) {
+                var signature = Files.readAllBytes(signatureFile.getPath());
+                Files.write(truncated.getPath(), Arrays.copyOf(signature, signature.length - 1));
+            }
+
+            assertFalse(integrityService.verifyExtensionVersion(packageFile, truncated, publicKeyFile));
+        }
+    }
+
+    @Test
+    void verifiesASignatureItProduced() throws Exception {
+        var keyPair = keyPairService.generateKeyPair();
+        try (
+                var packageFile = givenPackageOfSize(64 * 1024);
+                var publicKeyFile = givenPublicKeyFile(keyPair);
+                var signatureFile = integrityService.createSignatureFile(packageFile, keyPair)
+        ) {
+            assertTrue(integrityService.verifyExtensionVersion(packageFile, signatureFile, publicKeyFile));
+        }
+    }
+
+    private static TempFile givenPublicKeyFile(SignatureKeyPair keyPair) throws IOException {
+        var publicKeyFile = new TempFile("public", ".pem");
+        Files.writeString(publicKeyFile.getPath(), keyPair.getPublicKeyText());
+        return publicKeyFile;
+    }
+
+    /**
      * Why the implementation looks the way it does (#1450). Streaming a package into
      * {@link Ed25519Signer} looks like the memory-safe choice, but pure Ed25519 hashes the message twice,
      * so the signer keeps every byte handed to it - in a {@code ByteArrayOutputStream} that doubles as it
@@ -189,6 +237,14 @@ class ExtensionVersionIntegrityServiceTest {
         assumeTrue(
                 threads instanceof ThreadMXBean sunThreads && sunThreads.isThreadAllocatedMemorySupported(),
                 "JVM does not report per-thread allocation");
+
+        // Supported does not mean switched on, and a counter that is off reports -1 rather than failing.
+        // HotSpot enables it by default; a JVM started with it disabled gets it turned on here.
+        var sunThreads = (ThreadMXBean) threads;
+        if (!sunThreads.isThreadAllocatedMemoryEnabled()) {
+            sunThreads.setThreadAllocatedMemoryEnabled(true);
+        }
+        assumeTrue(sunThreads.isThreadAllocatedMemoryEnabled(), "per-thread allocation reporting is off");
 
         var keyPair = keyPairService.generateKeyPair();
         try (var packageFile = givenPackageOfSize(PACKAGE_SIZE)) {
