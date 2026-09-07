@@ -26,6 +26,15 @@ Variants:
 
 Before uploading, `ovsx` checks the packaged extension's size against the limit the registry reports on `/api/version`, so an oversized package is rejected locally instead of failing after the whole file has been uploaded.
 
+#### Package managers
+
+Packaging is done by `vsce`, which walks your production dependencies to decide what goes into the `.vsix`. It knows how to do that for two package managers only - npm, and yarn v1 via `--yarn` - and [will not be adding more](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1853665094). For anything else, pnpm included, there are two options:
+
+ * `ovsx publish --no-dependencies`
+   skips the dependency walk altogether. This is the right answer for a bundled extension - one built with esbuild, webpack or similar, where the bundle already contains everything the extension needs at runtime - regardless of which package manager installed the sources.
+ * `ovsx publish --follow-symlinks`
+   recurses into symlinked directories instead of packing each symlink as a file. A `node_modules` assembled out of symlinks, as pnpm's is, needs this for the walk to reach the real dependency files.
+
 ### Trusted Publishing
 
 Instead of a long-lived personal access token, `ovsx` can publish from a CI workflow with a short-lived token that the registry issues in exchange for an OIDC ID token of the workflow. The registry only issues such a token if the workflow matches a trusted publisher that a namespace owner registered under [trusted publishers](https://open-vsx.org/user-settings/trusted-publishers). No access token needs to be stored as a secret.
