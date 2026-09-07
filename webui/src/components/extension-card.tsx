@@ -16,11 +16,11 @@ import { Link as RouteLink } from 'react-router';
 import { Paper, Typography, Box, Fade, Skeleton } from '@mui/material';
 import { alpha, CSSObject, styled, Theme } from '@mui/material/styles';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import StarIcon from '@mui/icons-material/Star';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { Extension, SearchEntry } from '../extension-registry-types';
 import { ExtensionIcon } from './extension/extension-icon';
-import { ExtensionRatingStars } from '../pages/extension-detail/extension-rating-stars';
 import { createRoute, formatCompactNumber } from '../utils';
 import { MONO_FONT } from '../default/theme';
 import { GridItemProps } from '../hooks/use-grid-cursor';
@@ -92,10 +92,10 @@ const SkeletonContent: FunctionComponent = () => (
                 borderColor: 'border2',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.0625rem',
+                gap: '0.1875rem',
                 fontSize: { xs: '0.8125rem', sm: '0.875rem' }
             }}>
-            <ExtensionRatingStars number={0} fontSize='inherit' />
+            <StarIcon sx={{ fontSize: 'inherit', color: 'action.disabledBackground' }} />
         </Box>
     </>
 );
@@ -337,6 +337,8 @@ export const ExtensionCard = memo(
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
+                                        gap: '0.5rem',
+                                        overflow: 'hidden',
                                         fontSize: '0.75rem'
                                     }}>
                                     {footerStart ?? (
@@ -344,26 +346,37 @@ export const ExtensionCard = memo(
                                             sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '0.0625rem',
+                                                gap: '0.1875rem',
+                                                // The side that yields, and it clips rather than pushing
+                                                // its neighbour out of the card: which extension is more
+                                                // popular is what the eye compares across a grid of these,
+                                                // so the download count stays whole whatever has to give.
+                                                minWidth: 0,
+                                                flexShrink: 1,
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap',
                                                 fontSize: { xs: '0.8125rem', sm: '0.875rem' }
                                             }}>
-                                            <ExtensionRatingStars
-                                                number={extension.averageRating ?? 0}
-                                                fontSize='inherit'
-                                            />
                                             {reviewCount > 0 && (
-                                                <Box
-                                                    component='span'
-                                                    sx={{
-                                                        fontSize: '0.6875rem',
-                                                        color: 'text.disabled',
-                                                        ml: '0.1875rem',
-                                                        // Sheds first on tight cards; the query measures
-                                                        // the card's content box, i.e. this row's width.
-                                                        '@container (max-width: 134px)': { display: 'none' }
-                                                    }}>
-                                                    ({formatCompactNumber(reviewCount)})
-                                                </Box>
+                                                <>
+                                                    {/* One star and the number, rather than the five
+                                                        icons ExtensionRatingStars always draws. Five is
+                                                        an intrinsic width that cannot shrink, and on an
+                                                        extension with both reviews and a long download
+                                                        count - redhat.java, 5.0 stars and 41M - the two
+                                                        sides together outgrew the card and the count was
+                                                        pushed past its edge. The number also says more
+                                                        than a row of icons somebody has to count. */}
+                                                    <StarIcon sx={{ fontSize: 'inherit' }} />
+                                                    <Box component='span' sx={{ fontSize: '0.6875rem' }}>
+                                                        {(extension.averageRating ?? 0).toFixed(1)}
+                                                    </Box>
+                                                    <Box
+                                                        component='span'
+                                                        sx={{ fontSize: '0.6875rem', color: 'text.disabled' }}>
+                                                        ({formatCompactNumber(reviewCount)})
+                                                    </Box>
+                                                </>
                                             )}
                                         </Box>
                                     )}
@@ -375,6 +388,7 @@ export const ExtensionCard = memo(
                                                 alignItems: 'center',
                                                 gap: '0.1875rem',
                                                 flexShrink: 0,
+                                                whiteSpace: 'nowrap',
                                                 fontFamily: MONO_FONT,
                                                 fontSize: '0.6875rem',
                                                 color: 'text.disabled'
