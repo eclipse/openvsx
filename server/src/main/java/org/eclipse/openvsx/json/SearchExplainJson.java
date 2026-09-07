@@ -51,6 +51,23 @@ public record SearchExplainJson(
     ) {}
 
     /**
+     * One step of Elasticsearch's account of a score: what it was worth, what produced it, and the steps
+     * that in turn produced that.
+     *
+     * @param description Elasticsearch's own wording, which names the clause or the term
+     * @param value       what this step contributed
+     * @param details     the steps it is composed of, empty at a leaf or where the depth limit was reached
+     * @param truncated   whether children were dropped to keep the response a readable size
+     */
+    @Schema(description = "One step of the search engine's account of how a score was arrived at")
+    public record SearchScoreDetailJson(
+            String description,
+            double value,
+            List<SearchScoreDetailJson> details,
+            boolean truncated
+    ) {}
+
+    /**
      * One result, and where its score came from.
      *
      * @param score            the score the search ranked on
@@ -81,6 +98,7 @@ public record SearchExplainJson(
             @Nullable Double downloads,
             @Nullable Double recency,
             boolean unverified,
-            boolean deprecated
+            boolean deprecated,
+            @Nullable SearchScoreDetailJson scoreDetail
     ) {}
 }

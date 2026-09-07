@@ -27,6 +27,7 @@ import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
+import org.springframework.data.elasticsearch.core.document.Explanation;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -92,7 +93,27 @@ class SearchExplainServiceTest {
 
     @SuppressWarnings("unchecked")
     private static SearchHit<ExtensionSearch> hit(ExtensionSearch doc, float score) {
-        return new SearchHit<>(null, String.valueOf(doc.getId()), null, score, null, null, null, null, null, null, doc);
+        return hit(doc, score, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static SearchHit<ExtensionSearch> hit(ExtensionSearch doc, float score, Explanation explanation) {
+        return new SearchHit<>(
+                null,
+                String.valueOf(doc.getId()),
+                null,
+                score,
+                null,
+                null,
+                null,
+                null,
+                explanation,
+                null,
+                doc);
+    }
+
+    private static Explanation step(String description, double value, Explanation... details) {
+        return new Explanation(true, value, description, List.of(details));
     }
 
     /**
@@ -138,6 +159,60 @@ class SearchExplainServiceTest {
         assertThat(entry.namespace()).isEqualTo("gone");
         assertThat(entry.currentRelevance()).isNull();
         assertThat(entry.rating()).isNull();
+    }
+
+    /**
+     * The engine's own account of the text half, which is the part no amount of arithmetic over the
+     * stored values can reconstruct: which clause matched, and what it was worth.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void carriesTheEngineSAccountOfTheScore() {
+        var doc = document(1L, "yzhang", "markdown-all-in-one", 1.5);
+        givenHits(
+                hit(
+                        doc,
+                        3.0f,
+                        step(
+                                "function score, product of:",
+                                3.0,
+                                step("sum of:", 2.0, step("weight(name:markdown in 1)", 2.0)),
+                                step("field value function: relevance", 1.5))));
+
+        var detail = explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst().scoreDetail();
+
+        assertThat(detail).isNotNull();
+        assertThat(detail.description()).isEqualTo("function score, product of:");
+        assertThat(detail.value()).isEqualTo(3.0);
+        assertThat(detail.details()).hasSize(2);
+        assertThat(detail.details().getFirst().details().getFirst().description())
+                .isEqualTo("weight(name:markdown in 1)");
+    }
+
+    /**
+     * Elasticsearch explains a score down to term frequencies and field lengths, which is far more tree
+     * than the question needs. The step that loses its children says so, so a reader can tell a leaf from
+     * a truncation.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void trimsTheAccountAndSaysWhereItDidSo() {
+        var deep = step("d5", 1.0);
+        for (var i = 4; i >= 0; i--) {
+            deep = step("d" + i, 1.0, deep);
+        }
+        givenHits(hit(document(1L, "foo", "bar", 1.0), 1.0f, deep));
+
+        var detail = explainService.explain("markdown", 20, "relevance", "desc").entries().getFirst().scoreDetail();
+
+        var depth = 0;
+        var node = detail;
+        while (!node.details().isEmpty()) {
+            node = node.details().getFirst();
+            depth++;
+        }
+        assertThat(depth).isEqualTo(4);
+        assertThat(node.truncated()).isTrue();
     }
 
     // Only elasticsearch scores anything; the database engine orders rows. Reporting a breakdown of a

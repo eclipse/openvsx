@@ -646,6 +646,15 @@ export interface SearchExplainReferences {
     averageReviewRating: number;
 }
 
+/** One step of the engine's account of a score: what it was worth, and the steps that produced it. */
+export interface SearchScoreDetail {
+    description: string;
+    value: number;
+    details: SearchScoreDetail[];
+    /** Children were dropped to keep the response readable; this is not a leaf. */
+    truncated: boolean;
+}
+
 export interface SearchExplainEntry {
     position: number;
     namespace: string;
@@ -666,6 +675,8 @@ export interface SearchExplainEntry {
     recency?: number;
     unverified: boolean;
     deprecated: boolean;
+    /** The engine's own account of the score, which is the only view of what the text half is made of. */
+    scoreDetail?: SearchScoreDetail;
 }
 
 export interface ConsistencyCheck {

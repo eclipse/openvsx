@@ -37,7 +37,33 @@ const explained: SearchExplain = {
             downloads: 0.008,
             recency: 0.656,
             unverified: false,
-            deprecated: false
+            deprecated: false,
+            scoreDetail: {
+                description: 'function score, product of:',
+                value: 1.9,
+                truncated: false,
+                details: [
+                    {
+                        description: 'sum of:',
+                        value: 1.4,
+                        truncated: false,
+                        details: [
+                            {
+                                description: 'weight(name:markdown in 42)',
+                                value: 1.4,
+                                truncated: false,
+                                details: []
+                            }
+                        ]
+                    },
+                    {
+                        description: 'field value function: relevance',
+                        value: 1.364,
+                        truncated: false,
+                        details: []
+                    }
+                ]
+            }
         }
     ]
 };
@@ -59,7 +85,37 @@ describe('SearchExplainAdmin', () => {
         expect(screen.getByText('1.900')).toBeInTheDocument();
         expect(screen.getByText('1.400')).toBeInTheDocument();
         expect(screen.getByText('1.364')).toBeInTheDocument();
-        expect(screen.getByText('0.656')).toBeInTheDocument();
+    });
+
+    /**
+     * The whole point of the page: the score is a product of two halves that want different fixes, so the
+     * arithmetic and the engine's account of the text half are both on it - the second is the part no
+     * amount of arithmetic over the stored values can reconstruct.
+     */
+    it('expands a result into the arithmetic and the engine account behind it', async () => {
+        withService(() => Promise.resolve(explained));
+
+        await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
+        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
+
+        await userEvent.click(screen.getAllByLabelText('Show the score breakdown')[0]);
+
+        expect(await screen.findByText(/score 1\.900 = text 1\.400 × relevance 1\.364/)).toBeInTheDocument();
+        expect(screen.getByText(/rating 0\.020 \+ downloads 0\.008 \+ recency 0\.656/)).toBeInTheDocument();
+        expect(screen.getByText('weight(name:markdown in 42)')).toBeInTheDocument();
+    });
+
+    // Each number belongs in one place. They were in a stacked bar and in three columns of their own,
+    // which is two answers to the same question and one of them always the one you were not reading.
+    it('does not repeat the relevance terms outside the breakdown', async () => {
+        withService(() => Promise.resolve(explained));
+
+        await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
+        await userEvent.click(screen.getByRole('button', { name: /explain/i }));
+        expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
+
+        expect(screen.queryByText('0.656')).not.toBeInTheDocument();
     });
 
     // The reference values belong to the registry rather than any extension, and are the usual reason a

@@ -328,6 +328,10 @@ public class ElasticSearchService implements ISearchService {
         sortResults(queryBuilder, options.sortOrder(), options.sortBy());
         queryBuilder.withPageable(PageRequest.of(0, options.requestedSize()));
         queryBuilder.withTrackTotalHits(true);
+        // Elasticsearch's own account of how it arrived at each score, which is the only way to see what
+        // the text half is made of - the clause that matched, and what it was worth. It makes the search
+        // materially more expensive, which is why only this caller asks for it.
+        queryBuilder.withExplain(true);
 
         try {
             rwLock.readLock().lock();

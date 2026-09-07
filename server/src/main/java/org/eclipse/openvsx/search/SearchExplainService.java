@@ -15,7 +15,11 @@ package org.eclipse.openvsx.search;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.data.elasticsearch.core.document.Explanation;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.json.SearchExplainJson;
@@ -70,7 +74,7 @@ public class SearchExplainService {
         var entries = new ArrayList<SearchExplainJson.SearchExplainEntryJson>(hits.getSearchHits().size());
         var position = 0;
         for (var hit : hits.getSearchHits()) {
-            entries.add(toEntry(position++, hit.getScore(), hit.getContent(), stats));
+            entries.add(toEntry(position++, hit.getScore(), hit.getExplanation(), hit.getContent(), stats));
         }
 
         return new SearchExplainJson(
@@ -86,6 +90,7 @@ public class SearchExplainService {
     private SearchExplainJson.SearchExplainEntryJson toEntry(
             int position,
             float score,
+            @Nullable Explanation explanation,
             ExtensionSearch document,
             SearchStats stats
     ) {
@@ -114,6 +119,41 @@ public class SearchExplainService {
                 breakdown == null ? null : breakdown.downloads(),
                 breakdown == null ? null : breakdown.timestamp(),
                 breakdown != null && breakdown.unverified(),
-                breakdown != null && breakdown.deprecated());
+                breakdown != null && breakdown.deprecated(),
+                toScoreDetail(explanation, 0));
+    }
+
+    /**
+     * The maximum depth of the score account carried back.
+     * <p>
+     * Elasticsearch explains a score all the way down to the term frequencies and field lengths behind
+     * every clause, which is a great deal of tree for a question that is answered several levels above it:
+     * which clause matched, and what it was worth. Deeper steps are dropped and the step that lost them
+     * says so, rather than the response silently being a partial account of itself.
+     */
+    private static final int MAX_DETAIL_DEPTH = 4;
+
+    private static SearchExplainJson.@Nullable SearchScoreDetailJson toScoreDetail(
+            @Nullable Explanation explanation,
+            int depth
+    ) {
+        if (explanation == null) {
+            return null;
+        }
+
+        var children = explanation.getDetails();
+        var atLimit = depth >= MAX_DETAIL_DEPTH;
+        List<SearchExplainJson.SearchScoreDetailJson> details;
+        if (atLimit || children == null || children.isEmpty()) {
+            details = Collections.emptyList();
+        } else {
+            details = children.stream().map(child -> toScoreDetail(child, depth + 1)).filter(d -> d != null).toList();
+        }
+
+        return new SearchExplainJson.SearchScoreDetailJson(
+                explanation.getDescription() == null ? "" : explanation.getDescription(),
+                explanation.getValue() == null ? 0.0 : explanation.getValue(),
+                details,
+                atLimit && children != null && !children.isEmpty());
     }
 }

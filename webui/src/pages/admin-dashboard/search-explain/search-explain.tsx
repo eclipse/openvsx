@@ -11,12 +11,14 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, FormEvent, useState } from 'react';
+import { FC, Fragment, FormEvent, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     Chip,
+    Collapse,
+    IconButton,
     LinearProgress,
     Paper,
     Table,
@@ -29,7 +31,10 @@ import {
     Tooltip,
     Typography
 } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import type { SearchExplainEntry } from '../../../extension-registry-types';
+import { ScoreBreakdown } from './score-breakdown';
 import { formatCompactNumber, handleError } from '../../../utils';
 import { useSearchExplain } from './use-search-explain';
 
@@ -78,6 +83,7 @@ const RelevanceBar: FC<{ entry: SearchExplainEntry }> = ({ entry }) => {
 export const SearchExplainAdmin: FC = () => {
     const [term, setTerm] = useState('');
     const [submitted, setSubmitted] = useState('');
+    const [expanded, setExpanded] = useState<string | undefined>(undefined);
     const { data, isFetching, error } = useSearchExplain(submitted, RESULT_SIZE);
 
     const submit = (event: FormEvent) => {
@@ -130,66 +136,93 @@ export const SearchExplainAdmin: FC = () => {
                         <Table size='small'>
                             <TableHead>
                                 <TableRow>
+                                    <TableCell />
                                     <TableCell>#</TableCell>
                                     <TableCell>Extension</TableCell>
                                     <TableCell align='right'>Score</TableCell>
                                     <TableCell align='right'>Text</TableCell>
                                     <TableCell align='right'>Relevance</TableCell>
-                                    <TableCell>Made of</TableCell>
-                                    <TableCell align='right'>Rating</TableCell>
-                                    <TableCell align='right'>Downloads</TableCell>
-                                    <TableCell align='right'>Recency</TableCell>
-                                    <TableCell>Penalties</TableCell>
+                                    <TableCell>Relevance made of</TableCell>
+                                    <TableCell />
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {data.entries.map(entry => (
-                                    <TableRow key={`${entry.namespace}.${entry.name}`} hover>
-                                        <TableCell>{entry.position + 1}</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ fontWeight: 500 }}>
-                                                {entry.namespace}.{entry.name}
-                                            </Box>
-                                            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                                                {formatCompactNumber(entry.downloadCount)} downloads
-                                                {entry.timestamp ? ` · ${entry.timestamp.slice(0, 10)}` : ''}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell align='right'>{num(entry.score)}</TableCell>
-                                        <TableCell align='right'>{num(entry.textScore)}</TableCell>
-                                        <TableCell align='right'>
-                                            {num(entry.storedRelevance)}
-                                            {/* A stored relevance the formula no longer agrees with means the
+                                    <Fragment key={`${entry.namespace}.${entry.name}`}>
+                                        <TableRow
+                                            hover
+                                            sx={{ cursor: 'pointer', '& > *': { borderBottom: 'unset' } }}
+                                            onClick={() =>
+                                                setExpanded(
+                                                    expanded === `${entry.namespace}.${entry.name}`
+                                                        ? undefined
+                                                        : `${entry.namespace}.${entry.name}`
+                                                )
+                                            }>
+                                            <TableCell sx={{ width: 32 }}>
+                                                <IconButton size='small' aria-label='Show the score breakdown'>
+                                                    {expanded === `${entry.namespace}.${entry.name}` ? (
+                                                        <KeyboardArrowUpIcon fontSize='inherit' />
+                                                    ) : (
+                                                        <KeyboardArrowDownIcon fontSize='inherit' />
+                                                    )}
+                                                </IconButton>
+                                            </TableCell>
+                                            <TableCell>{entry.position + 1}</TableCell>
+                                            <TableCell>
+                                                <Box sx={{ fontWeight: 500 }}>
+                                                    {entry.namespace}.{entry.name}
+                                                </Box>
+                                                <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                                                    {formatCompactNumber(entry.downloadCount)} downloads
+                                                    {entry.timestamp ? ` · ${entry.timestamp.slice(0, 10)}` : ''}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell align='right'>{num(entry.score)}</TableCell>
+                                            <TableCell align='right'>{num(entry.textScore)}</TableCell>
+                                            <TableCell align='right'>
+                                                {num(entry.storedRelevance)}
+                                                {/* A stored relevance the formula no longer agrees with means the
                                                 index predates a change to it - worth seeing before drawing any
                                                 conclusion from the ordering. */}
-                                            {entry.currentRelevance !== undefined &&
-                                                Math.abs(entry.currentRelevance - entry.storedRelevance) > 0.01 && (
-                                                    <Tooltip
-                                                        title={`Recomputes to ${entry.currentRelevance.toFixed(
-                                                            3
-                                                        )} — the index is older than the formula`}
-                                                        arrow>
-                                                        <Box
-                                                            component='span'
-                                                            sx={{ ml: 0.5, color: 'warning.main', cursor: 'help' }}>
-                                                            ≠
-                                                        </Box>
-                                                    </Tooltip>
+                                                {entry.currentRelevance !== undefined &&
+                                                    Math.abs(entry.currentRelevance - entry.storedRelevance) > 0.01 && (
+                                                        <Tooltip
+                                                            title={`Recomputes to ${entry.currentRelevance.toFixed(
+                                                                3
+                                                            )} — the index is older than the formula`}
+                                                            arrow>
+                                                            <Box
+                                                                component='span'
+                                                                sx={{ ml: 0.5, color: 'warning.main', cursor: 'help' }}>
+                                                                ≠
+                                                            </Box>
+                                                        </Tooltip>
+                                                    )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <RelevanceBar entry={entry} />
+                                            </TableCell>
+                                            <TableCell>
+                                                {entry.unverified && (
+                                                    <Chip size='small' label='unverified' sx={{ mr: 0.5 }} />
                                                 )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <RelevanceBar entry={entry} />
-                                        </TableCell>
-                                        <TableCell align='right'>{num(entry.rating)}</TableCell>
-                                        <TableCell align='right'>{num(entry.downloads)}</TableCell>
-                                        <TableCell align='right'>{num(entry.recency)}</TableCell>
-                                        <TableCell>
-                                            {entry.unverified && (
-                                                <Chip size='small' label='unverified' sx={{ mr: 0.5 }} />
-                                            )}
-                                            {entry.deprecated && <Chip size='small' label='deprecated' />}
-                                        </TableCell>
-                                    </TableRow>
+                                                {entry.deprecated && <Chip size='small' label='deprecated' />}
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={7}
+                                                sx={{ p: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                <Collapse
+                                                    in={expanded === `${entry.namespace}.${entry.name}`}
+                                                    timeout='auto'
+                                                    unmountOnExit>
+                                                    <ScoreBreakdown entry={entry} />
+                                                </Collapse>
+                                            </TableCell>
+                                        </TableRow>
+                                    </Fragment>
                                 ))}
                             </TableBody>
                         </Table>
