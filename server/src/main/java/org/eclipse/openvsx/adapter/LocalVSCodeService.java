@@ -214,10 +214,8 @@ public class LocalVSCodeService implements IVSCodeService {
         var extensionsMap = extensionsList.stream()
                 .collect(Collectors.toMap(Extension::getId, Function.identity(), (a, b) -> a));
 
-        // The full active version list (all pre-releases included, unless capped) is only needed to populate
-        // the response's per-extension version list, which itself is only included for these flags. Skipping
-        // the fetch otherwise avoids pulling an extension's entire (potentially unbounded) version history
-        // just to compute "latest", which repositories.findLatestVersions below does directly in the database.
+        // Version details (and thus the potentially unbounded active-version history) are only needed
+        // for these flags; "latest" is computed separately below without fetching this list.
         var needsVersionList = test(flags, FLAG_INCLUDE_LATEST_VERSION_ONLY)
                 || test(flags, FLAG_INCLUDE_VERSIONS)
                 || test(flags, FLAG_INCLUDE_VERSION_PROPERTIES);
@@ -234,7 +232,7 @@ public class LocalVSCodeService implements IVSCodeService {
                     .stream()
                     .map(list -> versions.getLatest(list, true))
                     .collect(Collectors.toList());
-        } else if (test(flags, FLAG_INCLUDE_VERSIONS) || test(flags, FLAG_INCLUDE_VERSION_PROPERTIES)) {
+        } else if (needsVersionList) {
             extensionVersions = allActiveExtensionVersions;
         } else {
             extensionVersions = Collections.emptyList();
@@ -272,8 +270,21 @@ public class LocalVSCodeService implements IVSCodeService {
             fileResources = Collections.emptyMap();
         }
 
-        var latestVersions = repositories.findLatestVersions(extensionsMap.keySet(), targetPlatform).stream()
-                .collect(Collectors.toMap(ev -> ev.getExtension().getId(), ev -> ev));
+        // ponytail: reuse the already-fetched list for "latest" only when it's uncapped (complete) -
+        // a pre-release cap ranks across all target platforms combined, so a capped list can miss the
+        // true latest for this platform; that case still queries the database directly.
+        Map<Long, ExtensionVersion> latestVersions;
+        if (needsVersionList && maxPreReleaseVersions < 0) {
+            latestVersions = allActiveExtensionVersions.stream()
+                    .collect(Collectors.groupingBy(ev -> ev.getExtension().getId()))
+                    .values()
+                    .stream()
+                    .map(list -> versions.getLatest(list, false))
+                    .collect(Collectors.toMap(ev -> ev.getExtension().getId(), ev -> ev));
+        } else {
+            latestVersions = repositories.findLatestVersions(extensionsMap.keySet(), targetPlatform).stream()
+                    .collect(Collectors.toMap(ev -> ev.getExtension().getId(), ev -> ev));
+        }
 
         var extensionQueryResults = new ArrayList<ExtensionQueryResult.Extension>();
         for (var extension : extensionsList) {
