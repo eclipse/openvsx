@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.convert.ApplicationConversionService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.web.server.Cookie;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -42,12 +44,65 @@ class WebConfigTest {
         }
     }
 
+    /** With the public origins left at what the property defaults to; see {@link #defaultsToAnyOrigin()}. */
     private static Map<String, CorsConfiguration> mappingsFor(String webuiUrl) {
+        return mappingsFor(webuiUrl, "*");
+    }
+
+    private static Map<String, CorsConfiguration> mappingsFor(String webuiUrl, String... publicOrigins) {
         var config = new WebConfig(Optional.empty());
         config.webuiUrl = webuiUrl;
+        config.publicCorsOrigins = publicOrigins;
         var registry = new ReadableCorsRegistry();
         config.addCorsMappings(registry);
         return registry.configurations();
+    }
+
+    /**
+     * The property default, asserted through a context because the tests above construct {@link WebConfig}
+     * directly and never see it. Any origin, because the public surface exists to be consumed and a
+     * registry that wants it closed can say so; see the field's own documentation.
+     */
+    @Test
+    void defaultsToAnyOrigin() {
+        new ApplicationContextRunner()
+                .withInitializer(
+                        context -> context.getBeanFactory()
+                                .setConversionService(ApplicationConversionService.getSharedInstance()))
+                .withUserConfiguration(WebConfig.class)
+                .run(
+                        context -> assertThat(context.getBean(WebConfig.class).publicCorsOrigins)
+                                .containsExactly("*"));
+    }
+
+    // An operator who wants the public surface closed to the open web empties the setting, and then there
+    // is nothing to register rather than a mapping that allows nothing.
+    @Test
+    void registersNoPublicMappingsWhenTheSettingIsEmpty() {
+        var noOrigins = new String[0];
+
+        assertThat(mappingsFor("", noOrigins)).isEmpty();
+        assertThat(mappingsFor(UI_ORIGIN, noOrigins))
+                .doesNotContainKeys("/api/**", "/vscode/**", "/documents/**")
+                .containsKey("/user/**");
+    }
+
+    @Test
+    void allowsOnlyTheOriginsTheSettingNames() {
+        var mappings = mappingsFor("", "https://vscode.dev", "https://gitpod.io");
+
+        assertThat(mappings.get("/api/**").getAllowedOrigins())
+                .containsExactly("https://vscode.dev", "https://gitpod.io");
+        assertThat(mappings.get("/api/**").checkOrigin("https://elsewhere.example")).isNull();
+        assertThat(mappings.get("/api/**").getAllowCredentials()).isNull();
+    }
+
+    // Same reasoning as the pepper keyring: a trailing or doubled comma leaves a blank element behind,
+    // and a mapping for a blank origin would match nothing while obscuring what is actually allowed.
+    @Test
+    void ignoresBlankEntriesInTheSetting() {
+        assertThat(mappingsFor("", "https://vscode.dev", "", " ").get("/api/**").getAllowedOrigins())
+                .containsExactly("https://vscode.dev");
     }
 
     // The registry API, the VS Code gallery adapter and the static documents are public, and the browser

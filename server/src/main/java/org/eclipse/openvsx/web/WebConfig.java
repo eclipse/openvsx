@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.web;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -38,6 +39,32 @@ public class WebConfig implements WebMvcConfigurer {
         "${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/search,/user-settings/**,/publish,/admin-dashboard/**}"
     )
     String[] frontendRoutes;
+
+    /**
+     * The origins allowed to read the public, unauthenticated surface - the registry API, the VS Code
+     * gallery adapter and the static documents - from a browser. Comma separated; {@code *} for any.
+     * <p>
+     * Any by default, because that surface exists to be consumed: a public registry is read by clients
+     * that are not its own Web UI, and the ones running in a browser (VS Code for the Web, Gitpod, Theia,
+     * anything querying the gallery from page script) get nothing back without these headers. Clients
+     * that are not browsers - VS Code desktop fetches the gallery from its node extension host - never
+     * consult them and are unaffected by whatever this says.
+     * <p>
+     * Worth narrowing, or emptying, on a registry that is not meant to be read from the open web. The
+     * endpoints are unauthenticated, so this is not what keeps their contents private - anything that can
+     * reach them can read them - but on an instance reachable only from an internal network it does stop
+     * a page in an employee's browser being used to reach it from outside. Set to an empty value to
+     * register no public CORS mappings at all.
+     * <p>
+     * Deliberately not derived from {@code ovsx.webui.url}: where the Web UI is served from has nothing
+     * to do with which third parties may read the API, and tying the two together left a registry serving
+     * its UI from the same origin as its API emitting no CORS headers for the public surface at all.
+     * <p>
+     * Property: {@code ovsx.cors.public-origins}
+     * Default: {@code *}
+     */
+    @Value("${ovsx.cors.public-origins:*}")
+    String[] publicCorsOrigins;
 
     public WebConfig(Optional<MirrorExtensionHandlerInterceptor> mirrorExtensionHandlerInterceptor) {
         mirrorExtensionHandlerInterceptor.ifPresent(service -> this.mirrorInterceptor = service);
@@ -76,25 +103,34 @@ public class WebConfig implements WebMvcConfigurer {
                     .allowedOrigins(webuiOrigin);
         }
 
-        // The public, unauthenticated surface: the registry API, the VS Code gallery adapter and the
-        // static documents, readable from any origin and never with credentials.
-        //
-        // Registered whatever ovsx.webui.url says, because it has nothing to do with them. These used to
-        // sit inside the branch above, so a deployment serving the Web UI from the same origin as the API
-        // - where that property is empty or relative - emitted no CORS headers at all, and the browser
-        // clients that need them (vscode.dev, Gitpod, Theia and anything else querying the gallery from
-        // page script) could only be served by putting the headers back on at the CDN. Which is a poor
-        // place for them: the edge cannot tell the public surface from the credentialed one, and a rule
-        // permissive enough to cover the first is a rule that hands the second to any origin that asks.
-        //
-        // Clients that are not browsers - VS Code desktop fetches the gallery from its node extension
-        // host - never consult these headers at all, and are unaffected either way.
-        registry.addMapping("/api/**")
-                .allowedOrigins("*");
-        registry.addMapping("/vscode/**")
-                .allowedOrigins("*");
-        registry.addMapping("/documents/**")
-                .allowedOrigins("*");
+        // The public, unauthenticated surface, on its own setting rather than on wherever the Web UI
+        // happens to live - see publicCorsOrigins above for why the two were never related. Never with
+        // credentials, whatever it names: it is the pairing of a permissive origin with credentials that
+        // turns any origin into an authenticated reader, and nothing here needs a session.
+        var publicOrigins = publicCorsOrigins();
+        if (publicOrigins.length > 0) {
+            registry.addMapping("/api/**")
+                    .allowedOrigins(publicOrigins);
+            registry.addMapping("/vscode/**")
+                    .allowedOrigins(publicOrigins);
+            registry.addMapping("/documents/**")
+                    .allowedOrigins(publicOrigins);
+        }
+    }
+
+    /**
+     * The configured public origins, without the blanks.
+     * <p>
+     * A trailing or doubled comma leaves an empty element behind, and Spring trims each one, so an
+     * all-whitespace entry arrives blank too. Registering a mapping for a blank origin would match no
+     * request and only obscure what the setting actually allows.
+     */
+    private String[] publicCorsOrigins() {
+        if (publicCorsOrigins == null) {
+            return new String[0];
+        }
+
+        return Arrays.stream(publicCorsOrigins).filter(StringUtils::isNotBlank).toArray(String[]::new);
     }
 
     /**
