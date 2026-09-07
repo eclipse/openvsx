@@ -36,8 +36,10 @@ const explained: SearchExplain = {
             rating: 0.02,
             downloads: 0.008,
             recency: 0.656,
-            unverified: false,
+            unverified: true,
+            unverifiedFactor: 0.5,
             deprecated: false,
+            deprecatedFactor: 0.5,
             scoreDetail: {
                 description: 'function score, product of:',
                 value: 1.9,
@@ -104,6 +106,20 @@ describe('SearchExplainAdmin', () => {
         expect(await screen.findByText(/score 1\.900 = text 1\.400 × relevance 1\.364/)).toBeInTheDocument();
         expect(screen.getByText(/rating 0\.020 \+ downloads 0\.008 \+ recency 0\.656/)).toBeInTheDocument();
         expect(screen.getByText('weight(name:markdown in 42)')).toBeInTheDocument();
+    });
+
+    // The penalty factors are configurable and both can apply, so the page reports what they cost rather
+    // than asserting a number of its own - "then halved" was true of neither case reliably.
+    it('reports what a penalty factor actually costs', async () => {
+        withService(() => Promise.resolve(explained));
+
+        await userEvent.type(screen.getByLabelText('Search term'), 'markdown');
+        await userEvent.click(screen.getByRole('button', { name: /^explain$/i }));
+        expect(await screen.findByText('yzhang.markdown-all-in-one')).toBeInTheDocument();
+        await userEvent.click(screen.getAllByLabelText('Show the score breakdown')[0]);
+
+        expect(await screen.findByText('× 0.50 unverified')).toBeInTheDocument();
+        expect(screen.queryByText(/halved/)).not.toBeInTheDocument();
     });
 
     // Each number belongs in one place. They were in a stacked bar and in three columns of their own,

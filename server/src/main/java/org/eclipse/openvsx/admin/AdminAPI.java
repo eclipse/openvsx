@@ -461,6 +461,13 @@ public class AdminAPI {
     ) {
         try {
             admins.checkAdminUser();
+            // An empty query matches every document, and this endpoint asks the engine to explain each
+            // result it returns - which is the one search on the registry that must not be run over
+            // everything by accident.
+            var trimmed = query == null ? "" : query.trim();
+            if (trimmed.isEmpty()) {
+                throw new ErrorResultException("query must not be blank.");
+            }
             // Bounded because every entry costs a lookup of the extension behind it, to recompute the
             // relevance rather than read back the single number the document stores.
             if (size < 1 || size > 100) {
@@ -470,7 +477,7 @@ public class AdminAPI {
                 throw new ErrorResultException("offset must not be negative.");
             }
 
-            return ResponseEntity.ok(searchExplainService.explain(query, size, offset, sortBy, sortOrder));
+            return ResponseEntity.ok(searchExplainService.explain(trimmed, size, offset, sortBy, sortOrder));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

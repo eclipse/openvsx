@@ -89,7 +89,9 @@ public class RelevanceService {
      * @param downloads        the downloads term, already weighted and clamped
      * @param timestamp        the recency term, already weighted and clamped
      * @param unverified       whether the unverified-publisher factor was applied
+     * @param unverifiedFactor what that factor is, which is configurable and so not to be assumed
      * @param deprecated       whether the deprecated factor was applied
+     * @param deprecatedFactor what that factor is, likewise
      * @param total            the relevance actually stored on the indexed document
      */
     public record RelevanceBreakdown(
@@ -97,7 +99,9 @@ public class RelevanceService {
             double downloads,
             double timestamp,
             boolean unverified,
+            double unverifiedFactor,
             boolean deprecated,
+            double deprecatedFactor,
             double total
     ) {}
 
@@ -182,7 +186,15 @@ public class RelevanceService {
         }
 
         logger.debug("<< [{}] CALCULATE RELEVANCE: {}", extensionId, relevance);
-        return new RelevanceBreakdown(ratingTerm, downloadsTerm, timestampTerm, unverified, deprecated, relevance);
+        return new RelevanceBreakdown(
+                ratingTerm,
+                downloadsTerm,
+                timestampTerm,
+                unverified,
+                unverifiedRelevance,
+                deprecated,
+                deprecatedRelevance,
+                relevance);
     }
 
     private double limit(double value) {

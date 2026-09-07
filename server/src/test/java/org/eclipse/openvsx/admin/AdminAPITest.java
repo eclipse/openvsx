@@ -273,6 +273,20 @@ class AdminAPITest {
         Mockito.verify(search, Mockito.never()).updateSearchIndex(Mockito.anyBoolean());
     }
 
+    // An empty query matches every document, and this endpoint asks the engine to explain each result it
+    // returns - which is the one search on the registry that must not be run over everything by accident.
+    @Test
+    void testSearchExplainRejectsABlankQuery() throws Exception {
+        mockAdminUser();
+        mockMvc.perform(
+                get("/admin/search-explain")
+                        .param("query", "   ")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(errorJson("query must not be blank.")));
+    }
+
     @Test
     void testGetSearchIndexNotAdmin() throws Exception {
         mockNormalUser();

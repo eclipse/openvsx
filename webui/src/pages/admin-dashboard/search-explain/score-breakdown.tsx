@@ -68,9 +68,22 @@ export const ScoreBreakdown: FC<{ entry: SearchExplainEntry }> = ({ entry }) => 
             <Box sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Relevance</Box>
             <Box sx={{ fontFamily: MONO, fontSize: '0.75rem', mb: 0.5 }}>
                 rating {fixed(entry.rating)} + downloads {fixed(entry.downloads)} + recency {fixed(entry.recency)}
-                {entry.unverified || entry.deprecated ? ' , then halved:' : ''}
-                {entry.unverified && <Chip size='small' label='unverified' sx={{ ml: 0.5, height: 18 }} />}
-                {entry.deprecated && <Chip size='small' label='deprecated' sx={{ ml: 0.5, height: 18 }} />}
+                {/* The factors are configurable and both can apply, so what they cost is reported rather
+                    than described - "halved" was true of neither case reliably. */}
+                {entry.unverified && (
+                    <Chip
+                        size='small'
+                        label={`× ${fixed(entry.unverifiedFactor, 2)} unverified`}
+                        sx={{ ml: 0.5, height: 18 }}
+                    />
+                )}
+                {entry.deprecated && (
+                    <Chip
+                        size='small'
+                        label={`× ${fixed(entry.deprecatedFactor, 2)} deprecated`}
+                        sx={{ ml: 0.5, height: 18 }}
+                    />
+                )}
                 {' = '}
                 {fixed(entry.storedRelevance)}
             </Box>

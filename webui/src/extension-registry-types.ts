@@ -674,7 +674,10 @@ export interface SearchExplainEntry {
     downloads?: number;
     recency?: number;
     unverified: boolean;
+    /** What the unverified factor is; configurable, so how much it costs is not a constant to assume. */
+    unverifiedFactor?: number;
     deprecated: boolean;
+    deprecatedFactor?: number;
     /** The engine's own account of the score, which is the only view of what the text half is made of. */
     scoreDetail?: SearchScoreDetail;
 }

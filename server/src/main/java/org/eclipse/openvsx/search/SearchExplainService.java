@@ -126,7 +126,9 @@ public class SearchExplainService {
                 breakdown == null ? null : breakdown.downloads(),
                 breakdown == null ? null : breakdown.timestamp(),
                 breakdown != null && breakdown.unverified(),
+                breakdown == null ? null : breakdown.unverifiedFactor(),
                 breakdown != null && breakdown.deprecated(),
+                breakdown == null ? null : breakdown.deprecatedFactor(),
                 toScoreDetail(explanation, 0));
     }
 

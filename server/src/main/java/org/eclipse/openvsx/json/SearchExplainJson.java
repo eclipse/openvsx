@@ -79,8 +79,11 @@ public record SearchExplainJson(
      * @param rating           the rating term of {@code currentRelevance}, weighted and clamped
      * @param downloads        the downloads term, likewise
      * @param recency          the recency term, likewise
-     * @param unverified       whether the unverified-publisher factor halved it
-     * @param deprecated       whether the deprecated factor halved it
+     * @param unverified       whether the unverified-publisher factor was applied
+     * @param unverifiedFactor what that factor is; it is configurable, so how much it costs is not a
+     *                         constant the reader can assume
+     * @param deprecated       whether the deprecated factor was applied
+     * @param deprecatedFactor what that factor is, likewise
      */
     @Schema(description = "A single search result and the parts its score is made of")
     public record SearchExplainEntryJson(
@@ -98,7 +101,9 @@ public record SearchExplainJson(
             @Nullable Double downloads,
             @Nullable Double recency,
             boolean unverified,
+            @Nullable Double unverifiedFactor,
             boolean deprecated,
+            @Nullable Double deprecatedFactor,
             @Nullable SearchScoreDetailJson scoreDetail
     ) {}
 }
