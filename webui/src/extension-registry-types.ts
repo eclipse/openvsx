@@ -627,6 +627,47 @@ export interface SearchIndex {
     maxResultWindow?: number;
 }
 
+/** Why a search returned what it returned, in the order it returned it. */
+export interface SearchExplain {
+    query: string;
+    totalHits: number;
+    references: SearchExplainReferences;
+    entries: SearchExplainEntry[];
+}
+
+/**
+ * The registry-wide values the relevance terms are measured against. They belong to the registry rather
+ * than to any extension, and are the usual reason a term contributes nothing: a downloads term divided by
+ * a maximum in the tens of millions is near zero for almost everything.
+ */
+export interface SearchExplainReferences {
+    maxDownloadCount: number;
+    oldestTimestamp?: string;
+    averageReviewRating: number;
+}
+
+export interface SearchExplainEntry {
+    position: number;
+    namespace: string;
+    name: string;
+    downloadCount: number;
+    averageRating?: number;
+    timestamp?: string;
+    /** What the search ranked on: the text score multiplied by the stored relevance. */
+    score: number;
+    /** How well the query matched this document's text, recovered from the product. */
+    textScore?: number;
+    /** The relevance held on the indexed document, which is what actually ranked it. */
+    storedRelevance: number;
+    /** Recomputed now; differing from `storedRelevance` means the index has not been rebuilt since. */
+    currentRelevance?: number;
+    rating?: number;
+    downloads?: number;
+    recency?: number;
+    unverified: boolean;
+    deprecated: boolean;
+}
+
 export interface ConsistencyCheck {
     id: string;
     name: string;

@@ -56,6 +56,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.PersistedLogJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SearchExplainJson;
 import org.eclipse.openvsx.json.SearchIndexJson;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.StatsJson;
@@ -64,6 +65,7 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
@@ -86,6 +88,7 @@ public class AdminAPI {
     private final LogService logs;
     private final LocalRegistryService local;
     private final SearchUtilService search;
+    private final SearchExplainService searchExplainService;
 
     public AdminAPI(
             RepositoryService repositories,
@@ -94,7 +97,8 @@ public class AdminAPI {
             SettingsService settings,
             LogService logs,
             LocalRegistryService local,
-            SearchUtilService search
+            SearchUtilService search,
+            SearchExplainService searchExplainService
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -103,6 +107,7 @@ public class AdminAPI {
         this.logs = logs;
         this.local = local;
         this.search = search;
+        this.searchExplainService = searchExplainService;
     }
 
     @GetMapping(
@@ -425,6 +430,45 @@ public class AdminAPI {
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(SearchIndexJson.class);
+        }
+    }
+
+    @GetMapping(
+        path = "/search-explain",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Run a search and report how each result's score was arrived at")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The results and their score breakdowns are returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = SearchExplainJson.class)
+        )
+    )
+    @ApiResponse(
+        responseCode = "400",
+        description = "An error message is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = ResultJson.class))
+    )
+    public ResponseEntity<?> searchExplain(
+            @RequestParam("query") String query,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @RequestParam(value = "sortBy", defaultValue = "relevance") String sortBy,
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
+            @RequestParam(value = "token", required = false) String token
+    ) {
+        try {
+            admins.checkAdminUser();
+            // Bounded because every entry costs a lookup of the extension behind it, to recompute the
+            // relevance rather than read back the single number the document stores.
+            if (size < 1 || size > 100) {
+                throw new ErrorResultException("size must be between 1 and 100.");
+            }
+
+            return ResponseEntity.ok(searchExplainService.explain(query, size, sortBy, sortOrder));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
         }
     }
 

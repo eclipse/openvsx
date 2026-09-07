@@ -30,6 +30,7 @@ import org.eclipse.openvsx.cache.FilesCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
 
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     types = {
         EntityManager.class,
         SearchUtilService.class,
+        SearchExplainService.class,
         GoogleCloudStorageService.class,
         DownloadCountService.class,
         ExtensionDownloadMetrics.class,

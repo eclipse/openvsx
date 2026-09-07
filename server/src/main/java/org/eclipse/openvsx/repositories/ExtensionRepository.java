@@ -11,6 +11,7 @@ package org.eclipse.openvsx.repositories;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
@@ -22,6 +23,8 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
 
 public interface ExtensionRepository extends Repository<Extension, Long> {
+
+    Optional<Extension> findById(long id);
 
     Streamable<Extension> findByNamespace(Namespace namespace);
 

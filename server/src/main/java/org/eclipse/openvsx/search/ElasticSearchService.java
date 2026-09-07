@@ -311,6 +311,35 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    /**
+     * The same search the registry answers, with the scores kept.
+     * <p>
+     * {@link #search} throws them away - a caller wanting results does not care - but they are the whole
+     * point when the question is why a result sits where it does. Built through the same
+     * {@code createQuery} and {@code sortResults} as the real search rather than a copy of them, because a
+     * debugging view assembled separately is a view of a query nobody runs, and the first thing it would
+     * hide is the two having drifted apart.
+     * <p>
+     * One page only: this answers an admin looking at a result list, not a client paging through one.
+     */
+    public SearchHits<ExtensionSearch> searchWithScores(Options options) {
+        var queryBuilder = new NativeQueryBuilder();
+        createQuery(queryBuilder, options);
+        sortResults(queryBuilder, options.sortOrder(), options.sortBy());
+        queryBuilder.withPageable(PageRequest.of(0, options.requestedSize()));
+        queryBuilder.withTrackTotalHits(true);
+
+        try {
+            rwLock.readLock().lock();
+            return searchOperations.search(
+                    queryBuilder.build(),
+                    ExtensionSearch.class,
+                    searchOperations.indexOps(ExtensionSearch.class).getIndexCoordinates());
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
     public SearchResult search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
         if (resultWindow > maxResultWindow) {

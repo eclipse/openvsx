@@ -87,6 +87,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
@@ -147,6 +148,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         CacheService.class,
         PublishExtensionVersionHandler.class,
         SearchUtilService.class,
+        SearchExplainService.class,
         EclipseService.class,
         SimpleMeterRegistry.class,
         FileCacheDurationConfig.class,

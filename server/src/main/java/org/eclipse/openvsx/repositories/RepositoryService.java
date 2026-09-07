@@ -238,6 +238,13 @@ public class RepositoryService {
         return namespaceRepo.count();
     }
 
+    /**
+     * The extension an indexed search document points at, or {@code null} if it has since been purged.
+     */
+    public @Nullable Extension findExtension(long id) {
+        return extensionRepo.findById(id).orElse(null);
+    }
+
     public Extension findExtension(String name, Namespace namespace) {
         return extensionRepo.findByNameIgnoreCaseAndNamespace(name, namespace);
     }
