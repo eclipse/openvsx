@@ -67,6 +67,7 @@ import org.eclipse.openvsx.util.TargetPlatformVersion;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.eclipse.openvsx.util.auth.AccessTokenAuthentication;
+import org.eclipse.openvsx.web.WebUiProperties;
 
 import static org.eclipse.openvsx.entities.FileResource.CHANGELOG;
 import static org.eclipse.openvsx.entities.FileResource.DOWNLOAD;
@@ -94,6 +95,7 @@ public class AdminService {
     private final JobRequestScheduler scheduler;
     private final MailService mail;
     private final LogService logs;
+    private final WebUiProperties webUi;
 
     public AdminService(
             RepositoryService repositories,
@@ -108,7 +110,8 @@ public class AdminService {
             CacheService cache,
             JobRequestScheduler scheduler,
             MailService mail,
-            LogService logs
+            LogService logs,
+            WebUiProperties webUi
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -123,6 +126,7 @@ public class AdminService {
         this.scheduler = scheduler;
         this.mail = mail;
         this.logs = logs;
+        this.webUi = webUi;
     }
 
     @EventListener
@@ -412,7 +416,7 @@ public class AdminService {
                 (int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LLT));
         var extVersions = repositories.findLatestVersions(user);
         var types = new String[] { DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST };
-        var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), types);
+        var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(webUi.getApiUrl()), types);
         userPublishInfo.setExtensions(
                 extVersions.stream()
                         .map(latest -> {

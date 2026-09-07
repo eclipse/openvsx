@@ -47,6 +47,7 @@ import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.*;
 import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 import org.eclipse.openvsx.web.PreviewOperation;
+import org.eclipse.openvsx.web.WebUiProperties;
 
 import static org.eclipse.openvsx.util.TargetPlatform.*;
 
@@ -64,15 +65,18 @@ public class RegistryAPI {
     private final LocalRegistryService local;
     private final UpstreamRegistryService upstream;
     private final UserService users;
+    private final WebUiProperties webUi;
 
     public RegistryAPI(
             LocalRegistryService local,
             UpstreamRegistryService upstream,
-            UserService users
+            UserService users,
+            WebUiProperties webUi
     ) {
         this.local = local;
         this.upstream = upstream;
         this.users = users;
+        this.webUi = webUi;
     }
 
     protected Iterable<IExtensionRegistry> getRegistries() {
@@ -1249,7 +1253,7 @@ public class RegistryAPI {
             @RequestBody
             @Parameter(description = "Parameters of the metadata query") QueryParamJson param
     ) {
-        var location = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", "-", "query");
+        var location = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(webUi.getApiUrl()), "api", "-", "query");
         location = UrlUtil.addQuery(location, param.toQueryParams());
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
                 .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePublic())
@@ -1301,7 +1305,7 @@ public class RegistryAPI {
         }
         try {
             var json = local.createNamespace(namespace, token);
-            var serverUrl = UrlUtil.getBaseUrl();
+            var serverUrl = UrlUtil.getBaseUrl(webUi.getApiUrl());
             var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
@@ -1372,7 +1376,7 @@ public class RegistryAPI {
         }
         try {
             var json = local.createNamespace(namespace, user);
-            var serverUrl = UrlUtil.getBaseUrl();
+            var serverUrl = UrlUtil.getBaseUrl(webUi.getApiUrl());
             var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
@@ -1437,7 +1441,7 @@ public class RegistryAPI {
     ) {
         try {
             var json = local.publish(content, token);
-            var serverUrl = UrlUtil.getBaseUrl();
+            var serverUrl = UrlUtil.getBaseUrl(webUi.getApiUrl());
             var url = UrlUtil.createApiVersionUrl(serverUrl, json);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))
@@ -1495,7 +1499,7 @@ public class RegistryAPI {
             }
 
             var json = local.publish(content, new LoggedInAuthentication(user));
-            var serverUrl = UrlUtil.getBaseUrl();
+            var serverUrl = UrlUtil.getBaseUrl(webUi.getApiUrl());
             var url = UrlUtil.createApiUrl(serverUrl, "api", json.getNamespace(), json.getName(), json.getVersion());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .location(URI.create(url))

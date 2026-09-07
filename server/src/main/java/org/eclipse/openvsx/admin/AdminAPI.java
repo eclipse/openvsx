@@ -68,6 +68,7 @@ import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.*;
+import org.eclipse.openvsx.web.WebUiProperties;
 
 @RestController
 @RequestMapping("/admin")
@@ -85,6 +86,7 @@ public class AdminAPI {
     private final LogService logs;
     private final LocalRegistryService local;
     private final SearchUtilService search;
+    private final WebUiProperties webUi;
 
     public AdminAPI(
             RepositoryService repositories,
@@ -93,7 +95,8 @@ public class AdminAPI {
             SettingsService settings,
             LogService logs,
             LocalRegistryService local,
-            SearchUtilService search
+            SearchUtilService search,
+            WebUiProperties webUi
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -102,6 +105,7 @@ public class AdminAPI {
         this.logs = logs;
         this.local = local;
         this.search = search;
+        this.webUi = webUi;
     }
 
     @GetMapping(
@@ -763,7 +767,8 @@ public class AdminAPI {
     }
 
     private String createAdminNamespaceUrl(NamespaceJson namespace) {
-        return UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "admin", "namespace", namespace.getName());
+        return UrlUtil
+                .createApiUrl(UrlUtil.getBaseUrl(webUi.getApiUrl()), "admin", "namespace", namespace.getName());
     }
 
     @PostMapping(
