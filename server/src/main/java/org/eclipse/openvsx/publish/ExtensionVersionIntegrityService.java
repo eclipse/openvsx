@@ -85,28 +85,34 @@ public class ExtensionVersionIntegrityService {
 
         boolean verified;
         try {
-            // One array rather than a read loop into Ed25519Signer, for the reason spelled out on
-            // createSignatureFile below: the streaming signer buffers the whole message anyway, and does
-            // it in a structure that doubles as it grows.
-            var message = Files.readAllBytes(extensionFile.getPath());
-            var signature = Files.readAllBytes(signatureFile.getPath());
-            // Checked here because the low-level verify reads a fixed 64 bytes from the offset it is
-            // given: a truncated signature would come back out of BouncyCastle as an index out of
-            // bounds, and a padded one would verify on its first 64 bytes with the rest ignored.
-            // Ed25519Signer used to make this check itself and answer false, which is the honest answer
-            // - a signature of the wrong length does not verify - and is what the one caller, the
-            // mirror, already refuses the package on.
-            if (signature.length != Ed25519PrivateKeyParameters.SIGNATURE_SIZE) {
+            // The signature first, and by size before contents: the low-level verify reads a fixed 64
+            // bytes from the offset it is handed, so a truncated signature would come back out of
+            // BouncyCastle as an index out of bounds and a padded one would verify on its first 64 bytes
+            // with the rest ignored. Ed25519Signer made this check itself and answered false, which is
+            // the honest answer - a signature of the wrong length does not verify - and is what the one
+            // caller, the mirror, already refuses the package on.
+            //
+            // Ahead of the package, so that a signature this can already tell is not one costs nothing.
+            // Both files arrive here from a remote registry, and there is no point reading a few hundred
+            // megabytes to check something that has already failed - nor reading a "signature" that is
+            // a few hundred megabytes to find out it is not 64 bytes.
+            var signatureSize = Files.size(signatureFile.getPath());
+            if (signatureSize != Ed25519PrivateKeyParameters.SIGNATURE_SIZE) {
                 // The file, not the version it belongs to: the only caller downloads into a bare
                 // TempFile that carries no FileResource, so there is no extension to name here.
                 logger.warn(
                         "Signature file {} is {} bytes, expected {}",
                         signatureFile.getPath(),
-                        signature.length,
+                        signatureSize,
                         Ed25519PrivateKeyParameters.SIGNATURE_SIZE);
                 return false;
             }
 
+            var signature = Files.readAllBytes(signatureFile.getPath());
+            // One array rather than a read loop into Ed25519Signer, for the reason spelled out on
+            // createSignatureFile below: the streaming signer buffers the whole message anyway, and does
+            // it in a structure that doubles as it grows.
+            var message = Files.readAllBytes(extensionFile.getPath());
             verified = ed25519PublicKey
                     .verify(Ed25519.Algorithm.Ed25519, null, message, 0, message.length, signature, 0);
         } catch (IOException e) {

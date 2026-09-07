@@ -202,6 +202,29 @@ class ExtensionVersionIntegrityServiceTest {
         }
     }
 
+    /**
+     * And it refuses it without reading the package, which is the order the check has to be in: both
+     * files come from a remote registry, and there is nothing to be gained by pulling a few hundred
+     * megabytes into memory to check something that has already failed.
+     * <p>
+     * Asserted by pointing it at a package that does not exist. Reading it would throw rather than merely
+     * waste the memory, which turns "did not read it" into something a test can see.
+     */
+    @Test
+    void refusesAWrongLengthSignatureWithoutReadingThePackage() throws Exception {
+        var keyPair = keyPairService.generateKeyPair();
+        try (
+                var publicKeyFile = givenPublicKeyFile(keyPair);
+                var truncated = new TempFile("signature", ".sig");
+                var missingPackage = new TempFile("package", ".vsix")
+        ) {
+            Files.write(truncated.getPath(), new byte[63]);
+            Files.delete(missingPackage.getPath());
+
+            assertFalse(integrityService.verifyExtensionVersion(missingPackage, truncated, publicKeyFile));
+        }
+    }
+
     @Test
     void verifiesASignatureItProduced() throws Exception {
         var keyPair = keyPairService.generateKeyPair();
