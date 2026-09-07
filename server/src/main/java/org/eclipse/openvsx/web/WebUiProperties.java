@@ -23,15 +23,29 @@ import org.springframework.stereotype.Component;
 public class WebUiProperties {
 
     @Value("${ovsx.webui.url:}")
-    private String url;
+    private String webuiUrl = "";
+
+    @Value("${ovsx.api.url:${ovsx.webui.url:}}")
+    private String apiUrl = "";
 
     @Value(
         "${ovsx.webui.frontendRoutes:/extension/**,/namespace/**,/search,/user-settings/**,/publish,/admin-dashboard/**}"
     )
-    private String[] frontendRoutes;
+    private String[] frontendRoutes = {
+        "/extension/**",
+        "/namespace/**",
+        "/search",
+        "/user-settings/**",
+        "/publish",
+        "/admin-dashboard/**"
+    };
 
-    public String getUrl() {
-        return url;
+    public String getWebuiUrl() {
+        return webuiUrl;
+    }
+
+    public String getApiUrl() {
+        return apiUrl;
     }
 
     public String[] getFrontendRoutes() {

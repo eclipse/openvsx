@@ -399,7 +399,7 @@ public class LocalVSCodeService implements IVSCodeService {
             } else {
                 return ResponseEntity
                         .status(HttpStatus.FOUND)
-                        .location(URI.create(UrlUtil.getPublicKeyUrl(publicId)))
+                        .location(URI.create(UrlUtil.getPublicKeyUrl(publicId, webUi.getApiUrl())))
                         .build();
             }
         }
@@ -468,7 +468,7 @@ public class LocalVSCodeService implements IVSCodeService {
         }
 
         return UrlUtil.createApiUrl(
-                webUi.getUrl(),
+                webUi.getWebuiUrl(),
                 "extension",
                 extension.getNamespace().getName(),
                 extension.getName());
@@ -491,7 +491,7 @@ public class LocalVSCodeService implements IVSCodeService {
             var extension = extVersion.getExtension();
             var namespace = extension.getNamespace();
             var apiUrl = UrlUtil.createApiUrl(
-                    UrlUtil.getBaseUrl(),
+                    UrlUtil.getBaseUrl(webUi.getApiUrl()),
                     "vscode",
                     "asset",
                     namespace.getName(),
@@ -595,7 +595,7 @@ public class LocalVSCodeService implements IVSCodeService {
             Map<Long, List<FileResource>> fileResources,
             int flags
     ) {
-        var serverUrl = UrlUtil.getBaseUrl();
+        var serverUrl = UrlUtil.getBaseUrl(webUi.getApiUrl());
         var namespaceName = extVer.getExtension().getNamespace().getName();
         var extensionName = extVer.getExtension().getName();
 
@@ -661,7 +661,10 @@ public class LocalVSCodeService implements IVSCodeService {
                     FILE_SIGNATURE,
                     createFileUrl(resourcesByType.get(DOWNLOAD_SIG), fileBaseUrl));
             if (resourcesByType.containsKey(DOWNLOAD_SIG)) {
-                addQueryExtensionVersionFile(files, FILE_PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVer));
+                addQueryExtensionVersionFile(
+                        files,
+                        FILE_PUBLIC_KEY,
+                        UrlUtil.getPublicKeyUrl(extVer, webUi.getApiUrl()));
             }
         }
 

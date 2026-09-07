@@ -2630,7 +2630,8 @@ class AdminAPITest {
                 CacheService cache,
                 ExtensionValidator validator,
                 @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
-                OAuth2AttributesConfig attributesConfig
+                OAuth2AttributesConfig attributesConfig,
+                WebUiProperties webUi
         ) {
             return new UserService(
                     entityManager,
@@ -2639,7 +2640,8 @@ class AdminAPITest {
                     cache,
                     validator,
                     clientRegistrationRepository,
-                    attributesConfig);
+                    attributesConfig,
+                    webUi);
         }
 
         @Bean
@@ -2658,9 +2660,10 @@ class AdminAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService,
-                DSLContext dsl
+                DSLContext dsl,
+                WebUiProperties webUi
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl, webUi);
         }
 
         @Bean
@@ -2697,7 +2700,8 @@ class AdminAPITest {
                 CacheService cache,
                 JobRequestScheduler scheduler,
                 MailService mail,
-                LogService logs
+                LogService logs,
+                WebUiProperties webUi
         ) {
             return new AdminService(
                     repositories,
@@ -2712,7 +2716,8 @@ class AdminAPITest {
                     cache,
                     scheduler,
                     mail,
-                    logs);
+                    logs,
+                    webUi);
         }
 
         @Bean
@@ -2814,7 +2819,8 @@ class AdminAPITest {
                 CacheService cache,
                 EntityManager entityManager,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                CdnServiceConfig cdnServiceConfig
+                CdnServiceConfig cdnServiceConfig,
+                WebUiProperties webUi
         ) {
             return new StorageUtilService(
                     repositories,
@@ -2828,12 +2834,13 @@ class AdminAPITest {
                     cache,
                     entityManager,
                     fileCacheDurationConfig,
-                    cdnServiceConfig);
+                    cdnServiceConfig,
+                    webUi);
         }
 
         @Bean
-        LocalStorageService localStorage() {
-            return new LocalStorageService();
+        LocalStorageService localStorage(WebUiProperties webUi) {
+            return new LocalStorageService(webUi);
         }
 
         @Bean

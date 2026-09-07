@@ -95,7 +95,7 @@ public class SecurityConfig {
                 .exceptionHandling(configurer -> configurer.authenticationEntryPoint(new Http403ForbiddenEntryPoint()));
 
         if (userServices.canLogin()) {
-            var webuiUrl = webUi.getUrl();
+            var webuiUrl = webUi.getWebuiUrl();
             var redirectUrl = StringUtils.isEmpty(webuiUrl) ? "/" : webuiUrl;
             filterChain.oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);

@@ -76,14 +76,14 @@ public class SitemapService {
     }
 
     private String getBaseUrl() {
-        var webuiUrl = webUi.getUrl();
+        var webuiUrl = webUi.getWebuiUrl();
         String url;
         if (StringUtils.isEmpty(webuiUrl)) {
-            url = UrlUtil.getBaseUrl();
+            url = UrlUtil.getBaseUrl(webUi.getApiUrl());
         } else if (URI.create(webuiUrl).isAbsolute()) {
             url = webuiUrl;
         } else {
-            url = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), webuiUrl.split("/"));
+            url = UrlUtil.createApiUrl(UrlUtil.getBaseUrl(webUi.getApiUrl()), webuiUrl.split("/"));
         }
         if (!url.endsWith("/")) {
             url += "/";

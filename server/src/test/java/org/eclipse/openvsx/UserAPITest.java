@@ -1172,7 +1172,8 @@ class UserAPITest {
                 CacheService cache,
                 ExtensionValidator validator,
                 @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
-                OAuth2AttributesConfig attributesConfig
+                OAuth2AttributesConfig attributesConfig,
+                WebUiProperties webUi
         ) {
             return new UserService(
                     entityManager,
@@ -1181,7 +1182,8 @@ class UserAPITest {
                     cache,
                     validator,
                     clientRegistrationRepository,
-                    attributesConfig);
+                    attributesConfig,
+                    webUi);
         }
 
         @Bean
@@ -1200,9 +1202,10 @@ class UserAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService,
-                DSLContext dsl
+                DSLContext dsl,
+                WebUiProperties webUi
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl, webUi);
         }
 
         @Bean

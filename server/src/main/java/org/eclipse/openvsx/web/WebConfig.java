@@ -38,7 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        var webuiUrl = webUi.getUrl();
+        var webuiUrl = webUi.getWebuiUrl();
         if (!StringUtils.isEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute()) {
             // The Web UI is given with an absolute URL, so we need to enable CORS with credentials.
             var authorizedEndpoints = new String[] {

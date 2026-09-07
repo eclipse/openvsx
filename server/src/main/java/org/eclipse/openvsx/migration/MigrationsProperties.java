@@ -27,7 +27,7 @@ public class MigrationsProperties {
     private long delaySeconds;
 
     @Value("${ovsx.registry.version:}")
-    private String registryVersion;
+    private String registryVersion = "";
 
     public long getDelaySeconds() {
         return delaySeconds;

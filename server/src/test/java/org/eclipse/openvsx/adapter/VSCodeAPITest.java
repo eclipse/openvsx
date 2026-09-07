@@ -1512,7 +1512,8 @@ class VSCodeAPITest {
                 CacheService cache,
                 ExtensionValidator validator,
                 ClientRegistrationRepository clientRegistrationRepository,
-                OAuth2AttributesConfig attributesConfig
+                OAuth2AttributesConfig attributesConfig,
+                WebUiProperties webUi
         ) {
             return new UserService(
                     entityManager,
@@ -1521,7 +1522,8 @@ class VSCodeAPITest {
                     cache,
                     validator,
                     clientRegistrationRepository,
-                    attributesConfig);
+                    attributesConfig,
+                    webUi);
         }
 
         @Bean
@@ -1537,7 +1539,8 @@ class VSCodeAPITest {
                 CacheService cache,
                 EntityManager entityManager,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                CdnServiceConfig cdnServiceConfig
+                CdnServiceConfig cdnServiceConfig,
+                WebUiProperties webUi
         ) {
             return new StorageUtilService(
                     repositories,
@@ -1551,12 +1554,13 @@ class VSCodeAPITest {
                     cache,
                     entityManager,
                     fileCacheDurationConfig,
-                    cdnServiceConfig);
+                    cdnServiceConfig,
+                    webUi);
         }
 
         @Bean
-        LocalStorageService localStorage() {
-            return new LocalStorageService();
+        LocalStorageService localStorage(WebUiProperties webUi) {
+            return new LocalStorageService(webUi);
         }
 
         @Bean

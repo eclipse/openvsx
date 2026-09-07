@@ -42,6 +42,6 @@ public class ServerErrorController extends BasicErrorController {
     // the correct, property-driven path with no combination/doubling.
     @Override
     public ModelAndView errorHtml(HttpServletRequest request, HttpServletResponse response) {
-        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webUi.getUrl(), "error"));
+        return new ModelAndView("redirect:" + UrlUtil.createApiUrl(webUi.getWebuiUrl(), "error"));
     }
 }

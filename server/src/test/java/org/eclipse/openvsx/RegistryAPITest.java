@@ -3657,7 +3657,8 @@ class RegistryAPITest {
                 CacheService cache,
                 ExtensionValidator validator,
                 @Autowired(required = false) ClientRegistrationRepository clientRegistrationRepository,
-                OAuth2AttributesConfig attributesConfig
+                OAuth2AttributesConfig attributesConfig,
+                WebUiProperties webUi
         ) {
             return new UserService(
                     entityManager,
@@ -3666,7 +3667,8 @@ class RegistryAPITest {
                     cache,
                     validator,
                     clientRegistrationRepository,
-                    attributesConfig);
+                    attributesConfig,
+                    webUi);
         }
 
         @Bean
@@ -3685,9 +3687,10 @@ class RegistryAPITest {
                 EntityManager entityManager,
                 RepositoryService repositories,
                 MailService mailService,
-                DSLContext dsl
+                DSLContext dsl,
+                WebUiProperties webUi
         ) {
-            return new AccessTokenService(config, entityManager, repositories, mailService, dsl);
+            return new AccessTokenService(config, entityManager, repositories, mailService, dsl, webUi);
         }
 
         @Bean
@@ -3829,7 +3832,8 @@ class RegistryAPITest {
                 CacheService cache,
                 EntityManager entityManager,
                 FileCacheDurationConfig fileCacheDurationConfig,
-                CdnServiceConfig cdnServiceConfig
+                CdnServiceConfig cdnServiceConfig,
+                WebUiProperties webUi
         ) {
             return new StorageUtilService(
                     repositories,
@@ -3843,12 +3847,13 @@ class RegistryAPITest {
                     cache,
                     entityManager,
                     fileCacheDurationConfig,
-                    cdnServiceConfig);
+                    cdnServiceConfig,
+                    webUi);
         }
 
         @Bean
-        LocalStorageService localStorageService() {
-            return new LocalStorageService();
+        LocalStorageService localStorageService(WebUiProperties webUi) {
+            return new LocalStorageService(webUi);
         }
 
         @Bean
