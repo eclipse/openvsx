@@ -84,6 +84,36 @@ class WebConfigTest {
         assertThat(userMapping.getAllowCredentials()).isTrue();
     }
 
+    /**
+     * {@code ovsx.webui.url} is a URL; {@code allowedOrigins} is matched against the browser's
+     * {@code Origin} header, which never carries a path. A registry whose UI is served under one - at
+     * {@code https://example.com/openvsx} - configured a value that could match no browser's header, and
+     * the credentialed mappings silently applied to nothing.
+     */
+    @Test
+    void derivesAnOriginFromAWebUiUrlThatCarriesAPath() {
+        var mappings = mappingsFor("https://ui.example.com/openvsx");
+
+        var userMapping = mappings.get("/user/**");
+        assertThat(userMapping.getAllowedOrigins()).containsExactly(UI_ORIGIN);
+        assertThat(userMapping.checkOrigin(UI_ORIGIN)).isEqualTo(UI_ORIGIN);
+    }
+
+    // A browser leaves a default port out of the Origin it sends, so a configured one has to come out
+    // here too or it would be compared against a header that never has it.
+    @Test
+    void dropsADefaultPortFromTheDerivedOrigin() {
+        assertThat(mappingsFor("https://ui.example.com:443/").get("/user/**").checkOrigin(UI_ORIGIN))
+                .isEqualTo(UI_ORIGIN);
+    }
+
+    // And keeps one that is not the default - which is the development setup, where the UI runs on 3000.
+    @Test
+    void keepsANonDefaultPortInTheDerivedOrigin() {
+        assertThat(mappingsFor("http://localhost:3000").get("/user/**").getAllowedOrigins())
+                .containsExactly("http://localhost:3000");
+    }
+
     @Test
     void neverAllowsCredentialsFromAnOriginItWasNotGiven() {
         var mappings = mappingsFor(UI_ORIGIN);

@@ -10,9 +10,11 @@
 package org.eclipse.openvsx.web;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.servlet.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
@@ -50,10 +52,11 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (!StringUtils.isEmpty(webuiUrl) && URI.create(webuiUrl).isAbsolute()) {
-            // The Web UI is given with an absolute URL, so we need to enable CORS with credentials. Where
-            // it is served from the same origin as the API these are unnecessary: a same-origin request
-            // does not use CORS at all.
+        var webuiOrigin = webuiOrigin();
+        if (webuiOrigin != null) {
+            // The Web UI is on an origin of its own, so we need to enable CORS with credentials. Where it
+            // is served from the same origin as the API these are unnecessary: a same-origin request does
+            // not use CORS at all.
             var authorizedEndpoints = new String[] {
                 "/user/**",
                 "/logout",
@@ -65,12 +68,12 @@ public class WebConfig implements WebMvcConfigurer {
             };
             for (var endpoint : authorizedEndpoints) {
                 registry.addMapping(endpoint)
-                        .allowedOrigins(webuiUrl)
+                        .allowedOrigins(webuiOrigin)
                         .allowedMethods("GET", "HEAD", "POST", "DELETE", "PUT")
                         .allowCredentials(true);
             }
             registry.addMapping("/login-providers")
-                    .allowedOrigins(webuiUrl);
+                    .allowedOrigins(webuiOrigin);
         }
 
         // The public, unauthenticated surface: the registry API, the VS Code gallery adapter and the
@@ -92,6 +95,45 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("*");
         registry.addMapping("/documents/**")
                 .allowedOrigins("*");
+    }
+
+    /**
+     * The origin the Web UI is served from, or {@code null} when it does not have one of its own.
+     * <p>
+     * Derived rather than used as configured, because the two are not the same thing.
+     * {@code allowedOrigins} is matched against the browser's {@code Origin} header, which is a
+     * serialized origin - a scheme, a host and a non-default port, and never a path.
+     * {@code ovsx.webui.url} is a URL and may carry one, for a registry served at
+     * {@code https://example.com/openvsx} say; {@code CorsConfiguration.checkOrigin} trims one trailing
+     * slash and then compares what is left exactly, so a configured path meant the credentialed mappings
+     * matched nothing and CORS quietly did not apply to them at all.
+     * <p>
+     * A default port is dropped for the same reason: a browser leaves it out of the header it sends.
+     */
+    private @Nullable String webuiOrigin() {
+        if (StringUtils.isEmpty(webuiUrl)) {
+            return null;
+        }
+
+        var uri = URI.create(webuiUrl);
+        // Relative, or absolute but with no authority to take a host from - neither names an origin, so
+        // there is no separate Web UI to allow.
+        if (!uri.isAbsolute() || uri.getHost() == null) {
+            return null;
+        }
+
+        var scheme = uri.getScheme();
+        var origin = new StringBuilder(scheme).append("://").append(uri.getHost());
+        var defaultPort = switch (scheme.toLowerCase(Locale.ROOT)) {
+            case "https" -> 443;
+            case "http" -> 80;
+            default -> -1;
+        };
+        if (uri.getPort() != -1 && uri.getPort() != defaultPort) {
+            origin.append(':').append(uri.getPort());
+        }
+
+        return origin.toString();
     }
 
     /**
