@@ -1647,7 +1647,8 @@ export class AdminServiceImpl implements AdminService {
                 [this.registry.serverUrl, 'admin', 'search-explain'],
                 [
                     { key: 'query', value: query },
-                    { key: 'size', value: size }
+                    { key: 'size', value: size },
+                    { key: 'offset', value: offset }
                 ]
             )
         });
