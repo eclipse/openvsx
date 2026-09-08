@@ -211,21 +211,28 @@ export class Registry {
             const requestOptions = this.getRequestOptions();
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, response => {
-                response.on('end', () => {
-                    if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
-                        reject(statusError(response));
-                    } else {
-                        resolve();
-                    }
-                });
+                // Checked before anything is piped, so an error page is not written into the file the
+                // caller is about to read.
+                if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
+                    response.resume();
+                    stream.destroy();
+                    reject(statusError(response));
+                    return;
+                }
+
+                // Resolved on the file being closed rather than on the response ending. The two are
+                // not the same: createWriteStream opens and flushes asynchronously, so the last byte
+                // having arrived says nothing about the file existing yet, let alone holding the
+                // bytes. Callers that read the path straight afterwards saw an empty file, or none.
+                stream.on('close', () => resolve());
                 response.pipe(stream);
             });
             stream.on('error', (err: Error) => {
-                request.abort();
+                request.destroy();
                 reject(err);
             });
             request.on('error', (err: Error) => {
-                stream.close();
+                stream.destroy();
                 reject(err);
             });
             request.end();
