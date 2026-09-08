@@ -27,7 +27,7 @@ To execute any of these commands within your workspace, navigate to Terminal -> 
 To run the Open VSX registry in a development environment, you can use `docker compose` by following these steps:
 
  * Verify Docker Compose is installed by running `docker compose version`. If an error occurs, you may need to [install docker compose](https://docs.docker.com/compose/install/) on your machine.
- * Decide which profile(s) to run based on your needs. The [docker-compose.yml] file defines profiles for specific components:
+ * Decide which profile(s) to run based on your needs. The [docker-compose.yml](../docker-compose.yml) file defines profiles for specific components:
    * `db`: Starts the PostgreSQL container.
    * `es`: Starts the Elasticsearch container.
    * `debug`: Starts the PostgreSQL and Elasticsearch containers, which suits running the OpenVSX server and web UI locally for easier debugging.
@@ -52,7 +52,7 @@ To run the Open VSX registry in a development environment, you can use `docker c
    * the Valkey nodes are on ports 7001-7006 (user `openvsx`, password `openvsx`) if the `valkey` or `valkey-admin` profile was selected, and the Valkey UI is at [http://localhost:8090/](http://localhost:8090/) for `valkey-admin`.
  * Open VSX CLI commands can be run via `docker compose exec cli lib/ovsx` if the `commandline` or `openvsx` profile was selected.
  * To load some extensions from the main registry (openvsx.org), run `docker compose exec cli yarn load-extensions <N>`, where N is the number of extensions you would like to publish in your local registry.
- * For troubleshooting or manual intervention, access a service's interactive shell with `docker compose run --rm <service> /bin/bash`. Service names are listed in the [docker-compose.yml](docker-compose.yml) file.
+ * For troubleshooting or manual intervention, access a service's interactive shell with `docker compose run --rm <service> /bin/bash`. Service names are listed in the [docker-compose.yml](../docker-compose.yml) file.
 
 ### Setup locally on WSL
 
