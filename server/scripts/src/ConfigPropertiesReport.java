@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 // values, and recursing into @ConfigurationProperties field types beyond one level (e.g.
 // RemoteScannerProperties' Map<String, ScannerConfig> keys are operator-chosen at runtime and
 // aren't enumerable from source).
-void main() throws IOException {
+void main(String[] args) throws IOException {
     var entries = new TreeMap<String, PropertyEntry>();
     var configPropsClasses = new ArrayList<ConfigClassEntry>();
 
