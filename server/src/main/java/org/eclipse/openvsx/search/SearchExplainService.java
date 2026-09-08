@@ -17,11 +17,14 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.elasticsearch.core.document.Explanation;
 import org.springframework.stereotype.Component;
 
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.json.SearchExplainJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.RelevanceService.SearchStats;
@@ -78,10 +81,26 @@ public class SearchExplainService {
         // One SearchStats for the whole listing, as an indexing run would use: recomputing it per entry
         // would let the reference values drift between rows of the same table.
         var stats = new SearchStats(repositories);
+
+        // One query for the whole page rather than one per row. An id with no extension behind it has
+        // been purged since the document was indexed, which toEntry reports rather than hides.
+        var extensions = repositories
+                .findExtensions(hits.getSearchHits().stream().map(hit -> hit.getContent().getId()).toList())
+                .stream()
+                .collect(Collectors.toMap(Extension::getId, Function.identity()));
+
         var entries = new ArrayList<SearchExplainJson.SearchExplainEntryJson>(hits.getSearchHits().size());
         var position = offset;
         for (var hit : hits.getSearchHits()) {
-            entries.add(toEntry(position++, hit.getScore(), hit.getExplanation(), hit.getContent(), stats));
+            var document = hit.getContent();
+            entries.add(
+                    toEntry(
+                            position++,
+                            hit.getScore(),
+                            hit.getExplanation(),
+                            document,
+                            extensions.get(document.getId()),
+                            stats));
         }
 
         return new SearchExplainJson(
@@ -99,11 +118,11 @@ public class SearchExplainService {
             float score,
             @Nullable Explanation explanation,
             ExtensionSearch document,
+            @Nullable Extension extension,
             SearchStats stats
     ) {
         // Recomputed from the extension rather than read off the document, which holds only the product.
         // Where the two disagree the index is stale, and saying so is more use than hiding it.
-        var extension = repositories.findExtension(document.getId());
         var breakdown = extension == null ? null : relevanceService.explainRelevance(extension, stats);
 
         var storedRelevance = document.getRelevance();

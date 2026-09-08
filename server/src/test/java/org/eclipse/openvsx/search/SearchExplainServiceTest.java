@@ -28,7 +28,9 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.SearchHitsImpl;
 import org.springframework.data.elasticsearch.core.TotalHitsRelation;
 import org.springframework.data.elasticsearch.core.document.Explanation;
+import org.springframework.data.util.Streamable;
 
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 
@@ -36,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 
 /**
  * Taking a search score apart. The score a result ranked on is the product of how well the query matched
@@ -77,6 +80,8 @@ class SearchExplainServiceTest {
 
     private void givenHits(SearchHit<ExtensionSearch>... hits) {
         Mockito.when(elasticSearch.isEnabled()).thenReturn(true);
+        // No extension rows unless a test says otherwise, which is the purged case.
+        Mockito.lenient().when(repositories.findExtensions(anyCollection())).thenReturn(Streamable.empty());
         SearchHits<ExtensionSearch> searchHits = new SearchHitsImpl<>(
                 hits.length,
                 TotalHitsRelation.EQUAL_TO,
@@ -146,13 +151,35 @@ class SearchExplainServiceTest {
                 .isNull();
     }
 
+    // The page's extensions are fetched in one query and matched back to their documents by id. Get that
+    // pairing wrong and every row silently reports as purged, which is why this asserts a real breakdown
+    // rather than only the absence of one.
+    @Test
+    @SuppressWarnings("unchecked")
+    void reportsTheBreakdownOfTheExtensionBehindEachDocument() {
+        var extension = new Extension();
+        extension.setId(42L);
+        givenHits(hit(document(42L, "yzhang", "markdown-all-in-one", 1.25), 2.5f));
+        Mockito.when(repositories.findExtensions(anyCollection())).thenReturn(Streamable.of(extension));
+        Mockito.when(relevanceService.explainRelevance(Mockito.eq(extension), any()))
+                .thenReturn(new RelevanceService.RelevanceBreakdown(0.1, 0.2, 0.3, true, 0.5, false, 0.5, 0.3));
+
+        var entry = explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst();
+
+        assertThat(entry.currentRelevance()).isEqualTo(0.3);
+        assertThat(entry.rating()).isEqualTo(0.1);
+        assertThat(entry.downloads()).isEqualTo(0.2);
+        assertThat(entry.recency()).isEqualTo(0.3);
+        assertThat(entry.unverified()).isTrue();
+        assertThat(entry.unverifiedFactor()).isEqualTo(0.5);
+    }
+
     // The extension behind a document can have been purged since it was indexed. That is worth reporting
     // as an unknown breakdown rather than failing the whole listing.
     @Test
     @SuppressWarnings("unchecked")
     void survivesAnExtensionThatIsNoLongerThere() {
         givenHits(hit(document(7L, "gone", "away", 1.0), 1.0f));
-        Mockito.when(repositories.findExtension(7L)).thenReturn(null);
 
         var entry = explainService.explain("markdown", 20, 0, "relevance", "desc").entries().getFirst();
 

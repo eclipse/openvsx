@@ -63,7 +63,7 @@ public class RelevanceService {
         var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
         var entry = extension.toSearch(latest, targetPlatforms);
         entry.setRating(calculateRating(extension, stats));
-        entry.setRelevance(calculateRelevance(extension, latest, stats, entry));
+        entry.setRelevance(calculateRelevance(extension, latest, stats));
 
         return entry;
     }
@@ -118,29 +118,18 @@ public class RelevanceService {
             return null;
         }
 
-        var targetPlatforms = repositories.findExtensionTargetPlatforms(extension);
-        return breakdown(extension, latest, stats, extension.toSearch(latest, targetPlatforms));
+        return breakdown(extension, latest, stats);
     }
 
-    private double calculateRelevance(
-            Extension extension,
-            ExtensionVersion latest,
-            SearchStats stats,
-            ExtensionSearch entry
-    ) {
-        return breakdown(extension, latest, stats, entry).total();
+    private double calculateRelevance(Extension extension, ExtensionVersion latest, SearchStats stats) {
+        return breakdown(extension, latest, stats).total();
     }
 
-    private RelevanceBreakdown breakdown(
-            Extension extension,
-            ExtensionVersion latest,
-            SearchStats stats,
-            ExtensionSearch entry
-    ) {
+    private RelevanceBreakdown breakdown(Extension extension, ExtensionVersion latest, SearchStats stats) {
         var extensionId = NamingUtil.toExtensionId(extension);
         logger.debug(">> [{}] CALCULATE RELEVANCE", extensionId);
         var ratingValue = calculateRating(extension, stats) / 5.0;
-        var downloadsValue = entry.getDownloadCount() / stats.downloadRef;
+        var downloadsValue = extension.getDownloadCount() / stats.downloadRef;
         var timestamp = latest.getTimestamp();
         var timestampValue = Duration.between(stats.oldest, timestamp).toSeconds() / stats.timestampRef;
         var ratingTerm = ratingRelevance * limit(ratingValue);
@@ -175,7 +164,7 @@ public class RelevanceService {
 
         if (Double.isNaN(relevance) || Double.isInfinite(relevance)) {
             logger.debug("[{}] INVALID RELEVANCE", extensionId);
-            var message = "Invalid relevance for entry " + NamingUtil.toExtensionId(entry);
+            var message = "Invalid relevance for entry " + extensionId;
             try {
                 message += " " + jsonMapper.writeValueAsString(stats);
             } catch (JacksonException exc) {

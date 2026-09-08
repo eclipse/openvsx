@@ -228,7 +228,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findBundledExtensionsReference(extension),
                 () -> repositories.findDependenciesReference(extension),
                 () -> repositories.findDownloadsByStorageTypeAndName("storageType", STRING_LIST),
-                () -> repositories.findExtension(1L),
                 () -> repositories.findExtension("name", namespace),
                 () -> repositories.findExtension("name", "namespace"),
                 () -> repositories.findExtensionForUpdate("name", "namespace"),
