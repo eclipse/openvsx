@@ -10,6 +10,7 @@
 
 import * as http from 'http';
 import * as fs from 'fs';
+import { pipeline } from 'stream';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
 import { rejectError, statusError, withStatus } from './util';
@@ -207,7 +208,18 @@ export class Registry {
 
     download(file: string, url: URL): Promise<void> {
         return new Promise((resolve, reject) => {
+            // Written beside the target and renamed into place on success, so the caller's path holds
+            // either what it held before or the whole download, never part of one. Deferring the open
+            // until the status is known is not enough on its own: a connection dropped mid-body has
+            // already truncated the file by then, and `get` is handed a path the user chose.
+            const partial = `${file}.part`;
             let stream: fs.WriteStream | undefined;
+
+            const fail = (err: Error) => {
+                stream?.destroy();
+                fs.rm(partial, { force: true }, () => reject(err));
+            };
+
             const requestOptions = this.getRequestOptions();
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, response => {
@@ -217,27 +229,28 @@ export class Registry {
                     return;
                 }
 
-                // Opened only once the response is known to be one worth keeping. createWriteStream
-                // truncates on open, so opening before the status is known empties whatever is at the
-                // path for a request that then turns out to have failed - and `get` is handed a path
-                // the user chose, not a temporary one.
-                stream = fs.createWriteStream(file);
-                stream.on('error', (err: Error) => {
-                    request.destroy();
-                    reject(err);
-                });
+                stream = fs.createWriteStream(partial);
 
-                // Resolved on the file being closed rather than on the response ending. The two are
-                // not the same: a write stream opens and flushes asynchronously, so the last byte
-                // having arrived says nothing about the file existing yet, let alone holding the
-                // bytes. Callers that read the path straight afterwards saw an empty file, or none.
-                stream.on('close', () => resolve());
-                response.pipe(stream);
+                // pipeline rather than response.pipe: pipe installs its own error handler on the
+                // source, so a connection dropped mid-body is swallowed - the write stream is never
+                // ended, nothing settles, and the caller waits for a file that will never arrive.
+                // pipeline propagates that error and tears both ends down. Its callback also waits
+                // for the file to close, which matters in its own right: a write stream opens and
+                // flushes asynchronously, so the last byte having arrived says nothing about the
+                // file being on disk.
+                pipeline(response, stream, (err: NodeJS.ErrnoException | null) => {
+                    if (err) {
+                        fail(err);
+                    } else if (!response.complete) {
+                        // A body cut short still ends the stream cleanly; `complete` is what tells
+                        // that apart from having received all of it.
+                        fail(new Error(`The connection closed before the whole of ${url} was received.`));
+                    } else {
+                        fs.rename(partial, file, renameErr => renameErr ? fail(renameErr) : resolve());
+                    }
+                });
             });
-            request.on('error', (err: Error) => {
-                stream?.destroy();
-                reject(err);
-            });
+            request.on('error', (err: Error) => fail(err));
             request.end();
         });
     }

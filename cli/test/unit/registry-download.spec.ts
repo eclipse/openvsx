@@ -101,6 +101,29 @@ describe('Registry.download', () => {
         expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
     });
 
+    // A connection dropped mid-body used to leave the promise unsettled forever: pipe installs its
+    // own error handler on the response, so the error was swallowed, the write stream never ended and
+    // nothing ever resolved or rejected. The partial write also landed on the caller's path.
+    it('rejects rather than hanging when the connection drops mid-download', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(200, { 'Content-Length': '1000' });
+            res.write(Buffer.alloc(100, 'x'));
+            setTimeout(() => res.socket?.destroy(), 30);
+        });
+        const registry = new Registry({ registryUrl: url });
+        const file = tempPath('.vsix');
+        fs.writeFileSync(file, 'the file the user already had');
+
+        const outcome = await Promise.race([
+            registry.download(file, new URL(`${url}/truncated`)).then(() => 'resolved', () => 'rejected'),
+            new Promise<string>(resolve => setTimeout(() => resolve('never settled'), 4000))
+        ]);
+
+        expect(outcome).toBe('rejected');
+        expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
+        expect(fs.existsSync(`${file}.part`), 'the partial download should be cleaned up').toBe(false);
+    });
+
     it('does not create the file at all when the download fails', async () => {
         const url = await serve((_, res) => {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
