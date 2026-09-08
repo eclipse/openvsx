@@ -19,6 +19,7 @@ import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -35,6 +36,7 @@ import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.util.Streamable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import org.eclipse.openvsx.cache.LatestExtensionVersionCacheKeyGenerator;
 import org.eclipse.openvsx.entities.*;
@@ -59,6 +61,121 @@ class ElasticSearchServiceTest {
 
     @Autowired
     ElasticSearchService search;
+
+    /**
+     * What the text query actually asks Elasticsearch for.
+     * <p>
+     * Asserted on the serialized query because the bug it guards against is invisible in the calling
+     * code: `boost` on a multi_match builder is the boost of the whole query rather than of the field
+     * named before it, and `boolQuery.should(q).boost(n)` boosts the bool and not the clause. Both read
+     * as per-field and per-clause weighting and were neither, so every field and every clause scored
+     * alike - and a query only tells you which by being looked at.
+     */
+    @Test
+    void weightsTheNameAboveTheDescriptionInTheTextQuery() {
+        var query = capturedQueryFor("markdown");
+
+        // The weights ride in the field names; anything else is not a weight.
+        assertThat(query).contains("name^5", "displayName^5", "tags^3", "namespace^2", "description");
+        assertThat(query).doesNotContain("\"fields\":[\"name\"],");
+    }
+
+    /**
+     * An exact {@code namespace.name} gets its own heavily boosted clause, matched on the two fields that
+     * hold the parts. The {@code extensionId} field this replaces is mapped {@code index = false} and has
+     * no {@code .keyword} sub-field, so the term query that looked for one matched nothing at all.
+     */
+    @Test
+    void matchesAnExactExtensionIdOnTheFieldsThatHoldIt() {
+        var query = capturedQueryFor("yzhang.markdown-all-in-one");
+
+        assertThat(query).contains("\"namespace.keyword\":{\"value\":\"yzhang\"");
+        assertThat(query).contains("\"name.keyword\":{\"value\":\"markdown-all-in-one\"");
+        assertThat(query).contains("\"boost\":10.0");
+        // The field it used to look for cannot be matched, so nothing should be asking for it.
+        assertThat(query).doesNotContain("extensionId");
+    }
+
+    // Both halves have to match the same document, or "yzhang.anything" would pull in every extension in
+    // the namespace at a boost of ten.
+    @Test
+    void requiresBothHalvesOfAnExtensionIdToMatch() {
+        var query = capturedQueryFor("yzhang.markdown-all-in-one");
+
+        assertThat(query).contains("\"must\":[{\"term\":{\"namespace.keyword\"");
+        assertThat(query).doesNotContain("\"should\":[{\"term\":{\"namespace.keyword\"");
+    }
+
+    // A plain word is not an extension id, and a clause looking for one would only cost a lookup.
+    @Test
+    void addsNoExtensionIdClauseForAQueryThatIsNotOne() {
+        assertThat(capturedQueryFor("markdown")).doesNotContain("namespace.keyword");
+        // Nor for the shapes that split on a dot without naming both halves.
+        assertThat(capturedQueryFor("yzhang.")).doesNotContain("namespace.keyword");
+        assertThat(capturedQueryFor(".markdown")).doesNotContain("namespace.keyword");
+        assertThat(capturedQueryFor("a.b.c")).doesNotContain("namespace.keyword");
+    }
+
+    // The exact-phrase multi_match is meant to outscore the fuzzy one, which is a statement about that
+    // clause and so has to sit on it.
+    @Test
+    void boostsTheExactMatchAboveTheFuzzyOne() {
+        var query = capturedQueryFor("markdown");
+        var multiMatches = query.split("\"multi_match\"", -1).length - 1;
+
+        assertThat(multiMatches).isEqualTo(2);
+        assertThat(query).contains("\"boost\":5.0");
+        // The fuzzy clause is deliberately unboosted, so exactly one of the two carries the boost.
+        assertThat(query.split("\"boost\":5.0", -1).length - 1).isEqualTo(1);
+    }
+
+    private String capturedQueryFor(String queryString) {
+        var indexOps = Mockito.mock(IndexOperations.class);
+        Mockito.when(searchOperations.indexOps(ExtensionSearch.class)).thenReturn(indexOps);
+        Mockito.when(indexOps.getIndexCoordinates()).thenReturn(IndexCoordinates.of("extensions"));
+
+        SearchHits<ExtensionSearch> empty = new SearchHitsImpl<>(
+                0L,
+                TotalHitsRelation.EQUAL_TO,
+                0f,
+                Duration.ZERO,
+                null,
+                null,
+                List.of(),
+                null,
+                null,
+                null);
+        var captor = ArgumentCaptor.forClass(NativeQuery.class);
+        Mockito.when(searchOperations.search(captor.capture(), Mockito.eq(ExtensionSearch.class), any()))
+                .thenReturn(empty);
+
+        withMaxResultWindow(
+                10_000L,
+                () -> search.search(
+                        new ISearchService.Options(queryString, null, null, 10, 0, "desc", "relevance", false, null)));
+
+        return captor.getValue().getQuery().toString();
+    }
+
+    /**
+     * Runs {@code body} with the result-window ceiling set, and puts back whatever was there before.
+     * <p>
+     * The field is only populated from the index settings during {@code initSearchIndex}, which no test
+     * goes through, so it sits at zero unless a test says otherwise - and at zero every requested window
+     * exceeds it and {@code search} returns before it builds a query at all. Leaving a value behind would
+     * decide, by test ordering alone, whether {@link #testSearchResultWindowTooLarge()} exercises its
+     * boundary or passes because everything exceeds a ceiling of nothing. The Spring context is shared,
+     * so nothing else would put it back.
+     */
+    private void withMaxResultWindow(long window, Runnable body) {
+        var previous = ReflectionTestUtils.getField(search, "maxResultWindow");
+        ReflectionTestUtils.setField(search, "maxResultWindow", window);
+        try {
+            body.run();
+        } finally {
+            ReflectionTestUtils.setField(search, "maxResultWindow", previous);
+        }
+    }
 
     @Test
     void testRelevanceAverageRating() {
@@ -212,10 +329,14 @@ class ElasticSearchServiceTest {
     void testSearchResultWindowTooLarge() {
         mockIndex(true);
 
+        // Set explicitly, so this asserts the ceiling being exceeded rather than the field's untouched
+        // zero, against which every window is too large and the check under test never has to work.
         var options = new ISearchService.Options("foo", "bar", "universal", 50, 10000, null, null, false, null);
-        var searchHits = search.search(options);
-        assertThat(searchHits.getHits()).isEmpty();
-        assertThat(searchHits.getTotalHits()).isZero();
+        var searchHits = new SearchResult[1];
+        withMaxResultWindow(10_000L, () -> searchHits[0] = search.search(options));
+
+        assertThat(searchHits[0].getHits()).isEmpty();
+        assertThat(searchHits[0].getTotalHits()).isZero();
     }
 
     //---------- UTILITY ----------//

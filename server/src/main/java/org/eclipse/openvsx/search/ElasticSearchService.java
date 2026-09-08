@@ -456,42 +456,69 @@ public class ElasticSearchService implements ISearchService {
         return boolQuery;
     }
 
-    private ObjectBuilder<BoolQuery> createTextSearchQuery(BoolQuery.Builder boolQuery, Options options) {
-        boolQuery.should(
-                QueryBuilders.term(
-                        builder -> builder.field("extensionId.keyword")
-                                .value(options.queryString())
-                                .caseInsensitive(true)
-                                .boost(10f)));
+    /**
+     * Puts an exact {@code namespace.name} first, which is what someone who already knows precisely which
+     * extension they want types or pastes.
+     * <p>
+     * Matched on the two fields holding the parts rather than the {@code extensionId} the document also
+     * carries: that field is {@code @Field(index = false)}, so it reaches {@code _source} and no inverted
+     * index, and no term query against it can match.
+     * <p>
+     * Splitting on the dot is unambiguous - {@link org.eclipse.openvsx.ExtensionValidator} holds both a
+     * namespace and a name to {@code [\w\-\+\$~]+}, so a well-formed id has exactly one. Anything else
+     * adds no clause.
+     */
+    private void addExtensionIdQuery(BoolQuery.Builder boolQuery, String queryString) {
+        var parts = queryString.trim().split("\\.", -1);
+        if (parts.length != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
+            return;
+        }
 
-        // matching of search query in multiple fields with boost
+        boolQuery.should(
+                QueryBuilders.bool(
+                        extensionId -> extensionId
+                                .must(
+                                        QueryBuilders.term(
+                                                builder -> builder.field("namespace.keyword")
+                                                        .value(parts[0])
+                                                        .caseInsensitive(true)))
+                                .must(
+                                        QueryBuilders.term(
+                                                builder -> builder.field("name.keyword")
+                                                        .value(parts[1])
+                                                        .caseInsensitive(true)))
+                                .boost(10f)));
+    }
+
+    private ObjectBuilder<BoolQuery> createTextSearchQuery(BoolQuery.Builder boolQuery, Options options) {
+        addExtensionIdQuery(boolQuery, options.queryString());
+
+        // Weighted so what an extension is called counts for more than what it says about itself. The
+        // weights belong in the field names: `boost` on a multi_match is the whole query's boost, not a
+        // per-field one, so `.fields(x).boost(n)` would weight nothing.
         var multiMatchQuery = QueryBuilders.multiMatch(
                 builder -> builder.query(options.queryString())
-                        .fields("name").boost(5f)
-                        .fields("displayName").boost(5f)
-                        .fields("tags").boost(3f)
-                        .fields("namespace").boost(2f)
-                        .fields("description"));
+                        .fields("name^5", "displayName^5", "tags^3", "namespace^2", "description")
+                        .boost(5f));
 
-        boolQuery.should(multiMatchQuery).boost(5f);
+        boolQuery.should(multiMatchQuery);
 
         // Fuzzy matching of search query in multiple fields without boost
         // Same as above except does not fuzzy match tags
         var fuzzyMultiMatchQuery = QueryBuilders.multiMatch(
                 builder -> builder.query(options.queryString())
-                        .fields("name")
-                        .fields("displayName")
-                        .fields("namespace")
-                        .fields("description")
+                        .fields("name", "displayName", "namespace", "description")
                         .fuzziness("AUTO")
                         .prefixLength(2));
 
         boolQuery.should(fuzzyMultiMatchQuery);
 
-        // Prefix matching of search query in display name and namespace
+        // Prefix matching of search query in display name and namespace. The boost goes on the clause:
+        // `boolQuery.should(...)` returns the bool builder, so boosting after it would boost the bool.
         var prefixString = options.queryString().trim().toLowerCase();
-        var namePrefixQuery = QueryBuilders.prefix(builder -> builder.field("displayName").value(prefixString));
-        boolQuery.should(namePrefixQuery).boost(2f);
+        var namePrefixQuery = QueryBuilders
+                .prefix(builder -> builder.field("displayName").value(prefixString).boost(2f));
+        boolQuery.should(namePrefixQuery);
         var namespacePrefixQuery = QueryBuilders.prefix(builder -> builder.field("namespace").value(prefixString));
         boolQuery.should(namespacePrefixQuery);
 
