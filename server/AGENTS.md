@@ -44,11 +44,11 @@ something to argue for in the pull request description.
 - **`./gradlew test` must pass before you commit.** Some tests start
   Testcontainers (Postgres, Elasticsearch, LocalStack), so a working Docker
   daemon is required; say so rather than skipping them silently.
-- **`./gradlew spotlessCheck` must pass for the files you touched.** It is
-  deliberately not wired into `build`/`check` (`enforceCheck = false`), and the
-  repository has pre-existing violations elsewhere — so run `spotlessApply` and
-  then **revert files you did not otherwise change**, rather than sweeping
-  unrelated formatting into your commit.
+- **`./gradlew spotlessCheck` must pass.** It is deliberately not wired into
+  `build`/`check` (`enforceCheck = false`), but the tree is clean, so a
+  violation it reports is one you introduced. Run `spotlessApply` and **revert
+  files you did not otherwise change**, rather than sweeping unrelated
+  formatting into your commit.
 - **New source files need the EPL-2.0 license header** (copy it from any
   existing file).
 - **Never commit unless the user asks**, and stage only the files you changed
@@ -73,6 +73,23 @@ something to argue for in the pull request description.
   than misbehave later.
 - The server has **no CHANGELOG** — only `cli/` and `webui/` do. Do not invent
   one; put the reasoning in the commit message and pull request instead.
+
+## The formatter's JDT version has one source of truth
+
+The Eclipse formatter is driven from two paths — Spotless (`spotlessApply`) and
+jbang (`scripts/format.sh`, which pre-commit runs) — and they format the same
+source differently if they load different `org.eclipse.jdt.core` versions. That
+version is therefore declared in four places (`buildSrc/build.gradle`,
+`scripts/format.sh`, and the `//DEPS` lines of the two brace-fix scripts), all
+of which must match the version Spotless provisions for the `eclipse('<N>')`
+step in `build.gradle`.
+
+Do not change one by hand. `scripts/jdt-version-check.sh` reads the pin out of
+spotless-lib-extra's bundled lockfile and compares every declaration against
+it; pre-commit runs it whenever one of those files changes. Note that not every
+Eclipse release has a bundled lockfile — moving `eclipse('<N>')` to one that
+does not makes Spotless fall back to live P2 provisioning, which fails when
+Eclipse has not populated that repository.
 
 ## Deployment descriptors travel with the config
 

@@ -43,3 +43,10 @@ repos:
       language: system
       require_serial: true
       files: ^server/src/(main|test)/java/.*\.java$
+    - id: jdt-version-check
+      name: server -> jdt.core version consistency
+      entry: server/scripts/jdt-version-check.sh
+      language: system
+      require_serial: true
+      pass_filenames: false
+      files: ^server/(build\.gradle|buildSrc/build\.gradle|scripts/format\.sh|scripts/src/.*\.java)$
