@@ -25,4 +25,5 @@ export namespace AdminDashboardRoutes {
     export const LOGS = createRoute([ROOT, 'logs']);
     export const CONSISTENCY = createRoute([ROOT, 'consistency']);
     export const SEARCH_INDEX = createRoute([ROOT, 'search-index']);
+    export const SEARCH_EXPLAIN = createRoute([ROOT, 'search-explain']);
 }

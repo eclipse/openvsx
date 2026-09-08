@@ -48,6 +48,7 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
+import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.storage.log.DownloadCountService;
@@ -66,6 +67,7 @@ import static org.mockito.ArgumentMatchers.isNull;
     types = {
         EntityManager.class,
         SearchUtilService.class,
+        SearchExplainService.class,
         GoogleCloudStorageService.class,
         AzureBlobStorageService.class,
         AwsStorageService.class,

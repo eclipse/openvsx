@@ -58,6 +58,7 @@ import {
     TrustedPublisherStatus,
     ConsistencyCheckList,
     ConsistencyFindingList,
+    SearchExplain,
     SearchIndex,
     AdminStatistics
 } from './extension-registry-types';
@@ -773,6 +774,14 @@ export interface AdminService {
     getSettings(abortController: AbortController): Promise<Readonly<Settings>>;
     updateSettings(settings: Settings): Promise<Readonly<Settings>>;
     getSearchIndex(abortController: AbortController): Promise<Readonly<SearchIndex>>;
+
+    /** Runs a search and reports how each result's score was arrived at. */
+    explainSearch(
+        abortController: AbortController,
+        query: string,
+        size: number,
+        offset: number
+    ): Promise<Readonly<SearchExplain>>;
     getAdminStatistics(
         abortController: AbortController,
         year: number,
@@ -1622,6 +1631,26 @@ export class AdminServiceImpl implements AdminService {
             abortController,
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'search-index'])
+        });
+    }
+
+    async explainSearch(
+        abortController: AbortController,
+        query: string,
+        size: number,
+        offset: number
+    ): Promise<Readonly<SearchExplain>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL(
+                [this.registry.serverUrl, 'admin', 'search-explain'],
+                [
+                    { key: 'query', value: query },
+                    { key: 'size', value: size },
+                    { key: 'offset', value: offset }
+                ]
+            )
         });
     }
 

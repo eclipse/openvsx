@@ -22,6 +22,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +32,9 @@ import org.springframework.data.util.Streamable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,6 +61,7 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.PersistedLogJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SearchExplainJson;
 import org.eclipse.openvsx.json.SearchIndexJson;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.StatsJson;
@@ -64,6 +70,7 @@ import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.json.UserRelationshipsJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
+import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
@@ -71,6 +78,7 @@ import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.*;
 
 @RestController
+@Validated
 @RequestMapping("/admin")
 @ApiResponse(
     responseCode = "403",
@@ -86,6 +94,7 @@ public class AdminAPI {
     private final LogService logs;
     private final LocalRegistryService local;
     private final SearchUtilService search;
+    private final SearchExplainService searchExplainService;
 
     public AdminAPI(
             RepositoryService repositories,
@@ -94,7 +103,8 @@ public class AdminAPI {
             SettingsService settings,
             LogService logs,
             LocalRegistryService local,
-            SearchUtilService search
+            SearchUtilService search,
+            SearchExplainService searchExplainService
     ) {
         this.repositories = repositories;
         this.admins = admins;
@@ -103,6 +113,7 @@ public class AdminAPI {
         this.logs = logs;
         this.local = local;
         this.search = search;
+        this.searchExplainService = searchExplainService;
     }
 
     @GetMapping(
@@ -425,6 +436,55 @@ public class AdminAPI {
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(SearchIndexJson.class);
+        }
+    }
+
+    @GetMapping(
+        path = "/search-explain",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Run a search and report how each result's score was arrived at")
+    @ApiResponse(
+        responseCode = "200",
+        description = "The results and their score breakdowns are returned in JSON format",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = SearchExplainJson.class)
+        )
+    )
+    // A rejected parameter answers with problem+json rather than ResultJson: ValidationExceptionHandler
+    // only builds a ResultJson where the handler returns one, and SearchExplainJson is a record.
+    @ApiResponse(
+        responseCode = "400",
+        description = "A rejected parameter is reported as an RFC 9457 problem detail",
+        content = @Content(
+            mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)
+        )
+    )
+    public ResponseEntity<?> searchExplain(
+            // An empty query matches every document, and this is the one endpoint that asks the engine
+            // to explain every result it returns, so it must not be run over everything by accident.
+            @RequestParam("query")
+            @NotBlank(message = "parameter must not be blank") String query,
+            // Bounded because every entry costs a lookup of the extension behind it, to recompute the
+            // relevance rather than read back the single number the document stores.
+            @RequestParam(value = "size", defaultValue = "25")
+            @Min(value = 1, message = "parameter must be at least 1")
+            @Max(value = 100, message = "parameter must not exceed 100") int size,
+            @RequestParam(value = "offset", defaultValue = "0")
+            @Min(value = 0, message = "parameter must not be negative") int offset,
+            @RequestParam(value = "sortBy", defaultValue = "relevance") String sortBy,
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
+            @RequestParam(value = "token", required = false) String token
+    ) {
+        try {
+            admins.checkAdminUser();
+            // Trimmed so " foo " and "foo" are not treated as different queries.
+            var trimmed = query.trim();
+            return ResponseEntity.ok(searchExplainService.explain(trimmed, size, offset, sortBy, sortOrder));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
         }
     }
 

@@ -75,6 +75,9 @@ public class ElasticSearchService implements ISearchService {
 
     private long maxResultWindow;
 
+    /** Elasticsearch's own default, and what {@link #initSearchIndex} falls back to when the index is silent. */
+    private static final long DEFAULT_MAX_RESULT_WINDOW = 10_000;
+
     public ElasticSearchService(
             RepositoryService repositories,
             ElasticsearchOperations searchOperations,
@@ -220,7 +223,7 @@ public class ElasticSearchService implements ISearchService {
                 true,
                 documents,
                 activeExtensions,
-                maxResultWindow);
+                getMaxResultWindow());
     }
 
     @Async
@@ -311,9 +314,67 @@ public class ElasticSearchService implements ISearchService {
         }
     }
 
+    /**
+     * The same search the registry answers, with the scores kept.
+     * <p>
+     * {@link #search} throws them away - a caller wanting results does not care - but they are the whole
+     * point when the question is why a result sits where it does. Built through the same
+     * {@code createQuery} and {@code sortResults} as the real search rather than a copy of them, because a
+     * debugging view assembled separately is a view of a query nobody runs, and the first thing it would
+     * hide is the two having drifted apart.
+     * <p>
+     * One page only: this answers an admin looking at a result list, not a client paging through one.
+     */
+    public SearchHits<ExtensionSearch> searchWithScores(Options options) {
+        // The same ceiling the real search enforces. Without it a deep enough offset reaches Elasticsearch
+        // and comes back as an engine error about the result window, which says nothing about what to do.
+        var resultWindow = options.requestedOffset() + options.requestedSize();
+        if (resultWindow > getMaxResultWindow()) {
+            throw new ErrorResultException(
+                    "Cannot look past result " + getMaxResultWindow() + "; the index will not serve a deeper window.");
+        }
+
+        var queryBuilder = new NativeQueryBuilder();
+        createQuery(queryBuilder, options);
+        sortResults(queryBuilder, options.sortOrder(), options.sortBy());
+        // Whole pages only, which is all the one caller asks for - a partial page would need the
+        // two-page dance search() does, for an offset nothing produces.
+        queryBuilder.withPageable(
+                PageRequest.of(options.requestedOffset() / options.requestedSize(), options.requestedSize()));
+        queryBuilder.withTrackTotalHits(true);
+        // Elasticsearch's own account of how it arrived at each score, which is the only way to see what
+        // the text half is made of - the clause that matched, and what it was worth. It makes the search
+        // materially more expensive, which is why only this caller asks for it.
+        queryBuilder.withExplain(true);
+
+        try {
+            rwLock.readLock().lock();
+            return searchOperations.search(
+                    queryBuilder.build(),
+                    ExtensionSearch.class,
+                    searchOperations.indexOps(ExtensionSearch.class).getIndexCoordinates());
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * The deepest window the index will serve.
+     * <p>
+     * The field behind this is read from the index settings by {@link #initSearchIndex}, which runs on
+     * {@code ApplicationStartedEvent} - so until that has happened, or if it failed short of reading them,
+     * the field is zero. Taken literally that refuses every window there is, and since a refused window is
+     * an empty result rather than an error, an instance in that state answers every search with nothing
+     * and says nothing about why. Fall back to the engine's own default instead, which is what the index
+     * would almost certainly have said.
+     */
+    private long getMaxResultWindow() {
+        return maxResultWindow > 0 ? maxResultWindow : DEFAULT_MAX_RESULT_WINDOW;
+    }
+
     public SearchResult search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
-        if (resultWindow > maxResultWindow) {
+        if (resultWindow > getMaxResultWindow()) {
             return new SearchResult(0L, Collections.emptyList());
         }
 
