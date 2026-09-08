@@ -17,7 +17,7 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../support/test-providers';
 import { SearchExplainAdmin } from '../../../../src/pages/admin-dashboard/search-explain/search-explain';
 import { ExtensionRegistryService } from '../../../../src/extension-registry-service';
-import { SearchExplain } from '../../../../src/extension-registry-types';
+import { SearchExplain, SearchIndex } from '../../../../src/extension-registry-types';
 
 const explained: SearchExplain = {
     query: 'markdown',
@@ -70,9 +70,27 @@ const explained: SearchExplain = {
     ]
 };
 
-const withService = (explainSearch: (...args: never[]) => Promise<SearchExplain>) =>
+// The page reads the active engine to decide whether it has anything to explain, so every render
+// needs it stubbed; elasticsearch is the case the rest of these tests are about.
+const withService = (
+    explainSearch: (...args: never[]) => Promise<SearchExplain>,
+    implementation: SearchIndex['implementation'] = 'elasticsearch'
+) =>
     renderWithProviders(<SearchExplainAdmin />, {
-        mainContext: { service: { admin: { explainSearch } } as unknown as ExtensionRegistryService }
+        mainContext: {
+            service: {
+                admin: {
+                    explainSearch,
+                    getSearchIndex: () =>
+                        Promise.resolve({
+                            enabled: true,
+                            implementation,
+                            indexExists: implementation === 'elasticsearch',
+                            activeExtensions: 1
+                        } as SearchIndex)
+                }
+            } as unknown as ExtensionRegistryService
+        }
     });
 
 describe('SearchExplainAdmin', () => {
@@ -196,5 +214,23 @@ describe('SearchExplainAdmin', () => {
 
         expect(explainSearch).not.toHaveBeenCalled();
         expect(screen.getByRole('button', { name: /^explain$/i })).toBeDisabled();
+    });
+
+    // Nothing about the page hints that it cannot work on a registry without elasticsearch, and the
+    // request only happens on submit - so without this the admin types a query to find that out.
+    it('says up front when the engine cannot be explained, and will not let a query be run', async () => {
+        withService(() => Promise.reject(new Error('should not be called')), 'database');
+
+        expect(await screen.findByText(/answered by/i)).toBeInTheDocument();
+        expect(screen.getByText('database')).toBeInTheDocument();
+        expect(screen.getByLabelText('Search term')).toBeDisabled();
+        expect(screen.getByRole('button', { name: /^explain$/i })).toBeDisabled();
+    });
+
+    it('says nothing of the sort when elasticsearch is answering', async () => {
+        withService(() => Promise.resolve(explained));
+
+        await waitFor(() => expect(screen.getByLabelText('Search term')).toBeEnabled());
+        expect(screen.queryByText(/answered by/i)).not.toBeInTheDocument();
     });
 });

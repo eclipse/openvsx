@@ -36,6 +36,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import type { SearchExplainEntry } from '../../../extension-registry-types';
 import { ScoreBreakdown } from './score-breakdown';
 import { formatCompactNumber, handleError } from '../../../utils';
+import { useSearchIndex } from '../search-index/use-search-index';
 import { useSearchExplain } from './use-search-explain';
 
 // A plain Table rather than the DataGrid the rest of the admin dashboard uses: these rows are in
@@ -152,6 +153,10 @@ export const SearchExplainAdmin: FC = () => {
     const [term, setTerm] = useState('');
     const [submitted, setSubmitted] = useState('');
     const [expanded, setExpanded] = useState<string | undefined>(undefined);
+    // Only elasticsearch scores anything, so on any other engine there is nothing here to explain and
+    // the endpoint refuses. Shared query key with the Search Index page, so this costs no extra request.
+    const { data: index } = useSearchIndex();
+    const unsupported = index !== undefined && index.implementation !== 'elasticsearch';
     const { data, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, error } = useSearchExplain(
         submitted,
         RESULT_SIZE
@@ -180,6 +185,14 @@ export const SearchExplainAdmin: FC = () => {
                 </Typography>
             </Box>
 
+            {unsupported && (
+                <Alert severity='warning' sx={{ mb: 3 }}>
+                    Searches on this registry are answered by <strong>{index.implementation}</strong>, which orders rows
+                    rather than scoring them. There is no score to take apart, so there is nothing for this page to
+                    report.
+                </Alert>
+            )}
+
             <Box component='form' onSubmit={submit} sx={{ display: 'flex', gap: 2, mb: 3, maxWidth: 640 }}>
                 <TextField
                     fullWidth
@@ -188,8 +201,12 @@ export const SearchExplainAdmin: FC = () => {
                     placeholder='markdown'
                     value={term}
                     onChange={event => setTerm(event.target.value)}
+                    disabled={unsupported}
                 />
-                <Button type='submit' variant='contained' disabled={term.trim().length === 0 || isFetching}>
+                <Button
+                    type='submit'
+                    variant='contained'
+                    disabled={unsupported || term.trim().length === 0 || isFetching}>
                     Explain
                 </Button>
             </Box>
