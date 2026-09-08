@@ -16,6 +16,7 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../support/test-providers';
 import { ExtensionCard } from '../../../src/components/extension-card';
 import { Extension } from '../../../src/extension-registry-types';
+import { formatCompactNumber, formatRating } from '../../../src/utils';
 
 const extension = (overrides: Partial<Extension> = {}): Extension =>
     ({
@@ -41,28 +42,30 @@ const extension = (overrides: Partial<Extension> = {}): Extension =>
         ...overrides
     }) as unknown as Extension;
 
+// testing-library normalizes whitespace in the DOM before matching, and some locales put a
+// non-breaking space inside a compact number (fr-FR renders 1234 as '1,2 k'), so an expected string
+// straight from the formatter would not compare equal. Normalize it the same way.
+const normalized = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+// Scope: these cover the footer's rendering rules only - which elements appear for a given review
+// count. They deliberately do not claim to cover the overflow fix itself, which is CSS: jsdom
+// applies no layout, so an assertion about clipping or spilling would pass either way. Catching a
+// regression there needs a browser (the Playwright suite runs against the deployed site on a
+// schedule, so it cannot gate a change here).
 describe('ExtensionCard footer', () => {
-    // The card that prompted this: five filled stars are an intrinsic width that cannot shrink, and
-    // beside a long download count the pair outgrew the card and the count spilled past its edge.
-    // One star and the rating is a bounded width, and says more than a row of icons to be counted.
-    it('shows the rating as a single star and a number', () => {
+    // Expected strings come from the same formatters the component uses: compact and one-decimal
+    // formatting are locale-dependent ('41M' is '41 Mio.' under de-DE), so hard-coding them fails
+    // on a runner with a non-English locale.
+    it('shows the rating as a single star and a number, alongside the download count', () => {
         renderWithProviders(
             <ExtensionCard extension={extension({ averageRating: 5, reviewCount: 16, downloadCount: 41183269 })} />
         );
 
+        // One star, not the five ExtensionRatingStars draws - the intrinsic width that could not shrink.
         expect(screen.getAllByTestId('StarIcon')).toHaveLength(1);
-        expect(screen.getByText('5.0')).toBeInTheDocument();
-        expect(screen.getByText('(16)')).toBeInTheDocument();
-    });
-
-    // The download count is what the eye compares across a grid of these, so it is never the side that
-    // gives way - it keeps flexShrink: 0 while the rating beside it clips.
-    it('keeps the download count whole alongside a rating', () => {
-        renderWithProviders(
-            <ExtensionCard extension={extension({ averageRating: 5, reviewCount: 16, downloadCount: 41183269 })} />
-        );
-
-        expect(screen.getByText('41M')).toBeInTheDocument();
+        expect(screen.getByText(normalized(formatRating(5)))).toBeInTheDocument();
+        expect(screen.getByText(normalized(`(${formatCompactNumber(16)})`))).toBeInTheDocument();
+        expect(screen.getByText(normalized(formatCompactNumber(41183269)))).toBeInTheDocument();
     });
 
     // Nothing to say about a rating nobody has given: five grey stars claimed the width and stated a
@@ -71,6 +74,6 @@ describe('ExtensionCard footer', () => {
         renderWithProviders(<ExtensionCard extension={extension({ downloadCount: 1234 })} />);
 
         expect(screen.queryByTestId('StarIcon')).not.toBeInTheDocument();
-        expect(screen.getByText('1.2K')).toBeInTheDocument();
+        expect(screen.getByText(normalized(formatCompactNumber(1234)))).toBeInTheDocument();
     });
 });

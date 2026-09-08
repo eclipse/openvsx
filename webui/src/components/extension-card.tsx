@@ -21,7 +21,7 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import { ExtensionDetailRoutes } from '../pages/extension-detail/extension-detail-routes';
 import { Extension, SearchEntry } from '../extension-registry-types';
 import { ExtensionIcon } from './extension/extension-icon';
-import { createRoute, formatCompactNumber } from '../utils';
+import { createRoute, formatCompactNumber, formatRating } from '../utils';
 import { MONO_FONT } from '../default/theme';
 import { GridItemProps } from '../hooks/use-grid-cursor';
 import { cardHoverLift, cardSurface, focusRing } from './page-primitives';
@@ -70,7 +70,43 @@ const CardRoot = styled(Paper)(({ theme }) => ({
 
 const SkeletonRoot = styled(Paper)(({ theme }) => cardLayout(theme));
 
-// Only the unknown parts are skeletons; the stars' empty state looks the same loaded or not.
+/**
+ * The footer's rating cell: one star and a slot for the score, or an empty cell when there is no
+ * score to show - the footer is `space-between`, so the cell has to stay even when empty or the
+ * download count stops being right-aligned.
+ *
+ * This is the side that yields, and it clips rather than pushing its neighbour out of the card:
+ * which extension is more popular is what the eye compares across a grid of these, so the download
+ * count stays whole whatever has to give. One star rather than the five `ExtensionRatingStars`
+ * always draws - five is an intrinsic width that cannot shrink, and beside a long download count
+ * (redhat.java, 5.0 stars and 41M) the pair outgrew the card and the count spilled past its edge.
+ * The number also says more than a row of icons somebody has to count.
+ */
+const CardFooterRating: FunctionComponent<{ children?: ReactNode; placeholder?: boolean }> = ({
+    children,
+    placeholder
+}) => (
+    <Box
+        sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.1875rem',
+            minWidth: 0,
+            flexShrink: 1,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            fontSize: { xs: '0.8125rem', sm: '0.875rem' }
+        }}>
+        {children != null && (
+            <StarIcon sx={{ fontSize: 'inherit', ...(placeholder && { color: 'action.disabledBackground' }) }} />
+        )}
+        {children}
+    </Box>
+);
+
+// Only the unknown parts are skeletons. The rating cell keeps a greyed star beside a placeholder
+// bar so the footer reserves the footprint a rated card will need; a card that turns out to have
+// no reviews shows no rating at all, so for those the row does still settle once loaded.
 const SkeletonContent: FunctionComponent = () => (
     <>
         <Skeleton variant='rounded' width={54} height={54} sx={{ flexShrink: 0, mb: '0.75rem' }} />
@@ -92,10 +128,11 @@ const SkeletonContent: FunctionComponent = () => (
                 borderColor: 'border2',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.1875rem',
                 fontSize: { xs: '0.8125rem', sm: '0.875rem' }
             }}>
-            <StarIcon sx={{ fontSize: 'inherit', color: 'action.disabledBackground' }} />
+            <CardFooterRating placeholder>
+                <Skeleton variant='text' width='2.5rem' sx={{ fontSize: '0.6875rem' }} />
+            </CardFooterRating>
         </Box>
     </>
 );
@@ -342,34 +379,11 @@ export const ExtensionCard = memo(
                                         fontSize: '0.75rem'
                                     }}>
                                     {footerStart ?? (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.1875rem',
-                                                // The side that yields, and it clips rather than pushing
-                                                // its neighbour out of the card: which extension is more
-                                                // popular is what the eye compares across a grid of these,
-                                                // so the download count stays whole whatever has to give.
-                                                minWidth: 0,
-                                                flexShrink: 1,
-                                                overflow: 'hidden',
-                                                whiteSpace: 'nowrap',
-                                                fontSize: { xs: '0.8125rem', sm: '0.875rem' }
-                                            }}>
-                                            {reviewCount > 0 && (
+                                        <CardFooterRating>
+                                            {reviewCount > 0 ? (
                                                 <>
-                                                    {/* One star and the number, rather than the five
-                                                        icons ExtensionRatingStars always draws. Five is
-                                                        an intrinsic width that cannot shrink, and on an
-                                                        extension with both reviews and a long download
-                                                        count - redhat.java, 5.0 stars and 41M - the two
-                                                        sides together outgrew the card and the count was
-                                                        pushed past its edge. The number also says more
-                                                        than a row of icons somebody has to count. */}
-                                                    <StarIcon sx={{ fontSize: 'inherit' }} />
                                                     <Box component='span' sx={{ fontSize: '0.6875rem' }}>
-                                                        {(extension.averageRating ?? 0).toFixed(1)}
+                                                        {formatRating(extension.averageRating ?? 0)}
                                                     </Box>
                                                     <Box
                                                         component='span'
@@ -377,8 +391,8 @@ export const ExtensionCard = memo(
                                                         ({formatCompactNumber(reviewCount)})
                                                     </Box>
                                                 </>
-                                            )}
-                                        </Box>
+                                            ) : null}
+                                        </CardFooterRating>
                                     )}
                                     {downloadCount !== '0' && (
                                         <Box

@@ -50,6 +50,17 @@ export function formatCompactNumber(value: number): string {
     return compactNumberFormat.format(value);
 }
 
+const ratingFormat = new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+});
+
+/** Formats a star rating to one decimal, e.g. 4.25 -> "4.3". Unlike toFixed, which always emits a
+ *  '.', this follows the viewer's locale like every other number on a card does. */
+export function formatRating(value: number): string {
+    return ratingFormat.format(value);
+}
+
 const FILE_SIZE_UNITS = ['B', 'kB', 'MB', 'GB', 'TB'];
 
 /** Formats a byte count for humans, e.g. 5242880 -> "5.00 MB". */
