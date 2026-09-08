@@ -31,14 +31,14 @@ To run the Open VSX registry in a development environment, you can use `docker c
    * `db`: Starts the PostgreSQL container.
    * `es`: Starts the Elasticsearch container.
    * `debug`: Starts the PostgreSQL and Elasticsearch containers, which suits running the OpenVSX server and web UI locally for easier debugging.
-   * `backend`: Starts the OpenVSX server container (java).
+   * `backend`: Starts the OpenVSX server container (java), along with the PostgreSQL and Elasticsearch containers it waits on.
    * `frontend`: Starts the web UI container.
    * `commandline`: Starts a container with the OpenVSX CLI tools.
    * `openvsx`: Combines `backend`, `frontend`, and `commandline` profiles to start all related services.
    * `kibana`: Starts a kibana instance for easier access to the Elasticsearch service.
  * In the project root, initiate Docker Compose:
-   * Without profiles: `docker compose up`.
    * With profiles: `docker compose --profile <profile_name> up`. Use multiple `--profile` flags for multiple profiles, e.g., `docker compose --profile openvsx --profile kibana up`.
+   * A profile is required: every service in the file belongs to one, so a plain `docker compose up` starts nothing.
 
  * Depending on which profile(s) you selected, after some seconds, the respective services become available:
    * registry backend is available at [http://localhost:8080/](http://localhost:8080/) if the `backend` or `openvsx` profile was selected.
