@@ -15,6 +15,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - Add `verify` command to check a downloaded `.vsix` package's signature against the registry's public key, mirroring `vsce verify-signature` ([#993](https://github.com/eclipse-openvsx/openvsx/issues/993))
 - Add `verify-signature` command, verifying an already-extracted package/manifest/signature file trio entirely offline (no registry involved), matching `vsce verify-signature`'s own command shape ([#993](https://github.com/eclipse-openvsx/openvsx/issues/993))
 
+#### Fixed
+
+- Fix downloads that could be read before they were written. `download` resolved when the response ended rather than when the file was closed, and a write stream opens and flushes asynchronously, so a caller reading the path immediately afterwards could find the file empty or absent - which `verify` did, intermittently failing to read the public key it had just fetched. A failed download no longer touches the target path: the body is written beside it and renamed into place only once it has arrived whole, so a 404 or a dropped connection leaves what was there alone. A connection dropped mid-download now rejects rather than leaving the caller waiting forever ([#2185](https://github.com/eclipse-openvsx/openvsx/pull/2185))
+
 #### Changed
 
 - `publish --trusted-publishing` retries the token exchange when the registry answers that it could not verify the ID token (502, 503, 504), rather than failing the build on a blip reaching the identity provider. A refusal is never retried
