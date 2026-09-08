@@ -48,6 +48,7 @@ void main() throws IOException {
             var file = root.relativize(path).toString();
             scanValueAnnotations(raw, blanked, file, entries);
             scanConfigurationProperties(raw, blanked, file, entries, configPropsClasses);
+            scanConditionalOnProperty(raw, blanked, file, entries);
         }
     }
 
@@ -66,8 +67,7 @@ void main() throws IOException {
         var defaultCell = entry.defaultValue == null || entry.defaultValue.isEmpty()
                 ? "-"
                 : "`" + mdEscape(entry.defaultValue) + "`";
-        var sourceCell =
-                String.join(", ", entry.sources.stream().map(s -> "`" + s + "`").toList());
+        var sourceCell = formatSources(entry.sources);
         var noteCell = entry.note == null ? "" : mdEscape(entry.note);
         System.out.println(
                 "| `" + entry.key + "` | " + defaultCell + " | " + sourceCell + " | " + noteCell + " |");
@@ -91,11 +91,21 @@ record PropertyEntry(String key, String defaultValue, Set<String> sources, Strin
 
 record ConfigClassEntry(String prefix, String source, String note) {}
 
+/** Where a key is read, capped: `ovsx.data.mirror.enabled` is read in two dozen places, and a cell
+ *  listing all of them tells the reader less than one naming a couple and the count. */
+String formatSources(Set<String> sources) {
+    var shown = sources.stream().limit(MAX_SOURCES).map(s -> "`" + s + "`").toList();
+    var remaining = sources.size() - shown.size();
+    return String.join(", ", shown) + (remaining > 0 ? " and " + remaining + " more" : "");
+}
+
 String mdEscape(String text) {
     return text.replace("|", "\\|");
 }
 
 // ---- @Value("${key:default}") ----
+
+int MAX_SOURCES = 3;
 
 Pattern VALUE_ANNOTATION = Pattern.compile("@Value\\s*\\(");
 // Deliberately line-bound and avoids a `(?:X|Y)*` alternation group repeated per char - Java's
@@ -135,7 +145,7 @@ void scanValueAnnotations(
             } else {
                 var name = partsMatcher.group(2);
                 var constantValueMatcher =
-                        Pattern.compile(Pattern.quote(name) + "\\s*=\\s*\"([^\"]*)\"").matcher(raw);
+                        Pattern.compile("\\b" + Pattern.quote(name) + "\\b\\s*=\\s*\"([^\"]*)\"").matcher(raw);
                 if (constantValueMatcher.find()) {
                     joinedBuilder.append(constantValueMatcher.group(1));
                 } else {
@@ -152,13 +162,25 @@ void scanValueAnnotations(
         if (!placeholderMatcher.find()) {
             continue;
         }
-        var content = placeholderMatcher.group(1);
-        var colon = content.indexOf(':');
-        var key = colon < 0 ? content : content.substring(0, colon);
-        var defaultValue = colon < 0 ? null : content.substring(colon + 1);
-
         var line = lineNumber(raw, matcher.start());
-        addEntry(entries, key, defaultValue, file + ":" + line, note);
+        addPlaceholder(entries, placeholderMatcher.group(1), file + ":" + line, note);
+    }
+}
+
+/** The key and default of one `${...}` body, and of any placeholder nested in that default: a
+ *  property whose default is `${old.key:}` is the fallback pattern AGENTS.md requires of any key that
+ *  has shipped, so the old name is a property in its own right and belongs in the reference. */
+void addPlaceholder(TreeMap<String, PropertyEntry> entries, String content, String source, String note) {
+    var colon = content.indexOf(':');
+    var key = colon < 0 ? content : content.substring(0, colon);
+    var defaultValue = colon < 0 ? null : content.substring(colon + 1);
+    addEntry(entries, key, defaultValue, source, note);
+
+    if (defaultValue != null) {
+        var nested = PLACEHOLDER.matcher(defaultValue);
+        while (nested.find()) {
+            addPlaceholder(entries, nested.group(1), source, "fallback for " + key);
+        }
     }
 }
 
@@ -177,6 +199,9 @@ Set<String> SIMPLE_TYPES = Set.of(
         "String", "Boolean", "Integer", "Long", "Double", "Duration", "HttpStatus", "List", "Set", "Map",
         "boolean", "int", "long", "double", "float", "short", "byte", "char");
 Pattern MODIFIERS = Pattern.compile("^(?:(?:private|protected|public|final)\\s+)+");
+Pattern STATIC_MODIFIER = Pattern.compile("\\bstatic\\b");
+// Booleans, numbers (with an optional type suffix or underscores) and null.
+Pattern SIMPLE_LITERAL = Pattern.compile("true|false|null|-?[0-9][0-9_]*[LlFfDd]?|-?[0-9.]+[FfDd]?");
 Pattern TRAILING_NAME = Pattern.compile("(\\w+)$");
 
 void scanConfigurationProperties(
@@ -209,7 +234,7 @@ void scanConfigurationProperties(
                     : bareConstant.find() ? bareConstant.group(1) : arg.strip();
             var name = expr.contains(".") ? expr.substring(expr.lastIndexOf('.') + 1) : expr;
             var constantValueMatcher =
-                    Pattern.compile(Pattern.quote(name) + "\\s*=\\s*\"([^\"]*)\"").matcher(raw);
+                    Pattern.compile("\\b" + Pattern.quote(name) + "\\b\\s*=\\s*\"([^\"]*)\"").matcher(raw);
             if (constantValueMatcher.find()) {
                 prefix = constantValueMatcher.group(1);
             } else {
@@ -241,7 +266,7 @@ void scanConfigurationProperties(
             var closeParen = findMatchingParen(blanked, openParen);
             if (closeParen > 0) {
                 for (var field : splitTopLevel(raw.substring(openParen + 1, closeParen), ',')) {
-                    addField(entries, prefix, field.strip(), loc);
+                    addField(entries, prefix, field.strip(), field, loc);
                 }
             }
         } else if (classAt < Integer.MAX_VALUE) {
@@ -251,16 +276,24 @@ void scanConfigurationProperties(
                 var closeBrace = findMatchingBrace(blanked, absoluteOpenBrace);
                 if (closeBrace > 0) {
                     var bodyBlanked = blanked.substring(absoluteOpenBrace + 1, closeBrace);
+                    var bodyRaw = raw.substring(absoluteOpenBrace + 1, closeBrace);
+                    // Split on the blanked text so a ';' inside a string or comment cannot end a
+                    // field, but read each chunk's initializer from the raw text - every blanking pass
+                    // preserves length, so the two are index-aligned, and the blanked one has had its
+                    // string literals replaced by 'x' and would report those as the default.
+                    var chunkStart = 0;
                     for (var chunk : splitTopLevel(bodyBlanked, ';')) {
+                        var chunkRaw = bodyRaw.substring(chunkStart, chunkStart + chunk.length());
+                        chunkStart += chunk.length() + 1;
                         var trimmed = stripLeadingAnnotations(chunk.strip()).strip();
                         // A method's signature never has a top-level '=' before its '(' - a field's
                         // does only inside its initializer, which addField also strips before
                         // looking at the declaration, so checking pre-'=' text tells them apart.
                         var beforeInit = trimmed.split("=", 2)[0];
-                        if (trimmed.isEmpty() || trimmed.contains("static") || beforeInit.contains("(")) {
+                        if (trimmed.isEmpty() || STATIC_MODIFIER.matcher(trimmed).find() || beforeInit.contains("(")) {
                             continue;
                         }
-                        addField(entries, prefix, trimmed, loc);
+                        addField(entries, prefix, trimmed, chunkRaw, loc);
                     }
                 }
             }
@@ -268,7 +301,13 @@ void scanConfigurationProperties(
     }
 }
 
-void addField(TreeMap<String, PropertyEntry> entries, String prefix, String declaration, String loc) {
+void addField(
+        TreeMap<String, PropertyEntry> entries,
+        String prefix,
+        String declaration,
+        String declarationRaw,
+        String loc
+) {
     // Drop any initializer first ("= Duration.ofMinutes(5)", "= List.of(\"svg\")") - otherwise its
     // tokens (which may themselves look like a type-then-identifier pair, e.g. a qualified constant
     // reference) get mistaken for the field's own type/name.
@@ -286,7 +325,26 @@ void addField(TreeMap<String, PropertyEntry> entries, String prefix, String decl
     }
     var bareType = type.contains("<") ? type.substring(0, type.indexOf('<')) : type;
     var note = SIMPLE_TYPES.contains(bareType) ? null : "nested type, see " + bareType + " in this file";
-    addEntry(entries, prefix + "." + kebabCase(name), null, loc, note);
+    // From the raw text, since `declaration` may have had its string literals blanked.
+    var rawParts = declarationRaw.split("=", 2);
+    var defaultValue = rawParts.length > 1 ? simpleLiteral(rawParts[1]) : null;
+    addEntry(entries, prefix + "." + kebabCase(name), defaultValue, loc, note);
+}
+
+/** A field initializer's value where it is a plain literal, which is what can be reported as a
+ *  default without paraphrasing. An expression (`List.of("svg")`, `Duration.ofMinutes(5)`, a constant
+ *  from another class) is left out rather than printed as source the operator cannot use. */
+String simpleLiteral(String initializer) {
+    var value = initializer.strip();
+    if (value.endsWith(";")) {
+        value = value.substring(0, value.length() - 1).strip();
+    }
+    if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+        // The literal's value, not its source form, so an embedded quote reads as the operator would
+        // write it in a yaml file rather than as the escape Java needs.
+        return value.substring(1, value.length() - 1).replace("\\\"", "\"").replace("\\\\", "\\");
+    }
+    return SIMPLE_LITERAL.matcher(value).matches() ? value : null;
 }
 
 String stripLeadingAnnotations(String declaration) {
@@ -327,6 +385,79 @@ void addEntry(
             : existing.defaultValue();
     var mergedNote = existing.note() == null ? note : existing.note();
     entries.put(key, new PropertyEntry(key, mergedDefault, existing.sources(), mergedNote));
+}
+
+// ---- @ConditionalOnProperty(...) ----
+
+Pattern CONDITIONAL_ANNOTATION = Pattern.compile("@ConditionalOnProperty\\s*\\(");
+Pattern STRING_LITERAL = Pattern.compile("\"([^\"]*)\"");
+
+/** Keys read by {@code @ConditionalOnProperty}, which gate whole beans and so are among the most
+ *  consequential things an operator can set - and are read nowhere else, so without this they appear
+ *  in no reference at all. Only the {@code prefix}/{@code name}/{@code value} attributes are keys;
+ *  {@code havingValue} and {@code matchIfMissing} are not, which is why this reads the attributes by
+ *  name instead of taking every string literal in the annotation. */
+void scanConditionalOnProperty(String raw, String blanked, String file, TreeMap<String, PropertyEntry> entries) {
+    var matcher = CONDITIONAL_ANNOTATION.matcher(blanked);
+    while (matcher.find()) {
+        var close = findMatchingParen(blanked, matcher.end() - 1);
+        if (close < 0) {
+            continue;
+        }
+        var arg = raw.substring(matcher.end(), close);
+
+        String prefix = "";
+        var prefixExpr = attributeValue(arg, "prefix");
+        if (prefixExpr != null) {
+            var resolved = resolveStringExpression(prefixExpr, raw);
+            if (resolved == null) {
+                // Skipped rather than reported under a made-up key. Visible on stderr, because a
+                // reference that quietly omits a property is the thing this whole script is for.
+                System.err.println(
+                        "warning: " + file + " has @ConditionalOnProperty(prefix = " + prefixExpr.strip()
+                                + "), which is not resolvable in this file; its keys are omitted");
+                continue;
+            }
+            prefix = resolved.isEmpty() ? "" : resolved + ".";
+        }
+
+        var names = attributeValue(arg, "name");
+        if (names == null) {
+            names = attributeValue(arg, "value");
+        }
+        // The single-attribute form, @ConditionalOnProperty("a.b"), names no attribute at all.
+        if (names == null && !arg.contains("=")) {
+            names = arg;
+        }
+        if (names == null) {
+            continue;
+        }
+
+        var line = lineNumber(raw, matcher.start());
+        var literal = STRING_LITERAL.matcher(names);
+        while (literal.find()) {
+            addEntry(entries, prefix + literal.group(1), null, file + ":" + line, "gates a bean");
+        }
+    }
+}
+
+/** One annotation attribute's value expression, or null when the attribute is absent. */
+String attributeValue(String arg, String attribute) {
+    var matcher = Pattern
+            .compile("\\b" + Pattern.quote(attribute) + "\\s*=\\s*(\\{[^}]*\\}|\"[^\"]*\"|[A-Za-z_][\\w.]*)")
+            .matcher(arg);
+    return matcher.find() ? matcher.group(1) : null;
+}
+
+/** A string-valued expression: a literal as-is, a constant looked up in the same file. */
+String resolveStringExpression(String expression, String raw) {
+    var expr = expression.strip();
+    if (expr.startsWith("\"")) {
+        return expr.substring(1, expr.length() - 1);
+    }
+    var name = expr.contains(".") ? expr.substring(expr.lastIndexOf('.') + 1) : expr;
+    var matcher = Pattern.compile("\\b" + Pattern.quote(name) + "\\b\\s*=\\s*\"([^\"]*)\"").matcher(raw);
+    return matcher.find() ? matcher.group(1) : null;
 }
 
 // ---- small structural helpers ----
