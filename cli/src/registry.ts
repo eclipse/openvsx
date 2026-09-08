@@ -207,32 +207,35 @@ export class Registry {
 
     download(file: string, url: URL): Promise<void> {
         return new Promise((resolve, reject) => {
-            const stream = fs.createWriteStream(file);
+            let stream: fs.WriteStream | undefined;
             const requestOptions = this.getRequestOptions();
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, response => {
-                // Checked before anything is piped, so an error page is not written into the file the
-                // caller is about to read.
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
                     response.resume();
-                    stream.destroy();
                     reject(statusError(response));
                     return;
                 }
 
+                // Opened only once the response is known to be one worth keeping. createWriteStream
+                // truncates on open, so opening before the status is known empties whatever is at the
+                // path for a request that then turns out to have failed - and `get` is handed a path
+                // the user chose, not a temporary one.
+                stream = fs.createWriteStream(file);
+                stream.on('error', (err: Error) => {
+                    request.destroy();
+                    reject(err);
+                });
+
                 // Resolved on the file being closed rather than on the response ending. The two are
-                // not the same: createWriteStream opens and flushes asynchronously, so the last byte
+                // not the same: a write stream opens and flushes asynchronously, so the last byte
                 // having arrived says nothing about the file existing yet, let alone holding the
                 // bytes. Callers that read the path straight afterwards saw an empty file, or none.
                 stream.on('close', () => resolve());
                 response.pipe(stream);
             });
-            stream.on('error', (err: Error) => {
-                request.destroy();
-                reject(err);
-            });
             request.on('error', (err: Error) => {
-                stream.destroy();
+                stream?.destroy();
                 reject(err);
             });
             request.end();

@@ -84,19 +84,33 @@ describe('Registry.download', () => {
         expect(fs.readFileSync(file, 'utf-8')).toBe(body);
     });
 
-    // An error response used to be piped into the file before the promise rejected, leaving the error
-    // page behind at the path the caller had been given.
-    it('rejects without writing the error response into the file', async () => {
+    // An error response used to be piped into the file before the promise rejected, and the write
+    // stream was opened before the status was known at all - so a failed download truncated whatever
+    // was already at the path. `get` is handed a path the user chose, so that is their file.
+    it('leaves an existing file untouched when the download fails', async () => {
         const url = await serve((_, res) => {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('no such thing');
         });
         const registry = new Registry({ registryUrl: url });
-        const file = tempPath('.pem');
+        const file = tempPath('.vsix');
+        fs.writeFileSync(file, 'the file the user already had');
 
         await expect(registry.download(file, new URL(`${url}/missing`))).rejects.toThrow('status 404');
 
-        const written = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8') : '';
-        expect(written).not.toContain('no such thing');
+        expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
+    });
+
+    it('does not create the file at all when the download fails', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('no such thing');
+        });
+        const registry = new Registry({ registryUrl: url });
+        const file = tempPath('.vsix');
+
+        await expect(registry.download(file, new URL(`${url}/missing`))).rejects.toThrow('status 404');
+
+        expect(fs.existsSync(file)).toBe(false);
     });
 });

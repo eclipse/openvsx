@@ -17,7 +17,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Fixed
 
-- Fix downloads that could be read before they were written. `download` resolved when the response ended rather than when the file was closed, and a write stream opens and flushes asynchronously, so a caller reading the path immediately afterwards could find the file empty or absent - which `verify` did, intermittently failing to read the public key it had just fetched. An error response is no longer written into the file either ([#2185](https://github.com/eclipse-openvsx/openvsx/pull/2185))
+- Fix downloads that could be read before they were written. `download` resolved when the response ended rather than when the file was closed, and a write stream opens and flushes asynchronously, so a caller reading the path immediately afterwards could find the file empty or absent - which `verify` did, intermittently failing to read the public key it had just fetched. A failed download no longer touches the target path at all, where before the file was opened, and so truncated, before the response status was known ([#2185](https://github.com/eclipse-openvsx/openvsx/pull/2185))
 
 #### Changed
 
