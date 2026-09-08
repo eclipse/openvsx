@@ -66,15 +66,19 @@ services:
       - es
       - debug
 
+  # Kibana has to match the Elasticsearch above: it refuses to talk to a cluster on a different
+  # major version, so the two versions move together.
   kibana:
-    image: kibana:8.7.1
+    image: kibana:9.2.8
     ports:
       - "5601:5601"
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      # ELASTICSEARCH_HOSTS, not ELASTICSEARCH_URL: `elasticsearch.url` was removed in Kibana 7 and
+      # is not a setting any more, so the old name was quietly doing nothing.
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
         required: false
     profiles:
       - kibana
