@@ -223,7 +223,7 @@ public class ElasticSearchService implements ISearchService {
                 true,
                 documents,
                 activeExtensions,
-                maxResultWindow());
+                getMaxResultWindow());
     }
 
     @Async
@@ -329,9 +329,9 @@ public class ElasticSearchService implements ISearchService {
         // The same ceiling the real search enforces. Without it a deep enough offset reaches Elasticsearch
         // and comes back as an engine error about the result window, which says nothing about what to do.
         var resultWindow = options.requestedOffset() + options.requestedSize();
-        if (resultWindow > maxResultWindow()) {
+        if (resultWindow > getMaxResultWindow()) {
             throw new ErrorResultException(
-                    "Cannot look past result " + maxResultWindow() + "; the index will not serve a deeper window.");
+                    "Cannot look past result " + getMaxResultWindow() + "; the index will not serve a deeper window.");
         }
 
         var queryBuilder = new NativeQueryBuilder();
@@ -368,13 +368,13 @@ public class ElasticSearchService implements ISearchService {
      * and says nothing about why. Fall back to the engine's own default instead, which is what the index
      * would almost certainly have said.
      */
-    private long maxResultWindow() {
+    private long getMaxResultWindow() {
         return maxResultWindow > 0 ? maxResultWindow : DEFAULT_MAX_RESULT_WINDOW;
     }
 
     public SearchResult search(Options options) {
         var resultWindow = options.requestedOffset() + options.requestedSize();
-        if (resultWindow > maxResultWindow()) {
+        if (resultWindow > getMaxResultWindow()) {
             return new SearchResult(0L, Collections.emptyList());
         }
 

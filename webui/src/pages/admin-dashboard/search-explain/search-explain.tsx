@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { FC, Fragment, FormEvent, useState } from 'react';
+import { FC, FormEvent, useState } from 'react';
 import {
     Alert,
     Box,
@@ -38,6 +38,9 @@ import { ScoreBreakdown } from './score-breakdown';
 import { formatCompactNumber, handleError } from '../../../utils';
 import { useSearchExplain } from './use-search-explain';
 
+// A plain Table rather than the DataGrid the rest of the admin dashboard uses: these rows are in
+// search result order, which is the thing being examined, and a grid that invites the reader to sort
+// by score or downloads would let them destroy it with one click.
 const RESULT_SIZE = 25;
 
 const num = (value: number | undefined, digits = 3): string =>
@@ -80,6 +83,71 @@ const RelevanceBar: FC<{ entry: SearchExplainEntry }> = ({ entry }) => {
  * entirely different fixes. One is the query's field weights, the other the relevance formula. This shows
  * both, for the search the registry actually runs rather than a reconstruction of it.
  */
+/** One result: the summary row, and the breakdown it expands into. */
+const SearchExplainRow: FC<{ entry: SearchExplainEntry; expanded: boolean; onToggle: () => void }> = ({
+    entry,
+    expanded,
+    onToggle
+}) => (
+    <>
+        <TableRow hover sx={{ cursor: 'pointer', '& > *': { borderBottom: 'unset' } }} onClick={onToggle}>
+            <TableCell sx={{ width: 32 }}>
+                <IconButton size='small' aria-label='Show the score breakdown'>
+                    {expanded ? (
+                        <KeyboardArrowUpIcon fontSize='inherit' />
+                    ) : (
+                        <KeyboardArrowDownIcon fontSize='inherit' />
+                    )}
+                </IconButton>
+            </TableCell>
+            <TableCell>{entry.position + 1}</TableCell>
+            <TableCell>
+                <Box sx={{ fontWeight: 500 }}>
+                    {entry.namespace}.{entry.name}
+                </Box>
+                <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                    {formatCompactNumber(entry.downloadCount)} downloads
+                    {entry.timestamp ? ` · ${entry.timestamp.slice(0, 10)}` : ''}
+                </Box>
+            </TableCell>
+            <TableCell align='right'>{num(entry.score)}</TableCell>
+            <TableCell align='right'>{num(entry.textScore)}</TableCell>
+            <TableCell align='right'>
+                {num(entry.storedRelevance)}
+                {/* A stored relevance the formula no longer agrees with means the index predates a
+                change to it - worth seeing before drawing any conclusion from the ordering. */}
+                {entry.currentRelevance !== undefined &&
+                    Math.abs(entry.currentRelevance - entry.storedRelevance) > 0.01 && (
+                        <Tooltip
+                            title={`Recomputes to ${entry.currentRelevance.toFixed(
+                                3
+                            )} — the index is older than the formula`}
+                            arrow>
+                            <Box component='span' sx={{ ml: 0.5, color: 'warning.main', cursor: 'help' }}>
+                                ≠
+                            </Box>
+                        </Tooltip>
+                    )}
+            </TableCell>
+            <TableCell>
+                <RelevanceBar entry={entry} />
+            </TableCell>
+            <TableCell>
+                {entry.unverified && <Chip size='small' label='unverified' sx={{ mr: 0.5 }} />}
+                {entry.deprecated && <Chip size='small' label='deprecated' />}
+            </TableCell>
+        </TableRow>
+        <TableRow>
+            {/* Spans every column of the row above, the leading expander and trailing chips included. */}
+            <TableCell colSpan={8} sx={{ p: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Collapse in={expanded} timeout='auto' unmountOnExit>
+                    <ScoreBreakdown entry={entry} />
+                </Collapse>
+            </TableCell>
+        </TableRow>
+    </>
+);
+
 export const SearchExplainAdmin: FC = () => {
     const [term, setTerm] = useState('');
     const [submitted, setSubmitted] = useState('');
@@ -155,83 +223,17 @@ export const SearchExplainAdmin: FC = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {entries.map(entry => (
-                                    <Fragment key={`${entry.namespace}.${entry.name}`}>
-                                        <TableRow
-                                            hover
-                                            sx={{ cursor: 'pointer', '& > *': { borderBottom: 'unset' } }}
-                                            onClick={() =>
-                                                setExpanded(
-                                                    expanded === `${entry.namespace}.${entry.name}`
-                                                        ? undefined
-                                                        : `${entry.namespace}.${entry.name}`
-                                                )
-                                            }>
-                                            <TableCell sx={{ width: 32 }}>
-                                                <IconButton size='small' aria-label='Show the score breakdown'>
-                                                    {expanded === `${entry.namespace}.${entry.name}` ? (
-                                                        <KeyboardArrowUpIcon fontSize='inherit' />
-                                                    ) : (
-                                                        <KeyboardArrowDownIcon fontSize='inherit' />
-                                                    )}
-                                                </IconButton>
-                                            </TableCell>
-                                            <TableCell>{entry.position + 1}</TableCell>
-                                            <TableCell>
-                                                <Box sx={{ fontWeight: 500 }}>
-                                                    {entry.namespace}.{entry.name}
-                                                </Box>
-                                                <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                                                    {formatCompactNumber(entry.downloadCount)} downloads
-                                                    {entry.timestamp ? ` · ${entry.timestamp.slice(0, 10)}` : ''}
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell align='right'>{num(entry.score)}</TableCell>
-                                            <TableCell align='right'>{num(entry.textScore)}</TableCell>
-                                            <TableCell align='right'>
-                                                {num(entry.storedRelevance)}
-                                                {/* A stored relevance the formula no longer agrees with means the
-                                                index predates a change to it - worth seeing before drawing any
-                                                conclusion from the ordering. */}
-                                                {entry.currentRelevance !== undefined &&
-                                                    Math.abs(entry.currentRelevance - entry.storedRelevance) > 0.01 && (
-                                                        <Tooltip
-                                                            title={`Recomputes to ${entry.currentRelevance.toFixed(
-                                                                3
-                                                            )} — the index is older than the formula`}
-                                                            arrow>
-                                                            <Box
-                                                                component='span'
-                                                                sx={{ ml: 0.5, color: 'warning.main', cursor: 'help' }}>
-                                                                ≠
-                                                            </Box>
-                                                        </Tooltip>
-                                                    )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <RelevanceBar entry={entry} />
-                                            </TableCell>
-                                            <TableCell>
-                                                {entry.unverified && (
-                                                    <Chip size='small' label='unverified' sx={{ mr: 0.5 }} />
-                                                )}
-                                                {entry.deprecated && <Chip size='small' label='deprecated' />}
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={8}
-                                                sx={{ p: 0, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                <Collapse
-                                                    in={expanded === `${entry.namespace}.${entry.name}`}
-                                                    timeout='auto'
-                                                    unmountOnExit>
-                                                    <ScoreBreakdown entry={entry} />
-                                                </Collapse>
-                                            </TableCell>
-                                        </TableRow>
-                                    </Fragment>
-                                ))}
+                                {entries.map(entry => {
+                                    const id = `${entry.namespace}.${entry.name}`;
+                                    return (
+                                        <SearchExplainRow
+                                            key={id}
+                                            entry={entry}
+                                            expanded={expanded === id}
+                                            onToggle={() => setExpanded(expanded === id ? undefined : id)}
+                                        />
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </TableContainer>

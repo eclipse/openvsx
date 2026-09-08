@@ -275,6 +275,9 @@ class AdminAPITest {
 
     // An empty query matches every document, and this endpoint asks the engine to explain each result it
     // returns - which is the one search on the registry that must not be run over everything by accident.
+    // Note the parameter constraints report as a ProblemDetail rather than the ResultJson shape the rest
+    // of this API uses: ValidationExceptionHandler only builds a ResultJson when the handler returns one,
+    // and this endpoint returns a SearchExplainJson record, which cannot extend it.
     @Test
     void testSearchExplainRejectsABlankQuery() throws Exception {
         mockAdminUser();
@@ -284,7 +287,34 @@ class AdminAPITest {
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
                         .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().json(errorJson("query must not be blank.")));
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0]").value("query: parameter must not be blank"));
+    }
+
+    @Test
+    void testSearchExplainRejectsATooLargeSize() throws Exception {
+        mockAdminUser();
+        mockMvc.perform(
+                get("/admin/search-explain")
+                        .param("query", "markdown")
+                        .param("size", "101")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("size: parameter must not exceed 100"));
+    }
+
+    @Test
+    void testSearchExplainRejectsANegativeOffset() throws Exception {
+        mockAdminUser();
+        mockMvc.perform(
+                get("/admin/search-explain")
+                        .param("query", "markdown")
+                        .param("offset", "-1")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority(("ROLE_ADMIN"))))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("offset: parameter must not be negative"));
     }
 
     @Test

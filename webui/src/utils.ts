@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { ErrorResponse } from './server-request';
+import { ErrorResponse, ProblemDetail } from './server-request';
 
 export function addQuery(url: string, queries: { key: string; value: string | number | undefined }[]): string {
     const nonEmpty = queries.filter(q => q.value !== undefined);
@@ -177,13 +177,23 @@ export function handleError(err?: unknown): string {
             return `An unexpected error occurred: ${err.message}`;
         }
         // A failed request rejects with the parsed server body, not an Error.
-        const { error, message } = (typeof err === 'object' ? err : {}) as Partial<ErrorResponse>;
+        const body = (typeof err === 'object' ? err : {}) as Partial<ErrorResponse> & ProblemDetail;
+        const { error, message } = body;
         if (error && message) {
             return `${error} (${message})`;
         } else if (error) {
             return error;
         } else if (message) {
             return message;
+        }
+        // No `error` means a problem+json body rather than a ResultJson one: parameter validation puts
+        // the offending parameters in `errors`, other framework errors put prose in `detail`.
+        if (body.errors?.length) {
+            return [body.title, body.errors.join(', ')].filter(Boolean).join(': ');
+        } else if (body.detail) {
+            return body.title ? `${body.title}: ${body.detail}` : body.detail;
+        } else if (body.title) {
+            return body.title;
         }
     }
     return 'An unexpected error occurred.';
