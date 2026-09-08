@@ -12,6 +12,7 @@
  *****************************************************************************/
 
 ///usr/bin/env jbang "$0" "$@" ; exit $?
+//JAVA 25+
 //DEPS org.apache.maven:maven-artifact:3.9.9
 
 import java.io.StringReader;
