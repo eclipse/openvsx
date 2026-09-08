@@ -74,22 +74,31 @@ something to argue for in the pull request description.
 - The server has **no CHANGELOG** — only `cli/` and `webui/` do. Do not invent
   one; put the reasoning in the commit message and pull request instead.
 
-## The formatter's JDT version has one source of truth
+## The formatter's versions have one source of truth
 
 The Eclipse formatter is driven from two paths — Spotless (`spotlessApply`) and
 jbang (`scripts/format.sh`, which pre-commit runs) — and they format the same
-source differently if they load different `org.eclipse.jdt.core` versions. That
-version is therefore declared in four places (`buildSrc/build.gradle`,
-`scripts/format.sh`, and the `//DEPS` lines of the two brace-fix scripts), all
-of which must match the version Spotless provisions for the `eclipse('<N>')`
-step in `build.gradle`.
+source differently if they load different versions of the same library. Two
+coordinates are therefore spread across the build and the jbang scripts, and
+must agree:
 
-Do not change one by hand. `scripts/jdt-version-check.sh` reads the pin out of
-spotless-lib-extra's bundled lockfile and compares every declaration against
-it; pre-commit runs it whenever one of those files changes. Note that not every
-Eclipse release has a bundled lockfile — moving `eclipse('<N>')` to one that
-does not makes Spotless fall back to live P2 provisioning, which fails when
-Eclipse has not populated that repository.
+- **`org.eclipse.jdt.core`** — in `buildSrc/build.gradle`, `scripts/format.sh`
+  and the `//DEPS` lines of the two brace-fix scripts. All must match what
+  Spotless provisions for the `eclipse('<N>')` step in `build.gradle`. Note
+  that not every Eclipse release has a bundled lockfile — moving
+  `eclipse('<N>')` to one that does not makes Spotless fall back to live P2
+  provisioning, which fails when Eclipse has not populated that repository.
+  Beware that JDT uses two version schemes: Eclipse platform releases count
+  `4.40`, `4.41`, while the Maven artifacts count `3.46.0`, `3.47.0`.
+- **`com.diffplug.spotless:spotless-lib(-extra)`** — in
+  `buildSrc/build.gradle` and `ImportSort.java`'s `//DEPS`. All must match the
+  version the Spotless plugin in `libs.versions.toml` depends on.
+
+Do not change one by hand. `scripts/formatter-version-check.sh` resolves both
+authoritative versions — the JDT pin out of spotless-lib-extra's bundled
+lockfile, the spotless-lib version out of the plugin's POM — and compares every
+declaration against them; pre-commit runs it whenever one of those files
+changes.
 
 ## Deployment descriptors travel with the config
 
