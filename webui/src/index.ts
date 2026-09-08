@@ -71,7 +71,7 @@ export { AppProviders } from './app-providers';
 
 // `createAbsoluteURL` and `addQuery` are the other half of the request layer above:
 // building an endpoint against `service.serverUrl` needs them.
-export { createRoute, createAbsoluteURL, addQuery, formatCompactNumber, toRelativeTime } from './utils';
+export { createRoute, createAbsoluteURL, addQuery, formatCompactNumber, formatRating, toRelativeTime } from './utils';
 export { NotFound } from './not-found';
 
 // Theme tokens shared with the library chrome, so custom pages line up with it.
