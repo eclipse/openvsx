@@ -22,12 +22,35 @@ export function addEnvOptions(options: RegistryOptions): void {
     options.pat ??= process.env.OVSX_PAT;
     options.username ??= process.env.OVSX_USERNAME;
     options.password ??= process.env.OVSX_PASSWORD;
+    options.timeout ??= parseIntEnv(process.env.OVSX_TIMEOUT);
 }
 
 export function addTrustedPublishingEnvOptions(options: TrustedPublishingOptions): void {
     options.trustedPublishing ??= parseBooleanEnv(process.env.OVSX_TRUSTED_PUBLISHING);
     options.idToken ??= process.env.OVSX_ID_TOKEN;
     options.oidcAudience ??= process.env.OVSX_OIDC_AUDIENCE;
+}
+
+/** How long a request may make no progress before it is abandoned; see RegistryOptions.timeout. */
+export const DEFAULT_TIMEOUT = 30_000;
+
+/**
+ * The configured request timeout, for requests that have no RegistryOptions to read it from - the CI
+ * token exchange deliberately shares nothing with the registry, but there is no reason for it to be
+ * on a different clock.
+ */
+export function configuredTimeout(): number {
+    return parseIntEnv(process.env.OVSX_TIMEOUT) ?? DEFAULT_TIMEOUT;
+}
+
+function parseIntEnv(value?: string): number | undefined {
+    if (value === undefined || value.trim().length === 0) {
+        return undefined;
+    }
+    const parsed = Number(value.trim());
+    // Left undefined rather than throwing, so a mistyped variable falls back to the default instead
+    // of stopping a command that would otherwise work.
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 function parseBooleanEnv(value?: string): boolean | undefined {
@@ -139,6 +162,24 @@ export function withStatus(error: Error, status?: number): StatusError {
     const withStatusCode = error as StatusError;
     withStatusCode.status = status;
     return withStatusCode;
+}
+
+/**
+ * A URL in the form it can safely be printed: no user info and no query string.
+ *
+ * `createNamespace`, `verifyPat`, `publish` and `delete` all put the personal access token in a
+ * `token` query parameter, and an error message goes straight to stderr and from there into CI logs.
+ * The query carries nothing an error needs, so it is dropped whole rather than filtered key by key -
+ * a filter has to be kept in step with every parameter anyone ever adds.
+ */
+export function redactUrl(url: URL | string): string {
+    try {
+        const parsed = typeof url === 'string' ? new URL(url) : url;
+        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+    } catch {
+        // Not parseable, so nothing can be assumed about what it holds.
+        return '<url>';
+    }
 }
 
 export function statusError(response: http.IncomingMessage): StatusError {

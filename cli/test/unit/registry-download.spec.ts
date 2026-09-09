@@ -101,6 +101,88 @@ describe('Registry.download', () => {
         expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
     });
 
+    // createNamespace, verifyPat, publish and delete all put the personal access token in a `token`
+    // query parameter, and handleError writes an error's message straight to stderr - and so into CI
+    // logs. Driven through verifyPat rather than asserted on the helper alone, so the assertion covers
+    // the path a real command takes.
+    it('does not put the access token in a timeout message', async () => {
+        const url = await serve(() => { /* accepts, never responds */ });
+        const registry = new Registry({ registryUrl: url, timeout: 200 });
+        const pat = 'super-secret-pat-value';
+
+        const message = await Promise.race([
+            registry.verifyPat('some-namespace', pat).then(() => 'resolved', (e: Error) => e.message),
+            new Promise<string>(resolve => setTimeout(() => resolve('never settled'), 3000))
+        ]);
+
+        expect(message).toContain('No response from');
+        expect(message).not.toContain(pat);
+        expect(message).not.toContain('token=');
+        expect(message).not.toContain('?');
+    });
+
+    // A server that accepts the connection and then says nothing left the command open indefinitely:
+    // node's `timeout` option only raises an event, so nothing acted on it.
+    it('rejects when the server accepts the connection and never responds', async () => {
+        const url = await serve(() => { /* deliberately never responds */ });
+        const registry = new Registry({ registryUrl: url, timeout: 200 });
+        const file = tempPath('.vsix');
+
+        const outcome = await Promise.race([
+            registry.download(file, new URL(`${url}/silent`)).then(() => 'resolved', (e: Error) => e.message),
+            new Promise<string>(resolve => setTimeout(() => resolve('never settled'), 3000))
+        ]);
+
+        expect(outcome).toContain('No response from');
+        expect(fs.existsSync(`${file}.part`)).toBe(false);
+    });
+
+    // A timeout that fires once the body has started drives both the request's error handler and
+    // pipeline's callback, and each has cleanup to do before it can reject. Whichever finished first
+    // used to decide what the caller was told, so a third of stalled downloads reported ECONNRESET
+    // instead of the timeout. Repeated because a single pass proved nothing while that was true.
+    it('reports a download stalled mid-body as a timeout every time', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(200, { 'Content-Length': '1000' });
+            res.write(Buffer.alloc(100, 'x'));
+            // and then nothing
+        });
+        const registry = new Registry({ registryUrl: url, timeout: 150 });
+
+        for (let i = 0; i < 8; i++) {
+            const file = tempPath('.bin');
+            const message = await registry.download(file, new URL(`${url}/stalled`)).then(
+                () => 'resolved',
+                (err: NodeJS.ErrnoException) => err.message
+            );
+            expect(message, `iteration ${i}`).toContain('No response from');
+            expect(fs.existsSync(`${file}.part`), `iteration ${i}: partial left behind`).toBe(false);
+        }
+    });
+
+    // Inactivity, not a deadline: a large package arriving slowly must not be cut off, so the timeout
+    // has to be reset by every chunk rather than measured from the start of the request.
+    it('does not time out a download that is slow but still progressing', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(200, { 'Content-Length': '5' });
+            let sent = 0;
+            const tick = setInterval(() => {
+                res.write('x');
+                if (++sent === 5) {
+                    clearInterval(tick);
+                    res.end();
+                }
+            }, 120);
+        });
+        const registry = new Registry({ registryUrl: url, timeout: 300 });
+        const file = tempPath('.bin');
+
+        await registry.download(file, new URL(`${url}/slow`));
+
+        // Five chunks 120ms apart is 600ms in total, twice the timeout, but never 300ms without a byte.
+        expect(fs.readFileSync(file, 'utf-8')).toBe('xxxxx');
+    });
+
     // A connection dropped mid-body used to leave the promise unsettled forever: pipe installs its
     // own error handler on the response, so the error was swallowed, the write stream never ended and
     // nothing ever resolved or rejected. The partial write also landed on the caller's path.
