@@ -31,6 +31,18 @@ export function addTrustedPublishingEnvOptions(options: TrustedPublishingOptions
     options.oidcAudience ??= process.env.OVSX_OIDC_AUDIENCE;
 }
 
+/** How long a request may make no progress before it is abandoned; see RegistryOptions.timeout. */
+export const DEFAULT_TIMEOUT = 30_000;
+
+/**
+ * The configured request timeout, for requests that have no RegistryOptions to read it from - the CI
+ * token exchange deliberately shares nothing with the registry, but there is no reason for it to be
+ * on a different clock.
+ */
+export function configuredTimeout(): number {
+    return parseIntEnv(process.env.OVSX_TIMEOUT) ?? DEFAULT_TIMEOUT;
+}
+
 function parseIntEnv(value?: string): number | undefined {
     if (value === undefined || value.trim().length === 0) {
         return undefined;

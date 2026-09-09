@@ -13,12 +13,12 @@ import * as fs from 'fs';
 import { pipeline, Writable } from 'stream';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
-import { redactUrl, rejectError, statusError, withStatus } from './util';
+import { DEFAULT_TIMEOUT, redactUrl, rejectError, statusError, withStatus } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
 export const DEFAULT_PUBLISH_SIZE = 512 * 1024 * 1024;
-export const DEFAULT_TIMEOUT = 30_000;
+export { DEFAULT_TIMEOUT };
 export const DEFAULT_TOKEN_REQUEST_SIZE = 8 * 1024;
 export const DEFAULT_DELETE_SIZE = 64 * 1024;
 

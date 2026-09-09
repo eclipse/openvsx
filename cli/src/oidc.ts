@@ -14,7 +14,7 @@
 import * as http from 'http';
 import * as followRedirects from 'follow-redirects';
 import { TrustedPublishingOptions } from './trusted-publishing-options';
-import { redactUrl, statusError } from './util';
+import { configuredTimeout, redactUrl, statusError } from './util';
 
 /**
  * Whether an OIDC ID token can be obtained without user interaction.
@@ -58,9 +58,6 @@ async function getGitHubActionsIdToken(audience: string): Promise<string> {
     return response.value;
 }
 
-/** The CI token service is not the registry, so it does not take the registry's configured timeout. */
-const TOKEN_SERVICE_TIMEOUT = 30_000;
-
 /**
  * Minimal JSON GET that is not bound to the registry: the request must not carry any registry
  * credentials, as it is sent to the CI system's token service.
@@ -68,7 +65,11 @@ const TOKEN_SERVICE_TIMEOUT = 30_000;
 function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
     return new Promise((resolve, reject) => {
         const protocol = url.protocol === 'https:' ? followRedirects.https : followRedirects.http;
-        const request = protocol.request(url, { method: 'GET', headers, timeout: TOKEN_SERVICE_TIMEOUT }, response => {
+        // OVSX_TIMEOUT covers this request too. Read here rather than taken from the registry's
+        // options, since this one carries none of the registry's configuration - only the clock is
+        // shared, and having two of those to explain would be worse.
+        const timeout = configuredTimeout();
+        const request = protocol.request(url, { method: 'GET', headers, timeout }, response => {
             response.setEncoding('utf-8');
             let json = '';
             // See Registry.getJsonResponse: a connection lost mid-body never fires 'end', so the
@@ -91,7 +92,7 @@ function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
         // The timeout option only raises an event, so the request has to be destroyed for it to mean
         // anything; the error then arrives at the handler above.
         request.on('timeout', () => {
-            request.destroy(new Error(`No response from ${redactUrl(url)} for ${TOKEN_SERVICE_TIMEOUT} ms.`));
+            request.destroy(new Error(`No response from ${redactUrl(url)} for ${timeout} ms.`));
         });
         request.end();
     });
