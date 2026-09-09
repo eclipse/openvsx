@@ -101,6 +101,45 @@ describe('Registry.download', () => {
         expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
     });
 
+    // A server that accepts the connection and then says nothing left the command open indefinitely:
+    // node's `timeout` option only raises an event, so nothing acted on it.
+    it('rejects when the server accepts the connection and never responds', async () => {
+        const url = await serve(() => { /* deliberately never responds */ });
+        const registry = new Registry({ registryUrl: url, timeout: 200 });
+        const file = tempPath('.vsix');
+
+        const outcome = await Promise.race([
+            registry.download(file, new URL(`${url}/silent`)).then(() => 'resolved', (e: Error) => e.message),
+            new Promise<string>(resolve => setTimeout(() => resolve('never settled'), 3000))
+        ]);
+
+        expect(outcome).toContain('No response from');
+        expect(fs.existsSync(`${file}.part`)).toBe(false);
+    });
+
+    // Inactivity, not a deadline: a large package arriving slowly must not be cut off, so the timeout
+    // has to be reset by every chunk rather than measured from the start of the request.
+    it('does not time out a download that is slow but still progressing', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(200, { 'Content-Length': '5' });
+            let sent = 0;
+            const tick = setInterval(() => {
+                res.write('x');
+                if (++sent === 5) {
+                    clearInterval(tick);
+                    res.end();
+                }
+            }, 120);
+        });
+        const registry = new Registry({ registryUrl: url, timeout: 300 });
+        const file = tempPath('.bin');
+
+        await registry.download(file, new URL(`${url}/slow`));
+
+        // Five chunks 120ms apart is 600ms in total, twice the timeout, but never 300ms without a byte.
+        expect(fs.readFileSync(file, 'utf-8')).toBe('xxxxx');
+    });
+
     // A connection dropped mid-body used to leave the promise unsettled forever: pipe installs its
     // own error handler on the response, so the error was swallowed, the write stream never ended and
     // nothing ever resolved or rejected. The partial write also landed on the caller's path.

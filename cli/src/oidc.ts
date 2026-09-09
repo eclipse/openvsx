@@ -58,6 +58,9 @@ async function getGitHubActionsIdToken(audience: string): Promise<string> {
     return response.value;
 }
 
+/** The CI token service is not the registry, so it does not take the registry's configured timeout. */
+const TOKEN_SERVICE_TIMEOUT = 30_000;
+
 /**
  * Minimal JSON GET that is not bound to the registry: the request must not carry any registry
  * credentials, as it is sent to the CI system's token service.
@@ -65,7 +68,7 @@ async function getGitHubActionsIdToken(audience: string): Promise<string> {
 function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
     return new Promise((resolve, reject) => {
         const protocol = url.protocol === 'https:' ? followRedirects.https : followRedirects.http;
-        const request = protocol.request(url, { method: 'GET', headers }, response => {
+        const request = protocol.request(url, { method: 'GET', headers, timeout: TOKEN_SERVICE_TIMEOUT }, response => {
             response.setEncoding('utf-8');
             let json = '';
             response.on('data', chunk => json += chunk);
@@ -82,6 +85,11 @@ function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
             });
         });
         request.on('error', reject);
+        // The timeout option only raises an event, so the request has to be destroyed for it to mean
+        // anything; the error then arrives at the handler above.
+        request.on('timeout', () => {
+            request.destroy(new Error(`No response from ${url} for ${TOKEN_SERVICE_TIMEOUT} ms.`));
+        });
         request.end();
     });
 }

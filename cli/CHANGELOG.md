@@ -17,6 +17,8 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Fixed
 
+- Requests now give up after 30 seconds without progress instead of hanging indefinitely when a server accepts a connection and then says nothing. `OVSX_TIMEOUT` overrides the duration in milliseconds and `OVSX_TIMEOUT=0` disables it; it measures inactivity, so a large extension downloading slowly is unaffected ([#2186](https://github.com/eclipse-openvsx/openvsx/pull/2186))
+
 - Fix downloads that could be read before they were written. `download` resolved when the response ended rather than when the file was closed, and a write stream opens and flushes asynchronously, so a caller reading the path immediately afterwards could find the file empty or absent - which `verify` did, intermittently failing to read the public key it had just fetched. A failed download no longer touches the target path: the body is written beside it and renamed into place only once it has arrived whole, so a 404 or a dropped connection leaves what was there alone. A connection dropped mid-download now rejects rather than leaving the caller waiting forever ([#2185](https://github.com/eclipse-openvsx/openvsx/pull/2185))
 
 #### Changed

@@ -22,12 +22,23 @@ export function addEnvOptions(options: RegistryOptions): void {
     options.pat ??= process.env.OVSX_PAT;
     options.username ??= process.env.OVSX_USERNAME;
     options.password ??= process.env.OVSX_PASSWORD;
+    options.timeout ??= parseIntEnv(process.env.OVSX_TIMEOUT);
 }
 
 export function addTrustedPublishingEnvOptions(options: TrustedPublishingOptions): void {
     options.trustedPublishing ??= parseBooleanEnv(process.env.OVSX_TRUSTED_PUBLISHING);
     options.idToken ??= process.env.OVSX_ID_TOKEN;
     options.oidcAudience ??= process.env.OVSX_OIDC_AUDIENCE;
+}
+
+function parseIntEnv(value?: string): number | undefined {
+    if (value === undefined || value.trim().length === 0) {
+        return undefined;
+    }
+    const parsed = Number(value.trim());
+    // Left undefined rather than throwing, so a mistyped variable falls back to the default instead
+    // of stopping a command that would otherwise work.
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 function parseBooleanEnv(value?: string): boolean | undefined {

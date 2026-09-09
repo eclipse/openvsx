@@ -10,7 +10,7 @@
 
 import * as http from 'http';
 import * as fs from 'fs';
-import { pipeline } from 'stream';
+import { pipeline, Writable } from 'stream';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
 import { rejectError, statusError, withStatus } from './util';
@@ -18,6 +18,7 @@ import { rejectError, statusError, withStatus } from './util';
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
 export const DEFAULT_PUBLISH_SIZE = 512 * 1024 * 1024;
+export const DEFAULT_TIMEOUT = 30_000;
 export const DEFAULT_TOKEN_REQUEST_SIZE = 8 * 1024;
 export const DEFAULT_DELETE_SIZE = 64 * 1024;
 
@@ -26,6 +27,7 @@ export class Registry {
     readonly url: string;
     readonly maxNamespaceSize: number;
     readonly maxPublishSize: number;
+    readonly timeout: number;
     readonly username?: string;
     readonly password?: string;
 
@@ -39,6 +41,7 @@ export class Registry {
 
         this.maxNamespaceSize = options.maxNamespaceSize ?? DEFAULT_NAMESPACE_SIZE;
         this.maxPublishSize = options.maxPublishSize ?? DEFAULT_PUBLISH_SIZE;
+        this.timeout = options.timeout ?? DEFAULT_TIMEOUT;
         this.username = options.username;
         this.password = options.password;
     }
@@ -251,6 +254,7 @@ export class Registry {
                 });
             });
             request.on('error', (err: Error) => fail(err));
+            this.failOnTimeout(request, url);
             request.end();
         });
     }
@@ -261,6 +265,7 @@ export class Registry {
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
+            this.failOnTimeout(request, url);
             request.end();
         });
     }
@@ -271,6 +276,7 @@ export class Registry {
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
+            this.failOnTimeout(request, url);
             request.write(content);
             request.end();
         });
@@ -283,13 +289,14 @@ export class Registry {
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             stream.on('error', (err: Error) => {
-                request.abort();
+                request.destroy();
                 reject(err);
             });
             request.on('error', (err: Error) => {
                 stream.close();
                 reject(err);
             });
+            this.failOnTimeout(request, url);
             stream.on('open', () => stream.pipe(request));
         });
     }
@@ -309,6 +316,21 @@ export class Registry {
         return url.protocol === 'https:' ? followRedirects.https : followRedirects.http;
     }
 
+    /**
+     * Node's `timeout` option only raises an event - the request stays open, which is why a server
+     * that accepts a connection and then says nothing used to hold a command open indefinitely.
+     * Destroying the request with an error routes through the error handling each caller already
+     * has, so a stalled request rejects the way any other failure does. With a timeout of zero the
+     * event never fires and this does nothing.
+     */
+    // Typed on Writable because both http.ClientRequest and follow-redirects' wrapper are ones, and
+    // all this needs is the timeout event and destroy.
+    private failOnTimeout(request: Writable, url: URL): void {
+        request.on('timeout', () => {
+            request.destroy(new Error(`No response from ${url} for ${this.timeout} ms.`));
+        });
+    }
+
     private getRequestOptions(method?: string, headers?: http.OutgoingHttpHeaders, maxBodyLength?: number): http.RequestOptions {
         if (this.username && this.password) {
             headers ??= {};
@@ -318,7 +340,8 @@ export class Registry {
         return {
             method,
             headers,
-            maxBodyLength
+            maxBodyLength,
+            timeout: this.timeout
         } as http.RequestOptions;
     }
 
