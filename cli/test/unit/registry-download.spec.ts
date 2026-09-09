@@ -137,6 +137,29 @@ describe('Registry.download', () => {
         expect(fs.existsSync(`${file}.part`)).toBe(false);
     });
 
+    // A timeout that fires once the body has started drives both the request's error handler and
+    // pipeline's callback, and each has cleanup to do before it can reject. Whichever finished first
+    // used to decide what the caller was told, so a third of stalled downloads reported ECONNRESET
+    // instead of the timeout. Repeated because a single pass proved nothing while that was true.
+    it('reports a download stalled mid-body as a timeout every time', async () => {
+        const url = await serve((_, res) => {
+            res.writeHead(200, { 'Content-Length': '1000' });
+            res.write(Buffer.alloc(100, 'x'));
+            // and then nothing
+        });
+        const registry = new Registry({ registryUrl: url, timeout: 150 });
+
+        for (let i = 0; i < 8; i++) {
+            const file = tempPath('.bin');
+            const message = await registry.download(file, new URL(`${url}/stalled`)).then(
+                () => 'resolved',
+                (err: NodeJS.ErrnoException) => err.message
+            );
+            expect(message, `iteration ${i}`).toContain('No response from');
+            expect(fs.existsSync(`${file}.part`), `iteration ${i}: partial left behind`).toBe(false);
+        }
+    });
+
     // Inactivity, not a deadline: a large package arriving slowly must not be cut off, so the timeout
     // has to be reset by every chunk rather than measured from the start of the request.
     it('does not time out a download that is slow but still progressing', async () => {

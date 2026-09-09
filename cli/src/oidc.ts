@@ -92,7 +92,10 @@ function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
         // The timeout option only raises an event, so the request has to be destroyed for it to mean
         // anything; the error then arrives at the handler above.
         request.on('timeout', () => {
-            request.destroy(new Error(`No response from ${redactUrl(url)} for ${timeout} ms.`));
+            // Rejected before the teardown, so the timeout is what the caller sees rather than
+            // whichever error destroying the request happens to raise first.
+            reject(new Error(`No response from ${redactUrl(url)} for ${timeout} ms.`));
+            request.destroy();
         });
         request.end();
     });

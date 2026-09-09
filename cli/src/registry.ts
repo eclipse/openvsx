@@ -218,7 +218,16 @@ export class Registry {
             const partial = `${file}.part`;
             let stream: fs.WriteStream | undefined;
 
+            // Claimed synchronously, before the cleanup that has to happen before rejecting. A timeout
+            // mid-body drives both the request's error handler and pipeline's callback, and each used
+            // to wait on its own fs.rm - so whichever landed first decided what the caller was told,
+            // and the partial was removed twice.
+            let failed = false;
             const fail = (err: Error) => {
+                if (failed) {
+                    return;
+                }
+                failed = true;
                 stream?.destroy();
                 fs.rm(partial, { force: true }, () => reject(err));
             };
@@ -254,7 +263,7 @@ export class Registry {
                 });
             });
             request.on('error', (err: Error) => fail(err));
-            this.failOnTimeout(request, url);
+            this.failOnTimeout(request, url, fail);
             request.end();
         });
     }
@@ -265,7 +274,7 @@ export class Registry {
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
-            this.failOnTimeout(request, url);
+            this.failOnTimeout(request, url, reject);
             request.end();
         });
     }
@@ -276,7 +285,7 @@ export class Registry {
             const request = this.getProtocol(url)
                                 .request(url, requestOptions, this.getJsonResponse<T>(resolve, reject));
             request.on('error', reject);
-            this.failOnTimeout(request, url);
+            this.failOnTimeout(request, url, reject);
             request.write(content);
             request.end();
         });
@@ -296,7 +305,7 @@ export class Registry {
                 stream.close();
                 reject(err);
             });
-            this.failOnTimeout(request, url);
+            this.failOnTimeout(request, url, reject);
             stream.on('open', () => stream.pipe(request));
         });
     }
@@ -325,9 +334,16 @@ export class Registry {
      */
     // Typed on Writable because both http.ClientRequest and follow-redirects' wrapper are ones, and
     // all this needs is the timeout event and destroy.
-    private failOnTimeout(request: Writable, url: URL): void {
+    private failOnTimeout(request: Writable, url: URL, fail: (err: Error) => void): void {
         request.on('timeout', () => {
-            request.destroy(new Error(`No response from ${redactUrl(url)} for ${this.timeout} ms.`));
+            // Reported before the request is torn down, rather than by destroying it with the error.
+            // Destroying raises errors of its own - ECONNRESET on the response, a premature close
+            // from pipeline - and node guarantees no order between those and the request's own. In
+            // practice the request's arrives first, so this is belt and braces rather than the thing
+            // that stops the wrong error being reported; that is the caller claiming the failure
+            // before it does any asynchronous cleanup.
+            fail(new Error(`No response from ${redactUrl(url)} for ${this.timeout} ms.`));
+            request.destroy();
         });
     }
 
