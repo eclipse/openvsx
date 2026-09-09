@@ -14,7 +14,7 @@
 import * as http from 'http';
 import * as followRedirects from 'follow-redirects';
 import { TrustedPublishingOptions } from './trusted-publishing-options';
-import { statusError } from './util';
+import { redactUrl, statusError } from './util';
 
 /**
  * Whether an OIDC ID token can be obtained without user interaction.
@@ -88,7 +88,7 @@ function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
         // The timeout option only raises an event, so the request has to be destroyed for it to mean
         // anything; the error then arrives at the handler above.
         request.on('timeout', () => {
-            request.destroy(new Error(`No response from ${url} for ${TOKEN_SERVICE_TIMEOUT} ms.`));
+            request.destroy(new Error(`No response from ${redactUrl(url)} for ${TOKEN_SERVICE_TIMEOUT} ms.`));
         });
         request.end();
     });

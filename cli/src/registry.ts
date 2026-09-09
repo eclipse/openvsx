@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import { pipeline, Writable } from 'stream';
 import * as followRedirects from 'follow-redirects';
 import { RegistryOptions } from './registry-options';
-import { rejectError, statusError, withStatus } from './util';
+import { redactUrl, rejectError, statusError, withStatus } from './util';
 
 export const DEFAULT_URL = 'https://open-vsx.org';
 export const DEFAULT_NAMESPACE_SIZE = 1024;
@@ -247,7 +247,7 @@ export class Registry {
                     } else if (!response.complete) {
                         // A body cut short still ends the stream cleanly; `complete` is what tells
                         // that apart from having received all of it.
-                        fail(new Error(`The connection closed before the whole of ${url} was received.`));
+                        fail(new Error(`The connection closed before the whole of ${redactUrl(url)} was received.`));
                     } else {
                         fs.rename(partial, file, renameErr => renameErr ? fail(renameErr) : resolve());
                     }
@@ -327,7 +327,7 @@ export class Registry {
     // all this needs is the timeout event and destroy.
     private failOnTimeout(request: Writable, url: URL): void {
         request.on('timeout', () => {
-            request.destroy(new Error(`No response from ${url} for ${this.timeout} ms.`));
+            request.destroy(new Error(`No response from ${redactUrl(url)} for ${this.timeout} ms.`));
         });
     }
 

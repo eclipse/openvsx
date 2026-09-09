@@ -152,6 +152,24 @@ export function withStatus(error: Error, status?: number): StatusError {
     return withStatusCode;
 }
 
+/**
+ * A URL in the form it can safely be printed: no user info and no query string.
+ *
+ * `createNamespace`, `verifyPat`, `publish` and `delete` all put the personal access token in a
+ * `token` query parameter, and an error message goes straight to stderr and from there into CI logs.
+ * The query carries nothing an error needs, so it is dropped whole rather than filtered key by key -
+ * a filter has to be kept in step with every parameter anyone ever adds.
+ */
+export function redactUrl(url: URL | string): string {
+    try {
+        const parsed = typeof url === 'string' ? new URL(url) : url;
+        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+    } catch {
+        // Not parseable, so nothing can be assumed about what it holds.
+        return '<url>';
+    }
+}
+
 export function statusError(response: http.IncomingMessage): StatusError {
     const message = response.statusMessage
         ? `The server responded with status ${response.statusCode}: ${response.statusMessage}`

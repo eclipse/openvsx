@@ -101,6 +101,26 @@ describe('Registry.download', () => {
         expect(fs.readFileSync(file, 'utf-8')).toBe('the file the user already had');
     });
 
+    // createNamespace, verifyPat, publish and delete all put the personal access token in a `token`
+    // query parameter, and handleError writes an error's message straight to stderr - and so into CI
+    // logs. Driven through verifyPat rather than asserted on the helper alone, so the assertion covers
+    // the path a real command takes.
+    it('does not put the access token in a timeout message', async () => {
+        const url = await serve(() => { /* accepts, never responds */ });
+        const registry = new Registry({ registryUrl: url, timeout: 200 });
+        const pat = 'super-secret-pat-value';
+
+        const message = await Promise.race([
+            registry.verifyPat('some-namespace', pat).then(() => 'resolved', (e: Error) => e.message),
+            new Promise<string>(resolve => setTimeout(() => resolve('never settled'), 3000))
+        ]);
+
+        expect(message).toContain('No response from');
+        expect(message).not.toContain(pat);
+        expect(message).not.toContain('token=');
+        expect(message).not.toContain('?');
+    });
+
     // A server that accepts the connection and then says nothing left the command open indefinitely:
     // node's `timeout` option only raises an event, so nothing acted on it.
     it('rejects when the server accepts the connection and never responds', async () => {
