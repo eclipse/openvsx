@@ -349,6 +349,11 @@ export class Registry {
         return response => {
             response.setEncoding('utf-8');
             let json = '';
+            // A connection lost after the headers have arrived ends the response without 'end' ever
+            // firing, so without this the promise is never settled and the command waits on a body
+            // that is not coming. The configured timeout would eventually rescue it, but rejecting
+            // here reports what actually happened instead of thirty seconds of silence.
+            response.on('error', reject);
             response.on('data', chunk => json += chunk);
             response.on('end', () => {
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {

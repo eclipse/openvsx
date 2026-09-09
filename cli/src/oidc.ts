@@ -71,6 +71,9 @@ function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders): Promise<T> {
         const request = protocol.request(url, { method: 'GET', headers, timeout: TOKEN_SERVICE_TIMEOUT }, response => {
             response.setEncoding('utf-8');
             let json = '';
+            // See Registry.getJsonResponse: a connection lost mid-body never fires 'end', so the
+            // response's own error has to be what settles the promise.
+            response.on('error', reject);
             response.on('data', chunk => json += chunk);
             response.on('end', () => {
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
