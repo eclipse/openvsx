@@ -134,7 +134,11 @@ you touch configuration, diff all four and say which you changed.
 - Read files in full before wide-ranging changes, and before editing files you
   have not inspected. Do not rely on search snippets.
 - Keep code comments short (1–3 lines): state only the non-obvious constraint or
-  rationale, never narrate what the code does.
+  rationale, never narrate what the code does. In particular do not recount the
+  bug a line used to have or how it used to behave: a comment is read by
+  someone looking at the code as it stands, and the history belongs in the
+  commit message and the pull request, where anyone asking why it changed is
+  already looking.
 - Ask before removing functionality or code that appears intentional. Do not
   preserve backward compatibility unless the user asks for it.
 - A configuration property that has never appeared in a release can be renamed
