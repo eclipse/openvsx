@@ -45,6 +45,7 @@ public class IdentityService {
     private final CustomerService customerService;
     private final AccessTokenService tokenService;
     private final RateLimitProperties rateLimitProperties;
+    private final Optional<IdentityServiceHelper> identityServiceHelper;
 
     public IdentityService(
             ExpressionParser expressionParser,
@@ -52,7 +53,8 @@ public class IdentityService {
             TierService tierService,
             CustomerService customerService,
             AccessTokenService tokenService,
-            RateLimitProperties rateLimitProperties
+            RateLimitProperties rateLimitProperties,
+            Optional<IdentityServiceHelper> identityServiceHelper
     ) {
         this.expressionParser = expressionParser;
         this.beanFactory = beanFactory;
@@ -60,10 +62,29 @@ public class IdentityService {
         this.customerService = customerService;
         this.tokenService = tokenService;
         this.rateLimitProperties = rateLimitProperties;
+        this.identityServiceHelper = identityServiceHelper;
     }
 
     public ResolvedIdentity resolveIdentity(HttpServletRequest request) {
         String ipAddress = getIPAddress(request);
+        if (identityServiceHelper.isPresent()) {
+            IdentityServiceHelper identityServiceHelper = this.identityServiceHelper.orElseThrow();
+            Optional<IdentityServiceHelper.HelperIdentity> helperIdentity = identityServiceHelper.resolveClient(request);
+            if (helperIdentity.isPresent()) {
+                IdentityServiceHelper.HelperIdentity identity = helperIdentity.orElseThrow();
+                if (identity.clientIpAddress().isPresent()) {
+                    ipAddress = identity.clientIpAddress().orElseThrow();
+                }
+                if (identity.clientIdentity().isPresent()) {
+                    var customer = customerService.getCustomerByName(identity.clientIdentity().orElseThrow());
+                    if (customer.isPresent()) {
+                        return forCustomer(customer.get(), ipAddress, true);
+                    }
+                    logger.warn("IdentityServiceHelper resolved unknown customer {}, resolving on the origin", identity.clientIdentity().orElseThrow());
+                }
+            }
+        }
+
         String cacheKey = null;
 
         Optional<Customer> customer = Optional.empty();
@@ -74,7 +95,7 @@ public class IdentityService {
             if (customerId.isPresent()) {
                 customer = customerService.getCustomerById(customerId.get());
                 if (customer.isPresent()) {
-                    cacheKey = "customer_" + customer.get().getName();
+                    cacheKey = customerKey(customer.get());
                 }
             }
         }
@@ -93,7 +114,7 @@ public class IdentityService {
         if (customer.isEmpty()) {
             customer = customerService.getCustomerByIpAddress(ipAddress);
             if (customer.isPresent() && cacheKey == null) {
-                cacheKey = "customer_" + customer.get().getName();
+                cacheKey = customerKey(customer.get());
             }
         }
 
@@ -116,6 +137,24 @@ public class IdentityService {
                 customer.orElse(null),
                 tierService.getFreeTier().orElse(null),
                 tierService.getSafetyTier().orElse(null));
+    }
+
+    /**
+     * The identity of a request attributed to {@code customer}, as used for requests the edge
+     * reported. Shares the bucket key with {@link #resolveIdentity} so both debit one bucket.
+     */
+    public ResolvedIdentity forCustomer(Customer customer, String ipAddress, boolean countedAtEdge) {
+        return new ResolvedIdentity(
+                ipAddress,
+                customerKey(customer),
+                customer,
+                tierService.getFreeTier().orElse(null),
+                tierService.getSafetyTier().orElse(null),
+                countedAtEdge);
+    }
+
+    private static String customerKey(Customer customer) {
+        return "customer_" + customer.getName();
     }
 
     private String getIPAddress(HttpServletRequest request) {
