@@ -141,9 +141,6 @@ dependencies {
 
     implementation libs.woodstox.core
 
-    implementation libs.jaxb.api
-    implementation libs.jaxb.impl
-
     implementation libs.tika.core
     implementation libs.re2j
     implementation libs.loki.logback.appender
