@@ -55,6 +55,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Slight updates ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
 - Bump jOOQ 3.19.38 ([#2187](https://github.com/eclipse-openvsx/openvsx/pull/2187))
+- Remove unused `jaxb-api` and `jaxb-impl` dependencies ([#2317](https://github.com/eclipse-openvsx/openvsx/pull/2317))
 
 ### [v1.2.0] (10/09/2026)
 
