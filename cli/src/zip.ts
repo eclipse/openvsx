@@ -9,18 +9,9 @@
  ********************************************************************************/
 import * as crypto from 'crypto';
 import * as yauzl from 'yauzl-promise';
-import { Readable } from 'stream';
+import { buffer } from 'stream/consumers';
 import { pipeline } from 'stream/promises';
 import { Manifest } from './util';
-
-async function bufferStream(stream: Readable): Promise<Buffer> {
-	return await new Promise((resolve, reject) => {
-		const buffers: Buffer[] = [];
-		stream.on('data', buffer => buffers.push(buffer));
-		stream.once('error', reject);
-		stream.once('end', () => resolve(Buffer.concat(buffers)));
-	});
-}
 
 export async function readZip(packagePath: string, filter: (name: string) => boolean): Promise<Map<string, Buffer>> {
 	const result = new Map<string, Buffer>();
@@ -30,8 +21,7 @@ export async function readZip(packagePath: string, filter: (name: string) => boo
 			const name = entry.filename.toLowerCase();
 			if (filter(name)) {
 				const stream = await zipfile.openReadStream(entry);
-				const buffer = await bufferStream(stream);
-				result.set(name, buffer);
+				result.set(name, await buffer(stream));
 			}
 		}
 	} finally {
