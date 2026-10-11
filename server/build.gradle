@@ -138,8 +138,6 @@ dependencies {
     implementation libs.jackson.dataformat.xml
     implementation libs.jackson.dataformat.toml
 
-    implementation libs.woodstox.core
-
     implementation libs.tika.core
     implementation libs.re2j
     implementation libs.loki.logback.appender
