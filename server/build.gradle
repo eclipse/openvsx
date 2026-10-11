@@ -91,7 +91,6 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-mail"
     implementation "org.springframework.boot:spring-boot-starter-zipkin"
     implementation "org.springframework.boot:spring-boot-starter-session-jdbc"
-    implementation "org.springframework.boot:spring-boot-starter-restclient"
 
     implementation "org.springframework.boot:spring-boot-security-oauth2-client"
     implementation "org.springframework.security:spring-security-oauth2-jose"
@@ -148,9 +147,6 @@ dependencies {
     runtimeOnly "io.micrometer:micrometer-registry-prometheus"
     runtimeOnly "org.postgresql:postgresql"
     jooqCodegen "org.postgresql:postgresql"
-
-    // to aid migration from 3.5 to 4.0
-    runtimeOnly "org.springframework.boot:spring-boot-properties-migrator"
 
     devRuntimeOnly "org.springframework.boot:spring-boot-devtools"
 
