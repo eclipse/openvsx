@@ -51,6 +51,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump source-map-js from 1.2.1 to 1.2.2
 - Bump proxy-addr from 2.0.7 to 2.0.8
 - Remove `lodash` and `@types/lodash`
+- Remove `clipboard-copy` in favor of the built-in `navigator.clipboard.writeText`
 
 ## [v1.2.0] (10/09/2026)
 
