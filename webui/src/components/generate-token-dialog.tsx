@@ -30,7 +30,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import copy from 'clipboard-copy';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
@@ -84,7 +83,7 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
 
     const handleCopy = () => {
         if (tokenValue) {
-            copy(tokenValue).then(() => setCopied(true));
+            navigator.clipboard.writeText(tokenValue).then(() => setCopied(true));
             setTimeout(() => setCopied(false), 2000);
         }
     };
