@@ -40,7 +40,6 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Prevent duplicate active reviews from concurrent requests ([#2245](https://github.com/eclipse-openvsx/openvsx/pull/2245))
 - Make extension control fail-safe and bound its HTTP timeouts ([#2242](https://github.com/eclipse-openvsx/openvsx/pull/2242))
 - Delete upstream-proxied spool file even if the client aborts ([#2241](https://github.com/eclipse-openvsx/openvsx/pull/2241))
-- Bump tika to 3.3.2 ([#2240](https://github.com/eclipse-openvsx/openvsx/pull/2240))
 - Back the download analytics settled-cache with the shared cache infra ([#2235](https://github.com/eclipse-openvsx/openvsx/pull/2235))
 - Sync Spotless and jbang-fmt on org.eclipse.jdt.core 3.47.0 ([#2233](https://github.com/eclipse-openvsx/openvsx/pull/2233))
 - Repair and stop re-corrupting extensions' stale last-updated date ([#2231](https://github.com/eclipse-openvsx/openvsx/pull/2231))
@@ -55,6 +54,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Slight updates ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
 - Bump jOOQ 3.19.38 ([#2187](https://github.com/eclipse-openvsx/openvsx/pull/2187))
+- Bump tika to 3.3.2 ([#2240](https://github.com/eclipse-openvsx/openvsx/pull/2240))
 - Remove unused `jaxb-api` and `jaxb-impl` dependencies ([#2317](https://github.com/eclipse-openvsx/openvsx/pull/2317))
 
 ### [v1.2.0] (10/09/2026)
