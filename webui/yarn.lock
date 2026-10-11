@@ -1441,15 +1441,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-infinite-scroller@npm:^1.2.0":
-  version: 1.2.5
-  resolution: "@types/react-infinite-scroller@npm:1.2.5"
-  dependencies:
-    "@types/react": "npm:*"
-  checksum: 10/8b56f63c35802d2593cc25b3ab03bfbeceb2a5379997364fb5cea414cc8690341fbf3902d8fc7a6db43f87c144276009cb4a7f3388f1a52091ac3a4fd7de7d33
-  languageName: node
-  linkType: hard
-
 "@types/react-transition-group@npm:^4.4.10, @types/react-transition-group@npm:^4.4.12":
   version: 4.4.12
   resolution: "@types/react-transition-group@npm:4.4.12"
@@ -5065,7 +5056,6 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^18.2.0"
     "@types/react-dom": "npm:^18.2.0"
-    "@types/react-infinite-scroller": "npm:^1.2.0"
     "@typescript-eslint/eslint-plugin": "npm:^8.56.0"
     "@typescript-eslint/parser": "npm:^8.56.0"
     "@vitejs/plugin-react": "npm:^6.0.4"
@@ -5089,7 +5079,6 @@ __metadata:
     react-avatar-editor: "npm:^15.0.0"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^2.0.5"
-    react-infinite-scroller: "npm:^1.2.6"
     react-router: "npm:^7.18.2"
     rimraf: "npm:^6.1.0"
     rollup-plugin-visualizer: "npm:^7.0.1"
@@ -5351,7 +5340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.5.8, prop-types@npm:^15.6.2, prop-types@npm:^15.8.1":
+"prop-types@npm:^15.6.2, prop-types@npm:^15.8.1":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -5454,17 +5443,6 @@ __metadata:
   peerDependencies:
     react: ^16.6.0 || ^17.0.0 || ^18.0.0
   checksum: 10/03a8fbf4779c90899012809da09a6b174a2e11e2db4c7f4e61672903dd4e2f3bb732619da4254fc874c502251a07c8da01c752ed7d6df429c7718cf8451d176a
-  languageName: node
-  linkType: hard
-
-"react-infinite-scroller@npm:^1.2.6":
-  version: 1.2.6
-  resolution: "react-infinite-scroller@npm:1.2.6"
-  dependencies:
-    prop-types: "npm:^15.5.8"
-  peerDependencies:
-    react: ^0.14.9 || ^15.3.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
-  checksum: 10/d37d3dfc99029e203631b155cc92181453f14cef1cfbbf9bb05504a67b97eedc0771ca6848d110d846c26e3001981702baefd951bcdcdf9fbec15b5dfb420cad
   languageName: node
   linkType: hard
 

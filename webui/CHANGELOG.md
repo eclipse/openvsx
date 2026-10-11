@@ -52,6 +52,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump proxy-addr from 2.0.7 to 2.0.8
 - Remove `lodash` and `@types/lodash`
 - Remove `clipboard-copy` in favor of the built-in `navigator.clipboard.writeText`
+- Remove `react-infinite-scroller` and `@types/react-infinite-scroller`; search results load the next page through an `IntersectionObserver` sentinel instead of a window scroll listener
 
 ## [v1.2.0] (10/09/2026)
 

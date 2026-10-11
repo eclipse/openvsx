@@ -13,17 +13,20 @@
  ********************************************************************************/
 
 import { FunctionComponent, useContext, useEffect, useMemo, useRef } from 'react';
-import InfiniteScroll from 'react-infinite-scroller';
 import { ExtensionGrid } from './page-primitives';
 import { ExtensionCard } from './extension-card';
 import { ExtensionFilter } from '../extension-registry-service';
 import { useExtensionResultsCursor } from '../hooks/use-extension-results-cursor';
 import { useInfiniteSearch } from '../hooks/use-infinite-search';
+import { useInView } from '../hooks/use-in-view';
 import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, onUpdate }) => {
     const { handleError } = useContext(MainContext);
-    const { data, error, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteSearch(filter);
+    const { data, error, isLoading, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
+        useInfiniteSearch(filter);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const nearEnd = useInView(sentinelRef, { once: false, rootMargin: '200px', enabled: hasNextPage });
 
     const extensions = useMemo(() => data?.pages.flatMap(page => page.extensions) ?? [], [data]);
     const totalSize = data?.pages[0]?.totalSize ?? 0;
@@ -70,17 +73,20 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, o
         );
     });
 
+    // The observer only reports changes, so re-check whenever a page lands: a sentinel still in
+    // view must trigger the next one. Waiting out any fetch avoids cancelling it.
+    const loadedCount = extensions.length;
+    useEffect(() => {
+        if (nearEnd && hasNextPage && !isFetching) {
+            void fetchNextPage();
+        }
+    }, [nearEnd, hasNextPage, isFetching, loadedCount, fetchNextPage]);
+
     return (
-        <InfiniteScroll
-            loadMore={() => {
-                if (hasNextPage && !isFetchingNextPage) {
-                    void fetchNextPage();
-                }
-            }}
-            hasMore={hasNextPage && !isFetchingNextPage}
-            threshold={200}>
+        <div>
             <ExtensionGrid {...grid.containerProps}>{cards}</ExtensionGrid>
-        </InfiniteScroll>
+            <div ref={sentinelRef} />
+        </div>
     );
 };
 
