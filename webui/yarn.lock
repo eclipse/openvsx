@@ -2219,13 +2219,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"clipboard-copy@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "clipboard-copy@npm:4.0.1"
-  checksum: 10/530a09de80dfd0536793fdefb6559a2dfb6c2706b027c41c672a0f18debafd420e69111224f3265555afcd73f9cd97517dcaf494aa25996a58a8f550a3426080
-  languageName: node
-  linkType: hard
-
 "cliui@npm:^9.0.1":
   version: 9.0.1
   resolution: "cliui@npm:9.0.1"
@@ -5076,7 +5069,6 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^8.56.0"
     "@typescript-eslint/parser": "npm:^8.56.0"
     "@vitejs/plugin-react": "npm:^6.0.4"
-    clipboard-copy: "npm:^4.0.1"
     dompurify: "npm:^3.0.4"
     eslint: "npm:^9.39.0"
     eslint-config-prettier: "npm:^10.1.8"
