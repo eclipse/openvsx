@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, useContext, useEffect, useMemo, useRef } from 'react';
+import { FunctionComponent, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ExtensionGrid } from './page-primitives';
 import { ExtensionCard } from './extension-card';
 import { ExtensionFilter } from '../extension-registry-service';
@@ -23,10 +23,27 @@ import { MainContext } from '../context';
 
 export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, onUpdate }) => {
     const { handleError } = useContext(MainContext);
-    const { data, error, isLoading, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
-        useInfiniteSearch(filter);
+    const {
+        data,
+        error,
+        errorUpdateCount,
+        isLoading,
+        isFetching,
+        isFetchingNextPage,
+        isFetchNextPageError,
+        hasNextPage,
+        fetchNextPage
+    } = useInfiniteSearch(filter);
     const sentinelRef = useRef<HTMLDivElement>(null);
     const nearEnd = useInView(sentinelRef, { once: false, rootMargin: '200px', enabled: hasNextPage });
+    // A failed page is retried only once the sentinel leaves view and comes back, not in a loop.
+    const [dismissedErrorCount, setDismissedErrorCount] = useState(errorUpdateCount);
+    useEffect(() => {
+        if (!nearEnd) {
+            setDismissedErrorCount(errorUpdateCount);
+        }
+    }, [nearEnd, errorUpdateCount]);
+    const stalled = isFetchNextPageError && errorUpdateCount !== dismissedErrorCount;
 
     const extensions = useMemo(() => data?.pages.flatMap(page => page.extensions) ?? [], [data]);
     const totalSize = data?.pages[0]?.totalSize ?? 0;
@@ -77,10 +94,10 @@ export const ExtensionList: FunctionComponent<ExtensionListProps> = ({ filter, o
     // view must trigger the next one. Waiting out any fetch avoids cancelling it.
     const loadedCount = extensions.length;
     useEffect(() => {
-        if (nearEnd && hasNextPage && !isFetching) {
+        if (nearEnd && hasNextPage && !isFetching && !stalled) {
             void fetchNextPage();
         }
-    }, [nearEnd, hasNextPage, isFetching, loadedCount, fetchNextPage]);
+    }, [nearEnd, hasNextPage, isFetching, stalled, loadedCount, fetchNextPage]);
 
     return (
         <div>

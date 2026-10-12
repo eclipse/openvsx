@@ -94,6 +94,35 @@ describe('ExtensionList', () => {
         expect(offsets(search)).toEqual([0, 2]);
     });
 
+    // The failure lands after a delay, as over a network: an instant one batches `isFetching`
+    // back to false within one render, which hides the retry loop.
+    const failingNextPage = async (_: AbortController, filter: ExtensionFilter): Promise<SearchResult> => {
+        if (filter.offset === 0) {
+            return page(0, 4);
+        }
+        await new Promise(resolve => setTimeout(resolve, 20));
+        throw new Error('next page failed');
+    };
+    it('does not retry a failed page while the end of the list stays in view', async () => {
+        const { search, viewport } = renderList(failingNextPage);
+        await screen.findByText('Extension 1');
+        viewport.setInView(true);
+        await waitFor(() => expect(offsets(search)).toEqual([0, 2]));
+        await new Promise(resolve => setTimeout(resolve, 200));
+        expect(offsets(search)).toEqual([0, 2]);
+    });
+    it('retries a failed page once the end of the list leaves view and comes back', async () => {
+        const { search, viewport } = renderList(failingNextPage);
+        await screen.findByText('Extension 1');
+        viewport.setInView(true);
+        await waitFor(() => expect(offsets(search)).toEqual([0, 2]));
+        await new Promise(resolve => setTimeout(resolve, 100));
+        viewport.setInView(false);
+        viewport.setInView(true);
+        await waitFor(() => expect(offsets(search)).toEqual([0, 2, 2]));
+        await new Promise(resolve => setTimeout(resolve, 200));
+        expect(offsets(search)).toEqual([0, 2, 2]);
+    });
     it('requests nothing more when the first page holds every result', async () => {
         const { search, viewport } = renderList(async () => page(0, 2));
         await screen.findByText('Extension 1');
