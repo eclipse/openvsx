@@ -102,7 +102,8 @@ export function getJson<T>(url: URL, headers: http.OutgoingHttpHeaders, timeout:
 
 /**
  * Reads a response as JSON. A non-2xx status rejects with the `message` or `error` of a JSON
- * error body when there is one, and with the status otherwise.
+ * error body when there is one, and with the status otherwise. An HTML page rejects with an
+ * Error rather than its markup, since it usually means the URL points at a website, not an API.
  */
 export function jsonResponse<T>(resolve: (value: T) => void, reject: (reason: any) => void): (res: http.IncomingMessage) => void {
     return response => {
@@ -116,7 +117,7 @@ export function jsonResponse<T>(resolve: (value: T) => void, reject: (reason: an
         response.on('data', chunk => json += chunk);
         response.on('end', () => {
             if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
-                if (json.startsWith('{')) {
+                if (json.trimStart().startsWith('{')) {
                     try {
                         const parsed = JSON.parse(json) as { message?: string; error?: string };
                         const message = parsed.message || parsed.error;
@@ -130,8 +131,9 @@ export function jsonResponse<T>(resolve: (value: T) => void, reject: (reason: an
                     }
                 }
                 reject(statusError(response));
-            } else if (json.startsWith('<!DOCTYPE html>')) {
-                reject(json);
+            } else if (isHtml(response, json)) {
+                reject(withStatus(new Error(`The server responded with status ${response.statusCode} and an HTML page instead of JSON.`),
+                    response.statusCode));
             } else {
                 try {
                     resolve(JSON.parse(json));
@@ -161,6 +163,12 @@ function failOnTimeout(request: http.ClientRequest, url: URL, timeout: number | 
         fail(new Error(`No response from ${redactUrl(url)} for ${timeout} ms.`));
         request.destroy();
     });
+}
+
+// The body check covers servers that send HTML without a text/html Content-Type.
+function isHtml(response: http.IncomingMessage, body: string): boolean {
+    const contentType = response.headers['content-type']?.split(';')[0].trim().toLowerCase();
+    return contentType === 'text/html' || /^\s*<(?:!doctype\s+html|html)[\s>]/i.test(body);
 }
 
 function withoutCredentials(headers: http.OutgoingHttpHeaders = {}): http.OutgoingHttpHeaders {
