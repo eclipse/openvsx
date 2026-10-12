@@ -13,6 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ExtensionDetailOverview } from '../../../../src/pages/extension-detail/extension-detail-overview';
 import { Extension } from '../../../../src/extension-registry-types';
 import { renderWithProviders } from '../../support/test-providers';
@@ -78,20 +79,23 @@ describe('ExtensionDetailOverview', () => {
     });
 
     // The registry stores only the size of the package; the installed extension is larger by its
-    // compression ratio, so the sizes shown are labelled for what they are.
-    it('notes that the sizes are download sizes when any is shown', async () => {
+    // compression ratio, so an info icon beside the heading says what the sizes are.
+    it('explains in a tooltip that the sizes are download sizes', async () => {
         renderOverview({
             downloads: { universal: 'https://example.com/universal' },
             downloadSizes: { universal: 5 * 1024 * 1024 }
         });
 
-        expect(await screen.findByText(/installed size is larger/i)).toBeInTheDocument();
+        const info = await screen.findByLabelText(/installed size is larger/i);
+        await userEvent.hover(info);
+
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(/installed size is larger/i);
     });
 
-    it('does not note the download size when none is shown', async () => {
+    it('shows no info icon when no size is shown', async () => {
         renderOverview({ downloads: { universal: 'https://example.com/universal' } });
 
         expect(await screen.findByText('Universal')).toBeInTheDocument();
-        expect(screen.queryByText(/installed size is larger/i)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/installed size is larger/i)).not.toBeInTheDocument();
     });
 });

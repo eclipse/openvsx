@@ -9,12 +9,25 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
-import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
+import {
+    Box,
+    Theme,
+    Typography,
+    Button,
+    Link,
+    NativeSelect,
+    SxProps,
+    styled,
+    Grid,
+    Stack,
+    Tooltip
+} from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { MainContext } from '../../context';
 import { addQuery, createRoute, formatFileSize, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
@@ -81,6 +94,13 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>
                     Target Platforms:
                 </Box>
+                {Object.keys(props.extension.downloadSizes ?? {}).length > 0 ? (
+                    <Tooltip title='Download sizes; the installed size is larger.'>
+                        <Box component='span' tabIndex={0} sx={{ ml: 0.5, color: 'text.secondary', cursor: 'help' }}>
+                            <InfoOutlinedIcon fontSize='inherit' sx={{ verticalAlign: 'text-bottom' }} />
+                        </Box>
+                    </Tooltip>
+                ) : null}
                 <Stack component='ul' spacing={0.5} sx={{ m: 0, mt: 0.5, p: 0, listStyle: 'none' }}>
                     {Object.keys(props.extension.downloads).map(targetPlatform => {
                         const displayName = getTargetPlatformDisplayName(targetPlatform);
@@ -95,11 +115,6 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         ) : null;
                     })}
                 </Stack>
-                {Object.keys(props.extension.downloadSizes ?? {}).length > 0 ? (
-                    <Typography variant='caption' color='text.secondary'>
-                        Download sizes; the installed size is larger.
-                    </Typography>
-                ) : null}
             </Grid>
         );
     }, [props.extension.downloads, props.extension.downloadSizes]);
