@@ -97,7 +97,7 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                 {Object.keys(props.extension.downloadSizes ?? {}).length > 0 ? (
                     <Tooltip title='Download sizes; the installed size is larger.'>
                         <Box component='span' tabIndex={0} sx={{ ml: 0.5, color: 'text.secondary', cursor: 'help' }}>
-                            <InfoOutlinedIcon fontSize='inherit' sx={{ verticalAlign: 'text-bottom' }} />
+                            <InfoOutlinedIcon fontSize='inherit' sx={{ verticalAlign: 'top' }} />
                         </Box>
                     </Tooltip>
                 ) : null}
