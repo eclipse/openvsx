@@ -76,4 +76,22 @@ describe('ExtensionDetailOverview', () => {
         expect(await screen.findByText('Universal')).toBeInTheDocument();
         expect(screen.queryByText(/MB|KB|GB/)).not.toBeInTheDocument();
     });
+
+    // The registry stores only the size of the package; the installed extension is larger by its
+    // compression ratio, so the sizes shown are labelled for what they are.
+    it('notes that the sizes are download sizes when any is shown', async () => {
+        renderOverview({
+            downloads: { universal: 'https://example.com/universal' },
+            downloadSizes: { universal: 5 * 1024 * 1024 }
+        });
+
+        expect(await screen.findByText(/installed size is larger/i)).toBeInTheDocument();
+    });
+
+    it('does not note the download size when none is shown', async () => {
+        renderOverview({ downloads: { universal: 'https://example.com/universal' } });
+
+        expect(await screen.findByText('Universal')).toBeInTheDocument();
+        expect(screen.queryByText(/installed size is larger/i)).not.toBeInTheDocument();
+    });
 });

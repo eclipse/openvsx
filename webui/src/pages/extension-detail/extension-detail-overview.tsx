@@ -95,6 +95,11 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
                         ) : null;
                     })}
                 </Stack>
+                {Object.keys(props.extension.downloadSizes ?? {}).length > 0 ? (
+                    <Typography variant='caption' color='text.secondary'>
+                        Download sizes; the installed size is larger.
+                    </Typography>
+                ) : null}
             </Grid>
         );
     }, [props.extension.downloads, props.extension.downloadSizes]);
