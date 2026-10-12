@@ -14,6 +14,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 - `publish` now deletes the `.vsix` it packages into the temp directory once publishing finishes or fails, instead of leaving one behind per package and target
 - Drop the `X-OpenVSX-Token` header, which carries the personal access token when `--username`/`--password` are set, on a redirect to another origin, as is done for `Authorization`
 - A request with a body that is redirected with 301/302/303 now fails with an error naming the redirect target, instead of being resent as a GET without its body
+- Trusted publishing's OIDC ID token request now uses the registry client's request handling: it follows redirects (dropping the runner token on a redirect to another origin) and reports the token service's error message instead of only its status
 
 ### Dependencies
 
