@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { ExtensionDetailOverview } from '../../../../src/pages/extension-detail/extension-detail-overview';
 import { Extension } from '../../../../src/extension-registry-types';
 import { renderWithProviders } from '../../support/test-providers';
@@ -41,15 +41,20 @@ const extension = (overrides: Partial<Extension> = {}): Extension =>
 const renderOverview = (overrides: Partial<Extension> = {}) =>
     renderWithProviders(<ExtensionDetailOverview extension={extension(overrides)} selectVersion={() => {}} />);
 
+const platformRow = (name: string): HTMLElement =>
+    screen.getAllByRole('listitem').find(row => within(row).queryByText(name)) as HTMLElement;
+
 describe('ExtensionDetailOverview', () => {
-    it('shows the download size next to each target platform', async () => {
+    it('lists each target platform in its own row with its download size', async () => {
         renderOverview({
             downloads: { 'linux-x64': 'https://example.com/linux', 'win32-x64': 'https://example.com/win' },
             downloadSizes: { 'linux-x64': 5 * 1024 * 1024, 'win32-x64': 6 * 1024 * 1024 }
         });
 
-        expect(await screen.findByText(/Linux x64 \(5\.00 MB\)/)).toBeInTheDocument();
-        expect(screen.getByText(/Windows x64 \(6\.00 MB\)/)).toBeInTheDocument();
+        expect(await screen.findByText('Linux x64')).toBeInTheDocument();
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        expect(within(platformRow('Linux x64')).getByText('5.00 MB')).toBeInTheDocument();
+        expect(within(platformRow('Windows x64')).getByText('6.00 MB')).toBeInTheDocument();
     });
 
     // An extension published before the registry recorded sizes has none until the backfill reaches it.
@@ -60,8 +65,9 @@ describe('ExtensionDetailOverview', () => {
             downloadSizes: { 'linux-x64': 5 * 1024 * 1024 }
         });
 
-        expect(await screen.findByText(/Linux x64 \(5\.00 MB\)/)).toBeInTheDocument();
-        expect(screen.getByText(/Windows x64$/)).toBeInTheDocument();
+        expect(await screen.findByText('Linux x64')).toBeInTheDocument();
+        expect(within(platformRow('Linux x64')).getByText('5.00 MB')).toBeInTheDocument();
+        expect(within(platformRow('Windows x64')).queryByText(/MB|KB|GB/)).not.toBeInTheDocument();
     });
 
     it('lists the target platforms when no sizes are known at all', async () => {

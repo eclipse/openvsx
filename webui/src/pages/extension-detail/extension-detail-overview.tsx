@@ -79,18 +79,22 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         return (
             <Grid item xs={12}>
                 <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>
-                    Target Platforms:{' '}
+                    Target Platforms:
                 </Box>
-                {Object.keys(props.extension.downloads).map((targetPlatform, index) => {
-                    const displayName = getTargetPlatformDisplayName(targetPlatform);
-                    const size = props.extension.downloadSizes?.[targetPlatform];
-                    return displayName ? (
-                        <span key={targetPlatform}>
-                            {index > 0 ? ', ' : ''}
-                            {size === undefined ? displayName : `${displayName} (${formatFileSize(size)})`}
-                        </span>
-                    ) : null;
-                })}
+                <Stack component='ul' spacing={0.5} sx={{ m: 0, mt: 0.5, p: 0, listStyle: 'none' }}>
+                    {Object.keys(props.extension.downloads).map(targetPlatform => {
+                        const displayName = getTargetPlatformDisplayName(targetPlatform);
+                        const size = props.extension.downloadSizes?.[targetPlatform];
+                        return displayName ? (
+                            <Box component='li' key={targetPlatform} sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                                <Box component='span' sx={{ minWidth: '12rem', pr: 2 }}>
+                                    {displayName}
+                                </Box>
+                                {size === undefined ? null : <span>{formatFileSize(size)}</span>}
+                            </Box>
+                        ) : null;
+                    })}
+                </Stack>
             </Grid>
         );
     }, [props.extension.downloads, props.extension.downloadSizes]);
