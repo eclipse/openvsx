@@ -223,6 +223,15 @@ public class ExtensionJson extends ResultJson {
     @Schema(description = "Map of download links by target platform")
     private Map<String, String> downloads;
 
+    @Schema(
+        description = "Map of package sizes in bytes by target platform, for the same platforms as "
+                + "'downloads'. A platform is left out where its size is not known, which is the case for "
+                + "packages published before the registry started recording sizes and not yet backfilled. "
+                + "This is the download size; the installed extension is larger by the package's "
+                + "compression ratio."
+    )
+    private Map<String, Long> downloadSizes;
+
     @Schema(description = "Map of target platforms by extension version")
     private List<VersionTargetPlatformsJson> allTargetPlatformVersions;
 
@@ -598,6 +607,14 @@ public class ExtensionJson extends ResultJson {
         this.downloads = downloads;
     }
 
+    public Map<String, Long> getDownloadSizes() {
+        return downloadSizes;
+    }
+
+    public void setDownloadSizes(Map<String, Long> downloadSizes) {
+        this.downloadSizes = downloadSizes;
+    }
+
     public List<VersionTargetPlatformsJson> getAllTargetPlatformVersions() {
         return allTargetPlatformVersions;
     }
@@ -688,6 +705,7 @@ public class ExtensionJson extends ResultJson {
                 && Objects.equals(dependencies, that.dependencies)
                 && Objects.equals(bundledExtensions, that.bundledExtensions)
                 && Objects.equals(downloads, that.downloads)
+                && Objects.equals(downloadSizes, that.downloadSizes)
                 && Objects.equals(allTargetPlatformVersions, that.allTargetPlatformVersions)
                 && Objects.equals(url, that.url)
                 && Objects.equals(deprecated, that.deprecated)
@@ -739,6 +757,7 @@ public class ExtensionJson extends ResultJson {
                 dependencies,
                 bundledExtensions,
                 downloads,
+                downloadSizes,
                 allTargetPlatformVersions,
                 url,
                 deprecated,
