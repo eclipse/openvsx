@@ -45,14 +45,16 @@ class UpstreamRegistryServiceAspectTest {
 
     @Test
     void supportsFractionalRates() throws Throwable {
-        var aspect = new UpstreamRegistryServiceAspect(0.5);
+        var aspect = new UpstreamRegistryServiceAspect(2.5);
         var joinPoint = mock(ProceedingJoinPoint.class);
 
         var start = System.nanoTime();
         aspect.rateLimitMethodCall(joinPoint);
+        aspect.rateLimitMethodCall(joinPoint);
         var elapsed = Duration.ofNanos(System.nanoTime() - start);
 
-        assertThat(elapsed).isLessThan(Duration.ofSeconds(1));
+        // 2.5 rps is one call every 400 ms
+        assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(390));
     }
 
     @Test
