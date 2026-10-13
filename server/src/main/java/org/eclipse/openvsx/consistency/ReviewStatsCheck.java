@@ -90,6 +90,8 @@ public class ReviewStatsCheck implements ConsistencyCheck {
         if (extension == null) {
             return;
         }
+        // The lock does not reload an entity already managed by the scan in this transaction.
+        entityManager.refresh(extension);
 
         var count = repositories.countActiveReviews(extension);
         var rating = repositories.getAverageReviewRating(extension);

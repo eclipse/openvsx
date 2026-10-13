@@ -20,10 +20,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
@@ -56,6 +59,9 @@ class ReviewStatsCheckTest extends AbstractPostgresContainerTest {
 
     @Autowired
     ConsistencyCheckService consistencyCheckService;
+
+    @Autowired
+    ReviewStatsCheck check;
 
     @Autowired
     EntityManager em;
@@ -154,6 +160,31 @@ class ReviewStatsCheckTest extends AbstractPostgresContainerTest {
         assertThat(consistencyCheckService.fixAll(ReviewStatsCheck.ID)).isEqualTo(1);
         assertStats(2L, 3.0);
         verifyRepaired();
+    }
+
+    @Test
+    void fix_reindexesFreshStateEvenIfTheExtensionWasLoadedEarlier() {
+        givenActiveReviews(4, 2);
+        setStats(null, null);
+
+        new TransactionTemplate(txManager).executeWithoutResult(status -> {
+            // As in fixAll: check() has already loaded the extension into this transaction.
+            em.find(Extension.class, extensionId);
+            new TransactionTemplate(txManager, requiresNew()).executeWithoutResult(
+                    inner -> em.createNativeQuery("update extension set download_count = 42 where id = :id")
+                            .setParameter("id", extensionId)
+                            .executeUpdate());
+
+            check.fix(extensionId);
+        });
+
+        var indexed = ArgumentCaptor.forClass(Extension.class);
+        verify(search).updateSearchEntry(indexed.capture());
+        assertThat(indexed.getValue().getDownloadCount()).isEqualTo(42);
+    }
+
+    private static DefaultTransactionDefinition requiresNew() {
+        return new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     private void verifyRepaired() {
