@@ -27,7 +27,7 @@ import { UpdateContext } from './publisher-admin';
 import { useRevokePublisherContributions } from './use-publisher-admin';
 
 export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevokeContributionsButtonProps> = props => {
-    const { user, service, pageSettings, handleError } = useContext(MainContext);
+    const { user, service, handleError } = useContext(MainContext);
     const updateContext = useContext(UpdateContext);
     const { mutateAsync: revokeContributions, isPending: working } = useRevokePublisherContributions();
 
