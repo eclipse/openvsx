@@ -103,4 +103,16 @@ public interface ExtensionRepository extends Repository<Extension, Long> {
         nativeQuery = true
     )
     Streamable<Extension> findExtensionsWithStaleLastUpdatedDate();
+
+    // Extensions whose denormalized review_count / average_rating differ from their active reviews
+    // (null count = 0, no reviews = null or 0 rating; ratings compared with a small tolerance).
+    @Query(
+        value = "select e.* from extension e left join"
+                + " (select extension_id, count(*) cnt, avg(rating) avg_rating from extension_review"
+                + " where active = true group by extension_id) r on r.extension_id = e.id"
+                + " where coalesce(e.review_count, 0) <> coalesce(r.cnt, 0)"
+                + " or abs(coalesce(e.average_rating, 0) - coalesce(r.avg_rating, 0)) > 0.001",
+        nativeQuery = true
+    )
+    Streamable<Extension> findExtensionsWithInconsistentReviewStats();
 }
