@@ -290,6 +290,10 @@ public class RepositoryService {
         return extensionRepo.findExtensionsWithStaleLastUpdatedDate();
     }
 
+    public Streamable<Extension> findExtensionsWithInconsistentReviewStats() {
+        return extensionRepo.findExtensionsWithInconsistentReviewStats();
+    }
+
     public long countExtensions() {
         return extensionRepo.count();
     }
