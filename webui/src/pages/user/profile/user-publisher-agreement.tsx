@@ -98,7 +98,7 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
     const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
     const publisherAgreementSigned = user.publisherAgreement.status == 'signed';
     const loginProvider = user.publisherAgreement.loginProvider;
-    const loginProviderName = publisherAgreementName || loginProvider;
+    const loginProviderName = user.publisherAgreement.loginProviderName || loginProvider;
 
     let title: string;
     let description: ReactNode;

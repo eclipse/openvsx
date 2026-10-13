@@ -220,6 +220,8 @@ export interface UserData {
         timestamp?: TimestampString;
         /** Provider of the additional login needed to sign or revoke the agreement; none if absent. */
         loginProvider?: string;
+        /** Display name of the login provider; the provider id is shown if absent. */
+        loginProviderName?: string;
     };
     additionalLogins?: UserData[];
 }

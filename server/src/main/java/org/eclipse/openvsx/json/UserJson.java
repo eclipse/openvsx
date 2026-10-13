@@ -170,6 +170,9 @@ public class UserJson extends ResultJson {
         /* Additional login a user needs to sign or revoke the agreement, e.g. 'eclipse'; absent if none. */
         private String loginProvider;
 
+        /* Display name of the login provider, e.g. 'Eclipse'; clients fall back to the provider id. */
+        private String loginProviderName;
+
         public String getStatus() {
             return status;
         }
@@ -202,6 +205,14 @@ public class UserJson extends ResultJson {
             this.loginProvider = loginProvider;
         }
 
+        public String getLoginProviderName() {
+            return loginProviderName;
+        }
+
+        public void setLoginProviderName(String loginProviderName) {
+            this.loginProviderName = loginProviderName;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -214,12 +225,13 @@ public class UserJson extends ResultJson {
             return Objects.equals(status, that.status) &&
                     Objects.equals(version, that.version) &&
                     Objects.equals(timestamp, that.timestamp) &&
-                    Objects.equals(loginProvider, that.loginProvider);
+                    Objects.equals(loginProvider, that.loginProvider) &&
+                    Objects.equals(loginProviderName, that.loginProviderName);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(status, version, timestamp, loginProvider);
+            return Objects.hash(status, version, timestamp, loginProvider, loginProviderName);
         }
     }
 

@@ -45,7 +45,7 @@ export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevo
         return (
             <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', loginProvider])}>
                 <Button variant='contained' color='secondary'>
-                    Log in with {pageSettings?.publisherAgreement?.name || loginProvider}
+                    Log in with {user?.publisherAgreement?.loginProviderName || loginProvider}
                 </Button>
             </Link>
         );

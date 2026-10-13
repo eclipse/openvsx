@@ -20,7 +20,7 @@ import { PageSettings } from '../../../../../src/page-settings';
 import { UserData } from '../../../../../src/extension-registry-types';
 
 const service = { serverUrl: 'https://open-vsx.org' } as ExtensionRegistryService;
-const pageSettings = { publisherAgreement: { name: 'Eclipse' } } as PageSettings;
+const pageSettings = { publisherAgreement: { name: 'Open VSX' } } as PageSettings;
 
 const user = (overrides: Partial<UserData> = {}): UserData => ({
     loginName: 'octocat',
@@ -48,6 +48,12 @@ describe('UserPublisherAgreement', () => {
         render(user({ publisherAgreement: { status: 'none', loginProvider: 'acme' } }));
 
         expect(screen.getByRole('link')).toHaveAttribute('href', 'https://open-vsx.org/oauth2/authorization/acme');
+    });
+
+    it('labels the login with the display name when the server provides one', () => {
+        render(user({ publisherAgreement: { status: 'none', loginProvider: 'acme', loginProviderName: 'Acme Inc' } }));
+
+        expect(screen.getByRole('link', { name: 'Log in with Acme Inc' })).toBeInTheDocument();
     });
 
     it('offers signing once the user holds the named login', () => {

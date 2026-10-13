@@ -67,6 +67,22 @@ describe('PublisherRevokeContributionsButton', () => {
         );
     });
 
+    it('labels the login with the display name when the server provides one', () => {
+        renderWithProviders(
+            <PublisherRevokeContributionsButton publisherInfo={publisherInfo({ status: 'signed' })} />,
+            {
+                mainContext: {
+                    service,
+                    user: admin({
+                        publisherAgreement: { status: 'none', loginProvider: 'acme', loginProviderName: 'Acme Inc' }
+                    })
+                }
+            }
+        );
+
+        expect(screen.getByRole('link', { name: 'Log in with Acme Inc' })).toBeInTheDocument();
+    });
+
     it('revokes directly when the server names no additional login', () => {
         renderWithProviders(
             <PublisherRevokeContributionsButton publisherInfo={publisherInfo({ status: 'signed' })} />,
