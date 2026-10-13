@@ -218,6 +218,8 @@ export interface UserData {
     publisherAgreement?: {
         status: 'none' | 'signed' | 'outdated';
         timestamp?: TimestampString;
+        /** Provider of the additional login needed to sign or revoke the agreement; none if absent. */
+        loginProvider?: string;
     };
     additionalLogins?: UserData[];
 }

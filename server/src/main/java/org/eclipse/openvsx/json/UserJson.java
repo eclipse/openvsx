@@ -167,6 +167,9 @@ public class UserJson extends ResultJson {
 
         private String timestamp;
 
+        /* Additional login a user needs to sign or revoke the agreement, e.g. 'eclipse'; absent if none. */
+        private String loginProvider;
+
         public String getStatus() {
             return status;
         }
@@ -191,6 +194,14 @@ public class UserJson extends ResultJson {
             this.timestamp = timestamp;
         }
 
+        public String getLoginProvider() {
+            return loginProvider;
+        }
+
+        public void setLoginProvider(String loginProvider) {
+            this.loginProvider = loginProvider;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -202,12 +213,13 @@ public class UserJson extends ResultJson {
             PublisherAgreement that = (PublisherAgreement) o;
             return Objects.equals(status, that.status) &&
                     Objects.equals(version, that.version) &&
-                    Objects.equals(timestamp, that.timestamp);
+                    Objects.equals(timestamp, that.timestamp) &&
+                    Objects.equals(loginProvider, that.loginProvider);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(status, version, timestamp);
+            return Objects.hash(status, version, timestamp, loginProvider);
         }
     }
 
