@@ -23,7 +23,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 #### Changed
 
-- Move the Eclipse publisher agreement and Eclipse OAuth login out of the server behind the `PublisherAgreementService` and `ExternalLoginProvider` extension points; without an implementation, `ovsx.eclipse.*` has no effect
+- Move the Eclipse publisher agreement and Eclipse OAuth login out of the server behind the `PublisherAgreementService` and `ExternalLoginProvider` extension points; the `ovsx.eclipse.*` properties, their docs and the `ECLIPSE_CLIENT_*` handling in `generate-properties.sh` are removed, and a deployment that needs them supplies an implementation
 - Accept the personal access token via an Authorization: Bearer header ([#2209](https://github.com/eclipse-openvsx/openvsx/pull/2209))
 
 #### Fixed

@@ -745,6 +745,8 @@ public class UserAPI {
             json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
             json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
             publisherAgreements.signPublisherAgreement(user, json);
+            // Versions hidden while the agreement was missing or revoked become visible again.
+            extensions.reactivateExtensions(user);
 
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
