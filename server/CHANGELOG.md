@@ -21,6 +21,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Scope personal access tokens to a namespace or an extension, and add publishing-only tokens ([#2296](https://github.com/eclipse-openvsx/openvsx/pull/2296))
 - Publish a `SettingsChangedEvent` after the site settings change ([#2316](https://github.com/eclipse-openvsx/openvsx/pull/2316))
 - Expose the download size of each target platform as `downloadSizes` on the extension API response ([#2168](https://github.com/eclipse-openvsx/openvsx/pull/2168))
+- Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
 
 #### Changed
 
