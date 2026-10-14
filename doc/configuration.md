@@ -188,7 +188,7 @@ Further paths, comma separated, that the security configuration serves without a
 | Property      | `ovsx.search.relevance.rating`
 |---------------|---------------------------------------
 | Type          | double
-| Default       | `1.0`
+| Default       | `0.8`
 | Compatibility | Since 0.2.0
 
 Weight of user ratings for computing relevance. This has an impact on the order of search results when `sortBy` is set to `relevance`.
@@ -204,7 +204,7 @@ Weight of download counts for computing relevance. This has an impact on the ord
 | Property      | `ovsx.search.relevance.timestamp`
 |---------------|------------------------------------------
 | Type          | double
-| Default       | `1.0`
+| Default       | `0.7`
 | Compatibility | Since 0.2.0
 
 Weight of publishing timestamps for computing relevance (newer extensions are ranked higher). This has an impact on the order of search results when `sortBy` is set to `relevance`.
