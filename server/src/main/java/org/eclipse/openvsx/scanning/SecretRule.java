@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.scanning;
 
 import java.util.List;
@@ -39,7 +39,7 @@ public class SecretRule {
     /** Human-readable description of what this rule detects */
     private final @NonNull String description;
 
-    /** Compiled regex pattern to match secrets (case-insensitive) */
+    /** Compiled regex pattern to match secrets (case-sensitive unless the regex has an inline {@code (?i)}) */
     private final @NonNull Pattern pattern;
 
     /** Minimum Shannon entropy threshold (0.0-8.0). If set, matches below this are filtered out. */
@@ -57,7 +57,7 @@ public class SecretRule {
     private SecretRule(@NonNull Builder builder) {
         this.id = builder.id;
         this.description = builder.description;
-        this.pattern = Pattern.compile(builder.regex, Pattern.CASE_INSENSITIVE);
+        this.pattern = Pattern.compile(builder.regex);
         this.entropy = builder.entropy;
         this.secretGroup = builder.secretGroup;
 
@@ -143,7 +143,7 @@ public class SecretRule {
 
         /**
          * Set the regex pattern to match secrets.
-         * Pattern will be compiled as case-insensitive.
+         * Matching is case-sensitive, as in gitleaks; use an inline {@code (?i)} to opt out.
          */
         public Builder regex(String regex) {
             this.regex = regex;

@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.storage;
 
 import java.io.IOException;
@@ -312,6 +315,28 @@ public class StorageUtilService implements IStorageService {
     }
 
     /**
+     * The stored files of these versions, by version id, in one query.
+     * <p>
+     * {@link #getFileUrls} is the URL-only shorthand over this; a caller that needs more than the URL of a
+     * file - its size, say - takes the resources themselves rather than paying for a second query to read
+     * the other column.
+     */
+    public Map<Long, List<FileResource>> getFiles(Collection<ExtensionVersion> extVersions, String... types) {
+        var byVersion = extVersions.stream()
+                .map(ev -> Map.<Long, List<FileResource>>entry(ev.getId(), new ArrayList<>(types.length)))
+                .collect(
+                        Collectors.<Map.Entry<Long, List<FileResource>>, Long, List<FileResource>>toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue));
+
+        for (var resource : repositories.findFilesByType(extVersions, Arrays.asList(types))) {
+            byVersion.get(resource.getExtension().getId()).add(resource);
+        }
+
+        return byVersion;
+    }
+
+    /**
      * Returns URLs for the given file types as a map of ExtensionVersion.id by a map of type by file URL, to be used in JSON response data.
      */
     public Map<Long, Map<String, String>> getFileUrls(
@@ -319,19 +344,17 @@ public class StorageUtilService implements IStorageService {
             String serverUrl,
             String... types
     ) {
-        var type2Url = extVersions.stream()
-                .map(ev -> Map.<Long, Map<String, String>>entry(ev.getId(), new LinkedHashMap<>(types.length)))
-                .collect(
-                        Collectors.<Map.Entry<Long, Map<String, String>>, Long, Map<String, String>>toMap(
-                                Map.Entry::getKey,
-                                Map.Entry::getValue));
+        var type2Url = HashMap.<Long, Map<String, String>>newHashMap(extVersions.size());
+        getFiles(extVersions, types).forEach((extVersionId, resources) -> {
+            var urls = new LinkedHashMap<String, String>(types.length);
+            for (var resource : resources) {
+                urls.put(
+                        resource.getType(),
+                        createApiFileUrl(serverUrl, resource.getExtension(), resource.getName()));
+            }
 
-        var resources = repositories.findFilesByType(extVersions, Arrays.asList(types));
-        for (var resource : resources) {
-            var extVersion = resource.getExtension();
-            type2Url.get(extVersion.getId())
-                    .put(resource.getType(), createApiFileUrl(serverUrl, extVersion, resource.getName()));
-        }
+            type2Url.put(extVersionId, urls);
+        });
 
         return type2Url;
     }

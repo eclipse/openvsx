@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.admin;
 
 import java.time.LocalDateTime;
@@ -144,7 +144,7 @@ public class ScanAPI {
             ) List<String> threatScannerName
     ) {
         try {
-            admins.checkAdminUser();
+            admins.checkPermission(Permission.MANAGE_SCANS);
 
             var stats = new ScanStatisticsJson();
 
@@ -409,10 +409,14 @@ public class ScanAPI {
                 array = @ArraySchema(
                     schema = @Schema(type = "string", allowableValues = { "allowed", "blocked", "needs-review" })
                 )
-            ) List<String> adminDecision
+            ) List<String> adminDecision,
+            @RequestParam(defaultValue = "false")
+            @Parameter(
+                description = "Match the status filter exactly. Without it, filtering by ERROR also returns scans in other statuses that have an errored check result."
+            ) boolean exactStatus
     ) {
         try {
-            admins.checkAdminUser();
+            admins.checkPermission(Permission.MANAGE_SCANS);
 
             var statusFilter = parseStatusFilter(status);
             var normalizedPublisher = normalizeSearch(publisher);
@@ -440,7 +444,7 @@ public class ScanAPI {
             var pageable = PageRequest.of(pageNumber, size, sort);
 
             // Automatically include scans with errored check results when filtering by ERRORED status
-            var includeCheckErrors = statusFilter.contains(ScanStatus.ERRORED);
+            var includeCheckErrors = !exactStatus && statusFilter.contains(ScanStatus.ERRORED);
 
             var page = repositories.findScansFullyFiltered(
                     statusFilter.isEmpty() ? null : statusFilter,
@@ -597,7 +601,7 @@ public class ScanAPI {
     )
     public ResponseEntity<ScanFilterOptionsJson> getScanFilterOptions() {
         try {
-            admins.checkAdminUser();
+            admins.checkPermission(Permission.MANAGE_SCANS);
 
             var options = new ScanFilterOptionsJson();
 
@@ -639,7 +643,7 @@ public class ScanAPI {
             @Parameter(description = "Scan ID", example = "123") long scanId
     ) {
         try {
-            admins.checkAdminUser();
+            admins.checkPermission(Permission.MANAGE_SCANS);
 
             var scan = repositories.findExtensionScan(scanId);
             if (scan == null) {
@@ -689,7 +693,7 @@ public class ScanAPI {
             @Parameter(description = "Scan ID", example = "123") long scanId
     ) {
         try {
-            var adminUser = admins.checkAdminUser();
+            var adminUser = admins.checkPermission(Permission.MANAGE_SCANS);
 
             var scan = Optional.ofNullable(repositories.findExtensionScan(scanId))
                     .orElseThrow(() -> new ErrorResultException("Scan not found: " + scanId, HttpStatus.NOT_FOUND));
@@ -704,8 +708,9 @@ public class ScanAPI {
     }
 
     /**
-     * Make security decisions for one or more quarantined scans.
-     * Only valid for scans with QUARANTINED status.
+     * Make security decisions for one or more scans.
+     * Valid for scans with QUARANTINED status, and for ALLOWED decisions on scans with ERRORED
+     * status (e.g. a scanner bug that no retry can resolve).
      * Pass a single scanId for individual decisions, or multiple scanIds for bulk operations.
      * <p>
      * When a scan is allowed:
@@ -723,7 +728,7 @@ public class ScanAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @CrossOrigin
-    @Operation(summary = "Make security decisions for quarantined scans")
+    @Operation(summary = "Make security decisions for quarantined or errored scans")
     @MutatingOperation
     @ApiResponse(
         responseCode = "200",
@@ -735,14 +740,14 @@ public class ScanAPI {
     )
     @ApiResponse(
         responseCode = "400",
-        description = "Invalid request or scan not in quarantined status",
+        description = "Invalid request or scan status does not accept the decision",
         content = @Content()
     )
     public ResponseEntity<ScanDecisionResponseJson> makeScanDecisions(
             @RequestBody ScanDecisionRequest request
     ) {
         try {
-            var adminUser = admins.checkAdminUser();
+            var adminUser = admins.checkPermission(Permission.MANAGE_SCANS);
 
             if (request.getScanIds() == null || request.getScanIds().isEmpty()) {
                 throw new ErrorResultException("Scan IDs are required", HttpStatus.BAD_REQUEST);
@@ -768,11 +773,15 @@ public class ScanAPI {
                         continue;
                     }
 
-                    if (scan.getStatus() != ScanStatus.QUARANTINED) {
+                    var decidable = scan.getStatus() == ScanStatus.QUARANTINED
+                            || (scan.getStatus() == ScanStatus.ERRORED
+                                    && AdminScanDecision.ALLOWED.equals(decisionValue));
+                    if (!decidable) {
                         results.add(
                                 ScanDecisionResultJson.failure(
                                         scanIdStr,
-                                        "Scan not in quarantined status: " + formatScanStatus(scan.getStatus())));
+                                        "Scan not in a status that accepts this decision: "
+                                                + formatScanStatus(scan.getStatus())));
                         failed++;
                         continue;
                     }
@@ -1027,7 +1036,10 @@ public class ScanAPI {
         json.setStatus(job.getStatus().name());
         json.setCreatedAt(TimeUtil.toUTCString(job.getCreatedAt()));
         json.setUpdatedAt(TimeUtil.toUTCString(job.getUpdatedAt()));
-        json.setErrorMessage(job.getErrorMessage());
+        // Active jobs may carry transient poll errors; the DTO contract is failed/removed only.
+        if (job.getStatus().isTerminal()) {
+            json.setErrorMessage(job.getErrorMessage());
+        }
         json.setExternalUrl(buildExternalScannerUrl(job));
         return json;
     }

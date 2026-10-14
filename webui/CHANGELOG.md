@@ -6,17 +6,53 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Added
 
-- Add a "Caches" page to the admin dashboard: every cache registered in the application with what it holds, how often it is hit and how much it has evicted, and a way to clear one or all of them without restarting the server. A measurement the cache implementation cannot report is shown as a dash rather than a zero, so "not measured" stays distinguishable from "nothing cached"
-- Add a weekly downloads card to the extension detail page, shown only when the registry reports download analytics as enabled: the last 7 days' downloads, a sparkline of the weekly totals for the year behind it, and the period the headline covers. Hovering moves a marker line and reads out that week instead, and the card shows a skeleton in the same shape while the series loads. The figure names its unit, the curve is filled from zero and carries a description naming the per-week unit, so it is not read as a running total
-- Ask an anonymous visitor to log in on an extension's reviews tab, where the slot holding "Write a Review" was blank: the registry's login providers are offered as "Log in to Review", one provider linking straight to it and several opening the existing picker. Nothing is shown on a registry with no login providers configured, the same guard the navbar and publish page use. Arriving from an IDE's star-rating link lands on this tab without passing the header, so there was nothing on the page to act on and nothing saying an account is needed
+- Show the download size of each target platform's package next to its name on the extension detail page, from the new `downloadSizes` field of `Extension` ([#367](https://github.com/eclipse-openvsx/openvsx/issues/367))
+- Add an "Errors" tab to the scan admin page, where an admin can activate extension versions whose scan ended in an error that retrying cannot resolve. The Allowed Files and Blocked Files tabs move to positions 5 and 6, and their `tab` URL parameter values are unchanged
+- Add fine-grained admin permissions: a user can hold individual admin capabilities instead of the all-or-nothing admin role, and reaches the dashboard with only the pages those capabilities cover (#2269)
+- Add an "Access Control" admin dashboard page, where a user's role and permissions are assigned together and applied on Save; both move here from Publisher admin (#2269)
+- Export `hasPermission` and `hasAnyAdminAccess`, so a deployment with its own menu content can gate an admin entry the way the built-in menu does (#2269)
+- A contributed `adminPages` entry can declare the `permission` it needs; without one it stays admin-only, as it was while the whole dashboard required that role (#2269)
+- Add a "Caches" page to the admin dashboard, with per-cache hit/eviction stats and a way to clear one or all without restarting the server (#2203)
+- Add a weekly downloads card to the extension detail page, with a hoverable sparkline of the year's weekly totals (#2135)
+- Add a configurable site banner to the admin dashboard's Settings page, with a Markdown message, severity, a live preview of what visitors will see and an opt-out for showing it again to everyone who dismissed it, served from `/api/-/settings` ([#2256](https://github.com/eclipse-openvsx/openvsx/issues/2256))
+- Prompt anonymous visitors to log in on an extension's reviews tab, where "Write a Review" was previously blank (#2148)
+- Add a default max extension size field to the admin dashboard's Settings page, backed by a new `max-extension-size` runtime setting; falls back to the server's configured `ovsx.publishing.max-content-size` until an admin sets it explicitly, and cannot be raised past the server's `ovsx.publishing.max-override-size` ceiling ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
+- Add a "Size overrides" page to the admin dashboard for managing per-namespace and per-extension upload size limits, each capped at the same `ovsx.publishing.max-override-size` ceiling ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
+
+- Let a personal access token be restricted to a namespace or a single extension, and to publishing only, when it is generated, choosing the namespace from the ones the user is a member of and the extension from its active extensions, and show that in the token list ([#957](https://github.com/eclipse-openvsx/openvsx/issues/957))
 
 ### Changed
 
-- Return to the page a login started from instead of the front page: every login link now carries the current location, so the navbar menu, the publish page, user settings, the admin dashboard and the new reviews prompt all come back to where they were used. The registry honours the target only if it is one of its own Web UI routes, and an Eclipse login still lands on the profile page, where the publisher agreement is signed
+- **Breaking:** `AdminService.updateUserRole` is replaced by `updateUserAccess(provider, login, { role, permissions })`, which writes a user's role and permissions as one state in one request against the new `PUT /admin/user/{provider}/{login}/access` endpoint (#2269)
+- Removing an extension review follows the `manage_extensions` permission rather than the admin role, which admins hold either way (#2269)
+- Return to the page a login started from, instead of always landing on the front page (#2148)
+- Load an extension's icon only when it comes near the viewport, instead of every icon on the page at once (#2213)
+- Group the admin dashboard's sidebar into Content, Search, Maintenance, Administration, Rate Limiting, and Analytics sections instead of one flat list. The first section starts expanded, as does whichever section holds the current page, whether opened directly or navigated to ([#2278](https://github.com/eclipse-openvsx/openvsx/issues/2278))
+- Redesign the 404 page to match the new web UI, with a search field prefilled with the last segment of the requested path
+- **Breaking:** rename `useRegisterPageSearchBar` to `useSearchBar(ref)` (the ref is now required), which also takes `/` focus requests and gives focus back to the nav field when the bar leaves view
 
-### Changed
+### Fixed
 
-- Load an extension's icon only when it comes near the viewport, rather than every icon on the page at once. Icons are fetched as blobs, so the browser's own lazy loading never applied to them: the home page pulled 21 at mount and a search result list pulled one per card it had rendered. An extension with no icon shows the default straight away, and loading starts a little before the icon scrolls into view, so it is normally there by the time it is on screen
+- Fix `sendNonRetriableRequest` and `sendStrictRequest` still retrying network errors and aborted requests three times (#2237)
+- The publish page no longer refuses a package larger than the registry's default limit without asking the server. A namespace with a size override may publish more than the default allows, so the upload is now only blocked above the registry's ceiling — the largest any namespace could publish. A package that looks too big is shown in the queue while that ceiling is re-read, rather than the page staying empty until the answer arrives ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
+- The admin dashboard's Settings page sends only the settings that were changed, so saving no longer reverts a setting another admin changed while the page was open ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
+- The namespace details form no longer enables Save after a social handle is typed and then cleared, and now enables it when only the LinkedIn account type changes
+
+### Dependencies
+
+- Bump vitest from 4.1.11 to 5.0.3
+- Bump vite from 8.2.1 to 8.3.2
+- Bump ip-address from 10.4.0 to 10.7.2
+- Bump undici from 8.9.0 to 8.11.2
+- Bump markdown-it from 14.2.0 to 14.3.1
+- Bump brace-expansion from 1.1.18 to 1.1.21, 2.1.7, 5.0.12
+- Bump dompurify from 3.4.13 to 3.4.16
+- Bump fast-uri from 3.1.7 to 3.1.8
+- Pin the transitive `node-gyp` resolution to `^13.1.0` (from 12.2.0), which `fsevents`' optional dependency had resolved to `latest`
+- Bump source-map-js from 1.2.1 to 1.2.2
+- Bump proxy-addr from 2.0.7 to 2.0.8
+- Remove `lodash` and `@types/lodash`
+- Remove `clipboard-copy` in favor of the built-in `navigator.clipboard.writeText`
 
 ## [v1.2.0] (10/09/2026)
 
@@ -29,6 +65,11 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Show a warning notice with a claim action wherever an unverified namespace is holding something back — the extension settings page when the extension has a namespace ownership conflict, and the namespace settings page for any unverified namespace — making clear the namespace must be claimed (verified) first. The action is the deployment's configured `elements.claimNamespace`, falling back to the namespace access documentation when none is configured. The admin dashboard's extension and namespace views show the same explanation without the claim action, since claiming is the publisher's action to take, not an admin's on someone else's behalf
 - Add a "Search Index" page to the admin dashboard: which engine answers searches, how many extensions the index holds against how many it is built from, and a button to rebuild it where there is an index to rebuild. The two counts sit side by side because an index that has quietly lost entries answers searches perfectly well, just with nothing in them, which is indistinguishable from an empty registry unless both numbers are visible at once
 - Mark a version that was published through a trusted publishing workflow with an icon next to "Published by" on the extension detail page, linking to the deployment's trusted publishing documentation. The default deployment points that link at the [Trusted Publishing](https://github.com/eclipse-openvsx/openvsx/wiki/Trusted-Publishing) wiki page
+- Add a `Pill` component — the clickable glass pill the category pills are built on, now usable on its own — and extract the `MonoSlash`, `glassSurface` and `compactControl` page primitives out of the search field, the pills and the search header
+- Add `userLoading` to `MainContext`, so custom pages can tell "not logged in" from "still resolving the user"
+- Add a `userMenuContent` slot to `PageSettings.elements`: extra entries for the logged-in account menu, rendered above the admin entry. The slot receives a `MenuEntry` component to build entries with, so each entry is styled by the menu it appears in — the desktop and mobile menus style theirs differently, and a consumer cannot match both on its own
+- Add an `adminPages` slot to `PageSettings.elements`: extra admin dashboard pages, each declaring a name, icon, optional description and optional category, and each appearing in the side panel, as a card on the dashboard overview and as a route. Contributions are additive — a category name matching a built-in group appends to it, and a page whose path would shadow a built-in one is ignored
+- Widen the published API for consumers building their own pages: the request layer (`sendRequest`, `sendNonRetriableRequest`, `ErrorResponse`, `controllerFromSignal`), `MainContext`, `AppProviders`, `NotFound`, `createDefaultTheme` with the `MONO_FONT`/`NAVBAR_HEIGHT` tokens, the `createRoute`/`createAbsoluteURL`/`addQuery`/`formatCompactNumber`/`toRelativeTime` utils, the `useDebouncedCallback` and `useGridCursor` hooks, the navbar-chrome, search-focus and page-search-bar hooks, the category icon helpers, `ExtensionDetailRoutes`, and the `itemIcon`/`MenuItemText` building blocks for `userMenuContent` entries
 
 ### Changed
 
@@ -42,17 +83,6 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Publishing goes through TanStack Query: `publishExtension` and `createNamespace` are mutation hooks (`usePublishExtension`, `useCreateNamespace`), and both service methods lose their `AbortController` parameter — writes are no longer aborted, and retries are the query client's to own. The user's extension list is a query too (`useUserExtensions`), read by the settings tab and by the publish queue as it follows a package, so a card appears in the list as soon as the registry has the package
 - `ExtensionCard` accepts an `Extension` as well as a `SearchEntry`, and takes optional `to`, `linkState`, `overlay`, `footerStart`, `dimmed`, `tone` and `iconPending` props so other surfaces can reuse it instead of copying it
 - Show an extension card's rating as one star and the score rather than five stars, and no rating at all on an extension nobody has reviewed. Five icons could not shrink, so beside a long download count the count spilled out of the card
-
-### Added
-
-- Add a `Pill` component — the clickable glass pill the category pills are built on, now usable on its own — and extract the `MonoSlash`, `glassSurface` and `compactControl` page primitives out of the search field, the pills and the search header
-- Add `userLoading` to `MainContext`, so custom pages can tell "not logged in" from "still resolving the user"
-- Add a `userMenuContent` slot to `PageSettings.elements`: extra entries for the logged-in account menu, rendered above the admin entry. The slot receives a `MenuEntry` component to build entries with, so each entry is styled by the menu it appears in — the desktop and mobile menus style theirs differently, and a consumer cannot match both on its own
-- Add an `adminPages` slot to `PageSettings.elements`: extra admin dashboard pages, each declaring a name, icon, optional description and optional category, and each appearing in the side panel, as a card on the dashboard overview and as a route. Contributions are additive — a category name matching a built-in group appends to it, and a page whose path would shadow a built-in one is ignored
-- Widen the published API for consumers building their own pages: the request layer (`sendRequest`, `sendNonRetriableRequest`, `ErrorResponse`, `controllerFromSignal`), `MainContext`, `AppProviders`, `NotFound`, `createDefaultTheme` with the `MONO_FONT`/`NAVBAR_HEIGHT` tokens, the `createRoute`/`createAbsoluteURL`/`addQuery`/`formatCompactNumber`/`toRelativeTime` utils, the `useDebouncedCallback` and `useGridCursor` hooks, the navbar-chrome, search-focus and page-search-bar hooks, the category icon helpers, `ExtensionDetailRoutes`, and the `itemIcon`/`MenuItemText` building blocks for `userMenuContent` entries
-
-### Changed
-
 - Rename `ScrollToTop` to `ScrollRestoration`, matching what it does on back/forward navigation
 - Rename the extension tint context to `navbar-chrome-context` and add a second channel to it: a page with sections pinned under the navbar can extend the navbar's blur fan down to back them (`useExtendNavbarBlur`)
 - Give Popover and Autocomplete popups the same floating-paper treatment as the other menus, and stop Popovers locking body scroll — the lock jumps the scroll position on mobile and shifts the pinned chrome

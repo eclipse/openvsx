@@ -144,6 +144,9 @@ export interface Extension {
 
     // key: target platform, value: download link
     downloads: { [targetPlatform: string]: UrlString };
+    // key: target platform, value: size in bytes of the package behind its download link. A platform is
+    // absent where the registry does not know the size, and this is the download size, not the installed one.
+    downloadSizes?: { [targetPlatform: string]: number };
     allTargetPlatformVersions?: VersionTargetPlatforms[];
 
     deprecated: boolean;
@@ -210,11 +213,38 @@ export interface UserData {
     homepage?: string;
     provider?: string;
     role?: string;
+    /** Admin capabilities individually granted to this user, independent of role (see AdminPermission). */
+    permissions?: AdminPermission[];
     publisherAgreement?: {
         status: 'none' | 'signed' | 'outdated';
         timestamp?: TimestampString;
     };
     additionalLogins?: UserData[];
+}
+
+/**
+ * A single admin capability, matching the server's `org.eclipse.openvsx.entities.Permission` enum.
+ * A user with role 'admin' implicitly has every value here without it appearing in `permissions`.
+ */
+export type AdminPermission =
+    | 'manage_namespaces'
+    | 'manage_extensions'
+    | 'manage_publishers'
+    | 'manage_scans'
+    | 'manage_consistency'
+    | 'manage_rate_limits'
+    | 'manage_caches'
+    | 'manage_search_index'
+    | 'manage_settings'
+    | 'view_reports';
+
+/**
+ * The admin access a user should end up with, as a whole rather than a delta: `permissions`
+ * replaces whatever they hold now, and `role: 'none'` removes their role.
+ */
+export interface UserAccess {
+    role: 'admin' | 'privileged' | 'none';
+    permissions: AdminPermission[];
 }
 
 export interface UserRelationships {
@@ -245,6 +275,9 @@ export interface PersonalAccessToken {
     notified?: boolean;
     description: string;
     deleteTokenUrl: UrlString;
+    publishingOnly?: boolean;
+    scopeNamespace?: string;
+    scopeExtension?: string;
 }
 
 export const CATEGORIES = [
@@ -364,7 +397,10 @@ export interface TargetPlatformVersion {
 
 export interface RegistryVersion {
     version: string;
+    /** Default limit in bytes, applied when neither a namespace nor an extension override applies. */
     maxExtensionSize?: number;
+    /** Largest package the registry accepts from any namespace: the default raised by the highest override. */
+    maxExtensionSizeCeiling?: number;
     analyticsEnabled?: boolean;
 }
 
@@ -567,6 +603,21 @@ export interface TierList {
     tiers: Tier[];
 }
 
+export interface SizeOverride {
+    id: number;
+    namespace: string;
+    /** Absent means the override applies to the whole namespace. */
+    extension?: string;
+    /** Maximum package size in bytes. */
+    maxSize: number;
+}
+
+export interface SizeOverrideList {
+    sizeOverrides: SizeOverride[];
+    /** Read-only: neither a size override nor the registry-wide default can be raised past this ceiling. */
+    maxOverrideSize: number;
+}
+
 export enum EnforcementState {
     EVALUATION = 'EVALUATION',
     ENFORCEMENT = 'ENFORCEMENT'
@@ -626,8 +677,26 @@ export interface LogPageableList {
     };
 }
 
-export interface Settings {
+export type BannerSeverity = 'info' | 'warning';
+
+/**
+ * The settings the registry serves to every visitor. While the banner is switched on all four
+ * properties are present; while it is off, none are.
+ */
+export interface SiteSettings {
+    bannerEnabled?: boolean;
+    bannerMessage?: string;
+    bannerSeverity?: BannerSeverity;
+    bannerDismissId?: string;
+}
+
+/** Runtime settings as an admin reads them. A save sends a `Partial` of this, only what changed. */
+export interface Settings extends SiteSettings {
     readOnly: boolean;
+    /** Default max extension package size in bytes, applied when no namespace/extension override exists. */
+    maxExtensionSize: number;
+    /** Read-only: neither maxExtensionSize nor a size override can be raised past this ceiling. */
+    maxOverrideSize: number;
 }
 
 export interface SearchIndex {

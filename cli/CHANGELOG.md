@@ -2,6 +2,34 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
+### [next] (unreleased)
+
+#### Changed
+
+- `publish` checks a package against the size limit that applies to its own namespace, which a size override can raise above the registry default, and refuses an oversized upload before sending it. Against a registry older than 1.3.0, which cannot report that limit, it warns against the default and publishes anyway; if a registry that should be able to report it does not answer, it says the check did not happen rather than passing silently ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
+
+#### Fixed
+
+- `--version` reads the version from `package.json` at runtime instead of a generated `src/version.ts`, so it can no longer report a stale version
+- `publish` now deletes the `.vsix` it packages into the temp directory once publishing finishes or fails, instead of leaving one behind per package and target
+- Drop the `X-OpenVSX-Token` header, which carries the personal access token when `--username`/`--password` are set, on a redirect to another origin, as is done for `Authorization`
+- A request with a body that is redirected with 301/302/303 now fails with an error naming the redirect target, instead of being resent as a GET without its body
+- Trusted publishing's OIDC ID token request now uses the registry client's request handling: it follows redirects (dropping the runner token on a redirect to another origin) and reports the token service's error message instead of only its status
+- An HTML page in a successful response (any `<!doctype html>` casing, or a `text/html` Content-Type) now fails with an error naming the status, instead of printing the raw HTML or a JSON `SyntaxError`
+- An error response whose JSON body starts with whitespace now reports the server's message instead of only its status
+
+### Dependencies
+
+- Bump commander from 6.2.1 to 14.0.3; a command given more arguments than it takes now fails instead of ignoring the extras
+- Bump @vscode/vsce from 3.7.1 to 4.0.0
+- Bump vitest from 4.1.11 to 5.0.3, adding `vite` as a direct dev dependency - vitest 5 no longer bundles it, only requires it as a peer
+- Remove `leven`; the command-suggestion distance check now uses a vendored Levenshtein implementation, the same way `@vscode/vsce` itself replaced its own `leven` dependency in 4.0.0
+- Remove `tmp`; temporary file names are now generated with `crypto.randomUUID`
+- Remove `follow-redirects`; requests use `node:http`/`node:https` and the registry client follows redirects itself
+- Bump ip-address from 10.4.0 to 10.7.2
+- Bump brace-expansion to 1.1.21, 2.1.7, 5.0.12
+- Bump markdown-it from 14.2.0 to 14.3.2
+
 ### [v1.2.0] (10/09/2026)
 
 #### Added
@@ -25,6 +53,7 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 #### Changed
 
+- `createNamespace`, `verifyPat`, `publish` and `delete` now send the personal access token primarily via an `Authorization: Bearer` header (or, when `OVSX_USERNAME`/`OVSX_PASSWORD` are set, an `X-OpenVSX-Token` header, since `Authorization` is then already in use for Basic auth to a fronting proxy), moving away from a `token` query parameter that gets recorded in server and reverse-proxy access logs. The CLI checks the registry's reported version (`/api/version`) and only still sends the token as a query parameter, alongside the header, when talking to a registry older than 1.3.0, i.e. one that predates header support - including one whose version can't be determined at all, which is treated as too old rather than assumed to be caught up; on 1.3.0 and later the header is all it sends ([#1344](https://github.com/eclipse-openvsx/openvsx/issues/1344))
 - `publish --trusted-publishing` retries the token exchange when the registry answers that it could not verify the ID token (502, 503, 504), rather than failing the build on a blip reaching the identity provider. A refusal is never retried
 - `publish --trusted-publishing` requests a new token and retries once when the registry refuses the one it was publishing with. The issued token is short-lived and shared by every target platform of a release, so publishing a wide fan-out of large packages could outlive it and fail partway through. Targets that are refused together share one new token, and a token supplied with `--pat` is never retried
 - Bump minimum supported Node.js version to 22, matching the webui component

@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx;
 
 import java.io.ByteArrayOutputStream;
@@ -44,6 +47,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -51,6 +55,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestTemplate;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -84,6 +89,7 @@ import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
+import org.eclipse.openvsx.util.HttpHeadersUtil;
 import org.eclipse.openvsx.util.LogService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TargetPlatform;
@@ -92,6 +98,7 @@ import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
 import org.eclipse.openvsx.util.VersionAlias;
 import org.eclipse.openvsx.util.VersionService;
+import org.eclipse.openvsx.web.WebUiProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.entities.FileResource.*;
@@ -123,6 +130,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ExtensionDownloadMetrics.class,
         CacheService.class,
         EclipseService.class,
+        RestTemplate.class,
         PublishExtensionVersionService.class,
         SimpleMeterRegistry.class,
         JobRequestScheduler.class,
@@ -141,6 +149,9 @@ class RegistryAPITest {
      * bound the endpoint clamps to is the one a deployment would use.
      */
     private static final Duration CHANGES_FEED_LAG = Duration.ofSeconds(30);
+
+    /** The size the mocked extension's .vsix reports, in bytes. */
+    private static final long DOWNLOAD_SIZE = 1_234_567L;
 
     @MockitoSpyBean
     UserService users;
@@ -277,6 +288,35 @@ class RegistryAPITest {
                     e.setTimestamp("2000-01-01T10:00Z");
                     e.setDisplayName("Foo Bar");
                 })));
+    }
+
+    // The size travels from file_resource.size to the JSON untouched, keyed by target platform like
+    // 'downloads', so a client can show how big each platform's download is without fetching it.
+    @Test
+    void testExtensionDownloadSizes() throws Exception {
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findVersionsForUrls(any(), any(), any())).thenReturn(List.of(extVersion));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.downloadSizes.universal").value(DOWNLOAD_SIZE))
+                .andExpect(jsonPath("$.downloadSize").doesNotExist());
+    }
+
+    // Omitted rather than sent as 0, which a client could not tell from a genuinely empty file: a package
+    // published before the size column existed has none until the backfill reaches it.
+    @Test
+    void testExtensionDownloadSizesUnknown() throws Exception {
+        var extVersion = mockExtension();
+        Mockito.when(repositories.findExtensionVersion("foo", "bar", null, VersionAlias.LATEST)).thenReturn(extVersion);
+        Mockito.when(repositories.findVersionsForUrls(any(), any(), any())).thenReturn(List.of(extVersion));
+        repositories.findFilesByType(List.of(extVersion), List.of(DOWNLOAD)).forEach(file -> file.setSize(null));
+
+        mockMvc.perform(get("/api/{namespace}/{extension}", "foo", "bar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.downloads.universal").exists())
+                .andExpect(jsonPath("$.downloadSizes.universal").doesNotExist());
     }
 
     @Test
@@ -1728,6 +1768,23 @@ class RegistryAPITest {
     }
 
     @Test
+    void testCreateNamespaceBearerHeader() throws Exception {
+        var token = mockAccessToken();
+        Mockito.when(repositories.findMemberships(token.getUser()))
+                .thenReturn(Streamable.empty());
+        mockMvc.perform(
+                post("/api/-/namespace/create")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer my_token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(namespaceJson(n -> {
+                            n.setName("foobar");
+                        })))
+                .andExpect(status().isCreated())
+                .andExpect(redirectedUrl("http://localhost/api/foobar"))
+                .andExpect(content().json(successJson("Created namespace foobar")));
+    }
+
+    @Test
     void testCreateNamespaceNoName() throws Exception {
         mockAccessToken();
         mockMvc.perform(
@@ -1806,6 +1863,75 @@ class RegistryAPITest {
     }
 
     @Test
+    void testVerifyTokenScopedToNamespace() throws Exception {
+        var token = mockForPublish("contributor");
+        token.setScopeNamespace(repositories.findNamespace("foo"));
+        var other = new Namespace();
+        other.setName("other");
+        Mockito.when(repositories.findNamespace("other")).thenReturn(other);
+        Mockito.when(repositories.canPublishInNamespace(token.getUser(), other)).thenReturn(true);
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "other", "my_token"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testVerifyTokenScopedToExtension() throws Exception {
+        var token = mockForPublish("contributor");
+        var extension = new Extension();
+        extension.setName("bar");
+        extension.setNamespace(repositories.findNamespace("foo"));
+        token.setScopeExtension(extension);
+        var other = new Namespace();
+        other.setName("other");
+        Mockito.when(repositories.findNamespace("other")).thenReturn(other);
+        Mockito.when(repositories.canPublishInNamespace(token.getUser(), other)).thenReturn(true);
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "other", "my_token"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testVerifyTokenPublishingOnly() throws Exception {
+        var token = mockForPublish("contributor");
+        token.setType(PersonalAccessTokenType.LLP);
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", "foo", "my_token"))
+                .andExpect(status().isOk());
+    }
+
+    /**
+     * A blank parameter would otherwise reach {@code VerifyPublishVersion}, whose constructor rejects
+     * it with an IllegalArgumentException the endpoint does not catch - a client mistake reported as
+     * a server error.
+     */
+    @Test
+    void testSizeLimitRejectsABlankNamespace() throws Exception {
+        mockMvc.perform(get("/api/-/size-limit?namespace={ns}&extension={ext}&token={token}", "", "bar", "my_token"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testSizeLimitRejectsABlankExtension() throws Exception {
+        mockMvc.perform(get("/api/-/size-limit?namespace={ns}&extension={ext}&token={token}", "foo", "", "my_token"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // A blank namespace would otherwise reach the VerifyNamespace constructor, which rejects it with an
+    // IllegalArgumentException the endpoint does not catch.
+    @Test
+    void testVerifyTokenRejectsABlankNamespace() throws Exception {
+        mockAccessToken();
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat?token={token}", " ", "my_token"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void testVerifyTokenNoNamespace() throws Exception {
         mockAccessToken();
 
@@ -1826,8 +1952,61 @@ class RegistryAPITest {
         mockAccessToken();
         mockNamespace();
 
+        // the token parameter is optional now that the token can also arrive via a header, so a
+        // request with neither is an invalid-token 401, not a missing-parameter 400
         mockMvc.perform(get("/api/{namespace}/verify-pat", "foobar"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().json(errorJson("Invalid access token.")));
+    }
+
+    @Test
+    void testVerifyTokenBearerHeader() throws Exception {
+        mockForPublish("owner");
+
+        mockMvc.perform(
+                get("/api/{namespace}/verify-pat", "foo").header(HttpHeaders.AUTHORIZATION, "Bearer my_token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testVerifyTokenBearerHeaderCaseInsensitiveScheme() throws Exception {
+        mockForPublish("owner");
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat", "foo").header(HttpHeaders.AUTHORIZATION, "bearer my_token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testVerifyTokenOpenVsxHeaderFallback() throws Exception {
+        // The X-OpenVSX-Token header is the fallback for when Authorization is already in use
+        // (e.g. Basic auth to a fronting proxy) - it still has to work on its own.
+        mockForPublish("owner");
+
+        mockMvc.perform(get("/api/{namespace}/verify-pat", "foo").header(HttpHeadersUtil.TOKEN_HEADER, "my_token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testVerifyTokenAuthorizationTakesPriority() throws Exception {
+        // my_token is valid (mockForPublish sets it up); the other two are not, so this only
+        // succeeds if Authorization: Bearer is actually the one being resolved.
+        mockForPublish("owner");
+
+        mockMvc.perform(
+                get("/api/{namespace}/verify-pat?token={token}", "foo", "wrong-query-token")
+                        .header(HttpHeadersUtil.TOKEN_HEADER, "wrong-fallback-header-token")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer my_token"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testVerifyTokenOpenVsxHeaderTakesPriorityOverQuery() throws Exception {
+        mockForPublish("owner");
+
+        mockMvc.perform(
+                get("/api/{namespace}/verify-pat?token={token}", "foo", "wrong-query-token")
+                        .header(HttpHeadersUtil.TOKEN_HEADER, "my_token"))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -2029,6 +2208,29 @@ class RegistryAPITest {
         var bytes = createExtensionPackage("bar", "1.0.0", null);
         mockMvc.perform(
                 post("/api/-/publish?token={token}", "my_token")
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .content(bytes))
+                .andExpect(status().isCreated())
+                .andExpect(content().json(extensionJson(e -> {
+                    e.setNamespace("foo");
+                    e.setName("bar");
+                    e.setVersion("1.0.0");
+                    var u = new UserJson();
+                    u.setLoginName("test_user");
+                    e.setPublishedBy(u);
+                    e.setVerified(true);
+                    e.setDownloadable(true);
+                })));
+    }
+
+    @Test
+    void testPublishBearerHeader() throws Exception {
+        mockForPublish("owner");
+        mockActiveVersion();
+        var bytes = createExtensionPackage("bar", "1.0.0", null);
+        mockMvc.perform(
+                post("/api/-/publish")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer my_token")
                         .contentType(MediaType.APPLICATION_OCTET_STREAM)
                         .content(bytes))
                 .andExpect(status().isCreated())
@@ -2248,6 +2450,16 @@ class RegistryAPITest {
         mockForDelete(true, true);
         mockMvc.perform(
                 post("/api/{namespace}/{extension}/delete?allVersions=true&token={token}", "foo", "bar", "my_token"))
+                .andExpect(status().isOk())
+                .andExpect(content().json(successJson("Deleted foo.bar 1.0.0\nDeleted foo.bar 2.0.0")));
+    }
+
+    @Test
+    void testDeleteExtensionBearerHeader() throws Exception {
+        mockForDelete(true, true);
+        mockMvc.perform(
+                post("/api/{namespace}/{extension}/delete?allVersions=true", "foo", "bar")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer my_token"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(successJson("Deleted foo.bar 1.0.0\nDeleted foo.bar 2.0.0")));
     }
@@ -3081,6 +3293,7 @@ class RegistryAPITest {
         download.setType(DOWNLOAD);
         download.setStorageType(STORAGE_LOCAL);
         download.setName("extension-1.0.0.vsix");
+        download.setSize(DOWNLOAD_SIZE);
         var signature = new FileResource();
         if (withSignature) {
             signature.setExtension(extVersion);
@@ -3355,7 +3568,8 @@ class RegistryAPITest {
         token.setValue("my_token");
         token.setActive(true);
         token.setType(PersonalAccessTokenType.LLT);
-        Mockito.when(repositories.findPersonalAccessToken("my_token"))
+        // token.version defaults to 0 (never set below), so this is the v0 fallback lookup
+        Mockito.when(repositories.findPersonalAccessToken("my_token", 0))
                 .thenReturn(token);
         return token;
     }
@@ -3418,7 +3632,7 @@ class RegistryAPITest {
         return token;
     }
 
-    private void mockForPublish(String mode) {
+    private PersonalAccessToken mockForPublish(String mode) {
         var token = mockAccessToken();
         if (mode.equals("invalid")) {
             token.setActive(false);
@@ -3534,6 +3748,7 @@ class RegistryAPITest {
 
         Mockito.when(entityManager.merge(any(Extension.class)))
                 .then((Answer<Extension>) invocation -> invocation.getArgument(0, Extension.class));
+        return token;
     }
 
     private String reviewJson(Consumer<ReviewJson> content) throws JacksonException {
@@ -3761,9 +3976,10 @@ class RegistryAPITest {
         EclipseTokenService eclipseTokenService(
                 TransactionTemplate transactions,
                 EntityManager entityManager,
-                ClientRegistrationRepository clientRegistrationRepository
+                ClientRegistrationRepository clientRegistrationRepository,
+                RestTemplate restTemplate
         ) {
-            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository);
+            return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository, restTemplate);
         }
 
         @Bean
@@ -3798,8 +4014,9 @@ class RegistryAPITest {
                     cache,
                     integrityService,
                     similarityCheckService,
-                    publishingConfig,
+                    TestSizeLimits.atConfigDefault(),
                     trustedPublishingConfig,
+                    new WebUiProperties(),
                     CHANGES_FEED_LAG);
         }
 
@@ -3842,7 +4059,6 @@ class RegistryAPITest {
 
         @Bean
         ExtensionService extensionService(
-                PublishingConfig publishingConfig,
                 EntityManager entityManager,
                 RepositoryService repositories,
                 SearchUtilService search,
@@ -3854,7 +4070,7 @@ class RegistryAPITest {
                 ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
-                    publishingConfig,
+                    TestSizeLimits.atConfigDefault(),
                     entityManager,
                     repositories,
                     search,

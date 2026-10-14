@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
-import { ChangeEvent, FunctionComponent, useState } from 'react';
+import { ChangeEvent, FunctionComponent, ReactNode, useState } from 'react';
 import {
     Button,
     Dialog,
@@ -30,7 +30,6 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import copy from 'clipboard-copy';
 
 const TOKEN_DESCRIPTION_SIZE = 255;
 
@@ -42,7 +41,7 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
     const [copied, setCopied] = useState(false);
     const [showToken, setShowToken] = useState(false);
 
-    const { open, onClose, title = 'Generate new token' } = props;
+    const { open, onClose, title = 'Generate new token', canGenerate: inputValid = true } = props;
 
     const resetState = () => {
         setLoading(false);
@@ -84,12 +83,12 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
 
     const handleCopy = () => {
         if (tokenValue) {
-            copy(tokenValue).then(() => setCopied(true));
+            navigator.clipboard.writeText(tokenValue).then(() => setCopied(true));
             setTimeout(() => setCopied(false), 2000);
         }
     };
 
-    const canGenerate = !descriptionError && !loading;
+    const canGenerate = !descriptionError && !loading && inputValid;
 
     return (
         <>
@@ -150,6 +149,7 @@ export const GenerateTokenDialog: FunctionComponent<GenerateTokenDialogProps> = 
                                         }}
                                     />
                                 </Box>
+                                {props.children}
                             </>
                         )}
                     </DialogContent>
@@ -177,4 +177,6 @@ export interface GenerateTokenDialogProps {
     onGenerate: (description: string) => Promise<string>;
     onError?: (err: unknown) => void;
     title?: string;
+    canGenerate?: boolean;
+    children?: ReactNode;
 }

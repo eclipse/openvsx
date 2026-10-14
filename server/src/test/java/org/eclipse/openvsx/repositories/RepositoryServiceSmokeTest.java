@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2022 Wladimir Hofmann and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.repositories;
 
 import java.lang.reflect.Modifier;
@@ -90,6 +93,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
         extVersion.setVersion("3.1.2-rc1+armhf");
         extVersion.setTargetPlatform("targetPlatform");
         extVersion.setExtension(extension);
+        extVersion.setPublishedBy(userData);
         var personalAccessToken = new PersonalAccessToken();
         personalAccessToken.setType(PersonalAccessTokenType.LLT);
         var keyPair = new SignatureKeyPair();
@@ -205,6 +209,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.countUsers(),
                 () -> repositories.downloadsTotal(),
                 () -> repositories.findPersonalAccessToken("value"),
+                () -> repositories.findPersonalAccessToken("value", 0),
                 () -> repositories.findPersonalAccessToken(1L),
                 () -> repositories.findPersonalAccessTokens(userData),
                 () -> repositories.findActiveExtensions(namespace),
@@ -214,6 +219,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findActiveVersions(extension),
                 () -> repositories.findAdminStatisticsByYearAndMonth(1997, 1),
                 () -> repositories.findAllActiveExtensions(),
+                () -> repositories.findAllDeprecatedExtensions(),
                 () -> repositories.findAllExtensionNames(namespace),
                 () -> repositories.findAllPersistedLogs(),
                 () -> repositories.findPersistedLogsAfter(NOW),
@@ -235,6 +241,8 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findExtensionForUpdateNoWait("name", "namespace"),
                 () -> repositories.findExtensions(namespace),
                 () -> repositories.findExtensionsWithInconsistentActiveFlag(),
+                () -> repositories.findExtensionsWithStaleLastUpdatedDate(),
+                () -> repositories.findExtensionsWithInconsistentReviewStats(),
                 () -> repositories.findFileByType(extVersion, "type"),
                 () -> repositories.findFiles(extVersion),
                 () -> repositories.findFilesByStorageType("storageType"),
@@ -247,6 +255,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findOrphanNamespaces(),
                 () -> repositories.findPersistedLogsAfter(NOW),
                 () -> repositories.findUserByLoginName("provider", "loginName"),
+                () -> repositories.findUsersById(List.of(userData.getId())),
                 () -> repositories.searchUsers("search", "role", Pageable.ofSize(25)),
                 () -> repositories.findVersion("version", "targetPlatform", extension),
                 () -> repositories.findVersion("version", "targetPlatform", "extensionName", "namespace"),
@@ -258,7 +267,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findFilesByType(List.of(extVersion), STRING_LIST),
                 () -> repositories.countVersions("namespaceName", "extensionName"),
                 () -> repositories.topMostDownloadedExtensions(1),
-                () -> repositories.countActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LLT),
+                () -> repositories.countActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LONG_LIVED),
                 () -> repositories.topMostActivePublishingUsers(1),
                 () -> repositories.topNamespaceExtensions(1),
                 () -> repositories.topNamespaceExtensionVersions(1),
@@ -292,6 +301,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findChanges(null, null, new ChangesCursor(NOW, 1L), 100),
                 () -> repositories.findChanges(null, NOW, new ChangesCursor(NOW.minus(Duration.ofDays(1)), 1L), 100),
                 () -> repositories.findLatestExtensionVersionChange(extVersion),
+                () -> repositories.wasReportedAsAvailable(extVersion),
                 () -> repositories.recordExtensionVersionChange(
                         extVersion,
                         ExtensionVersionState.ACTIVE,
@@ -337,9 +347,10 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.deleteFiles(extVersion),
                 () -> repositories.findExtensionTargetPlatforms(extension),
                 () -> repositories.deactivateKeyPairs(),
-                () -> repositories.findActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LLT),
+                () -> repositories.findActivePersonalAccessTokensAndType(userData, PersonalAccessTokenType.LONG_LIVED),
                 () -> repositories.findAllPersonalAccessTokensByVersion(0),
                 () -> repositories.findLatestVersions(List.of(1L)),
+                () -> repositories.findLatestVersions(List.of(1L), "targetPlatform"),
                 () -> repositories.hasSameVersion(extVersion),
                 () -> repositories.hasActiveReview(extension, userData),
                 () -> repositories.findLatestVersionsIsPreview(List.of(1L)),
@@ -374,7 +385,8 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .deleteExpiredPersonalAccessTokens(NOW, List.of(PersonalAccessTokenType.TPT)),
                 () -> repositories.findExpiringPersonalAccessTokensWithoutNotification(NOW, page),
-                () -> repositories.updateExpiresTimeForLegacyPersonalAccessTokens(NOW, PersonalAccessTokenType.LLT),
+                () -> repositories
+                        .updateExpiresTimeForLegacyPersonalAccessTokens(NOW, PersonalAccessTokenType.LONG_LIVED),
                 () -> repositories.findActiveExtensionByDisplayName("displayName", List.of("namespaceName")),
                 () -> repositories.findSimilarExtensionsByLevenshtein(
                         "extensionName",

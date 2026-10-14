@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2019 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx;
 
 import java.io.InputStream;
@@ -27,10 +30,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -60,6 +65,9 @@ public class RegistryAPI {
     private static final String VERSION_PATH_PARAM_REGEX = "(?:" + SemanticVersion.VERSION_PATH_PARAM_REGEX
             + ")|latest|pre-release";
     private static final String NO_JSON_INPUT = "No JSON input.";
+    private static final String TOKEN_PARAM_DESCRIPTION = "A personal access token. Deprecated: send it via the "
+            + "Authorization: Bearer header instead (or " + HttpHeadersUtil.TOKEN_HEADER
+            + " if Authorization is already in use).";
 
     protected final Logger logger = LoggerFactory.getLogger(RegistryAPI.class);
 
@@ -145,19 +153,68 @@ public class RegistryAPI {
         description = "The specified namespace could not be found",
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ResultJson> verifyToken(
+            HttpServletRequest request,
             @PathVariable
+            @NotBlank(message = "namespace must not be blank")
             @Parameter(description = "Namespace", example = "GitLab") String namespace,
-            @RequestParam
-            @Parameter(description = "A personal access token") String token
+            @RequestParam(required = false)
+            @Parameter(description = TOKEN_PARAM_DESCRIPTION, deprecated = true) String token
     ) {
+        var tokenValue = HttpHeadersUtil.resolveAccessToken(request, token);
         try {
-            return ResponseEntity.ok(local.verifyToken(namespace, token));
+            return ResponseEntity.ok(local.verifyToken(namespace, tokenValue));
         } catch (NotFoundException exc) {
             var json = ResultJson.error("Namespace not found: " + namespace);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(ResultJson.class);
+        }
+    }
+
+    @GetMapping(
+        path = "/api/-/size-limit",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @CrossOrigin
+    @Operation(
+        summary = "Get the maximum package size that may be published to a namespace/extension",
+        description = "Answers for a package that has not been published yet, so neither the namespace "
+                + "nor the extension needs to exist; the applicable default is returned when they do not."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "The applicable size limit is returned in JSON format",
+        content = @Content(schema = @Schema(implementation = SizeLimitJson.class))
+    )
+    @ApiResponse(
+        responseCode = "401",
+        description = "The token is missing, invalid or expired",
+        content = @Content(schema = @Schema(implementation = SizeLimitJson.class))
+    )
+    @ApiResponse(
+        responseCode = "403",
+        description = "The token is valid but has no publishing permission in the namespace",
+        content = @Content(schema = @Schema(implementation = SizeLimitJson.class))
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<SizeLimitJson> getSizeLimit(
+            HttpServletRequest request,
+            @RequestParam
+            @NotBlank(message = "namespace must not be blank")
+            @Parameter(description = "Namespace", example = "redhat") String namespace,
+            @RequestParam
+            @NotBlank(message = "extension must not be blank")
+            @Parameter(description = "Extension name", example = "java") String extension,
+            @RequestParam(required = false)
+            @Parameter(description = TOKEN_PARAM_DESCRIPTION, deprecated = true) String token
+    ) {
+        var tokenValue = HttpHeadersUtil.resolveAccessToken(request, token);
+        try {
+            return ResponseEntity.ok(local.getSizeLimit(namespace, extension, tokenValue));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity(SizeLimitJson.class);
         }
     }
 
@@ -1302,11 +1359,13 @@ public class RegistryAPI {
             examples = @ExampleObject(value = "{ \"error\": \"Invalid access token.\" }")
         )
     )
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ResultJson> createNamespace(
+            HttpServletRequest request,
             @RequestBody
             @Parameter(description = "Describes the namespace to create") NamespaceJson namespace,
-            @RequestParam
-            @Parameter(description = "A personal access token") String token
+            @RequestParam(required = false)
+            @Parameter(description = TOKEN_PARAM_DESCRIPTION, deprecated = true) String token
     ) {
         if (namespace == null) {
             return ResponseEntity.ok(ResultJson.error(NO_JSON_INPUT));
@@ -1314,8 +1373,9 @@ public class RegistryAPI {
         if (StringUtils.isEmpty(namespace.getName())) {
             return ResponseEntity.ok(ResultJson.error("Missing required property 'name'."));
         }
+        var tokenValue = HttpHeadersUtil.resolveAccessToken(request, token);
         try {
-            var json = local.createNamespace(namespace, token);
+            var json = local.createNamespace(namespace, tokenValue);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiUrl(serverUrl, "api", namespace.getName());
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -1445,13 +1505,16 @@ public class RegistryAPI {
                 + "or the user has not signed a Publisher Agreement",
         content = @Content(schema = @Schema(implementation = ResultJson.class))
     )
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ExtensionJson> publish(
+            HttpServletRequest request,
             InputStream content,
-            @RequestParam
-            @Parameter(description = "A personal access token") String token
+            @RequestParam(required = false)
+            @Parameter(description = TOKEN_PARAM_DESCRIPTION, deprecated = true) String token
     ) {
+        var tokenValue = HttpHeadersUtil.resolveAccessToken(request, token);
         try {
-            var json = local.publish(content, token);
+            var json = local.publish(content, tokenValue);
             var serverUrl = UrlUtil.getBaseUrl();
             var url = UrlUtil.createApiVersionUrl(serverUrl, json);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -1569,7 +1632,9 @@ public class RegistryAPI {
             examples = @ExampleObject(value = "{ \"error\": \"Extension not found: foo.bar\" }")
         )
     )
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ResultJson> deleteExtension(
+            HttpServletRequest request,
             @PathVariable
             @Parameter(description = "Extension namespace", example = "redhat") String namespace,
             @PathVariable
@@ -1577,9 +1642,10 @@ public class RegistryAPI {
             @RequestBody(required = false) List<TargetPlatformVersionJson> targetVersions,
             @RequestParam(required = false, defaultValue = "false")
             @Parameter(description = "Delete all versions of the extension") boolean allVersions,
-            @RequestParam
-            @Parameter(description = "A personal access token") String token
+            @RequestParam(required = false)
+            @Parameter(description = TOKEN_PARAM_DESCRIPTION, deprecated = true) String token
     ) {
+        var tokenValue = HttpHeadersUtil.resolveAccessToken(request, token);
         try {
             if (allVersions && targetVersions != null && !targetVersions.isEmpty()) {
                 var json = ResultJson
@@ -1599,7 +1665,7 @@ public class RegistryAPI {
 
             // null tells the service to delete every version the token's user is allowed to delete
             var versions = allVersions ? null : targetVersions;
-            return ResponseEntity.ok(local.deleteExtension(namespace, extension, versions, token));
+            return ResponseEntity.ok(local.deleteExtension(namespace, extension, versions, tokenValue));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

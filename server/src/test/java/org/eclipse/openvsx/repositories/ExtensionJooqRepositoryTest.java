@@ -174,7 +174,7 @@ class ExtensionJooqRepositoryTest extends AbstractPostgresContainerTest {
     @Test
     void displayNameLookupUsesTheDisplayNameIndexUnderAGenericPlan() {
         // A generic plan keeps bind parameters unresolved, so it only uses the index when the query's
-        // expression is identical to the one V1_76 indexes.
+        // expression is identical to the one V1_81 indexes.
         for (var i = 0; i < 50; i++) {
             persistVersion(persistExtension("dn-seed-ns-" + i, "seed-extension"), "1.0.0", "Seed Formatter " + i, true);
         }

@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2025 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.scanning;
 
 import java.io.File;
@@ -259,7 +259,7 @@ public class SecretRuleLoader {
         /** Human-readable description of what this rule detects */
         public String description;
 
-        /** Regex pattern to match secrets (required, compiled as case-insensitive) */
+        /** Regex pattern to match secrets (required, case-sensitive unless it starts with {@code (?i)}) */
         public String regex;
 
         /** Minimum Shannon entropy threshold (0.0-8.0). Matches below this are filtered out. */

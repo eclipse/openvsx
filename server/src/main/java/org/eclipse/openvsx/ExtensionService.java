@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx;
 
 import java.io.BufferedInputStream;
@@ -43,11 +46,11 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.TargetPlatformVersionJson;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
-import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.*;
 import org.eclipse.openvsx.util.auth.AuthenticatedUser;
 
@@ -58,7 +61,7 @@ public class ExtensionService {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionService.class);
 
-    private final PublishingConfig publishingConfig;
+    private final ExtensionSizeLimitService sizeLimits;
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final SearchUtilService search;
@@ -70,7 +73,7 @@ public class ExtensionService {
     private final ExtensionScanPersistenceService scanPersistenceService;
 
     public ExtensionService(
-            PublishingConfig publishingConfig,
+            ExtensionSizeLimitService sizeLimits,
             EntityManager entityManager,
             RepositoryService repositories,
             SearchUtilService search,
@@ -81,7 +84,7 @@ public class ExtensionService {
             ExtensionScanService scanService,
             ExtensionScanPersistenceService scanPersistenceService
     ) {
-        this.publishingConfig = publishingConfig;
+        this.sizeLimits = sizeLimits;
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.search = search;
@@ -94,7 +97,7 @@ public class ExtensionService {
     }
 
     private long getMaxContentSize() {
-        return publishingConfig.getMaxContentSize();
+        return sizeLimits.getCeiling();
     }
 
     @Transactional
@@ -115,7 +118,10 @@ public class ExtensionService {
     public TempFile createExtensionFile(InputStream content) {
         requireNonNull(content);
         long maxContentSize = getMaxContentSize();
-        try (var input = ByteStreams.limit(new BufferedInputStream(content), maxContentSize + 1)) {
+        // Saturating: the ceiling is an unrestricted positive long, and at Long.MAX_VALUE the extra
+        // byte wraps negative, which ByteStreams.limit rejects - failing every publish.
+        var readLimit = maxContentSize == Long.MAX_VALUE ? Long.MAX_VALUE : maxContentSize + 1;
+        try (var input = ByteStreams.limit(new BufferedInputStream(content), readLimit)) {
             long size;
             var extensionFile = new TempFile("extension_", ".vsix");
             try (var out = Files.newOutputStream(extensionFile.getPath())) {
@@ -235,6 +241,7 @@ public class ExtensionService {
         cache.evictNamespaceDetails(extension);
         cache.evictLatestExtensionVersion(extension);
         cache.evictExtensionJsons(extension);
+        cache.evictSitemap();
 
         if (extension.getVersions().stream().anyMatch(ExtensionVersion::isActive)) {
             // There is at least one active version => activate the extension
@@ -293,8 +300,8 @@ public class ExtensionService {
             return true;
         }
 
-        // if the extension was quarantined before, check if there is an admin decision
-        if (ScanStatus.QUARANTINED.equals(scan.getStatus())) {
+        // if the extension was quarantined or errored before, check if there is an admin decision
+        if (ScanStatus.QUARANTINED.equals(scan.getStatus()) || ScanStatus.ERRORED.equals(scan.getStatus())) {
             var scanDecision = repositories.findAdminScanDecision(scan);
             return scanDecision != null && scanDecision.isAllowed();
         }
@@ -660,7 +667,7 @@ public class ExtensionService {
         // Read before the version is marked as removed below, and only reported for a version the feed
         // announced as available -- deleting one it never reported has nothing to withdraw, exactly as
         // purging one does not, see recordPurge.
-        var reported = wasReportedAsAvailable(extVersion);
+        var reported = repositories.wasReportedAsAvailable(extVersion);
         var now = TimeUtil.getCurrentUTC();
         extVersion.setActive(false);
         extVersion.setRemoved(true);
@@ -720,6 +727,10 @@ public class ExtensionService {
         for (var review : repositories.findAllReviews(extension)) {
             entityManager.remove(review);
         }
+
+        // Removing the extension cascades any size override scoped to it, which can lower the
+        // ceiling - that is cached per node and published over Redis, so it has to be told.
+        sizeLimits.invalidateCeiling();
 
         var deprecatedExtensions = repositories.findDeprecatedExtensions(extension);
         for (var deprecatedExtension : deprecatedExtensions) {
@@ -819,7 +830,7 @@ public class ExtensionService {
      * {@link RepositoryService#detachExtensionVersionChanges}.
      */
     private void recordPurge(ExtensionVersion extVersion) {
-        if (wasReportedAsAvailable(extVersion)) {
+        if (repositories.wasReportedAsAvailable(extVersion)) {
             repositories.recordPurgedExtensionVersionChange(
                     extVersion,
                     ExtensionVersionState.REMOVED,
@@ -829,24 +840,5 @@ public class ExtensionService {
         // Unconditional, and in particular also on the paths that append nothing above: whatever the log
         // already holds for this version has to stop pointing at it before it is deleted.
         repositories.detachExtensionVersionChanges(extVersion);
-    }
-
-    /**
-     * Whether the changes feed last reported this version as being available, and so has a transition to
-     * withdraw once the version goes away.
-     * <p>
-     * False for a version the feed never reported -- one whose publication never made it public, for
-     * instance because a scan quarantined it, or one that predates the feed and was already hidden when
-     * it was seeded. Reporting its removal would withdraw a publication that consumers were never told
-     * about, which is the one thing the append-only log is not allowed to say.
-     * <p>
-     * False as well once the feed has reported the version as gone: a version is deleted before it can be
-     * purged, and the purge only drops the tombstone the deletion kept, which is invisible from the
-     * outside, so a second entry would report a transition that never happened.
-     */
-    private boolean wasReportedAsAvailable(ExtensionVersion extVersion) {
-        return repositories.findLatestExtensionVersionChange(extVersion)
-                .map(latest -> latest.getState() != ExtensionVersionState.REMOVED)
-                .orElse(false);
     }
 }

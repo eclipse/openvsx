@@ -42,7 +42,7 @@ export * from './components/page-container';
 // Leaf hook modules keep their helpers private, so `export *` exposes only the
 // public hook plus its types (e.g. useSearch + SearchFilter).
 export * from './hooks/use-search';
-export { useRegisterPageSearchBar } from './context/search/page-search-bar-context';
+export { useSearchBar } from './context/search/page-search-bar-context';
 
 // Keyboard shortcuts: register shortcuts from custom pages/components. The hook
 // only takes effect below a KeyboardShortcutsProvider — the built-in AppLayout
@@ -72,6 +72,8 @@ export { AppProviders } from './app-providers';
 // `createAbsoluteURL` and `addQuery` are the other half of the request layer above:
 // building an endpoint against `service.serverUrl` needs them.
 export { createRoute, createAbsoluteURL, addQuery, formatCompactNumber, formatRating, toRelativeTime } from './utils';
+// So a deployment with its own menu content can gate an admin entry the same way the built-in ones do.
+export { hasPermission, hasAnyAdminAccess } from './permissions';
 export { NotFound } from './not-found';
 
 // Theme tokens shared with the library chrome, so custom pages line up with it.
@@ -93,3 +95,12 @@ export { ExtensionDetailRoutes } from './pages/extension-detail/extension-detail
 
 // Shape of the pages contributed through `PageSettings.elements.adminPages`.
 export type { AdminPage, AdminPageCategory } from './pages/admin-dashboard/nav-types';
+
+// The banner admins configure at runtime. `RegistryBanner` is what the built-in layout falls back
+// to when `PageSettings.elements.banner` is unset; the pieces under it are exported too, so a
+// deployment can render the settings its own way — `useSiteSettings` to read them, `Banner` for
+// the collapsing bar and its tones, and `SanitizedMarkdown` to render a message as safely as we do.
+export { RegistryBanner } from './components/registry-banner';
+export { useSiteSettings, siteSettingsQueryKey } from './components/use-site-settings';
+export { Banner, type BannerProps } from './components/banner';
+export { SanitizedMarkdown, type SanitizedMarkdownProps } from './components/sanitized-markdown';

@@ -1,16 +1,20 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2019 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.json;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,6 +46,9 @@ public class UserJson extends ResultJson {
 
     @Schema(hidden = true)
     private String role;
+
+    @Schema(hidden = true)
+    private Set<String> permissions;
 
     @Schema(description = "Full name")
     private String fullName;
@@ -91,6 +98,14 @@ public class UserJson extends ResultJson {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Set<String> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Set<String> permissions) {
+        this.permissions = permissions;
     }
 
     public String getFullName() {
@@ -209,6 +224,7 @@ public class UserJson extends ResultJson {
                 && Objects.equals(tokensUrl, userJson.tokensUrl)
                 && Objects.equals(createTokenUrl, userJson.createTokenUrl)
                 && Objects.equals(role, userJson.role)
+                && Objects.equals(permissions, userJson.permissions)
                 && Objects.equals(fullName, userJson.fullName)
                 && Objects.equals(avatarUrl, userJson.avatarUrl)
                 && Objects.equals(homepage, userJson.homepage)
@@ -224,6 +240,7 @@ public class UserJson extends ResultJson {
                 tokensUrl,
                 createTokenUrl,
                 role,
+                permissions,
                 fullName,
                 avatarUrl,
                 homepage,

@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDateTime;
@@ -22,6 +22,7 @@ import org.springframework.data.repository.query.Param;
 
 import org.eclipse.openvsx.entities.AdminScanDecision;
 import org.eclipse.openvsx.entities.ExtensionScan;
+import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.UserData;
 
 /**
@@ -40,14 +41,14 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
     @Query("SELECT d FROM AdminScanDecision d JOIN FETCH d.decidedBy WHERE d.scan.id = :scanId")
     AdminScanDecision findByScanId(long scanId);
 
-    /** Count all ALLOWED decisions */
-    long countByDecision(String decision);
+    /** Count decisions of the given kind on scans that currently have the given status */
+    long countByDecisionAndScanStatus(String decision, ScanStatus status);
 
     /** Count decisions made by a given admin user */
     long countByDecidedBy(UserData decidedBy);
 
     /**
-     * Counts decisions where the associated scan has matching validation failures or threats.
+     * Counts decisions on quarantined scans where the associated scan has matching validation failures or threats.
      * Date filtering is based on the scan's started_at timestamp (when the scan began).
      */
     @Query(
@@ -55,6 +56,7 @@ public interface AdminScanDecisionRepository extends Repository<AdminScanDecisio
                 SELECT COUNT(*) FROM admin_scan_decision d
                 JOIN extension_scan s ON s.id = d.scan_id
                 WHERE d.decision = :decision
+                  AND s.status = 'QUARANTINED'
                   AND (CAST(:startedFrom AS TIMESTAMP) IS NULL OR s.started_at >= :startedFrom)
                   AND (CAST(:startedTo AS TIMESTAMP) IS NULL OR s.started_at <= :startedTo)
                   AND (:applyCheckTypesFilter = false OR EXISTS (

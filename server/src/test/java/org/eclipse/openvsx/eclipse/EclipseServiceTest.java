@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.eclipse;
 
 import java.io.IOException;
@@ -37,6 +40,7 @@ import org.springframework.web.client.RestTemplate;
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.ExtensionValidator;
 import org.eclipse.openvsx.MockTransactionTemplate;
+import org.eclipse.openvsx.TestSizeLimits;
 import org.eclipse.openvsx.UserService;
 import org.eclipse.openvsx.adapter.VSCodeIdService;
 import org.eclipse.openvsx.analytics.ingestion.DownloadIngestionProcessor;
@@ -47,7 +51,6 @@ import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
-import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
@@ -563,7 +566,7 @@ class EclipseServiceTest {
                 ExtensionScanPersistenceService scanPersistenceService
         ) {
             return new ExtensionService(
-                    new PublishingConfig(),
+                    TestSizeLimits.atConfigDefault(),
                     entityManager,
                     repositories,
                     search,

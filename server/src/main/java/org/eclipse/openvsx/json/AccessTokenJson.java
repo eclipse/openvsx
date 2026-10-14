@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -40,6 +43,14 @@ public class AccessTokenJson extends ResultJson {
     private String description;
 
     private String deleteTokenUrl;
+
+    private boolean publishingOnly;
+
+    @Nullable
+    private String scopeNamespace;
+
+    @Nullable
+    private String scopeExtension;
 
     public Long getId() {
         return id;
@@ -106,5 +117,31 @@ public class AccessTokenJson extends ResultJson {
 
     public void setDeleteTokenUrl(String deleteTokenUrl) {
         this.deleteTokenUrl = deleteTokenUrl;
+    }
+
+    @Nullable
+    public String getScopeNamespace() {
+        return scopeNamespace;
+    }
+
+    public void setScopeNamespace(@Nullable String scopeNamespace) {
+        this.scopeNamespace = scopeNamespace;
+    }
+
+    @Nullable
+    public String getScopeExtension() {
+        return scopeExtension;
+    }
+
+    public void setScopeExtension(@Nullable String scopeExtension) {
+        this.scopeExtension = scopeExtension;
+    }
+
+    public boolean isPublishingOnly() {
+        return publishingOnly;
+    }
+
+    public void setPublishingOnly(boolean publishingOnly) {
+        this.publishingOnly = publishingOnly;
     }
 }

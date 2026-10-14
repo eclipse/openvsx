@@ -30,6 +30,31 @@ describe('Registry JSON requests', () => {
         return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     }
 
+    async function getJsonError(contentType: string | undefined, body: string): Promise<unknown> {
+        const url = await serve((_, res) => {
+            res.writeHead(200, contentType ? { 'Content-Type': contentType } : {});
+            res.end(body);
+        });
+        const registry = new Registry({ registryUrl: url });
+        return registry.getJson(new URL(`${url}/api/foo`)).then(() => 'resolved', err => err);
+    }
+
+    it.each([
+        ['an uppercase doctype', 'text/html; charset=utf-8', '<!DOCTYPE html><html><body>Sign in</body></html>'],
+        ['a lowercase doctype', 'text/html', '<!doctype html><html><body>Sign in</body></html>'],
+        ['a text/html page without a doctype', 'text/html', '<html><body>Sign in</body></html>'],
+        ['an HTML page sent as JSON', 'application/json', '\n<!doctype html><html></html>'],
+        ['an HTML page without a Content-Type', undefined, '<html lang="en"></html>'],
+    ])('rejects %s with an Error carrying the status', async (_, contentType, body) => {
+        const err = await getJsonError(contentType, body);
+
+        expect(err).toBeInstanceOf(Error);
+        expect(err).not.toBeInstanceOf(SyntaxError);
+        expect(err).toMatchObject({ status: 200 });
+        expect((err as Error).message).toMatch(/status 200 and an HTML page instead of JSON/);
+        expect((err as Error).message).not.toContain('<html');
+    });
+
     // A connection lost after the headers have arrived never fires 'end' on the response, and the
     // response's own error had no listener - so the promise was never settled and the command waited
     // on a body that was not coming. Asserted with the timeout switched off, since a timeout would

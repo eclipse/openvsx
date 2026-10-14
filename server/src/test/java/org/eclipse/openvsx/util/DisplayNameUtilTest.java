@@ -30,7 +30,7 @@ class DisplayNameUtilTest {
     @Test
     void coversEverySpaceSeparator() {
         // Fails when a JDK upgrade brings a newer Unicode version with a new Zs character; add it to
-        // the constant and to the index expression in the V1_76 migration.
+        // the constant and to the index expression in the V1_81 migration.
         var expected = IntStream.rangeClosed(Character.MIN_CODE_POINT, Character.MAX_CODE_POINT)
                 .filter(cp -> Character.getType(cp) == Character.SPACE_SEPARATOR)
                 .boxed()

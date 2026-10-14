@@ -17,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import jakarta.persistence.EntityManager;
 import org.jobrunr.scheduling.JobRequestScheduler;
@@ -33,11 +32,11 @@ import org.springframework.http.HttpStatus;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
-import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.DrainOnCloseInputStream;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
@@ -50,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ExtensionServiceTest {
 
     @Mock
-    PublishingConfig publishingConfig;
+    ExtensionSizeLimitService sizeLimits;
     @Mock
     EntityManager entityManager;
     @Mock
@@ -75,7 +74,7 @@ class ExtensionServiceTest {
     @BeforeEach
     void setUp() {
         svc = new ExtensionService(
-                publishingConfig,
+                sizeLimits,
                 entityManager,
                 repositories,
                 search,
@@ -158,8 +157,7 @@ class ExtensionServiceTest {
         ext.getVersions().add(extVersion);
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // the feed announced this version as available at some point
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.ACTIVE)));
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(true);
 
         svc.deleteExtensionVersion(mockUser(), extVersion);
 
@@ -180,7 +178,7 @@ class ExtensionServiceTest {
         ext.getVersions().add(extVersion);
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // no entry was ever written for it
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion)).thenReturn(Optional.empty());
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(false);
 
         svc.deleteExtensionVersion(mockUser(), extVersion);
 
@@ -196,8 +194,7 @@ class ExtensionServiceTest {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // the feed announced this version as available at some point
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.ACTIVE)));
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(true);
 
         svc.removeExtensionVersion(extVersion);
 
@@ -216,8 +213,8 @@ class ExtensionServiceTest {
     void shouldNotReportAPurgeOfAVersionThatWasAlreadyRemoved() {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.REMOVED)));
+        // the feed already reported this version as removed
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(false);
 
         svc.removeExtensionVersion(extVersion);
 
@@ -232,7 +229,7 @@ class ExtensionServiceTest {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
         // no entry was ever written for it, e.g. its publication failed before it was activated
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion)).thenReturn(Optional.empty());
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(false);
 
         svc.removeExtensionVersion(extVersion);
 
@@ -246,8 +243,7 @@ class ExtensionServiceTest {
     void shouldDetachTheLogFromAPurgedVersionEvenWhenItReportsNothing() {
         var extVersion = plainExtensionVersion(mockExtension(), "1.1.0");
         Mockito.when(repositories.findFiles(extVersion)).thenReturn(Streamable.empty());
-        Mockito.when(repositories.findLatestExtensionVersionChange(extVersion))
-                .thenReturn(Optional.of(change(extVersion, ExtensionVersionState.REMOVED)));
+        Mockito.when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(false);
 
         svc.removeExtensionVersion(extVersion);
 
@@ -268,6 +264,24 @@ class ExtensionServiceTest {
         var decision = new AdminScanDecision();
         decision.setDecision(AdminScanDecision.ALLOWED);
 
+        Mockito.when(repositories.findAdminScanDecision(scan)).thenReturn(decision);
+
+        svc.reactivateExtensions(user);
+
+        assertThat(ext.isActive()).isTrue();
+        assertThat(extVersion.isActive()).isTrue();
+    }
+
+    @Test
+    void shouldReactivateExtensionsWithErroredScansAndAllowed() {
+        var user = mockUser();
+        var ext = mockExtension();
+        var extVersion = mockExtensionVersion(ext, "1.1.0", ScanStatus.ERRORED, user);
+        ext.getVersions().add(extVersion);
+
+        var scan = repositories.findLatestExtensionScan(extVersion);
+        var decision = new AdminScanDecision();
+        decision.setDecision(AdminScanDecision.ALLOWED);
         Mockito.when(repositories.findAdminScanDecision(scan)).thenReturn(decision);
 
         svc.reactivateExtensions(user);
@@ -302,6 +316,17 @@ class ExtensionServiceTest {
         Mockito.verify(repositories, Mockito.never()).findLatestExtensionScan(Mockito.any());
     }
 
+    @Test
+    void shouldEvictSitemapCacheOnUpdate() {
+        var ext = mockExtension();
+
+        // lastUpdatedDate - what sitemap.xml reports as `lastmod` - is stamped right here, so this is
+        // the one place that must evict it; see #2229.
+        svc.updateExtension(ext);
+
+        Mockito.verify(cache).evictSitemap();
+    }
+
     /**
      * Validating and scanning a package that can not be published anyway is pointless, so the publish
      * preconditions (publisher exists, access rights, version not published yet) are checked first and
@@ -309,7 +334,7 @@ class ExtensionServiceTest {
      */
     @Test
     void shouldNotScanWhenPublishPreconditionsFail() {
-        Mockito.when(publishingConfig.getMaxContentSize()).thenReturn(1024L);
+        Mockito.when(sizeLimits.getCeiling()).thenReturn(1024L);
         Mockito.when(scanService.isEnabled()).thenReturn(true);
         Mockito.doThrow(new ErrorResultException("Insufficient access rights for publisher: redhat"))
                 .when(publishHandler).checkPublishPreconditions(Mockito.any(), Mockito.any());
@@ -332,10 +357,29 @@ class ExtensionServiceTest {
                 .publishAsync(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
+    /**
+     * The ceiling is an unrestricted positive long. The read limit is one byte above it, which at
+     * Long.MAX_VALUE wraps negative and is rejected outright - every publish would fail on a registry
+     * configured with no practical limit.
+     */
+    @Test
+    void shouldStillPublishWhenTheCeilingIsTheLargestLong() throws Exception {
+        Mockito.when(sizeLimits.getCeiling()).thenReturn(Long.MAX_VALUE);
+
+        var token = mockToken();
+        var content = new ByteArrayInputStream("extension package".getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(
+                () -> svc.publishVersion(
+                        content,
+                        new AccessTokenAuthentication(token.getUser(), token.getType(), token.getId(), null)))
+                .isNotInstanceOf(IllegalArgumentException.class);
+    }
+
     @Test
     void shouldRejectAPackageExceedingTheMaxContentSize() {
         var maxContentSize = 10L;
-        Mockito.when(publishingConfig.getMaxContentSize()).thenReturn(maxContentSize);
+        Mockito.when(sizeLimits.getCeiling()).thenReturn(maxContentSize);
 
         var token = mockToken();
         var raw = new ByteArrayInputStream(
@@ -370,14 +414,6 @@ class ExtensionServiceTest {
         extVersion.setTimestamp(LocalDateTime.parse("2000-01-01T10:00"));
         extVersion.setExtension(extension);
         return extVersion;
-    }
-
-    private ExtensionVersionChange change(ExtensionVersion extVersion, ExtensionVersionState state) {
-        var change = new ExtensionVersionChange();
-        change.setExtensionVersion(extVersion);
-        change.setState(state);
-        change.setChangedAt(LocalDateTime.parse("2000-01-01T10:00"));
-        return change;
     }
 
     private Extension mockExtension() {

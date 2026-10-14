@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.scanning;
 
 import java.io.File;
@@ -220,6 +220,13 @@ public class RemoteScanner implements Scanner {
                     submission.externalJobId(),
                     status,
                     mappedStatus);
+
+            if (mappedStatus == PollStatus.FAILED) {
+                String body = response != null && response.length() > 500
+                        ? response.substring(0, 500) + "..."
+                        : response;
+                logger.warn("Job {} reported status '{}', response: {}", submission.externalJobId(), status, body);
+            }
 
             return mappedStatus;
 

@@ -1,4 +1,4 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -6,10 +6,10 @@
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.admin;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.eclipse.openvsx.entities.Permission;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.mockito.Mockito.*;
@@ -50,7 +51,7 @@ class FileDecisionAPITest {
     @Test
     void getFiles_pagination_validation_failures() throws Exception {
         // Always allow the request to pass the admin gate in this test setup.
-        when(admins.checkAdminUser()).thenReturn(TestData.adminUser());
+        when(admins.checkPermission(Permission.MANAGE_SCANS)).thenReturn(TestData.adminUser());
 
         mockMvc.perform(
                 get("/admin/scans/files")

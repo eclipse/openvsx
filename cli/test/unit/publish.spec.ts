@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
 
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as os from 'os';
@@ -28,12 +29,14 @@ vi.mock('@vscode/vsce', () => ({ createVSIX: vi.fn() }));
 interface RecordedRequest {
     pathname: string;
     query: URLSearchParams;
+    headers: http.IncomingHttpHeaders;
 }
 
 interface RegistryStub {
     url: string;
     publishRequests: RecordedRequest[];
     tokenRequests: number;
+    versionRequests: number;
     close: () => Promise<void>;
 }
 
@@ -41,7 +44,7 @@ interface RegistryStub {
  * Stands in for the registry's `/api/version` and `/api/-/publish` endpoints.
  */
 async function startRegistryStub(
-    version: { status?: number; body?: unknown } = {},
+    version: { status?: number; body?: unknown; sizeLimit?: number } = {},
     publishResponse: {
         status?: number;
         body?: unknown;
@@ -61,21 +64,31 @@ async function startRegistryStub(
     // Answers the nth publish with the nth entry, the last one repeating, so a first attempt can be
     // refused and the retry accepted.
     const publishAttempts = publishResponse.attempts;
-    const state = { tokenRequests: 0 };
+    const state = { tokenRequests: 0, versionRequests: 0 };
     const server = http.createServer((req, res) => {
         const url = new URL(req.url ?? '/', 'http://127.0.0.1');
         req.on('data', () => undefined);
         req.on('end', () => {
             if (url.pathname === '/api/version') {
+                state.versionRequests++;
                 res.writeHead(versionStatus, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(versionBody));
+            } else if (url.pathname === '/api/-/size-limit') {
+                // Absent means a registry too old to answer, which is a 404 rather than a limit.
+                if (version.sizeLimit === undefined) {
+                    res.writeHead(404, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Not found' }));
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ maxSize: version.sizeLimit }));
+                }
             } else if (url.pathname === '/api/-/trusted-publishing/token') {
                 state.tokenRequests++;
                 res.writeHead(201, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ value: `token-${state.tokenRequests}` }));
             } else {
                 const attempt = publishAttempts?.[Math.min(publishRequests.length, publishAttempts.length - 1)];
-                publishRequests.push({ pathname: url.pathname, query: url.searchParams });
+                publishRequests.push({ pathname: url.pathname, query: url.searchParams, headers: req.headers });
                 res.writeHead(attempt?.status ?? publishStatus, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(attempt?.body ?? publishBody));
             }
@@ -88,6 +101,9 @@ async function startRegistryStub(
         publishRequests,
         get tokenRequests() {
             return state.tokenRequests;
+        },
+        get versionRequests() {
+            return state.versionRequests;
         },
         close: () => new Promise<void>(resolve => server.close(() => resolve()))
     };
@@ -110,7 +126,7 @@ describe('publish', () => {
     });
 
     async function givenRegistry(
-        version?: { status?: number; body?: unknown },
+        version?: { status?: number; body?: unknown; sizeLimit?: number },
         publishResponse?: {
             status?: number;
             body?: unknown;
@@ -135,12 +151,26 @@ describe('publish', () => {
         return file;
     }
 
-    function givenExtensionFile(sizeInBytes: number): string {
+    /**
+     * A real package padded with random bytes to roughly `fillerBytes`. It has to be a real one:
+     * publish reads the manifest to learn which namespace to ask for a size limit, so a buffer of
+     * zeros is not something that could ever reach a registry. Random, because zeros would compress
+     * away and the file would not actually be large.
+     */
+    async function givenExtensionFile(fillerBytes: number): Promise<string> {
+        const zip = await buildZip({
+            'extension/package.json': Buffer.from(
+                JSON.stringify({ publisher: 'foo', name: 'bar', version: '1.0.0' })
+            ),
+            'extension/filler.bin': crypto.randomBytes(fillerBytes)
+        });
         const file = path.join(os.tmpdir(), `ovsx-publish-test-${Math.random().toString(36).slice(2)}.vsix`);
-        fs.writeFileSync(file, Buffer.alloc(sizeInBytes));
+        fs.writeFileSync(file, zip);
         tmpFiles.push(file);
         return file;
     }
+
+    const sizeOf = (file: string): number => fs.statSync(file).size;
 
     // The packaging options ovsx hands to vsce are the whole of its packaging behaviour, so the ones a
     // caller sets have to arrive there intact - `--follow-symlinks` above all, which is what makes the
@@ -172,9 +202,141 @@ describe('publish', () => {
         });
     });
 
-    it('publishes a package that is within the registry size limit', async () => {
-        const registry = await givenRegistry({ body: { version: '1.2.0', maxExtensionSize: 1024 } });
-        const extensionFile = givenExtensionFile(100);
+    describe('removes the package it created', () => {
+
+        // Records where vsce was asked to write, so the test can check that file is gone afterwards.
+        function givenPackaging(): string[] {
+            const written: string[] = [];
+            vi.mocked(createVSIX).mockImplementation(async (options) => {
+                written.push(options!.packagePath!);
+                tmpFiles.push(options!.packagePath!);
+                fs.writeFileSync(options!.packagePath!, await buildZip({
+                    'extension/package.json': Buffer.from(JSON.stringify({ publisher: 'foo', name: 'bar', version: '1.0.0' }))
+                }));
+            });
+            return written;
+        }
+
+        it('after publishing it', async () => {
+            const registry = await givenRegistry();
+            const written = givenPackaging();
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('fulfilled');
+            expect(written).toHaveLength(1);
+            expect(fs.existsSync(written[0])).toBe(false);
+        });
+
+        it('when the registry rejects it', async () => {
+            const registry = await givenRegistry({}, { status: 400, body: { error: 'Something went wrong.' } });
+            const written = givenPackaging();
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('rejected');
+            expect(written).toHaveLength(1);
+            expect(fs.existsSync(written[0])).toBe(false);
+        });
+
+        it('when it is skipped as a duplicate', async () => {
+            const registry = await givenRegistry({}, { status: 400, body: { error: 'foo.bar 1.0.0 is already published.' } });
+            const written = givenPackaging();
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url, skipDuplicate: true });
+
+            expect(result.status).toBe('fulfilled');
+            expect(written).toHaveLength(1);
+            expect(fs.existsSync(written[0])).toBe(false);
+        });
+
+        it('when it exceeds the registry size limit', async () => {
+            const registry = await givenRegistry({ body: { version: '1.3.0', maxExtensionSize: 10_000_000 }, sizeLimit: 1 });
+            const written = givenPackaging();
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('rejected');
+            expect(registry.publishRequests).toHaveLength(0);
+            expect(fs.existsSync(written[0])).toBe(false);
+        });
+
+        it('when packaging fails after writing part of it', async () => {
+            const registry = await givenRegistry();
+            const written: string[] = [];
+            vi.mocked(createVSIX).mockImplementation(async (options) => {
+                written.push(options!.packagePath!);
+                tmpFiles.push(options!.packagePath!);
+                fs.writeFileSync(options!.packagePath!, 'partial');
+                throw new Error('Packaging failed.');
+            });
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('rejected');
+            expect(registry.publishRequests).toHaveLength(0);
+            expect(fs.existsSync(written[0])).toBe(false);
+        });
+
+        it('for every target of a fan-out', async () => {
+            const registry = await givenRegistry();
+            const written = givenPackaging();
+
+            const results = await publish({
+                packagePath: ['.'],
+                pat: 'the.pat',
+                registryUrl: registry.url,
+                targets: ['linux-x64', 'darwin-arm64']
+            });
+
+            expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled']);
+            expect(written).toHaveLength(2);
+            expect(written.filter(file => fs.existsSync(file))).toEqual([]);
+        });
+
+        // A locked or read-only temp dir failing to clean up is a separate problem from whatever
+        // publishExtensionFile already threw, and must not hide it.
+        it('does not let a cleanup failure mask the original publish error', async () => {
+            const registry = await givenRegistry({}, { status: 400, body: { error: 'Something went wrong.' } });
+            givenPackaging();
+            vi.spyOn(fs.promises, 'rm').mockRejectedValueOnce(new Error('EBUSY: resource busy or locked'));
+
+            const [result] = await publish({ packagePath: ['.'], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('rejected');
+            expect((result as PromiseRejectedResult).reason.message).toContain('Something went wrong');
+        });
+    });
+
+    describe('keeps a package the user supplied', () => {
+
+        it('given as --packagePath', async () => {
+            const registry = await givenRegistry();
+            const packagePath = await givenExtensionFile(100);
+
+            const [result] = await publish({ packagePath: [packagePath], pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('fulfilled');
+            expect(fs.existsSync(packagePath)).toBe(true);
+        });
+
+        it('given as --extensionFile, even when the registry rejects it', async () => {
+            const registry = await givenRegistry({}, { status: 400, body: { error: 'Something went wrong.' } });
+            const extensionFile = await givenExtensionFile(100);
+
+            const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
+
+            expect(result.status).toBe('rejected');
+            expect(fs.existsSync(extensionFile)).toBe(true);
+        });
+    });
+
+    it('publishes a package the namespace limit allows', async () => {
+        const extensionFile = await givenExtensionFile(2000);
+        const registry = await givenRegistry({
+            body: { version: '1.3.0', maxExtensionSize: 100 },
+            sizeLimit: sizeOf(extensionFile) + 1
+        });
 
         const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
 
@@ -182,22 +344,60 @@ describe('publish', () => {
         expect(registry.publishRequests).toHaveLength(1);
     });
 
-    it('rejects locally, without uploading, when the package exceeds the registry size limit', async () => {
-        const registry = await givenRegistry({ body: { version: '1.2.0', maxExtensionSize: 100 } });
-        const extensionFile = givenExtensionFile(200);
+    // The namespace limit is authoritative, so there is no false negative left to worry about and
+    // the upload can be refused before it is sent.
+    it('refuses a package above the limit the registry reports for its namespace', async () => {
+        const extensionFile = await givenExtensionFile(2000);
+        const registry = await givenRegistry({
+            body: { version: '1.3.0', maxExtensionSize: 10_000_000 },
+            sizeLimit: sizeOf(extensionFile) - 1
+        });
 
         const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
 
         expect(result.status).toBe('rejected');
-        expect((result as PromiseRejectedResult).reason.message).toBe(
-            `The extension package (200 bytes) exceeds the size limit of 100 bytes accepted by the registry at ${registry.url}.`
-        );
+        expect((result as PromiseRejectedResult).reason.message).toContain('exceeds the size limit');
+        expect((result as PromiseRejectedResult).reason.message).toContain('foo.bar');
         expect(registry.publishRequests).toHaveLength(0);
     });
 
+    // ovsx publishes to registries of every age. A release that refused to publish anywhere without
+    // the new endpoint would be worse than the false negative it is fixing.
+    it('falls back to warning when the registry predates the size-limit endpoint', async () => {
+        const extensionFile = await givenExtensionFile(2000);
+        const registry = await givenRegistry({ body: { version: '1.2.0', maxExtensionSize: 100 } });
+
+        const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
+
+        expect(result.status).toBe('fulfilled');
+        expect(registry.publishRequests).toHaveLength(1);
+        expect(console.warn).toHaveBeenCalledWith(
+            expect.stringContaining('exceeds the default size limit of 100 bytes')
+        );
+    });
+
+    /**
+     * A registry new enough to be asked, whose answer never arrives - a misrouted /api/-/*, a WAF, a
+     * 502. Staying quiet made that indistinguishable from a working preflight, and since an override
+     * can lower a limit as well as raise it, no package is small enough for silence to be safe.
+     */
+    it('warns when a registry new enough to answer the size-limit lookup does not', async () => {
+        // comfortably under the default, so nothing else would have had cause to say anything
+        const extensionFile = await givenExtensionFile(200);
+        const registry = await givenRegistry({ body: { version: '1.3.0', maxExtensionSize: 10_000_000 } });
+
+        const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
+
+        expect(result.status).toBe('fulfilled');
+        expect(registry.publishRequests).toHaveLength(1);
+        expect(console.warn).toHaveBeenCalledWith(
+            expect.stringContaining('Could not check the size limit for foo.bar')
+        );
+    });
+
     it('proceeds when the registry does not report a size limit', async () => {
+        const extensionFile = await givenExtensionFile(200);
         const registry = await givenRegistry({ body: { version: '1.2.0' } });
-        const extensionFile = givenExtensionFile(200);
 
         const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
 
@@ -207,12 +407,32 @@ describe('publish', () => {
 
     it('proceeds when the registry does not expose `/api/version`', async () => {
         const registry = await givenRegistry({ status: 404, body: {} });
-        const extensionFile = givenExtensionFile(200);
+        const extensionFile = await givenExtensionFile(200);
 
         const [result] = await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url });
 
         expect(result.status).toBe('fulfilled');
         expect(registry.publishRequests).toHaveLength(1);
+    });
+
+    // The size-limit lookup and the token-header version check (Registry.tokenQuery) both fetch
+    // /api/version, and every target used to get its own Registry instance - looking that up once for
+    // the size limit and once per target added up fast for a wide fan-out. All targets now share the
+    // one Registry created up front, so this is a single request regardless of fan-out width.
+    it('looks up the registry version only once across a fan-out of targets', async () => {
+        const registry = await givenRegistry({ body: { version: '1.3.0' } });
+        const extensionFile = await givenExtensionFile(200);
+
+        const results = await publish({
+            extensionFile,
+            pat: 'the.pat',
+            registryUrl: registry.url,
+            targets: ['linux-x64', 'darwin-arm64', 'win32-x64']
+        });
+
+        expect(results.every(result => result.status === 'fulfilled')).toBe(true);
+        expect(registry.publishRequests).toHaveLength(3);
+        expect(registry.versionRequests).toBe(1);
     });
 
     // The trusted publishing token is short-lived and shared by every target platform of a release, so
@@ -240,8 +460,8 @@ describe('publish', () => {
         expect(result.status).toBe('fulfilled');
         expect(registry.publishRequests).toHaveLength(2);
         // the retry carries the replacement, not the token that was just refused
-        expect(registry.publishRequests[0].query.get('token')).toBe('token-1');
-        expect(registry.publishRequests[1].query.get('token')).toBe('token-2');
+        expect(registry.publishRequests[0].headers.authorization).toBe('Bearer token-1');
+        expect(registry.publishRequests[1].headers.authorization).toBe('Bearer token-2');
         expect(registry.tokenRequests).toBe(2);
     });
 
@@ -303,7 +523,7 @@ describe('publish', () => {
         expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled', 'fulfilled']);
         expect(registry.publishRequests).toHaveLength(3);
         expect(registry.tokenRequests).toBe(1);
-        expect(registry.publishRequests.map(request => request.query.get('token')))
-            .toEqual(['token-1', 'token-1', 'token-1']);
+        expect(registry.publishRequests.map(request => request.headers.authorization))
+            .toEqual(['Bearer token-1', 'Bearer token-1', 'Bearer token-1']);
     });
 });

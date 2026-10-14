@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2020 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDateTime;
@@ -27,15 +30,20 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     Streamable<PersonalAccessToken> findByUser(UserData user);
 
-    Streamable<PersonalAccessToken> findByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
+    Streamable<PersonalAccessToken> findByUserAndActiveTrueAndTypeIn(
+            UserData user,
+            Collection<PersonalAccessTokenType> types
+    );
 
     Streamable<PersonalAccessToken> findByVersion(int version);
 
-    long countByUserAndActiveTrueAndType(UserData user, PersonalAccessTokenType type);
+    long countByUserAndActiveTrueAndTypeIn(UserData user, Collection<PersonalAccessTokenType> types);
 
     PersonalAccessToken findById(long id);
 
     PersonalAccessToken findByValue(String value);
+
+    PersonalAccessToken findByValueAndVersion(String value, int version);
 
     PersonalAccessToken findByUserAndDescriptionAndActiveTrue(UserData user, String description);
 
@@ -45,9 +53,9 @@ public interface PersonalAccessTokenRepository extends Repository<PersonalAccess
 
     @Modifying
     @Query(
-        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null and t.type = ?2"
+        "update PersonalAccessToken t set t.expiresTimestamp = ?1 where t.active = true and t.expiresTimestamp is null and t.type in ?2"
     )
-    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type);
+    int updateExpiresTimeForLegacyAccessTokens(LocalDateTime timestamp, Collection<PersonalAccessTokenType> types);
 
     List<PersonalAccessToken> findByExpiresTimestampLessThanEqualAndActiveTrueAndNotifiedFalseOrderById(
             LocalDateTime timestamp,

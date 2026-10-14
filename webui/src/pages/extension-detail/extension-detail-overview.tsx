@@ -9,14 +9,27 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useContext, useEffect, useState, useRef, useMemo } from 'react';
-import { Box, Theme, Typography, Button, Link, NativeSelect, SxProps, styled, Grid, Stack } from '@mui/material';
+import {
+    Box,
+    Theme,
+    Typography,
+    Button,
+    Link,
+    NativeSelect,
+    SxProps,
+    styled,
+    Grid,
+    Stack,
+    Tooltip
+} from '@mui/material';
 import { Link as RouteLink, useNavigate, useParams } from 'react-router';
 import HomeIcon from '@mui/icons-material/Home';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { MainContext } from '../../context';
-import { addQuery, createRoute, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
+import { addQuery, createRoute, formatFileSize, getTargetPlatformDisplayName, getEngineDisplayName } from '../../utils';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { SanitizedMarkdown } from '../../components/sanitized-markdown';
 import { Timestamp } from '../../components/timestamp';
@@ -79,20 +92,32 @@ export const ExtensionDetailOverview: FunctionComponent<ExtensionDetailOverviewP
         return (
             <Grid item xs={12}>
                 <Box component='span' sx={{ color: 'primary.dark', fontWeight: 'fontWeightBold' }}>
-                    Target Platforms:{' '}
+                    Target Platforms:
                 </Box>
-                {Object.keys(props.extension.downloads).map((targetPlatform, index) => {
-                    const displayName = getTargetPlatformDisplayName(targetPlatform);
-                    return displayName ? (
-                        <span key={targetPlatform}>
-                            {index > 0 ? ', ' : ''}
-                            {displayName}
-                        </span>
-                    ) : null;
-                })}
+                {Object.keys(props.extension.downloadSizes ?? {}).length > 0 ? (
+                    <Tooltip title='Download sizes; the installed size is larger.'>
+                        <Box component='span' tabIndex={0} sx={{ ml: 0.5, color: 'text.secondary', cursor: 'help' }}>
+                            <InfoOutlinedIcon fontSize='inherit' sx={{ verticalAlign: 'top' }} />
+                        </Box>
+                    </Tooltip>
+                ) : null}
+                <Stack component='ul' spacing={0.5} sx={{ m: 0, mt: 0.5, p: 0, listStyle: 'none' }}>
+                    {Object.keys(props.extension.downloads).map(targetPlatform => {
+                        const displayName = getTargetPlatformDisplayName(targetPlatform);
+                        const size = props.extension.downloadSizes?.[targetPlatform];
+                        return displayName ? (
+                            <Box component='li' key={targetPlatform} sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                                <Box component='span' sx={{ minWidth: '12rem', pr: 2 }}>
+                                    {displayName}
+                                </Box>
+                                {size === undefined ? null : <span>{formatFileSize(size)}</span>}
+                            </Box>
+                        ) : null;
+                    })}
+                </Stack>
             </Grid>
         );
-    }, [props.extension.downloads]);
+    }, [props.extension.downloads, props.extension.downloadSizes]);
 
     useEffect(() => {
         setLoading(true);

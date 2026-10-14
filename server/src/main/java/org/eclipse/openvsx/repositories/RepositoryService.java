@@ -1,12 +1,15 @@
-/********************************************************************************
+/******************************************************************************
  * Copyright (c) 2019 TypeFox and others
  *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0.
+ * terms of the Eclipse Public License 2.0 which is available at
+ * https://www.eclipse.org/legal/epl-2.0.
  *
  * SPDX-License-Identifier: EPL-2.0
- ********************************************************************************/
+ *****************************************************************************/
 package org.eclipse.openvsx.repositories;
 
 import java.time.LocalDate;
@@ -271,12 +274,24 @@ public class RepositoryService {
         return extensionRepo.findByActiveTrue();
     }
 
+    public Streamable<Extension> findAllDeprecatedExtensions() {
+        return extensionRepo.findByDeprecatedTrue();
+    }
+
     public Streamable<Extension> findAllNotMatchingByExtensionId(List<String> extensionIds) {
         return extensionRepo.findAllNotMatchingByExtensionId(extensionIds);
     }
 
     public Streamable<Extension> findExtensionsWithInconsistentActiveFlag() {
         return extensionRepo.findExtensionsWithInconsistentActiveFlag();
+    }
+
+    public Streamable<Extension> findExtensionsWithStaleLastUpdatedDate() {
+        return extensionRepo.findExtensionsWithStaleLastUpdatedDate();
+    }
+
+    public Streamable<Extension> findExtensionsWithInconsistentReviewStats() {
+        return extensionRepo.findExtensionsWithInconsistentReviewStats();
     }
 
     public long countExtensions() {
@@ -474,6 +489,14 @@ public class RepositoryService {
         return userDataRepo.findByProviderAndLoginName(provider, loginName);
     }
 
+    /**
+     * Loads users as mapped entities, unlike {@link #searchUsers} - which hands back objects carrying
+     * only the columns its jOOQ query selects, so without their permissions.
+     */
+    public List<UserData> findUsersById(Collection<Long> ids) {
+        return userDataRepo.findByIdIn(ids);
+    }
+
     public long countUsers() {
         return userDataRepo.count();
     }
@@ -553,17 +576,24 @@ public class RepositoryService {
 
     public Streamable<PersonalAccessToken> findActivePersonalAccessTokensAndType(
             UserData user,
-            PersonalAccessTokenType type
+            Collection<PersonalAccessTokenType> types
     ) {
-        return personalAccessTokenRepo.findByUserAndActiveTrueAndType(user, type);
+        return personalAccessTokenRepo.findByUserAndActiveTrueAndTypeIn(user, types);
     }
 
-    public long countActivePersonalAccessTokensAndType(UserData user, PersonalAccessTokenType type) {
-        return personalAccessTokenRepo.countByUserAndActiveTrueAndType(user, type);
+    public long countActivePersonalAccessTokensAndType(
+            UserData user,
+            Collection<PersonalAccessTokenType> types
+    ) {
+        return personalAccessTokenRepo.countByUserAndActiveTrueAndTypeIn(user, types);
     }
 
     public PersonalAccessToken findPersonalAccessToken(String value) {
         return personalAccessTokenRepo.findByValue(value);
+    }
+
+    public PersonalAccessToken findPersonalAccessToken(String value, int version) {
+        return personalAccessTokenRepo.findByValueAndVersion(value, version);
     }
 
     public PersonalAccessToken findPersonalAccessToken(long id) {
@@ -594,8 +624,11 @@ public class RepositoryService {
                 .deleteExpiredAccessTokens(timestamp, types.stream().map(Enum::name).toList());
     }
 
-    public int updateExpiresTimeForLegacyPersonalAccessTokens(LocalDateTime timestamp, PersonalAccessTokenType type) {
-        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, type);
+    public int updateExpiresTimeForLegacyPersonalAccessTokens(
+            LocalDateTime timestamp,
+            Collection<PersonalAccessTokenType> types
+    ) {
+        return personalAccessTokenRepo.updateExpiresTimeForLegacyAccessTokens(timestamp, types);
     }
 
     public PersonalAccessToken findPersonalAccessToken(UserData user, String description) {
@@ -736,6 +769,23 @@ public class RepositoryService {
      */
     public Optional<ExtensionVersionChange> findLatestExtensionVersionChange(ExtensionVersion extVersion) {
         return extensionVersionChangeRepo.findFirstByExtensionVersionOrderByChangedAtDescIdDesc(extVersion);
+    }
+
+    /**
+     * Whether the changes feed last reported this version as available under its current namespace, and
+     * so has a transition to withdraw once it goes away (deleted, purged, or renamed again).
+     * <p>
+     * Scoped to the current namespace, not the single latest entry overall: a renamed version can carry
+     * entries under more than one namespace, and a newer entry for an abandoned one would otherwise
+     * answer for the wrong tuple. False when never reported under this namespace, or already
+     * {@code REMOVED} there.
+     */
+    public boolean wasReportedAsAvailable(ExtensionVersion extVersion) {
+        var namespace = extVersion.getExtension().getNamespace().getName();
+        return extensionVersionChangeRepo
+                .findFirstByExtensionVersionAndNamespaceOrderByChangedAtDescIdDesc(extVersion, namespace)
+                .map(latest -> latest.getState() != ExtensionVersionState.REMOVED)
+                .orElse(false);
     }
 
     public List<ExtensionVersion> findActiveExtensionVersions(
@@ -972,6 +1022,10 @@ public class RepositoryService {
 
     public List<ExtensionVersion> findLatestVersions(Collection<Long> extensionIds) {
         return extensionVersionJooqRepo.findLatest(extensionIds);
+    }
+
+    public List<ExtensionVersion> findLatestVersions(Collection<Long> extensionIds, String targetPlatform) {
+        return extensionVersionJooqRepo.findLatest(extensionIds, targetPlatform);
     }
 
     public Map<Long, Boolean> findLatestVersionsIsPreview(Collection<Long> extensionIds) {
@@ -1278,8 +1332,9 @@ public class RepositoryService {
         return adminScanDecisionRepo.findByScanId(scanId);
     }
 
+    /** Counts the quarantine decisions; decisions on errored scans are not part of the quarantine review. */
     public long countAdminScanDecisions(String decision) {
-        return adminScanDecisionRepo.countByDecision(decision);
+        return adminScanDecisionRepo.countByDecisionAndScanStatus(decision, ScanStatus.QUARANTINED);
     }
 
     public long countAdminScanDecisions(UserData decidedBy) {

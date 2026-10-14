@@ -8,14 +8,13 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
+import * as crypto from 'crypto';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
-import * as tmp from 'tmp';
 import * as http from 'http';
 import { RegistryOptions } from './registry-options';
 import { TrustedPublishingOptions } from './trusted-publishing-options';
-
-export { promisify } from 'util';
 
 export function addEnvOptions(options: RegistryOptions): void {
     options.registryUrl ??= process.env.OVSX_REGISTRY_URL;
@@ -76,36 +75,39 @@ export function matchExtensionId(id: string): RegExpExecArray | null {
     return /^([\w-]+)(?:\.|\/)([\w-]+)$/.exec(id);
 }
 
-export function optionalStat(path: fs.PathLike): Promise<fs.Stats | undefined> {
-    return new Promise((resolve, reject) => {
-        fs.stat(path, (err, stats) => resolve(stats));
-    });
-}
-
-export function makeDirs(path: fs.PathLike): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (fs.existsSync(path)) {
-            resolve();
-        } else {
-            fs.mkdir(path, { recursive: true }, (err: NodeJS.ErrnoException | null) => {
-                if (err)
-                    reject(err);
-                else
-                    resolve();
-            });
+/**
+ * Levenshtein distance between `a` and `b`: the minimum number of single-character insertions,
+ * deletions or substitutions needed to turn one into the other. Used to suggest the closest known
+ * command for a typo.
+ */
+export function levenshtein(a: string, b: string): number {
+    if (a === b) {
+        return 0;
+    }
+    // The distance is symmetric, so keep the shorter string in `b` to bound the row size.
+    if (b.length > a.length) {
+        [a, b] = [b, a];
+    }
+    // A single row of the edit distance matrix, seeded with the distance between the empty prefix
+    // of `a` and every prefix of `b`.
+    const row = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+        let diagonal = row[0];
+        row[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+            const above = row[j];
+            row[j] = Math.min(row[j - 1] + 1, above + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+            diagonal = above;
         }
-    });
+    }
+    return row[b.length];
 }
 
-export function createTempFile(options: tmp.TmpNameOptions): Promise<string> {
-    return new Promise((resolve, reject) => {
-        tmp.tmpName(options, (err: Error | null, name: string) => {
-            if (err)
-                reject(err);
-            else
-                resolve(name);
-        });
-    });
+/**
+ * Returns a random, not-yet-created file path ending in `postfix`, directly in the OS temp directory.
+ */
+export function getTempFilePath(postfix = ''): string {
+    return path.join(os.tmpdir(), `ovsx-${crypto.randomUUID()}${postfix}`);
 }
 
 export function rejectError(err: any) {
@@ -167,10 +169,12 @@ export function withStatus(error: Error, status?: number): StatusError {
 /**
  * A URL in the form it can safely be printed: no user info and no query string.
  *
- * `createNamespace`, `verifyPat`, `publish` and `delete` all put the personal access token in a
- * `token` query parameter, and an error message goes straight to stderr and from there into CI logs.
- * The query carries nothing an error needs, so it is dropped whole rather than filtered key by key -
- * a filter has to be kept in step with every parameter anyone ever adds.
+ * The personal access token travels in a header now, but `createNamespace`, `verifyPat`, `publish`
+ * and `delete` still carry it in the query string too when talking to a registry too old to resolve
+ * it from the header (see `Registry.tokenQuery`, #1344). An error message goes straight to stderr
+ * and from there into CI logs, and the query carries nothing an error needs - so it stays dropped
+ * whole rather than filtered key by key, a filter having to be kept in step with every parameter
+ * anyone ever adds.
  */
 export function redactUrl(url: URL | string): string {
     try {
@@ -189,24 +193,8 @@ export function statusError(response: http.IncomingMessage): StatusError {
     return withStatus(new Error(message), response.statusCode);
 }
 
-export function readFile(name: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<string> {
-    return new Promise((resolve, reject) => {
-        fs.readFile(
-            path.join(packagePath ?? process.cwd(), name),
-            { encoding },
-            (err: NodeJS.ErrnoException | null, content: string) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(content);
-                }
-            }
-        );
-    });
-}
-
 export async function readManifest(packagePath?: string): Promise<Manifest> {
-    const content = await readFile('package.json', packagePath);
+    const content = await fs.promises.readFile(path.join(packagePath ?? process.cwd(), 'package.json'), 'utf-8');
     return JSON.parse(content);
 }
 
@@ -222,26 +210,9 @@ export function validateManifest(manifest: Manifest): void {
     }
 }
 
-export function writeFile(name: string, content: string, packagePath?: string, encoding: BufferEncoding = 'utf-8'): Promise<void> {
-    return new Promise((resolve, reject) => {
-        fs.writeFile(
-            path.join(packagePath ?? process.cwd(), name),
-            content,
-            { encoding },
-            (err: NodeJS.ErrnoException | null) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            }
-        );
-    });
-}
-
 export function writeManifest(manifest: Manifest, packagePath?: string): Promise<void> {
     const content = JSON.stringify(manifest, null, 4);
-    return writeFile('package.json', content, packagePath);
+    return fs.promises.writeFile(path.join(packagePath ?? process.cwd(), 'package.json'), content, 'utf-8');
 }
 
 export interface Manifest {
