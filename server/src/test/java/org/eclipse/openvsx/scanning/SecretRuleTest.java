@@ -113,15 +113,37 @@ class SecretRuleTest {
     }
 
     @Test
-    void pattern_matchesCaseInsensitive() {
+    void pattern_isCaseSensitiveByDefault() {
         var rule = new SecretRule.Builder()
                 .id("test")
                 .regex("secret_key")
                 .build();
 
+        assertTrue(rule.getPattern().matcher("secret_key").find());
+        assertFalse(rule.getPattern().matcher("SECRET_KEY").find());
+        assertFalse(rule.getPattern().matcher("Secret_Key").find());
+    }
+
+    @Test
+    void pattern_honoursInlineCaseInsensitiveFlag() {
+        var rule = new SecretRule.Builder()
+                .id("test")
+                .regex("(?i)secret_key")
+                .build();
+
         assertTrue(rule.getPattern().matcher("SECRET_KEY").find());
         assertTrue(rule.getPattern().matcher("Secret_Key").find());
-        assertTrue(rule.getPattern().matcher("secret_key").find());
+    }
+
+    @Test
+    void pattern_awsAccessTokenIgnoresMixedCaseWords() {
+        var rule = new SecretRule.Builder()
+                .id("aws-access-token")
+                .regex("(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}")
+                .build();
+
+        assertTrue(rule.getPattern().matcher("AKIAIOSFODNN7EXAMPLE").find());
+        assertFalse(rule.getPattern().matcher("Asiakasdokumentaatio").find());
     }
 
     @Test

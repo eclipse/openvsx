@@ -259,7 +259,7 @@ public class SecretRuleLoader {
         /** Human-readable description of what this rule detects */
         public String description;
 
-        /** Regex pattern to match secrets (required, compiled as case-insensitive) */
+        /** Regex pattern to match secrets (required, case-sensitive unless it starts with {@code (?i)}) */
         public String regex;
 
         /** Minimum Shannon entropy threshold (0.0-8.0). Matches below this are filtered out. */

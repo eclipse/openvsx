@@ -62,7 +62,6 @@
         "react-avatar-editor": "^15.0.0",
         "react-dom": "^18.2.0",
         "react-helmet-async": "^2.0.5",
-        "react-infinite-scroller": "^1.2.6",
         "react-router": "^7.18.2"
     },
     "//resolutions": "@types/react-infinite-scroller declares its @types/react dependency as *, which resolves to v19 and puts a second copy of the React types in the tree; the pin below holds it at 18 until this app moves to React 19",
@@ -85,7 +84,6 @@
         "@types/node": "^22.0.0",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
-        "@types/react-infinite-scroller": "^1.2.0",
         "@typescript-eslint/eslint-plugin": "^8.56.0",
         "@typescript-eslint/parser": "^8.56.0",
         "@vitejs/plugin-react": "^6.0.4",

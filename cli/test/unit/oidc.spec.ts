@@ -190,9 +190,21 @@ describe('OIDC ID token detection', () => {
                 .rejects.toMatchObject({ message: 'no id-token permission', status: 403 });
         });
 
+        it('fails with the message of the workflow runtime if its error body starts with whitespace', async () => {
+            await givenTokenService(403, '\n{"message":"no id-token permission"}');
+            await expect(getIdToken('https://open-vsx.org', {}))
+                .rejects.toMatchObject({ message: 'no id-token permission', status: 403 });
+        });
+
         it('fails with the status if the workflow runtime rejects the request without a message', async () => {
             await givenTokenService(403, {});
             await expect(getIdToken('https://open-vsx.org', {})).rejects.toThrow(/status 403/);
+        });
+
+        it('fails with an Error if the workflow runtime answers with an HTML page', async () => {
+            await givenTokenService(200, '<!doctype html><html><body>Sign in</body></html>');
+            await expect(getIdToken('https://open-vsx.org', {}))
+                .rejects.toMatchObject({ message: expect.stringMatching(/HTML page instead of JSON/), status: 200 });
         });
 
         it('follows a redirect of the workflow runtime, keeping the runner token on the same origin', async () => {
