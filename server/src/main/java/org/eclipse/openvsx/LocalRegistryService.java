@@ -193,7 +193,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     public ExtensionJson getExtension(String namespace, String extensionName, String targetPlatform, String version) {
         var extVersion = findExtensionVersion(namespace, extensionName, targetPlatform, version);
         var json = toExtensionVersionJson(extVersion, targetPlatform, true);
-        json.setDownloads(getDownloads(extVersion.getExtension(), targetPlatform, extVersion.getVersion()));
+        setDownloads(json, extVersion.getExtension(), targetPlatform, extVersion.getVersion());
         return json;
     }
 
@@ -263,22 +263,27 @@ public class LocalRegistryService implements IExtensionRegistry {
         return json;
     }
 
-    private Map<String, String> getDownloads(Extension extension, String targetPlatform, String version) {
+    private void setDownloads(ExtensionJson json, Extension extension, String targetPlatform, String version) {
         var extVersions = repositories.findVersionsForUrls(extension, targetPlatform, version);
-        var fileUrls = storageUtil.getFileUrls(extVersions, UrlUtil.getBaseUrl(), DOWNLOAD);
-        return extVersions.stream()
-                .map(ev -> {
-                    var files = fileUrls.get(ev.getId());
-                    var download = files != null ? files.get(DOWNLOAD) : null;
-                    if (download == null) {
-                        logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(ev));
-                        return null;
-                    } else {
-                        return Map.entry(ev.getTargetPlatform(), download);
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        var files = storageUtil.getFiles(extVersions, DOWNLOAD);
+        var downloads = new HashMap<String, String>();
+        var sizes = new HashMap<String, Long>();
+        var baseUrl = UrlUtil.getBaseUrl();
+        for (var ev : extVersions) {
+            var download = files.getOrDefault(ev.getId(), List.of()).stream().findFirst().orElse(null);
+            if (download == null) {
+                logger.warn("Could not find download for: {}", NamingUtil.toLogFormat(ev));
+                continue;
+            }
+
+            downloads.put(ev.getTargetPlatform(), UrlUtil.createApiFileUrl(baseUrl, ev, download.getName()));
+            if (download.getSize() != null) {
+                sizes.put(ev.getTargetPlatform(), download.getSize());
+            }
+        }
+
+        json.setDownloads(downloads);
+        json.setDownloadSizes(sizes);
     }
 
     private ExtensionVersion findExtensionVersion(
@@ -1200,14 +1205,15 @@ public class LocalRegistryService implements IExtensionRegistry {
         }
 
         json.setAllVersions(allVersionsJson);
-        var fileUrls = storageUtil.getFileUrls(
-                List.of(extVersion),
-                serverUrl,
-                withFileTypes(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST));
-        json.setFiles(fileUrls.get(extVersion.getId()));
-        if (json.getFiles().containsKey(DOWNLOAD_SIG)) {
-            json.getFiles().put(PUBLIC_KEY, UrlUtil.getPublicKeyUrl(extVersion));
-        }
+        // getFiles rather than getFileUrls: the package size is read from the same rows as the URLs, so
+        // this path stays one query, and toFilesJson is the same mapping the two builders below already
+        // use - including the public key it adds alongside a signature.
+        var resources = storageUtil
+                .getFiles(
+                        List.of(extVersion),
+                        withFileTypes(DOWNLOAD, MANIFEST, ICON, README, LICENSE, CHANGELOG, VSIXMANIFEST))
+                .get(extVersion.getId());
+        json.setFiles(toFilesJson(extVersion, resources, UrlUtil.createApiFileBaseUrl(serverUrl, extVersion)));
         if (json.getDependencies() != null) {
             for (var ref : json.getDependencies()) {
                 ref.setUrl(createApiUrl(serverUrl, "api", ref.getNamespace(), ref.getExtension()));

@@ -144,6 +144,9 @@ export interface Extension {
 
     // key: target platform, value: download link
     downloads: { [targetPlatform: string]: UrlString };
+    // key: target platform, value: size in bytes of the package behind its download link. A platform is
+    // absent where the registry does not know the size, and this is the download size, not the installed one.
+    downloadSizes?: { [targetPlatform: string]: number };
     allTargetPlatformVersions?: VersionTargetPlatforms[];
 
     deprecated: boolean;

@@ -82,6 +82,32 @@ async function startStallingTokenService(): Promise<TokenService> {
     };
 }
 
+/**
+ * Stands in for a token service that redirects `/token` to `location(port)` and answers any other
+ * path with an ID token.
+ */
+async function startRedirectingService(location: (port: number) => string): Promise<TokenService> {
+    const requests: TokenServiceRequest[] = [];
+    const server = http.createServer((req, res) => {
+        const url = new URL(req.url ?? '/', 'http://127.0.0.1');
+        requests.push({ query: url.searchParams, authorization: req.headers['authorization'] });
+        if (url.pathname === '/token') {
+            res.writeHead(302, { Location: location((server.address() as AddressInfo).port) });
+            res.end();
+        } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ count: 1, value: 'the.id.token' }));
+        }
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as AddressInfo).port;
+    return {
+        url: `http://127.0.0.1:${port}/token?api-version=2.0`,
+        requests,
+        close: () => new Promise<void>(resolve => server.close(() => resolve()))
+    };
+}
+
 describe('OIDC ID token detection', () => {
 
     const environment = { ...process.env };
@@ -158,9 +184,51 @@ describe('OIDC ID token detection', () => {
                 .rejects.toThrow('GitHub Actions did not return an OIDC ID token.');
         });
 
-        it('fails if the workflow runtime rejects the request', async () => {
+        it('fails with the message of the workflow runtime if it rejects the request', async () => {
             await givenTokenService(403, { message: 'no id-token permission' });
+            await expect(getIdToken('https://open-vsx.org', {}))
+                .rejects.toMatchObject({ message: 'no id-token permission', status: 403 });
+        });
+
+        it('fails with the message of the workflow runtime if its error body starts with whitespace', async () => {
+            await givenTokenService(403, '\n{"message":"no id-token permission"}');
+            await expect(getIdToken('https://open-vsx.org', {}))
+                .rejects.toMatchObject({ message: 'no id-token permission', status: 403 });
+        });
+
+        it('fails with the status if the workflow runtime rejects the request without a message', async () => {
+            await givenTokenService(403, {});
             await expect(getIdToken('https://open-vsx.org', {})).rejects.toThrow(/status 403/);
+        });
+
+        it('fails with an Error if the workflow runtime answers with an HTML page', async () => {
+            await givenTokenService(200, '<!doctype html><html><body>Sign in</body></html>');
+            await expect(getIdToken('https://open-vsx.org', {}))
+                .rejects.toMatchObject({ message: expect.stringMatching(/HTML page instead of JSON/), status: 200 });
+        });
+
+        it('follows a redirect of the workflow runtime, keeping the runner token on the same origin', async () => {
+            const service = await givenTokenService();
+            const redirect = await startRedirectingService(port => `http://127.0.0.1:${port}/moved?api-version=2.0`);
+            services.push(redirect);
+            process.env[REQUEST_URL] = redirect.url;
+
+            await expect(getIdToken('https://open-vsx.org', {})).resolves.toBe('the.id.token');
+            expect(redirect.requests).toHaveLength(2);
+            expect(redirect.requests[1].authorization).toBe('Bearer runner-token');
+            expect(service.requests).toHaveLength(0);
+        });
+
+        it('drops the runner token on a redirect to another origin', async () => {
+            const service = await givenTokenService();
+            // another port is another origin
+            const redirect = await startRedirectingService(() => service.url);
+            services.push(redirect);
+            process.env[REQUEST_URL] = redirect.url;
+
+            await expect(getIdToken('https://open-vsx.org', {})).resolves.toBe('the.id.token');
+            expect(service.requests).toHaveLength(1);
+            expect(service.requests[0].authorization).toBeUndefined();
         });
 
         // The response had no error listener, so a token service that died part-way through answering
@@ -180,10 +248,9 @@ describe('OIDC ID token detection', () => {
             expect(outcome).not.toBe('never settled');
         });
 
-        // This is a second HTTP implementation, so the registry's timeout tests cannot cover it: a
-        // silent token service would hang trusted publishing with nothing to notice. Distinct from the
-        // mid-response test above, which the response's error handler settles either way and which
-        // therefore passes with this timeout removed.
+        // The timeout here comes from OVSX_TIMEOUT rather than registry options, so the registry's
+        // timeout tests do not cover it. Distinct from the mid-response test above, which the
+        // response's error handler settles either way.
         it('fails if the workflow runtime accepts the connection and never responds', async () => {
             const service = await startSilentTokenService();
             services.push(service);
