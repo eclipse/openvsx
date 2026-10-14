@@ -11,6 +11,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Add fine-grained admin permissions: a user can hold individual admin capabilities instead of the all-or-nothing admin role, and reaches the dashboard with only the pages those capabilities cover (#2269)
 - Add an "Access Control" admin dashboard page, where a user's role and permissions are assigned together and applied on Save; both move here from Publisher admin (#2269)
 - Export `hasPermission` and `hasAnyAdminAccess`, so a deployment with its own menu content can gate an admin entry the way the built-in menu does (#2269)
+- Export `useInView` (with `ViewportObserverContext` to drive it in tests), `useRegistryValue` and `useReportedQuery`, so custom pages can defer work until visible, read server config and report query errors the way the built-in pages do
 - A contributed `adminPages` entry can declare the `permission` it needs; without one it stays admin-only, as it was while the whole dashboard required that role (#2269)
 - Add a "Caches" page to the admin dashboard, with per-cache hit/eviction stats and a way to clear one or all without restarting the server (#2203)
 - Add a weekly downloads card to the extension detail page, with a hoverable sparkline of the year's weekly totals (#2135)
@@ -37,6 +38,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 - The publish page no longer refuses a package larger than the registry's default limit without asking the server. A namespace with a size override may publish more than the default allows, so the upload is now only blocked above the registry's ceiling — the largest any namespace could publish. A package that looks too big is shown in the queue while that ceiling is re-read, rather than the page staying empty until the answer arrives ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
 - The admin dashboard's Settings page sends only the settings that were changed, so saving no longer reverts a setting another admin changed while the page was open ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
 - The namespace details form no longer enables Save after a social handle is typed and then cleared, and now enables it when only the LinkedIn account type changes
+
+### Removed
+
+- **Breaking:** stop exporting `SearchActionContext`, `filterFromParams`, `filterToParams`, `SEARCH_DEBOUNCE_MS` and `ExtensionHeaderInfo`, internals the package root exposed by accident; `useSearch` reads and applies the search filter
 
 ### Dependencies
 
