@@ -60,6 +60,13 @@ public class SettingsJson extends ResultJson {
     )
     private @Nullable String bannerDismissId;
 
+    @Schema(
+        description = "Whether visitors get per-extension download analytics. Off by default, so a registry can "
+                + "backfill its download history before the graphs appear. Can only be switched on where download "
+                + "analytics is configured."
+    )
+    private @Nullable Boolean downloadAnalyticsEnabled;
+
     public @Nullable Boolean getReadOnly() {
         return readOnly;
     }
@@ -114,5 +121,13 @@ public class SettingsJson extends ResultJson {
 
     public void setBannerDismissId(@Nullable String bannerDismissId) {
         this.bannerDismissId = bannerDismissId;
+    }
+
+    public @Nullable Boolean getDownloadAnalyticsEnabled() {
+        return downloadAnalyticsEnabled;
+    }
+
+    public void setDownloadAnalyticsEnabled(@Nullable Boolean downloadAnalyticsEnabled) {
+        this.downloadAnalyticsEnabled = downloadAnalyticsEnabled;
     }
 }

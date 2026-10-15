@@ -52,6 +52,7 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
@@ -117,6 +118,9 @@ class LocalRegistryServiceTest {
     @Mock
     ExtensionSizeLimitService sizeLimits;
 
+    @Mock
+    DownloadAnalyticsVisibilityService downloadAnalytics;
+
     private LocalRegistryService registryService;
 
     private TempFile tempFile;
@@ -138,6 +142,7 @@ class LocalRegistryServiceTest {
                 integrityService,
                 similarityCheckService,
                 sizeLimits,
+                downloadAnalytics,
                 new TrustedPublishingConfig(),
                 new WebUiProperties(),
                 Duration.ofSeconds(30));
@@ -498,6 +503,14 @@ class LocalRegistryServiceTest {
 
         assertThat(json.getMaxExtensionSize()).isEqualTo(512L);
         assertThat(json.getMaxExtensionSizeCeiling()).isEqualTo(2048L);
+    }
+
+    @Test
+    void shouldReportAnalyticsAsTheServerServesThem() {
+        registryService.registryVersion = "1.3.0";
+        when(downloadAnalytics.isVisible()).thenReturn(true);
+
+        assertThat(registryService.getRegistryVersion().isAnalyticsEnabled()).isTrue();
     }
 
     @Test

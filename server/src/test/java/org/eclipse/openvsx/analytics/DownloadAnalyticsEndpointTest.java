@@ -18,6 +18,7 @@ import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,10 @@ import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.repositories.DownloadAnalyticsRepository;
+import org.eclipse.openvsx.settings.SettingsJsonMapper;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Full-stack proof of the enabled configuration: the TimescaleDB-backed repository on its own
- * database, queried through the public REST endpoint.
+ * database, queried through the public REST endpoint with the extension analytics switch on.
  * <p>
  * {@code @Isolated}: aggregates over the whole shared download_analytics table, colliding with unrelated
  * tests concurrently writing their own download events into it.
@@ -78,10 +82,22 @@ class DownloadAnalyticsEndpointTest extends AbstractTimeseriesContainerTest {
     @Autowired
     StorageUtilService storageUtilService;
 
+    @Autowired
+    SettingsService settings;
+
+    @Autowired
+    SettingsJsonMapper settingsMapper;
+
     private Extension extension;
+
+    @BeforeEach
+    void switchAnalyticsOn() {
+        switchAnalytics(true);
+    }
 
     @AfterEach
     void cleanUp() {
+        switchAnalytics(false);
         RequestContextHolder.resetRequestAttributes();
         new JdbcTemplate(dataSource).execute("TRUNCATE download_event");
         if (extension != null) {
@@ -105,6 +121,13 @@ class DownloadAnalyticsEndpointTest extends AbstractTimeseriesContainerTest {
             });
             extension = null;
         }
+    }
+
+    /** Off by default, as a registry still backfilling wants, so the endpoint answers 404 until it is on. */
+    private void switchAnalytics(boolean on) {
+        var json = new SettingsJson();
+        json.setDownloadAnalyticsEnabled(on);
+        settings.update(settingsMapper.toRows(json));
     }
 
     @Test

@@ -35,11 +35,13 @@ class SettingsJsonMapperTest {
         var json = new SettingsJson();
         json.setReadOnly(true);
         json.setBannerMessage("Maintenance tonight");
+        json.setDownloadAnalyticsEnabled(false);
 
         assertThat(mapper.toRows(json).rows())
                 .containsExactly(
                         entry(ReadOnlySetting.KEY, true),
-                        entry(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
+                        entry(BannerSetting.KEY_MESSAGE, "Maintenance tonight"),
+                        entry(DownloadAnalyticsSetting.KEY, false));
     }
 
     @Test
@@ -58,21 +60,31 @@ class SettingsJsonMapperTest {
                                 BannerSetting.KEY_SEVERITY,
                                 "warning",
                                 BannerSetting.KEY_MESSAGE,
-                                "Hi")));
+                                "Hi",
+                                DownloadAnalyticsSetting.KEY,
+                                true)));
 
         assertThat(json.getReadOnly()).isTrue();
         assertThat(json.getBannerSeverity()).isEqualTo("warning");
         assertThat(json.getBannerMessage()).isEqualTo("Hi");
         assertThat(json.getBannerEnabled()).isNull();
+        assertThat(json.getDownloadAnalyticsEnabled()).isTrue();
         assertThat(json.getMaxOverrideSize()).isEqualTo(1024L);
     }
 
     @Test
-    void theSiteViewLeavesOutEverythingButTheBanner() {
+    void theSiteViewLeavesOutTheAdminOnlyRows() {
         var json = mapper
                 .toSiteJson(new SettingRows(Map.of(ReadOnlySetting.KEY, true, MaxExtensionSizeSetting.KEY, 1L)));
 
         var jackson = JsonMapper.shared();
         assertThat(jackson.readTree(jackson.writeValueAsString(json)).propertyNames()).isEmpty();
+    }
+
+    @Test
+    void theSiteViewCarriesTheDownloadAnalyticsSwitch() {
+        var json = mapper.toSiteJson(new SettingRows(Map.of(DownloadAnalyticsSetting.KEY, false)));
+
+        assertThat(json.getDownloadAnalyticsEnabled()).isFalse();
     }
 }

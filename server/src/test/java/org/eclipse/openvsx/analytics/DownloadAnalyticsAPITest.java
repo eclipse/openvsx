@@ -26,6 +26,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +41,8 @@ class DownloadAnalyticsAPITest {
 
     private final DownloadAnalyticsService service = Mockito.mock(DownloadAnalyticsService.class);
     private final RepositoryService repositories = Mockito.mock(RepositoryService.class);
+    private final DownloadAnalyticsVisibilityService downloadAnalytics = Mockito
+            .mock(DownloadAnalyticsVisibilityService.class);
 
     private MockMvc mockMvc;
 
@@ -48,8 +51,10 @@ class DownloadAnalyticsAPITest {
         var controller = new DownloadAnalyticsAPI(
                 service,
                 repositories,
+                downloadAnalytics,
                 Clock.fixed(NOW, ZoneOffset.UTC));
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        Mockito.when(downloadAnalytics.isVisible()).thenReturn(true);
 
         var extension = new Extension();
         extension.setId(42L);
@@ -69,6 +74,14 @@ class DownloadAnalyticsAPITest {
                         content().json(
                                 "{\"points\":[{\"t\":\"2026-07-01\",\"count\":4321},{\"t\":\"2026-07-02\",\"count\":10}]}",
                                 true));
+    }
+
+    @Test
+    void testSwitchedOffAnalyticsIsNotFound() throws Exception {
+        Mockito.when(downloadAnalytics.isVisible()).thenReturn(false);
+
+        mockMvc.perform(get("/api/foo/bar/analytics/downloads")).andExpect(status().isNotFound());
+        Mockito.verifyNoInteractions(service);
     }
 
     @Test

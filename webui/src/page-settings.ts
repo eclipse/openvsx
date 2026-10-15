@@ -12,6 +12,7 @@ import { ComponentType, ReactNode } from 'react';
 import { SxProps, Theme } from '@mui/material/styles';
 import { Extension, NamespaceDetails, SortBy } from './extension-registry-types';
 import { AdminPage } from './pages/admin-dashboard/nav-types';
+import { AdminSettingsSection } from './pages/admin-dashboard/settings-sections';
 import { Cookie } from './utils';
 
 /** One entry contributed to the account menu, rendered by the menu's own styling. */
@@ -153,6 +154,12 @@ export interface PageSettings {
          * dashboard overview and as a route. Additive only — see {@link AdminPage}.
          */
         adminPages?: AdminPage[];
+        /**
+         * Extra switches for the admin dashboard's Settings page, each bound to a boolean the
+         * deployment's server adds to its runtime settings, grouped into the built-in sections or
+         * sections of their own. Additive only — see {@link AdminSettingsSection}.
+         */
+        adminSettingsSections?: AdminSettingsSection[];
         banner?: {
             content: ComponentType;
             props?: {

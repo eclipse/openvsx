@@ -110,6 +110,7 @@ import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
+import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.settings.MaxExtensionSizeSetting;
 import org.eclipse.openvsx.settings.ReadOnlySetting;
@@ -3372,6 +3373,7 @@ class AdminAPITest {
                     integrityService,
                     similarityCheckService,
                     TestSizeLimits.atConfigDefault(),
+                    Mockito.mock(DownloadAnalyticsVisibilityService.class),
                     new TrustedPublishingConfig(),
                     new WebUiProperties(),
                     Duration.ofSeconds(30));

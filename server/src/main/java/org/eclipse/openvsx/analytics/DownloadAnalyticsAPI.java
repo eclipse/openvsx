@@ -39,11 +39,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
 import org.eclipse.openvsx.util.NotFoundException;
 
 /**
  * Minimal REST surface over {@link DownloadAnalyticsService}. The bean only exists when download
- * analytics is enabled, so the path stays unmapped (404) otherwise.
+ * analytics is enabled, so the path stays unmapped (404) otherwise; while an admin keeps the
+ * {@link DownloadAnalyticsVisibilityService} switch off it answers 404 as well, so the two look the
+ * same.
  */
 @RestController
 @ConditionalOnProperty(name = "ovsx.analytics.enabled", havingValue = "true")
@@ -54,20 +57,27 @@ public class DownloadAnalyticsAPI {
 
     private final DownloadAnalyticsService service;
     private final RepositoryService repositories;
+    private final DownloadAnalyticsVisibilityService downloadAnalytics;
     private final Clock clock;
 
     @Autowired
-    public DownloadAnalyticsAPI(DownloadAnalyticsService service, RepositoryService repositories) {
-        this(service, repositories, Clock.systemUTC());
+    public DownloadAnalyticsAPI(
+            DownloadAnalyticsService service,
+            RepositoryService repositories,
+            DownloadAnalyticsVisibilityService downloadAnalytics
+    ) {
+        this(service, repositories, downloadAnalytics, Clock.systemUTC());
     }
 
     DownloadAnalyticsAPI(
             DownloadAnalyticsService service,
             RepositoryService repositories,
+            DownloadAnalyticsVisibilityService downloadAnalytics,
             Clock clock
     ) {
         this.service = service;
         this.repositories = repositories;
+        this.downloadAnalytics = downloadAnalytics;
         this.clock = clock;
     }
 
@@ -85,7 +95,7 @@ public class DownloadAnalyticsAPI {
     )
     @ApiResponse(
         responseCode = "404",
-        description = "The specified extension could not be found, or download analytics is disabled",
+        description = "The specified extension could not be found, or extension analytics is switched off",
         content = @Content()
     )
     @ApiResponse(
@@ -114,6 +124,10 @@ public class DownloadAnalyticsAPI {
                 schema = @Schema(type = "string", allowableValues = { "day", "week", "month" }, defaultValue = "day")
             ) String interval
     ) {
+        if (!downloadAnalytics.isVisible()) {
+            throw new NotFoundException();
+        }
+
         var extensionEntity = repositories.findActiveExtension(extension, namespace);
         if (extensionEntity == null) {
             throw new NotFoundException();

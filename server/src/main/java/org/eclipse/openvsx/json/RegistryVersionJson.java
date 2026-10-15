@@ -47,7 +47,9 @@ public class RegistryVersionJson extends ResultJson {
     @Nullable
     private String trustedPublishingAudience;
 
-    @Schema(description = "Whether download analytics are enabled and the analytics endpoints are available")
+    @Schema(
+        description = "Whether download analytics are configured and switched on, so the analytics endpoints are available"
+    )
     private boolean analyticsEnabled;
 
     public String getVersion() {

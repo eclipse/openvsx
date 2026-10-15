@@ -67,6 +67,7 @@ import org.eclipse.openvsx.search.SimilarityService;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
+import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.LogService;
@@ -1392,6 +1393,7 @@ class UserAPITest {
                     integrityService,
                     similarityCheckService,
                     TestSizeLimits.atConfigDefault(),
+                    Mockito.mock(DownloadAnalyticsVisibilityService.class),
                     new TrustedPublishingConfig(),
                     new WebUiProperties(),
                     Duration.ofSeconds(30));

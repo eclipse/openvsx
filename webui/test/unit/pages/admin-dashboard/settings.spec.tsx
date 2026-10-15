@@ -17,6 +17,8 @@ import userEvent from '@testing-library/user-event';
 import { RuntimeSettingsPage } from '../../../../src/pages/admin-dashboard/settings';
 import { ExtensionRegistryService } from '../../../../src/extension-registry-service';
 import { Settings } from '../../../../src/extension-registry-types';
+import { PageSettings } from '../../../../src/page-settings';
+import { AdminSettingsSection } from '../../../../src/pages/admin-dashboard/settings-sections';
 import { useSiteSettings } from '../../../../src/components/use-site-settings';
 import { renderWithProviders } from '../../support/test-providers';
 
@@ -24,6 +26,7 @@ const defaults: Settings = {
     readOnly: false,
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
+    downloadAnalyticsEnabled: false,
     bannerEnabled: false,
     bannerMessage: '',
     bannerSeverity: 'info',
@@ -34,6 +37,7 @@ const configured: Settings = {
     readOnly: false,
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
+    downloadAnalyticsEnabled: false,
     bannerEnabled: true,
     bannerMessage: 'Heads up',
     bannerSeverity: 'info',
@@ -42,13 +46,18 @@ const configured: Settings = {
 
 // not named render*, so the testing-library naming rule does not treat the service stub it returns
 // as a render result
-const mountPage = (settings: Settings = defaults, getSiteSettings = vi.fn().mockResolvedValue({})) => {
+const mountPage = (settings: Settings = defaults, adminSettingsSections?: AdminSettingsSection[]) => {
     const admin = {
         getSettings: vi.fn().mockResolvedValue(settings),
         updateSettings: vi.fn().mockImplementation((updated: Settings) => Promise.resolve(updated))
     };
+    const getSiteSettings = vi.fn().mockResolvedValue({});
+    const pageSettings = {
+        elements: { adminSettingsSections },
+        urls: { extensionDefaultIcon: '/default-icon.png', namespaceAccessInfo: '/namespace-access' }
+    } as PageSettings;
     renderWithProviders(<RuntimeSettingsPage />, {
-        mainContext: { service: { admin, getSiteSettings } as unknown as ExtensionRegistryService }
+        mainContext: { service: { admin, getSiteSettings } as unknown as ExtensionRegistryService, pageSettings }
     });
     return admin;
 };
@@ -441,5 +450,92 @@ describe('RuntimeSettingsPage', () => {
                 expect.objectContaining({ maxExtensionSize: 1024 * 1024 * 1024 })
             )
         );
+    });
+
+    it('saves the download analytics switch on its own', async () => {
+        const admin = mountPage();
+
+        await userEvent.click(await screen.findByLabelText('Toggle Download analytics'));
+        await save();
+
+        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ downloadAnalyticsEnabled: true }));
+    });
+
+    // /api/-/settings is the public copy of the switch, and the same cache that seeds the banner
+    // seeds it, so a tab left open does not keep serving the pre-save value.
+    it('seeds the public settings with the saved download analytics switch', async () => {
+        const saved: Settings = { ...defaults, downloadAnalyticsEnabled: true };
+        const admin = {
+            getSettings: vi.fn().mockResolvedValue(defaults),
+            updateSettings: vi.fn().mockResolvedValue(saved)
+        };
+        const getSiteSettings = vi.fn().mockResolvedValue({});
+        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsEnabled ?? 'unknown')}</output>;
+        renderWithProviders(
+            <>
+                <RuntimeSettingsPage />
+                <Probe />
+            </>,
+            { mainContext: { service: { admin, getSiteSettings } as unknown as ExtensionRegistryService } }
+        );
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('unknown'));
+
+        await userEvent.click(await screen.findByLabelText('Toggle Download analytics'));
+        await save();
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('true'));
+    });
+
+    it('renders a contributed section after the built-in ones and saves its switch', async () => {
+        const withAudit = { ...defaults, auditLogEnabled: false };
+        const admin = mountPage(withAudit, [
+            {
+                id: 'audit',
+                title: 'Audit',
+                description: 'Who did what.',
+                flags: [{ key: 'auditLogEnabled', title: 'Audit log', description: 'Records every admin action.' }]
+            }
+        ]);
+
+        const headings = (await screen.findAllByRole('heading', { level: 2 })).map(heading => heading.textContent);
+        expect(headings).toEqual(['Registry', 'Site settings', 'Publishing', 'Analytics', 'Audit']);
+        await userEvent.click(await screen.findByLabelText('Toggle Audit log'));
+        await save();
+
+        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ auditLogEnabled: true }));
+    });
+
+    it('appends a contributed switch to the built-in section it names', async () => {
+        const withRetention = { ...defaults, retentionEnabled: true };
+        mountPage(withRetention, [
+            {
+                id: 'analytics',
+                flags: [{ key: 'retentionEnabled', title: 'Retention', description: 'Keeps the raw events.' }]
+            }
+        ]);
+
+        expect(await screen.findByLabelText('Toggle Retention')).toBeChecked();
+        expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(4);
+        const toggles = screen.getAllByLabelText(/^Toggle /).map(toggle => toggle.getAttribute('aria-label'));
+        expect(toggles).toEqual([
+            'Toggle Read-only mode',
+            'Toggle banner',
+            'Toggle Download analytics',
+            'Toggle Retention'
+        ]);
+    });
+
+    // Contributed switches can only be added: one that names a built-in key would otherwise render a
+    // second control over the same setting.
+    it('ignores a contributed switch over a setting the page already shows', async () => {
+        mountPage(defaults, [
+            {
+                id: 'registry',
+                flags: [{ key: 'readOnly', title: 'Freeze', description: 'The same switch under another name.' }]
+            }
+        ]);
+
+        await screen.findByLabelText('Toggle Read-only mode');
+        expect(screen.queryByLabelText('Toggle Freeze')).toBeNull();
     });
 });
