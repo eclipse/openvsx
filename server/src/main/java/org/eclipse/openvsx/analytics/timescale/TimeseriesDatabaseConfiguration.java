@@ -52,6 +52,7 @@ class TimeseriesDatabaseConfiguration {
     // The derived validation timeout floors at this, and Hikari rejects a validation timeout that
     // is not below the connection timeout, so the connection timeout has to exceed it.
     private static final long VALIDATION_TIMEOUT_FLOOR_MS = 250L;
+    private static final Duration MIN_PROBE_INTERVAL = Duration.ofSeconds(1);
 
     /** JDBC URL of the time-series database. Required whenever analytics are enabled. */
     @Value("${ovsx.analytics.datasource.url:}")
@@ -101,9 +102,10 @@ class TimeseriesDatabaseConfiguration {
                     "ovsx.analytics.datasource.connection-timeout must be greater than "
                             + VALIDATION_TIMEOUT_FLOOR_MS + "ms, but was " + connectionTimeout + "ms");
         }
-        if (probeInterval.isZero() || probeInterval.isNegative()) {
+        if (probeInterval.compareTo(MIN_PROBE_INTERVAL) < 0) {
             throw new IllegalStateException(
-                    "ovsx.analytics.availability.probe-interval must be positive, but was " + probeInterval);
+                    "ovsx.analytics.availability.probe-interval must be at least " + MIN_PROBE_INTERVAL
+                            + ", but was " + probeInterval);
         }
         if (failureThreshold < 1) {
             throw new IllegalStateException(

@@ -1643,7 +1643,7 @@ Note that the buckets on either side of the boundary carry the same counts — t
 | Default       | `PT30S`
 | Compatibility | Unreleased
 
-How often the time-series database is probed. Analytics is optional: while the database is unreachable the registry keeps serving, the analytics endpoint answers `503` with a `Retry-After` header, and analytics writes are skipped without waiting on a connection timeout. A probe is also what notices that the database is back. Must be positive.
+How often the time-series database is probed. Analytics is optional: while the database is unreachable the registry keeps serving, the analytics endpoint answers `503` with a `Retry-After` header, and analytics writes are skipped without waiting on a connection timeout. A probe is also what notices that the database is back, so probing cannot be switched off. Must be at least `PT1S`; startup fails otherwise.
 
 The server starts without the time-series database being reachable. Its schema is migrated on the first successful probe, and analytics stays unavailable until then. A failure that is not a connectivity problem, such as a migration the database rejects, still fails startup.
 

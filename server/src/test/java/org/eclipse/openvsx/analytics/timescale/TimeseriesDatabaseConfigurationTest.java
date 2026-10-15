@@ -82,13 +82,28 @@ class TimeseriesDatabaseConfigurationTest {
     }
 
     @Test
-    void rejectsAProbeIntervalThatIsNotPositive() {
-        var config = config();
-        config.probeInterval = Duration.ZERO;
+    void rejectsAProbeIntervalBelowOneSecond() {
+        for (var interval : new Duration[] {
+            Duration.ZERO,
+            Duration.ofSeconds(-1),
+            Duration.ofNanos(500_000),
+            Duration.ofMillis(999)
+        }) {
+            var config = config();
+            config.probeInterval = interval;
 
-        assertThatThrownBy(config::validateConfiguration)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ovsx.analytics.availability.probe-interval");
+            assertThatThrownBy(config::validateConfiguration)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("ovsx.analytics.availability.probe-interval");
+        }
+    }
+
+    @Test
+    void acceptsAProbeIntervalOfOneSecond() {
+        var config = config();
+        config.probeInterval = Duration.ofSeconds(1);
+
+        assertThatCode(config::validateConfiguration).doesNotThrowAnyException();
     }
 
     @Test
