@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Component
@@ -29,13 +29,13 @@ public class NotifyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final Logger logger = LoggerFactory.getLogger(NotifyPersonalAccessTokenExpirationHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final AccessTokenConfig config;
     private final AccessTokenService tokens;
     private final RepositoryService repositories;
 
     public NotifyPersonalAccessTokenExpirationHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             AccessTokenConfig config,
             AccessTokenService tokens,
             RepositoryService repositories

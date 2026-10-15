@@ -21,18 +21,18 @@ import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.ratelimit.UsageStatsService;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 
 @Component
 public class CalculateDailyUsageStatsHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private final Logger logger = LoggerFactory.getLogger(CalculateDailyUsageStatsHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final @Nullable UsageStatsService usageStatsService;
 
     public CalculateDailyUsageStatsHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             @Nullable UsageStatsService usageStatsService
     ) {
         this.readOnly = readOnly;

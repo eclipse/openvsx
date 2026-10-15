@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 import org.eclipse.openvsx.util.TimeUtil;
 
 @Component
@@ -27,12 +27,12 @@ public class LegacyPersonalAccessTokenExpirationHandler implements JobRequestHan
 
     private final Logger logger = LoggerFactory.getLogger(LegacyPersonalAccessTokenExpirationHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final AccessTokenConfig config;
     private final AccessTokenService tokens;
 
     public LegacyPersonalAccessTokenExpirationHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             AccessTokenConfig config,
             AccessTokenService tokens
     ) {

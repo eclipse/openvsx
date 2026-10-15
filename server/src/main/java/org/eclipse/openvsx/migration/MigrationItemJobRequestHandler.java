@@ -24,7 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 
 @Component
 public class MigrationItemJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
@@ -37,7 +37,7 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
 
     protected final Logger logger = LoggerFactory.getLogger(MigrationItemJobRequestHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final RepositoryService repositories;
     private final MigrationService migrations;
     private final MigrationScheduler scheduler;
@@ -49,7 +49,7 @@ public class MigrationItemJobRequestHandler implements JobRequestHandler<Handler
     int batchSize;
 
     public MigrationItemJobRequestHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             RepositoryService repositories,
             MigrationService migrations,
             MigrationScheduler scheduler

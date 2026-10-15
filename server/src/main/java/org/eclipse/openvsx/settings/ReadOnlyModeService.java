@@ -12,7 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.settings;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * Whether the registry is refusing writes right now: {@link ReadOnlySetting} as the server reads it.
@@ -20,13 +20,13 @@ import org.springframework.stereotype.Component;
  * node's cached snapshot; see the package documentation for how a change made on another node
  * arrives.
  */
-@Component
-public class ReadOnlyMode {
+@Service
+public class ReadOnlyModeService {
 
     private final SettingsService settings;
     private final ReadOnlySetting setting;
 
-    public ReadOnlyMode(SettingsService settings, ReadOnlySetting setting) {
+    public ReadOnlyModeService(SettingsService settings, ReadOnlySetting setting) {
         this.settings = settings;
         this.setting = setting;
     }

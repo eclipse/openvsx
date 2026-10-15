@@ -18,9 +18,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Blocks write operations while keeping browsing, search and downloads available. The server reads
- * the flag through {@link ReadOnlyMode}; this bean only stores it. Not a {@link PublicSetting}: the
- * web UI learns that the registry is read-only from the 409s {@link ReadOnlyEndpointAspect} returns,
- * not from a published flag.
+ * the flag through {@link ReadOnlyModeService}; this bean only stores it. Not a
+ * {@link PublicSetting}: the web UI learns that the registry is read-only from the 409s
+ * {@link ReadOnlyEndpointAspect} returns, not from a published flag.
  */
 @Component
 class ReadOnlySetting implements WritableSetting<Boolean> {

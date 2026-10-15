@@ -31,12 +31,12 @@ import static org.mockito.Mockito.*;
 
 class ReadOnlyEndpointAspectTest {
 
-    private final ReadOnlyMode readOnly = mock(ReadOnlyMode.class);
+    private final ReadOnlyModeService readOnly = mock(ReadOnlyModeService.class);
     private final ReadOnlyEndpointAspect advisor = new ReadOnlyEndpointAspect(provider(readOnly));
 
     @SuppressWarnings("unchecked")
-    private static ObjectProvider<ReadOnlyMode> provider(ReadOnlyMode readOnly) {
-        var provider = (ObjectProvider<ReadOnlyMode>) mock(ObjectProvider.class);
+    private static ObjectProvider<ReadOnlyModeService> provider(ReadOnlyModeService readOnly) {
+        var provider = (ObjectProvider<ReadOnlyModeService>) mock(ObjectProvider.class);
         when(provider.getObject()).thenReturn(readOnly);
         return provider;
     }

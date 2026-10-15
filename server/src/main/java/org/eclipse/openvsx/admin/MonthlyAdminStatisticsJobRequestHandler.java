@@ -18,19 +18,19 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 import org.eclipse.openvsx.util.TimeUtil;
 import org.eclipse.openvsx.util.UUIDService;
 
 @Component
 public class MonthlyAdminStatisticsJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final JobRequestScheduler scheduler;
     private final UUIDService uuidService;
 
     public MonthlyAdminStatisticsJobRequestHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             JobRequestScheduler scheduler,
             UUIDService uuidService
     ) {

@@ -27,7 +27,7 @@ import tools.jackson.databind.JsonNode;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;
@@ -37,13 +37,13 @@ public class ExtensionControlJobRequestHandler implements JobRequestHandler<Hand
 
     protected final Logger logger = LoggerFactory.getLogger(ExtensionControlJobRequestHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final AdminService admin;
     private final ExtensionControlService service;
     private final RepositoryService repositories;
 
     public ExtensionControlJobRequestHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             AdminService admin,
             ExtensionControlService service,
             RepositoryService repositories

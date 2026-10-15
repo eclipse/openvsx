@@ -17,10 +17,10 @@
  * <p>
  * A setting is a package-private {@link WritableSetting} bean. It only ever sees rows handed to it
  * and never reads the store. If the server consults the value, a public reader such as
- * {@link ReadOnlyMode} asks {@link SettingsService#current} for it behind a name that says what the
- * value means; the reader is a bean of its own precisely because the setting must not know the
- * store. The rest of the server injects readers and nothing else: {@link SettingsService} is the
- * only way to a value, and {@link SettingsCache} stays package-private behind it.
+ * {@link ReadOnlyModeService} asks {@link SettingsService#current} for it behind a name that says
+ * what the value means; the reader is a bean of its own precisely because the setting must not
+ * know the store. The rest of the server injects readers and nothing else: {@link SettingsService}
+ * is the only way to a value, and {@link SettingsCache} stays package-private behind it.
  * <p>
  * A reader sees this node's snapshot. A change made on another node arrives through
  * {@link SettingsUpdateChannel}, or once the snapshot expires after {@code ovsx.caching.setting.ttl}.

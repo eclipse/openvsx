@@ -18,16 +18,16 @@ import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 
 @Component
 @ConditionalOnProperty(value = "ovsx.data.mirror.enabled", havingValue = "false", matchIfMissing = true)
 public class VSCodeIdDailyUpdateJobRequestHandler implements JobRequestHandler<JobRequest> {
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final VSCodeIdUpdateService service;
 
-    public VSCodeIdDailyUpdateJobRequestHandler(ReadOnlyMode readOnly, VSCodeIdUpdateService service) {
+    public VSCodeIdDailyUpdateJobRequestHandler(ReadOnlyModeService readOnly, VSCodeIdUpdateService service) {
         this.readOnly = readOnly;
         this.service = service;
     }

@@ -19,18 +19,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
-import org.eclipse.openvsx.settings.ReadOnlyMode;
+import org.eclipse.openvsx.settings.ReadOnlyModeService;
 
 @Component
 public class UpgradePersonalAccessTokenHandler implements JobRequestHandler<HandlerJobRequest<?>> {
 
     private final Logger logger = LoggerFactory.getLogger(UpgradePersonalAccessTokenHandler.class);
 
-    private final ReadOnlyMode readOnly;
+    private final ReadOnlyModeService readOnly;
     private final AccessTokenService tokens;
 
     public UpgradePersonalAccessTokenHandler(
-            ReadOnlyMode readOnly,
+            ReadOnlyModeService readOnly,
             AccessTokenService tokens
     ) {
         this.readOnly = readOnly;
