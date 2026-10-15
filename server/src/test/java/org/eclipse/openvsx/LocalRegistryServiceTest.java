@@ -52,7 +52,7 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
-import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
@@ -119,7 +119,7 @@ class LocalRegistryServiceTest {
     ExtensionSizeLimitService sizeLimits;
 
     @Mock
-    DownloadAnalyticsVisibilityService downloadAnalytics;
+    DownloadAnalyticsSetting downloadAnalytics;
 
     private LocalRegistryService registryService;
 

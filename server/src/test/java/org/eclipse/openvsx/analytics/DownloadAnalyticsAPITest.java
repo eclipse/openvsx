@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,8 +41,8 @@ class DownloadAnalyticsAPITest {
 
     private final DownloadAnalyticsService service = Mockito.mock(DownloadAnalyticsService.class);
     private final RepositoryService repositories = Mockito.mock(RepositoryService.class);
-    private final DownloadAnalyticsVisibilityService downloadAnalytics = Mockito
-            .mock(DownloadAnalyticsVisibilityService.class);
+    private final DownloadAnalyticsSetting downloadAnalytics = Mockito
+            .mock(DownloadAnalyticsSetting.class);
 
     private MockMvc mockMvc;
 

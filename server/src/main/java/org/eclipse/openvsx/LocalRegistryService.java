@@ -55,7 +55,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
-import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
@@ -100,7 +100,7 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final ExtensionSizeLimitService sizeLimits;
-    private final DownloadAnalyticsVisibilityService downloadAnalytics;
+    private final DownloadAnalyticsSetting downloadAnalytics;
     private final TrustedPublishingConfig trustedPublishingConfig;
     private final WebUiProperties webUi;
 
@@ -124,7 +124,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
             ExtensionSizeLimitService sizeLimits,
-            DownloadAnalyticsVisibilityService downloadAnalytics,
+            DownloadAnalyticsSetting downloadAnalytics,
             TrustedPublishingConfig trustedPublishingConfig,
             WebUiProperties webUi,
             @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag

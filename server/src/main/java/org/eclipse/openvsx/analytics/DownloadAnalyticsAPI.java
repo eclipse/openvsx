@@ -39,13 +39,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.DownloadAnalyticsVisibilityService;
+import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 import org.eclipse.openvsx.util.NotFoundException;
 
 /**
  * Minimal REST surface over {@link DownloadAnalyticsService}. The bean only exists when download
  * analytics is enabled, so the path stays unmapped (404) otherwise; while an admin keeps the
- * {@link DownloadAnalyticsVisibilityService} switch off it answers 404 as well, so the two look the
+ * {@link DownloadAnalyticsSetting} switch off it answers 404 as well, so the two look the
  * same.
  */
 @RestController
@@ -57,14 +57,14 @@ public class DownloadAnalyticsAPI {
 
     private final DownloadAnalyticsService service;
     private final RepositoryService repositories;
-    private final DownloadAnalyticsVisibilityService downloadAnalytics;
+    private final DownloadAnalyticsSetting downloadAnalytics;
     private final Clock clock;
 
     @Autowired
     public DownloadAnalyticsAPI(
             DownloadAnalyticsService service,
             RepositoryService repositories,
-            DownloadAnalyticsVisibilityService downloadAnalytics
+            DownloadAnalyticsSetting downloadAnalytics
     ) {
         this(service, repositories, downloadAnalytics, Clock.systemUTC());
     }
@@ -72,7 +72,7 @@ public class DownloadAnalyticsAPI {
     DownloadAnalyticsAPI(
             DownloadAnalyticsService service,
             RepositoryService repositories,
-            DownloadAnalyticsVisibilityService downloadAnalytics,
+            DownloadAnalyticsSetting downloadAnalytics,
             Clock clock
     ) {
         this.service = service;

@@ -20,18 +20,28 @@ import org.springframework.stereotype.Component;
 /**
  * Whether visitors get download analytics. Off by default, so a registry can backfill its download
  * history before the extension pages show a graph. Only meaningful where
- * {@code ovsx.analytics.enabled} wires download analytics at all. The server reads the switch
- * through {@link DownloadAnalyticsVisibilityService}; this bean only stores it.
+ * {@code ovsx.analytics.enabled} wires download analytics at all, which {@link #isVisible()} folds
+ * in for the server.
  */
 @Component
-class DownloadAnalyticsSetting implements WritableSetting<Boolean>, PublicSetting {
+public class DownloadAnalyticsSetting implements WritableSetting<Boolean>, PublicSetting {
 
-    static final String KEY = "download-analytics-enabled";
+    public static final String KEY = "download-analytics-enabled";
 
+    private final SettingsStore store;
     private final boolean analyticsConfigured;
 
-    public DownloadAnalyticsSetting(@Value("${ovsx.analytics.enabled:false}") boolean analyticsConfigured) {
+    public DownloadAnalyticsSetting(
+            SettingsStore store,
+            @Value("${ovsx.analytics.enabled:false}") boolean analyticsConfigured
+    ) {
+        this.store = store;
         this.analyticsConfigured = analyticsConfigured;
+    }
+
+    /** {@code false} until an admin switches it on, and always where analytics is not configured. */
+    public boolean isVisible() {
+        return effective(store.snapshot());
     }
 
     @Override
@@ -66,6 +76,10 @@ class DownloadAnalyticsSetting implements WritableSetting<Boolean>, PublicSettin
     /** Always published, as the effective state: a switch left on after analytics was unconfigured reads as off. */
     @Override
     public Map<String, Object> publicView(SettingRows stored) {
-        return Map.of(KEY, analyticsConfigured && read(stored));
+        return Map.of(KEY, effective(stored));
+    }
+
+    private boolean effective(SettingRows stored) {
+        return analyticsConfigured && read(stored);
     }
 }
