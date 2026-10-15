@@ -140,6 +140,40 @@ class AnalyticsAvailabilityTest {
     }
 
     @Test
+    void statusReportsTheLastProbeAndItsErrorUntilItSucceeds() {
+        var availability = availability(3);
+        availability.runProbe(false);
+        var healthy = availability.status();
+        assertThat(healthy.available()).isTrue();
+        assertThat(healthy.lastProbe()).isNotNull();
+        assertThat(healthy.lastError()).isNull();
+
+        reachable.set(false);
+        availability.runProbe(false);
+        var down = availability.status();
+        assertThat(down.available()).isFalse();
+        assertThat(down.lastError()).isEqualTo("SQLTransientConnectionException: timeout");
+        assertThat(down.since()).isAfterOrEqualTo(healthy.since());
+
+        reachable.set(true);
+        availability.runProbe(false);
+        assertThat(availability.status().available()).isTrue();
+        assertThat(availability.status().lastError()).isNull();
+    }
+
+    @Test
+    void sinceChangesOnlyWhenTheStateDoes() throws Exception {
+        var availability = availability(3);
+        availability.runProbe(false);
+        var since = availability.status().since();
+
+        Thread.sleep(5);
+        availability.runProbe(false);
+
+        assertThat(availability.status().since()).isEqualTo(since);
+    }
+
+    @Test
     void aSuccessfulCallResetsTheFailureCount() {
         var availability = availability(3);
         availability.runProbe(false);
