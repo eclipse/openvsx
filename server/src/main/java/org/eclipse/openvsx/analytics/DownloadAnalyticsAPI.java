@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,7 @@ import org.eclipse.openvsx.util.NotFoundException;
 public class DownloadAnalyticsAPI {
 
     private static final int MAX_RANGE_YEARS = 5;
+    private static final int RETRY_AFTER_SECONDS = 30;
 
     private final DownloadAnalyticsService service;
     private final RepositoryService repositories;
@@ -85,6 +88,11 @@ public class DownloadAnalyticsAPI {
         description = "The specified extension could not be found, or download analytics is disabled",
         content = @Content()
     )
+    @ApiResponse(
+        responseCode = "503",
+        description = "The analytics database is currently unreachable; the rest of the registry is unaffected",
+        content = @Content()
+    )
     public ResponseEntity<DownloadSeriesJson> getDownloads(
             @PathVariable
             @Parameter(description = "Extension namespace", example = "redhat") String namespace,
@@ -112,7 +120,16 @@ public class DownloadAnalyticsAPI {
         }
 
         var request = buildRequest(extensionEntity.getId(), from, to, interval);
-        var points = service.getSeries(request).stream()
+        List<DownloadSeriesPoint> series;
+        try {
+            series = service.getSeries(request);
+        } catch (AnalyticsUnavailableException e) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(RETRY_AFTER_SECONDS))
+                    .build();
+        }
+
+        var points = series.stream()
                 .map(
                         point -> new DownloadSeriesJson.DownloadSeriesPointJson(
                                 LocalDate.ofInstant(point.bucketStart(), ZoneOffset.UTC).toString(),
