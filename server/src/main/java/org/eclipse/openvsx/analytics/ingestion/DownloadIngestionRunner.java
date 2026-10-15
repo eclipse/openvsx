@@ -24,7 +24,7 @@ import org.springframework.util.StopWatch;
 
 import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.settings.ReadOnlyModeService;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 /**
  * Drives the ingestion of one {@link DownloadRecordSource}: skips already-processed and
@@ -39,10 +39,10 @@ public class DownloadIngestionRunner {
 
     protected final Logger logger = LoggerFactory.getLogger(DownloadIngestionRunner.class);
 
-    private final ReadOnlyModeService readOnly;
+    private final ReadOnlySetting readOnly;
     private final DownloadIngestionProcessor processor;
 
-    public DownloadIngestionRunner(ReadOnlyModeService readOnly, DownloadIngestionProcessor processor) {
+    public DownloadIngestionRunner(ReadOnlySetting readOnly, DownloadIngestionProcessor processor) {
         this.readOnly = readOnly;
         this.processor = processor;
     }

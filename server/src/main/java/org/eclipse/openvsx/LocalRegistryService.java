@@ -55,7 +55,7 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;

@@ -21,11 +21,13 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.SiteSettingsJson;
 import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 /**
- * The one place that turns stored rows into the wire DTOs and back. In this package because the
- * row keys belong to the setting beans, which nothing outside can see; the DTOs themselves name no
- * setting. Properties are camelCase like every other DTO, rows kebab-case as stored.
+ * The one place that turns stored rows into the wire DTOs and back, and so the one class that spells
+ * every setting's row keys; the DTOs themselves name no setting. Properties are camelCase like every
+ * other DTO, rows kebab-case as stored.
  */
 @Component
 public class SettingsJsonMapper {

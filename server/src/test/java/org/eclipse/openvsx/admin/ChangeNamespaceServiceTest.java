@@ -30,7 +30,7 @@ import org.eclipse.openvsx.entities.ExtensionVersionState;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.TargetPlatform;
 
 import static org.assertj.core.api.Assertions.assertThat;

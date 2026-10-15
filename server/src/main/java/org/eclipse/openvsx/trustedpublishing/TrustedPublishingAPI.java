@@ -35,7 +35,7 @@ import org.eclipse.openvsx.json.TrustedPublisherListJson;
 import org.eclipse.openvsx.json.TrustedPublisherProviderJson;
 import org.eclipse.openvsx.json.TrustedPublisherStatusJson;
 import org.eclipse.openvsx.json.TrustedPublisherTokenRequestJson;
-import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.settings.readonly.MutatingOperation;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 

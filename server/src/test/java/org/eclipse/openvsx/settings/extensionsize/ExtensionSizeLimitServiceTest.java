@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.extensionsize;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,6 +33,7 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.ExtensionSizeOverrideRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,9 +63,9 @@ class ExtensionSizeLimitServiceTest {
         overrides = Mockito.mock(ExtensionSizeOverrideRepository.class);
         repositories = Mockito.mock(RepositoryService.class);
         publishingConfig = Mockito.mock(PublishingConfig.class);
-        maxExtensionSize = new MaxExtensionSizeSetting(publishingConfig);
+        maxExtensionSize = Mockito.mock(MaxExtensionSizeSetting.class);
         // lenient: the write tests below never read the default limit.
-        Mockito.lenient().when(settings.current(maxExtensionSize)).thenReturn(DEFAULT_LIMIT);
+        Mockito.lenient().when(maxExtensionSize.getValue()).thenReturn(DEFAULT_LIMIT);
         limits = new ExtensionSizeLimitService(settings, maxExtensionSize, overrides, repositories, publishingConfig);
     }
 

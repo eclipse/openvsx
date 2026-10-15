@@ -83,9 +83,9 @@ import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.settings.SettingsJsonMapper;
 import org.eclipse.openvsx.settings.SettingsService;
+import org.eclipse.openvsx.settings.readonly.MutatingOperation;
 import org.eclipse.openvsx.util.*;
 
 @RestController

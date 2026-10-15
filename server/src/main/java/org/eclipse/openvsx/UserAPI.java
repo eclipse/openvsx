@@ -64,7 +64,7 @@ import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.NamespaceOwnershipCheckScanner;
 import org.eclipse.openvsx.security.CodedAuthException;
-import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.settings.readonly.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NamingUtil;

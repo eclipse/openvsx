@@ -10,23 +10,38 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.readonly;
 
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import org.eclipse.openvsx.settings.PublicSetting;
+import org.eclipse.openvsx.settings.SettingRows;
+import org.eclipse.openvsx.settings.SettingsStore;
+import org.eclipse.openvsx.settings.WritableSetting;
+
 /**
- * Blocks write operations while keeping browsing, search and downloads available. The server reads
- * the flag through {@link ReadOnlyModeService}; this bean only stores it. Not a
- * {@link PublicSetting}: the web UI learns that the registry is read-only from the 409s
- * {@link ReadOnlyEndpointAspect} returns, not from a published flag.
+ * Blocks write operations while keeping browsing, search and downloads available. The server asks
+ * {@link #isEnabled()}. Not a {@link PublicSetting}: the web UI learns that the registry is
+ * read-only from the 409s {@link ReadOnlyEndpointAspect} returns, not from a published flag.
  */
 @Component
-class ReadOnlySetting implements WritableSetting<Boolean> {
+public class ReadOnlySetting implements WritableSetting<Boolean> {
 
     /** Shipped before settings had owners, so the name is also its bare row key. */
-    static final String KEY = "read-only";
+    public static final String KEY = "read-only";
+
+    private final SettingsStore store;
+
+    public ReadOnlySetting(SettingsStore store) {
+        this.store = store;
+    }
+
+    /** {@code false} until an admin switches it on, as this node's snapshot has it. */
+    public boolean isEnabled() {
+        return read(store.snapshot());
+    }
 
     @Override
     public String getName() {

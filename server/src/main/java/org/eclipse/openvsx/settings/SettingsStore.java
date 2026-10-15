@@ -28,17 +28,17 @@ import org.eclipse.openvsx.util.TimeUtil;
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SETTING;
 
 /**
- * The settings store as this node sees it, behind one cache entry. Package-private: only
- * {@link SettingsService} and {@link SettingsUpdateChannel} touch it, and the server reads a value
- * through {@link SettingsService#current}.
+ * The settings store as this node sees it, behind one cache entry. A setting the server consults
+ * reads {@link #snapshot()} from its accessor and nothing else here: the uncached read and the
+ * writes belong to {@link SettingsService}, the eviction also to {@link SettingsUpdateChannel}.
  */
 @Component
 @CacheConfig(cacheManager = "localCacheManager")
-class SettingsCache {
+public class SettingsStore {
 
     private final SettingRepository repository;
 
-    public SettingsCache(SettingRepository repository) {
+    public SettingsStore(SettingRepository repository) {
         this.repository = repository;
     }
 

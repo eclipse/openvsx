@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.analytics.DownloadEvent;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.settings.ReadOnlyModeService;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -43,7 +43,7 @@ class DownloadIngestionRunnerTest {
     private static final String STORAGE = FileResource.STORAGE_AWS;
     private static final String NAME = "access.log.gz";
 
-    private final ReadOnlyModeService readOnly = Mockito.mock(ReadOnlyModeService.class);
+    private final ReadOnlySetting readOnly = Mockito.mock(ReadOnlySetting.class);
     private final DownloadIngestionProcessor processor = Mockito.mock(DownloadIngestionProcessor.class);
     private final DownloadRecordSource source = Mockito.mock(DownloadRecordSource.class);
     private final List<RawDownloadRecord> records = List

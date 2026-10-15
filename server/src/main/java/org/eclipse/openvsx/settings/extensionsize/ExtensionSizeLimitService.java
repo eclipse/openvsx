@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.extensionsize;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -35,12 +35,13 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.ExtensionSizeOverrideRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
+import org.eclipse.openvsx.settings.SettingsService;
+import org.eclipse.openvsx.settings.SettingsStore;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 /**
- * Size limits for published packages: the admin-set default of {@link MaxExtensionSizeSetting} as
- * the server reads it, the per-namespace and per-extension overrides on top of it, and the ceiling
- * across all of them.
+ * Size limits for published packages: the admin-set default of {@link MaxExtensionSizeSetting}, the
+ * per-namespace and per-extension overrides on top of it, and the ceiling across all of them.
  */
 @Service
 @CacheConfig(cacheManager = "localCacheManager")
@@ -68,12 +69,9 @@ public class ExtensionSizeLimitService {
         this.publishingConfig = publishingConfig;
     }
 
-    /**
-     * The admin-set default, ignoring overrides, from this node's cached snapshot; see the package
-     * documentation for how a change made on another node arrives.
-     */
+    /** The admin-set default, ignoring overrides. */
     public long getDefaultLimit() {
-        return settings.current(maxExtensionSize);
+        return maxExtensionSize.getValue();
     }
 
     /** The write-time ceiling {@link #requireValidSize} enforces; see {@link PublishingConfig#getMaxOverrideSize()}. */
@@ -83,7 +81,7 @@ public class ExtensionSizeLimitService {
 
     /**
      * Largest package any namespace may publish. Used as the stream-time cap, before the namespace is
-     * known. Evicted by {@link SettingsCache#clear()}, which every settings write triggers.
+     * known. Evicted by {@link SettingsStore#clear()}, which every settings write triggers.
      */
     @Cacheable(value = CacheService.CACHE_SETTING, key = CACHE_KEY_CEILING)
     public long getCeiling() {

@@ -33,7 +33,7 @@ import org.eclipse.openvsx.json.ConsistencyCheckListJson;
 import org.eclipse.openvsx.json.ConsistencyFindingJson;
 import org.eclipse.openvsx.json.ConsistencyFindingListJson;
 import org.eclipse.openvsx.json.ResultJson;
-import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.settings.readonly.MutatingOperation;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.NotFoundException;
 

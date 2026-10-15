@@ -110,10 +110,12 @@ import org.eclipse.openvsx.security.IdPrincipal;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.settings.SettingRows;
 import org.eclipse.openvsx.settings.SettingsJsonMapper;
 import org.eclipse.openvsx.settings.SettingsService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
 import org.eclipse.openvsx.storage.CdnServiceConfig;
@@ -273,7 +275,7 @@ class AdminAPITest {
     @Test
     void testGetSettingsReportsMaxExtensionSize() throws Exception {
         mockAdminUser();
-        var rows = new SettingRows(Map.of("read-only", false, "max-extension-size", 536_870_912L));
+        var rows = new SettingRows(Map.of(ReadOnlySetting.KEY, false, MaxExtensionSizeSetting.KEY, 536_870_912L));
         Mockito.when(settings.getCurrentSettings()).thenReturn(rows);
 
         mockMvc.perform(
@@ -289,8 +291,8 @@ class AdminAPITest {
     @Test
     void testUpdateSettingsAppliesMaxExtensionSizeAndLogsIt() throws Exception {
         var admin = mockAdminUser();
-        Mockito.when(settings.update(Mockito.any())).thenReturn("max-extension-size -> 1073741824");
-        var rows = new SettingRows(Map.of("read-only", false, "max-extension-size", 1_073_741_824L));
+        Mockito.when(settings.update(Mockito.any())).thenReturn(MaxExtensionSizeSetting.KEY + " -> 1073741824");
+        var rows = new SettingRows(Map.of(ReadOnlySetting.KEY, false, MaxExtensionSizeSetting.KEY, 1_073_741_824L));
         Mockito.when(settings.getCurrentSettings()).thenReturn(rows);
 
         mockMvc.perform(

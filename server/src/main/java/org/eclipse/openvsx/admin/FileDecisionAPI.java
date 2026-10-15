@@ -35,7 +35,7 @@ import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Permission;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.settings.readonly.MutatingOperation;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 

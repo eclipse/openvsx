@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.readonly;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -31,12 +31,12 @@ import static org.mockito.Mockito.*;
 
 class ReadOnlyEndpointAspectTest {
 
-    private final ReadOnlyModeService readOnly = mock(ReadOnlyModeService.class);
+    private final ReadOnlySetting readOnly = mock(ReadOnlySetting.class);
     private final ReadOnlyEndpointAspect advisor = new ReadOnlyEndpointAspect(provider(readOnly));
 
     @SuppressWarnings("unchecked")
-    private static ObjectProvider<ReadOnlyModeService> provider(ReadOnlyModeService readOnly) {
-        var provider = (ObjectProvider<ReadOnlyModeService>) mock(ObjectProvider.class);
+    private static ObjectProvider<ReadOnlySetting> provider(ReadOnlySetting readOnly) {
+        var provider = (ObjectProvider<ReadOnlySetting>) mock(ObjectProvider.class);
         when(provider.getObject()).thenReturn(readOnly);
         return provider;
     }

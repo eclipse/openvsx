@@ -10,18 +10,24 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.readonly;
 
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.eclipse.openvsx.settings.SettingRows;
+import org.eclipse.openvsx.settings.SettingsStore;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.openvsx.settings.ReadOnlySetting.KEY;
+import static org.eclipse.openvsx.settings.readonly.ReadOnlySetting.KEY;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ReadOnlySettingTest {
 
-    private final ReadOnlySetting readOnly = new ReadOnlySetting();
+    private final SettingsStore store = mock(SettingsStore.class);
+    private final ReadOnlySetting readOnly = new ReadOnlySetting(store);
 
     private static SettingRows rows(Object... keyValues) {
         return keyValues.length == 0
@@ -41,11 +47,19 @@ class ReadOnlySettingTest {
 
     @Test
     void anUpdateWithoutTheFlagLeavesItAlone() {
-        assertThat(readOnly.merge(true, rows(BannerSetting.KEY_MESSAGE, "Maintenance tonight"))).isTrue();
+        assertThat(readOnly.merge(true, rows("some-other-row", "x"))).isTrue();
     }
 
     @Test
     void itStoresItselfUnderItsBareLegacyKey() {
         assertThat(readOnly.toRows(true)).containsExactly(Map.entry(KEY, true));
+    }
+
+    @Test
+    void theAccessorFollowsTheSnapshot() {
+        when(store.snapshot()).thenReturn(rows(KEY, true), rows());
+
+        assertThat(readOnly.isEnabled()).isTrue();
+        assertThat(readOnly.isEnabled()).isFalse();
     }
 }

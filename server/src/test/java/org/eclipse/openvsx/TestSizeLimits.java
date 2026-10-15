@@ -15,7 +15,7 @@ package org.eclipse.openvsx;
 import org.mockito.Mockito;
 
 import org.eclipse.openvsx.publish.PublishingConfig;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
 
 public final class TestSizeLimits {
 

@@ -68,7 +68,7 @@ import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;

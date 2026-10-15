@@ -28,14 +28,14 @@ import org.eclipse.openvsx.util.AfterCommitExecutor;
  * Serves the registry's settings to the two endpoints that read them and applies an admin's update
  * across every registered {@link WritableSetting}. It knows what a setting is, never what any
  * particular setting means: names, row keys, legal values, and defaults all belong to
- * the bean. Code that needs a setting's value at runtime injects that setting's reader, see the
+ * the bean. Code that needs a setting's value at runtime injects that setting and asks it, see the
  * package documentation, not this.
  */
 @Service
 public class SettingsService {
 
     private final List<WritableSetting<?>> settings;
-    private final SettingsCache cache;
+    private final SettingsStore store;
     private final SettingsUpdateChannel channel;
     private final AfterCommitExecutor afterCommit;
     private final ApplicationEventPublisher events;
@@ -46,13 +46,13 @@ public class SettingsService {
      */
     public SettingsService(
             List<WritableSetting<?>> settings,
-            SettingsCache cache,
+            SettingsStore store,
             SettingsUpdateChannel channel,
             AfterCommitExecutor afterCommit,
             ApplicationEventPublisher events
     ) {
         this.settings = settings.stream().sorted(Comparator.comparing(WritableSetting::getName)).toList();
-        this.cache = cache;
+        this.store = store;
         this.channel = channel;
         this.afterCommit = afterCommit;
         this.events = events;
@@ -60,7 +60,7 @@ public class SettingsService {
 
     /** Every setting's rows with its defaults applied, drafts included. The admin view. */
     public SettingRows getCurrentSettings() {
-        var stored = cache.snapshot();
+        var stored = store.snapshot();
         var rows = new LinkedHashMap<String, Object>();
         settings.forEach(setting -> rows.putAll(currentRows(setting, stored)));
         return new SettingRows(rows);
@@ -68,7 +68,7 @@ public class SettingsService {
 
     /** Only what the settings implementing {@link PublicSetting} choose to publish. */
     public SettingRows getSiteSettings() {
-        var stored = cache.snapshot();
+        var stored = store.snapshot();
         var rows = new LinkedHashMap<String, Object>();
         for (var setting : settings) {
             if (setting instanceof PublicSetting published) {
@@ -79,14 +79,6 @@ public class SettingsService {
     }
 
     /**
-     * One setting's value as this node sees it, from the cached snapshot. For the readers in this
-     * package that the server consults at runtime, hence not public; a save reads the store itself.
-     */
-    <T> T current(WritableSetting<T> setting) {
-        return setting.read(cache.snapshot());
-    }
-
-    /**
      * Drops every cached setting on this node and tells the others to. For callers that change data
      * a setting derives from, such as the size overrides behind the ceiling: evicting one key is not
      * enough. Deferred to after the commit, or a node could refill the cache from the rows as they
@@ -94,7 +86,7 @@ public class SettingsService {
      */
     public void invalidateCache() {
         afterCommit.execute(() -> {
-            cache.clear();
+            store.clear();
             channel.publish();
             events.publishEvent(new SettingsChangedEvent());
         });
@@ -106,7 +98,7 @@ public class SettingsService {
      * transaction.
      */
     public String update(SettingRows update) {
-        var stored = cache.load();
+        var stored = store.load();
 
         var pending = new LinkedHashMap<String, Object>();
         var described = new ArrayList<String>();
@@ -120,8 +112,8 @@ public class SettingsService {
             return "";
         }
 
-        cache.setAll(pending);
-        cache.clear();
+        store.setAll(pending);
+        store.clear();
         channel.publish();
         afterCommit.execute(() -> events.publishEvent(new SettingsChangedEvent()));
         return String.join(", ", described);

@@ -26,6 +26,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 import org.eclipse.openvsx.util.ErrorResultException;
 
@@ -45,15 +47,15 @@ class SettingsServiceTest {
 
     private static final long MB = 1024L * 1024;
 
-    private final SettingsCache cache = mock(SettingsCache.class);
+    private final SettingsStore store = mock(SettingsStore.class);
     private final SettingsUpdateChannel channel = mock(SettingsUpdateChannel.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final ReadOnlySetting readOnly = new ReadOnlySetting();
+    private final ReadOnlySetting readOnly = new ReadOnlySetting(store);
     private final PublishingConfig publishingConfig = mock(PublishingConfig.class);
-    private final MaxExtensionSizeSetting maxExtensionSize = new MaxExtensionSizeSetting(publishingConfig);
+    private final MaxExtensionSizeSetting maxExtensionSize = new MaxExtensionSizeSetting(store, publishingConfig);
     private final SettingsService settings = new SettingsService(
             List.of(readOnly, maxExtensionSize, new BannerSetting()),
-            cache,
+            store,
             channel,
             new AfterCommitExecutor(),
             events);
@@ -82,14 +84,14 @@ class SettingsServiceTest {
 
     private void stored(Object... keyValues) {
         var snapshot = rows(keyValues);
-        when(cache.snapshot()).thenReturn(snapshot);
-        when(cache.load()).thenReturn(snapshot);
+        when(store.snapshot()).thenReturn(snapshot);
+        when(store.load()).thenReturn(snapshot);
     }
 
     /** The rows the save handed to {@code setAll}; empty when it wrote nothing. */
     @SuppressWarnings("unchecked")
     private Map<String, Object> written() {
-        return mockingDetails(cache).getInvocations()
+        return mockingDetails(store).getInvocations()
                 .stream()
                 .filter(call -> call.getMethod().getName().equals("setAll"))
                 .findFirst()
@@ -187,7 +189,7 @@ class SettingsServiceTest {
         settings.update(rows(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Published"));
 
         // One transaction, so no reader can see the switch on beside the old message.
-        verify(cache, times(1)).setAll(any());
+        verify(store, times(1)).setAll(any());
         assertThat(written()).containsEntry(BannerSetting.KEY_ENABLED, true)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "Published");
     }
@@ -198,21 +200,21 @@ class SettingsServiceTest {
 
         settings.update(rows(ReadOnlySetting.KEY, true));
 
-        var order = Mockito.inOrder(cache, channel);
-        order.verify(cache).setAll(any());
-        order.verify(cache).clear();
+        var order = Mockito.inOrder(store, channel);
+        order.verify(store).setAll(any());
+        order.verify(store).clear();
         order.verify(channel).publish();
     }
 
     @Test
     void aFailedWriteClearsAndPublishesNothing() {
         stored(ReadOnlySetting.KEY, false);
-        Mockito.doThrow(new IllegalStateException("db down")).when(cache).setAll(any());
+        Mockito.doThrow(new IllegalStateException("db down")).when(store).setAll(any());
 
         assertThatThrownBy(() -> settings.update(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(IllegalStateException.class);
 
-        verify(cache, never()).clear();
+        verify(store, never()).clear();
         verify(channel, never()).publish();
     }
 
@@ -225,7 +227,7 @@ class SettingsServiceTest {
                         rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "<script>alert(1)</script>")))
                 .isInstanceOf(ErrorResultException.class);
 
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
         verify(channel, never()).publish();
     }
 
@@ -262,7 +264,7 @@ class SettingsServiceTest {
         };
         var service = new SettingsService(
                 List.of(readOnly, refusing),
-                cache,
+                store,
                 channel,
                 new AfterCommitExecutor(),
                 events);
@@ -271,7 +273,7 @@ class SettingsServiceTest {
         assertThatThrownBy(() -> service.update(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(ErrorResultException.class);
 
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     @Test
@@ -335,7 +337,7 @@ class SettingsServiceTest {
     @Test
     void aSaveMergesAgainstTheStoreNotTheCachedSnapshot() {
         stored(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_DISMISS_ID, "token-1");
-        when(cache.snapshot())
+        when(store.snapshot())
                 .thenReturn(
                         new SettingRows(
                                 Map.of(
@@ -358,15 +360,6 @@ class SettingsServiceTest {
         assertThat(written()).doesNotContainKey(BannerSetting.KEY_DISMISS_ID);
     }
 
-    @Test
-    void currentReadsASettingFromTheSnapshot() {
-        stored(ReadOnlySetting.KEY, true);
-        assertThat(settings.current(readOnly)).isTrue();
-
-        stored();
-        assertThat(settings.current(readOnly)).isFalse();
-    }
-
     // A clear issued before the commit lets any node refill the ceiling from the rows as they still
     // are, leaving an entry staler than if nothing had been evicted.
     @Test
@@ -374,13 +367,13 @@ class SettingsServiceTest {
         TransactionSynchronizationManager.initSynchronization();
 
         settings.invalidateCache();
-        verify(cache, never()).clear();
+        verify(store, never()).clear();
 
         var synchronizations = TransactionSynchronizationManager.getSynchronizations();
         TransactionSynchronizationManager.clearSynchronization();
         synchronizations.forEach(s -> s.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
 
-        verify(cache).clear();
+        verify(store).clear();
         verify(channel).publish();
     }
 
@@ -388,7 +381,7 @@ class SettingsServiceTest {
     void invalidateCacheClearsStraightAwayWithoutATransaction() {
         settings.invalidateCache();
 
-        verify(cache).clear();
+        verify(store).clear();
     }
 
     @Test
@@ -438,7 +431,7 @@ class SettingsServiceTest {
         var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 1024L * MB);
-        assertThat(changes).isEqualTo("max-extension-size -> 1073741824");
+        assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 1073741824");
     }
 
     // With nothing stored the value read back is the configuration fallback, so storing that same
@@ -450,7 +443,7 @@ class SettingsServiceTest {
         var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 512L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
-        assertThat(changes).isEqualTo("max-extension-size -> 536870912");
+        assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 536870912");
     }
 
     @Test
@@ -476,7 +469,7 @@ class SettingsServiceTest {
         stored();
 
         assertThatCode(() -> settings.update(rows())).doesNotThrowAnyException();
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     @Test
@@ -485,7 +478,7 @@ class SettingsServiceTest {
 
         assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 0L)))
                 .isInstanceOf(ErrorResultException.class);
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     @Test
@@ -496,7 +489,7 @@ class SettingsServiceTest {
         assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 1001L)))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the maximum");
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     // The ceiling can be lowered below a default stored earlier; that default stays in force until

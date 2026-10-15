@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 
 import org.eclipse.openvsx.settings.BannerSetting.Banner;
+import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,7 +73,7 @@ class BannerSettingTest {
     void anUpdateTouchingNoBannerRowLeavesTheValueAlone() {
         var current = new Banner(true, "Maintenance tonight", "warning", "token-1");
 
-        assertThat(banner.merge(current, rows("read-only", true))).isEqualTo(current);
+        assertThat(banner.merge(current, rows(ReadOnlySetting.KEY, true))).isEqualTo(current);
     }
 
     @Test

@@ -10,29 +10,38 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings;
+package org.eclipse.openvsx.settings.extensionsize;
 
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.settings.SettingRows;
+import org.eclipse.openvsx.settings.SettingsStore;
+import org.eclipse.openvsx.settings.WritableSetting;
 
 /**
  * The default size limit for a published package, applied when no namespace or extension override
- * does. Falls back to {@code ovsx.publishing.max-content-size} until an admin stores a value. The
- * server reads it through {@link ExtensionSizeLimitService}, which also applies the overrides; this
- * bean only stores it.
+ * does. Falls back to {@code ovsx.publishing.max-content-size} until an admin stores a value.
+ * {@link ExtensionSizeLimitService} applies the overrides on top of {@link #getValue()}.
  */
 @Component
-class MaxExtensionSizeSetting implements WritableSetting<Long> {
+public class MaxExtensionSizeSetting implements WritableSetting<Long> {
 
-    static final String KEY = "max-extension-size";
+    public static final String KEY = "max-extension-size";
 
+    private final SettingsStore store;
     private final PublishingConfig publishingConfig;
 
-    public MaxExtensionSizeSetting(PublishingConfig publishingConfig) {
+    public MaxExtensionSizeSetting(SettingsStore store, PublishingConfig publishingConfig) {
+        this.store = store;
         this.publishingConfig = publishingConfig;
+    }
+
+    /** The admin-set default as this node's snapshot has it, ignoring overrides. */
+    public long getValue() {
+        return read(store.snapshot());
     }
 
     @Override

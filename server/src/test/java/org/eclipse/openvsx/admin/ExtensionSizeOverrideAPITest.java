@@ -32,7 +32,7 @@ import org.eclipse.openvsx.entities.ExtensionSizeOverride;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.Permission;
 import org.eclipse.openvsx.entities.UserData;
-import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
 
