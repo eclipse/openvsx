@@ -741,6 +741,24 @@ export interface CacheList {
     caches: CacheInfo[];
 }
 
+/** The state of download analytics, for the admin dashboard. */
+export interface AnalyticsStatus {
+    /** Whether analytics is turned on; when false only the file counts are present. */
+    enabled: boolean;
+    /** Whether the time-series database is reachable right now. */
+    available?: boolean;
+    /** ISO 8601 UTC time since which the database has been reachable, or unreachable. */
+    since?: string;
+    /** ISO 8601 UTC time of the last probe of the database. */
+    lastProbe?: string;
+    /** Why the last probe failed; absent once a probe succeeded. */
+    lastError?: string;
+    /** Ingested log files kept until their events can be stored. */
+    pendingFiles: number;
+    /** Log files that failed ingestion and await manual attention. */
+    failedFiles: number;
+}
+
 /** Why a search returned what it returned, in the order it returned it. */
 export interface SearchExplain {
     query: string;

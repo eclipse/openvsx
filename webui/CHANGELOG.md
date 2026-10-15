@@ -14,6 +14,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Export `useInView` (with `ViewportObserverContext` to drive it in tests), `useRegistryValue` and `useReportedQuery`, so custom pages can defer work until visible, read server config and report query errors the way the built-in pages do
 - A contributed `adminPages` entry can declare the `permission` it needs; without one it stays admin-only, as it was while the whole dashboard required that role (#2269)
 - Add a "Caches" page to the admin dashboard, with per-cache hit/eviction stats and a way to clear one or all without restarting the server (#2203)
+- Add a "Download Analytics" page to the admin dashboard's Maintenance section, showing whether the analytics database is reachable, since when and why not, and how many log files wait for it
 - Add a weekly downloads card to the extension detail page, with a hoverable sparkline of the year's weekly totals (#2135)
 - Add a configurable site banner to the admin dashboard's Settings page, with a Markdown message, severity, a live preview of what visitors will see and an opt-out for showing it again to everyone who dismissed it, served from `/api/-/settings` ([#2256](https://github.com/eclipse-openvsx/openvsx/issues/2256))
 - Prompt anonymous visitors to log in on an extension's reviews tab, where "Write a Review" was previously blank (#2148)
