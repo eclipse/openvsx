@@ -126,6 +126,20 @@ class AnalyticsAvailabilityTest {
     }
 
     @Test
+    void failuresBeforeARecoveryDoNotCountTowardsTheNextOutage() {
+        var availability = availability(3);
+        availability.runProbe(false);
+        availability.recordFailure();
+        availability.recordFailure();
+
+        availability.runProbe(false);
+        availability.recordFailure();
+        availability.recordFailure();
+
+        assertThat(availability.isAvailable()).isTrue();
+    }
+
+    @Test
     void aSuccessfulCallResetsTheFailureCount() {
         var availability = availability(3);
         availability.runProbe(false);

@@ -21,8 +21,6 @@ import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -48,8 +46,10 @@ public class AnalyticsAvailability implements AutoCloseable {
     private final Duration probeInterval;
     private final int failureThreshold;
 
-    private final AtomicBoolean available = new AtomicBoolean(false);
-    private final AtomicInteger consecutiveFailures = new AtomicInteger();
+    // Written under the lock, so that the failure count and the state change together; read without it.
+    private final Object lock = new Object();
+    private volatile boolean available;
+    private int consecutiveFailures;
     private @Nullable ScheduledExecutorService scheduler;
 
     /**
@@ -64,7 +64,7 @@ public class AnalyticsAvailability implements AutoCloseable {
     }
 
     public boolean isAvailable() {
-        return available.get();
+        return available;
     }
 
     /**
@@ -72,12 +72,16 @@ public class AnalyticsAvailability implements AutoCloseable {
      * outage can finish after it, so only a successful probe restores availability.
      */
     public void recordSuccess() {
-        consecutiveFailures.set(0);
+        synchronized (lock) {
+            consecutiveFailures = 0;
+        }
     }
 
     public void recordFailure() {
-        if (consecutiveFailures.incrementAndGet() >= failureThreshold) {
-            transitionTo(false);
+        synchronized (lock) {
+            if (++consecutiveFailures >= failureThreshold) {
+                available = false;
+            }
         }
     }
 
@@ -111,28 +115,32 @@ public class AnalyticsAvailability implements AutoCloseable {
     void runProbe(boolean startup) {
         try {
             probe.run();
-            consecutiveFailures.set(0);
-            transitionTo(true);
+            boolean restored;
+            synchronized (lock) {
+                consecutiveFailures = 0;
+                restored = !available;
+                available = true;
+            }
+            if (restored) {
+                logger.info("the analytics database is reachable, analytics is available");
+            }
         } catch (RuntimeException e) {
             if (startup && !isConnectivityFailure(e)) {
                 throw e;
             }
 
-            consecutiveFailures.set(failureThreshold);
-            if (transitionTo(false) || startup) {
+            boolean opened;
+            synchronized (lock) {
+                consecutiveFailures = failureThreshold;
+                opened = available;
+                available = false;
+            }
+            if (opened || startup) {
                 logger.warn("the analytics database is unreachable, analytics is unavailable until it is", e);
             } else {
                 logger.debug("the analytics database is still unreachable", e);
             }
         }
-    }
-
-    private boolean transitionTo(boolean value) {
-        var changed = available.compareAndSet(!value, value);
-        if (changed && value) {
-            logger.info("the analytics database is reachable, analytics is available");
-        }
-        return changed;
     }
 
     /**
