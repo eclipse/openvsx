@@ -1637,6 +1637,24 @@ It exists because the time-series aggregate is materialized on a delay: its refr
 
 Note that the buckets on either side of the boundary carry the same counts — the margin decides how a range is read, not what it contains.
 
+| Property      | `ovsx.analytics.availability.probe-interval`
+|---------------|-------------------------
+| Type          | ISO 8601 duration
+| Default       | `PT30S`
+| Compatibility | Unreleased
+
+How often the time-series database is probed. Analytics is optional: while the database is unreachable the registry keeps serving, the analytics endpoint answers `503` with a `Retry-After` header, and analytics writes are skipped without waiting on a connection timeout. A probe is also what notices that the database is back. Must be positive.
+
+The server starts without the time-series database being reachable. Its schema is migrated on the first successful probe, and analytics stays unavailable until then. A failure that is not a connectivity problem, such as a migration the database rejects, still fails startup.
+
+| Property      | `ovsx.analytics.availability.failure-threshold`
+|---------------|-------------------------
+| Type          | int
+| Default       | `3`
+| Compatibility | Unreleased
+
+How many analytics calls in a row may fail to reach the time-series database before it is treated as unavailable without waiting for the next probe. Only connectivity failures count. Must be at least 1.
+
 | Property      | `ovsx.analytics.datasource.url`
 |---------------|-------------------------
 | Type          | string
@@ -1675,4 +1693,4 @@ Maximum size of the time-series connection pool. Must be at least 1. Enabling an
 | Default       | `2000`
 | Compatibility | Unreleased
 
-How long to wait for a connection from the time-series pool, in milliseconds. Deliberately far below Hikari's own 30 seconds: analytics writes happen on the download-serving path, so an unreachable time-series database has to fail fast enough for the caller to swallow the error rather than holding a request thread. Must be greater than 250ms — the validation timeout is derived at half this value with a 250ms floor, and Hikari rejects a validation timeout that is not below the connection timeout.
+How long to wait for a connection from the time-series pool, in milliseconds. Deliberately far below Hikari's own 30 seconds, so that an unreachable time-series database fails fast enough for the caller to give up rather than holding a thread; once it is judged unavailable (see `ovsx.analytics.availability.probe-interval`) calls do not wait at all. Must be greater than 250ms — the validation timeout is derived at half this value with a 250ms floor, and Hikari rejects a validation timeout that is not below the connection timeout.

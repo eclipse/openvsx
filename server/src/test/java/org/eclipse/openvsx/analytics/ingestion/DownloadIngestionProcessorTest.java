@@ -362,7 +362,12 @@ class DownloadIngestionProcessorTest extends AbstractPostgresContainerTest {
     /** Overrides everything the processor calls, so the inherited DSLContext is never touched. */
     static class RecordingAnalyticsRepository extends DownloadAnalyticsRepository {
         RecordingAnalyticsRepository() {
-            super(null);
+            super(null, null);
+        }
+
+        @Override
+        public boolean isAvailable() {
+            return true;
         }
 
         final List<DownloadEvent> saved = new CopyOnWriteArrayList<>();

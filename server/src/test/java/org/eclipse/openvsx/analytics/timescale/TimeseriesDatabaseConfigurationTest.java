@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.analytics.timescale;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -79,6 +81,26 @@ class TimeseriesDatabaseConfigurationTest {
         assertThatCode(config::validateConfiguration).doesNotThrowAnyException();
     }
 
+    @Test
+    void rejectsAProbeIntervalThatIsNotPositive() {
+        var config = config();
+        config.probeInterval = Duration.ZERO;
+
+        assertThatThrownBy(config::validateConfiguration)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ovsx.analytics.availability.probe-interval");
+    }
+
+    @Test
+    void rejectsAFailureThresholdBelowOne() {
+        var config = config();
+        config.failureThreshold = 0;
+
+        assertThatThrownBy(config::validateConfiguration)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ovsx.analytics.availability.failure-threshold");
+    }
+
     /** A configuration carrying the defaults the @Value annotations declare. */
     private TimeseriesDatabaseConfiguration config() {
         var config = new TimeseriesDatabaseConfiguration();
@@ -87,6 +109,8 @@ class TimeseriesDatabaseConfigurationTest {
         config.password = "openvsx";
         config.maximumPoolSize = 5;
         config.connectionTimeout = 2000L;
+        config.probeInterval = Duration.ofSeconds(30);
+        config.failureThreshold = 3;
         return config;
     }
 }

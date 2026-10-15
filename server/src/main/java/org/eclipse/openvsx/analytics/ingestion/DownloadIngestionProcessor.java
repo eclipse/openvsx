@@ -40,6 +40,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.analytics.DownloadEvent;
 import org.eclipse.openvsx.cache.CacheService;
 import org.eclipse.openvsx.entities.DownloadIngestion;
@@ -154,6 +155,9 @@ public class DownloadIngestionProcessor {
                 // counted here rather than in process(): with analytics disabled or the write
                 // failing, nothing was loaded and the counter must not say otherwise
                 metrics.recordLoaded(events.size(), events.stream().mapToInt(DownloadEvent::count).sum());
+            } catch (AnalyticsUnavailableException e) {
+                logger.warn("the analytics database is unavailable, {} download events were not stored", events.size());
+                metrics.recordFailedEvents(events.size());
             } catch (Exception e) {
                 logger.error("could not store {} download events for analytics", events.size(), e);
                 metrics.recordFailedEvents(events.size());
@@ -207,6 +211,11 @@ public class DownloadIngestionProcessor {
      */
     public void captureDownload(FileResource resource) {
         analyticsRepository.ifAvailable(repository -> {
+            if (!repository.isAvailable()) {
+                // a download is not worth waiting on a connection timeout for, nor logging an error each
+                return;
+            }
+
             var extVersion = resource.getExtension();
             if (extVersion == null) {
                 logger.warn("no extension version found for download {}, skipping", resource.getName());
@@ -232,6 +241,8 @@ public class DownloadIngestionProcessor {
             try {
                 repository.save(List.of(event));
                 metrics.recordLoaded(1, 1);
+            } catch (AnalyticsUnavailableException e) {
+                metrics.recordFailedEvents(1);
             } catch (Exception e) {
                 // the caller is serving a download; an analytics outage must not fail it
                 logger.error("could not record the download of {} for analytics", resource.getName(), e);

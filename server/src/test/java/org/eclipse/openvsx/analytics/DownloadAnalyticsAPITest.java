@@ -72,6 +72,15 @@ class DownloadAnalyticsAPITest {
     }
 
     @Test
+    void testUnreachableAnalyticsDatabaseIsServiceUnavailable() throws Exception {
+        Mockito.when(service.getSeries(any())).thenThrow(new AnalyticsUnavailableException());
+
+        mockMvc.perform(get("/api/foo/bar/analytics/downloads"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(header().string("Retry-After", "30"));
+    }
+
+    @Test
     void testSeriesIsPubliclyCacheable() throws Exception {
         Mockito.when(service.getSeries(any())).thenReturn(List.of());
 
