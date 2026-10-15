@@ -18,6 +18,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.sql.SQLTransientConnectionException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,16 @@ public class AnalyticsAvailability implements AutoCloseable {
     private final Object lock = new Object();
     private volatile boolean available;
     private int consecutiveFailures;
+    private Instant since = Instant.now();
+    private @Nullable Instant lastProbe;
+    private @Nullable String lastError;
     private @Nullable ScheduledExecutorService scheduler;
+
+    /**
+     * What the admin dashboard shows: the current verdict, since when it holds, and what the last
+     * probe found. The error is the last probe's, and absent once a probe succeeded.
+     */
+    public record Status(boolean available, Instant since, @Nullable Instant lastProbe, @Nullable String lastError) {}
 
     /**
      * @param probe            touches the database and throws when it cannot be used
@@ -67,6 +77,23 @@ public class AnalyticsAvailability implements AutoCloseable {
         return available;
     }
 
+    public Status status() {
+        synchronized (lock) {
+            return new Status(available, since, lastProbe, lastError);
+        }
+    }
+
+    /** Must be called with the lock held. */
+    private boolean setAvailable(boolean value) {
+        if (available == value) {
+            return false;
+        }
+
+        available = value;
+        since = Instant.now();
+        return true;
+    }
+
     /**
      * Resets the count of failed calls. It never reopens an open circuit: a call admitted before an
      * outage can finish after it, so only a successful probe restores availability.
@@ -80,7 +107,7 @@ public class AnalyticsAvailability implements AutoCloseable {
     public void recordFailure() {
         synchronized (lock) {
             if (++consecutiveFailures >= failureThreshold) {
-                available = false;
+                setAvailable(false);
             }
         }
     }
@@ -118,8 +145,9 @@ public class AnalyticsAvailability implements AutoCloseable {
             boolean restored;
             synchronized (lock) {
                 consecutiveFailures = 0;
-                restored = !available;
-                available = true;
+                lastProbe = Instant.now();
+                lastError = null;
+                restored = setAvailable(true);
             }
             if (restored) {
                 logger.info("the analytics database is reachable, analytics is available");
@@ -132,8 +160,9 @@ public class AnalyticsAvailability implements AutoCloseable {
             boolean opened;
             synchronized (lock) {
                 consecutiveFailures = failureThreshold;
-                opened = available;
-                available = false;
+                lastProbe = Instant.now();
+                lastError = describe(e);
+                opened = setAvailable(false);
             }
             if (opened || startup) {
                 logger.warn("the analytics database is unreachable, analytics is unavailable until it is", e);
@@ -141,6 +170,16 @@ public class AnalyticsAvailability implements AutoCloseable {
                 logger.debug("the analytics database is still unreachable", e);
             }
         }
+    }
+
+    private static String describe(Throwable failure) {
+        var root = failure;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+
+        var description = root.getClass().getSimpleName() + ": " + root.getMessage();
+        return description.length() > 300 ? description.substring(0, 300) : description;
     }
 
     /**

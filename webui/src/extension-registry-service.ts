@@ -65,6 +65,7 @@ import {
     ConsistencyFindingList,
     SearchExplain,
     CacheList,
+    AnalyticsStatus,
     SearchIndex,
     AdminStatistics,
     UserAccess
@@ -853,6 +854,7 @@ export interface AdminService {
     getCaches(abortController: AbortController): Promise<Readonly<CacheList>>;
     /** Clears one cache, or every cache when no cache is named. */
     clearCaches(cache?: { manager: string; name: string }): Promise<Readonly<SuccessResult>>;
+    getAnalyticsStatus(abortController: AbortController): Promise<Readonly<AnalyticsStatus>>;
     getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>>;
     getConsistencyFindings(
         abortController: AbortController,
@@ -1812,6 +1814,14 @@ export class AdminServiceImpl implements AdminService {
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'caches', 'clear'], query),
             headers
+        });
+    }
+
+    async getAnalyticsStatus(abortController: AbortController): Promise<Readonly<AnalyticsStatus>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'analytics', 'status'])
         });
     }
 
