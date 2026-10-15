@@ -45,7 +45,10 @@ class SettingsAPITest {
                         true));
         Mockito.when(settings.getSiteSettings()).thenReturn(site);
 
-        MockMvcBuilders.standaloneSetup(new SettingsAPI(settings, new SettingsJsonMapper(new PublishingConfig())))
+        MockMvcBuilders.standaloneSetup(
+                new SettingsAPI(
+                        settings,
+                        new SettingsJsonMapper(new PublishingConfig(), Mockito.mock(DownloadAnalyticsSetting.class))))
                 .build()
                 .perform(get("/api/-/settings"))
                 .andExpect(status().isOk())

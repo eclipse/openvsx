@@ -32,12 +32,12 @@ export const useSettings = () => {
 };
 
 /**
- * What the public endpoint serves for these settings: the banner only while it is on. The server
- * refuses to switch download analytics on where it is not configured, so the stored switch is the
- * served one.
+ * What the public endpoint serves for these settings: the banner only while it is on, and the
+ * download analytics switch only where the server has analytics configured, since a switch left
+ * on from before that changed is stored but not served.
  */
 const toSiteSettings = (settings: Settings): SiteSettings => ({
-    downloadAnalyticsEnabled: settings.downloadAnalyticsEnabled,
+    downloadAnalyticsEnabled: settings.downloadAnalyticsConfigured && settings.downloadAnalyticsEnabled,
     ...(settings.bannerEnabled
         ? {
               bannerEnabled: settings.bannerEnabled,

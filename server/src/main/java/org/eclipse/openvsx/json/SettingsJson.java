@@ -61,11 +61,17 @@ public class SettingsJson extends ResultJson {
     private @Nullable String bannerDismissId;
 
     @Schema(
-        description = "Whether visitors get per-extension download analytics. Off by default, so a registry can "
-                + "backfill its download history before the graphs appear. Can only be switched on where download "
-                + "analytics is configured."
+        description = "Whether visitors get the weekly downloads card on extension pages and the download series "
+                + "endpoint. Off by default. Can only be switched on where download analytics is configured."
     )
     private @Nullable Boolean downloadAnalyticsEnabled;
+
+    @Schema(
+        description = "Read-only: whether download analytics is configured on this registry "
+                + "(ovsx.analytics.enabled). The switch only applies then.",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private @Nullable Boolean downloadAnalyticsConfigured;
 
     public @Nullable Boolean getReadOnly() {
         return readOnly;
@@ -129,5 +135,13 @@ public class SettingsJson extends ResultJson {
 
     public void setDownloadAnalyticsEnabled(@Nullable Boolean downloadAnalyticsEnabled) {
         this.downloadAnalyticsEnabled = downloadAnalyticsEnabled;
+    }
+
+    public @Nullable Boolean getDownloadAnalyticsConfigured() {
+        return downloadAnalyticsConfigured;
+    }
+
+    public void setDownloadAnalyticsConfigured(@Nullable Boolean downloadAnalyticsConfigured) {
+        this.downloadAnalyticsConfigured = downloadAnalyticsConfigured;
     }
 }

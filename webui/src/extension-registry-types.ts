@@ -401,6 +401,7 @@ export interface RegistryVersion {
     maxExtensionSize?: number;
     /** Largest package the registry accepts from any namespace: the default raised by the highest override. */
     maxExtensionSizeCeiling?: number;
+    /** Whether download analytics is served, as of this page load. `SiteSettings.downloadAnalyticsEnabled` follows the admin switch live. */
     analyticsEnabled?: boolean;
 }
 
@@ -699,8 +700,10 @@ export interface Settings extends SiteSettings {
     maxExtensionSize: number;
     /** Read-only: neither maxExtensionSize nor a size override can be raised past this ceiling. */
     maxOverrideSize: number;
-    /** Serves the download series endpoint and shows the weekly downloads card. Off until an admin switches it on. */
+    /** Shows the weekly downloads card on extension pages and serves the download series endpoint. Off until an admin switches it on. */
     downloadAnalyticsEnabled: boolean;
+    /** Read-only: whether the server has download analytics configured at all. The switch only applies then. */
+    downloadAnalyticsConfigured: boolean;
 }
 
 export interface SearchIndex {

@@ -42,6 +42,11 @@ export interface AdminSettingsSection {
     flags: AdminSettingsFlag[];
     /** Outlines the section while it holds unsaved edits, for settings worth a second look. Ignored for a built-in id. */
     warnOnChange?: boolean;
+    /**
+     * Leaves the whole section out when it returns false for the loaded settings, for switches the
+     * server would refuse, such as one over a feature it has not configured. Ignored for a built-in id.
+     */
+    available?: (settings: Settings) => boolean;
 }
 
 /** A section as the page renders it, with the contributed switches folded into the built-in ones. */
@@ -51,6 +56,7 @@ export interface ResolvedSettingsSection {
     description: string;
     flags: AdminSettingsFlag[];
     warnOnChange: boolean;
+    available?: (settings: Settings) => boolean;
 }
 
 const flag = (key: keyof Settings, title: string, description: string): AdminSettingsFlag => ({
@@ -89,6 +95,7 @@ export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
         flags: [],
         warnOnChange: false
     },
+    // Only where the server has analytics configured: the switch would be refused otherwise.
     {
         id: 'analytics',
         title: 'Analytics',
@@ -96,13 +103,25 @@ export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
         flags: [
             flag(
                 'downloadAnalyticsEnabled',
-                'Download analytics',
-                'Shows weekly download graphs on extension pages and serves the download series endpoint. ' +
-                    'Switch it on once the download history is backfilled, so visitors do not meet empty graphs.'
+                'Weekly downloads on the extension page',
+                'Shows the weekly downloads card on the extension details page and serves the download series ' +
+                    'endpoint behind it.'
             )
         ],
-        warnOnChange: false
+        warnOnChange: false,
+        available: settings => settings.downloadAnalyticsConfigured
     }
+];
+
+/** The settings the page renders itself, so a contributed switch cannot double up on them either. */
+const PAGE_KEYS: readonly (keyof Settings)[] = [
+    'maxExtensionSize',
+    'maxOverrideSize',
+    'bannerEnabled',
+    'bannerMessage',
+    'bannerSeverity',
+    'bannerDismissId',
+    'downloadAnalyticsConfigured'
 ];
 
 /** The built-in sections with the contributed ones folded in, in the order the page shows them. */
@@ -110,10 +129,16 @@ export const withContributedSections = (
     contributed: readonly AdminSettingsSection[] = []
 ): ResolvedSettingsSection[] => {
     const sections = BUILT_IN_SECTIONS.map(section => ({ ...section, flags: [...section.flags] }));
-    const used = new Set(sections.flatMap(section => section.flags.map(({ key }) => key)));
+    const used = new Set<string>([...PAGE_KEYS, ...sections.flatMap(section => section.flags.map(({ key }) => key))]);
     for (const extra of contributed) {
-        const flags = extra.flags.filter(({ key }) => !used.has(key));
-        flags.forEach(({ key }) => used.add(key));
+        // Recorded as each switch is accepted, so a key repeated within one contribution is caught too.
+        const flags: AdminSettingsFlag[] = [];
+        for (const candidate of extra.flags) {
+            if (!used.has(candidate.key)) {
+                used.add(candidate.key);
+                flags.push(candidate);
+            }
+        }
         const target = sections.find(section => section.id === extra.id);
         if (target) {
             target.flags.push(...flags);
@@ -123,7 +148,8 @@ export const withContributedSections = (
                 title: extra.title ?? extra.id,
                 description: extra.description ?? '',
                 flags,
-                warnOnChange: extra.warnOnChange ?? false
+                warnOnChange: extra.warnOnChange ?? false,
+                available: extra.available
             });
         }
     }

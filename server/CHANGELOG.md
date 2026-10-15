@@ -16,7 +16,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Backfill download events from access logs ([#2228](https://github.com/eclipse-openvsx/openvsx/pull/2228))
 - Prompt anonymous visitors to log in on the reviews tab ([#2148](https://github.com/eclipse-openvsx/openvsx/pull/2148))
 - Add a Caches page to the admin dashboard ([#2203](https://github.com/eclipse-openvsx/openvsx/pull/2203))
-- Time-series download analytics, shown on extension pages once an admin switches on the `downloadAnalyticsEnabled` site setting, so a registry can backfill its download history first ([#2134](https://github.com/eclipse-openvsx/openvsx/pull/2134))
+- Time-series download analytics, shown on extension pages once an admin switches on the `downloadAnalyticsEnabled` site setting, so a registry can backfill its download history first; `GET /admin/settings` reports whether analytics is configured as `downloadAnalyticsConfigured` ([#2134](https://github.com/eclipse-openvsx/openvsx/pull/2134))
 - Give download analytics its own time-series database; the registry starts and keeps serving while it is unreachable, and log files are kept until their events are stored ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133))
 - Scope personal access tokens to a namespace or an extension, and add publishing-only tokens ([#2296](https://github.com/eclipse-openvsx/openvsx/pull/2296))
 - Publish a `SettingsChangedEvent` after the site settings change ([#2316](https://github.com/eclipse-openvsx/openvsx/pull/2316))

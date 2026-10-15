@@ -28,7 +28,8 @@ import static org.mockito.Mockito.when;
 class SettingsJsonMapperTest {
 
     private final PublishingConfig publishingConfig = mock(PublishingConfig.class);
-    private final SettingsJsonMapper mapper = new SettingsJsonMapper(publishingConfig);
+    private final DownloadAnalyticsSetting downloadAnalytics = mock(DownloadAnalyticsSetting.class);
+    private final SettingsJsonMapper mapper = new SettingsJsonMapper(publishingConfig, downloadAnalytics);
 
     @Test
     void theRowsUseTheStoredKebabCaseKeys() {
@@ -50,8 +51,9 @@ class SettingsJsonMapperTest {
     }
 
     @Test
-    void rowsReadBackIntoThePayloadWithTheCeiling() {
+    void rowsReadBackIntoThePayloadWithTheConfiguration() {
         when(publishingConfig.getMaxOverrideSize()).thenReturn(1024L);
+        when(downloadAnalytics.isConfigured()).thenReturn(true);
         var json = mapper.toJson(
                 new SettingRows(
                         Map.of(
@@ -69,6 +71,7 @@ class SettingsJsonMapperTest {
         assertThat(json.getBannerMessage()).isEqualTo("Hi");
         assertThat(json.getBannerEnabled()).isNull();
         assertThat(json.getDownloadAnalyticsEnabled()).isTrue();
+        assertThat(json.getDownloadAnalyticsConfigured()).isTrue();
         assertThat(json.getMaxOverrideSize()).isEqualTo(1024L);
     }
 

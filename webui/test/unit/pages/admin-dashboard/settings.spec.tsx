@@ -27,6 +27,7 @@ const defaults: Settings = {
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
     downloadAnalyticsEnabled: false,
+    downloadAnalyticsConfigured: true,
     bannerEnabled: false,
     bannerMessage: '',
     bannerSeverity: 'info',
@@ -38,6 +39,7 @@ const configured: Settings = {
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
     downloadAnalyticsEnabled: false,
+    downloadAnalyticsConfigured: true,
     bannerEnabled: true,
     bannerMessage: 'Heads up',
     bannerSeverity: 'info',
@@ -70,6 +72,7 @@ const save = async () => {
 };
 
 const SHOW_AGAIN = 'Show again to everyone who dismissed it';
+const ANALYTICS_TOGGLE = 'Toggle Weekly downloads on the extension page';
 
 describe('RuntimeSettingsPage', () => {
     it('saves a banner message typed by the admin', async () => {
@@ -455,10 +458,19 @@ describe('RuntimeSettingsPage', () => {
     it('saves the download analytics switch on its own', async () => {
         const admin = mountPage();
 
-        await userEvent.click(await screen.findByLabelText('Toggle Download analytics'));
+        await userEvent.click(await screen.findByLabelText(ANALYTICS_TOGGLE));
         await save();
 
         await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ downloadAnalyticsEnabled: true }));
+    });
+
+    // The server refuses the switch where it has no analytics configured, so the page does not offer it.
+    it('leaves out the Analytics section where the server has no download analytics configured', async () => {
+        mountPage({ ...defaults, downloadAnalyticsConfigured: false });
+
+        await screen.findByLabelText('Toggle Read-only mode');
+        expect(screen.queryByRole('heading', { name: 'Analytics' })).toBeNull();
+        expect(screen.queryByLabelText(ANALYTICS_TOGGLE)).toBeNull();
     });
 
     // /api/-/settings is the public copy of the switch, and the same cache that seeds the banner
@@ -480,10 +492,36 @@ describe('RuntimeSettingsPage', () => {
         );
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('unknown'));
 
-        await userEvent.click(await screen.findByLabelText('Toggle Download analytics'));
+        await userEvent.click(await screen.findByLabelText(ANALYTICS_TOGGLE));
         await save();
 
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('true'));
+    });
+
+    // A switch left on from before the server lost its analytics configuration is stored but not
+    // served, so the seed has to say what the public endpoint would.
+    it('seeds the public settings with the effective download analytics switch', async () => {
+        const stale: Settings = { ...defaults, downloadAnalyticsEnabled: true, downloadAnalyticsConfigured: false };
+        const admin = {
+            getSettings: vi.fn().mockResolvedValue(stale),
+            updateSettings: vi.fn().mockResolvedValue(stale)
+        };
+        const getSiteSettings = vi.fn().mockResolvedValue({});
+        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsEnabled ?? 'unknown')}</output>;
+        renderWithProviders(
+            <>
+                <RuntimeSettingsPage />
+                <Probe />
+            </>,
+            { mainContext: { service: { admin, getSiteSettings } as unknown as ExtensionRegistryService } }
+        );
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('unknown'));
+
+        await userEvent.click(await screen.findByLabelText('Toggle Read-only mode'));
+        await save();
+
+        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('false'));
     });
 
     it('renders a contributed section after the built-in ones and saves its switch', async () => {
@@ -497,9 +535,11 @@ describe('RuntimeSettingsPage', () => {
             }
         ]);
 
-        const headings = (await screen.findAllByRole('heading', { level: 2 })).map(heading => heading.textContent);
+        // The Analytics section only appears once the settings are loaded, so wait for them first.
+        const auditToggle = await screen.findByLabelText('Toggle Audit log');
+        const headings = screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent);
         expect(headings).toEqual(['Registry', 'Site settings', 'Publishing', 'Analytics', 'Audit']);
-        await userEvent.click(await screen.findByLabelText('Toggle Audit log'));
+        await userEvent.click(auditToggle);
         await save();
 
         await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ auditLogEnabled: true }));
@@ -517,12 +557,7 @@ describe('RuntimeSettingsPage', () => {
         expect(await screen.findByLabelText('Toggle Retention')).toBeChecked();
         expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(4);
         const toggles = screen.getAllByLabelText(/^Toggle /).map(toggle => toggle.getAttribute('aria-label'));
-        expect(toggles).toEqual([
-            'Toggle Read-only mode',
-            'Toggle banner',
-            'Toggle Download analytics',
-            'Toggle Retention'
-        ]);
+        expect(toggles).toEqual(['Toggle Read-only mode', 'Toggle banner', ANALYTICS_TOGGLE, 'Toggle Retention']);
     });
 
     // Contributed switches can only be added: one that names a built-in key would otherwise render a
@@ -537,5 +572,24 @@ describe('RuntimeSettingsPage', () => {
 
         await screen.findByLabelText('Toggle Read-only mode');
         expect(screen.queryByLabelText('Toggle Freeze')).toBeNull();
+    });
+
+    // The banner and the size limit are not switches, but they are settings the page renders, and a
+    // key repeated within one contribution would render two controls over one setting.
+    it('ignores a contributed switch over a field the page renders itself, and a key it has already accepted', async () => {
+        mountPage({ ...defaults, retentionEnabled: true }, [
+            {
+                id: 'audit',
+                flags: [
+                    { key: 'bannerEnabled', title: 'Banner again', description: 'A second control over the banner.' },
+                    { key: 'retentionEnabled', title: 'Retention', description: 'Keeps the raw events.' },
+                    { key: 'retentionEnabled', title: 'Retention again', description: 'The same key twice.' }
+                ]
+            }
+        ]);
+
+        await screen.findByLabelText('Toggle Retention');
+        expect(screen.queryByLabelText('Toggle Banner again')).toBeNull();
+        expect(screen.queryByLabelText('Toggle Retention again')).toBeNull();
     });
 });

@@ -286,7 +286,8 @@ class AdminAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.readOnly").value(false))
                 .andExpect(jsonPath("$.maxExtensionSize").value(536870912))
-                .andExpect(jsonPath("$.maxOverrideSize").value(1073741824));
+                .andExpect(jsonPath("$.maxOverrideSize").value(1073741824))
+                .andExpect(jsonPath("$.downloadAnalyticsConfigured").value(false));
     }
 
     @Test
@@ -3303,7 +3304,7 @@ class AdminAPITest {
         // a stock PublishingConfig holds.
         @Bean
         SettingsJsonMapper settingsJsonMapper() {
-            return new SettingsJsonMapper(new PublishingConfig());
+            return new SettingsJsonMapper(new PublishingConfig(), Mockito.mock(DownloadAnalyticsSetting.class));
         }
 
         @Bean

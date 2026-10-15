@@ -44,6 +44,11 @@ public class DownloadAnalyticsSetting implements WritableSetting<Boolean>, Publi
         return effective(store.snapshot());
     }
 
+    /** Whether {@code ovsx.analytics.enabled} wires download analytics at all; the switch only applies then. */
+    public boolean isConfigured() {
+        return analyticsConfigured;
+    }
+
     @Override
     public String getName() {
         return KEY;

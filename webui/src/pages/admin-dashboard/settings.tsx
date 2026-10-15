@@ -62,6 +62,12 @@ export const RuntimeSettingsPage: FC = () => {
 
     const contributedSections = pageSettings.elements.adminSettingsSections;
     const sections = useMemo(() => withContributedSections(contributedSections), [contributedSections]);
+    // A section the server cannot honour, such as Analytics where none is configured, is left out
+    // rather than shown with a switch the save would refuse. Until the settings load there is
+    // nothing to judge it by, so it waits for them.
+    const visibleSections = sections.filter(
+        section => !section.available || (settings !== undefined && section.available(settings))
+    );
     // `bannerDismissId` is not edited: it is stamped into the patch at save time, when the admin
     // asks for the banner to be shown again to everyone who dismissed it.
     const settingKeys = useMemo<string[]>(
@@ -222,7 +228,7 @@ export const RuntimeSettingsPage: FC = () => {
 
                 {/* The banner and the size limit are more than a switch, so the page puts them into their
                     sections itself; every other setting is one of the section's switches. */}
-                {sections.map(section => (
+                {visibleSections.map(section => (
                     <SettingsSection
                         key={section.id}
                         title={section.title}

@@ -31,15 +31,17 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 public class SettingsJsonMapper {
 
     private final PublishingConfig publishingConfig;
+    private final DownloadAnalyticsSetting downloadAnalytics;
 
-    public SettingsJsonMapper(PublishingConfig publishingConfig) {
+    public SettingsJsonMapper(PublishingConfig publishingConfig, DownloadAnalyticsSetting downloadAnalytics) {
         this.publishingConfig = publishingConfig;
+        this.downloadAnalytics = downloadAnalytics;
     }
 
     /**
-     * The admin view: every row the settings report, plus the ceiling no size can be raised past,
-     * which is configuration rather than a setting. A field no row backs stays null, and so off the
-     * wire.
+     * The admin view: every row the settings report, plus two pieces of configuration rather than
+     * settings, the ceiling no size can be raised past and whether download analytics is configured
+     * at all. A field no row backs stays null, and so off the wire.
      */
     public SettingsJson toJson(SettingRows stored) {
         var rows = stored.rows();
@@ -52,6 +54,7 @@ public class SettingsJsonMapper {
         json.setBannerSeverity(string(rows, BannerSetting.KEY_SEVERITY));
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
         json.setDownloadAnalyticsEnabled(bool(rows, DownloadAnalyticsSetting.KEY));
+        json.setDownloadAnalyticsConfigured(downloadAnalytics.isConfigured());
         return json;
     }
 
