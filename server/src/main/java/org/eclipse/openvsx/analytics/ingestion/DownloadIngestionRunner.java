@@ -188,16 +188,9 @@ public class DownloadIngestionRunner {
         }
 
         var storageType = source.getStorageType();
-        if (!processor.isAnalyticsEnabled()) {
-            // analytics was switched off since: there is nothing left to wait for
-            pending.forEach(name -> {
-                processor.markAnalyticsDone(storageType, name);
-                source.finish(name);
-            });
-            return true;
-        }
-
-        if (!processor.isAnalyticsAvailable()) {
+        // with analytics switched off since, there is nothing left to store: the files are only released
+        var analyticsEnabled = processor.isAnalyticsEnabled();
+        if (analyticsEnabled && !processor.isAnalyticsAvailable()) {
             logger.info(
                     "the analytics database is unavailable, keeping {} {} items pending",
                     pending.size(),
@@ -211,10 +204,12 @@ public class DownloadIngestionRunner {
             }
 
             try {
-                processor.backfill(storageType, source.read(name));
+                if (analyticsEnabled) {
+                    processor.backfill(storageType, source.read(name));
+                }
                 processor.markAnalyticsDone(storageType, name);
                 source.finish(name);
-                logger.info("stored the pending analytics events of {}", name);
+                logger.info("released the pending analytics item {}", name);
             } catch (AnalyticsUnavailableException e) {
                 logger.info("the analytics database became unavailable, the rest stays pending");
                 return true;

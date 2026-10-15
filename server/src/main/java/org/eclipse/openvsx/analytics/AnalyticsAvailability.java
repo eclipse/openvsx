@@ -67,9 +67,12 @@ public class AnalyticsAvailability implements AutoCloseable {
         return available.get();
     }
 
+    /**
+     * Resets the count of failed calls. It never reopens an open circuit: a call admitted before an
+     * outage can finish after it, so only a successful probe restores availability.
+     */
     public void recordSuccess() {
         consecutiveFailures.set(0);
-        transitionTo(true);
     }
 
     public void recordFailure() {
@@ -108,7 +111,8 @@ public class AnalyticsAvailability implements AutoCloseable {
     void runProbe(boolean startup) {
         try {
             probe.run();
-            recordSuccess();
+            consecutiveFailures.set(0);
+            transitionTo(true);
         } catch (RuntimeException e) {
             if (startup && !isConnectivityFailure(e)) {
                 throw e;

@@ -113,6 +113,19 @@ class AnalyticsAvailabilityTest {
     }
 
     @Test
+    void aLateSuccessfulCallDoesNotRestoreAvailability() {
+        var availability = availability(3);
+        reachable.set(false);
+        availability.runProbe(false);
+        assertThat(availability.isAvailable()).isFalse();
+
+        // a call admitted before the outage finishes after it
+        availability.recordSuccess();
+
+        assertThat(availability.isAvailable()).isFalse();
+    }
+
+    @Test
     void aSuccessfulCallResetsTheFailureCount() {
         var availability = availability(3);
         availability.runProbe(false);

@@ -59,7 +59,7 @@ class DownloadAnalyticsRepositoryOutageTest {
 
     @Test
     void anUnreachableDatabaseSurfacesAsUnavailableAndOpensTheCircuit() {
-        availability.recordSuccess();
+        availability.runProbe(false);
 
         assertThatThrownBy(() -> repository.findSeries(REQUEST)).isInstanceOf(AnalyticsUnavailableException.class)
                 .hasCauseInstanceOf(org.jooq.exception.DataAccessException.class);

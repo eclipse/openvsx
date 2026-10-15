@@ -171,13 +171,17 @@ class TimeseriesDatabaseConfiguration {
             @Qualifier("timeseriesDsl") DSLContext dsl,
             @Qualifier("timeseriesFlyway") Flyway flyway
     ) {
+        return new AnalyticsAvailability(probe(dsl, flyway), probeInterval, failureThreshold);
+    }
+
+    static Runnable probe(DSLContext dsl, Flyway flyway) {
         var migrated = new AtomicBoolean();
-        return new AnalyticsAvailability(() -> {
+        return () -> {
             if (!migrated.get()) {
                 flyway.migrate();
                 migrated.set(true);
             }
             dsl.selectOne().fetch();
-        }, probeInterval, failureThreshold);
+        };
     }
 }

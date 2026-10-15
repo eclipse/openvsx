@@ -149,6 +149,18 @@ class DownloadIngestionRunnerTest {
         verify(source).finish(NAME);
     }
 
+    @Test
+    void testCleanupOfPendingFilesStopsWhenTheRegistryGoesReadOnly() throws Exception {
+        when(processor.pendingAnalyticsIngestions(eq(STORAGE), anyList())).thenReturn(List.of(NAME));
+        when(processor.isAnalyticsEnabled()).thenReturn(false);
+        when(settings.isReadOnly()).thenReturn(false, true);
+
+        runner.run(source);
+
+        verify(processor, never()).markAnalyticsDone(anyString(), anyString());
+        verify(source, never()).finish(anyString());
+    }
+
     private void givenProcessedFileWithEvents() {
         var event = new DownloadEvent(
                 Instant.parse("2026-07-01T14:00:00Z"),
