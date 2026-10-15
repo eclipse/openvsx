@@ -235,6 +235,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories
                         .findAllPendingAnalyticsDownloadIngestionsByStorageTypeAndNameIn("storageType", STRING_LIST),
                 () -> repositories.countPendingAnalyticsDownloadIngestions(),
+                () -> repositories.markDownloadIngestionAnalyticsDone("storageType", "name"),
                 () -> repositories.findBundledExtensionsReference(extension),
                 () -> repositories.findDependenciesReference(extension),
                 () -> repositories.findDownloadsByStorageTypeAndName("storageType", STRING_LIST),
