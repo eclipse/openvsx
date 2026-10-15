@@ -27,9 +27,14 @@ import org.eclipse.openvsx.util.TimeUtil;
 
 import static org.eclipse.openvsx.cache.CacheService.CACHE_SETTING;
 
+/**
+ * The settings store as this node sees it, behind one cache entry. Package-private: only
+ * {@link SettingsService} and {@link SettingsUpdateChannel} touch it, and the server reads a value
+ * through {@link SettingsService#current}.
+ */
 @Component
 @CacheConfig(cacheManager = "localCacheManager")
-public class SettingsCache {
+class SettingsCache {
 
     private final SettingRepository repository;
 

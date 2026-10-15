@@ -22,10 +22,11 @@ import org.eclipse.openvsx.util.ErrorResultException;
  * One runtime setting of the registry, as a single value of type {@code T} that decodes itself from,
  * and encodes itself back into, the rows it is stored under. Adding a setting is one new
  * {@code @Component} implementing this; {@link SettingsService} knows what a setting is, never what
- * any particular one means.
+ * any particular one means. A setting the server consults at runtime also gets a reader, see the
+ * package documentation.
  * <p>
  * The rows are handed in rather than fetched, so one save reads the store exactly once and no
- * setting sees a store it is halfway through writing.
+ * setting sees a store it is halfway through writing. A setting never reads the store itself.
  */
 public interface WritableSetting<T> {
 

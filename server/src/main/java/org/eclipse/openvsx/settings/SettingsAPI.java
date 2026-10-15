@@ -34,9 +34,11 @@ import org.eclipse.openvsx.json.SiteSettingsJson;
 public class SettingsAPI {
 
     private final SettingsService settings;
+    private final SettingsJsonMapper settingsMapper;
 
-    public SettingsAPI(SettingsService settings) {
+    public SettingsAPI(SettingsService settings, SettingsJsonMapper settingsMapper) {
         this.settings = settings;
+        this.settingsMapper = settingsMapper;
     }
 
     @GetMapping(path = "/api/-/settings", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -51,6 +53,6 @@ public class SettingsAPI {
         // Short-lived: an admin changing a setting should reach visitors within five minutes.
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
-                .body(settings.getSiteSettings());
+                .body(settingsMapper.toSiteJson(settings.getSiteSettings()));
     }
 }

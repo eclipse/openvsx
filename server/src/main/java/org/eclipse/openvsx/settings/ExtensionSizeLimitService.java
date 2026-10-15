@@ -37,6 +37,11 @@ import org.eclipse.openvsx.repositories.ExtensionSizeOverrideRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
 
+/**
+ * Size limits for published packages: the admin-set default of {@link MaxExtensionSizeSetting} as
+ * the server reads it, the per-namespace and per-extension overrides on top of it, and the ceiling
+ * across all of them.
+ */
 @Service
 @CacheConfig(cacheManager = "localCacheManager")
 public class ExtensionSizeLimitService {
@@ -44,24 +49,31 @@ public class ExtensionSizeLimitService {
     private static final String CACHE_KEY_CEILING = "'extension-size-ceiling'";
 
     private final SettingsService settings;
+    private final MaxExtensionSizeSetting maxExtensionSize;
     private final ExtensionSizeOverrideRepository overrides;
     private final RepositoryService repositories;
     private final PublishingConfig publishingConfig;
 
     public ExtensionSizeLimitService(
             SettingsService settings,
+            MaxExtensionSizeSetting maxExtensionSize,
             ExtensionSizeOverrideRepository overrides,
             RepositoryService repositories,
             PublishingConfig publishingConfig
     ) {
         this.settings = settings;
+        this.maxExtensionSize = maxExtensionSize;
         this.overrides = overrides;
         this.repositories = repositories;
         this.publishingConfig = publishingConfig;
     }
 
+    /**
+     * The admin-set default, ignoring overrides, from this node's cached snapshot; see the package
+     * documentation for how a change made on another node arrives.
+     */
     public long getDefaultLimit() {
-        return settings.getMaxExtensionSize();
+        return settings.current(maxExtensionSize);
     }
 
     /** The write-time ceiling {@link #requireValidSize} enforces; see {@link PublishingConfig#getMaxOverrideSize()}. */

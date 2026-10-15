@@ -22,76 +22,52 @@ import java.util.Objects;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import org.eclipse.openvsx.json.SettingsJson;
-import org.eclipse.openvsx.json.SiteSettingsJson;
-import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 
 /**
  * Serves the registry's settings to the two endpoints that read them and applies an admin's update
  * across every registered {@link WritableSetting}. It knows what a setting is, never what any
  * particular setting means: names, row keys, legal values, and defaults all belong to
- * the bean.
+ * the bean. Code that needs a setting's value at runtime injects that setting's reader, see the
+ * package documentation, not this.
  */
 @Service
 public class SettingsService {
 
     private final List<WritableSetting<?>> settings;
-    private final ReadOnlySetting readOnly;
-    private final MaxExtensionSizeSetting maxExtensionSize;
-    private final PublishingConfig publishingConfig;
     private final SettingsCache cache;
     private final SettingsUpdateChannel channel;
     private final AfterCommitExecutor afterCommit;
     private final ApplicationEventPublisher events;
 
     /**
-     * {@code readOnly} is injected only to serve the deprecated {@link #isReadOnly()}, and leaves
-     * with it. Settings are ordered by name so the audit line and the public settings object do not
-     * reshuffle with bean discovery order.
+     * Settings are ordered by name so the audit line and the public settings object do not reshuffle
+     * with bean discovery order.
      */
     public SettingsService(
             List<WritableSetting<?>> settings,
-            ReadOnlySetting readOnly,
-            MaxExtensionSizeSetting maxExtensionSize,
-            PublishingConfig publishingConfig,
             SettingsCache cache,
             SettingsUpdateChannel channel,
             AfterCommitExecutor afterCommit,
             ApplicationEventPublisher events
     ) {
         this.settings = settings.stream().sorted(Comparator.comparing(WritableSetting::getName)).toList();
-        this.readOnly = readOnly;
-        this.maxExtensionSize = maxExtensionSize;
-        this.publishingConfig = publishingConfig;
         this.cache = cache;
         this.channel = channel;
         this.afterCommit = afterCommit;
         this.events = events;
     }
 
-    /** @deprecated inject {@link ReadOnlySetting} and call {@link ReadOnlySetting#isEnabled()}. */
-    @Deprecated
-    public boolean isReadOnly() {
-        return readOnly.isEnabled();
-    }
-
-    public long getMaxExtensionSize() {
-        return maxExtensionSize.getValue();
-    }
-
     /** Every setting's rows with its defaults applied, drafts included. The admin view. */
-    public SettingsJson getCurrentSettings() {
+    public SettingRows getCurrentSettings() {
         var stored = cache.snapshot();
         var rows = new LinkedHashMap<String, Object>();
         settings.forEach(setting -> rows.putAll(currentRows(setting, stored)));
-        var json = SettingsJson.of(rows);
-        json.setMaxOverrideSize(publishingConfig.getMaxOverrideSize());
-        return json;
+        return new SettingRows(rows);
     }
 
     /** Only what the settings implementing {@link PublicSetting} choose to publish. */
-    public SiteSettingsJson getSiteSettings() {
+    public SettingRows getSiteSettings() {
         var stored = cache.snapshot();
         var rows = new LinkedHashMap<String, Object>();
         for (var setting : settings) {
@@ -99,7 +75,15 @@ public class SettingsService {
                 rows.putAll(published.publicView(stored));
             }
         }
-        return SiteSettingsJson.of(rows);
+        return new SettingRows(rows);
+    }
+
+    /**
+     * One setting's value as this node sees it, from the cached snapshot. For the readers in this
+     * package that the server consults at runtime, hence not public; a save reads the store itself.
+     */
+    <T> T current(WritableSetting<T> setting) {
+        return setting.read(cache.snapshot());
     }
 
     /**
@@ -121,8 +105,7 @@ public class SettingsService {
      * before anything is written, so a refusal leaves the store untouched; the rows then go in as one
      * transaction.
      */
-    public String updateFromJson(SettingsJson newSettings) {
-        var update = new SettingRows(newSettings.toRows());
+    public String update(SettingRows update) {
         var stored = cache.load();
 
         var pending = new LinkedHashMap<String, Object>();

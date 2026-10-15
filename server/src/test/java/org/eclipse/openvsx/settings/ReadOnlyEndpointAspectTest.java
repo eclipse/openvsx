@@ -18,6 +18,7 @@ import java.util.Arrays;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 
 import org.eclipse.openvsx.RegistryAPI;
@@ -30,8 +31,15 @@ import static org.mockito.Mockito.*;
 
 class ReadOnlyEndpointAspectTest {
 
-    private final SettingsService settings = mock(SettingsService.class);
-    private final ReadOnlyEndpointAspect advisor = new ReadOnlyEndpointAspect(settings);
+    private final ReadOnlyMode readOnly = mock(ReadOnlyMode.class);
+    private final ReadOnlyEndpointAspect advisor = new ReadOnlyEndpointAspect(provider(readOnly));
+
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<ReadOnlyMode> provider(ReadOnlyMode readOnly) {
+        var provider = (ObjectProvider<ReadOnlyMode>) mock(ObjectProvider.class);
+        when(provider.getObject()).thenReturn(readOnly);
+        return provider;
+    }
 
     @Test
     void classFilterMatchesRegistryUserAndAdminApiControllers() {
@@ -76,7 +84,7 @@ class ReadOnlyEndpointAspectTest {
 
     @Test
     void blocksTheCallWhenTheRegistryIsReadOnly() throws Throwable {
-        when(settings.isReadOnly()).thenReturn(true);
+        when(readOnly.isEnabled()).thenReturn(true);
         var invocation = mock(MethodInvocation.class);
 
         var result = (ResponseEntity<?>) interceptor().invoke(invocation);
@@ -88,7 +96,7 @@ class ReadOnlyEndpointAspectTest {
 
     @Test
     void proceedsWhenTheRegistryIsWritable() throws Throwable {
-        when(settings.isReadOnly()).thenReturn(false);
+        when(readOnly.isEnabled()).thenReturn(false);
         var invocation = mock(MethodInvocation.class);
         when(invocation.proceed()).thenReturn("ok");
 

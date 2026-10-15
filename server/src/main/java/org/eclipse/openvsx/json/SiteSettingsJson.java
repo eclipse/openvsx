@@ -12,19 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.json;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jspecify.annotations.Nullable;
 
-import org.eclipse.openvsx.settings.BannerSetting;
-
 /**
  * The settings served anonymously to every visitor. A type of its own rather than a view of
  * {@link SettingsJson}, so an admin-only setting cannot reach the public endpoint by being added
- * there. Properties are absent while the banner is switched off.
+ * there; {@code SettingsJsonMapper} fills it. Properties are absent while the banner is switched off.
  */
 @Schema(name = "SiteSettings", description = "Settings of the registry meant for visitors")
 @JsonInclude(Include.NON_NULL)
@@ -46,16 +42,6 @@ public class SiteSettingsJson extends ResultJson {
                 + "the banner to be shown again, so correcting the message leaves dismissals in place."
     )
     private @Nullable String bannerDismissId;
-
-    /** Reads the public rows into the payload; anything else is left out. */
-    public static SiteSettingsJson of(Map<String, Object> rows) {
-        var json = new SiteSettingsJson();
-        json.bannerEnabled = rows.get(BannerSetting.KEY_ENABLED) instanceof Boolean value ? value : null;
-        json.bannerMessage = rows.get(BannerSetting.KEY_MESSAGE) instanceof String value ? value : null;
-        json.bannerSeverity = rows.get(BannerSetting.KEY_SEVERITY) instanceof String value ? value : null;
-        json.bannerDismissId = rows.get(BannerSetting.KEY_DISMISS_ID) instanceof String value ? value : null;
-        return json;
-    }
 
     public @Nullable Boolean getBannerEnabled() {
         return bannerEnabled;

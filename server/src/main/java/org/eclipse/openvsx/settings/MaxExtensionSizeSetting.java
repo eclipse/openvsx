@@ -20,23 +20,19 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 
 /**
  * The default size limit for a published package, applied when no namespace or extension override
- * does. Falls back to {@code ovsx.publishing.max-content-size} until an admin stores a value.
+ * does. Falls back to {@code ovsx.publishing.max-content-size} until an admin stores a value. The
+ * server reads it through {@link ExtensionSizeLimitService}, which also applies the overrides; this
+ * bean only stores it.
  */
 @Component
-public class MaxExtensionSizeSetting implements WritableSetting<Long> {
+class MaxExtensionSizeSetting implements WritableSetting<Long> {
 
-    public static final String KEY = "max-extension-size";
+    static final String KEY = "max-extension-size";
 
-    private final SettingsCache cache;
     private final PublishingConfig publishingConfig;
 
-    public MaxExtensionSizeSetting(SettingsCache cache, PublishingConfig publishingConfig) {
-        this.cache = cache;
+    public MaxExtensionSizeSetting(PublishingConfig publishingConfig) {
         this.publishingConfig = publishingConfig;
-    }
-
-    public long getValue() {
-        return read(cache.snapshot());
     }
 
     @Override

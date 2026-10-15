@@ -22,7 +22,7 @@ import org.mockito.Mockito;
 import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.analytics.DownloadEvent;
 import org.eclipse.openvsx.entities.FileResource;
-import org.eclipse.openvsx.settings.SettingsService;
+import org.eclipse.openvsx.settings.ReadOnlyMode;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -43,7 +43,7 @@ class DownloadIngestionRunnerTest {
     private static final String STORAGE = FileResource.STORAGE_AWS;
     private static final String NAME = "access.log.gz";
 
-    private final SettingsService settings = Mockito.mock(SettingsService.class);
+    private final ReadOnlyMode readOnly = Mockito.mock(ReadOnlyMode.class);
     private final DownloadIngestionProcessor processor = Mockito.mock(DownloadIngestionProcessor.class);
     private final DownloadRecordSource source = Mockito.mock(DownloadRecordSource.class);
     private final List<RawDownloadRecord> records = List
@@ -53,7 +53,7 @@ class DownloadIngestionRunnerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        runner = new DownloadIngestionRunner(settings, processor);
+        runner = new DownloadIngestionRunner(readOnly, processor);
         when(source.getStorageType()).thenReturn(STORAGE);
         when(source.listBatches()).thenAnswer(invocation -> List.of(List.of(NAME)).iterator());
         when(source.read(NAME)).thenReturn(records);
@@ -153,7 +153,7 @@ class DownloadIngestionRunnerTest {
     void testCleanupOfPendingFilesStopsWhenTheRegistryGoesReadOnly() throws Exception {
         when(processor.pendingAnalyticsIngestions(eq(STORAGE), anyList())).thenReturn(List.of(NAME));
         when(processor.isAnalyticsEnabled()).thenReturn(false);
-        when(settings.isReadOnly()).thenReturn(false, true);
+        when(readOnly.isEnabled()).thenReturn(false, true);
 
         runner.run(source);
 

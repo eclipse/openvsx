@@ -24,7 +24,7 @@ import org.springframework.util.StopWatch;
 
 import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.settings.SettingsService;
+import org.eclipse.openvsx.settings.ReadOnlyMode;
 
 /**
  * Drives the ingestion of one {@link DownloadRecordSource}: skips already-processed and
@@ -39,17 +39,17 @@ public class DownloadIngestionRunner {
 
     protected final Logger logger = LoggerFactory.getLogger(DownloadIngestionRunner.class);
 
-    private final SettingsService settings;
+    private final ReadOnlyMode readOnly;
     private final DownloadIngestionProcessor processor;
 
-    public DownloadIngestionRunner(SettingsService settings, DownloadIngestionProcessor processor) {
-        this.settings = settings;
+    public DownloadIngestionRunner(ReadOnlyMode readOnly, DownloadIngestionProcessor processor) {
+        this.readOnly = readOnly;
         this.processor = processor;
     }
 
     public void run(DownloadRecordSource source) {
         var storageType = source.getStorageType();
-        if (settings.isReadOnly()) {
+        if (readOnly.isEnabled()) {
             logger.info("registry is in read-only mode, skipping {} ingestion", storageType);
             return;
         }
@@ -77,7 +77,7 @@ public class DownloadIngestionRunner {
                         break batches;
                     }
 
-                    if (settings.isReadOnly()) {
+                    if (readOnly.isEnabled()) {
                         logger.info("registry is in read-only mode, stopping {} ingestion", storageType);
                         break batches;
                     }
@@ -199,7 +199,7 @@ public class DownloadIngestionRunner {
         }
 
         for (var name : pending) {
-            if (LocalDateTime.now().isAfter(maxExecutionTime) || settings.isReadOnly()) {
+            if (LocalDateTime.now().isAfter(maxExecutionTime) || readOnly.isEnabled()) {
                 return false;
             }
 

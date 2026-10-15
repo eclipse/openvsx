@@ -18,13 +18,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.openvsx.settings.ReadOnlySetting.KEY;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ReadOnlySettingTest {
 
-    private final SettingsCache cache = mock(SettingsCache.class);
-    private final ReadOnlySetting readOnly = new ReadOnlySetting(cache);
+    private final ReadOnlySetting readOnly = new ReadOnlySetting();
 
     private static SettingRows rows(Object... keyValues) {
         return keyValues.length == 0
@@ -50,12 +47,5 @@ class ReadOnlySettingTest {
     @Test
     void itStoresItselfUnderItsBareLegacyKey() {
         assertThat(readOnly.toRows(true)).containsExactly(Map.entry(KEY, true));
-    }
-
-    @Test
-    void theAccessorReadsThroughTheCache() {
-        when(cache.snapshot()).thenReturn(rows(KEY, true));
-
-        assertThat(readOnly.isEnabled()).isTrue();
     }
 }

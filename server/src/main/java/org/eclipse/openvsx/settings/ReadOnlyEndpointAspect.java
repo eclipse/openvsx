@@ -16,8 +16,8 @@ import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.aop.support.StaticMethodMatcherPointcutAdvisor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -34,13 +34,14 @@ import org.eclipse.openvsx.json.ResultJson;
  * four in {@code mirror.aop}) has no {@code @ConditionalOnProperty} and so is always active. A plain
  * Method/Class check has none of that cost.
  * <p>
- * {@link SettingsService} is injected lazily: any bean implementing {@code Advisor} (this one included,
+ * {@link ReadOnlyMode} is looked up lazily: any bean implementing {@code Advisor} (this one included,
  * via {@link StaticMethodMatcherPointcutAdvisor}) is resolved eagerly by Spring's auto-proxying
- * machinery before all {@code BeanPostProcessor}s are registered, and {@code SettingsService}'s own
+ * machinery before all {@code BeanPostProcessor}s are registered, and {@code ReadOnlyMode}'s own
  * dependency chain reaches all the way to the JPA/DataSource (and therefore Flyway) infrastructure -
  * pulling that in this early produced a
  * "not eligible for getting processed by all BeanPostProcessors" warning at startup. Deferring the
- * lookup until the advice actually fires keeps this bean itself cheap to construct.
+ * lookup until the advice actually fires keeps this bean itself cheap to construct. An
+ * {@link ObjectProvider} rather than a {@code @Lazy} proxy keeps that deferral visible at the call site.
  * <p>
  * {@code @Role(ROLE_INFRASTRUCTURE)}: this bean is itself resolved before all {@code BeanPostProcessor}s
  * are registered (see above) and is never meant to be proxied/advised by anything else, which otherwise
@@ -51,8 +52,8 @@ import org.eclipse.openvsx.json.ResultJson;
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class ReadOnlyEndpointAspect extends StaticMethodMatcherPointcutAdvisor {
 
-    public ReadOnlyEndpointAspect(@Lazy SettingsService settings) {
-        super((MethodInterceptor) invocation -> settings.isReadOnly()
+    public ReadOnlyEndpointAspect(ObjectProvider<ReadOnlyMode> readOnly) {
+        super((MethodInterceptor) invocation -> readOnly.getObject().isEnabled()
                 ? ResponseEntity.status(409).body(ResultJson.error("Registry is in read-only mode."))
                 : invocation.proceed());
         setClassFilter(
