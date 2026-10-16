@@ -72,25 +72,10 @@ Follow the `write-code` skill: understand → implement → test → changelog �
 
 ## Changelog
 
-Location: `CHANGELOG.md`.
+`CHANGELOG.md`, following the rules in the root `AGENTS.md`. Entries say why a
+change matters to a consumer of the package.
 
-Sections under `## [next] (unreleased)`: `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Dependencies`.
-
-Rules:
-
-- **Keep entries short — one line per change.** State what changed and why it
-  matters to a consumer of the package; link the issue/PR for detail instead
-  of writing the detail out.
-- All new entries go under `## [next]`. Read the full section first and append to existing subsections; never duplicate them; if subsection does not exist yet add it.
-- A release commit renames `## [next] (unreleased)` to `## [vX.Y.Z] - YYYY-MM-DD` (Keep a Changelog); don't do that yourself.
-- Released version sections (e.g. `## [v1.2.0] - 2026-09-10`) are immutable; never modify them.
-- **Never describe a change against something that is itself unreleased.** If your
-  work modifies behaviour introduced by an entry already under `## [next]`, edit
-  that entry to describe the final state instead of adding a second one. Readers
-  of the released notes never saw the intermediate version, so "replaced X with
-  Y" is noise when X never shipped. Adding a genuinely new behaviour still earns
-  its own entry — just phrase it as the end state, not as a delta.
-- The same test applies to public API: a signature introduced under `## [next]`
-  and changed again before release is one entry describing the final signature,
-  not a change entry. Only a signature that has actually shipped is a breaking
-  change worth calling out.
+- The final-state rule applies to public API too: a signature introduced under
+  `[next]` and changed again before release is one entry describing the final
+  signature, not a change entry. Only a signature that has actually shipped is
+  a breaking change worth calling out.
