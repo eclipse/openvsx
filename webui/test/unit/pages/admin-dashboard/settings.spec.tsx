@@ -592,4 +592,17 @@ describe('RuntimeSettingsPage', () => {
         expect(screen.queryByLabelText('Toggle Banner again')).toBeNull();
         expect(screen.queryByLabelText('Toggle Retention again')).toBeNull();
     });
+
+    it('leaves out a contributed section that has no switch left', async () => {
+        mountPage(defaults, [
+            {
+                id: 'audit',
+                title: 'Audit',
+                flags: [{ key: 'readOnly', title: 'Freeze', description: 'The same switch under another name.' }]
+            }
+        ]);
+
+        await screen.findByLabelText('Toggle Read-only mode');
+        expect(screen.queryByText('Audit')).toBeNull();
+    });
 });

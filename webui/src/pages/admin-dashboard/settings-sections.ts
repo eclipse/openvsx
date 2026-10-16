@@ -32,8 +32,9 @@ export interface AdminSettingsFlag {
 export interface AdminSettingsSection {
     /**
      * A built-in id - `registry`, `site`, `publishing` or `analytics` - appends the switches to that
-     * section. Any other id adds a section after the built-in ones; sections sharing an id are
-     * merged into one.
+     * section, where they share its availability: `analytics` is left out where the server has no
+     * download analytics configured. Any other id adds a section after the built-in ones; sections
+     * sharing an id are merged into one.
      */
     id: string;
     /** Ignored for a built-in id. A section of your own is titled by its id without one. */
@@ -141,7 +142,7 @@ export const withContributedSections = (
         const target = sections.find(section => section.id === extra.id);
         if (target) {
             target.flags.push(...flags);
-        } else {
+        } else if (flags.length > 0) {
             sections.push({
                 id: extra.id,
                 title: extra.title ?? extra.id,

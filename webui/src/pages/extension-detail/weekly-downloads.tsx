@@ -117,8 +117,8 @@ const sectionSx = {
  */
 export const WeeklyDownloads: FunctionComponent<{ extension: Extension }> = ({ extension }) => {
     const theme = useTheme();
-    // The site settings rather than the version loaded at startup: an admin's save seeds them and
-    // they poll, so a switch flipped during this session reaches the card without a reload.
+    // An admin's save seeds the site settings and they poll, so a switch flipped during this
+    // session reaches the card without a reload.
     const analyticsVisible = useSiteSettings().data?.downloadAnalyticsVisible ?? false;
     const [hovered, setHovered] = useState<number | undefined>(undefined);
 

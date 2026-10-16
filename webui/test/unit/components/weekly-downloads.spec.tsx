@@ -16,6 +16,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../support/test-providers';
 import { WeeklyDownloads } from '../../../src/pages/extension-detail/weekly-downloads';
+import { useSiteSettings } from '../../../src/components/use-site-settings';
 import { DownloadSeriesPoint, Extension, SiteSettings } from '../../../src/extension-registry-types';
 import { ExtensionRegistryService } from '../../../src/extension-registry-service';
 
@@ -219,9 +220,17 @@ describe('WeeklyDownloads', () => {
 
     it('renders nothing (and never calls the endpoint) while the site settings say analytics is off', async () => {
         const service = serviceReturning(points(Array(14).fill(1)), { downloadAnalyticsVisible: false });
-        renderWithProviders(<WeeklyDownloads extension={extension} />, { mainContext: { service } });
+        // The card is hidden while the settings load too, so wait until they say off.
+        const SettingsLoaded = () => (useSiteSettings().isSuccess ? <output>settings loaded</output> : null);
+        renderWithProviders(
+            <>
+                <WeeklyDownloads extension={extension} />
+                <SettingsLoaded />
+            </>,
+            { mainContext: { service } }
+        );
 
-        await waitFor(() => expect(service.getSiteSettings).toHaveBeenCalled());
+        await screen.findByText('settings loaded');
         expect(screen.queryByText(/weekly downloads/i)).not.toBeInTheDocument();
         expect(service.getExtensionDownloadSeries).not.toHaveBeenCalled();
     });
