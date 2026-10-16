@@ -30,8 +30,8 @@ import org.eclipse.openvsx.entities.Permission;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.SizeOverrideJson;
 import org.eclipse.openvsx.json.SizeOverrideListJson;
-import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
-import org.eclipse.openvsx.settings.readonly.MutatingOperation;
+import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;
 

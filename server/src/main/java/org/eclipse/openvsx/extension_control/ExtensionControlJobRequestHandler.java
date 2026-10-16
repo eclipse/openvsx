@@ -27,7 +27,7 @@ import tools.jackson.databind.JsonNode;
 import org.eclipse.openvsx.admin.AdminService;
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
+import org.eclipse.openvsx.settings.ReadOnlySetting;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.ExtensionId;
 import org.eclipse.openvsx.util.NamingUtil;

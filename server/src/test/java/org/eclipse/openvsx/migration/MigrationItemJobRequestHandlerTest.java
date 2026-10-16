@@ -26,7 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import org.eclipse.openvsx.entities.MigrationItem;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
+import org.eclipse.openvsx.settings.ReadOnlySetting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

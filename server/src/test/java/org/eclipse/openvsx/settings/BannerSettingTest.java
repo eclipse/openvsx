@@ -21,7 +21,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 
 import org.eclipse.openvsx.settings.BannerSetting.Banner;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.readonly;
+package org.eclipse.openvsx.settings;
 
 import java.lang.reflect.Method;
 
@@ -23,8 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.function.SingletonSupplier;
 
-import org.eclipse.openvsx.RegistryAPI;
-import org.eclipse.openvsx.UserAPI;
 import org.eclipse.openvsx.json.ResultJson;
 
 /**
@@ -33,18 +31,14 @@ import org.eclipse.openvsx.json.ResultJson;
  * to resolve types on every candidate bean, on every Spring context boot - this was the single largest
  * cost in the test suite's context startup time (roughly 70% of it), since this aspect (unlike the other
  * four in {@code mirror.aop}) has no {@code @ConditionalOnProperty} and so is always active. A plain
- * Method/Class check has none of that cost.
+ * Method/Class check has none of that cost. It guards every {@link MutatingOperation} on a class named
+ * {@code *API}, in any package.
  * <p>
- * {@link ReadOnlySetting} is looked up lazily: any bean implementing {@code Advisor} (this one
- * included, via {@link StaticMethodMatcherPointcutAdvisor}) is resolved eagerly by Spring's auto-proxying
- * machinery before all {@code BeanPostProcessor}s are registered, and {@code ReadOnlySetting}'s
- * own dependency chain reaches all the way to the JPA/DataSource (and therefore Flyway) infrastructure -
- * pulling that in this early produced a
- * "not eligible for getting processed by all BeanPostProcessors" warning at startup. Deferring the
- * lookup until the advice actually fires keeps this bean itself cheap to construct. An
- * {@link ObjectProvider} rather than a {@code @Lazy} proxy keeps that deferral visible at the call site,
- * and {@link SingletonSupplier} keeps the lookup to one, where the provider alone would repeat it on
- * every guarded call.
+ * {@link ReadOnlySetting} is resolved on the first guarded call rather than at construction: any
+ * {@code Advisor} is created before all {@code BeanPostProcessor}s are registered, and the setting's
+ * dependency chain reaches the JPA/DataSource (and therefore Flyway) infrastructure, which would then
+ * trip the "not eligible for getting processed by all BeanPostProcessors" warning at startup.
+ * {@link SingletonSupplier} resolves it once, so each check is only a read of the cached snapshot.
  * <p>
  * {@code @Role(ROLE_INFRASTRUCTURE)}: this bean is itself resolved before all {@code BeanPostProcessor}s
  * are registered (see above) and is never meant to be proxied/advised by anything else, which otherwise
@@ -57,10 +51,7 @@ public class ReadOnlyEndpointAspect extends StaticMethodMatcherPointcutAdvisor {
 
     public ReadOnlyEndpointAspect(ObjectProvider<ReadOnlySetting> readOnly) {
         super(interceptor(SingletonSupplier.of(readOnly::getObject)));
-        setClassFilter(
-                type -> type == RegistryAPI.class || type == UserAPI.class
-                        || (type.getPackageName().equals("org.eclipse.openvsx.admin")
-                                && type.getSimpleName().endsWith("API")));
+        setClassFilter(type -> type.getSimpleName().endsWith("API"));
     }
 
     private static MethodInterceptor interceptor(SingletonSupplier<ReadOnlySetting> readOnly) {

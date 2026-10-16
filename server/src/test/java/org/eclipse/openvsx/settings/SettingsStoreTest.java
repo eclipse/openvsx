@@ -20,7 +20,6 @@ import org.mockito.ArgumentCaptor;
 
 import org.eclipse.openvsx.entities.Setting;
 import org.eclipse.openvsx.repositories.SettingRepository;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

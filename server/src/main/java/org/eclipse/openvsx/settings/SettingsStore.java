@@ -34,7 +34,7 @@ import static org.eclipse.openvsx.cache.CacheService.CACHE_SETTING;
  */
 @Component
 @CacheConfig(cacheManager = "localCacheManager")
-public class SettingsStore {
+class SettingsStore {
 
     private final SettingRepository repository;
 

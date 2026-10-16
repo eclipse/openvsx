@@ -50,7 +50,7 @@ import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SortBy;
-import org.eclipse.openvsx.settings.readonly.MutatingOperation;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.util.*;
 import org.eclipse.openvsx.util.auth.LoggedInAuthentication;
 import org.eclipse.openvsx.web.PreviewOperation;

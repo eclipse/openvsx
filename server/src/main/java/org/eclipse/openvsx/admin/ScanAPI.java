@@ -42,7 +42,7 @@ import org.springframework.web.bind.annotation.*;
 import org.eclipse.openvsx.entities.*;
 import org.eclipse.openvsx.json.*;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.readonly.MutatingOperation;
+import org.eclipse.openvsx.settings.MutatingOperation;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.LogService;

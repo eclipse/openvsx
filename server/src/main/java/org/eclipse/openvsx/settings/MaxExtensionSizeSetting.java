@@ -10,16 +10,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.extensionsize;
+package org.eclipse.openvsx.settings;
 
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.publish.PublishingConfig;
-import org.eclipse.openvsx.settings.SettingRows;
-import org.eclipse.openvsx.settings.SettingsStore;
-import org.eclipse.openvsx.settings.WritableSetting;
 
 /**
  * The default size limit for a published package, applied when no namespace or extension override

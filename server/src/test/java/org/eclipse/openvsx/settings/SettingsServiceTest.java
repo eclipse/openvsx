@@ -26,8 +26,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.eclipse.openvsx.publish.PublishingConfig;
-import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 import org.eclipse.openvsx.util.ErrorResultException;
 

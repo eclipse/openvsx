@@ -10,20 +10,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.readonly;
+package org.eclipse.openvsx.settings;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ClassUtils;
 
 import org.eclipse.openvsx.RegistryAPI;
-import org.eclipse.openvsx.UserAPI;
-import org.eclipse.openvsx.admin.AdminAPI;
 import org.eclipse.openvsx.json.ResultJson;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,15 +44,35 @@ class ReadOnlyEndpointAspectTest {
     }
 
     @Test
-    void classFilterMatchesRegistryUserAndAdminApiControllers() {
-        var filter = advisor.getClassFilter();
-        assertThat(filter.matches(RegistryAPI.class)).isTrue();
-        assertThat(filter.matches(UserAPI.class)).isTrue();
-        assertThat(filter.matches(AdminAPI.class)).isTrue();
+    void matchesEveryMutatingOperationInTheRegistry() {
+        var scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(
+                (reader, factory) -> reader.getAnnotationMetadata()
+                        .hasAnnotatedMethods(MutatingOperation.class.getName()));
+        scanner.addExcludeFilter(new AssignableTypeFilter(ReadOnlyEndpointAspectTest.class));
+        var unguarded = new ArrayList<String>();
+        var guarded = 0;
+        for (var candidate : scanner.findCandidateComponents("org.eclipse.openvsx")) {
+            var type = ClassUtils.resolveClassName(candidate.getBeanClassName(), null);
+            for (var method : type.getDeclaredMethods()) {
+                if (!method.isAnnotationPresent(MutatingOperation.class)) {
+                    continue;
+                }
+                if (advisor.getClassFilter().matches(type) && advisor.matches(method, type)) {
+                    guarded++;
+                } else {
+                    unguarded.add(type.getSimpleName() + "." + method.getName());
+                }
+            }
+        }
+
+        assertThat(unguarded).isEmpty();
+        assertThat(guarded).isGreaterThan(40);
     }
 
     @Test
-    void classFilterRejectsUnrelatedClasses() {
+    void classFilterRejectsClassesNotNamedApi() {
+        assertThat(advisor.getClassFilter().matches(RegistryAPI.class)).isTrue();
         assertThat(advisor.getClassFilter().matches(ReadOnlyEndpointAspectTest.class)).isFalse();
     }
 

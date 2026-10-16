@@ -24,7 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
+import org.eclipse.openvsx.settings.ReadOnlySetting;
 
 @Component
 public class MigrationItemJobRequestHandler implements JobRequestHandler<HandlerJobRequest<?>> {

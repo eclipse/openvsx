@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 import org.eclipse.openvsx.migration.HandlerJobRequest;
 import org.eclipse.openvsx.ratelimit.UsageStatsService;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
+import org.eclipse.openvsx.settings.ReadOnlySetting;
 
 @Component
 public class CalculateDailyUsageStatsHandler implements JobRequestHandler<HandlerJobRequest<?>> {

@@ -24,7 +24,7 @@ import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

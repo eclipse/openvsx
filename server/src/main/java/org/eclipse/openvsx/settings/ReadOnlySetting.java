@@ -10,16 +10,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.readonly;
+package org.eclipse.openvsx.settings;
 
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
-
-import org.eclipse.openvsx.settings.PublicSetting;
-import org.eclipse.openvsx.settings.SettingRows;
-import org.eclipse.openvsx.settings.SettingsStore;
-import org.eclipse.openvsx.settings.WritableSetting;
 
 /**
  * Blocks write operations while keeping browsing, search and downloads available. The server asks

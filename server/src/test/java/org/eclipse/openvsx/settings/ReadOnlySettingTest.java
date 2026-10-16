@@ -10,17 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.readonly;
+package org.eclipse.openvsx.settings;
 
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import org.eclipse.openvsx.settings.SettingRows;
-import org.eclipse.openvsx.settings.SettingsStore;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.openvsx.settings.readonly.ReadOnlySetting.KEY;
+import static org.eclipse.openvsx.settings.ReadOnlySetting.KEY;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

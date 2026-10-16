@@ -21,8 +21,6 @@ import org.springframework.stereotype.Component;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.SiteSettingsJson;
 import org.eclipse.openvsx.publish.PublishingConfig;
-import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 /**
  * The one place that turns stored rows into the wire DTOs and back, and so the one class that spells

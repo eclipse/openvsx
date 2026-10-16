@@ -50,7 +50,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
 import org.eclipse.openvsx.search.SearchUtilService;
-import org.eclipse.openvsx.settings.extensionsize.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.*;
 import org.eclipse.openvsx.util.auth.AuthenticatedUser;
 

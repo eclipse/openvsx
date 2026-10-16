@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.extensionsize;
+package org.eclipse.openvsx.settings;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -35,8 +35,6 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.ExtensionSizeOverrideRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
-import org.eclipse.openvsx.settings.SettingsService;
-import org.eclipse.openvsx.settings.SettingsStore;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 /**

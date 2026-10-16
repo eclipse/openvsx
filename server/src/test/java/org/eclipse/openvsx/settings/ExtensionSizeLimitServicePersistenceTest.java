@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.settings.extensionsize;
+package org.eclipse.openvsx.settings;
 
 import java.util.UUID;
 

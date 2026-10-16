@@ -19,8 +19,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.publish.PublishingConfig;
-import org.eclipse.openvsx.settings.extensionsize.MaxExtensionSizeSetting;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;

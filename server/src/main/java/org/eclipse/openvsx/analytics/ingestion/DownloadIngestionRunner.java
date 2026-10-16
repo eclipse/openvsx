@@ -24,7 +24,7 @@ import org.springframework.util.StopWatch;
 
 import org.eclipse.openvsx.analytics.AnalyticsUnavailableException;
 import org.eclipse.openvsx.entities.Extension;
-import org.eclipse.openvsx.settings.readonly.ReadOnlySetting;
+import org.eclipse.openvsx.settings.ReadOnlySetting;
 
 /**
  * Drives the ingestion of one {@link DownloadRecordSource}: skips already-processed and
