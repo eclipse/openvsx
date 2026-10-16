@@ -413,8 +413,6 @@ export interface DownloadSeries {
     points: DownloadSeriesPoint[];
 }
 
-export type DownloadSeriesInterval = 'day' | 'week' | 'month';
-
 export interface LoginProviders {
     loginProviders: Record<string, string>;
 }

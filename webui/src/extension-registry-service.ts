@@ -29,7 +29,6 @@ import {
     PublisherInfo,
     RegistryVersion,
     DownloadSeries,
-    DownloadSeriesInterval,
     SearchEntry,
     LoginProviders,
     ScanResultJson,
@@ -107,21 +106,21 @@ export class ExtensionRegistryService {
     /**
      * Fetches the download time series for an extension from the analytics endpoint, which responds
      * 404 where download analytics is not configured. Callers showing it should gate on
-     * {@link SiteSettings.downloadAnalyticsVisible}. `from`/`to` are UTC dates
-     * (yyyy-MM-dd); `from` is inclusive and `to` is exclusive.
+     * {@link SiteSettings.downloadAnalyticsVisible}. The server fixes the window: the daily
+     * downloads of the last 52 weeks, ending today.
      */
     async getExtensionDownloadSeries(
         abortController: AbortController,
-        params: { namespace: string; name: string; from?: string; to?: string; interval?: DownloadSeriesInterval }
+        params: { namespace: string; name: string }
     ): Promise<Readonly<DownloadSeries>> {
-        const endpoint = createAbsoluteURL(
-            [this.serverUrl, 'api', params.namespace, params.name, 'analytics', 'downloads'],
-            [
-                { key: 'from', value: params.from },
-                { key: 'to', value: params.to },
-                { key: 'interval', value: params.interval }
-            ]
-        );
+        const endpoint = createAbsoluteURL([
+            this.serverUrl,
+            'api',
+            params.namespace,
+            params.name,
+            'analytics',
+            'downloads'
+        ]);
         // Non-retriable: retries are owned by the TanStack query that calls this.
         return sendNonRetriableRequest<DownloadSeries>({ abortController, endpoint });
     }

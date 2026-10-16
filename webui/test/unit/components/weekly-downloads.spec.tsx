@@ -95,10 +95,10 @@ describe('WeeklyDownloads', () => {
         expect(await screen.findByText((7000).toLocaleString())).toBeInTheDocument();
         expect(screen.getByText(/weekly downloads/i)).toBeInTheDocument();
         expect(screen.getByTestId('sparkline')).toHaveAttribute('data-length', '2');
-        expect(service.getExtensionDownloadSeries).toHaveBeenCalledWith(
-            expect.anything(),
-            expect.objectContaining({ namespace: 'redhat', name: 'java', interval: 'day' })
-        );
+        expect(service.getExtensionDownloadSeries).toHaveBeenCalledWith(expect.anything(), {
+            namespace: 'redhat',
+            name: 'java'
+        });
     });
 
     it('frames the area from zero, so a steady series is not drawn as a climbing one', async () => {
