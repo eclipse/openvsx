@@ -12,6 +12,11 @@
  *****************************************************************************/
 package org.eclipse.openvsx.json;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -59,6 +64,16 @@ public class SettingsJson extends ResultJson {
                 + "the banner to be shown again, so correcting the message leaves dismissals in place."
     )
     private @Nullable String bannerDismissId;
+
+    @Schema(
+        description = "Whether the web UI shows the weekly downloads card on extension pages. Off by default. "
+                + "Absent where download analytics is not configured (ovsx.analytics.enabled), and then it "
+                + "cannot be switched on. As in any update, absent in a request leaves it unchanged."
+    )
+    private @Nullable Boolean downloadAnalyticsVisible;
+
+    /** Settings a deployment adds outside the registry's own, flattened into the document as camelCase properties. */
+    private final Map<String, Object> additionalSettings = new LinkedHashMap<>();
 
     public @Nullable Boolean getReadOnly() {
         return readOnly;
@@ -114,5 +129,24 @@ public class SettingsJson extends ResultJson {
 
     public void setBannerDismissId(@Nullable String bannerDismissId) {
         this.bannerDismissId = bannerDismissId;
+    }
+
+    public @Nullable Boolean getDownloadAnalyticsVisible() {
+        return downloadAnalyticsVisible;
+    }
+
+    public void setDownloadAnalyticsVisible(@Nullable Boolean downloadAnalyticsVisible) {
+        this.downloadAnalyticsVisible = downloadAnalyticsVisible;
+    }
+
+    @JsonAnyGetter
+    @Schema(hidden = true)
+    public Map<String, Object> getAdditionalSettings() {
+        return additionalSettings;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalSetting(String name, Object value) {
+        additionalSettings.put(name, value);
     }
 }

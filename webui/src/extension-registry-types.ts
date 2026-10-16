@@ -401,7 +401,6 @@ export interface RegistryVersion {
     maxExtensionSize?: number;
     /** Largest package the registry accepts from any namespace: the default raised by the highest override. */
     maxExtensionSizeCeiling?: number;
-    analyticsEnabled?: boolean;
 }
 
 /** One bucket of the download time series: `t` is the UTC bucket start (yyyy-MM-dd). */
@@ -413,8 +412,6 @@ export interface DownloadSeriesPoint {
 export interface DownloadSeries {
     points: DownloadSeriesPoint[];
 }
-
-export type DownloadSeriesInterval = 'day' | 'week' | 'month';
 
 export interface LoginProviders {
     loginProviders: Record<string, string>;
@@ -688,6 +685,8 @@ export interface SiteSettings {
     bannerMessage?: string;
     bannerSeverity?: BannerSeverity;
     bannerDismissId?: string;
+    /** Whether the weekly downloads card is shown: configured on the server and switched on by an admin. */
+    downloadAnalyticsVisible?: boolean;
 }
 
 /** Runtime settings as an admin reads them. A save sends a `Partial` of this, only what changed. */
@@ -697,6 +696,11 @@ export interface Settings extends SiteSettings {
     maxExtensionSize: number;
     /** Read-only: neither maxExtensionSize nor a size override can be raised past this ceiling. */
     maxOverrideSize: number;
+    /**
+     * Shows the weekly downloads card on extension pages. Off until an admin switches it on, and
+     * absent where the server has no download analytics configured, since it cannot be switched on then.
+     */
+    downloadAnalyticsVisible?: boolean;
 }
 
 export interface SearchIndex {

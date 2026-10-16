@@ -22,11 +22,13 @@ import java.util.Objects;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import org.eclipse.openvsx.json.SettingsJson;
+import org.eclipse.openvsx.json.SiteSettingsJson;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 
 /**
- * Serves the registry's settings to the two endpoints that read them and applies an admin's update
- * across every registered {@link WritableSetting}. It knows what a setting is, never what any
+ * Serves the registry's settings to the two endpoints that read them, as their JSON documents, and
+ * applies an admin's update across every registered {@link WritableSetting}. It knows what a setting is, never what any
  * particular setting means: names, row keys, legal values, and defaults all belong to
  * the bean. Code that needs a setting's value at runtime injects that setting and asks it, see the
  * package documentation, not this.
@@ -35,6 +37,7 @@ import org.eclipse.openvsx.util.AfterCommitExecutor;
 public class SettingsService {
 
     private final List<WritableSetting<?>> settings;
+    private final SettingsJsonMapper mapper;
     private final SettingsStore store;
     private final SettingsUpdateChannel channel;
     private final AfterCommitExecutor afterCommit;
@@ -44,30 +47,45 @@ public class SettingsService {
      * Settings are ordered by name so the audit line and the public settings object do not reshuffle
      * with bean discovery order.
      */
-    public SettingsService(
+    SettingsService(
             List<WritableSetting<?>> settings,
+            SettingsJsonMapper mapper,
             SettingsStore store,
             SettingsUpdateChannel channel,
             AfterCommitExecutor afterCommit,
             ApplicationEventPublisher events
     ) {
         this.settings = settings.stream().sorted(Comparator.comparing(WritableSetting::getName)).toList();
+        this.mapper = mapper;
         this.store = store;
         this.channel = channel;
         this.afterCommit = afterCommit;
         this.events = events;
     }
 
-    /** Every setting's rows with its defaults applied, drafts included. The admin view. */
-    public SettingRows getCurrentSettings() {
-        var stored = store.snapshot();
-        var rows = new LinkedHashMap<String, Object>();
-        settings.forEach(setting -> rows.putAll(currentRows(setting, stored)));
-        return new SettingRows(rows);
+    /** Every setting with its defaults applied, drafts included. The admin view. */
+    public SettingsJson getCurrentSettings() {
+        return mapper.toJson(currentRows());
     }
 
     /** Only what the settings implementing {@link PublicSetting} choose to publish. */
-    public SettingRows getSiteSettings() {
+    public SiteSettingsJson getSiteSettings() {
+        return mapper.toSiteJson(siteRows());
+    }
+
+    /** Applies an admin's update, where an absent field leaves its setting unchanged, and returns the audit line. */
+    public String update(SettingsJson update) {
+        return updateRows(mapper.toRows(update));
+    }
+
+    SettingRows currentRows() {
+        var stored = store.snapshot();
+        var rows = new LinkedHashMap<String, Object>();
+        settings.forEach(setting -> rows.putAll(currentRowsOf(setting, stored)));
+        return new SettingRows(rows);
+    }
+
+    SettingRows siteRows() {
         var stored = store.snapshot();
         var rows = new LinkedHashMap<String, Object>();
         for (var setting : settings) {
@@ -93,11 +111,10 @@ public class SettingsService {
     }
 
     /**
-     * Applies an admin's update and returns the audit line. Every setting is merged and validated
-     * before anything is written, so a refusal leaves the store untouched; the rows then go in as one
-     * transaction.
+     * Every setting is merged and validated before anything is written, so a refusal leaves the store
+     * untouched; the rows then go in as one transaction.
      */
-    public String update(SettingRows update) {
+    String updateRows(SettingRows update) {
         var stored = store.load();
 
         var pending = new LinkedHashMap<String, Object>();
@@ -141,7 +158,7 @@ public class SettingsService {
         return changed;
     }
 
-    private static <T> Map<String, Object> currentRows(WritableSetting<T> setting, SettingRows stored) {
+    private static <T> Map<String, Object> currentRowsOf(WritableSetting<T> setting, SettingRows stored) {
         return setting.toRows(setting.read(stored));
     }
 }

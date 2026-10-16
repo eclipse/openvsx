@@ -12,13 +12,11 @@
  *****************************************************************************/
 package org.eclipse.openvsx.settings;
 
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import org.eclipse.openvsx.publish.PublishingConfig;
+import org.eclipse.openvsx.json.SiteSettingsJson;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -33,17 +31,14 @@ class SettingsAPITest {
     // is anonymous comes from SecurityConfig's /api/** permitAll.
     @Test
     void returnsTheSiteSettingsAsJson() throws Exception {
-        var site = new SettingRows(
-                Map.of(
-                        BannerSetting.KEY_ENABLED,
-                        true,
-                        BannerSetting.KEY_MESSAGE,
-                        "Maintenance tonight",
-                        BannerSetting.KEY_SEVERITY,
-                        "warning"));
+        var site = new SiteSettingsJson();
+        site.setBannerEnabled(true);
+        site.setBannerMessage("Maintenance tonight");
+        site.setBannerSeverity("warning");
+        site.setDownloadAnalyticsVisible(true);
         Mockito.when(settings.getSiteSettings()).thenReturn(site);
 
-        MockMvcBuilders.standaloneSetup(new SettingsAPI(settings, new SettingsJsonMapper(new PublishingConfig())))
+        MockMvcBuilders.standaloneSetup(new SettingsAPI(settings))
                 .build()
                 .perform(get("/api/-/settings"))
                 .andExpect(status().isOk())
@@ -52,7 +47,7 @@ class SettingsAPITest {
                 .andExpect(jsonPath("$.bannerMessage").value("Maintenance tonight"))
                 .andExpect(jsonPath("$.bannerSeverity").value("warning"))
                 .andExpect(jsonPath("$.bannerDismissId").doesNotExist())
-                // only banner properties are public, whatever else the admin payload carries
-                .andExpect(jsonPath("$.length()").value(3));
+                .andExpect(jsonPath("$.downloadAnalyticsVisible").value(true))
+                .andExpect(jsonPath("$.length()").value(4));
     }
 }

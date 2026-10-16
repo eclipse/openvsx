@@ -28,6 +28,7 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -89,13 +90,13 @@ import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
 import org.eclipse.openvsx.json.ResultJson;
+import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
 import org.eclipse.openvsx.mail.MailService;
 import org.eclipse.openvsx.metrics.ExtensionDownloadMetrics;
 import org.eclipse.openvsx.publish.ExtensionVersionIntegrityService;
 import org.eclipse.openvsx.publish.PublishExtensionVersionHandler;
-import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.scanning.ExtensionScanPersistenceService;
 import org.eclipse.openvsx.scanning.ExtensionScanService;
@@ -112,9 +113,6 @@ import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.settings.MaxExtensionSizeSetting;
-import org.eclipse.openvsx.settings.ReadOnlySetting;
-import org.eclipse.openvsx.settings.SettingRows;
-import org.eclipse.openvsx.settings.SettingsJsonMapper;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -275,8 +273,7 @@ class AdminAPITest {
     @Test
     void testGetSettingsReportsMaxExtensionSize() throws Exception {
         mockAdminUser();
-        var rows = new SettingRows(Map.of(ReadOnlySetting.KEY, false, MaxExtensionSizeSetting.KEY, 536_870_912L));
-        Mockito.when(settings.getCurrentSettings()).thenReturn(rows);
+        Mockito.when(settings.getCurrentSettings()).thenReturn(settingsJson(536_870_912L));
 
         mockMvc.perform(
                 get("/admin/settings")
@@ -292,8 +289,7 @@ class AdminAPITest {
     void testUpdateSettingsAppliesMaxExtensionSizeAndLogsIt() throws Exception {
         var admin = mockAdminUser();
         Mockito.when(settings.update(Mockito.any())).thenReturn(MaxExtensionSizeSetting.KEY + " -> 1073741824");
-        var rows = new SettingRows(Map.of(ReadOnlySetting.KEY, false, MaxExtensionSizeSetting.KEY, 1_073_741_824L));
-        Mockito.when(settings.getCurrentSettings()).thenReturn(rows);
+        Mockito.when(settings.getCurrentSettings()).thenReturn(settingsJson(1_073_741_824L));
 
         mockMvc.perform(
                 put("/admin/settings")
@@ -304,7 +300,18 @@ class AdminAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxExtensionSize").value(1073741824));
 
+        var update = ArgumentCaptor.forClass(SettingsJson.class);
+        Mockito.verify(settings).update(update.capture());
+        assertThat(update.getValue().getMaxExtensionSize()).isEqualTo(1_073_741_824L);
         Mockito.verify(logs).logAction(Mockito.eq(admin), Mockito.any());
+    }
+
+    private static SettingsJson settingsJson(long maxExtensionSize) {
+        var json = new SettingsJson();
+        json.setReadOnly(false);
+        json.setMaxExtensionSize(maxExtensionSize);
+        json.setMaxOverrideSize(1_073_741_824L);
+        return json;
     }
 
     @Test
@@ -3296,13 +3303,6 @@ class AdminAPITest {
                 RestTemplate restTemplate
         ) {
             return new EclipseTokenService(transactions, entityManager, clientRegistrationRepository, restTemplate);
-        }
-
-        // The real mapper over a default configuration, so the settings endpoints report the ceiling
-        // a stock PublishingConfig holds.
-        @Bean
-        SettingsJsonMapper settingsJsonMapper() {
-            return new SettingsJsonMapper(new PublishingConfig());
         }
 
         @Bean
