@@ -10,25 +10,25 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 ### Fixed
 
-- `--version` reads the version from `package.json` at runtime instead of a generated `src/version.ts`, so it can no longer report a stale version
-- `publish` now deletes the `.vsix` it packages into the temp directory once publishing finishes or fails, instead of leaving one behind per package and target
-- Drop the `X-OpenVSX-Token` header, which carries the personal access token when `--username`/`--password` are set, on a redirect to another origin, as is done for `Authorization`
-- A request with a body that is redirected with 301/302/303 now fails with an error naming the redirect target, instead of being resent as a GET without its body
-- Trusted publishing's OIDC ID token request now uses the registry client's request handling: it follows redirects (dropping the runner token on a redirect to another origin) and reports the token service's error message instead of only its status
-- An HTML page in a successful response (any `<!doctype html>` casing, or a `text/html` Content-Type) now fails with an error naming the status, instead of printing the raw HTML or a JSON `SyntaxError`
-- An error response whose JSON body starts with whitespace now reports the server's message instead of only its status
+- `--version` reads the version from `package.json` at runtime instead of a generated `src/version.ts`, so it can no longer report a stale version (#2295)
+- `publish` now deletes the `.vsix` it packages into the temp directory once publishing finishes or fails, instead of leaving one behind per package and target (#2286)
+- Drop the `X-OpenVSX-Token` header, which carries the personal access token when `--username`/`--password` are set, on a redirect to another origin, as is done for `Authorization` (#2309)
+- A request with a body that is redirected with 301/302/303 now fails with an error naming the redirect target, instead of being resent as a GET without its body (#2309)
+- Trusted publishing's OIDC ID token request now uses the registry client's request handling: it follows redirects (dropping the runner token on a redirect to another origin) and reports the token service's error message instead of only its status (#2322)
+- An HTML page in a successful response (any `<!doctype html>` casing, or a `text/html` Content-Type) now fails with an error naming the status, instead of printing the raw HTML or a JSON `SyntaxError` (#2326)
+- An error response whose JSON body starts with whitespace now reports the server's message instead of only its status (#2326)
 
 ### Dependencies
 
-- Bump commander from 6.2.1 to 14.0.3; a command given more arguments than it takes now fails instead of ignoring the extras
-- Bump @vscode/vsce from 3.7.1 to 4.0.0
-- Bump vitest from 4.1.11 to 5.0.3, adding `vite` as a direct dev dependency - vitest 5 no longer bundles it, only requires it as a peer
-- Remove `leven`; the command-suggestion distance check now uses a vendored Levenshtein implementation, the same way `@vscode/vsce` itself replaced its own `leven` dependency in 4.0.0
-- Remove `tmp`; temporary file names are now generated with `crypto.randomUUID`
-- Remove `follow-redirects`; requests use `node:http`/`node:https` and the registry client follows redirects itself
-- Bump ip-address from 10.4.0 to 10.7.2
+- Bump commander from 6.2.1 to 14.0.3; a command given more arguments than it takes now fails instead of ignoring the extras (#2294)
+- Bump @vscode/vsce from 3.7.1 to 4.0.0 (#2288)
+- Bump vitest from 4.1.11 to 5.0.3, adding `vite` as a direct dev dependency - vitest 5 no longer bundles it, only requires it as a peer (#2291)
+- Remove `leven`; the command-suggestion distance check now uses a vendored Levenshtein implementation, the same way `@vscode/vsce` itself replaced its own `leven` dependency in 4.0.0 (#2290)
+- Remove `tmp`; temporary file names are now generated with `crypto.randomUUID` (#2284)
+- Remove `follow-redirects`; requests use `node:http`/`node:https` and the registry client follows redirects itself (#2309)
+- Bump ip-address from 10.4.0 to 10.7.2 (#2264)
 - Bump brace-expansion to 1.1.21, 2.1.7, 5.0.12
-- Bump markdown-it from 14.2.0 to 14.3.2
+- Bump markdown-it from 14.2.0 to 14.3.2 (#2281)
 
 ## [v1.2.0] - 2026-09-10
 

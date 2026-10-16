@@ -564,7 +564,7 @@ How many log objects to list per request while reading download logs from the bu
 |---------------|-------------------------------
 | Type          | string
 | Default       |
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 Where to keep a processed log file instead of only deleting it. When set, the file is copied to this prefix within the same bucket before the original is removed; when empty, the default, a processed file is deleted outright.
 
@@ -1008,7 +1008,7 @@ Whether to use Redis for caching. Caffeine (in-memory cache) is used by default.
 |---------------|-------------------------
 | Type          | boolean
 | Default       | `false`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 Whether the caches count hits, misses and evictions, which the admin dashboard's Caches page reports. Off by default: every cache implementation counts on the lookup path, so it is paid on every cache read for numbers nothing consults unless somebody is looking at that page. Changing it takes a restart, since the counting is configured when each cache is built.
 
@@ -1601,7 +1601,7 @@ Download analytics keeps its time-series data in a **separate** database from th
 |---------------|-------------------------
 | Type          | boolean
 | Default       | `false`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 Whether to enable download analytics. When `false`, the time-series datasource, its migrations and its jOOQ context are not created at all, and none of the settings below are read.
 
@@ -1609,7 +1609,7 @@ Whether to enable download analytics. When `false`, the time-series datasource, 
 |---------------|-------------------------
 | Type          | long
 | Default       | `536870912`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 The decompressed-size cap applied while parsing an access-log stream, whether read from the scheduled AWS source or uploaded to the admin backfill endpoint. A highly-compressible gzip file could otherwise grow the in-memory record list without bound; exceeding the limit fails the parse.
 
@@ -1617,7 +1617,7 @@ The decompressed-size cap applied while parsing an access-log stream, whether re
 |---------------|-------------------------
 | Type          | ISO 8601 duration
 | Default       | `PT1H`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 How long the settled part of a download series is held in memory before being read again. Settled ranges are older than `ovsx.analytics.settling-margin` and so do not normally change, which is what makes caching them safe.
 
@@ -1629,7 +1629,7 @@ It is a per-node, in-memory cache, so in a cluster each node expires on its own 
 |---------------|-------------------------
 | Type          | ISO 8601 duration
 | Default       | `PT2H`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 How far back from now a download series is treated as settled. Buckets older than this are answered from a cached query and buckets newer than it are read live, so the margin is the point at which the series stops being re-read on every request.
 
@@ -1641,7 +1641,7 @@ Note that the buckets on either side of the boundary carry the same counts — t
 |---------------|-------------------------
 | Type          | ISO 8601 duration
 | Default       | `PT30S`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 How often the time-series database is probed. Analytics is optional: while the database is unreachable the registry keeps serving, the analytics endpoint answers `503` with a `Retry-After` header, and analytics writes are skipped without waiting on a connection timeout. A probe is also what notices that the database is back, so probing cannot be switched off. Must be at least `PT1S`; startup fails otherwise.
 
@@ -1651,7 +1651,7 @@ The server starts without the time-series database being reachable. Its schema i
 |---------------|-------------------------
 | Type          | int
 | Default       | `3`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 How many analytics calls in a row may fail to reach the time-series database before it is treated as unavailable without waiting for the next probe. Only connectivity failures count. Must be at least 1.
 
@@ -1659,7 +1659,7 @@ How many analytics calls in a row may fail to reach the time-series database bef
 |---------------|-------------------------
 | Type          | string
 | Default       |
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 JDBC URL of the time-series database, e.g. `jdbc:postgresql://localhost:5433/openvsx_timeseries`. Required when analytics are enabled: startup fails if it is not set, because reaching that point means analytics were asked for and a missing URL is a mistake rather than a way to opt out. It must not point at the registry database, whose schema is migrated separately and does not need the `timescaledb` extension.
 
@@ -1667,7 +1667,7 @@ JDBC URL of the time-series database, e.g. `jdbc:postgresql://localhost:5433/ope
 |---------------|-------------------------
 | Type          | string
 | Default       |
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 User name for the time-series database. Optional: when unset, nothing is passed to the pool and the driver resolves it its own way, from a URL parameter, `.pgpass` or IAM.
 
@@ -1675,7 +1675,7 @@ User name for the time-series database. Optional: when unset, nothing is passed 
 |---------------|-------------------------
 | Type          | string
 | Default       |
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 Password for the time-series database. Optional, on the same terms as the user name above.
 
@@ -1683,7 +1683,7 @@ Password for the time-series database. Optional, on the same terms as the user n
 |---------------|-------------------------
 | Type          | int
 | Default       | `5`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 Maximum size of the time-series connection pool. Must be at least 1. Enabling analytics gives a deployment a **second** pool, so size this against the time-series server's `max_connections` together with the registry pool rather than in isolation.
 
@@ -1691,6 +1691,6 @@ Maximum size of the time-series connection pool. Must be at least 1. Enabling an
 |---------------|-------------------------
 | Type          | long
 | Default       | `2000`
-| Compatibility | Unreleased
+| Compatibility | Since 1.3.0
 
 How long to wait for a connection from the time-series pool, in milliseconds. Deliberately far below Hikari's own 30 seconds, so that an unreachable time-series database fails fast enough for the caller to give up rather than holding a thread; once it is judged unavailable (see `ovsx.analytics.availability.probe-interval`) calls do not wait at all. Must be greater than 250ms — the validation timeout is derived at half this value with a 250ms floor, and Hikari rejects a validation timeout that is not below the connection timeout.
