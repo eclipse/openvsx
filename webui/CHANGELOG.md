@@ -65,7 +65,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Remove `clipboard-copy` in favor of the built-in `navigator.clipboard.writeText`
 - Remove `react-infinite-scroller` and `@types/react-infinite-scroller`; search results load the next page through an `IntersectionObserver` sentinel instead of a window scroll listener
 
-## [v1.2.0] (10/09/2026)
+## [v1.2.0] - 2026-09-10
 
 ### Added
 
@@ -116,7 +116,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump @humanfs/node from 0.16.6 to 0.16.8
 - Bump js-yaml from 4.3.1 to 4.3.2
 
-## [v1.1.2] (20/08/2026)
+## [v1.1.2] - 2026-08-20
 
 ### Added
 
@@ -126,7 +126,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Fix the extension overview sidebar overlapping the readme content at narrower ("tablet") window widths: there are now only mobile and desktop layouts, with tablet widths using the desktop layout ([#2068](https://github.com/eclipse-openvsx/openvsx/issues/2068))
 
-## [v1.1.1] (09/08/2026)
+## [v1.1.1] - 2026-08-09
 
 ### Fixed
 
@@ -144,7 +144,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump js-yaml from `4.3.0` to `4.3.1`
 - Bump react-router from `7.18.1` to `7.18.2`
 
-## [v1.1.0] (02/08/2026)
+## [v1.1.0] - 2026-08-02
 
 ### Added
 
@@ -185,7 +185,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump react-router from `6.30.4` to `7.18.1`
 - Remove react-router-dom and its stale `@types/react-router-dom` v5 typings
 
-## [v1.0.2] (23/06/2026)
+## [v1.0.2] - 2026-06-23
 
 ### Changed
 
@@ -200,27 +200,27 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump markdown-it from `14.1.1` to `14.2.0` ([#1904](https://github.com/eclipse-openvsx/openvsx/pull/1904))
 - Bump @babel/core from `7.29.0` to `7.29.7` ([#1909](https://github.com/eclipse-openvsx/openvsx/pull/1909))
 
-## [v1.0.1] (11/06/2026)
+## [v1.0.1] - 2026-06-11
 
 ### Dependencies
 
 - Bump qs from `6.15.1` to `6.15.2` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
 - Bump react-router and react-router-dom from `6.30.3` to `6.30.4` ([#1897](https://github.com/eclipse-openvsx/openvsx/pull/1897))
 
-## [v1.0.0] (28/05/2026)
+## [v1.0.0] - 2026-05-28
 
 ### Added
 
 - Add a settings page in the admin dashboard and support putting the registry in read-only mode ([#1835](https://github.com/eclipse-openvsx/openvsx/pull/1835))
 
-## [v0.20.4] (22/05/2026)
+## [v0.20.4] - 2026-05-22
 
 ### Added
 
 - Add support to retry failed scanner jobs in the admin dashboard ([#1832](https://github.com/eclipse-openvsx/openvsx/pull/1832))
 - Display non-terminal scanner jobs in the scan card ([#1836](https://github.com/eclipse-openvsx/openvsx/pull/1836))
 
-## [v0.20.3] (08/05/2026)
+## [v0.20.3] - 2026-05-08
 
 ### Changed
 
@@ -230,7 +230,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Fix admin dashboard breadcrumbs not being URL-decoded due to #1782 ([#1806](https://github.com/eclipse-openvsx/openvsx/pull/1806))
 
-## [v0.20.2] (28/04/2026)
+## [v0.20.2] - 2026-04-28
 
 ### Added
 
@@ -253,7 +253,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump react-avatar-editor from `13.0.2` to `15.1.0` ([#1787](https://github.com/eclipse/openvsx/pull/1787))
 - Bump postcss from `8.5.6` to `8.5.10` ([#1793](https://github.com/eclipse/openvsx/pull/1793))
 
-## [v0.20.1] (20/04/2026)
+## [v0.20.1] - 2026-04-20
 
 ### Changed
 
@@ -270,7 +270,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Bump dompurify from `3.3.2` to `3.4.0` ([#1768](https://github.com/eclipse/openvsx/pull/1768))
 
-## [v0.20.0] (13/04/2026)
+## [v0.20.0] - 2026-04-13
 
 ### Added
 
@@ -283,7 +283,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Avoid loading extension data multiple times on the extension detail page ([#1756](https://github.com/eclipse/openvsx/pull/1756))
 
-## [v0.19.1] (Apr. 2026)
+## [v0.19.1] - 2026-04-07
 
 ### Fixed
 
@@ -296,7 +296,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump lodash from `4.17.23` to `4.18.1` ([#1742](https://github.com/eclipse/openvsx/pull/1742))
 - Bump vite from `7.3.1` to `7.3.2` ([#1744](https://github.com/eclipse/openvsx/pull/1744))
 
-## [v0.19.0] (Mar. 2026)
+## [v0.19.0] - 2026-03-25
 
 ### Added
 
@@ -322,7 +322,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Bump dompurify from `3.2.4` to `3.3.2` ([#1671](https://github.com/eclipse/openvsx/pull/1671))
 - Bump flatten from `3.3.1` to `3.4.2` ([#1702](https://github.com/eclipse/openvsx/pull/1702))
 
-## [v0.18.0] (Feb. 2026)
+## [v0.18.0] - 2026-02-17
 
 ### Added
 
@@ -344,7 +344,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Upgrade `react-router-dom` from `6.23.1` to `6.30.3`
 - Upgrade `@playwright/test` from `1.57.0` to `1.58.0`
 
-## [v0.17.1] (Jan. 2026)
+## [v0.17.1] - 2026-01-06
 
 ### Dependencies
 
