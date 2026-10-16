@@ -32,6 +32,46 @@ class SettingsJsonMapperTest {
     private final SettingsJsonMapper mapper = new SettingsJsonMapper(publishingConfig, downloadAnalytics);
 
     @Test
+    void aSettingAddedElsewhereTravelsAsACamelCaseProperty() {
+        var rows = new SettingRows(Map.of(ReadOnlySetting.KEY, true, "audit-log-enabled", true));
+
+        assertThat(mapper.toJson(rows).getAdditionalSettings()).containsExactly(entry("auditLogEnabled", true));
+        assertThat(mapper.toSiteJson(rows).getAdditionalSettings()).containsExactly(entry("auditLogEnabled", true));
+    }
+
+    @Test
+    void anAdditionalPropertyBecomesItsKebabCaseRow() {
+        var json = new SettingsJson();
+        json.setAdditionalSetting("auditLogEnabled", true);
+
+        assertThat(mapper.toRows(json).rows()).containsExactly(entry("audit-log-enabled", true));
+    }
+
+    @Test
+    void aBuiltInSettingCannotBeWrittenAsAnAdditionalProperty() {
+        var json = new SettingsJson();
+        json.setAdditionalSetting("read-only", true);
+        json.setAdditionalSetting("readOnly", true);
+        json.setAdditionalSetting("Max_Extension_Size", 1L);
+
+        assertThat(mapper.toRows(json).rows()).isEmpty();
+    }
+
+    @Test
+    void additionalPropertiesSitFlatOnTheWire() {
+        var json = new SettingsJson();
+        json.setReadOnly(false);
+        json.setAdditionalSetting("auditLogEnabled", true);
+
+        var wire = JsonMapper.shared().writeValueAsString(json);
+        assertThat(wire).contains("\"auditLogEnabled\":true").doesNotContain("additionalSettings");
+
+        var read = JsonMapper.shared().readValue("{\"readOnly\":true,\"auditLogEnabled\":false}", SettingsJson.class);
+        assertThat(read.getReadOnly()).isTrue();
+        assertThat(read.getAdditionalSettings()).containsExactly(entry("auditLogEnabled", false));
+    }
+
+    @Test
     void theRowsUseTheStoredKebabCaseKeys() {
         var json = new SettingsJson();
         json.setReadOnly(true);

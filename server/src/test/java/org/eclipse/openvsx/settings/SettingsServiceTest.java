@@ -322,6 +322,56 @@ class SettingsServiceTest {
         assertThat(withAnalytics(false).getCurrentSettings().getDownloadAnalyticsVisible()).isNull();
     }
 
+    @Test
+    void aDeploymentsOwnSettingIsReadUpdatedAndPublishedThroughTheJsonDocuments() {
+        var service = new SettingsService(
+                List.of(readOnly, new AuditLogSetting()),
+                new SettingsJsonMapper(publishingConfig, mock(DownloadAnalyticsSetting.class)),
+                store,
+                channel,
+                new AfterCommitExecutor(),
+                events);
+        stored();
+
+        assertThat(service.getCurrentSettings().getAdditionalSettings()).containsEntry("auditLogEnabled", false);
+        assertThat(service.getSiteSettings().getAdditionalSettings()).containsEntry("auditLogEnabled", false);
+
+        var update = new SettingsJson();
+        update.setAdditionalSetting("auditLogEnabled", true);
+        update.setAdditionalSetting("unknownSetting", true);
+        assertThat(service.update(update)).isEqualTo("audit-log-enabled -> true");
+        verify(store).setAll(Map.of("audit-log-enabled", true));
+    }
+
+    /** What a deployment's own module would register: a public boolean outside this package's DTO fields. */
+    private static class AuditLogSetting implements WritableSetting<Boolean>, PublicSetting {
+
+        @Override
+        public String getName() {
+            return "audit-log-enabled";
+        }
+
+        @Override
+        public Boolean read(SettingRows stored) {
+            return stored.asBoolean(getName(), false);
+        }
+
+        @Override
+        public Boolean merge(Boolean current, SettingRows update) {
+            return update.asBoolean(getName(), current);
+        }
+
+        @Override
+        public Map<String, Object> toRows(Boolean value) {
+            return Map.of(getName(), value);
+        }
+
+        @Override
+        public Map<String, Object> publicView(SettingRows stored) {
+            return toRows(read(stored));
+        }
+    }
+
     private SettingsService withAnalytics(boolean configured) {
         var analytics = new DownloadAnalyticsSetting(configured);
         return new SettingsService(

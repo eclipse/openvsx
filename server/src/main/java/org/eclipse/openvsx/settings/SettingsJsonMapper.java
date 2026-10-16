@@ -13,7 +13,10 @@
 package org.eclipse.openvsx.settings;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -25,10 +28,21 @@ import org.eclipse.openvsx.publish.PublishingConfig;
 /**
  * The one place that turns stored rows into the wire DTOs and back, and so the one class that spells
  * every setting's row keys; the DTOs themselves name no setting. Properties are camelCase like every
- * other DTO, rows kebab-case as stored.
+ * other DTO, rows kebab-case as stored. A row of a setting added outside this package travels as an
+ * additional property named after its key, {@code audit-log-enabled} as {@code auditLogEnabled}.
  */
 @Component
 class SettingsJsonMapper {
+
+    private static final Set<String> BUILT_IN_KEYS = Set.of(
+            ReadOnlySetting.KEY,
+            MaxExtensionSizeSetting.KEY,
+            BannerSetting.KEY_ENABLED,
+            BannerSetting.KEY_MESSAGE,
+            BannerSetting.KEY_SEVERITY,
+            BannerSetting.KEY_DISMISS_ID,
+            DownloadAnalyticsSetting.KEY);
+    private static final Pattern PROPERTY_NAME = Pattern.compile("[a-z][a-zA-Z0-9]*");
 
     private final PublishingConfig publishingConfig;
     private final DownloadAnalyticsSetting downloadAnalytics;
@@ -55,6 +69,7 @@ class SettingsJsonMapper {
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
         json.setDownloadAnalyticsVisible(
                 downloadAnalytics.isConfigured() ? bool(rows, DownloadAnalyticsSetting.KEY) : null);
+        additionalRows(rows, BUILT_IN_KEYS).forEach(json::setAdditionalSetting);
         return json;
     }
 
@@ -68,6 +83,13 @@ class SettingsJsonMapper {
         putIfPresent(rows, BannerSetting.KEY_SEVERITY, json.getBannerSeverity());
         putIfPresent(rows, BannerSetting.KEY_DISMISS_ID, json.getBannerDismissId());
         putIfPresent(rows, DownloadAnalyticsSetting.KEY, json.getDownloadAnalyticsVisible());
+        // A built-in setting is written only through its own property, never under another spelling.
+        json.getAdditionalSettings().forEach((name, value) -> {
+            var key = toRowKey(name);
+            if (value != null && PROPERTY_NAME.matcher(name).matches() && !BUILT_IN_KEYS.contains(key)) {
+                rows.put(key, value);
+            }
+        });
         return new SettingRows(rows);
     }
 
@@ -80,7 +102,38 @@ class SettingsJsonMapper {
         json.setBannerSeverity(string(rows, BannerSetting.KEY_SEVERITY));
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
         json.setDownloadAnalyticsVisible(bool(rows, DownloadAnalyticsSetting.KEY));
+        // Built-in rows only ever reach visitors through their own properties above.
+        additionalRows(rows, BUILT_IN_KEYS).forEach(json::setAdditionalSetting);
         return json;
+    }
+
+    /** The rows no built-in property carries, under their property names. */
+    private static Map<String, Object> additionalRows(Map<String, Object> rows, Set<String> builtIn) {
+        var additional = new LinkedHashMap<String, Object>();
+        rows.forEach((key, value) -> {
+            if (!builtIn.contains(key)) {
+                additional.put(toPropertyName(key), value);
+            }
+        });
+        return additional;
+    }
+
+    private static String toPropertyName(String rowKey) {
+        var name = new StringBuilder();
+        var upper = false;
+        for (var c : rowKey.toCharArray()) {
+            if (c == '-') {
+                upper = true;
+            } else {
+                name.append(upper ? Character.toUpperCase(c) : c);
+                upper = false;
+            }
+        }
+        return name.toString();
+    }
+
+    private static String toRowKey(String propertyName) {
+        return propertyName.replaceAll("([A-Z])", "-$1").toLowerCase(Locale.ROOT);
     }
 
     private static void putIfPresent(Map<String, Object> rows, String key, @Nullable Object value) {

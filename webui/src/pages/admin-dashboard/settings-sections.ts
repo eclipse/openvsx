@@ -16,8 +16,9 @@ import type { Settings } from '../../extension-registry-types';
 /** A runtime setting shown as an on/off switch on the admin dashboard's Settings page. */
 export interface AdminSettingsFlag {
     /**
-     * The `Settings` property the switch reads and writes. For a contributed switch, a boolean the
-     * deployment's server adds to `/admin/settings`.
+     * The `Settings` property the switch reads and writes. For a contributed switch, the camelCase
+     * name of a boolean setting the deployment's server registers: a setting stored under
+     * `audit-log-enabled` is read and written as `auditLogEnabled` on `/admin/settings`.
      */
     key: string;
     title: string;

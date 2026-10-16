@@ -155,9 +155,9 @@ export interface PageSettings {
          */
         adminPages?: AdminPage[];
         /**
-         * Extra switches for the admin dashboard's Settings page, each bound to a boolean the
-         * deployment's server adds to its runtime settings, grouped into the built-in sections or
-         * sections of their own. Additive only — see {@link AdminSettingsSection}.
+         * Extra switches for the admin dashboard's Settings page, each bound to a boolean runtime
+         * setting the deployment's server registers, grouped into the built-in sections or sections
+         * of their own. Additive only — see {@link AdminSettingsSection}.
          */
         adminSettingsSections?: AdminSettingsSection[];
         banner?: {

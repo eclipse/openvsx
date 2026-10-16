@@ -21,6 +21,7 @@
  * {@link SettingsUpdateChannel}, or once the snapshot expires after {@code ovsx.caching.setting.ttl}.
  * <p>
  * Adding a setting: the bean ({@link PublicSetting} too if visitors may see it), its fields on the
- * DTOs and their lines in {@link SettingsJsonMapper}.
+ * DTOs and their lines in {@link SettingsJsonMapper}. A deployment's own module needs only the bean:
+ * its kebab-case rows reach the DTOs as additional camelCase properties.
  */
 package org.eclipse.openvsx.settings;

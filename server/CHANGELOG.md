@@ -20,6 +20,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Give download analytics its own time-series database; the registry starts and keeps serving while it is unreachable, and log files are kept until their events are stored ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133))
 - Scope personal access tokens to a namespace or an extension, and add publishing-only tokens ([#2296](https://github.com/eclipse-openvsx/openvsx/pull/2296))
 - Publish a `SettingsChangedEvent` after the site settings change ([#2316](https://github.com/eclipse-openvsx/openvsx/pull/2316))
+- Serve runtime settings a deployment registers as its own `WritableSetting` beans on `/admin/settings`, and on `/api/-/settings` when they are a `PublicSetting`, as camelCase properties named after their row keys ([#2340](https://github.com/eclipse-openvsx/openvsx/pull/2340))
 - Expose the download size of each target platform as `downloadSizes` on the extension API response ([#2168](https://github.com/eclipse-openvsx/openvsx/pull/2168))
 - Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
 - Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard
