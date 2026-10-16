@@ -153,7 +153,7 @@ ovsx:
       ttl: PT0S
     # Off by default, matching every other deployment. Set this to true and start the `analytics`
     # docker-compose profile together to work on download analytics locally; enabling it without
-    # that database reachable fails startup rather than degrading quietly.
+    # that database reachable still starts the server; analytics is then unavailable until it is.
     enabled: false
     # the postgres-timeseries service of docker-compose.yml
     datasource:

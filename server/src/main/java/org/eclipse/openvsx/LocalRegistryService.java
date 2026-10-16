@@ -145,9 +145,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.changesFeedLag = changesFeedLag;
     }
 
-    @Value("${ovsx.analytics.enabled:false}")
-    boolean analyticsEnabled;
-
     @Value("${ovsx.registry.version:}")
     String registryVersion;
 
@@ -1492,7 +1489,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.setMaxExtensionSizeCeiling(sizeLimits.getCeiling());
         json.setTrustedPublishingAudience(
                 trustedPublishingConfig.isEnabled() ? trustedPublishingConfig.getAudience() : null);
-        json.setAnalyticsEnabled(analyticsEnabled);
         return json;
     }
 

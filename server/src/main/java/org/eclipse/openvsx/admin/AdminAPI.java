@@ -1552,7 +1552,7 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkPermission(Permission.MANAGE_SETTINGS);
 
-            var changes = settings.updateFromJson(newSettings);
+            var changes = settings.update(newSettings);
             var json = settings.getCurrentSettings();
             json.setSuccess("Updated settings: " + changes);
             logs.logAction(adminUser, json);

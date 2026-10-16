@@ -29,7 +29,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 
 /**
  * Operational metrics of the download ingestion pipeline: parse skip rate, load volume,
- * extract lag and dead-letter depth.
+ * extract lag, dead-letter depth and log files pending analytics.
  */
 @Component
 public class DownloadIngestionMetrics {
@@ -41,6 +41,7 @@ public class DownloadIngestionMetrics {
     public static final String FAILED_EVENTS_METRIC = "openvsx_analytics_events_failed_total";
     public static final String EXTRACT_LAG_METRIC = "openvsx_analytics_extract_lag";
     public static final String DEAD_LETTER_METRIC = "openvsx_analytics_dead_letter_depth";
+    public static final String PENDING_FILES_METRIC = "openvsx_analytics_pending_files";
 
     private static final Logger logger = LoggerFactory.getLogger(DownloadIngestionMetrics.class);
 
@@ -65,7 +66,7 @@ public class DownloadIngestionMetrics {
                 .description("Downloads counted by the ingestion pipeline")
                 .register(registry);
         this.failedEvents = Counter.builder(FAILED_EVENTS_METRIC)
-                .description("Aggregated download events lost because the analytics store rejected them")
+                .description("Aggregated download events that could not be written to the analytics store")
                 .register(registry);
         this.extractLag = Timer.builder(EXTRACT_LAG_METRIC)
                 .description("Delay between a download and its ingestion from access logs")
@@ -77,6 +78,22 @@ public class DownloadIngestionMetrics {
         Gauge.builder(DEAD_LETTER_METRIC, deadLetterDepth::get)
                 .description("Number of log files that failed processing and await manual attention")
                 .register(registry);
+
+        Supplier<Long> pendingFiles = Suppliers
+                .memoizeWithExpiration(() -> countPendingFiles(repositories), 1, TimeUnit.MINUTES)::get;
+        Gauge.builder(PENDING_FILES_METRIC, pendingFiles::get)
+                .description(
+                        "Number of ingested log files kept until their events can be stored in the analytics store")
+                .register(registry);
+    }
+
+    private long countPendingFiles(RepositoryService repositories) {
+        try {
+            return repositories.countPendingAnalyticsDownloadIngestions();
+        } catch (Exception e) {
+            logger.warn("could not determine the number of log files pending analytics", e);
+            return -1;
+        }
     }
 
     private long countFailedItems(RepositoryService repositories) {
