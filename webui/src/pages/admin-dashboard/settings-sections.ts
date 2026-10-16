@@ -33,7 +33,7 @@ export interface AdminSettingsSection {
     /**
      * A built-in id - `registry`, `site`, `publishing` or `analytics` - appends the switches to that
      * section, where they share its availability: `analytics` is left out where the server has no
-     * download analytics configured. Any other id adds a section after the built-in ones; sections
+     * download analytics configured. Any other id adds a section of its own; sections
      * sharing an id are merged into one.
      */
     id: string;
@@ -66,7 +66,7 @@ const flag = (key: keyof Settings, title: string, description: string): AdminSet
     description
 });
 
-/** The sections the page always shows, in this order. The banner and the size limit are rendered by the page itself. */
+/** The sections the page always shows. The banner and the size limit are rendered by the page itself. */
 export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
     {
         id: 'registry',
@@ -124,7 +124,7 @@ const PAGE_KEYS: readonly (keyof Settings)[] = [
     'downloadAnalyticsConfigured'
 ];
 
-/** The built-in sections with the contributed ones folded in, in the order the page shows them. */
+/** The built-in sections with the contributed ones folded in, sorted by title as the page shows them. */
 export const withContributedSections = (
     contributed: readonly AdminSettingsSection[] = []
 ): ResolvedSettingsSection[] => {
@@ -153,5 +153,5 @@ export const withContributedSections = (
             });
         }
     }
-    return sections;
+    return sections.sort((a, b) => a.title.localeCompare(b.title));
 };

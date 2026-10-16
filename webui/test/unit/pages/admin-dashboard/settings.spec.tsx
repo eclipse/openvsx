@@ -524,7 +524,7 @@ describe('RuntimeSettingsPage', () => {
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('false'));
     });
 
-    it('renders a contributed section after the built-in ones and saves its switch', async () => {
+    it('sorts a contributed section among the built-in ones by title and saves its switch', async () => {
         const withAudit = { ...defaults, auditLogEnabled: false };
         const admin = mountPage(withAudit, [
             {
@@ -538,7 +538,7 @@ describe('RuntimeSettingsPage', () => {
         // The Analytics section only appears once the settings are loaded, so wait for them first.
         const auditToggle = await screen.findByLabelText('Toggle Audit log');
         const headings = screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent);
-        expect(headings).toEqual(['Registry', 'Site settings', 'Publishing', 'Analytics', 'Audit']);
+        expect(headings).toEqual(['Analytics', 'Audit', 'Publishing', 'Registry', 'Site settings']);
         await userEvent.click(auditToggle);
         await save();
 
@@ -557,7 +557,7 @@ describe('RuntimeSettingsPage', () => {
         expect(await screen.findByLabelText('Toggle Retention')).toBeChecked();
         expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(4);
         const toggles = screen.getAllByLabelText(/^Toggle /).map(toggle => toggle.getAttribute('aria-label'));
-        expect(toggles).toEqual(['Toggle Read-only mode', 'Toggle banner', ANALYTICS_TOGGLE, 'Toggle Retention']);
+        expect(toggles).toEqual([ANALYTICS_TOGGLE, 'Toggle Retention', 'Toggle Read-only mode', 'Toggle banner']);
     });
 
     // Contributed switches can only be added: one that names a built-in key would otherwise render a
