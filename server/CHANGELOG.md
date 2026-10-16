@@ -16,12 +16,14 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Backfill download events from access logs ([#2228](https://github.com/eclipse-openvsx/openvsx/pull/2228))
 - Prompt anonymous visitors to log in on the reviews tab ([#2148](https://github.com/eclipse-openvsx/openvsx/pull/2148))
 - Add a Caches page to the admin dashboard ([#2203](https://github.com/eclipse-openvsx/openvsx/pull/2203))
-- Time-series download analytics ([#2134](https://github.com/eclipse-openvsx/openvsx/pull/2134))
-- Give download analytics its own time-series database ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133))
+- Time-series download analytics, kept off extension pages until an admin switches them on, so a registry can backfill its download history first ([#2134](https://github.com/eclipse-openvsx/openvsx/pull/2134), [#2340](https://github.com/eclipse-openvsx/openvsx/pull/2340))
+- Give download analytics its own time-series database; the registry starts and keeps serving while it is unreachable, and log files are kept until their events are stored ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133))
 - Scope personal access tokens to a namespace or an extension, and add publishing-only tokens ([#2296](https://github.com/eclipse-openvsx/openvsx/pull/2296))
 - Publish a `SettingsChangedEvent` after the site settings change ([#2316](https://github.com/eclipse-openvsx/openvsx/pull/2316))
+- Serve runtime settings a deployment registers as its own `WritableSetting` beans on `/admin/settings`, and on `/api/-/settings` when they are a `PublicSetting`, as camelCase properties named after their row keys ([#2340](https://github.com/eclipse-openvsx/openvsx/pull/2340))
 - Expose the download size of each target platform as `downloadSizes` on the extension API response ([#2168](https://github.com/eclipse-openvsx/openvsx/pull/2168))
 - Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
+- Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard
 
 #### Changed
 
@@ -29,6 +31,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 #### Fixed
 
+- Refuse the trusted publishing endpoints that create or delete a trusted publisher or issue a publish token while the registry is read-only ([#2339](https://github.com/eclipse-openvsx/openvsx/pull/2339))
 - Match secret detection rules case-sensitively unless the rule has an inline `(?i)`, which stops mixed-case words such as `Asiakasdokumentaatio` being flagged as AWS keys, see #2329 ([#2330](https://github.com/eclipse-openvsx/openvsx/pull/2330))
 - Keep polling async scanners through transient errors, confirm an error status on a second poll before failing a scan, and treat every non-2xx scanner response as an error ([#2307](https://github.com/eclipse-openvsx/openvsx/pull/2307))
 - Remove the max-override-size ceiling on extension size overrides ([#2297](https://github.com/eclipse-openvsx/openvsx/pull/2297))

@@ -70,4 +70,12 @@ class DownloadIngestionMetricsTest {
         var gauge = registry.get(DownloadIngestionMetrics.DEAD_LETTER_METRIC).gauge();
         assertEquals(7, gauge.value());
     }
+
+    @Test
+    void testPendingFilesGauge() {
+        Mockito.when(repositories.countPendingAnalyticsDownloadIngestions()).thenReturn(3L);
+
+        var gauge = registry.get(DownloadIngestionMetrics.PENDING_FILES_METRIC).gauge();
+        assertEquals(3, gauge.value());
+    }
 }

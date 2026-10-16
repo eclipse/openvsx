@@ -662,6 +662,22 @@ public class RepositoryService {
         return downloadIngestionRepo.findAllSucceededDownloadIngestionsByStorageTypeAndNameIn(storageType, names);
     }
 
+    public List<String> findAllPendingAnalyticsDownloadIngestionsByStorageTypeAndNameIn(
+            String storageType,
+            List<String> names
+    ) {
+        return downloadIngestionRepo
+                .findAllPendingAnalyticsDownloadIngestionsByStorageTypeAndNameIn(storageType, names);
+    }
+
+    public int markDownloadIngestionAnalyticsDone(String storageType, String name) {
+        return downloadIngestionRepo.markDownloadIngestionAnalyticsDone(storageType, name);
+    }
+
+    public long countPendingAnalyticsDownloadIngestions() {
+        return downloadIngestionRepo.countPendingAnalyticsDownloadIngestions();
+    }
+
     public List<String> findAllFailedDownloadIngestionsByStorageTypeAndNameIn(
             String storageType,
             List<String> names

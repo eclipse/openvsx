@@ -36,6 +36,7 @@ export { NamespaceDetail } from './pages/namespace-detail/namespace-detail';
 export { UserSettings, type UserSettingsProps } from './pages/user/user-settings';
 export { NotFound } from './not-found';
 export type { AdminPage, AdminPageCategory } from './pages/admin-dashboard/nav-types';
+export type { AdminSettingsSection, AdminSettingsFlag } from './pages/admin-dashboard/settings-sections';
 
 // Building blocks of the built-in home page, for composing a custom one.
 export { HeroSearch, type HeroSearchProps } from './pages/home/hero-search';

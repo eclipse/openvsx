@@ -28,6 +28,7 @@ import org.jobrunr.scheduling.JobRequestScheduler;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -111,6 +112,7 @@ import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
+import org.eclipse.openvsx.settings.MaxExtensionSizeSetting;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.storage.AzureBlobStorageService;
@@ -271,11 +273,7 @@ class AdminAPITest {
     @Test
     void testGetSettingsReportsMaxExtensionSize() throws Exception {
         mockAdminUser();
-        var currentSettings = new SettingsJson();
-        currentSettings.setReadOnly(false);
-        currentSettings.setMaxExtensionSize(536_870_912L);
-        currentSettings.setMaxOverrideSize(1_073_741_824L);
-        Mockito.when(settings.getCurrentSettings()).thenReturn(currentSettings);
+        Mockito.when(settings.getCurrentSettings()).thenReturn(settingsJson(536_870_912L));
 
         mockMvc.perform(
                 get("/admin/settings")
@@ -290,11 +288,8 @@ class AdminAPITest {
     @Test
     void testUpdateSettingsAppliesMaxExtensionSizeAndLogsIt() throws Exception {
         var admin = mockAdminUser();
-        Mockito.when(settings.updateFromJson(Mockito.any())).thenReturn("max-extension-size -> 1073741824");
-        var updatedSettings = new SettingsJson();
-        updatedSettings.setReadOnly(false);
-        updatedSettings.setMaxExtensionSize(1_073_741_824L);
-        Mockito.when(settings.getCurrentSettings()).thenReturn(updatedSettings);
+        Mockito.when(settings.update(Mockito.any())).thenReturn(MaxExtensionSizeSetting.KEY + " -> 1073741824");
+        Mockito.when(settings.getCurrentSettings()).thenReturn(settingsJson(1_073_741_824L));
 
         mockMvc.perform(
                 put("/admin/settings")
@@ -305,7 +300,18 @@ class AdminAPITest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.maxExtensionSize").value(1073741824));
 
+        var update = ArgumentCaptor.forClass(SettingsJson.class);
+        Mockito.verify(settings).update(update.capture());
+        assertThat(update.getValue().getMaxExtensionSize()).isEqualTo(1_073_741_824L);
         Mockito.verify(logs).logAction(Mockito.eq(admin), Mockito.any());
+    }
+
+    private static SettingsJson settingsJson(long maxExtensionSize) {
+        var json = new SettingsJson();
+        json.setReadOnly(false);
+        json.setMaxExtensionSize(maxExtensionSize);
+        json.setMaxOverrideSize(1_073_741_824L);
+        return json;
     }
 
     @Test
