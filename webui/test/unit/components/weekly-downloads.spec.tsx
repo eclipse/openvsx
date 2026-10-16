@@ -56,7 +56,7 @@ vi.mock('@mui/x-charts/SparkLineChart', () => ({
 }));
 
 const extension = { namespace: 'redhat', name: 'java' } as unknown as Extension;
-const analyticsOn: SiteSettings = { downloadAnalyticsEnabled: true };
+const analyticsOn: SiteSettings = { downloadAnalyticsVisible: true };
 
 function points(counts: number[]): DownloadSeriesPoint[] {
     return counts.map((count, i) => ({ t: `2026-01-${String(i + 1).padStart(2, '0')}`, count }));
@@ -218,7 +218,7 @@ describe('WeeklyDownloads', () => {
     });
 
     it('renders nothing (and never calls the endpoint) while the site settings say analytics is off', async () => {
-        const service = serviceReturning(points(Array(14).fill(1)), { downloadAnalyticsEnabled: false });
+        const service = serviceReturning(points(Array(14).fill(1)), { downloadAnalyticsVisible: false });
         renderWithProviders(<WeeklyDownloads extension={extension} />, { mainContext: { service } });
 
         await waitFor(() => expect(service.getSiteSettings).toHaveBeenCalled());

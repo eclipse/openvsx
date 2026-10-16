@@ -107,7 +107,7 @@ export class ExtensionRegistryService {
     /**
      * Fetches the download time series for an extension from the analytics endpoint. The endpoint
      * only answers while download analytics is served (otherwise it responds 404), so callers
-     * should gate on {@link SiteSettings.downloadAnalyticsEnabled}. `from`/`to` are UTC dates
+     * should gate on {@link SiteSettings.downloadAnalyticsVisible}. `from`/`to` are UTC dates
      * (yyyy-MM-dd); `from` is inclusive and `to` is exclusive.
      */
     async getExtensionDownloadSeries(

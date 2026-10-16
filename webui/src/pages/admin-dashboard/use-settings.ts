@@ -37,7 +37,7 @@ export const useSettings = () => {
  * on from before that changed is stored but not served.
  */
 const toSiteSettings = (settings: Settings): SiteSettings => ({
-    downloadAnalyticsEnabled: settings.downloadAnalyticsConfigured && settings.downloadAnalyticsEnabled,
+    downloadAnalyticsVisible: settings.downloadAnalyticsConfigured && settings.downloadAnalyticsVisible,
     ...(settings.bannerEnabled
         ? {
               bannerEnabled: settings.bannerEnabled,

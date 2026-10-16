@@ -53,7 +53,7 @@ public class SettingsJsonMapper {
         json.setBannerMessage(string(rows, BannerSetting.KEY_MESSAGE));
         json.setBannerSeverity(string(rows, BannerSetting.KEY_SEVERITY));
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
-        json.setDownloadAnalyticsEnabled(bool(rows, DownloadAnalyticsSetting.KEY));
+        json.setDownloadAnalyticsVisible(bool(rows, DownloadAnalyticsSetting.KEY));
         json.setDownloadAnalyticsConfigured(downloadAnalytics.isConfigured());
         return json;
     }
@@ -67,7 +67,7 @@ public class SettingsJsonMapper {
         putIfPresent(rows, BannerSetting.KEY_MESSAGE, json.getBannerMessage());
         putIfPresent(rows, BannerSetting.KEY_SEVERITY, json.getBannerSeverity());
         putIfPresent(rows, BannerSetting.KEY_DISMISS_ID, json.getBannerDismissId());
-        putIfPresent(rows, DownloadAnalyticsSetting.KEY, json.getDownloadAnalyticsEnabled());
+        putIfPresent(rows, DownloadAnalyticsSetting.KEY, json.getDownloadAnalyticsVisible());
         return new SettingRows(rows);
     }
 
@@ -79,7 +79,7 @@ public class SettingsJsonMapper {
         json.setBannerMessage(string(rows, BannerSetting.KEY_MESSAGE));
         json.setBannerSeverity(string(rows, BannerSetting.KEY_SEVERITY));
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
-        json.setDownloadAnalyticsEnabled(bool(rows, DownloadAnalyticsSetting.KEY));
+        json.setDownloadAnalyticsVisible(bool(rows, DownloadAnalyticsSetting.KEY));
         return json;
     }
 

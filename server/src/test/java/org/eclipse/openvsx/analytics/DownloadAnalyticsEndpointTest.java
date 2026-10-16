@@ -126,7 +126,7 @@ class DownloadAnalyticsEndpointTest extends AbstractTimeseriesContainerTest {
     /** Off by default, as a registry still backfilling wants, so the endpoint answers 404 until it is on. */
     private void switchAnalytics(boolean on) {
         var json = new SettingsJson();
-        json.setDownloadAnalyticsEnabled(on);
+        json.setDownloadAnalyticsVisible(on);
         settings.update(settingsMapper.toRows(json));
     }
 

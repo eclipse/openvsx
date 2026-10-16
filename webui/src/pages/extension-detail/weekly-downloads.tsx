@@ -119,7 +119,7 @@ export const WeeklyDownloads: FunctionComponent<{ extension: Extension }> = ({ e
     const theme = useTheme();
     // The site settings rather than the version loaded at startup: an admin's save seeds them and
     // they poll, so a switch flipped during this session reaches the card without a reload.
-    const analyticsEnabled = useSiteSettings().data?.downloadAnalyticsEnabled ?? false;
+    const analyticsVisible = useSiteSettings().data?.downloadAnalyticsVisible ?? false;
     const [hovered, setHovered] = useState<number | undefined>(undefined);
 
     const {
@@ -127,12 +127,12 @@ export const WeeklyDownloads: FunctionComponent<{ extension: Extension }> = ({ e
         isLoading,
         isError
     } = useExtensionDownloadSeries(extension.namespace, extension.name, {
-        enabled: analyticsEnabled
+        enabled: analyticsVisible
     });
 
     const daily = useMemo(() => points ?? [], [points]);
     const counts = useMemo(() => weeklyTotals(daily.map(point => point.count)), [daily]);
-    if (!analyticsEnabled) {
+    if (!analyticsVisible) {
         return null;
     }
 

@@ -25,7 +25,7 @@ const WEEKS = 52;
  * the react-query result (`data` is the ordered {@link DownloadSeriesPoint} array). The range is an
  * exact multiple of 7 days so callers can fold it into whole weeks with nothing left over; daily
  * granularity is what lets those weeks end on today rather than on the last complete calendar week.
- * Gate with `options.enabled` on `SiteSettings.downloadAnalyticsEnabled`, since the endpoint 404s
+ * Gate with `options.enabled` on `SiteSettings.downloadAnalyticsVisible`, since the endpoint 404s
  * while analytics is off.
  */
 export const useExtensionDownloadSeries = (namespace: string, name: string, options?: { enabled?: boolean }) => {

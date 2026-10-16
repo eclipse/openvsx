@@ -102,7 +102,7 @@ export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
         description: 'What the registry reports about how extensions are used.',
         flags: [
             flag(
-                'downloadAnalyticsEnabled',
+                'downloadAnalyticsVisible',
                 'Weekly downloads on the extension page',
                 'Shows the weekly downloads card on the extension details page and serves the download series ' +
                     'endpoint behind it.'

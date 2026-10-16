@@ -688,7 +688,7 @@ export interface SiteSettings {
     bannerSeverity?: BannerSeverity;
     bannerDismissId?: string;
     /** Whether download analytics are served: configured on the server and switched on by an admin. */
-    downloadAnalyticsEnabled?: boolean;
+    downloadAnalyticsVisible?: boolean;
 }
 
 /** Runtime settings as an admin reads them. A save sends a `Partial` of this, only what changed. */
@@ -699,7 +699,7 @@ export interface Settings extends SiteSettings {
     /** Read-only: neither maxExtensionSize nor a size override can be raised past this ceiling. */
     maxOverrideSize: number;
     /** Shows the weekly downloads card on extension pages and serves the download series endpoint. Off until an admin switches it on. */
-    downloadAnalyticsEnabled: boolean;
+    downloadAnalyticsVisible: boolean;
     /** Read-only: whether the server has download analytics configured at all. The switch only applies then. */
     downloadAnalyticsConfigured: boolean;
 }

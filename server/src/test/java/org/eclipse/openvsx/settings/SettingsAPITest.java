@@ -57,7 +57,7 @@ class SettingsAPITest {
                 .andExpect(jsonPath("$.bannerMessage").value("Maintenance tonight"))
                 .andExpect(jsonPath("$.bannerSeverity").value("warning"))
                 .andExpect(jsonPath("$.bannerDismissId").doesNotExist())
-                .andExpect(jsonPath("$.downloadAnalyticsEnabled").value(true))
+                .andExpect(jsonPath("$.downloadAnalyticsVisible").value(true))
                 // only the published rows reach the wire, whatever else the admin payload carries
                 .andExpect(jsonPath("$.length()").value(4));
     }

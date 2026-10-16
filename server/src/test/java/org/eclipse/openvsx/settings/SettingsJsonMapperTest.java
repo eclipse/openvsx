@@ -36,7 +36,7 @@ class SettingsJsonMapperTest {
         var json = new SettingsJson();
         json.setReadOnly(true);
         json.setBannerMessage("Maintenance tonight");
-        json.setDownloadAnalyticsEnabled(false);
+        json.setDownloadAnalyticsVisible(false);
 
         assertThat(mapper.toRows(json).rows())
                 .containsExactly(
@@ -70,7 +70,7 @@ class SettingsJsonMapperTest {
         assertThat(json.getBannerSeverity()).isEqualTo("warning");
         assertThat(json.getBannerMessage()).isEqualTo("Hi");
         assertThat(json.getBannerEnabled()).isNull();
-        assertThat(json.getDownloadAnalyticsEnabled()).isTrue();
+        assertThat(json.getDownloadAnalyticsVisible()).isTrue();
         assertThat(json.getDownloadAnalyticsConfigured()).isTrue();
         assertThat(json.getMaxOverrideSize()).isEqualTo(1024L);
     }
@@ -88,6 +88,6 @@ class SettingsJsonMapperTest {
     void theSiteViewCarriesTheDownloadAnalyticsSwitch() {
         var json = mapper.toSiteJson(new SettingRows(Map.of(DownloadAnalyticsSetting.KEY, false)));
 
-        assertThat(json.getDownloadAnalyticsEnabled()).isFalse();
+        assertThat(json.getDownloadAnalyticsVisible()).isFalse();
     }
 }

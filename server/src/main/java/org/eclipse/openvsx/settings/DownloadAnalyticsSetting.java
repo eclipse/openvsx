@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DownloadAnalyticsSetting implements WritableSetting<Boolean>, PublicSetting {
 
-    public static final String KEY = "download-analytics-enabled";
+    public static final String KEY = "download-analytics-visible";
 
     private final SettingsStore store;
     private final boolean analyticsConfigured;

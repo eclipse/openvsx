@@ -26,7 +26,7 @@ const defaults: Settings = {
     readOnly: false,
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
-    downloadAnalyticsEnabled: false,
+    downloadAnalyticsVisible: false,
     downloadAnalyticsConfigured: true,
     bannerEnabled: false,
     bannerMessage: '',
@@ -38,7 +38,7 @@ const configured: Settings = {
     readOnly: false,
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
-    downloadAnalyticsEnabled: false,
+    downloadAnalyticsVisible: false,
     downloadAnalyticsConfigured: true,
     bannerEnabled: true,
     bannerMessage: 'Heads up',
@@ -461,7 +461,7 @@ describe('RuntimeSettingsPage', () => {
         await userEvent.click(await screen.findByLabelText(ANALYTICS_TOGGLE));
         await save();
 
-        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ downloadAnalyticsEnabled: true }));
+        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalledWith({ downloadAnalyticsVisible: true }));
     });
 
     // The server refuses the switch where it has no analytics configured, so the page does not offer it.
@@ -476,13 +476,13 @@ describe('RuntimeSettingsPage', () => {
     // /api/-/settings is the public copy of the switch, and the same cache that seeds the banner
     // seeds it, so a tab left open does not keep serving the pre-save value.
     it('seeds the public settings with the saved download analytics switch', async () => {
-        const saved: Settings = { ...defaults, downloadAnalyticsEnabled: true };
+        const saved: Settings = { ...defaults, downloadAnalyticsVisible: true };
         const admin = {
             getSettings: vi.fn().mockResolvedValue(defaults),
             updateSettings: vi.fn().mockResolvedValue(saved)
         };
         const getSiteSettings = vi.fn().mockResolvedValue({});
-        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsEnabled ?? 'unknown')}</output>;
+        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsVisible ?? 'unknown')}</output>;
         renderWithProviders(
             <>
                 <RuntimeSettingsPage />
@@ -501,13 +501,13 @@ describe('RuntimeSettingsPage', () => {
     // A switch left on from before the server lost its analytics configuration is stored but not
     // served, so the seed has to say what the public endpoint would.
     it('seeds the public settings with the effective download analytics switch', async () => {
-        const stale: Settings = { ...defaults, downloadAnalyticsEnabled: true, downloadAnalyticsConfigured: false };
+        const stale: Settings = { ...defaults, downloadAnalyticsVisible: true, downloadAnalyticsConfigured: false };
         const admin = {
             getSettings: vi.fn().mockResolvedValue(stale),
             updateSettings: vi.fn().mockResolvedValue(stale)
         };
         const getSiteSettings = vi.fn().mockResolvedValue({});
-        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsEnabled ?? 'unknown')}</output>;
+        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsVisible ?? 'unknown')}</output>;
         renderWithProviders(
             <>
                 <RuntimeSettingsPage />

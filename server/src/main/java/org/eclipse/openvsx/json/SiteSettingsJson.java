@@ -45,7 +45,7 @@ public class SiteSettingsJson extends ResultJson {
     private @Nullable String bannerDismissId;
 
     @Schema(description = "Whether per-extension download analytics are served to visitors")
-    private @Nullable Boolean downloadAnalyticsEnabled;
+    private @Nullable Boolean downloadAnalyticsVisible;
 
     public @Nullable Boolean getBannerEnabled() {
         return bannerEnabled;
@@ -79,11 +79,11 @@ public class SiteSettingsJson extends ResultJson {
         this.bannerDismissId = bannerDismissId;
     }
 
-    public @Nullable Boolean getDownloadAnalyticsEnabled() {
-        return downloadAnalyticsEnabled;
+    public @Nullable Boolean getDownloadAnalyticsVisible() {
+        return downloadAnalyticsVisible;
     }
 
-    public void setDownloadAnalyticsEnabled(@Nullable Boolean downloadAnalyticsEnabled) {
-        this.downloadAnalyticsEnabled = downloadAnalyticsEnabled;
+    public void setDownloadAnalyticsVisible(@Nullable Boolean downloadAnalyticsVisible) {
+        this.downloadAnalyticsVisible = downloadAnalyticsVisible;
     }
 }

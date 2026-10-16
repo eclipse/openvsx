@@ -64,7 +64,7 @@ public class SettingsJson extends ResultJson {
         description = "Whether visitors get the weekly downloads card on extension pages and the download series "
                 + "endpoint. Off by default. Can only be switched on where download analytics is configured."
     )
-    private @Nullable Boolean downloadAnalyticsEnabled;
+    private @Nullable Boolean downloadAnalyticsVisible;
 
     @Schema(
         description = "Read-only: whether download analytics is configured on this registry "
@@ -129,12 +129,12 @@ public class SettingsJson extends ResultJson {
         this.bannerDismissId = bannerDismissId;
     }
 
-    public @Nullable Boolean getDownloadAnalyticsEnabled() {
-        return downloadAnalyticsEnabled;
+    public @Nullable Boolean getDownloadAnalyticsVisible() {
+        return downloadAnalyticsVisible;
     }
 
-    public void setDownloadAnalyticsEnabled(@Nullable Boolean downloadAnalyticsEnabled) {
-        this.downloadAnalyticsEnabled = downloadAnalyticsEnabled;
+    public void setDownloadAnalyticsVisible(@Nullable Boolean downloadAnalyticsVisible) {
+        this.downloadAnalyticsVisible = downloadAnalyticsVisible;
     }
 
     public @Nullable Boolean getDownloadAnalyticsConfigured() {
