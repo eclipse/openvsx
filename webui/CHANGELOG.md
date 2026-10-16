@@ -4,6 +4,8 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+## [1.3.0] - 2026-10-16
+
 ### Added
 
 - Show the download size of each target platform's package next to its name on the extension detail page, from the new `downloadSizes` field of `Extension` ([#367](https://github.com/eclipse-openvsx/openvsx/issues/367))
