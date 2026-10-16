@@ -18,8 +18,9 @@ cookie=$(<"$COOKIE_FILE")
 
 while IFS=$'\t' read -r ver date _; do
   if [ ${#only[@]} -gt 0 ] && ! printf '%s\n' "${only[@]}" | grep -qxF "$ver"; then continue; fi
-  # The overview page can be cached; the per-version page is the source of truth.
-  if curl -fsS -o /dev/null "$BASE/releases/$ver" 2>/dev/null; then echo "exists, skipping: $ver"; continue; fi
+  # The overview page can be cached; the per-version page is the source of truth. The site caches
+  # a 404 for 15 minutes, so every probe carries a unique query string to bypass it.
+  if curl -fsS -o /dev/null "$BASE/releases/$ver?_=$RANDOM$RANDOM" 2>/dev/null; then echo "exists, skipping: $ver"; continue; fi
   if [ $apply -eq 0 ]; then echo "would create: $ver ($date)"; continue; fi
 
   form=$(curl -fsSL -H "Cookie: $cookie" "$BASE/create-release")
@@ -33,6 +34,6 @@ while IFS=$'\t' read -r ver date _; do
     --data-urlencode "form_id=$form_id" --data-urlencode "op=Create"
 
   # The release page existing is the only success signal the form gives.
-  if curl -fsS -o /dev/null "$BASE/releases/$ver"; then echo "created: $ver ($date)"
+  if curl -fsS -o /dev/null "$BASE/releases/$ver?_=$RANDOM$RANDOM"; then echo "created: $ver ($date)"
   else echo "FAILED (no release page): $ver" >&2; exit 1; fi
 done < <("$DIFF" --tsv)

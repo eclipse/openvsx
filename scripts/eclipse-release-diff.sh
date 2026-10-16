@@ -16,6 +16,9 @@ gh release list -R "$REPO" --limit 500 --json tagName,publishedAt,isDraft,isPrer
 sort -V |
 while IFS=$'\t' read -r ver date tag; do
   grep -qxF "$ver" <<<"$eclipse" && continue
+  # The project page is cached for anonymous readers and ignores a query string; the release page
+  # honours one, so it settles whether a release the listing lacks really is missing.
+  curl -fsS -o /dev/null "$PAGE/releases/$ver?_=$RANDOM$RANDOM" 2>/dev/null && continue
   if [ "${1:-}" = "--tsv" ]; then
     printf '%s\t%s\thttps://github.com/%s/releases/tag/%s\n' "$ver" "$date" "$REPO" "$tag"
   else
