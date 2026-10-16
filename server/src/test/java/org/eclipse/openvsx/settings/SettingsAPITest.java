@@ -12,11 +12,13 @@
  *****************************************************************************/
 package org.eclipse.openvsx.settings;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import org.eclipse.openvsx.json.SiteSettingsJson;
+import org.eclipse.openvsx.publish.PublishingConfig;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -31,13 +33,17 @@ class SettingsAPITest {
     // is anonymous comes from SecurityConfig's /api/** permitAll.
     @Test
     void returnsTheSiteSettingsAsJson() throws Exception {
-        var site = new SiteSettingsJson();
-        site.setBannerEnabled(true);
-        site.setBannerMessage("Maintenance tonight");
-        site.setBannerSeverity("warning");
+        var site = new SettingRows(
+                Map.of(
+                        BannerSetting.KEY_ENABLED,
+                        true,
+                        BannerSetting.KEY_MESSAGE,
+                        "Maintenance tonight",
+                        BannerSetting.KEY_SEVERITY,
+                        "warning"));
         Mockito.when(settings.getSiteSettings()).thenReturn(site);
 
-        MockMvcBuilders.standaloneSetup(new SettingsAPI(settings))
+        MockMvcBuilders.standaloneSetup(new SettingsAPI(settings, new SettingsJsonMapper(new PublishingConfig())))
                 .build()
                 .perform(get("/api/-/settings"))
                 .andExpect(status().isOk())

@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -46,18 +45,15 @@ class SettingsServiceTest {
 
     private static final long MB = 1024L * 1024;
 
-    private final SettingsCache cache = mock(SettingsCache.class);
+    private final SettingsStore store = mock(SettingsStore.class);
     private final SettingsUpdateChannel channel = mock(SettingsUpdateChannel.class);
     private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-    private final ReadOnlySetting readOnly = new ReadOnlySetting(cache);
+    private final ReadOnlySetting readOnly = new ReadOnlySetting(store);
     private final PublishingConfig publishingConfig = mock(PublishingConfig.class);
-    private final MaxExtensionSizeSetting maxExtensionSize = new MaxExtensionSizeSetting(cache, publishingConfig);
+    private final MaxExtensionSizeSetting maxExtensionSize = new MaxExtensionSizeSetting(store, publishingConfig);
     private final SettingsService settings = new SettingsService(
             List.of(readOnly, maxExtensionSize, new BannerSetting()),
-            readOnly,
-            maxExtensionSize,
-            publishingConfig,
-            cache,
+            store,
             channel,
             new AfterCommitExecutor(),
             events);
@@ -75,20 +71,25 @@ class SettingsServiceTest {
         }
     }
 
-    private void stored(Object... keyValues) {
+    /** Also how an update is built: only the rows the client means to change. */
+    private static SettingRows rows(Object... keyValues) {
         var map = new LinkedHashMap<String, Object>();
         for (var i = 0; i < keyValues.length; i += 2) {
             map.put((String) keyValues[i], keyValues[i + 1]);
         }
-        var rows = new SettingRows(map);
-        when(cache.snapshot()).thenReturn(rows);
-        when(cache.load()).thenReturn(rows);
+        return new SettingRows(map);
+    }
+
+    private void stored(Object... keyValues) {
+        var snapshot = rows(keyValues);
+        when(store.snapshot()).thenReturn(snapshot);
+        when(store.load()).thenReturn(snapshot);
     }
 
     /** The rows the save handed to {@code setAll}; empty when it wrote nothing. */
     @SuppressWarnings("unchecked")
     private Map<String, Object> written() {
-        return mockingDetails(cache).getInvocations()
+        return mockingDetails(store).getInvocations()
                 .stream()
                 .filter(call -> call.getMethod().getName().equals("setAll"))
                 .findFirst()
@@ -96,67 +97,47 @@ class SettingsServiceTest {
                 .orElse(Map.of());
     }
 
-    /** Builds an update the way a client does: only the settings it means to change. */
-    private static SettingsJson update(Object... keyValues) {
-        var json = new SettingsJson();
-        for (var i = 0; i < keyValues.length; i += 2) {
-            var key = (String) keyValues[i];
-            var value = keyValues[i + 1];
-            switch (key) {
-                case ReadOnlySetting.KEY -> json.setReadOnly((Boolean) value);
-                case MaxExtensionSizeSetting.KEY -> json.setMaxExtensionSize((Long) value);
-                case BannerSetting.KEY_ENABLED -> json.setBannerEnabled((Boolean) value);
-                case BannerSetting.KEY_MESSAGE -> json.setBannerMessage((String) value);
-                case BannerSetting.KEY_SEVERITY -> json.setBannerSeverity((String) value);
-                case BannerSetting.KEY_DISMISS_ID -> json.setBannerDismissId((String) value);
-                default -> throw new IllegalArgumentException("unknown setting " + key);
-            }
-        }
-        return json;
-    }
-
     @Test
     void siteSettingsHoldBackReadOnlyMode() {
         stored(ReadOnlySetting.KEY, true, BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Hi");
 
-        // SiteSettingsJson has no read-only property at all; the banner still comes through
-        assertThat(settings.getSiteSettings().getBannerMessage()).isEqualTo("Hi");
+        assertThat(settings.getSiteSettings().rows())
+                .doesNotContainKey(ReadOnlySetting.KEY)
+                .containsEntry(BannerSetting.KEY_MESSAGE, "Hi");
     }
 
     @Test
     void aPublishedBannerAlwaysCarriesAllFourSiteSettings() {
         stored(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Hi");
 
-        var site = settings.getSiteSettings();
-        assertThat(site.getBannerEnabled()).isTrue();
-        assertThat(site.getBannerMessage()).isEqualTo("Hi");
-        assertThat(site.getBannerSeverity()).isEqualTo("info");
-        assertThat(site.getBannerDismissId()).isEmpty();
+        assertThat(settings.getSiteSettings().rows())
+                .containsEntry(BannerSetting.KEY_ENABLED, true)
+                .containsEntry(BannerSetting.KEY_MESSAGE, "Hi")
+                .containsEntry(BannerSetting.KEY_SEVERITY, "info")
+                .containsEntry(BannerSetting.KEY_DISMISS_ID, "");
     }
 
     @Test
     void siteSettingsHoldBackADraftedBanner() {
         stored(BannerSetting.KEY_ENABLED, false, BannerSetting.KEY_MESSAGE, "Security incident");
 
-        var site = settings.getSiteSettings();
-        assertThat(site.getBannerMessage()).isNull();
-        assertThat(site.getBannerEnabled()).isNull();
+        assertThat(settings.getSiteSettings().rows()).isEmpty();
     }
 
     @Test
     void theAdminViewKeepsADraftedBanner() {
         stored(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "Security incident");
 
-        var json = settings.getCurrentSettings();
-        assertThat(json.getReadOnly()).isTrue();
-        assertThat(json.getBannerMessage()).isEqualTo("Security incident");
+        assertThat(settings.getCurrentSettings().rows())
+                .containsEntry(ReadOnlySetting.KEY, true)
+                .containsEntry(BannerSetting.KEY_MESSAGE, "Security incident");
     }
 
     @Test
     void aSettingLeftOutOfTheRequestIsNotTouched() {
         stored(ReadOnlySetting.KEY, true);
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
 
         assertThat(written()).doesNotContainKey(ReadOnlySetting.KEY);
     }
@@ -173,8 +154,8 @@ class SettingsServiceTest {
                 BannerSetting.KEY_DISMISS_ID,
                 "token-1");
 
-        settings.updateFromJson(
-                update(
+        settings.update(
+                rows(
                         BannerSetting.KEY_ENABLED,
                         true,
                         BannerSetting.KEY_MESSAGE,
@@ -194,7 +175,7 @@ class SettingsServiceTest {
     void aValueEqualToAStaleSnapshotIsStillWritten() {
         stored(ReadOnlySetting.KEY, false);
 
-        settings.updateFromJson(update(ReadOnlySetting.KEY, false));
+        settings.update(rows(ReadOnlySetting.KEY, false));
 
         assertThat(written()).containsEntry(ReadOnlySetting.KEY, false);
     }
@@ -203,10 +184,10 @@ class SettingsServiceTest {
     void aSaveWritesAllItsRowsInOneCall() {
         stored(BannerSetting.KEY_ENABLED, false, BannerSetting.KEY_MESSAGE, "Drafted");
 
-        settings.updateFromJson(update(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Published"));
+        settings.update(rows(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Published"));
 
         // One transaction, so no reader can see the switch on beside the old message.
-        verify(cache, times(1)).setAll(any());
+        verify(store, times(1)).setAll(any());
         assertThat(written()).containsEntry(BannerSetting.KEY_ENABLED, true)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "Published");
     }
@@ -215,23 +196,23 @@ class SettingsServiceTest {
     void theCacheIsClearedAndPublishedOnlyAfterTheRowsAreStored() {
         stored(ReadOnlySetting.KEY, false);
 
-        settings.updateFromJson(update(ReadOnlySetting.KEY, true));
+        settings.update(rows(ReadOnlySetting.KEY, true));
 
-        var order = Mockito.inOrder(cache, channel);
-        order.verify(cache).setAll(any());
-        order.verify(cache).clear();
+        var order = Mockito.inOrder(store, channel);
+        order.verify(store).setAll(any());
+        order.verify(store).clear();
         order.verify(channel).publish();
     }
 
     @Test
     void aFailedWriteClearsAndPublishesNothing() {
         stored(ReadOnlySetting.KEY, false);
-        Mockito.doThrow(new IllegalStateException("db down")).when(cache).setAll(any());
+        Mockito.doThrow(new IllegalStateException("db down")).when(store).setAll(any());
 
-        assertThatThrownBy(() -> settings.updateFromJson(update(ReadOnlySetting.KEY, true)))
+        assertThatThrownBy(() -> settings.update(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(IllegalStateException.class);
 
-        verify(cache, never()).clear();
+        verify(store, never()).clear();
         verify(channel, never()).publish();
     }
 
@@ -240,11 +221,11 @@ class SettingsServiceTest {
         stored(ReadOnlySetting.KEY, false);
 
         assertThatThrownBy(
-                () -> settings.updateFromJson(
-                        update(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "<script>alert(1)</script>")))
+                () -> settings.update(
+                        rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "<script>alert(1)</script>")))
                 .isInstanceOf(ErrorResultException.class);
 
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
         verify(channel, never()).publish();
     }
 
@@ -281,19 +262,16 @@ class SettingsServiceTest {
         };
         var service = new SettingsService(
                 List.of(readOnly, refusing),
-                readOnly,
-                maxExtensionSize,
-                publishingConfig,
-                cache,
+                store,
                 channel,
                 new AfterCommitExecutor(),
                 events);
         stored(ReadOnlySetting.KEY, false);
 
-        assertThatThrownBy(() -> service.updateFromJson(update(ReadOnlySetting.KEY, true)))
+        assertThatThrownBy(() -> service.update(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(ErrorResultException.class);
 
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     @Test
@@ -301,12 +279,12 @@ class SettingsServiceTest {
         // SettingsJson is NON_NULL, so a field a setting stops reporting vanishes off the wire.
         stored();
 
-        var json = settings.getCurrentSettings();
-        assertThat(json.getReadOnly()).isFalse();
-        assertThat(json.getBannerEnabled()).isFalse();
-        assertThat(json.getBannerMessage()).isEmpty();
-        assertThat(json.getBannerSeverity()).isEqualTo("info");
-        assertThat(json.getBannerDismissId()).isEmpty();
+        assertThat(settings.getCurrentSettings().rows())
+                .containsEntry(ReadOnlySetting.KEY, false)
+                .containsEntry(BannerSetting.KEY_ENABLED, false)
+                .containsEntry(BannerSetting.KEY_MESSAGE, "")
+                .containsEntry(BannerSetting.KEY_SEVERITY, "info")
+                .containsEntry(BannerSetting.KEY_DISMISS_ID, "");
     }
 
     @Test
@@ -314,7 +292,7 @@ class SettingsServiceTest {
         stored(ReadOnlySetting.KEY, false, BannerSetting.KEY_MESSAGE, "tonigth");
 
         var changes = settings
-                .updateFromJson(update(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "tonight"));
+                .update(rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "tonight"));
 
         // Settings in name order, and the message named rather than quoted: the log column caps at 512.
         assertThat(changes).isEqualTo("banner-message, read-only -> true");
@@ -326,7 +304,7 @@ class SettingsServiceTest {
         stored(BannerSetting.KEY_MESSAGE, "tonigth", BannerSetting.KEY_DISMISS_ID, "token-1");
 
         // A client that doesn't know about the token can't reset dismissals by leaving it out.
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "tonight"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "tonight"));
 
         assertThat(written()).doesNotContainKey(BannerSetting.KEY_DISMISS_ID);
     }
@@ -335,7 +313,7 @@ class SettingsServiceTest {
     void aSuppliedDismissTokenIsStoredAsGiven() {
         stored(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-1");
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-2"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-2"));
 
         assertThat(written()).containsEntry(BannerSetting.KEY_DISMISS_ID, "token-2");
     }
@@ -346,8 +324,8 @@ class SettingsServiceTest {
         // from everyone who dismissed the old one.
         stored(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_DISMISS_ID, "token-1");
 
-        settings.updateFromJson(
-                update(BannerSetting.KEY_MESSAGE, "Something new", BannerSetting.KEY_DISMISS_ID, "token-1"));
+        settings.update(
+                rows(BannerSetting.KEY_MESSAGE, "Something new", BannerSetting.KEY_DISMISS_ID, "token-1"));
 
         assertThat(written().get(BannerSetting.KEY_DISMISS_ID)).asString().isNotBlank().isNotEqualTo("token-1");
     }
@@ -357,7 +335,7 @@ class SettingsServiceTest {
     @Test
     void aSaveMergesAgainstTheStoreNotTheCachedSnapshot() {
         stored(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_DISMISS_ID, "token-1");
-        when(cache.snapshot())
+        when(store.snapshot())
                 .thenReturn(
                         new SettingRows(
                                 Map.of(
@@ -366,7 +344,7 @@ class SettingsServiceTest {
                                         BannerSetting.KEY_DISMISS_ID,
                                         "token-1")));
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "Something new"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "Something new"));
 
         assertThat(written().get(BannerSetting.KEY_DISMISS_ID)).asString().isNotBlank().isNotEqualTo("token-1");
     }
@@ -375,18 +353,9 @@ class SettingsServiceTest {
     void anEmptyBannerMintsNoDismissToken() {
         stored();
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_SEVERITY, "info"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_SEVERITY, "info"));
 
         assertThat(written()).doesNotContainKey(BannerSetting.KEY_DISMISS_ID);
-    }
-
-    @Test
-    void readOnlyModeReadsTheStoredFlag() {
-        stored(ReadOnlySetting.KEY, true);
-        assertThat(settings.isReadOnly()).isTrue();
-
-        stored();
-        assertThat(settings.isReadOnly()).isFalse();
     }
 
     // A clear issued before the commit lets any node refill the ceiling from the rows as they still
@@ -396,13 +365,13 @@ class SettingsServiceTest {
         TransactionSynchronizationManager.initSynchronization();
 
         settings.invalidateCache();
-        verify(cache, never()).clear();
+        verify(store, never()).clear();
 
         var synchronizations = TransactionSynchronizationManager.getSynchronizations();
         TransactionSynchronizationManager.clearSynchronization();
         synchronizations.forEach(s -> s.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
 
-        verify(cache).clear();
+        verify(store).clear();
         verify(channel).publish();
     }
 
@@ -410,14 +379,14 @@ class SettingsServiceTest {
     void invalidateCacheClearsStraightAwayWithoutATransaction() {
         settings.invalidateCache();
 
-        verify(cache).clear();
+        verify(store).clear();
     }
 
     @Test
     void publishesAChangedEventWhenSettingsChange() {
         stored(BannerSetting.KEY_MESSAGE, "old");
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "new"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "new"));
 
         verify(events).publishEvent(any(SettingsChangedEvent.class));
     }
@@ -426,7 +395,7 @@ class SettingsServiceTest {
     void publishesNoEventWhenNothingChanged() {
         stored();
 
-        settings.updateFromJson(new SettingsJson());
+        settings.update(rows());
 
         verify(events, never()).publishEvent(any(Object.class));
     }
@@ -443,7 +412,7 @@ class SettingsServiceTest {
         stored(BannerSetting.KEY_MESSAGE, "old");
         TransactionSynchronizationManager.initSynchronization();
 
-        settings.updateFromJson(update(BannerSetting.KEY_MESSAGE, "new"));
+        settings.update(rows(BannerSetting.KEY_MESSAGE, "new"));
         verify(events, never()).publishEvent(any(Object.class));
 
         var synchronizations = TransactionSynchronizationManager.getSynchronizations();
@@ -454,27 +423,13 @@ class SettingsServiceTest {
     }
 
     @Test
-    void maxExtensionSizeFallsBackToPublishingConfigWhenNothingIsStored() {
-        stored();
-
-        assertThat(settings.getMaxExtensionSize()).isEqualTo(512L * MB);
-    }
-
-    @Test
-    void maxExtensionSizeReturnsTheStoredValue() {
-        stored(MaxExtensionSizeSetting.KEY, 1024L * MB);
-
-        assertThat(settings.getMaxExtensionSize()).isEqualTo(1024L * MB);
-    }
-
-    @Test
     void updateStoresNewMaxExtensionSizeAndReportsTheChange() {
         stored(MaxExtensionSizeSetting.KEY, 512L * MB);
 
-        var changes = settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 1024L * MB));
+        var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 1024L * MB);
-        assertThat(changes).isEqualTo("max-extension-size -> 1073741824");
+        assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 1073741824");
     }
 
     // With nothing stored the value read back is the configuration fallback, so storing that same
@@ -483,17 +438,17 @@ class SettingsServiceTest {
     void updateStoresMaxExtensionSizeEvenWhenItMatchesWhatIsReadBack() {
         stored();
 
-        var changes = settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 512L * MB));
+        var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 512L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
-        assertThat(changes).isEqualTo("max-extension-size -> 536870912");
+        assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 536870912");
     }
 
     @Test
     void updateLeavesAnOmittedMaxExtensionSizeAlone() {
         stored();
 
-        settings.updateFromJson(update(ReadOnlySetting.KEY, true));
+        settings.update(rows(ReadOnlySetting.KEY, true));
 
         assertThat(written()).doesNotContainKey(MaxExtensionSizeSetting.KEY);
     }
@@ -502,7 +457,7 @@ class SettingsServiceTest {
     void updateLeavesAnOmittedReadOnlyAlone() {
         stored(ReadOnlySetting.KEY, true);
 
-        settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 1024L * MB));
+        settings.update(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
 
         assertThat(written()).doesNotContainKey(ReadOnlySetting.KEY);
     }
@@ -511,17 +466,17 @@ class SettingsServiceTest {
     void updateAcceptsARequestThatCarriesNothing() {
         stored();
 
-        assertThatCode(() -> settings.updateFromJson(new SettingsJson())).doesNotThrowAnyException();
-        verify(cache, never()).setAll(any());
+        assertThatCode(() -> settings.update(rows())).doesNotThrowAnyException();
+        verify(store, never()).setAll(any());
     }
 
     @Test
     void updateRejectsNonPositiveMaxExtensionSize() {
         stored();
 
-        assertThatThrownBy(() -> settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 0L)))
+        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 0L)))
                 .isInstanceOf(ErrorResultException.class);
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     @Test
@@ -529,10 +484,10 @@ class SettingsServiceTest {
         stored();
         when(publishingConfig.getMaxOverrideSize()).thenReturn(1000L);
 
-        assertThatThrownBy(() -> settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 1001L)))
+        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 1001L)))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the maximum");
-        verify(cache, never()).setAll(any());
+        verify(store, never()).setAll(any());
     }
 
     // The ceiling can be lowered below a default stored earlier; that default stays in force until
@@ -542,7 +497,7 @@ class SettingsServiceTest {
         stored(MaxExtensionSizeSetting.KEY, 1024L * MB);
         when(publishingConfig.getMaxOverrideSize()).thenReturn(100L * MB);
 
-        settings.updateFromJson(update(ReadOnlySetting.KEY, true));
+        settings.update(rows(ReadOnlySetting.KEY, true));
 
         assertThat(written()).containsEntry(ReadOnlySetting.KEY, true);
     }
@@ -552,16 +507,14 @@ class SettingsServiceTest {
         stored(MaxExtensionSizeSetting.KEY, 1024L * MB);
         when(publishingConfig.getMaxOverrideSize()).thenReturn(100L * MB);
 
-        assertThatThrownBy(() -> settings.updateFromJson(update(MaxExtensionSizeSetting.KEY, 200L * MB)))
+        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 200L * MB)))
                 .isInstanceOf(ErrorResultException.class);
     }
 
     @Test
-    void theAdminViewReportsTheMaxExtensionSizeAndTheOverrideCeiling() {
+    void theAdminViewReportsTheMaxExtensionSize() {
         stored();
 
-        var json = settings.getCurrentSettings();
-        assertThat(json.getMaxExtensionSize()).isEqualTo(512L * MB);
-        assertThat(json.getMaxOverrideSize()).isEqualTo(1024L * MB);
+        assertThat(settings.getCurrentSettings().rows()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
     }
 }

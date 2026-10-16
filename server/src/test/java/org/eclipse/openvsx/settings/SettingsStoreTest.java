@@ -33,10 +33,10 @@ import static org.mockito.Mockito.when;
  * The store is jsonb, so a value's JSON type is what tells a setting whether it read a flag or a
  * string. These are the decoding and encoding rules every setting depends on.
  */
-class SettingsCacheTest {
+class SettingsStoreTest {
 
     private final SettingRepository repository = mock(SettingRepository.class);
-    private final SettingsCache cache = new SettingsCache(repository);
+    private final SettingsStore store = new SettingsStore(repository);
 
     private static Setting setting(String key, String json) {
         var stored = mock(Setting.class);
@@ -52,41 +52,41 @@ class SettingsCacheTest {
 
     @Test
     void valuesKeepTheirStoredJsonType() {
-        stored(setting("read-only", "true"), setting("banner-message", "\"Maintenance tonight\""));
+        stored(setting(ReadOnlySetting.KEY, "true"), setting(BannerSetting.KEY_MESSAGE, "\"Maintenance tonight\""));
 
-        var rows = cache.snapshot().rows();
+        var rows = store.snapshot().rows();
 
-        assertThat(rows).containsEntry("read-only", true);
-        assertThat(rows).containsEntry("banner-message", "Maintenance tonight");
+        assertThat(rows).containsEntry(ReadOnlySetting.KEY, true);
+        assertThat(rows).containsEntry(BannerSetting.KEY_MESSAGE, "Maintenance tonight");
     }
 
     @Test
     void aStoredJsonNullIsSkipped() {
         // No setting is meaningfully absent-but-present, so a null row reads as no row at all.
-        stored(setting("read-only", "null"));
+        stored(setting(ReadOnlySetting.KEY, "null"));
 
-        assertThat(cache.snapshot().rows()).isEmpty();
+        assertThat(store.snapshot().rows()).isEmpty();
     }
 
     @Test
     void theSnapshotCannotBeMutatedByItsReaders() {
-        stored(setting("read-only", "true"));
+        stored(setting(ReadOnlySetting.KEY, "true"));
 
-        assertThat(cache.snapshot().rows()).isUnmodifiable();
+        assertThat(store.snapshot().rows()).isUnmodifiable();
     }
 
     @Test
     void writingEncodesTheValueAsJson() {
-        cache.setAll(Map.of("banner-message", "Maintenance tonight"));
+        store.setAll(Map.of(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
 
         var value = ArgumentCaptor.forClass(String.class);
-        verify(repository).upsert(eq("banner-message"), value.capture(), any());
+        verify(repository).upsert(eq(BannerSetting.KEY_MESSAGE), value.capture(), any());
         assertThat(value.getValue()).isEqualTo("\"Maintenance tonight\"");
     }
 
     @Test
     void writingStoresEveryRowWithOneTimestamp() {
-        cache.setAll(Map.of("read-only", true, "banner-message", "Hi"));
+        store.setAll(Map.of(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "Hi"));
 
         var now = ArgumentCaptor.forClass(java.time.LocalDateTime.class);
         verify(repository, times(2)).upsert(any(), any(), now.capture());

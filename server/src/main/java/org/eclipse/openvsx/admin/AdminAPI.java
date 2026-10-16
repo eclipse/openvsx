@@ -84,6 +84,7 @@ import org.eclipse.openvsx.search.SearchExplainService;
 import org.eclipse.openvsx.search.SearchIndexStats;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.settings.MutatingOperation;
+import org.eclipse.openvsx.settings.SettingsJsonMapper;
 import org.eclipse.openvsx.settings.SettingsService;
 import org.eclipse.openvsx.util.*;
 
@@ -105,6 +106,7 @@ public class AdminAPI {
     private final AdminService admins;
     private final ExtensionService extensions;
     private final SettingsService settings;
+    private final SettingsJsonMapper settingsMapper;
     private final LogService logs;
     private final LocalRegistryService local;
     private final SearchUtilService search;
@@ -116,6 +118,7 @@ public class AdminAPI {
             AdminService admins,
             ExtensionService extensions,
             SettingsService settings,
+            SettingsJsonMapper settingsMapper,
             LogService logs,
             LocalRegistryService local,
             SearchUtilService search,
@@ -126,6 +129,7 @@ public class AdminAPI {
         this.admins = admins;
         this.extensions = extensions;
         this.settings = settings;
+        this.settingsMapper = settingsMapper;
         this.logs = logs;
         this.local = local;
         this.search = search;
@@ -1523,7 +1527,7 @@ public class AdminAPI {
     public ResponseEntity<SettingsJson> getSettings() {
         try {
             admins.checkPermission(Permission.MANAGE_SETTINGS);
-            return ResponseEntity.ok(settings.getCurrentSettings());
+            return ResponseEntity.ok(settingsMapper.toJson(settings.getCurrentSettings()));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(SettingsJson.class);
         }
@@ -1552,8 +1556,8 @@ public class AdminAPI {
         try {
             var adminUser = admins.checkPermission(Permission.MANAGE_SETTINGS);
 
-            var changes = settings.updateFromJson(newSettings);
-            var json = settings.getCurrentSettings();
+            var changes = settings.update(settingsMapper.toRows(newSettings));
+            var json = settingsMapper.toJson(settings.getCurrentSettings());
             json.setSuccess("Updated settings: " + changes);
             logs.logAction(adminUser, json);
 
