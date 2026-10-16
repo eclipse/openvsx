@@ -1,6 +1,6 @@
 {
     "name": "openvsx-webui",
-    "version": "1.3.0-dev.0",
+    "version": "1.3.0",
     "description": "User interface for Eclipse Open VSX",
     "keywords": [
         "react",
@@ -27,6 +27,14 @@
             "name": "Miro Spönemann",
             "email": "miro.spoenemann@typefox.io",
             "url": "https://www.typefox.io"
+        },
+        {
+            "name": "Thomas Neidhart",
+            "email": "thomas.neidhart@eclipse-foundation.org"
+        },
+        {
+            "name": "Jordi Gómez Hidalgo",
+            "email": "jordi.gomez@eclipse-foundation.org"
         }
     ],
     "files": [
