@@ -287,7 +287,7 @@ class AdminAPITest {
                 .andExpect(jsonPath("$.readOnly").value(false))
                 .andExpect(jsonPath("$.maxExtensionSize").value(536870912))
                 .andExpect(jsonPath("$.maxOverrideSize").value(1073741824))
-                .andExpect(jsonPath("$.downloadAnalyticsConfigured").value(false));
+                .andExpect(jsonPath("$.downloadAnalyticsVisible").doesNotExist());
     }
 
     @Test

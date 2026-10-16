@@ -27,7 +27,6 @@ const defaults: Settings = {
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
     downloadAnalyticsVisible: false,
-    downloadAnalyticsConfigured: true,
     bannerEnabled: false,
     bannerMessage: '',
     bannerSeverity: 'info',
@@ -39,7 +38,6 @@ const configured: Settings = {
     maxExtensionSize: 512 * 1024 * 1024,
     maxOverrideSize: Number.MAX_SAFE_INTEGER,
     downloadAnalyticsVisible: false,
-    downloadAnalyticsConfigured: true,
     bannerEnabled: true,
     bannerMessage: 'Heads up',
     bannerSeverity: 'info',
@@ -466,7 +464,8 @@ describe('RuntimeSettingsPage', () => {
 
     // The server refuses the switch where it has no analytics configured, so the page does not offer it.
     it('leaves out the Analytics section where the server has no download analytics configured', async () => {
-        mountPage({ ...defaults, downloadAnalyticsConfigured: false });
+        const { downloadAnalyticsVisible: _, ...unconfigured } = defaults;
+        mountPage(unconfigured);
 
         await screen.findByLabelText('Toggle Read-only mode');
         expect(screen.queryByRole('heading', { name: 'Analytics' })).toBeNull();
@@ -496,32 +495,6 @@ describe('RuntimeSettingsPage', () => {
         await save();
 
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('true'));
-    });
-
-    // A switch left on from before the server lost its analytics configuration is stored but not
-    // served, so the seed has to say what the public endpoint would.
-    it('seeds the public settings with the effective download analytics switch', async () => {
-        const stale: Settings = { ...defaults, downloadAnalyticsVisible: true, downloadAnalyticsConfigured: false };
-        const admin = {
-            getSettings: vi.fn().mockResolvedValue(stale),
-            updateSettings: vi.fn().mockResolvedValue(stale)
-        };
-        const getSiteSettings = vi.fn().mockResolvedValue({});
-        const Probe = () => <output>{String(useSiteSettings().data?.downloadAnalyticsVisible ?? 'unknown')}</output>;
-        renderWithProviders(
-            <>
-                <RuntimeSettingsPage />
-                <Probe />
-            </>,
-            { mainContext: { service: { admin, getSiteSettings } as unknown as ExtensionRegistryService } }
-        );
-        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('unknown'));
-
-        await userEvent.click(await screen.findByLabelText('Toggle Read-only mode'));
-        await save();
-
-        await waitFor(() => expect(admin.updateSettings).toHaveBeenCalled());
-        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('false'));
     });
 
     it('sorts a contributed section among the built-in ones by title and saves its switch', async () => {

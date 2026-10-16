@@ -62,16 +62,10 @@ public class SettingsJson extends ResultJson {
 
     @Schema(
         description = "Whether the web UI shows the weekly downloads card on extension pages. Off by default. "
-                + "Can only be switched on where download analytics is configured."
+                + "Absent where download analytics is not configured (ovsx.analytics.enabled), and then it "
+                + "cannot be switched on. As in any update, absent in a request leaves it unchanged."
     )
     private @Nullable Boolean downloadAnalyticsVisible;
-
-    @Schema(
-        description = "Read-only: whether download analytics is configured on this registry "
-                + "(ovsx.analytics.enabled). The switch only applies then.",
-        accessMode = Schema.AccessMode.READ_ONLY
-    )
-    private @Nullable Boolean downloadAnalyticsConfigured;
 
     public @Nullable Boolean getReadOnly() {
         return readOnly;
@@ -135,13 +129,5 @@ public class SettingsJson extends ResultJson {
 
     public void setDownloadAnalyticsVisible(@Nullable Boolean downloadAnalyticsVisible) {
         this.downloadAnalyticsVisible = downloadAnalyticsVisible;
-    }
-
-    public @Nullable Boolean getDownloadAnalyticsConfigured() {
-        return downloadAnalyticsConfigured;
-    }
-
-    public void setDownloadAnalyticsConfigured(@Nullable Boolean downloadAnalyticsConfigured) {
-        this.downloadAnalyticsConfigured = downloadAnalyticsConfigured;
     }
 }

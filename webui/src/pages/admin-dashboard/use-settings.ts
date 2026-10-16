@@ -33,11 +33,10 @@ export const useSettings = () => {
 
 /**
  * What the public endpoint serves for these settings: the banner only while it is on, and the
- * download analytics switch only where the server has analytics configured, since a switch left
- * on from before that changed is stored but not served.
+ * download analytics switch as off where the server has no analytics configured, which leaves it out.
  */
 const toSiteSettings = (settings: Settings): SiteSettings => ({
-    downloadAnalyticsVisible: settings.downloadAnalyticsConfigured && settings.downloadAnalyticsVisible,
+    downloadAnalyticsVisible: settings.downloadAnalyticsVisible === true,
     ...(settings.bannerEnabled
         ? {
               bannerEnabled: settings.bannerEnabled,

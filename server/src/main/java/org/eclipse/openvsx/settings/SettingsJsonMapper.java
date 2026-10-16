@@ -53,8 +53,8 @@ public class SettingsJsonMapper {
         json.setBannerMessage(string(rows, BannerSetting.KEY_MESSAGE));
         json.setBannerSeverity(string(rows, BannerSetting.KEY_SEVERITY));
         json.setBannerDismissId(string(rows, BannerSetting.KEY_DISMISS_ID));
-        json.setDownloadAnalyticsVisible(bool(rows, DownloadAnalyticsSetting.KEY));
-        json.setDownloadAnalyticsConfigured(downloadAnalytics.isConfigured());
+        json.setDownloadAnalyticsVisible(
+                downloadAnalytics.isConfigured() ? bool(rows, DownloadAnalyticsSetting.KEY) : null);
         return json;
     }
 

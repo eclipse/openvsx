@@ -696,10 +696,11 @@ export interface Settings extends SiteSettings {
     maxExtensionSize: number;
     /** Read-only: neither maxExtensionSize nor a size override can be raised past this ceiling. */
     maxOverrideSize: number;
-    /** Shows the weekly downloads card on extension pages. Off until an admin switches it on. */
-    downloadAnalyticsVisible: boolean;
-    /** Read-only: whether the server has download analytics configured at all. The switch only applies then. */
-    downloadAnalyticsConfigured: boolean;
+    /**
+     * Shows the weekly downloads card on extension pages. Off until an admin switches it on, and
+     * absent where the server has no download analytics configured, since it cannot be switched on then.
+     */
+    downloadAnalyticsVisible?: boolean;
 }
 
 export interface SearchIndex {

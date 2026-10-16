@@ -71,8 +71,14 @@ class SettingsJsonMapperTest {
         assertThat(json.getBannerMessage()).isEqualTo("Hi");
         assertThat(json.getBannerEnabled()).isNull();
         assertThat(json.getDownloadAnalyticsVisible()).isTrue();
-        assertThat(json.getDownloadAnalyticsConfigured()).isTrue();
         assertThat(json.getMaxOverrideSize()).isEqualTo(1024L);
+    }
+
+    @Test
+    void leavesOutTheAnalyticsSwitchWhereAnalyticsIsNotConfigured() {
+        var json = mapper.toJson(new SettingRows(Map.of(DownloadAnalyticsSetting.KEY, true)));
+
+        assertThat(json.getDownloadAnalyticsVisible()).isNull();
     }
 
     @Test

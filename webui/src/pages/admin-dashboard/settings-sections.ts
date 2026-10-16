@@ -109,7 +109,7 @@ export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
             )
         ],
         warnOnChange: false,
-        available: settings => settings.downloadAnalyticsConfigured
+        available: settings => settings.downloadAnalyticsVisible !== undefined
     }
 ];
 
@@ -120,8 +120,7 @@ const PAGE_KEYS: readonly (keyof Settings)[] = [
     'bannerEnabled',
     'bannerMessage',
     'bannerSeverity',
-    'bannerDismissId',
-    'downloadAnalyticsConfigured'
+    'bannerDismissId'
 ];
 
 /** The built-in sections with the contributed ones folded in, sorted by title as the page shows them. */
