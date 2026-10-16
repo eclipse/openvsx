@@ -67,6 +67,12 @@ case "${COMPONENT}" in
           echo "openvsx server has dependency overrides behind the Spring Boot BOM; review them first."
           exit 1
         fi
+        UNRELEASED=$(awk '/^\| Property / { property = $4 } /^\| Compatibility +\| Unreleased/ { print "  " property }' doc/configuration.md)
+        if [ -n "${UNRELEASED}" ]; then
+          echo "doc/configuration.md still marks these properties as Unreleased; date them to ${VERSION} first:"
+          echo "${UNRELEASED}"
+          exit 1
+        fi
         ;;
 esac
 
