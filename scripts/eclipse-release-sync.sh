@@ -5,7 +5,7 @@
 # Usage: ./eclipse-release-sync.sh [--apply] [VERSION...]
 set -euo pipefail
 
-BASE=https://projects.eclipse.org/projects/ecd.openvsx
+BASE="https://projects.eclipse.org/projects/ecd.openvsx"
 COOKIE_FILE=${ECLIPSE_COOKIE_FILE:-$HOME/.eclipse-cookie}
 DIFF="$(dirname "$0")/eclipse-release-diff.sh"
 

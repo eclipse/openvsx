@@ -4,8 +4,8 @@
 # Usage: ./eclipse-release-diff.sh [--tsv]
 set -euo pipefail
 
-REPO=eclipse-openvsx/openvsx
-PAGE=https://projects.eclipse.org/projects/ecd.openvsx
+REPO="eclipse-openvsx/openvsx"
+PAGE="https://projects.eclipse.org/projects/ecd.openvsx"
 
 eclipse=$(curl -fsSL "$PAGE" | grep -oE '/releases/[0-9][^"]*"' | sed 's#/releases/##;s#"##' | sort -u)
 [ -n "$eclipse" ] || { echo "no releases parsed from $PAGE (page layout changed?)" >&2; exit 1; }
