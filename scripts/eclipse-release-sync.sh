@@ -18,6 +18,8 @@ cookie=$(<"$COOKIE_FILE")
 
 while IFS=$'\t' read -r ver date _; do
   if [ ${#only[@]} -gt 0 ] && ! printf '%s\n' "${only[@]}" | grep -qxF "$ver"; then continue; fi
+  # The overview page can be cached; the per-version page is the source of truth.
+  if curl -fsS -o /dev/null "$BASE/releases/$ver" 2>/dev/null; then echo "exists, skipping: $ver"; continue; fi
   if [ $apply -eq 0 ]; then echo "would create: $ver ($date)"; continue; fi
 
   form=$(curl -fsSL -H "Cookie: $cookie" "$BASE/create-release")
