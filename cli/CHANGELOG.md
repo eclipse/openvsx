@@ -2,7 +2,7 @@
 
 This change log covers only the command line interface (CLI) of Open VSX.
 
-## [next] (unrelesed)
+## [next] (unreleased)
 
 ## [1.3.0] - 2026-10-16
 
