@@ -86,7 +86,6 @@ import org.eclipse.openvsx.search.*;
 import org.eclipse.openvsx.security.OAuth2AttributesConfig;
 import org.eclipse.openvsx.security.OAuth2UserServices;
 import org.eclipse.openvsx.security.SecurityConfig;
-import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 import org.eclipse.openvsx.storage.*;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
 import org.eclipse.openvsx.util.ChangesCursor;
@@ -4016,7 +4015,6 @@ class RegistryAPITest {
                     integrityService,
                     similarityCheckService,
                     TestSizeLimits.atConfigDefault(),
-                    Mockito.mock(DownloadAnalyticsSetting.class),
                     trustedPublishingConfig,
                     new WebUiProperties(),
                     CHANGES_FEED_LAG);

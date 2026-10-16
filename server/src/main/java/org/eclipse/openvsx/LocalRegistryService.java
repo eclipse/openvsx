@@ -55,7 +55,6 @@ import org.eclipse.openvsx.search.ISearchService;
 import org.eclipse.openvsx.search.SearchResult;
 import org.eclipse.openvsx.search.SearchUtilService;
 import org.eclipse.openvsx.search.SimilarityCheckService;
-import org.eclipse.openvsx.settings.DownloadAnalyticsSetting;
 import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.storage.StorageUtilService;
 import org.eclipse.openvsx.trustedpublishing.TrustedPublishingConfig;
@@ -100,7 +99,6 @@ public class LocalRegistryService implements IExtensionRegistry {
     private final ExtensionVersionIntegrityService integrityService;
     private final SimilarityCheckService similarityCheckService;
     private final ExtensionSizeLimitService sizeLimits;
-    private final DownloadAnalyticsSetting downloadAnalytics;
     private final TrustedPublishingConfig trustedPublishingConfig;
     private final WebUiProperties webUi;
 
@@ -124,7 +122,6 @@ public class LocalRegistryService implements IExtensionRegistry {
             ExtensionVersionIntegrityService integrityService,
             @Nullable SimilarityCheckService similarityCheckService,
             ExtensionSizeLimitService sizeLimits,
-            DownloadAnalyticsSetting downloadAnalytics,
             TrustedPublishingConfig trustedPublishingConfig,
             WebUiProperties webUi,
             @Value("${ovsx.changes-feed.lag:PT30S}") Duration changesFeedLag
@@ -143,7 +140,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         this.integrityService = integrityService;
         this.similarityCheckService = similarityCheckService;
         this.sizeLimits = sizeLimits;
-        this.downloadAnalytics = downloadAnalytics;
         this.trustedPublishingConfig = trustedPublishingConfig;
         this.webUi = webUi;
         this.changesFeedLag = changesFeedLag;
@@ -1493,7 +1489,6 @@ public class LocalRegistryService implements IExtensionRegistry {
         json.setMaxExtensionSizeCeiling(sizeLimits.getCeiling());
         json.setTrustedPublishingAudience(
                 trustedPublishingConfig.isEnabled() ? trustedPublishingConfig.getAudience() : null);
-        json.setAnalyticsEnabled(downloadAnalytics.isVisible());
         return json;
     }
 

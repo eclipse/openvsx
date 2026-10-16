@@ -47,11 +47,6 @@ public class RegistryVersionJson extends ResultJson {
     @Nullable
     private String trustedPublishingAudience;
 
-    @Schema(
-        description = "Whether download analytics are configured and switched on, so the analytics endpoints are available"
-    )
-    private boolean analyticsEnabled;
-
     public String getVersion() {
         return version;
     }
@@ -82,13 +77,5 @@ public class RegistryVersionJson extends ResultJson {
 
     public void setTrustedPublishingAudience(String trustedPublishingAudience) {
         this.trustedPublishingAudience = trustedPublishingAudience;
-    }
-
-    public boolean isAnalyticsEnabled() {
-        return analyticsEnabled;
-    }
-
-    public void setAnalyticsEnabled(boolean analyticsEnabled) {
-        this.analyticsEnabled = analyticsEnabled;
     }
 }

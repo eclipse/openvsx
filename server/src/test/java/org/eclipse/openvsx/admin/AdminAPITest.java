@@ -3374,7 +3374,6 @@ class AdminAPITest {
                     integrityService,
                     similarityCheckService,
                     TestSizeLimits.atConfigDefault(),
-                    Mockito.mock(DownloadAnalyticsSetting.class),
                     new TrustedPublishingConfig(),
                     new WebUiProperties(),
                     Duration.ofSeconds(30));

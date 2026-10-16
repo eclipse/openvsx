@@ -401,8 +401,6 @@ export interface RegistryVersion {
     maxExtensionSize?: number;
     /** Largest package the registry accepts from any namespace: the default raised by the highest override. */
     maxExtensionSizeCeiling?: number;
-    /** Whether download analytics is served, as of this page load. `SiteSettings.downloadAnalyticsEnabled` follows the admin switch live. */
-    analyticsEnabled?: boolean;
 }
 
 /** One bucket of the download time series: `t` is the UTC bucket start (yyyy-MM-dd). */
