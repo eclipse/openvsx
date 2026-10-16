@@ -74,7 +74,7 @@ Follow the `write-code` skill: understand → implement → test → changelog �
 
 Location: `CHANGELOG.md`.
 
-Sections under `## [next]`: `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Dependencies`.
+Sections under `## [next] (unreleased)`: `### Added`, `### Changed`, `### Fixed`, `### Removed`, `### Dependencies`.
 
 Rules:
 
@@ -82,7 +82,8 @@ Rules:
   matters to a consumer of the package; link the issue/PR for detail instead
   of writing the detail out.
 - All new entries go under `## [next]`. Read the full section first and append to existing subsections; never duplicate them; if subsection does not exist yet add it.
-- Released version sections (e.g. `## [0.5.0]`) are immutable; never modify them.
+- A release commit renames `## [next] (unreleased)` to `## [vX.Y.Z] - YYYY-MM-DD` (Keep a Changelog); don't do that yourself.
+- Released version sections (e.g. `## [v1.2.0] - 2026-09-10`) are immutable; never modify them.
 - **Never describe a change against something that is itself unreleased.** If your
   work modifies behaviour introduced by an entry already under `## [next]`, edit
   that entry to describe the final state instead of adding a second one. Readers

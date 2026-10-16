@@ -146,11 +146,11 @@ Location: `CHANGELOG.md`.
 - **Keep entries short — one line per change.** State what changed and why it
   matters to someone running or integrating the server; link the issue/PR for
   detail instead of writing the detail out.
-- New entries go under `### [next] (unreleased)`, in `#### Added` /
-  `#### Changed` / `#### Fixed` / `#### Dependencies` as needed. Read the
+- New entries go under `## [next] (unreleased)`, in `### Added` /
+  `### Changed` / `### Fixed` / `### Dependencies` as needed. Read the
   section first and append to an existing subsection rather than duplicating
-  it. A release commit renames that heading to the version and date — don't do
-  that yourself.
+  it. A release commit renames that heading to `## [vX.Y.Z] - YYYY-MM-DD`
+  (Keep a Changelog) — don't do that yourself.
 - Released sections are immutable; never modify them.
 - Never describe a change against something that is itself unreleased: if your
   work modifies behaviour introduced by an entry under `[next]`, edit that
