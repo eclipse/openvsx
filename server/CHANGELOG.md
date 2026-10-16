@@ -9,24 +9,24 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 ### Added
 
 - Add fine-grained admin permissions ([#2269](https://github.com/eclipse-openvsx/openvsx/pull/2269))
-- Configurable extension size limits with namespace overrides ([#2287](https://github.com/eclipse-openvsx/openvsx/pull/2287))
-- Optimize extensionQuery ([#2161](https://github.com/eclipse-openvsx/openvsx/pull/2161))
-- Harmonize license headers in the formatting pipeline ([#2265](https://github.com/eclipse-openvsx/openvsx/pull/2265))
-- Allow generate-download-logs.sh to query a remote postgres ([#2239](https://github.com/eclipse-openvsx/openvsx/pull/2239))
+- Configurable extension size limits with namespace overrides, bounded by `ovsx.publishing.max-override-size` ([#2287](https://github.com/eclipse-openvsx/openvsx/pull/2287), [#2303](https://github.com/eclipse-openvsx/openvsx/pull/2303))
 - Backfill download events from access logs ([#2228](https://github.com/eclipse-openvsx/openvsx/pull/2228))
 - Prompt anonymous visitors to log in on the reviews tab ([#2148](https://github.com/eclipse-openvsx/openvsx/pull/2148))
 - Add a Caches page to the admin dashboard ([#2203](https://github.com/eclipse-openvsx/openvsx/pull/2203))
 - Time-series download analytics, kept off extension pages until an admin switches them on, so a registry can backfill its download history first ([#2134](https://github.com/eclipse-openvsx/openvsx/pull/2134), [#2340](https://github.com/eclipse-openvsx/openvsx/pull/2340))
-- Give download analytics its own time-series database; the registry starts and keeps serving while it is unreachable, and log files are kept until their events are stored ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133))
+- Give download analytics its own time-series database; the registry starts and keeps serving while it is unreachable, and log files are kept until their events are stored ([#2133](https://github.com/eclipse-openvsx/openvsx/pull/2133), [#2336](https://github.com/eclipse-openvsx/openvsx/pull/2336))
 - Scope personal access tokens to a namespace or an extension, and add publishing-only tokens ([#2296](https://github.com/eclipse-openvsx/openvsx/pull/2296))
 - Publish a `SettingsChangedEvent` after the site settings change ([#2316](https://github.com/eclipse-openvsx/openvsx/pull/2316))
 - Serve runtime settings a deployment registers as its own `WritableSetting` beans on `/admin/settings`, and on `/api/-/settings` when they are a `PublicSetting`, as camelCase properties named after their row keys ([#2340](https://github.com/eclipse-openvsx/openvsx/pull/2340))
 - Expose the download size of each target platform as `downloadSizes` on the extension API response ([#2168](https://github.com/eclipse-openvsx/openvsx/pull/2168))
 - Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
-- Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard
+- Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard ([#2337](https://github.com/eclipse-openvsx/openvsx/pull/2337))
+- Record the CI run behind a trusted-publishing upload when the token carries it: GitHub's `job_workflow_ref`, `run_id` and `workflow_sha`, GitLab's `pipeline_id`, `job_id` and `sha` ([#2283](https://github.com/eclipse-openvsx/openvsx/pull/2283))
 
 ### Changed
 
+- **Upgrade:** migration `V1_78` makes `extension_version.published_by_id` `NOT NULL` and stops the server from starting if a row is still `NULL`. Versions published before 1.2.0 without a recorded token have no publisher to backfill, so check `SELECT count(*) FROM extension_version WHERE published_by_id IS NULL` returns 0 before upgrading ([#2276](https://github.com/eclipse-openvsx/openvsx/pull/2276))
+- `/vscode/gallery/extensionquery` loads only the versions it returns instead of every active version of each matched extension, pre-releases included ([#2161](https://github.com/eclipse-openvsx/openvsx/pull/2161))
 - Accept the personal access token via an Authorization: Bearer header ([#2209](https://github.com/eclipse-openvsx/openvsx/pull/2209))
 
 ### Fixed
@@ -34,32 +34,24 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Refuse the trusted publishing endpoints that create or delete a trusted publisher or issue a publish token while the registry is read-only ([#2339](https://github.com/eclipse-openvsx/openvsx/pull/2339))
 - Match secret detection rules case-sensitively unless the rule has an inline `(?i)`, which stops mixed-case words such as `Asiakasdokumentaatio` being flagged as AWS keys, see #2329 ([#2330](https://github.com/eclipse-openvsx/openvsx/pull/2330))
 - Keep polling async scanners through transient errors, confirm an error status on a second poll before failing a scan, and treat every non-2xx scanner response as an error ([#2307](https://github.com/eclipse-openvsx/openvsx/pull/2307))
-- Remove the max-override-size ceiling on extension size overrides ([#2297](https://github.com/eclipse-openvsx/openvsx/pull/2297))
-- TP: store extra information ([#2283](https://github.com/eclipse-openvsx/openvsx/pull/2283))
-- Lax the claim validation ([#2282](https://github.com/eclipse-openvsx/openvsx/pull/2282))
-- Make extension_version.published_by_id NOT NULL ([#2276](https://github.com/eclipse-openvsx/openvsx/pull/2276))
+- Compare trusted-publishing claims case-insensitively, like the rest of its checks ([#2282](https://github.com/eclipse-openvsx/openvsx/pull/2282))
 - Un-deprecate extensions removed from the extension-control file ([#2261](https://github.com/eclipse-openvsx/openvsx/pull/2261))
-- The listDependencies task fails with config cache ([#2254](https://github.com/eclipse-openvsx/openvsx/pull/2254))
 - Report a namespace rename on the registry changes feed ([#2246](https://github.com/eclipse-openvsx/openvsx/pull/2246))
 - Resolve extension resources for the target platform VS Code asks for ([#2183](https://github.com/eclipse-openvsx/openvsx/pull/2183))
 - Scope the legacy token lookup to version-0 rows ([#2247](https://github.com/eclipse-openvsx/openvsx/pull/2247))
 - Prevent duplicate active reviews from concurrent requests ([#2245](https://github.com/eclipse-openvsx/openvsx/pull/2245))
 - Make extension control fail-safe and bound its HTTP timeouts ([#2242](https://github.com/eclipse-openvsx/openvsx/pull/2242))
 - Delete upstream-proxied spool file even if the client aborts ([#2241](https://github.com/eclipse-openvsx/openvsx/pull/2241))
-- Back the download analytics settled-cache with the shared cache infra ([#2235](https://github.com/eclipse-openvsx/openvsx/pull/2235))
-- Sync Spotless and jbang-fmt on org.eclipse.jdt.core 3.47.0 ([#2233](https://github.com/eclipse-openvsx/openvsx/pull/2233))
 - Repair and stop re-corrupting extensions' stale last-updated date ([#2231](https://github.com/eclipse-openvsx/openvsx/pull/2231))
 - Evict the local caches by key prefix too, instead of guessing ([#2222](https://github.com/eclipse-openvsx/openvsx/pull/2222))
 - Evict caches once the transaction has committed ([#2220](https://github.com/eclipse-openvsx/openvsx/pull/2220))
 - Clear extension caches by pattern where Redis can, as intended ([#2219](https://github.com/eclipse-openvsx/openvsx/pull/2219))
-- Bind the analytics durations so the reference can see them ([#2204](https://github.com/eclipse-openvsx/openvsx/pull/2204))
-- Point the download log generator at the silo service ([#2207](https://github.com/eclipse-openvsx/openvsx/pull/2207))
-- Code review bugs ([#2189](https://github.com/eclipse-openvsx/openvsx/pull/2189))
+- Fix infinite recursion in entity `equals`/`hashCode`, namespace logo uploads to local storage, a malformed customer CIDR aborting the IP address cache rebuild, and the missing-files job on versions without a download file ([#2189](https://github.com/eclipse-openvsx/openvsx/pull/2189))
 
 ### Dependencies
 
-- Slight updates ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
-- Bump jOOQ 3.19.38 ([#2187](https://github.com/eclipse-openvsx/openvsx/pull/2187))
+- Bump jOOQ from 3.19.37 to 3.19.39 ([#2187](https://github.com/eclipse-openvsx/openvsx/pull/2187), [#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
+- Update other dependencies to newer patch versions ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
 - Bump tika to 3.3.2 ([#2240](https://github.com/eclipse-openvsx/openvsx/pull/2240))
 - Remove unused `jaxb-api` and `jaxb-impl` dependencies ([#2317](https://github.com/eclipse-openvsx/openvsx/pull/2317))
 
