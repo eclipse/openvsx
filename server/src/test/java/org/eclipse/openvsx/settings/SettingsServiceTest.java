@@ -291,19 +291,46 @@ class SettingsServiceTest {
     }
 
     @Test
-    void readsAndUpdatesThroughTheJsonDocuments() {
+    void anUpdateDocumentWritesTheRowsItCarries() {
         stored(ReadOnlySetting.KEY, false);
         var update = new SettingsJson();
         update.setReadOnly(true);
 
         assertThat(settings.update(update)).isEqualTo("read-only -> true");
         verify(store).setAll(Map.of(ReadOnlySetting.KEY, true));
+    }
+
+    @Test
+    void theAdminDocumentReadsTheStoredRows() {
+        stored(ReadOnlySetting.KEY, true);
 
         var current = settings.getCurrentSettings();
-        assertThat(current.getReadOnly()).isFalse();
+
+        assertThat(current.getReadOnly()).isTrue();
         assertThat(current.getMaxExtensionSize()).isEqualTo(512L * MB);
         assertThat(current.getMaxOverrideSize()).isEqualTo(1024L * MB);
-        assertThat(settings.getSiteSettings().getBannerEnabled()).isNull();
+    }
+
+    @Test
+    void theDownloadAnalyticsSwitchIsPublishedAsItsEffectiveState() {
+        stored(DownloadAnalyticsSetting.KEY, true);
+
+        assertThat(withAnalytics(true).getSiteSettings().getDownloadAnalyticsVisible()).isTrue();
+        assertThat(withAnalytics(true).getCurrentSettings().getDownloadAnalyticsVisible()).isTrue();
+        // A switch left on after analytics was unconfigured is stored, but neither served nor offered.
+        assertThat(withAnalytics(false).getSiteSettings().getDownloadAnalyticsVisible()).isFalse();
+        assertThat(withAnalytics(false).getCurrentSettings().getDownloadAnalyticsVisible()).isNull();
+    }
+
+    private SettingsService withAnalytics(boolean configured) {
+        var analytics = new DownloadAnalyticsSetting(configured);
+        return new SettingsService(
+                List.of(readOnly, analytics),
+                new SettingsJsonMapper(publishingConfig, analytics),
+                store,
+                channel,
+                new AfterCommitExecutor(),
+                events);
     }
 
     @Test

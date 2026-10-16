@@ -566,6 +566,23 @@ describe('RuntimeSettingsPage', () => {
         expect(screen.queryByLabelText('Toggle Retention again')).toBeNull();
     });
 
+    it('leaves out a contributed section whose availability check refuses the loaded settings', async () => {
+        const available = vi.fn().mockReturnValue(false);
+        mountPage({ ...defaults, retentionEnabled: true }, [
+            {
+                id: 'retention',
+                title: 'Retention',
+                flags: [{ key: 'retentionEnabled', title: 'Keep raw events', description: 'Keeps the raw events.' }],
+                available
+            }
+        ]);
+
+        await screen.findByLabelText('Toggle Read-only mode');
+        expect(available).toHaveBeenCalledWith(expect.objectContaining({ retentionEnabled: true }));
+        expect(screen.queryByRole('heading', { name: 'Retention' })).toBeNull();
+        expect(screen.queryByLabelText('Toggle Keep raw events')).toBeNull();
+    });
+
     it('leaves out a contributed section that has no switch left', async () => {
         mountPage(defaults, [
             {

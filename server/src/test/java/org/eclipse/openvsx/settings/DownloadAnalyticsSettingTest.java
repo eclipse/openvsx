@@ -22,14 +22,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.eclipse.openvsx.settings.DownloadAnalyticsSetting.KEY;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class DownloadAnalyticsSettingTest {
 
-    private final SettingsStore store = mock(SettingsStore.class);
-    private final DownloadAnalyticsSetting configured = new DownloadAnalyticsSetting(store, true);
-    private final DownloadAnalyticsSetting unconfigured = new DownloadAnalyticsSetting(store, false);
+    private final DownloadAnalyticsSetting configured = new DownloadAnalyticsSetting(true);
+    private final DownloadAnalyticsSetting unconfigured = new DownloadAnalyticsSetting(false);
 
     private static SettingRows rows(Object... keyValues) {
         return keyValues.length == 0
@@ -76,13 +73,5 @@ class DownloadAnalyticsSettingTest {
         assertThat(configured.publicView(rows())).containsExactly(Map.entry(KEY, false));
         assertThat(configured.publicView(rows(KEY, true))).containsExactly(Map.entry(KEY, true));
         assertThat(unconfigured.publicView(rows(KEY, true))).containsExactly(Map.entry(KEY, false));
-    }
-
-    @Test
-    void theAccessorIsTheEffectiveState() {
-        when(store.snapshot()).thenReturn(rows(KEY, true));
-
-        assertThat(configured.isVisible()).isTrue();
-        assertThat(unconfigured.isVisible()).isFalse();
     }
 }

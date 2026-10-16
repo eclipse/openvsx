@@ -20,29 +20,18 @@ import org.springframework.stereotype.Component;
 /**
  * Whether the web UI shows download analytics on extension pages; the series endpoint serves data
  * regardless. Off by default, so a registry can backfill its download history before the extension
- * pages show a graph. Only meaningful where
- * {@code ovsx.analytics.enabled} wires download analytics at all, which {@link #isVisible()} folds
- * in for the server.
+ * pages show a graph. Only meaningful where {@code ovsx.analytics.enabled} wires download analytics
+ * at all.
  */
 @Component
 public class DownloadAnalyticsSetting implements WritableSetting<Boolean>, PublicSetting {
 
     public static final String KEY = "download-analytics-visible";
 
-    private final SettingsStore store;
     private final boolean analyticsConfigured;
 
-    public DownloadAnalyticsSetting(
-            SettingsStore store,
-            @Value("${ovsx.analytics.enabled:false}") boolean analyticsConfigured
-    ) {
-        this.store = store;
+    public DownloadAnalyticsSetting(@Value("${ovsx.analytics.enabled:false}") boolean analyticsConfigured) {
         this.analyticsConfigured = analyticsConfigured;
-    }
-
-    /** {@code false} until an admin switches it on, and always where analytics is not configured. */
-    public boolean isVisible() {
-        return effective(store.snapshot());
     }
 
     /** Whether {@code ovsx.analytics.enabled} wires download analytics at all; the switch only applies then. */
