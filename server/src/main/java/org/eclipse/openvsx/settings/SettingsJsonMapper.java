@@ -28,12 +28,12 @@ import org.eclipse.openvsx.publish.PublishingConfig;
  * other DTO, rows kebab-case as stored.
  */
 @Component
-public class SettingsJsonMapper {
+class SettingsJsonMapper {
 
     private final PublishingConfig publishingConfig;
     private final DownloadAnalyticsSetting downloadAnalytics;
 
-    public SettingsJsonMapper(PublishingConfig publishingConfig, DownloadAnalyticsSetting downloadAnalytics) {
+    SettingsJsonMapper(PublishingConfig publishingConfig, DownloadAnalyticsSetting downloadAnalytics) {
         this.publishingConfig = publishingConfig;
         this.downloadAnalytics = downloadAnalytics;
     }
@@ -43,7 +43,7 @@ public class SettingsJsonMapper {
      * settings, the ceiling no size can be raised past and whether download analytics is configured
      * at all. A field no row backs stays null, and so off the wire.
      */
-    public SettingsJson toJson(SettingRows stored) {
+    SettingsJson toJson(SettingRows stored) {
         var rows = stored.rows();
         var json = new SettingsJson();
         json.setReadOnly(bool(rows, ReadOnlySetting.KEY));
@@ -59,7 +59,7 @@ public class SettingsJsonMapper {
     }
 
     /** The rows an update carries. A null field is a setting the caller isn't touching, so it produces no row. */
-    public SettingRows toRows(SettingsJson json) {
+    SettingRows toRows(SettingsJson json) {
         var rows = new LinkedHashMap<String, Object>();
         putIfPresent(rows, ReadOnlySetting.KEY, json.getReadOnly());
         putIfPresent(rows, MaxExtensionSizeSetting.KEY, json.getMaxExtensionSize());
@@ -72,7 +72,7 @@ public class SettingsJsonMapper {
     }
 
     /** The published rows; a row with no property on the site DTO is left out. */
-    public SiteSettingsJson toSiteJson(SettingRows published) {
+    SiteSettingsJson toSiteJson(SettingRows published) {
         var rows = published.rows();
         var json = new SiteSettingsJson();
         json.setBannerEnabled(bool(rows, BannerSetting.KEY_ENABLED));

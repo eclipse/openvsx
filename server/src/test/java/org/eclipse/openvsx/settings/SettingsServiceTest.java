@@ -25,6 +25,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.publish.PublishingConfig;
 import org.eclipse.openvsx.util.AfterCommitExecutor;
 import org.eclipse.openvsx.util.ErrorResultException;
@@ -53,6 +54,7 @@ class SettingsServiceTest {
     private final MaxExtensionSizeSetting maxExtensionSize = new MaxExtensionSizeSetting(store, publishingConfig);
     private final SettingsService settings = new SettingsService(
             List.of(readOnly, maxExtensionSize, new BannerSetting()),
+            new SettingsJsonMapper(publishingConfig, mock(DownloadAnalyticsSetting.class)),
             store,
             channel,
             new AfterCommitExecutor(),
@@ -101,7 +103,7 @@ class SettingsServiceTest {
     void siteSettingsHoldBackReadOnlyMode() {
         stored(ReadOnlySetting.KEY, true, BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Hi");
 
-        assertThat(settings.getSiteSettings().rows())
+        assertThat(settings.siteRows().rows())
                 .doesNotContainKey(ReadOnlySetting.KEY)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "Hi");
     }
@@ -110,7 +112,7 @@ class SettingsServiceTest {
     void aPublishedBannerAlwaysCarriesAllFourSiteSettings() {
         stored(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Hi");
 
-        assertThat(settings.getSiteSettings().rows())
+        assertThat(settings.siteRows().rows())
                 .containsEntry(BannerSetting.KEY_ENABLED, true)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "Hi")
                 .containsEntry(BannerSetting.KEY_SEVERITY, "info")
@@ -121,14 +123,14 @@ class SettingsServiceTest {
     void siteSettingsHoldBackADraftedBanner() {
         stored(BannerSetting.KEY_ENABLED, false, BannerSetting.KEY_MESSAGE, "Security incident");
 
-        assertThat(settings.getSiteSettings().rows()).isEmpty();
+        assertThat(settings.siteRows().rows()).isEmpty();
     }
 
     @Test
     void theAdminViewKeepsADraftedBanner() {
         stored(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "Security incident");
 
-        assertThat(settings.getCurrentSettings().rows())
+        assertThat(settings.currentRows().rows())
                 .containsEntry(ReadOnlySetting.KEY, true)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "Security incident");
     }
@@ -137,7 +139,7 @@ class SettingsServiceTest {
     void aSettingLeftOutOfTheRequestIsNotTouched() {
         stored(ReadOnlySetting.KEY, true);
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "Maintenance tonight"));
 
         assertThat(written()).doesNotContainKey(ReadOnlySetting.KEY);
     }
@@ -154,7 +156,7 @@ class SettingsServiceTest {
                 BannerSetting.KEY_DISMISS_ID,
                 "token-1");
 
-        settings.update(
+        settings.updateRows(
                 rows(
                         BannerSetting.KEY_ENABLED,
                         true,
@@ -175,7 +177,7 @@ class SettingsServiceTest {
     void aValueEqualToAStaleSnapshotIsStillWritten() {
         stored(ReadOnlySetting.KEY, false);
 
-        settings.update(rows(ReadOnlySetting.KEY, false));
+        settings.updateRows(rows(ReadOnlySetting.KEY, false));
 
         assertThat(written()).containsEntry(ReadOnlySetting.KEY, false);
     }
@@ -184,7 +186,7 @@ class SettingsServiceTest {
     void aSaveWritesAllItsRowsInOneCall() {
         stored(BannerSetting.KEY_ENABLED, false, BannerSetting.KEY_MESSAGE, "Drafted");
 
-        settings.update(rows(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Published"));
+        settings.updateRows(rows(BannerSetting.KEY_ENABLED, true, BannerSetting.KEY_MESSAGE, "Published"));
 
         // One transaction, so no reader can see the switch on beside the old message.
         verify(store, times(1)).setAll(any());
@@ -196,7 +198,7 @@ class SettingsServiceTest {
     void theCacheIsClearedAndPublishedOnlyAfterTheRowsAreStored() {
         stored(ReadOnlySetting.KEY, false);
 
-        settings.update(rows(ReadOnlySetting.KEY, true));
+        settings.updateRows(rows(ReadOnlySetting.KEY, true));
 
         var order = Mockito.inOrder(store, channel);
         order.verify(store).setAll(any());
@@ -209,7 +211,7 @@ class SettingsServiceTest {
         stored(ReadOnlySetting.KEY, false);
         Mockito.doThrow(new IllegalStateException("db down")).when(store).setAll(any());
 
-        assertThatThrownBy(() -> settings.update(rows(ReadOnlySetting.KEY, true)))
+        assertThatThrownBy(() -> settings.updateRows(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(IllegalStateException.class);
 
         verify(store, never()).clear();
@@ -221,7 +223,7 @@ class SettingsServiceTest {
         stored(ReadOnlySetting.KEY, false);
 
         assertThatThrownBy(
-                () -> settings.update(
+                () -> settings.updateRows(
                         rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "<script>alert(1)</script>")))
                 .isInstanceOf(ErrorResultException.class);
 
@@ -262,13 +264,14 @@ class SettingsServiceTest {
         };
         var service = new SettingsService(
                 List.of(readOnly, refusing),
+                mock(SettingsJsonMapper.class),
                 store,
                 channel,
                 new AfterCommitExecutor(),
                 events);
         stored(ReadOnlySetting.KEY, false);
 
-        assertThatThrownBy(() -> service.update(rows(ReadOnlySetting.KEY, true)))
+        assertThatThrownBy(() -> service.updateRows(rows(ReadOnlySetting.KEY, true)))
                 .isInstanceOf(ErrorResultException.class);
 
         verify(store, never()).setAll(any());
@@ -279,7 +282,7 @@ class SettingsServiceTest {
         // SettingsJson is NON_NULL, so a field a setting stops reporting vanishes off the wire.
         stored();
 
-        assertThat(settings.getCurrentSettings().rows())
+        assertThat(settings.currentRows().rows())
                 .containsEntry(ReadOnlySetting.KEY, false)
                 .containsEntry(BannerSetting.KEY_ENABLED, false)
                 .containsEntry(BannerSetting.KEY_MESSAGE, "")
@@ -288,11 +291,27 @@ class SettingsServiceTest {
     }
 
     @Test
+    void readsAndUpdatesThroughTheJsonDocuments() {
+        stored(ReadOnlySetting.KEY, false);
+        var update = new SettingsJson();
+        update.setReadOnly(true);
+
+        assertThat(settings.update(update)).isEqualTo("read-only -> true");
+        verify(store).setAll(Map.of(ReadOnlySetting.KEY, true));
+
+        var current = settings.getCurrentSettings();
+        assertThat(current.getReadOnly()).isFalse();
+        assertThat(current.getMaxExtensionSize()).isEqualTo(512L * MB);
+        assertThat(current.getMaxOverrideSize()).isEqualTo(1024L * MB);
+        assertThat(settings.getSiteSettings().getBannerEnabled()).isNull();
+    }
+
+    @Test
     void theAuditLineNamesEveryChangedRowAndQuotesNoMessage() {
         stored(ReadOnlySetting.KEY, false, BannerSetting.KEY_MESSAGE, "tonigth");
 
         var changes = settings
-                .update(rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "tonight"));
+                .updateRows(rows(ReadOnlySetting.KEY, true, BannerSetting.KEY_MESSAGE, "tonight"));
 
         // Settings in name order, and the message named rather than quoted: the log column caps at 512.
         assertThat(changes).isEqualTo("banner-message, read-only -> true");
@@ -304,7 +323,7 @@ class SettingsServiceTest {
         stored(BannerSetting.KEY_MESSAGE, "tonigth", BannerSetting.KEY_DISMISS_ID, "token-1");
 
         // A client that doesn't know about the token can't reset dismissals by leaving it out.
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "tonight"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "tonight"));
 
         assertThat(written()).doesNotContainKey(BannerSetting.KEY_DISMISS_ID);
     }
@@ -313,7 +332,7 @@ class SettingsServiceTest {
     void aSuppliedDismissTokenIsStoredAsGiven() {
         stored(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-1");
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-2"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "tonight", BannerSetting.KEY_DISMISS_ID, "token-2"));
 
         assertThat(written()).containsEntry(BannerSetting.KEY_DISMISS_ID, "token-2");
     }
@@ -324,7 +343,7 @@ class SettingsServiceTest {
         // from everyone who dismissed the old one.
         stored(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_DISMISS_ID, "token-1");
 
-        settings.update(
+        settings.updateRows(
                 rows(BannerSetting.KEY_MESSAGE, "Something new", BannerSetting.KEY_DISMISS_ID, "token-1"));
 
         assertThat(written().get(BannerSetting.KEY_DISMISS_ID)).asString().isNotBlank().isNotEqualTo("token-1");
@@ -344,7 +363,7 @@ class SettingsServiceTest {
                                         BannerSetting.KEY_DISMISS_ID,
                                         "token-1")));
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "Something new"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "Something new"));
 
         assertThat(written().get(BannerSetting.KEY_DISMISS_ID)).asString().isNotBlank().isNotEqualTo("token-1");
     }
@@ -353,7 +372,7 @@ class SettingsServiceTest {
     void anEmptyBannerMintsNoDismissToken() {
         stored();
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_SEVERITY, "info"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "", BannerSetting.KEY_SEVERITY, "info"));
 
         assertThat(written()).doesNotContainKey(BannerSetting.KEY_DISMISS_ID);
     }
@@ -386,7 +405,7 @@ class SettingsServiceTest {
     void publishesAChangedEventWhenSettingsChange() {
         stored(BannerSetting.KEY_MESSAGE, "old");
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "new"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "new"));
 
         verify(events).publishEvent(any(SettingsChangedEvent.class));
     }
@@ -395,7 +414,7 @@ class SettingsServiceTest {
     void publishesNoEventWhenNothingChanged() {
         stored();
 
-        settings.update(rows());
+        settings.updateRows(rows());
 
         verify(events, never()).publishEvent(any(Object.class));
     }
@@ -412,7 +431,7 @@ class SettingsServiceTest {
         stored(BannerSetting.KEY_MESSAGE, "old");
         TransactionSynchronizationManager.initSynchronization();
 
-        settings.update(rows(BannerSetting.KEY_MESSAGE, "new"));
+        settings.updateRows(rows(BannerSetting.KEY_MESSAGE, "new"));
         verify(events, never()).publishEvent(any(Object.class));
 
         var synchronizations = TransactionSynchronizationManager.getSynchronizations();
@@ -426,7 +445,7 @@ class SettingsServiceTest {
     void updateStoresNewMaxExtensionSizeAndReportsTheChange() {
         stored(MaxExtensionSizeSetting.KEY, 512L * MB);
 
-        var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
+        var changes = settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 1024L * MB);
         assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 1073741824");
@@ -438,7 +457,7 @@ class SettingsServiceTest {
     void updateStoresMaxExtensionSizeEvenWhenItMatchesWhatIsReadBack() {
         stored();
 
-        var changes = settings.update(rows(MaxExtensionSizeSetting.KEY, 512L * MB));
+        var changes = settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 512L * MB));
 
         assertThat(written()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
         assertThat(changes).isEqualTo(MaxExtensionSizeSetting.KEY + " -> 536870912");
@@ -448,7 +467,7 @@ class SettingsServiceTest {
     void updateLeavesAnOmittedMaxExtensionSizeAlone() {
         stored();
 
-        settings.update(rows(ReadOnlySetting.KEY, true));
+        settings.updateRows(rows(ReadOnlySetting.KEY, true));
 
         assertThat(written()).doesNotContainKey(MaxExtensionSizeSetting.KEY);
     }
@@ -457,7 +476,7 @@ class SettingsServiceTest {
     void updateLeavesAnOmittedReadOnlyAlone() {
         stored(ReadOnlySetting.KEY, true);
 
-        settings.update(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
+        settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 1024L * MB));
 
         assertThat(written()).doesNotContainKey(ReadOnlySetting.KEY);
     }
@@ -466,7 +485,7 @@ class SettingsServiceTest {
     void updateAcceptsARequestThatCarriesNothing() {
         stored();
 
-        assertThatCode(() -> settings.update(rows())).doesNotThrowAnyException();
+        assertThatCode(() -> settings.updateRows(rows())).doesNotThrowAnyException();
         verify(store, never()).setAll(any());
     }
 
@@ -474,7 +493,7 @@ class SettingsServiceTest {
     void updateRejectsNonPositiveMaxExtensionSize() {
         stored();
 
-        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 0L)))
+        assertThatThrownBy(() -> settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 0L)))
                 .isInstanceOf(ErrorResultException.class);
         verify(store, never()).setAll(any());
     }
@@ -484,7 +503,7 @@ class SettingsServiceTest {
         stored();
         when(publishingConfig.getMaxOverrideSize()).thenReturn(1000L);
 
-        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 1001L)))
+        assertThatThrownBy(() -> settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 1001L)))
                 .isInstanceOf(ErrorResultException.class)
                 .hasMessageContaining("exceeds the maximum");
         verify(store, never()).setAll(any());
@@ -497,7 +516,7 @@ class SettingsServiceTest {
         stored(MaxExtensionSizeSetting.KEY, 1024L * MB);
         when(publishingConfig.getMaxOverrideSize()).thenReturn(100L * MB);
 
-        settings.update(rows(ReadOnlySetting.KEY, true));
+        settings.updateRows(rows(ReadOnlySetting.KEY, true));
 
         assertThat(written()).containsEntry(ReadOnlySetting.KEY, true);
     }
@@ -507,7 +526,7 @@ class SettingsServiceTest {
         stored(MaxExtensionSizeSetting.KEY, 1024L * MB);
         when(publishingConfig.getMaxOverrideSize()).thenReturn(100L * MB);
 
-        assertThatThrownBy(() -> settings.update(rows(MaxExtensionSizeSetting.KEY, 200L * MB)))
+        assertThatThrownBy(() -> settings.updateRows(rows(MaxExtensionSizeSetting.KEY, 200L * MB)))
                 .isInstanceOf(ErrorResultException.class);
     }
 
@@ -515,6 +534,6 @@ class SettingsServiceTest {
     void theAdminViewReportsTheMaxExtensionSize() {
         stored();
 
-        assertThat(settings.getCurrentSettings().rows()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
+        assertThat(settings.currentRows().rows()).containsEntry(MaxExtensionSizeSetting.KEY, 512L * MB);
     }
 }
