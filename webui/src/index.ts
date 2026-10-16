@@ -58,6 +58,7 @@ export { Pill } from './components/pill';
 export { KbdKey } from './components/kbd-key';
 export { OpenVsxMark } from './components/openvsx-mark';
 export { PageContainer, type PageContainerProps } from './components/page-container';
+export { ListLoadError, type ListLoadErrorProps } from './components/list-load-error';
 // Also the app's drop target for .vsix packages, so a custom menu keeps drag-and-drop publishing.
 export { PublishButton, type PublishButtonProps } from './components/publish/publish-button';
 
