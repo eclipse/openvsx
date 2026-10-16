@@ -104,8 +104,7 @@ export const BUILT_IN_SECTIONS: readonly ResolvedSettingsSection[] = [
             flag(
                 'downloadAnalyticsVisible',
                 'Weekly downloads on the extension page',
-                'Shows the weekly downloads card on the extension details page and serves the download series ' +
-                    'endpoint behind it.'
+                'Shows the weekly downloads card on the extension details page.'
             )
         ],
         warnOnChange: false,

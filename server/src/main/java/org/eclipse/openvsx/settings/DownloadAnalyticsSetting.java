@@ -18,8 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Whether visitors get download analytics. Off by default, so a registry can backfill its download
- * history before the extension pages show a graph. Only meaningful where
+ * Whether the web UI shows download analytics on extension pages; the series endpoint serves data
+ * regardless. Off by default, so a registry can backfill its download history before the extension
+ * pages show a graph. Only meaningful where
  * {@code ovsx.analytics.enabled} wires download analytics at all, which {@link #isVisible()} folds
  * in for the server.
  */

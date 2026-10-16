@@ -44,7 +44,7 @@ public class SiteSettingsJson extends ResultJson {
     )
     private @Nullable String bannerDismissId;
 
-    @Schema(description = "Whether per-extension download analytics are served to visitors")
+    @Schema(description = "Whether the web UI shows per-extension download analytics to visitors")
     private @Nullable Boolean downloadAnalyticsVisible;
 
     public @Nullable Boolean getBannerEnabled() {

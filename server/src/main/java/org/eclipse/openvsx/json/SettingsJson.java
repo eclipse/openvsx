@@ -61,8 +61,8 @@ public class SettingsJson extends ResultJson {
     private @Nullable String bannerDismissId;
 
     @Schema(
-        description = "Whether visitors get the weekly downloads card on extension pages and the download series "
-                + "endpoint. Off by default. Can only be switched on where download analytics is configured."
+        description = "Whether the web UI shows the weekly downloads card on extension pages. Off by default. "
+                + "Can only be switched on where download analytics is configured."
     )
     private @Nullable Boolean downloadAnalyticsVisible;
 
