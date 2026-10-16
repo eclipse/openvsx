@@ -21,6 +21,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 - Add a "Size overrides" page to the admin dashboard for managing per-namespace and per-extension upload size limits, each capped at the same `ovsx.publishing.max-override-size` ceiling ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
 
 - Let a personal access token be restricted to a namespace or a single extension, and to publishing only, when it is generated, choosing the namespace from the ones the user is a member of and the extension from its active extensions, and show that in the token list ([#957](https://github.com/eclipse-openvsx/openvsx/issues/957))
+- Export `ListLoadError`, the inline warning with a Retry button the search results show when a page fails to load, for lists in custom pages
 
 ### Changed
 
@@ -34,7 +35,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Fixed
 
-- Stop search results from re-requesting a page that failed to load, and reopening the error dialog, while the end of the list stays in view; it is retried once the end is scrolled away from and back to
+- Stop search results from re-requesting a page that failed to load in a loop, reopening the error dialog each time; a failed page, the first one included, now shows an inline notice with a Retry button instead of the dialog
 - Fix `sendNonRetriableRequest` and `sendStrictRequest` still retrying network errors and aborted requests three times (#2237)
 - The publish page no longer refuses a package larger than the registry's default limit without asking the server. A namespace with a size override may publish more than the default allows, so the upload is now only blocked above the registry's ceiling — the largest any namespace could publish. A package that looks too big is shown in the queue while that ceiling is re-read, rather than the page staying empty until the answer arrives ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
 - The admin dashboard's Settings page sends only the settings that were changed, so saving no longer reverts a setting another admin changed while the page was open ([#2129](https://github.com/eclipse-openvsx/openvsx/issues/2129))
