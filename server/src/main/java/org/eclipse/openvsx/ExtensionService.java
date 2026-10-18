@@ -116,8 +116,7 @@ public class ExtensionService {
     public TempFile createExtensionFile(InputStream content) {
         requireNonNull(content);
         long maxContentSize = getMaxContentSize();
-        // Saturating: the ceiling is an unrestricted positive long, and at Long.MAX_VALUE the extra
-        // byte wraps negative, which would read nothing - failing every publish.
+        // Saturating: the ceiling is an unrestricted positive long, so +1 must not overflow.
         var readLimit = maxContentSize == Long.MAX_VALUE ? Long.MAX_VALUE : maxContentSize + 1;
         try (var input = content) {
             long size = 0;

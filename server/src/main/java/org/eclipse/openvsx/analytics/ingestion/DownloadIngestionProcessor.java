@@ -48,6 +48,7 @@ import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.repositories.DownloadAnalyticsRepository;
 import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.search.SearchUtilService;
+import org.eclipse.openvsx.util.CollectionUtil;
 
 @Component
 public class DownloadIngestionProcessor {
@@ -460,10 +461,7 @@ public class DownloadIngestionProcessor {
                     .collect(Collectors.toList());
 
             logger.info("[DownloadIngestionProcessor] total active extensions: {}", activeExtensions.size());
-            var parts = new ArrayList<List<Extension>>();
-            for (int from = 0; from < activeExtensions.size(); from += 100) {
-                parts.add(activeExtensions.subList(from, Math.min(from + 100, activeExtensions.size())));
-            }
+            var parts = CollectionUtil.partition(activeExtensions, 100);
             logger.info("[DownloadIngestionProcessor] partitions: {} | partition size: 100", parts.size());
 
             parts.forEach(search::updateSearchEntriesAsync);

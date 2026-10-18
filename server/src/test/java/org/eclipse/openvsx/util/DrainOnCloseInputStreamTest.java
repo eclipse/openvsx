@@ -80,13 +80,9 @@ class DrainOnCloseInputStreamTest {
         assertThat(underlying.available()).isEqualTo(8);
     }
 
-    // Mirrors ExtensionService#createExtensionFile, which reads the InputStream it's handed only up
-    // to the configured limit and closes it once the package exceeds it, leaving everything past
-    // the cap unread on the wire.
-    // Wrapping once here at the entry point and closing through try-with-resources drains that
-    // remainder for free via the close() cascade, without ExtensionService needing to know about it -
-    // as long as our own bound is generous enough to cover it, which callers get by using the same
-    // max upload size for both.
+    // A reader that stops at a size cap (as ExtensionService#createExtensionFile does) leaves the
+    // rest unread on the wire. Closing through try-with-resources drains that remainder, as long
+    // as the bound covers it, which callers get by using the same max upload size for both.
     @Test
     void drainsWhateverASizeCappedReaderNeverReached() throws IOException {
         var body = "x".repeat(20).getBytes(StandardCharsets.UTF_8);

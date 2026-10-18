@@ -70,12 +70,8 @@ public class DrainOnCloseInputStream extends FilterInputStream {
     @Override
     public void close() throws IOException {
         try {
-            long remaining = maxBytes - bytesRead;
-            var buffer = new byte[8192];
-            int n;
-            while (remaining > 0 && (n = read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
-                remaining -= n;
-            }
+            // skipNBytes throws EOFException when the stream ends early, which is fine here
+            skipNBytes(Math.max(0, maxBytes - bytesRead));
         } catch (IOException ignored) {
             // best-effort drain; connection state doesn't matter once we're closing this stream
         } finally {
