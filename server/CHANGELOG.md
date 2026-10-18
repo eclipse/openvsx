@@ -22,6 +22,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
 - Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard ([#2337](https://github.com/eclipse-openvsx/openvsx/pull/2337))
 - Record the CI run behind a trusted-publishing upload when the token carries it: GitHub's `job_workflow_ref`, `run_id` and `workflow_sha`, GitLab's `pipeline_id`, `job_id` and `sha` ([#2283](https://github.com/eclipse-openvsx/openvsx/pull/2283))
+- Let a deployment resolve a request's rate limit client through an `IdentityServiceHelper` bean, for requests a CDN already attributed; such a request is checked against its customer's bucket, and rejected once it is exhausted, but not debited again
 
 ### Changed
 
