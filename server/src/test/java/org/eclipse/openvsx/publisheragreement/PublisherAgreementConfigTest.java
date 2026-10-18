@@ -19,18 +19,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+import org.eclipse.openvsx.repositories.RepositoryService;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PublisherAgreementConfigTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
+            .withBean(RepositoryService.class, () -> Mockito.mock(RepositoryService.class))
             .withUserConfiguration(PublisherAgreementConfig.class);
 
     @Test
-    void noopIsTheDefault() {
+    void simpleServiceIsTheDefault() {
         runner.run(
                 context -> assertThat(context.getBean(PublisherAgreementService.class))
-                        .isInstanceOf(NoopPublisherAgreementService.class));
+                        .isInstanceOf(SimplePublisherAgreementService.class));
     }
 
     @Test

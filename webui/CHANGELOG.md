@@ -4,6 +4,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Changed
+
+- The default publisher agreement text URL is now the server's `/api/publisher-agreement`, instead of `/documents/publisher-agreement.md`
+
 ## [1.3.0] - 2026-10-16
 
 ### Added

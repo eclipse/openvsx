@@ -43,6 +43,7 @@ import org.eclipse.openvsx.entities.FileDecision;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.eclipse.openvsx.entities.PublisherAgreement;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
 import org.eclipse.openvsx.entities.SignatureKeyPair;
@@ -161,6 +162,11 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
         trustedPublisher.setClaims(Map.of("claim", "value"));
         trustedPublisher.setCreatedBy(userData);
         trustedPublisher.setCreatedTimestamp(NOW);
+
+        var publisherAgreement = new PublisherAgreement();
+        publisherAgreement.setUserDataId(userData.getId());
+        publisherAgreement.setVersion(1);
+        publisherAgreement.setSignedTimestamp(NOW);
 
         // Persist all entities consistently using EntityManager
         Stream.of(
@@ -507,6 +513,9 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, userData),
                 () -> repositories.findTrustedPublisher(1L),
                 () -> repositories.deleteTrustedPublisher(trustedPublisher),
+                () -> repositories.findActivePublisherAgreements(userData.getId()),
+                () -> repositories.findPublisherAgreementHistory(userData.getId()),
+                () -> repositories.savePublisherAgreement(publisherAgreement),
                 () -> repositories.deleteTier(tier),
                 () -> repositories.deleteCustomer(customer),
                 // Extension scan delete method - add last, still not clear why but otherwise the test fails

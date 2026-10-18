@@ -1337,6 +1337,26 @@ Content type of that response.
 
 Body of that response.
 
+## Publisher Agreement
+
+Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing is recorded with the agreement version, and raising the version makes everyone sign again. A deployment with its own agreement service (a `@Primary` `PublisherAgreementService` bean) replaces this one, and these properties then have no effect.
+
+| Property      | `ovsx.publisher-agreement.version`
+|---------------|-----------------------------------
+| Type          | integer
+| Default       | `0`
+| Compatibility | Since 1.4.0
+
+The current version of the agreement. `0` disables agreements: everyone may publish. Any positive number requires a signature of at least that version.
+
+| Property      | `ovsx.publisher-agreement.text`
+|---------------|--------------------------------
+| Type          | string
+| Default       |
+| Compatibility | Since 1.4.0
+
+Location of the agreement text, in Markdown, as any Spring resource location such as `classpath:agreement.md` or `file:/etc/openvsx/agreement.md`. It is served at `/api/publisher-agreement`, which the web UI shows by default.
+
 ## Trusted Publishing
 
 Publishing with a short-lived token proved by an OIDC ID token from a CI provider, rather than

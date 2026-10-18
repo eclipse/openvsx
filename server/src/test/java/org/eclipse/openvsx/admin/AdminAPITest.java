@@ -87,6 +87,7 @@ import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
 import org.eclipse.openvsx.json.NamespaceMembershipJson;
 import org.eclipse.openvsx.json.NamespaceMembershipListJson;
+import org.eclipse.openvsx.json.PublisherAgreementEntryJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.SettingsJson;
 import org.eclipse.openvsx.json.UserJson;
@@ -221,6 +222,10 @@ class AdminAPITest {
 
     @Autowired
     CacheInfoService caches;
+
+    // registered as a mock through the @MockitoBean types list above
+    @Autowired
+    PublisherAgreementService publisherAgreements;
 
     // registered as a mock through the @MockitoBean types list above
     @Autowired
@@ -1489,6 +1494,45 @@ class AdminAPITest {
                     ext1.setVersion("1.0.0");
                     upi.setExtensions(List.of(ext1));
                 })));
+    }
+
+    @Test
+    void testPublisherAgreementHistoryNotAdmin() throws Exception {
+        mockNormalUser();
+        mockMvc.perform(
+                get("/admin/publisher/{provider}/{loginName}/agreement-history", "github", "test")
+                        .with(user("test_user")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testPublisherAgreementHistoryUnknownUser() throws Exception {
+        mockAdminUser();
+        when(repositories.findUserByLoginName("github", "nobody")).thenReturn(null);
+        mockMvc.perform(
+                get("/admin/publisher/{provider}/{loginName}/agreement-history", "github", "nobody")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testPublisherAgreementHistory() throws Exception {
+        mockAdminUser();
+        var user = new UserData();
+        user.setLoginName("test");
+        user.setProvider("github");
+        when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
+        when(publisherAgreements.publisherAgreementHistory(user)).thenReturn(
+                List.of(
+                        new PublisherAgreementEntryJson(2, "2026-10-18T10:00:00Z", null),
+                        new PublisherAgreementEntryJson(1, "2026-10-01T10:00:00Z", "2026-10-10T10:00:00Z")));
+        mockMvc.perform(
+                get("/admin/publisher/{provider}/{loginName}/agreement-history", "github", "test")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].version").value(2))
+                .andExpect(jsonPath("$[0].revokedTimestamp").doesNotExist())
+                .andExpect(jsonPath("$[1].revokedTimestamp").value("2026-10-10T10:00:00Z"));
     }
 
     @Test

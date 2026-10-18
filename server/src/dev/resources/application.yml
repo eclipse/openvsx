@@ -110,6 +110,10 @@ bucket4j:
   enabled: false
 
 ovsx:
+  publisher-agreement:
+    # version = 0, PA is no-op, if > 0 it requires signing PA (each increase requires re-sign)
+    version: 0
+    text: classpath:static/documents/publisher-agreement.md
   caching:
     statistics:
       # On for development, off everywhere else: the counting costs something on every cache lookup,

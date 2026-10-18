@@ -12,15 +12,21 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.eclipse.openvsx.repositories.RepositoryService;
 
 @Configuration(proxyBeanMethods = false)
 public class PublisherAgreementConfig {
 
     // A deployment's own bean is @Primary; this stays a candidate so injection by type has a fallback.
     @Bean
-    PublisherAgreementService noopPublisherAgreementService() {
-        return new NoopPublisherAgreementService();
+    PublisherAgreementService simplePublisherAgreementService(
+            RepositoryService repositories,
+            @Value("${ovsx.publisher-agreement.version:0}") int version
+    ) {
+        return new SimplePublisherAgreementService(repositories, version);
     }
 }

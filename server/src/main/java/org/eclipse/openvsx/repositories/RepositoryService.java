@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +51,7 @@ import org.eclipse.openvsx.entities.NamespaceMembership;
 import org.eclipse.openvsx.entities.PersistedLog;
 import org.eclipse.openvsx.entities.PersonalAccessToken;
 import org.eclipse.openvsx.entities.PersonalAccessTokenType;
+import org.eclipse.openvsx.entities.PublisherAgreement;
 import org.eclipse.openvsx.entities.RateLimitToken;
 import org.eclipse.openvsx.entities.ScanCheckResult;
 import org.eclipse.openvsx.entities.ScanStatus;
@@ -117,6 +119,7 @@ public class RepositoryService {
     private final DailyUsageStatsRepository dailyUsageStatsRepository;
     private final UserDataJooqRepository userDataJooqRepo;
     private final TrustedPublisherRepository trustedPublisherRepo;
+    private final PublisherAgreementRepository publisherAgreementRepo;
 
     public RepositoryService(
             NamespaceRepository namespaceRepo,
@@ -154,7 +157,8 @@ public class RepositoryService {
             RateLimitTokenRepository rateLimitTokenRepository,
             DailyUsageStatsRepository dailyUsageStatsRepository,
             UserDataJooqRepository userDataJooqRepo,
-            TrustedPublisherRepository trustedPublisherRepo
+            TrustedPublisherRepository trustedPublisherRepo,
+            PublisherAgreementRepository publisherAgreementRepo
     ) {
         this.namespaceRepo = namespaceRepo;
         this.namespaceJooqRepo = namespaceJooqRepo;
@@ -192,6 +196,22 @@ public class RepositoryService {
         this.dailyUsageStatsRepository = dailyUsageStatsRepository;
         this.userDataJooqRepo = userDataJooqRepo;
         this.trustedPublisherRepo = trustedPublisherRepo;
+        this.publisherAgreementRepo = publisherAgreementRepo;
+    }
+
+    /** The user's unrevoked signings, the latest first. */
+    public List<PublisherAgreement> findActivePublisherAgreements(long userDataId) {
+        return publisherAgreementRepo.findByUserDataIdAndRevokedTimestampIsNull(userDataId).stream()
+                .sorted(Comparator.comparingLong(PublisherAgreement::getId).reversed())
+                .toList();
+    }
+
+    public List<PublisherAgreement> findPublisherAgreementHistory(long userDataId) {
+        return publisherAgreementRepo.findByUserDataIdOrderByIdDesc(userDataId).toList();
+    }
+
+    public PublisherAgreement savePublisherAgreement(PublisherAgreement agreement) {
+        return publisherAgreementRepo.save(agreement);
     }
 
     public Streamable<TrustedPublisher> findTrustedPublishersByExtension(Extension extension) {

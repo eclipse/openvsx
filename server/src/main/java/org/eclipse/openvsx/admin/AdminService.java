@@ -59,6 +59,7 @@ import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ChangeNamespaceJson;
 import org.eclipse.openvsx.json.ExtensionJson;
 import org.eclipse.openvsx.json.NamespaceJson;
+import org.eclipse.openvsx.json.PublisherAgreementEntryJson;
 import org.eclipse.openvsx.json.ResultJson;
 import org.eclipse.openvsx.json.UserAccessJson;
 import org.eclipse.openvsx.json.UserPublishInfoJson;
@@ -571,6 +572,15 @@ public class AdminService {
 
     private String join(Collection<Permission> permissions) {
         return permissions.stream().map(Permission::toString).collect(Collectors.joining(", "));
+    }
+
+    @Transactional
+    public List<PublisherAgreementEntryJson> getPublisherAgreementHistory(String provider, String loginName) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
+        }
+        return publisherAgreements.publisherAgreementHistory(user);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)

@@ -12,13 +12,16 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.List;
+
 import org.eclipse.openvsx.entities.UserData;
+import org.eclipse.openvsx.json.PublisherAgreementEntryJson;
 import org.eclipse.openvsx.json.UserJson;
 import org.eclipse.openvsx.util.ErrorResultException;
 
 /**
  * Extension point for deployments that require publishers to sign an agreement. The default
- * implementation ({@link NoopPublisherAgreementService}) requires nothing; a deployment replaces it
+ * implementation ({@link SimplePublisherAgreementService}) keeps a signing history in the database; a deployment replaces it
  * by providing a {@code @Primary} bean of this type.
  */
 public interface PublisherAgreementService {
@@ -53,4 +56,11 @@ public interface PublisherAgreementService {
      * Does nothing if there is nothing to revoke.
      */
     void revokePublisherAgreement(UserData user, UserData admin);
+
+    /**
+     * The user's signings, latest first, for administrators. Empty unless the implementation keeps a history.
+     */
+    default List<PublisherAgreementEntryJson> publisherAgreementHistory(UserData user) {
+        return List.of();
+    }
 }
