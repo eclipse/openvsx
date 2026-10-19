@@ -117,7 +117,7 @@ class ChangeNamespaceServiceTest {
         stubRename(oldNamespace, newNamespace, extension);
         when(repositories.findVersions(extension)).thenReturn(Streamable.empty());
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, true);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, true, false);
 
         verify(sizeLimits).moveOverridesToNamespace(oldNamespace, newNamespace, true);
     }
@@ -142,7 +142,7 @@ class ChangeNamespaceServiceTest {
             return null;
         }).when(repositories).recordExtensionVersionChange(eq(extVersion), any(), any());
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false, false);
 
         assertThat(extension.getNamespace()).isEqualTo(newNamespace);
         assertThat(namespacesAtCallTime).containsExactly("old", "new");
@@ -166,7 +166,7 @@ class ChangeNamespaceServiceTest {
         // e.g. it predates the feed and was never publicly announced
         when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(false);
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false, false);
 
         // nothing to withdraw -- same rule as for a deletion or purge of a version the feed never reported
         verify(repositories, never())
@@ -174,6 +174,58 @@ class ChangeNamespaceServiceTest {
         // still active, so it is announced under the new namespace regardless
         verify(repositories)
                 .recordExtensionVersionChange(eq(extVersion), eq(ExtensionVersionState.ACTIVE), any());
+    }
+
+    /**
+     * The handler loads the target namespace before copying the files, which can take a while, so its
+     * copy is stale by the time it gets here. Only the copied logo may be written back (#989).
+     */
+    @Test
+    void movingIntoAnExistingNamespaceWritesOnlyTheCopiedLogo() {
+        var oldNamespace = namespace("old");
+        var staleNewNamespace = namespace("new");
+        staleNewNamespace.setDescription("before");
+        staleNewNamespace.setLogoName("logo-new-1.png");
+        staleNewNamespace.setLogoStorageType("local");
+        var managedNewNamespace = namespace("new");
+        managedNewNamespace.setId(staleNewNamespace.getId());
+        managedNewNamespace.setDescription("edited during the copy");
+        var extension = extension(oldNamespace);
+        when(repositories.findExtensions(oldNamespace)).thenReturn(Streamable.of(extension));
+        when(repositories.findVersions(extension)).thenReturn(Streamable.empty());
+        when(repositories.findMemberships(oldNamespace)).thenReturn(Streamable.empty());
+        when(repositories.findMemberships(managedNewNamespace)).thenReturn(Streamable.empty());
+        when(entityManager.find(Namespace.class, staleNewNamespace.getId())).thenReturn(managedNewNamespace);
+
+        service.changeNamespaceInDatabase(staleNewNamespace, oldNamespace, List.of(), false, false, true);
+
+        verify(entityManager, never()).merge(any());
+        assertThat(managedNewNamespace.getDescription()).isEqualTo("edited during the copy");
+        assertThat(managedNewNamespace.getLogoName()).isEqualTo("logo-new-1.png");
+        assertThat(managedNewNamespace.getLogoStorageType()).isEqualTo("local");
+        assertThat(extension.getNamespace()).isSameAs(managedNewNamespace);
+    }
+
+    /** Without a logo to copy, the target's own logo is not the handler's to write. */
+    @Test
+    void movingIntoAnExistingNamespaceWithoutALogoLeavesItsLogoAlone() {
+        var oldNamespace = namespace("old");
+        var staleNewNamespace = namespace("new");
+        staleNewNamespace.setLogoName("logo-new-1.png");
+        var managedNewNamespace = namespace("new");
+        managedNewNamespace.setId(staleNewNamespace.getId());
+        managedNewNamespace.setLogoName("logo-new-2.png");
+        var extension = extension(oldNamespace);
+        when(repositories.findExtensions(oldNamespace)).thenReturn(Streamable.of(extension));
+        when(repositories.findVersions(extension)).thenReturn(Streamable.empty());
+        when(repositories.findMemberships(oldNamespace)).thenReturn(Streamable.empty());
+        when(repositories.findMemberships(managedNewNamespace)).thenReturn(Streamable.empty());
+        when(entityManager.find(Namespace.class, staleNewNamespace.getId())).thenReturn(managedNewNamespace);
+
+        service.changeNamespaceInDatabase(staleNewNamespace, oldNamespace, List.of(), false, false, false);
+
+        verify(entityManager, never()).merge(any());
+        assertThat(managedNewNamespace.getLogoName()).isEqualTo("logo-new-2.png");
     }
 
     @Test
@@ -186,7 +238,7 @@ class ChangeNamespaceServiceTest {
         when(repositories.findVersions(extension)).thenReturn(Streamable.of(extVersion));
         when(repositories.wasReportedAsAvailable(extVersion)).thenReturn(true);
 
-        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false);
+        service.changeNamespaceInDatabase(newNamespace, oldNamespace, List.of(), true, false, false);
 
         // the previously reported old tuple is withdrawn ...
         verify(repositories)

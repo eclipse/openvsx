@@ -114,7 +114,8 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 })
                 .collect(Collectors.toList());
 
-        if (StringUtils.isNotEmpty(oldNamespace.getLogoName())) {
+        var logoCopied = StringUtils.isNotEmpty(oldNamespace.getLogoName());
+        if (logoCopied) {
             newNamespace.setLogoName(NamingUtil.changeLogoName(oldNamespace, newNamespace));
             storageUtil.copyNamespaceLogo(oldNamespace, newNamespace);
         }
@@ -124,7 +125,8 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
                 oldNamespace,
                 updatedResources,
                 createNewNamespace,
-                json.removeOldNamespace());
+                json.removeOldNamespace(),
+                logoCopied);
 
         // remove the old resources from external storage
         pairs.stream()
