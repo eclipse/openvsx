@@ -28,6 +28,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - **Upgrade:** migration `V1_78` makes `extension_version.published_by_id` `NOT NULL` and stops the server from starting if a row is still `NULL`. Versions published before 1.2.0 without a recorded token have no publisher to backfill, so check `SELECT count(*) FROM extension_version WHERE published_by_id IS NULL` returns 0 before upgrading ([#2276](https://github.com/eclipse-openvsx/openvsx/pull/2276))
 - `/vscode/gallery/extensionquery` loads only the versions it returns instead of every active version of each matched extension, pre-releases included ([#2161](https://github.com/eclipse-openvsx/openvsx/pull/2161))
 - Accept the personal access token via an Authorization: Bearer header ([#2209](https://github.com/eclipse-openvsx/openvsx/pull/2209))
+- `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
 
 ### Fixed
 
@@ -54,6 +55,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Update other dependencies to newer patch versions ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
 - Bump tika to 3.3.2 ([#2240](https://github.com/eclipse-openvsx/openvsx/pull/2240))
 - Remove unused `jaxb-api` and `jaxb-impl` dependencies ([#2317](https://github.com/eclipse-openvsx/openvsx/pull/2317))
+- Remove the direct `guava` dependency ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
 
 ## [v1.2.0] - 2026-09-10
 
