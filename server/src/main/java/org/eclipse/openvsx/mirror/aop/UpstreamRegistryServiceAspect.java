@@ -53,7 +53,7 @@ public class UpstreamRegistryServiceAspect {
     @Around("execution(* org.eclipse.openvsx.UpstreamRegistryService.*(..))")
     public Object rateLimitMethodCall(ProceedingJoinPoint joinPoint) throws Throwable {
         if (bucket != null) {
-            bucket.consume(1);
+            bucket.consumeUninterruptibly(1);
         }
         return joinPoint.proceed();
     }

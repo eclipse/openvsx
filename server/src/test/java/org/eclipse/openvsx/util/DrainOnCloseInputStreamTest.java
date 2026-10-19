@@ -97,6 +97,32 @@ class DrainOnCloseInputStreamTest {
     }
 
     @Test
+    void secondCloseDoesNotTouchTheUnderlyingStream() throws IOException {
+        var closes = new int[1];
+        InputStream underlying = new ByteArrayInputStream("body".getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public synchronized long skip(long n) {
+                if (closes[0] > 0) {
+                    throw new IllegalStateException("skipped after close");
+                }
+                return super.skip(n);
+            }
+
+            @Override
+            public void close() throws IOException {
+                closes[0]++;
+                super.close();
+            }
+        };
+        var stream = new DrainOnCloseInputStream(underlying, 1024);
+
+        stream.close();
+
+        assertThatCode(stream::close).doesNotThrowAnyException();
+        assertThat(closes[0]).isEqualTo(1);
+    }
+
+    @Test
     void closeSwallowsAnIOExceptionFromDraining() {
         InputStream failing = new InputStream() {
             @Override

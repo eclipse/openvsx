@@ -73,6 +73,26 @@ class UpstreamRegistryServiceAspectTest {
     }
 
     @Test
+    void waitsOutTheSpacingEvenWhenInterrupted() throws Throwable {
+        var aspect = new UpstreamRegistryServiceAspect(10);
+        var joinPoint = mock(ProceedingJoinPoint.class);
+
+        aspect.rateLimitMethodCall(joinPoint);
+        var start = System.nanoTime();
+        Thread.currentThread().interrupt();
+        try {
+            aspect.rateLimitMethodCall(joinPoint);
+            var elapsed = Duration.ofNanos(System.nanoTime() - start);
+
+            // 10 rps is one call every 100 ms; the interrupt neither cuts the wait short nor is lost
+            assertThat(elapsed).isGreaterThanOrEqualTo(Duration.ofMillis(90));
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
     void rejectsNonPositiveRates() {
         assertThatThrownBy(() -> new UpstreamRegistryServiceAspect(0))
                 .isInstanceOf(IllegalArgumentException.class);
