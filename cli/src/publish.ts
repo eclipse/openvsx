@@ -44,14 +44,41 @@ export async function publish(options: PublishOptions = {}): Promise<PromiseSett
     const internalPublishOptions: InternalPublishOptions[] = [];
     const packagePaths = options.packagePath || [undefined];
     const targets = options.targets || [undefined];
+    let anyPrepackaged = false;
     for (const packagePath of packagePaths) {
-        for (const target of targets) {
+        const prepackaged = options.extensionFile !== undefined || !!packagePath?.endsWith('.vsix');
+        anyPrepackaged ||= prepackaged;
+        // A package is already built for its target, so it is published once, not once per target.
+        for (const target of prepackaged ? [undefined] : targets) {
             internalPublishOptions.push({ ...options, packagePath: packagePath, target: target, maxExtensionSize });
+        }
+    }
+    if (anyPrepackaged) {
+        for (const [flag, key] of PACKAGING_OPTIONS) {
+            if (options[key] !== undefined) {
+                console.warn(`Ignoring option '${flag}' for prepackaged extension.`);
+            }
         }
     }
 
     return Promise.allSettled(internalPublishOptions.map(publishOptions => doPublish(registry, publishOptions)));
 }
+
+/**
+ * Options that only affect packaging, with the CLI flag that sets each, in the order they are reported
+ * as ignored for a prepackaged extension. `--no-dependencies` is left out: the CLI always sets
+ * `dependencies`, so whether it was given cannot be told apart.
+ */
+export const PACKAGING_OPTIONS: ReadonlyArray<readonly [string, keyof PublishOptions]> = [
+    ['--target', 'targets'],
+    ['--baseContentUrl', 'baseContentUrl'],
+    ['--baseImagesUrl', 'baseImagesUrl'],
+    ['--yarn', 'yarn'],
+    ['--follow-symlinks', 'followSymlinks'],
+    ['--packageVersion', 'packageVersion'],
+    ['--allow-missing-repository', 'allowMissingRepository'],
+    ['--pre-release', 'preRelease']
+];
 
 /**
  * Looks up the registry's default extension size limit, so an oversized package can be flagged
@@ -81,8 +108,6 @@ async function doPublish(registry: Registry, options: InternalPublishOptions = {
         if (packaged) {
             await packageExtension(options, registry);
             console.log(); // new line
-        } else if (options.preRelease) {
-            console.warn("Ignoring option '--pre-release' for prepackaged extension.");
         }
         await publishExtensionFile(registry, options);
     } finally {
