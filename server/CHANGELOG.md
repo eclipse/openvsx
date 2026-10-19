@@ -6,6 +6,8 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ## [next] (unreleased)
 
+## [1.3.0] - 2026-10-16
+
 ### Added
 
 - Add fine-grained admin permissions ([#2269](https://github.com/eclipse-openvsx/openvsx/pull/2269))
