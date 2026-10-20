@@ -6,6 +6,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Changed
 
+- `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
 - The default publisher agreement text URL is now the server's `/api/publisher-agreement`, instead of `/documents/publisher-agreement.md`
 
 ## [1.3.0] - 2026-10-16

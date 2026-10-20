@@ -6,6 +6,16 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ## [next] (unreleased)
 
+### Changed
+
+- `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
+
+### Dependencies
+
+- Remove the direct `guava` dependency ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
+
+## [1.3.0] - 2026-10-16
+
 ### Added
 
 - Add fine-grained admin permissions ([#2269](https://github.com/eclipse-openvsx/openvsx/pull/2269))
