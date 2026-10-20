@@ -8,6 +8,10 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
 
+### Fixed
+
+- A query reported through `useReportedQuery` (or a page's own error effect) no longer reopens the error dialog in a loop that cannot be closed while the query stays failed (#2348)
+
 ## [1.3.0] - 2026-10-16
 
 ### Added
