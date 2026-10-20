@@ -34,6 +34,7 @@ import org.eclipse.openvsx.settings.ExtensionSizeLimitService;
 import org.eclipse.openvsx.util.TargetPlatform;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -226,6 +227,32 @@ class ChangeNamespaceServiceTest {
 
         verify(entityManager, never()).merge(any());
         assertThat(managedNewNamespace.getLogoName()).isEqualTo("logo-new-2.png");
+    }
+
+    /** A target deleted during the copy aborts the move rather than being recreated. */
+    @Test
+    void movingIntoANamespaceDeletedDuringTheCopyAborts() {
+        var oldNamespace = namespace("old");
+        var deletedNewNamespace = namespace("new");
+        var extension = extension(oldNamespace);
+        when(repositories.findExtensions(oldNamespace)).thenReturn(Streamable.of(extension));
+        when(repositories.findVersions(extension)).thenReturn(Streamable.empty());
+        when(entityManager.find(Namespace.class, deletedNewNamespace.getId())).thenReturn(null);
+
+        assertThatThrownBy(
+                () -> service.changeNamespaceInDatabase(
+                        deletedNewNamespace,
+                        oldNamespace,
+                        List.of(),
+                        false,
+                        true,
+                        false))
+                .isInstanceOf(IllegalStateException.class);
+
+        assertThat(extension.getNamespace()).isSameAs(oldNamespace);
+        verify(entityManager, never()).persist(any());
+        verify(entityManager, never()).merge(any());
+        verify(entityManager, never()).remove(any());
     }
 
     @Test
