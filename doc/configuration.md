@@ -1347,7 +1347,7 @@ Requires publishers to sign an agreement before they can publish. Disabled by de
 | Default       |
 | Compatibility | Since 1.4.0
 
-The current version of the agreement, as a semantic version such as `1.0.0`. Empty disables agreements: everyone may publish. An invalid value stops the server from starting.
+The current version of the agreement, such as `1`, `1.0` or `1.0.0`: a semantic version whose minor and patch numbers may be left out. Empty disables agreements: everyone may publish. An invalid value stops the server from starting.
 
 | Property      | `ovsx.publisher-agreement.text`
 |---------------|--------------------------------

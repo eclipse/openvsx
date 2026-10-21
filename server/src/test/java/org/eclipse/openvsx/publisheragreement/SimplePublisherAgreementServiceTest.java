@@ -84,8 +84,32 @@ class SimplePublisherAgreementServiceTest {
 
     @Test
     void invalidVersionIsRejected() {
-        assertThatThrownBy(() -> service("1")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service("v1.0.0")).isInstanceOf(IllegalArgumentException.class);
+        for (var version : new String[] { "v1.0.0", "1.", ".1", "1..0", "1.2.3.4", "x", "-1", "01", "1.00" }) {
+            assertThatThrownBy(() -> service(version)).as(version).isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    void aVersionNeedsNotSpellOutAllThreeNumbers() {
+        for (var version : new String[] { "1", "1.0", "1.1", "1.0.0", "1.2.3", "1.0.0-beta", " 2 " }) {
+            assertThat(service(version).hasPublisherAgreement(user)).as(version).isFalse();
+        }
+    }
+
+    @Test
+    void signaturesAreComparedByMajorWhateverTheFormOfTheVersion() {
+        assertThat(service("1").signPublisherAgreement(user, new UserJson())).isTrue();
+
+        for (var current : new String[] { "1", "1.0", "1.1", "1.0.0", "1.4.2" }) {
+            assertThat(service(current).hasPublisherAgreement(user)).as(current).isTrue();
+        }
+        for (var current : new String[] { "2", "2.0", "2.1.0" }) {
+            assertThat(status(service(current))).as(current).isEqualTo("outdated");
+        }
+
+        assertThat(service("2.1").signPublisherAgreement(user, new UserJson())).isTrue();
+        assertThat(service("1.5").hasPublisherAgreement(user)).isTrue();
+        assertThat(service("3").hasPublisherAgreement(user)).isFalse();
     }
 
     @Test

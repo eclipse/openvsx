@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.publisheragreement;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,8 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import org.eclipse.openvsx.util.TimeUtil;
 
 /**
- * Records each signing of the agreement, with its semantic version, as an append-only history. A signature
+ * Records each signing of the agreement, with its version, as an append-only history. A version is a
+ * semantic version in which the minor and patch numbers may be left out ({@code 1}, {@code 1.0}). A signature
  * stays valid within the major version of the configured one; raising the major version makes it outdated. A
  * revocation blocks the user from signing again until an admin reinstates them. A blank version disables
  * agreements: everyone may publish. Users without a login provider, such as the development super_user, are
@@ -40,23 +42,27 @@ public class SimplePublisherAgreementService implements PublisherAgreementServic
     }
 
     private static final String MARKER_VERSION = "0.0.0";
+    private static final Pattern SHORT_VERSION = Pattern.compile("\\d+(?:\\.\\d+){0,2}");
 
     private final RepositoryService repositories;
     private final String versionText;
     private final SemanticVersion currentVersion;
 
-    /** @throws IllegalArgumentException if the version is neither blank nor a semantic version */
+    /** @throws IllegalArgumentException if the version is neither blank nor like 1, 1.0 or a semantic version */
     public SimplePublisherAgreementService(RepositoryService repositories, String version) {
         this.repositories = repositories;
         this.versionText = version == null ? null : version.trim();
         this.currentVersion = versionText == null || versionText.isEmpty() ? null : parse(versionText);
     }
 
+    /** Reads a version, in which 1 and 1.0 stand for 1.0.0, besides a full semantic version. */
     private static SemanticVersion parse(String version) {
-        if (!SemanticVersion.VERSION_PARSE_PATTERN.matcher(version).matches()) {
+        var missing = 2 - version.chars().filter(c -> c == '.').count();
+        var full = SHORT_VERSION.matcher(version).matches() ? version + ".0".repeat((int) missing) : version;
+        if (!SemanticVersion.VERSION_PARSE_PATTERN.matcher(full).matches()) {
             throw new IllegalArgumentException("Invalid ovsx.publisher-agreement.version: '" + version + "'");
         }
-        return SemanticVersion.parse(version);
+        return SemanticVersion.parse(full);
     }
 
     private boolean enabled() {
@@ -74,7 +80,7 @@ public class SimplePublisherAgreementService implements PublisherAgreementServic
         if (latest.getRevokedTimestamp() != null) {
             return latest.getReinstatedTimestamp() == null ? Status.REVOKED : Status.NONE;
         }
-        return SemanticVersion.parse(latest.getVersion()).getMajor() >= currentVersion.getMajor()
+        return parse(latest.getVersion()).getMajor() >= currentVersion.getMajor()
                 ? Status.SIGNED
                 : Status.OUTDATED;
     }

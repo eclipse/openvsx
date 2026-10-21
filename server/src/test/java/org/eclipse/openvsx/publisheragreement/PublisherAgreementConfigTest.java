@@ -42,8 +42,16 @@ class PublisherAgreementConfigTest {
 
     @Test
     void invalidVersionFailsStartup() {
-        runner.withPropertyValues("ovsx.publisher-agreement.version=1").run(
+        runner.withPropertyValues("ovsx.publisher-agreement.version=v1.0").run(
                 context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void shortVersionEnablesAgreements() {
+        for (var version : new String[] { "1", "1.1" }) {
+            runner.withPropertyValues("ovsx.publisher-agreement.version=" + version).run(
+                    context -> assertThat(context).as(version).hasNotFailed());
+        }
     }
 
     @Test

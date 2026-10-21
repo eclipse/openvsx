@@ -8,7 +8,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ### Added
 
-- Publisher agreements out of the box: with `ovsx.publisher-agreement.version` set to a semantic version users must sign before publishing, a signature stays valid within that major version, and each signing is kept as history; an admin revocation blocks signing until `POST /admin/publisher/{provider}/{loginName}/reinstate-agreement`; the text is served at `/api/publisher-agreement` and `GET /admin/publisher/{provider}/{loginName}/agreement-history` lists a user's signings. Disabled by default; migration `V1_82` adds the `publisher_agreement` table
+- Publisher agreements out of the box: with `ovsx.publisher-agreement.version` set to a version such as `1`, `1.0` or `1.0.0` users must sign before publishing, a signature stays valid within that major version, and each signing is kept as history; an admin revocation blocks signing until `POST /admin/publisher/{provider}/{loginName}/reinstate-agreement`; the text is served at `/api/publisher-agreement` and `GET /admin/publisher/{provider}/{loginName}/agreement-history` lists a user's signings. Disabled by default; migration `V1_82` adds the `publisher_agreement` table
 
 ### Changed
 
