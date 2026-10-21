@@ -17,8 +17,13 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class PublisherAgreementAPITest {
 
@@ -43,5 +48,25 @@ class PublisherAgreementAPITest {
     void notFoundWhenTheResourceIsMissing() {
         assertThat(api("classpath:publisheragreement/missing.md").getText().getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // Through the request mapping, as the webui calls it: it asks for text/plain.
+    @Test
+    void servesTheTextWhateverTheClientAccepts() throws Exception {
+        var mvc = MockMvcBuilders.standaloneSetup(api("classpath:publisheragreement/agreement.md")).build();
+
+        for (var accept : new String[] {
+            "text/plain",
+            "text/markdown",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "application/json"
+        }) {
+            mvc.perform(get("/api/publisher-agreement").header("Accept", accept))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType("text/plain;charset=UTF-8"))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Test Publisher Agreement")));
+        }
+        mvc.perform(get("/api/publisher-agreement"))
+                .andExpect(status().isOk());
     }
 }

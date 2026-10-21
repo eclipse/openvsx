@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -40,7 +42,8 @@ public class PublisherAgreementAPI {
         this.location = location;
     }
 
-    @GetMapping(path = "/api/publisher-agreement", produces = MediaType.TEXT_MARKDOWN_VALUE + ";charset=UTF-8")
+    // No `produces` condition: it would answer 406 to a client accepting only text/plain, as the webui does.
+    @GetMapping("/api/publisher-agreement")
     public ResponseEntity<Resource> getText() {
         if (location.isBlank()) {
             return ResponseEntity.notFound().build();
@@ -49,6 +52,9 @@ public class PublisherAgreementAPI {
         if (!text.exists()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(text);
+        return ResponseEntity.ok()
+                .contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
+                .cacheControl(CacheControl.noCache())
+                .body(text);
     }
 }
