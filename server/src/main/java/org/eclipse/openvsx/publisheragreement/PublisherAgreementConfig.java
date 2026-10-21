@@ -15,6 +15,7 @@ package org.eclipse.openvsx.publisheragreement;
 import java.util.Arrays;
 
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,9 +33,13 @@ public class PublisherAgreementConfig {
     PublisherAgreementService simplePublisherAgreementService(
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
-            Environment environment
+            Environment environment,
+            ListableBeanFactory beanFactory
     ) {
-        warnAboutEclipseProperties(environment);
+        // Counts this bean too: a deployment's own service, which may use ovsx.eclipse.*, makes it more than one.
+        if (beanFactory.getBeanNamesForType(PublisherAgreementService.class, true, false).length <= 1) {
+            warnAboutEclipseProperties(environment);
+        }
         return new SimplePublisherAgreementService(repositories, version);
     }
 

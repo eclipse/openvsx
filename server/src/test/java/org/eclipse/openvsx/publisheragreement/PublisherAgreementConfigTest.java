@@ -13,8 +13,11 @@
 package org.eclipse.openvsx.publisheragreement;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,6 +26,7 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(OutputCaptureExtension.class)
 class PublisherAgreementConfigTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
@@ -55,6 +59,19 @@ class PublisherAgreementConfigTest {
             assertThat(context.getBean(PublisherAgreementService.class))
                     .isSameAs(context.getBean(DeploymentConfig.class).custom);
         });
+    }
+
+    @Test
+    void warnsAboutLeftoverEclipsePropertiesWithoutADeploymentService(CapturedOutput output) {
+        runner.withPropertyValues("ovsx.eclipse.base-url=x").run(
+                context -> assertThat(output)
+                        .contains("ovsx.eclipse.* properties are ignored"));
+    }
+
+    @Test
+    void doesNotWarnWhenADeploymentServiceIsPresent(CapturedOutput output) {
+        runner.withUserConfiguration(DeploymentConfig.class).withPropertyValues("ovsx.eclipse.base-url=x")
+                .run(context -> assertThat(output).doesNotContain("ovsx.eclipse.* properties are ignored"));
     }
 
     @Configuration(proxyBeanMethods = false)
