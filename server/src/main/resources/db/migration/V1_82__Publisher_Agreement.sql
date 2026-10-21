@@ -20,4 +20,6 @@ CREATE TABLE IF NOT EXISTS public.publisher_agreement
 
 CREATE INDEX IF NOT EXISTS publisher_agreement__user_data_id__idx ON public.publisher_agreement (user_data_id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS publisher_agreement__active__idx ON public.publisher_agreement (user_data_id) WHERE revoked_timestamp IS NULL;
+-- one unrevoked signing of a version per user, which a double click would otherwise duplicate; signing a
+-- newer version leaves the earlier unrevoked row in place, so this cannot be one row per user
+CREATE UNIQUE INDEX IF NOT EXISTS publisher_agreement__active__idx ON public.publisher_agreement (user_data_id, version) WHERE revoked_timestamp IS NULL;
