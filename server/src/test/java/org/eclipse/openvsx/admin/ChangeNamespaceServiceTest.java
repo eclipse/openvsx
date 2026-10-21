@@ -229,9 +229,9 @@ class ChangeNamespaceServiceTest {
         assertThat(managedNewNamespace.getLogoName()).isEqualTo("logo-new-2.png");
     }
 
-    /** A target deleted during the copy aborts the move rather than being recreated. */
+    /** A target deleted during the copy fails this attempt and rolls it back; the job's retry creates it. */
     @Test
-    void movingIntoANamespaceDeletedDuringTheCopyAborts() {
+    void movingIntoANamespaceDeletedDuringTheCopyFailsTheAttempt() {
         var oldNamespace = namespace("old");
         var deletedNewNamespace = namespace("new");
         var extension = extension(oldNamespace);

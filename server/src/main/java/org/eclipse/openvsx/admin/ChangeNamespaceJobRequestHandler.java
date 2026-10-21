@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.jobs.lambdas.JobRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,7 @@ public class ChangeNamespaceJobRequestHandler implements JobRequestHandler<Chang
     }
 
     @Override
+    @Job(name = "Change namespace", retries = 1)
     public void run(ChangeNamespaceJobRequest jobRequest) throws Exception {
         var oldNamespace = jobRequest.getData().oldNamespace();
         Object lock;

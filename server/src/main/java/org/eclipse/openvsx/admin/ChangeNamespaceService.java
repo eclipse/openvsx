@@ -81,6 +81,7 @@ public class ChangeNamespaceService {
             // The caller loaded this copy before the slow file copy; write only the logo it changed.
             var managedNewNamespace = entityManager.find(Namespace.class, newNamespace.getId());
             if (managedNewNamespace == null) {
+                // Rolls back; the job's retry finds no target and creates it.
                 throw new IllegalStateException("Namespace was deleted during the change: " + newNamespace.getName());
             }
             if (logoCopied) {
