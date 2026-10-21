@@ -40,6 +40,7 @@ class SimplePublisherAgreementServiceTest {
 
     SimplePublisherAgreementServiceTest() {
         user.setId(7);
+        user.setProvider("github");
         Mockito.when(repositories.findPublisherAgreementHistory(anyLong())).thenAnswer(
                 i -> rows.stream().sorted((x, y) -> Long.compare(y.getId(), x.getId())).toList());
         Mockito.when(repositories.savePublisherAgreement(any())).thenAnswer(i -> {
@@ -172,5 +173,34 @@ class SimplePublisherAgreementServiceTest {
         service.signPublisherAgreement(user, new UserJson());
         service.reinstatePublisherAgreement(user);
         assertThat(rows).singleElement().satisfies(a -> assertThat(a.getReinstatedTimestamp()).isNull());
+    }
+
+    /** Created directly in the database, like the development super_user: there is no login to sign with. */
+    private UserData withoutLoginProvider() {
+        var dbUser = new UserData();
+        dbUser.setId(8);
+        return dbUser;
+    }
+
+    @Test
+    void aUserWithoutALoginProviderIsNotHeldToTheAgreement() {
+        var service = service("1.0.0");
+        var dbUser = withoutLoginProvider();
+
+        assertThat(service.hasPublisherAgreement(dbUser)).isTrue();
+        assertThatCode(() -> service.checkPublisherAgreement(dbUser)).doesNotThrowAnyException();
+        assertThat(rows).isEmpty();
+    }
+
+    @Test
+    void aRevokedUserWithoutALoginProviderStaysBlockedUntilReinstated() {
+        var service = service("1.0.0");
+        var dbUser = withoutLoginProvider();
+
+        service.revokePublisherAgreement(dbUser, admin());
+        assertThat(service.hasPublisherAgreement(dbUser)).isFalse();
+
+        service.reinstatePublisherAgreement(dbUser);
+        assertThat(service.hasPublisherAgreement(dbUser)).isTrue();
     }
 }

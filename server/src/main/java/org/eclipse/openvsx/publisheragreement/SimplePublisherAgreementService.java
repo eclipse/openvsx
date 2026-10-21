@@ -30,7 +30,8 @@ import org.eclipse.openvsx.util.TimeUtil;
  * Records each signing of the agreement, with its semantic version, as an append-only history. A signature
  * stays valid within the major version of the configured one; raising the major version makes it outdated. A
  * revocation blocks the user from signing again until an admin reinstates them. A blank version disables
- * agreements: everyone may publish.
+ * agreements: everyone may publish. Users without a login provider, such as the development super_user, are
+ * not held to the agreement unless it was revoked.
  */
 public class SimplePublisherAgreementService implements PublisherAgreementService {
 
@@ -81,7 +82,12 @@ public class SimplePublisherAgreementService implements PublisherAgreementServic
     @Override
     @Transactional
     public boolean hasPublisherAgreement(UserData user) {
-        return !enabled() || status(latest(user)) == Status.SIGNED;
+        if (!enabled()) {
+            return true;
+        }
+        var status = status(latest(user));
+        // A user created directly in the database has no login to sign with, so only a revocation holds.
+        return status == Status.SIGNED || (user.getProvider() == null && status != Status.REVOKED);
     }
 
     @Override
