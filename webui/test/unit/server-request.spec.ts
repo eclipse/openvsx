@@ -10,7 +10,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { jsonResponse, stubFetch } from './support/fetch';
-import { sendNonRetriableRequest, sendStrictRequest } from '../../src/server-request';
+import { sendNonRetriableRequest, sendRequest, sendStrictRequest } from '../../src/server-request';
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -80,6 +80,84 @@ describe('sendStrictRequest', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(2);
         vi.useRealTimers();
+    });
+});
+
+describe('sendRequest', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    // A fresh Response per call: a body can only be read once.
+    function stubFetchAlways(status: number) {
+        const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
+            init?.signal?.aborted
+                ? Promise.reject(new DOMException('The operation was aborted.', 'AbortError'))
+                : Promise.resolve(jsonResponse({ error: 'boom' }, status))
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        return fetchMock;
+    }
+
+    // Regression test: a function `retryOn` replaces fetch-retry's `retries` cap, and ours never
+    // checked `attempt`, so a persistent 5xx was retried forever.
+    it('stops retrying a persistent server error after 10 retries', async () => {
+        vi.useFakeTimers();
+        const fetchMock = stubFetchAlways(500);
+
+        const assertion = expect(sendRequest({ endpoint: 'https://open-vsx.org/api/-/search' })).rejects.toMatchObject({
+            status: 500
+        });
+        await vi.runAllTimersAsync();
+        await assertion;
+
+        expect(fetchMock).toHaveBeenCalledTimes(11);
+    });
+
+    it('stops retrying once the request is aborted', async () => {
+        vi.useFakeTimers();
+        const fetchMock = stubFetchAlways(500);
+        const abortController = new AbortController();
+
+        const assertion = expect(
+            sendRequest({ endpoint: 'https://open-vsx.org/api/-/search', abortController })
+        ).rejects.toMatchObject({ name: 'AbortError' });
+        await vi.advanceTimersByTimeAsync(0);
+        abortController.abort();
+        await vi.runAllTimersAsync();
+        await assertion;
+
+        // The retry already scheduled before the abort rejects and is not retried again.
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives up on a persistent 429 after 10 waits, even for a non-retriable request', async () => {
+        vi.useFakeTimers();
+        const fetchMock = stubFetchAlways(429);
+
+        const assertion = expect(
+            sendStrictRequest({ endpoint: 'https://open-vsx.org/api/-/search' })
+        ).rejects.toMatchObject({ status: 429 });
+        await vi.runAllTimersAsync();
+        await assertion;
+
+        expect(fetchMock).toHaveBeenCalledTimes(11);
+    });
+
+    it('settles as soon as the request is aborted while waiting out a 429', async () => {
+        vi.useFakeTimers();
+        const fetchMock = stubFetchAlways(429);
+        const abortController = new AbortController();
+
+        const assertion = expect(
+            sendStrictRequest({ endpoint: 'https://open-vsx.org/api/-/search', abortController })
+        ).rejects.toMatchObject({ name: 'AbortError' });
+        await vi.advanceTimersByTimeAsync(0);
+        abortController.abort();
+        await assertion;
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(vi.getTimerCount()).toBe(0);
     });
 });
 

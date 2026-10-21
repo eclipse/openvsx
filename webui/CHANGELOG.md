@@ -11,6 +11,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 ### Fixed
 
 - A query reported through `useReportedQuery` (or a page's own error effect) no longer reopens the error dialog in a loop that cannot be closed while the query stays failed (#2348)
+- `sendRequest` stops after 10 retries of a network error or 5xx and after 10 waits on a 429, instead of retrying forever, and an aborted request now settles right away instead of being retried or waiting out a rate limit
 
 ### Dependencies
 

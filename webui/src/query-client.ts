@@ -28,7 +28,7 @@ export const queryClient = new QueryClient({
             // so the fetch-retry loop no longer runs for them. This mirrors the old
             // fetch-retry policy — retry transient failures (network errors and 5xx) with
             // exponential backoff, but never retry client errors (4xx), which won't recover.
-            // (429s never reach here: `sendRequest` waits out the rate limit internally.)
+            // (`sendRequest` waits out a 429 internally; one that outlasts its cap lands here as a 4xx.)
             retry: (failureCount, error) => {
                 const status = (error as Partial<ErrorResponse> | null)?.status;
                 if (status !== undefined && status < 500) {
