@@ -4,6 +4,15 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Changed
+
+- `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
+
+### Dependencies
+
+- Bump vite from 8.3.2 to 8.3.5 (#2357)
+- Bump markdown-it from 14.3.2 to 14.3.3 (#2358)
+
 ## [1.3.0] - 2026-10-16
 
 ### Added

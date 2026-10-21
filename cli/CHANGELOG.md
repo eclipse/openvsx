@@ -8,6 +8,10 @@ This change log covers only the command line interface (CLI) of Open VSX.
 
 - `publish -i ext.vsix` now warns about the packaging options it ignores, as `publish ext.vsix` does, and publishes the package once instead of once per `--target`
 
+### Dependencies
+
+- Bump vite from 8.3.2 to 8.3.5 (#2357)
+
 ## [1.3.0] - 2026-10-16
 
 ### Changed
