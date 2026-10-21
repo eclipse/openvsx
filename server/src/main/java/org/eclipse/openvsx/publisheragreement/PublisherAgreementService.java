@@ -69,6 +69,16 @@ public interface PublisherAgreementService {
     }
 
     /**
+     * Whether the user's extensions may stay published, for the check on startup. An implementation that
+     * can fail to tell, for instance because it asks a remote server, overrides this to return
+     * {@link PublisherCompliance#UNKNOWN} then: nobody is deactivated on a guess. By default it follows
+     * {@link #hasPublisherAgreement}.
+     */
+    default PublisherCompliance publisherCompliance(UserData user) {
+        return hasPublisherAgreement(user) ? PublisherCompliance.COMPLIANT : PublisherCompliance.NON_COMPLIANT;
+    }
+
+    /**
      * The user's signings, latest first, for administrators. Empty unless the implementation keeps a history.
      */
     default List<PublisherAgreementEntryJson> publisherAgreementHistory(UserData user) {

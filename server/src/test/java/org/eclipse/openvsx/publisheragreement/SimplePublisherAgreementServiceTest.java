@@ -227,4 +227,31 @@ class SimplePublisherAgreementServiceTest {
         service.reinstatePublisherAgreement(dbUser);
         assertThat(service.hasPublisherAgreement(dbUser)).isTrue();
     }
+
+    @Test
+    void aPublisherIsCompliantWhileTheirAgreementIsCurrent() {
+        assertThat(service("1.0.0").publisherCompliance(user)).isEqualTo(PublisherCompliance.NON_COMPLIANT);
+
+        service("1.0.0").signPublisherAgreement(user, new UserJson());
+        assertThat(service("1.4.0").publisherCompliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
+        assertThat(service("2.0.0").publisherCompliance(user)).isEqualTo(PublisherCompliance.NON_COMPLIANT);
+
+        service("1.0.0").revokePublisherAgreement(user, admin());
+        assertThat(service("1.0.0").publisherCompliance(user)).isEqualTo(PublisherCompliance.NON_COMPLIANT);
+    }
+
+    @Test
+    void nobodyIsOutOfComplianceWhileAgreementsAreDisabled() {
+        assertThat(service("").publisherCompliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
+    }
+
+    @Test
+    void aUserWithoutALoginProviderIsCompliantUnlessRevoked() {
+        var service = service("1.0.0");
+        var dbUser = withoutLoginProvider();
+        assertThat(service.publisherCompliance(dbUser)).isEqualTo(PublisherCompliance.COMPLIANT);
+
+        service.revokePublisherAgreement(dbUser, admin());
+        assertThat(service.publisherCompliance(dbUser)).isEqualTo(PublisherCompliance.NON_COMPLIANT);
+    }
 }

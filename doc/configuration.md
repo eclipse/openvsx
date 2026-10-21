@@ -1357,6 +1357,15 @@ The current version of the agreement, such as `1`, `1.0` or `1.0.0`: a semantic 
 
 Location of the agreement text, in Markdown, as any Spring resource location such as `classpath:agreement.md` or `file:/etc/openvsx/agreement.md`. It is served at `/api/publisher-agreement`, which the web UI shows by default.
 
+| Property      | `ovsx.publisher-agreement.check-compliance-on-start`
+|---------------|-----------------------------------------------------
+| Type          | boolean
+| Default       | `false`
+| Compatibility | Since 1.4.0
+
+Whether to check publishers on startup and deactivate the extension versions of those without a current agreement. The agreement service decides who has one: with the default service a publisher is compliant while their signature is current, so an outdated or revoked one is not. A publisher whose status cannot be determined, for instance because a remote service is unreachable, is left alone. Has no effect while agreements are disabled.
+Replaces `ovsx.eclipse.check-compliance-on-start`, which is still read while this one is not set.
+
 ## Trusted Publishing
 
 Publishing with a short-lived token proved by an OIDC ID token from a CI provider, rather than
