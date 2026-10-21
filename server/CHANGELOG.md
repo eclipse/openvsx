@@ -9,6 +9,11 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 ### Changed
 
 - `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
+- A failed namespace change is retried once, instead of ten times as JobRunr does by default ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
+
+### Fixed
+
+- Moving extensions into an existing namespace no longer reverts edits made to that namespace while its files were being copied ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
 
 ### Dependencies
 
