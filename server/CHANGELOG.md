@@ -6,6 +6,10 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ## [next] (unreleased)
 
+### Added
+
+- Trusted publishing for GitHub and GitLab accepts optional repository/owner (GitHub) or project/namespace (GitLab) IDs at registration, so private repositories can be registered ([#2350](https://github.com/eclipse-openvsx/openvsx/issues/2350))
+
 ### Changed
 
 - `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
