@@ -10,7 +10,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Dependencies
 
-- Bump vite from 8.3.2 to 8.3.5
+- Bump vite from 8.3.2 to 8.3.5 (#2357)
 
 ## [1.3.0] - 2026-10-16
 
