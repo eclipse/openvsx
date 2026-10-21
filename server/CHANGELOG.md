@@ -14,6 +14,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 ### Fixed
 
 - Moving extensions into an existing namespace no longer reverts edits made to that namespace while its files were being copied ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
+- Concurrent downloads and download-log ingestions of the same extension no longer lose increments of its download count
 
 ### Dependencies
 
