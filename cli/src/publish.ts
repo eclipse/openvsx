@@ -55,7 +55,8 @@ export async function publish(options: PublishOptions = {}): Promise<PromiseSett
     }
     if (anyPrepackaged) {
         for (const [flag, key] of PACKAGING_OPTIONS) {
-            if (options[key] !== undefined) {
+            // An explicit `false` is not a flag that was given.
+            if (options[key] !== undefined && options[key] !== false) {
                 console.warn(`Ignoring option '${flag}' for prepackaged extension.`);
             }
         }
@@ -100,7 +101,6 @@ async function doPublish(registry: Registry, options: InternalPublishOptions = {
     if (options.packagePath?.endsWith('.vsix')) {
         options.extensionFile = options.packagePath;
         delete options.packagePath;
-        delete options.target;
     }
     // Only a package created here is a temp file; one the user supplied must never be deleted.
     const packaged = !options.extensionFile;

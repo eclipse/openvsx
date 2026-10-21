@@ -19,7 +19,8 @@ import * as path from 'path';
 import { AddressInfo } from 'net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createVSIX } from '@vscode/vsce';
-import { publish } from '../../src/publish';
+import { PACKAGING_OPTIONS, publish } from '../../src/publish';
+import { PublishOptions } from '../../src/publish-options';
 import { buildZip } from './support/zip';
 
 // Only the tests below that publish from a source directory reach this; every other one passes an
@@ -253,6 +254,46 @@ describe('publish', () => {
                 '--allow-missing-repository',
                 '--pre-release'
             ));
+        });
+
+        // One option at a time, with the key derived from the flag the way commander does it (`--target`
+        // is the exception, main.ts passes it on as `targets`), so the table is not checked against itself.
+        const optionKey = (flag: string): keyof PublishOptions => {
+            const name = flag.slice(2).replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
+            return (name === 'target' ? 'targets' : name) as keyof PublishOptions;
+        };
+        const sampleValues: Partial<Record<keyof PublishOptions, unknown>> = {
+            targets: ['linux-x64'],
+            baseContentUrl: 'https://content.test',
+            baseImagesUrl: 'https://images.test',
+            packageVersion: '2.0.0'
+        };
+
+        it.each(PACKAGING_OPTIONS.map(([flag]) => flag))('warns about %s when it is the only one given', async flag => {
+            const registry = await givenRegistry();
+            const extensionFile = await givenExtensionFile(100);
+            const key = optionKey(flag);
+
+            await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url, [key]: sampleValues[key] ?? true });
+
+            expect(ignoredWarnings()).toEqual(warningsFor(flag));
+        });
+
+        it('does not warn about a flag that is explicitly off', async () => {
+            const registry = await givenRegistry();
+            const extensionFile = await givenExtensionFile(100);
+
+            await publish({
+                extensionFile,
+                pat: 'the.pat',
+                registryUrl: registry.url,
+                yarn: false,
+                followSymlinks: false,
+                allowMissingRepository: false,
+                preRelease: false
+            });
+
+            expect(ignoredWarnings()).toEqual([]);
         });
 
         it('given as --packagePath', async () => {
