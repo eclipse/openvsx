@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -744,7 +745,7 @@ public class UserAPI {
             json.setPermissions(user.getPermissionsAsStrings());
             json.setTokensUrl(createApiUrl(serverUrl, "user", "tokens"));
             json.setCreateTokenUrl(createApiUrl(serverUrl, "user", "token", "create"));
-            if (publisherAgreements.signPublisherAgreement(user, json)) {
+            if (signOnce(user, json)) {
                 // Versions hidden while the agreement was missing become visible again.
                 extensions.reactivateExtensions(user);
             }
@@ -752,6 +753,15 @@ public class UserAPI {
             return ResponseEntity.ok(json);
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity(UserJson.class);
+        }
+    }
+
+    // A concurrent signing loses to the unique index; the retry then reports the winner's signature.
+    private boolean signOnce(UserData user, UserJson json) {
+        try {
+            return publisherAgreements.signPublisherAgreement(user, json);
+        } catch (DataIntegrityViolationException exc) {
+            return publisherAgreements.signPublisherAgreement(user, json);
         }
     }
 

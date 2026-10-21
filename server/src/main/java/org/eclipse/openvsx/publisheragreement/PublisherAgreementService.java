@@ -44,6 +44,8 @@ public interface PublisherAgreementService {
     /**
      * Signs the agreement on behalf of the user and adds the resulting status to the JSON.
      *
+     * Must be idempotent: the caller may repeat the call, e.g. after a concurrent signing.
+     *
      * @return whether the user signed now; false if the current agreement was already signed
      * @throws ErrorResultException if the user may not sign, e.g. after a revocation
      */

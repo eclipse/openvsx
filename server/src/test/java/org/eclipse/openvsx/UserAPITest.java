@@ -190,6 +190,22 @@ class UserAPITest {
     }
 
     @Test
+    void testSignPublisherAgreementConcurrentSigningIsNotAnError() throws Exception {
+        var userData = mockUserData();
+        when(publisherAgreements.signPublisherAgreement(eq(userData), any()))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"))
+                .thenReturn(false);
+
+        mockMvc.perform(
+                post("/user/publisher-agreement")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories, Mockito.never()).findVersionsByUser(userData, false);
+    }
+
+    @Test
     void testSignPublisherAgreementFailureDoesNotReactivateExtensions() throws Exception {
         var userData = mockUserData();
         Mockito.doThrow(new ErrorResultException("nope", HttpStatus.BAD_REQUEST))
