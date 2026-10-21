@@ -18,4 +18,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * One signing in a user's publisher agreement history; {@code revokedTimestamp} is absent while it stands.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record PublisherAgreementEntryJson(int version, String signedTimestamp, String revokedTimestamp) {}
+public record PublisherAgreementEntryJson(
+        String version,
+        String signedTimestamp,
+        String revokedTimestamp,
+        String reinstatedTimestamp
+) {}

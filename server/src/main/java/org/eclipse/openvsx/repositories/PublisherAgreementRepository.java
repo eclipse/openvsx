@@ -19,8 +19,6 @@ import org.eclipse.openvsx.entities.PublisherAgreement;
 
 public interface PublisherAgreementRepository extends Repository<PublisherAgreement, Long> {
 
-    Streamable<PublisherAgreement> findByUserDataIdAndRevokedTimestampIsNull(long userDataId);
-
     Streamable<PublisherAgreement> findByUserDataIdOrderByIdDesc(long userDataId);
 
     PublisherAgreement save(PublisherAgreement agreement);

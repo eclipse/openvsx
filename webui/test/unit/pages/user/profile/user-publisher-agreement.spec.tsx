@@ -80,4 +80,19 @@ describe('UserPublisherAgreement', () => {
         expect(screen.getByText('Publisher Agreement signed')).toBeInTheDocument();
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
+
+    it('offers no way to sign after a revocation', () => {
+        render(user({ publisherAgreement: { status: 'revoked' } }));
+
+        expect(screen.getByText('Publisher Agreement revoked')).toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    });
+
+    it('says the agreement changed when the signature is outdated', () => {
+        render(user({ publisherAgreement: { status: 'outdated' } }));
+
+        expect(screen.getByText('Publisher Agreement updated')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /review & sign/i })).toBeInTheDocument();
+    });
 });

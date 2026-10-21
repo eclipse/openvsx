@@ -37,6 +37,18 @@ class PublisherAgreementConfigTest {
     }
 
     @Test
+    void invalidVersionFailsStartup() {
+        runner.withPropertyValues("ovsx.publisher-agreement.version=1").run(
+                context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void semanticVersionEnablesAgreements() {
+        runner.withPropertyValues("ovsx.publisher-agreement.version=1.0.0").run(
+                context -> assertThat(context).hasNotFailed());
+    }
+
+    @Test
     void primaryDeploymentBeanReplacesTheDefault() {
         runner.withUserConfiguration(DeploymentConfig.class).run(context -> {
             assertThat(context.getBeansOfType(PublisherAgreementService.class)).hasSize(2);

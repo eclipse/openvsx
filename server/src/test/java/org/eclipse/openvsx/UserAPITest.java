@@ -162,6 +162,7 @@ class UserAPITest {
     void testSignPublisherAgreementReactivatesExtensions() throws Exception {
         var userData = mockUserData();
         when(repositories.findVersionsByUser(userData, false)).thenReturn(Streamable.empty());
+        when(publisherAgreements.signPublisherAgreement(eq(userData), any())).thenReturn(true);
 
         mockMvc.perform(
                 post("/user/publisher-agreement")
@@ -172,6 +173,20 @@ class UserAPITest {
         var order = Mockito.inOrder(publisherAgreements, repositories);
         order.verify(publisherAgreements).signPublisherAgreement(eq(userData), any());
         order.verify(repositories).findVersionsByUser(userData, false);
+    }
+
+    @Test
+    void testSignPublisherAgreementAlreadySignedDoesNotReactivateExtensions() throws Exception {
+        var userData = mockUserData();
+        when(publisherAgreements.signPublisherAgreement(eq(userData), any())).thenReturn(false);
+
+        mockMvc.perform(
+                post("/user/publisher-agreement")
+                        .with(user("test_user"))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk());
+
+        Mockito.verify(repositories, Mockito.never()).findVersionsByUser(userData, false);
     }
 
     @Test

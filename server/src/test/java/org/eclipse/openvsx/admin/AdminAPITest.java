@@ -1524,15 +1524,34 @@ class AdminAPITest {
         when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
         when(publisherAgreements.publisherAgreementHistory(user)).thenReturn(
                 List.of(
-                        new PublisherAgreementEntryJson(2, "2026-10-18T10:00:00Z", null),
-                        new PublisherAgreementEntryJson(1, "2026-10-01T10:00:00Z", "2026-10-10T10:00:00Z")));
+                        new PublisherAgreementEntryJson("2.0.0", "2026-10-18T10:00:00Z", null, null),
+                        new PublisherAgreementEntryJson(
+                                "1.0.0",
+                                "2026-10-01T10:00:00Z",
+                                "2026-10-10T10:00:00Z",
+                                null)));
         mockMvc.perform(
                 get("/admin/publisher/{provider}/{loginName}/agreement-history", "github", "test")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].version").value(2))
+                .andExpect(jsonPath("$[0].version").value("2.0.0"))
                 .andExpect(jsonPath("$[0].revokedTimestamp").doesNotExist())
                 .andExpect(jsonPath("$[1].revokedTimestamp").value("2026-10-10T10:00:00Z"));
+    }
+
+    @Test
+    void testReinstatePublisherAgreement() throws Exception {
+        mockAdminUser();
+        var user = new UserData();
+        user.setLoginName("test");
+        user.setProvider("github");
+        when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
+        mockMvc.perform(
+                post("/admin/publisher/{provider}/{loginName}/reinstate-agreement", "github", "test")
+                        .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                        .with(csrf().asHeader()))
+                .andExpect(status().isOk());
+        Mockito.verify(publisherAgreements).reinstatePublisherAgreement(user);
     }
 
     @Test

@@ -43,8 +43,11 @@ public interface PublisherAgreementService {
 
     /**
      * Signs the agreement on behalf of the user and adds the resulting status to the JSON.
+     *
+     * @return whether the user signed now; false if the current agreement was already signed
+     * @throws ErrorResultException if the user may not sign, e.g. after a revocation
      */
-    void signPublisherAgreement(UserData user, UserJson json);
+    boolean signPublisherAgreement(UserData user, UserJson json);
 
     /**
      * Adds the user's agreement status to the JSON served to administrators.
@@ -56,6 +59,12 @@ public interface PublisherAgreementService {
      * Does nothing if there is nothing to revoke.
      */
     void revokePublisherAgreement(UserData user, UserData admin);
+
+    /**
+     * Lifts the block of an earlier revocation, so the user may sign again. Does nothing by default.
+     */
+    default void reinstatePublisherAgreement(UserData user) {
+    }
 
     /**
      * The user's signings, latest first, for administrators. Empty unless the implementation keeps a history.

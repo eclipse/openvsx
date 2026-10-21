@@ -1339,15 +1339,15 @@ Body of that response.
 
 ## Publisher Agreement
 
-Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing is recorded with the agreement version, and raising the version makes everyone sign again. A deployment with its own agreement service (a `@Primary` `PublisherAgreementService` bean) replaces this one, and these properties then have no effect.
+Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing is recorded with the agreement version. A signature stays valid within the major version of the configured one, so raising the major version makes everyone sign again. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment with its own agreement service (a `@Primary` `PublisherAgreementService` bean) replaces this one, and these properties then have no effect.
 
 | Property      | `ovsx.publisher-agreement.version`
 |---------------|-----------------------------------
-| Type          | integer
-| Default       | `0`
+| Type          | string
+| Default       |
 | Compatibility | Since 1.4.0
 
-The current version of the agreement. `0` disables agreements: everyone may publish. Any positive number requires a signature of at least that version.
+The current version of the agreement, as a semantic version such as `1.0.0`. Empty disables agreements: everyone may publish. An invalid value stops the server from starting.
 
 | Property      | `ovsx.publisher-agreement.text`
 |---------------|--------------------------------

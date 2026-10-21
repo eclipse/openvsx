@@ -16,7 +16,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -197,13 +196,6 @@ public class RepositoryService {
         this.userDataJooqRepo = userDataJooqRepo;
         this.trustedPublisherRepo = trustedPublisherRepo;
         this.publisherAgreementRepo = publisherAgreementRepo;
-    }
-
-    /** The user's unrevoked signings, the latest first. */
-    public List<PublisherAgreement> findActivePublisherAgreements(long userDataId) {
-        return publisherAgreementRepo.findByUserDataIdAndRevokedTimestampIsNull(userDataId).stream()
-                .sorted(Comparator.comparingLong(PublisherAgreement::getId).reversed())
-                .toList();
     }
 
     public List<PublisherAgreement> findPublisherAgreementHistory(long userDataId) {

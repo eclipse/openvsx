@@ -165,7 +165,7 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
 
         var publisherAgreement = new PublisherAgreement();
         publisherAgreement.setUserDataId(userData.getId());
-        publisherAgreement.setVersion(1);
+        publisherAgreement.setVersion("1.0.0");
         publisherAgreement.setSignedTimestamp(NOW);
 
         // Persist all entities consistently using EntityManager
@@ -513,7 +513,6 @@ class RepositoryServiceSmokeTest extends AbstractPostgresContainerTest {
                 () -> repositories.findTrustedPublishersByNamespaceAndCreatedBy(namespace, userData),
                 () -> repositories.findTrustedPublisher(1L),
                 () -> repositories.deleteTrustedPublisher(trustedPublisher),
-                () -> repositories.findActivePublisherAgreements(userData.getId()),
                 () -> repositories.findPublisherAgreementHistory(userData.getId()),
                 () -> repositories.savePublisherAgreement(publisherAgreement),
                 () -> repositories.deleteTier(tier),

@@ -28,6 +28,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 
@@ -39,9 +40,6 @@ class SimplePublisherAgreementServiceTest {
 
     SimplePublisherAgreementServiceTest() {
         user.setId(7);
-        Mockito.when(repositories.findActivePublisherAgreements(anyLong())).thenAnswer(
-                i -> rows.stream().filter(a -> a.getRevokedTimestamp() == null)
-                        .sorted((x, y) -> Long.compare(y.getId(), x.getId())).toList());
         Mockito.when(repositories.findPublisherAgreementHistory(anyLong())).thenAnswer(
                 i -> rows.stream().sorted((x, y) -> Long.compare(y.getId(), x.getId())).toList());
         Mockito.when(repositories.savePublisherAgreement(any())).thenAnswer(i -> {
@@ -54,13 +52,25 @@ class SimplePublisherAgreementServiceTest {
         });
     }
 
-    private SimplePublisherAgreementService service(int version) {
+    private SimplePublisherAgreementService service(String version) {
         return new SimplePublisherAgreementService(repositories, version);
+    }
+
+    private UserData admin() {
+        var admin = new UserData();
+        admin.setId(9);
+        return admin;
+    }
+
+    private String status(SimplePublisherAgreementService service) {
+        var json = new UserJson();
+        service.enrichUserJson(json, user);
+        return json.getPublisherAgreement().getStatus();
     }
 
     @Test
     void disabledMeansEveryoneMayPublishAndNothingToSign() {
-        var service = service(0);
+        var service = service("");
         var json = new UserJson();
         assertThat(service.hasPublisherAgreement(user)).isTrue();
         service.enrichUserJson(json, user);
@@ -72,49 +82,95 @@ class SimplePublisherAgreementServiceTest {
     }
 
     @Test
-    void unsignedUserMayNotPublish() {
-        var service = service(1);
-        var json = new UserJson();
-        assertThat(service.hasPublisherAgreement(user)).isFalse();
-        assertThatThrownBy(() -> service.checkPublisherAgreement(user)).isInstanceOf(ErrorResultException.class);
-        service.enrichUserJson(json, user);
-        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("none");
+    void invalidVersionIsRejected() {
+        assertThatThrownBy(() -> service("1")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service("v1.0.0")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void signingAllowsPublishingUntilTheVersionIsRaised() {
-        var json = new UserJson();
-        service(1).signPublisherAgreement(user, json);
-        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("signed");
-        assertThatCode(() -> service(1).checkPublisherAgreement(user)).doesNotThrowAnyException();
+    void unsignedUserMayNotPublish() {
+        var service = service("1.0.0");
+        assertThat(service.hasPublisherAgreement(user)).isFalse();
+        assertThatThrownBy(() -> service.checkPublisherAgreement(user)).isInstanceOf(ErrorResultException.class);
+        assertThat(status(service)).isEqualTo("none");
+    }
 
-        var later = service(2);
-        var outdated = new UserJson();
-        later.enrichUserJson(outdated, user);
-        assertThat(outdated.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+    @Test
+    void signatureStaysValidWithinTheMajorVersionOnly() {
+        assertThat(service("1.0.0").signPublisherAgreement(user, new UserJson())).isTrue();
+        assertThat(status(service("1.0.0"))).isEqualTo("signed");
+        assertThatCode(() -> service("1.0.0").checkPublisherAgreement(user)).doesNotThrowAnyException();
+
+        assertThat(service("1.4.2").hasPublisherAgreement(user)).isTrue();
+
+        var later = service("2.0.0");
+        assertThat(status(later)).isEqualTo("outdated");
         assertThat(later.hasPublisherAgreement(user)).isFalse();
 
-        later.signPublisherAgreement(user, new UserJson());
+        assertThat(later.signPublisherAgreement(user, new UserJson())).isTrue();
         assertThat(later.hasPublisherAgreement(user)).isTrue();
     }
 
     @Test
-    void historyIsKeptAcrossResignAndRevoke() {
-        service(1).signPublisherAgreement(user, new UserJson());
-        service(1).signPublisherAgreement(user, new UserJson());
+    void signingAgainWhenAlreadySignedChangesNothing() {
+        assertThat(service("1.0.0").signPublisherAgreement(user, new UserJson())).isTrue();
+        assertThat(service("1.0.0").signPublisherAgreement(user, new UserJson())).isFalse();
         assertThat(rows).hasSize(1);
-        service(2).signPublisherAgreement(user, new UserJson());
-        assertThat(rows).hasSize(2);
+    }
 
-        var admin = new UserData();
-        admin.setId(9);
-        service(2).revokePublisherAgreement(user, admin);
-        assertThat(service(2).hasPublisherAgreement(user)).isFalse();
-        assertThat(service(2).publisherAgreementHistory(user))
-                .extracting(e -> e.version(), e -> e.revokedTimestamp() != null)
-                .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple(2, true),
-                        org.assertj.core.groups.Tuple.tuple(1, true));
+    @Test
+    void revocationBlocksSigningAgain() {
+        var service = service("2.0.0");
+        service("1.0.0").signPublisherAgreement(user, new UserJson());
+        service.signPublisherAgreement(user, new UserJson());
+        service.revokePublisherAgreement(user, admin());
+
+        assertThat(service.hasPublisherAgreement(user)).isFalse();
+        assertThat(status(service)).isEqualTo("revoked");
+        assertThatThrownBy(() -> service.signPublisherAgreement(user, new UserJson()))
+                .isInstanceOfSatisfying(
+                        ErrorResultException.class,
+                        e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.FORBIDDEN));
         assertThat(rows).hasSize(2).allSatisfy(a -> assertThat(a.getRevokedById()).isEqualTo(9L));
+        assertThat(service.publisherAgreementHistory(user))
+                .extracting(e -> e.version(), e -> e.revokedTimestamp() != null)
+                .containsExactly(tuple("2.0.0", true), tuple("1.0.0", true));
+    }
+
+    @Test
+    void revokingAUserWhoNeverSignedBlocksThem() {
+        var service = service("1.0.0");
+        service.revokePublisherAgreement(user, admin());
+        service.revokePublisherAgreement(user, admin());
+
+        assertThat(rows).hasSize(1);
+        assertThat(status(service)).isEqualTo("revoked");
+        assertThatThrownBy(() -> service.signPublisherAgreement(user, new UserJson()))
+                .isInstanceOf(ErrorResultException.class);
+    }
+
+    @Test
+    void reinstatingLetsTheUserSignAgain() {
+        var service = service("1.0.0");
+        service.signPublisherAgreement(user, new UserJson());
+        service.revokePublisherAgreement(user, admin());
+        service.reinstatePublisherAgreement(user);
+
+        assertThat(status(service)).isEqualTo("none");
+        assertThat(service.hasPublisherAgreement(user)).isFalse();
+        assertThat(service.signPublisherAgreement(user, new UserJson())).isTrue();
+        assertThat(service.hasPublisherAgreement(user)).isTrue();
+        assertThat(service.publisherAgreementHistory(user)).hasSize(2);
+
+        service.revokePublisherAgreement(user, admin());
+        assertThat(status(service)).isEqualTo("revoked");
+    }
+
+    @Test
+    void reinstatingWithoutARevocationDoesNothing() {
+        var service = service("1.0.0");
+        service.signPublisherAgreement(user, new UserJson());
+        service.reinstatePublisherAgreement(user);
+        assertThat(rows).singleElement().satisfies(a -> assertThat(a.getReinstatedTimestamp()).isNull());
     }
 }

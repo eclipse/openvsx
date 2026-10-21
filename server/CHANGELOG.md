@@ -6,7 +6,14 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ## [next] (unreleased)
 
+### Added
+
+- Publisher agreements out of the box: with `ovsx.publisher-agreement.version` set to a semantic version users must sign before publishing, a signature stays valid within that major version, and each signing is kept as history; an admin revocation blocks signing until `POST /admin/publisher/{provider}/{loginName}/reinstate-agreement`; the text is served at `/api/publisher-agreement` and `GET /admin/publisher/{provider}/{loginName}/agreement-history` lists a user's signings. Disabled by default; migration `V1_82` adds the `publisher_agreement` table
+
 ### Changed
+
+- Move the Eclipse publisher agreement and Eclipse OAuth login behind the `PublisherAgreementService` and `ExternalLoginProvider` extension points; `UserJson.publisherAgreement` gains `loginProvider` and `loginProviderName` naming the additional login needed to sign or revoke
+- **Upgrade:** the `ovsx.eclipse.*` properties, their deployment descriptor entries and the `ECLIPSE_CLIENT_*` handling in `generate-properties.sh` are removed, and publisher agreements are no longer enforced through Eclipse; a deployment that needs that supplies a `@Primary` `PublisherAgreementService`, otherwise everyone may publish unless `ovsx.publisher-agreement.version` is set. A warning is logged at startup while `ovsx.eclipse.*` is still configured
 
 - `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
 - A failed namespace change is retried once, instead of ten times as JobRunr does by default ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
@@ -37,11 +44,9 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Add a consistency check that finds and repairs extensions whose stored average rating or review count differs from their active reviews, see #2327 ([#2328](https://github.com/eclipse-openvsx/openvsx/pull/2328))
 - Add `GET /admin/analytics/status`, which reports whether download analytics is enabled and reachable and how many log files wait for it, for the admin dashboard ([#2337](https://github.com/eclipse-openvsx/openvsx/pull/2337))
 - Record the CI run behind a trusted-publishing upload when the token carries it: GitHub's `job_workflow_ref`, `run_id` and `workflow_sha`, GitLab's `pipeline_id`, `job_id` and `sha` ([#2283](https://github.com/eclipse-openvsx/openvsx/pull/2283))
-- Publisher agreements out of the box: with `ovsx.publisher-agreement.version` above 0 users must sign before publishing, each signing is kept as history, and raising the version makes everyone sign again; the text comes from `ovsx.publisher-agreement.text` and is served at `/api/publisher-agreement`, and `GET /admin/publisher/{provider}/{loginName}/agreement-history` lists a user's signings. Disabled by default; migration `V1_82` adds the `publisher_agreement` table
 
 ### Changed
 
-- Move the Eclipse publisher agreement and Eclipse OAuth login out of the server behind the `PublisherAgreementService` and `ExternalLoginProvider` extension points; the `ovsx.eclipse.*` properties, their docs, deployment descriptor entries and the `ECLIPSE_CLIENT_*` handling in `generate-properties.sh` are removed, and a deployment that needs them supplies an implementation, and the default one is a signing history kept in the database (see Added); `UserJson.publisherAgreement` gains optional `loginProvider` and `loginProviderName` naming the additional login needed to sign or revoke
 - **Upgrade:** migration `V1_78` makes `extension_version.published_by_id` `NOT NULL` and stops the server from starting if a row is still `NULL`. Versions published before 1.2.0 without a recorded token have no publisher to backfill, so check `SELECT count(*) FROM extension_version WHERE published_by_id IS NULL` returns 0 before upgrading ([#2276](https://github.com/eclipse-openvsx/openvsx/pull/2276))
 - `/vscode/gallery/extensionquery` loads only the versions it returns instead of every active version of each matched extension, pre-releases included ([#2161](https://github.com/eclipse-openvsx/openvsx/pull/2161))
 - Accept the personal access token via an Authorization: Bearer header ([#2209](https://github.com/eclipse-openvsx/openvsx/pull/2209))

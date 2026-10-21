@@ -43,7 +43,7 @@ public class PublisherAgreement implements Serializable {
     private long userDataId;
 
     @Column(nullable = false)
-    private int version;
+    private String version;
 
     @Column(name = "signed_timestamp", nullable = false)
     private LocalDateTime signedTimestamp;
@@ -64,11 +64,11 @@ public class PublisherAgreement implements Serializable {
         this.userDataId = userDataId;
     }
 
-    public int getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(String version) {
         this.version = version;
     }
 
@@ -85,6 +85,17 @@ public class PublisherAgreement implements Serializable {
 
     @Column(name = "revoked_by_id")
     private Long revokedById;
+
+    @Column(name = "reinstated_timestamp")
+    private LocalDateTime reinstatedTimestamp;
+
+    public LocalDateTime getReinstatedTimestamp() {
+        return reinstatedTimestamp;
+    }
+
+    public void setReinstatedTimestamp(LocalDateTime reinstatedTimestamp) {
+        this.reinstatedTimestamp = reinstatedTimestamp;
+    }
 
     public LocalDateTime getRevokedTimestamp() {
         return revokedTimestamp;

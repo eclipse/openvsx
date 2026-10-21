@@ -216,7 +216,7 @@ export interface UserData {
     /** Admin capabilities individually granted to this user, independent of role (see AdminPermission). */
     permissions?: AdminPermission[];
     publisherAgreement?: {
-        status: 'none' | 'signed' | 'outdated';
+        status: 'none' | 'signed' | 'outdated' | 'revoked';
         timestamp?: TimestampString;
         /** Provider of the additional login needed to sign or revoke the agreement; none if absent. */
         loginProvider?: string;

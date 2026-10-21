@@ -111,8 +111,8 @@ bucket4j:
 
 ovsx:
   publisher-agreement:
-    # version = 0, PA is no-op, if > 0 it requires signing PA (each increase requires re-sign)
-    version: 0
+    # empty disables the agreement; a semantic version requires signing it (a new major version requires re-signing)
+    version: ''
     text: classpath:static/documents/publisher-agreement.md
   caching:
     statistics:

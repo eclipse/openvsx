@@ -1340,6 +1340,24 @@ public class AdminAPI {
     }
 
     @PostMapping(
+        path = "/publisher/{provider}/{loginName}/reinstate-agreement",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Operation(hidden = true, summary = "Lift the block of a revoked publisher agreement")
+    @MutatingOperation
+    public ResponseEntity<ResultJson> reinstatePublisherAgreement(
+            @PathVariable String loginName,
+            @PathVariable String provider
+    ) {
+        try {
+            admins.checkPermission(Permission.MANAGE_PUBLISHERS);
+            return ResponseEntity.ok(admins.reinstatePublisherAgreement(provider, loginName));
+        } catch (ErrorResultException exc) {
+            return exc.toResponseEntity();
+        }
+    }
+
+    @PostMapping(
         path = "/publisher/{provider}/{loginName}/revoke",
         produces = MediaType.APPLICATION_JSON_VALUE
     )

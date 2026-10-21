@@ -584,6 +584,16 @@ public class AdminService {
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson reinstatePublisherAgreement(String provider, String loginName) {
+        var user = repositories.findUserByLoginName(provider, loginName);
+        if (user == null) {
+            throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
+        }
+        publisherAgreements.reinstatePublisherAgreement(user);
+        return ResultJson.success("Reinstated the publisher agreement of " + loginName + ".");
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
     public ResultJson revokePublisherContributions(String provider, String loginName, UserData admin) {
         return revokePublisherContributions(provider, loginName, admin, null);
     }

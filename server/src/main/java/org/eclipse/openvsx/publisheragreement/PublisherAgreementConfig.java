@@ -12,9 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.Arrays;
+
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.Environment;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
 
@@ -25,8 +31,24 @@ public class PublisherAgreementConfig {
     @Bean
     PublisherAgreementService simplePublisherAgreementService(
             RepositoryService repositories,
-            @Value("${ovsx.publisher-agreement.version:0}") int version
+            @Value("${ovsx.publisher-agreement.version:}") String version,
+            Environment environment
     ) {
+        warnAboutEclipseProperties(environment);
         return new SimplePublisherAgreementService(repositories, version);
+    }
+
+    // The Eclipse agreement is gone and its properties bind to nothing, so enforcement silently stops.
+    private static void warnAboutEclipseProperties(Environment environment) {
+        if (environment instanceof ConfigurableEnvironment configurable
+                && configurable.getPropertySources().stream()
+                        .filter(EnumerablePropertySource.class::isInstance)
+                        .map(EnumerablePropertySource.class::cast)
+                        .flatMap(source -> Arrays.stream(source.getPropertyNames()))
+                        .anyMatch(name -> name.startsWith("ovsx.eclipse."))) {
+            LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
+                    "ovsx.eclipse.* properties are ignored since the Eclipse publisher agreement was removed; "
+                            + "provide a PublisherAgreementService bean or set ovsx.publisher-agreement.version");
+        }
     }
 }
