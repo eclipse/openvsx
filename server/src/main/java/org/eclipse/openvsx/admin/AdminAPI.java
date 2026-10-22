@@ -1396,6 +1396,7 @@ public class AdminAPI {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Operation(summary = "Bulk revoke publisher contributions")
+    @MutatingOperation
     @ApiResponse(
         responseCode = "200",
         description = "A success message is returned in JSON format",
