@@ -95,7 +95,11 @@ class PublisherAgreementServiceTest {
 
         when(provider.enabled()).thenReturn(true);
         givenStatus(State.NONE);
-        service = new PublisherAgreementService(provider, repositories, extensions, transactions);
+        service = serviceWith(new PublisherAgreementVersions("1.0.0", List.of()));
+    }
+
+    private PublisherAgreementService serviceWith(PublisherAgreementVersions versions) {
+        return new PublisherAgreementService(provider, repositories, extensions, transactions, versions);
     }
 
     private AgreementStatus givenStatus(State state) {
@@ -560,6 +564,83 @@ class PublisherAgreementServiceTest {
 
         assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
         assertThat(service.mayPublish(user)).isFalse();
+    }
+
+    // ---- the service decides which signed versions still count
+
+    @Test
+    void aSignatureOfAVersionThatNoLongerCountsIsOutdated() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(State.SIGNED);
+
+        var thrown = refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+
+        assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
+        var json = new UserJson();
+        service.enrichUserJson(json, user);
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+        assertThat(json.getPublisherAgreement().getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void aSignatureOfAnAllowedVersionStaysSigned() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of("1")));
+        givenStatus(State.SIGNED);
+
+        assertThatCode(() -> service.requireAgreement(user)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void anAgreementTheProviderCallsOutdatedStaysOutdated() {
+        givenStatus(State.OUTDATED);
+
+        refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+    }
+
+    @Test
+    void aSignatureWithoutAVersionStaysSigned() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(new AgreementStatus(State.SIGNED, null, SIGNED_AT, false));
+
+        assertThatCode(() -> service.requireAgreement(user)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void adminsSeeTheSameJudgement() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(State.SIGNED);
+        var json = new UserJson();
+
+        service.enrichUserJsonForAdmin(json, user);
+
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+    }
+
+    /** What the provider signed has to count, or nothing is recorded and the cause is named: a retry cannot help. */
+    @Test
+    void aSigningOfAVersionThatDoesNotCountIsNotASigning() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+
+        var thrown = refusedWith(HttpStatus.INTERNAL_SERVER_ERROR, () -> service.sign(user, new UserJson()));
+
+        assertThat(thrown.getMessage()).contains("1.0").contains("does not accept");
+        assertThat(events).isEmpty();
+        verify(extensions, never()).reactivateExtensions(any());
+    }
+
+    @Test
+    void aSignatureThatNoLongerCountsKeepsItsTimeAndTheLinkedLogin() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        when(provider.requiredLogin()).thenReturn(new ExternalLogin("eclipse", "Eclipse"));
+        givenStatus(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, true));
+        var json = new UserJson();
+
+        service.enrichUserJson(json, user);
+
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+        assertThat(json.getPublisherAgreement().getTimestamp()).isEqualTo("2026-10-01T10:00Z");
+        assertThat(json.getAdditionalLogins()).extracting(UserJson::getProvider).containsExactly("eclipse");
     }
 
     // ---- what the steps that change an agreement must hold

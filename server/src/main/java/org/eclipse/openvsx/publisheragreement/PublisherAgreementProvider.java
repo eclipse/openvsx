@@ -34,8 +34,12 @@ public interface PublisherAgreementProvider {
 
     /**
      * The agreement of the user, determined as that user: an implementation that asks a remote service may
-     * use the user's own credentials. It returns {@link AgreementStatus.State#UNKNOWN} when it cannot tell,
-     * for instance because the remote service is unreachable, rather than guessing {@code NONE}.
+     * use the user's own credentials. It reports the version the user signed as {@code SIGNED}, without judging
+     * whether that version still counts, which {@link PublisherAgreementService} decides for every provider from
+     * {@code ovsx.publisher-agreement.version} and {@code ovsx.publisher-agreement.allowed-versions}; a provider
+     * that cannot tell the version leaves it out, and that signature then counts whatever the versions are.
+     * It returns {@link AgreementStatus.State#UNKNOWN} when it cannot tell, for instance because the remote
+     * service is unreachable, rather than guessing {@code NONE}.
      */
     AgreementStatus status(UserData user);
 
@@ -50,7 +54,9 @@ public interface PublisherAgreementProvider {
     /**
      * Signs the current agreement on behalf of the user and returns the resulting status, which has to be
      * {@code SIGNED} and whose version is recorded: anything else counts as a failure and is not recorded. Must
-     * be idempotent: signing again an agreement that is already signed returns the status as it is.
+     * be idempotent: signing again an agreement that is already signed returns the status as it is. A version that
+     * the registry does not accept (see {@link #status}) makes the signing fail for good, so it has to be one that
+     * {@code ovsx.publisher-agreement.version} or {@code ovsx.publisher-agreement.allowed-versions} lets through.
      *
      * @throws PublisherAgreementException if the user cannot sign
      */

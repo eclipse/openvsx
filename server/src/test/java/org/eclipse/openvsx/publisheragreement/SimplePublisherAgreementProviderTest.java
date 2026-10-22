@@ -27,7 +27,6 @@ import org.eclipse.openvsx.publisheragreement.AgreementStatus.State;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -76,50 +75,20 @@ class SimplePublisherAgreementProviderTest {
         assertThat(provider("1").enabled()).isTrue();
     }
 
+    /** Whether that version still counts is for the service. */
     @Test
-    void invalidVersionIsRejected() {
-        for (var version : new String[] { "v1.0.0", "1.", ".1", "1..0", "1.2.3.4", "x", "-1", "01", "1.00" }) {
-            assertThatThrownBy(() -> provider(version)).as(version).isInstanceOf(IllegalArgumentException.class);
-        }
-    }
+    void aSignatureIsReportedAsSignedWhateverItsVersion() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "0.1");
 
-    @Test
-    void aVersionTooLargeToReadIsRejectedNamingTheProperty() {
-        assertThatThrownBy(() -> provider("99999999999999999999"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("ovsx.publisher-agreement.version");
-    }
+        var status = provider("2").status(user);
 
-    @Test
-    void aVersionNeedsNotSpellOutAllThreeNumbers() {
-        for (var version : new String[] { "1", "1.0", "1.1", "1.0.0", "1.2.3", "1.0.0-beta", " 2 " }) {
-            assertThat(provider(version).enabled()).as(version).isTrue();
-        }
+        assertThat(status.state()).isEqualTo(State.SIGNED);
+        assertThat(status.version()).isEqualTo("0.1");
     }
 
     @Test
     void aUserWhoNeverSignedHasNone() {
         assertThat(provider("1.0.0").status(user).state()).isEqualTo(State.NONE);
-    }
-
-    @Test
-    void aSignatureIsComparedByMajorWhateverTheFormOfTheVersion() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1");
-
-        for (var current : new String[] { "1", "1.0", "1.1", "1.0.0", "1.4.2" }) {
-            assertThat(provider(current).status(user).state()).as(current).isEqualTo(State.SIGNED);
-        }
-        for (var current : new String[] { "2", "2.0", "2.1.0" }) {
-            assertThat(provider(current).status(user).state()).as(current).isEqualTo(State.OUTDATED);
-        }
-    }
-
-    @Test
-    void aLowerConfiguredMajorStillCountsTheHigherSignature() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "2.1");
-
-        assertThat(provider("1.5").status(user).state()).isEqualTo(State.SIGNED);
-        assertThat(provider("3").status(user).state()).isEqualTo(State.OUTDATED);
     }
 
     @Test

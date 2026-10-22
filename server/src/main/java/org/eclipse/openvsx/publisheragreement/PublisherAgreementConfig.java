@@ -12,10 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.List;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
 
@@ -35,5 +40,21 @@ public class PublisherAgreementConfig {
                             + "users have no agreement text to read before signing");
         }
         return new SimplePublisherAgreementProvider(repositories, version);
+    }
+
+    /** Which signed versions count, for whichever provider is in use; an invalid version stops the startup. */
+    @Bean
+    PublisherAgreementVersions publisherAgreementVersions(
+            @Value("${ovsx.publisher-agreement.version:}") String version,
+            Environment environment
+    ) {
+        // Bound rather than read as a placeholder, which does not see a YAML list or an indexed key.
+        var allowed = Binder.get(environment)
+                .bind("ovsx.publisher-agreement.allowed-versions", Bindable.listOf(String.class))
+                .orElse(List.of())
+                .stream()
+                .filter(allowedVersion -> !allowedVersion.isEmpty())
+                .toList();
+        return new PublisherAgreementVersions(version, allowed);
     }
 }

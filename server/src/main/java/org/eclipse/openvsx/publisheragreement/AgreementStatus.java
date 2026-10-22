@@ -20,7 +20,8 @@ import org.jspecify.annotations.Nullable;
  * What a {@link PublisherAgreementProvider} knows about the agreement of a user.
  *
  * @param state the state of the agreement
- * @param version the version signed, if any
+ * @param version the version signed, if any: a semantic version such as {@code 1.1}, whose minor and patch numbers
+ *        may be left out, because the service judges it. A signed status without a version always counts.
  * @param timestamp when it was signed, if known
  * @param loginLinked whether the user has linked the {@link PublisherAgreementProvider#requiredLogin() login}
  *        the provider needs to sign or withdraw on their behalf
@@ -35,9 +36,9 @@ public record AgreementStatus(
     public enum State {
         /** The user has not signed. */
         NONE,
-        /** The user signed the current agreement. */
+        /** The user signed a version; the service decides whether that version still counts. */
         SIGNED,
-        /** The user signed an earlier version that no longer counts. */
+        /** The provider itself knows that what the user signed no longer counts. */
         OUTDATED,
         /** The provider could not tell. */
         UNKNOWN

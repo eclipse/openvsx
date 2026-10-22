@@ -1339,7 +1339,7 @@ Body of that response.
 
 ## Publisher Agreement
 
-Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing, revocation and reinstatement is recorded with the agreement version, whichever provider keeps the agreement. A signature stays valid within the major version of the configured one, so raising the major version makes everyone sign again; until they do, they cannot publish, but their extensions stay published. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment that keeps the agreement elsewhere supplies its own `PublisherAgreementProvider` (a `@Primary` bean), which replaces the default one and its `ovsx.publisher-agreement.version`; the rest, such as who may publish, the block after a revocation and the history, is the server's and stays.
+Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing, revocation and reinstatement is recorded with the agreement version, whichever provider keeps the agreement. Which signatures stay valid is set by the allowed versions: without any, a signature of the configured major version or a higher one stays valid, so raising the major version makes everyone sign again; until they do, they cannot publish, but their extensions stay published. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment that keeps the agreement elsewhere supplies its own `PublisherAgreementProvider` (a `@Primary` bean), which replaces the default one; which signed versions still count is decided from `ovsx.publisher-agreement.version` and `ovsx.publisher-agreement.allowed-versions` whichever provider is in use, and the rest, such as who may publish, the block after a revocation and the history, is the server's and stays.
 
 | Property      | `ovsx.publisher-agreement.version`
 |---------------|-----------------------------------
@@ -1348,6 +1348,14 @@ Requires publishers to sign an agreement before they can publish. Disabled by de
 | Compatibility | Since 1.4.0
 
 The current version of the agreement, such as `1`, `1.0` or `1.0.0`: a semantic version whose minor and patch numbers may be left out. Empty disables agreements: everyone may publish. An invalid value stops the server from starting.
+
+| Property      | `ovsx.publisher-agreement.allowed-versions`
+|---------------|--------------------------------------------
+| Type          | list of strings
+| Default       |
+| Compatibility | Since 1.4.0
+
+The versions a signature may have to count as signed, comma separated, such as `1.1,1.2`; the version of `ovsx.publisher-agreement.version` is always one of them. A signature of any other version is outdated, whatever its major version, and its signer has to sign again before publishing. Versions are compared as semantic versions, so `1`, `1.0` and `1.0.0` are the same. Empty accepts any signature of the same or a higher major version than the configured one. In YAML the list may be written as a YAML list, and a single version such as `1.10` has to be quoted, or it is read as the number 1.1. A signature whose version cannot be read counts as outdated. An invalid version in the list stops the server from starting.
 
 | Property      | `ovsx.publisher-agreement.text`
 |---------------|--------------------------------

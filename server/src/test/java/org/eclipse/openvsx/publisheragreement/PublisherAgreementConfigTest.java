@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -21,6 +23,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
 
@@ -67,6 +70,72 @@ class PublisherAgreementConfigTest {
             assertThat(context.getBean(PublisherAgreementProvider.class))
                     .isSameAs(context.getBean(DeploymentConfig.class).custom);
         });
+    }
+
+    /** Signed 2.0 while the agreement is 1.1: only the list can make that outdated, the major rule would not. */
+    @Test
+    void theListReachesTheVersionsHoweverItIsWritten() {
+        for (var list : new String[][] {
+            { "ovsx.publisher-agreement.allowed-versions=1.1, 1.2" },
+            { "ovsx.publisher-agreement.allowed-versions[0]=1.1", "ovsx.publisher-agreement.allowed-versions[1]=1.2" }
+        }) {
+            runner.withPropertyValues("ovsx.publisher-agreement.version=1.1").withPropertyValues(list).run(
+                    context -> {
+                        var versions = context.getBean(PublisherAgreementVersions.class);
+                        assertThat(versions.accepts("1.2")).as(list[0]).isTrue();
+                        assertThat(versions.accepts("2.0")).as(list[0]).isFalse();
+                    });
+        }
+    }
+
+    @Test
+    void theListIsReadFromAnEnvironmentVariable() {
+        var environment = new SystemEnvironmentPropertySource(
+                "systemEnvironment",
+                Map.of(
+                        "OVSX_PUBLISHERAGREEMENT_VERSION",
+                        "1.1",
+                        "OVSX_PUBLISHERAGREEMENT_ALLOWEDVERSIONS",
+                        "1.1,1.2"));
+
+        runner.withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(environment)).run(
+                context -> {
+                    var versions = context.getBean(PublisherAgreementVersions.class);
+                    assertThat(versions.accepts("1.2")).isTrue();
+                    assertThat(versions.accepts("2.0")).isFalse();
+                });
+    }
+
+    @Test
+    void blankEntriesInTheListAreIgnored() {
+        for (var list : new String[][] {
+            { "ovsx.publisher-agreement.allowed-versions=1.1,1.2," },
+            { "ovsx.publisher-agreement.allowed-versions=1.1,,1.2" },
+            { "ovsx.publisher-agreement.allowed-versions[0]=1.2", "ovsx.publisher-agreement.allowed-versions[1]=" }
+        }) {
+            runner.withPropertyValues("ovsx.publisher-agreement.version=1.2").withPropertyValues(list).run(
+                    context -> {
+                        assertThat(context).as(list[0]).hasNotFailed();
+                        assertThat(context.getBean(PublisherAgreementVersions.class).accepts("1.2")).isTrue();
+                    });
+        }
+    }
+
+    @Test
+    void withoutAListTheSameMajorStaysValid() {
+        runner.withPropertyValues("ovsx.publisher-agreement.version=1.1").run(
+                context -> assertThat(context.getBean(PublisherAgreementVersions.class).accepts("1.7")).isTrue());
+    }
+
+    @Test
+    void anInvalidAllowedVersionFailsStartupNamingTheProperty() {
+        runner.withPropertyValues(
+                "ovsx.publisher-agreement.version=1",
+                "ovsx.publisher-agreement.allowed-versions=1,x").run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasStackTraceContaining("ovsx.publisher-agreement.allowed-versions");
+                });
     }
 
     @Test
