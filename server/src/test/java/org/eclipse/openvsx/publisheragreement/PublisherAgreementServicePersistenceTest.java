@@ -56,10 +56,11 @@ class PublisherAgreementServicePersistenceTest extends AbstractPostgresContainer
 
     private PublisherAgreementService service(String version) {
         return new PublisherAgreementService(
-                new SimplePublisherAgreementProvider(repositories, version, List.of()),
+                new SimplePublisherAgreementProvider(repositories, version),
                 repositories,
                 extensions,
-                new TransactionTemplate(transactionManager));
+                new TransactionTemplate(transactionManager),
+                new PublisherAgreementVersions(version, List.of()));
     }
 
     private UserData persistUser(String name) {

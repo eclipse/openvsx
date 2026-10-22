@@ -54,8 +54,8 @@ class SimplePublisherAgreementProviderTest {
         });
     }
 
-    private SimplePublisherAgreementProvider provider(String version, String... allowedVersions) {
-        return new SimplePublisherAgreementProvider(repositories, version, List.of(allowedVersions));
+    private SimplePublisherAgreementProvider provider(String version) {
+        return new SimplePublisherAgreementProvider(repositories, version);
     }
 
     private void happened(PublisherAgreementEvent.Type type, String version) {
@@ -76,25 +76,15 @@ class SimplePublisherAgreementProviderTest {
         assertThat(provider("1").enabled()).isTrue();
     }
 
+    /** Whether that version still counts is for the service. */
     @Test
-    void invalidVersionIsRejected() {
-        for (var version : new String[] { "v1.0.0", "1.", ".1", "1..0", "1.2.3.4", "x", "-1", "01", "1.00" }) {
-            assertThatThrownBy(() -> provider(version)).as(version).isInstanceOf(IllegalArgumentException.class);
-        }
-    }
+    void aSignatureIsReportedAsSignedWhateverItsVersion() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "0.1");
 
-    @Test
-    void aVersionTooLargeToReadIsRejectedNamingTheProperty() {
-        assertThatThrownBy(() -> provider("99999999999999999999"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("ovsx.publisher-agreement.version");
-    }
+        var status = provider("2").status(user);
 
-    @Test
-    void aVersionNeedsNotSpellOutAllThreeNumbers() {
-        for (var version : new String[] { "1", "1.0", "1.1", "1.0.0", "1.2.3", "1.0.0-beta", " 2 " }) {
-            assertThat(provider(version).enabled()).as(version).isTrue();
-        }
+        assertThat(status.state()).isEqualTo(State.SIGNED);
+        assertThat(status.version()).isEqualTo("0.1");
     }
 
     @Test
@@ -102,110 +92,7 @@ class SimplePublisherAgreementProviderTest {
         assertThat(provider("1.0.0").status(user).state()).isEqualTo(State.NONE);
     }
 
-    @Test
-    void aSignatureIsComparedByMajorWhateverTheFormOfTheVersion() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1");
-
-        for (var current : new String[] { "1", "1.0", "1.1", "1.0.0", "1.4.2" }) {
-            assertThat(provider(current).status(user).state()).as(current).isEqualTo(State.SIGNED);
-        }
-        for (var current : new String[] { "2", "2.0", "2.1.0" }) {
-            assertThat(provider(current).status(user).state()).as(current).isEqualTo(State.OUTDATED);
-        }
-    }
-
-    @Test
-    void aLowerConfiguredMajorStillCountsTheHigherSignature() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "2.1");
-
-        assertThat(provider("1.5").status(user).state()).isEqualTo(State.SIGNED);
-        assertThat(provider("3").status(user).state()).isEqualTo(State.OUTDATED);
-    }
-
     // ---- allowed versions decide which signatures stay valid
-
-    @Test
-    void aSignatureOfAnAllowedVersionStaysValidAcrossAMinorChange() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
-
-        assertThat(provider("1.2", "1.1", "1.2").status(user).state()).isEqualTo(State.SIGNED);
-    }
-
-    @Test
-    void aSignatureOfAVersionThatIsNotAllowedIsOutdatedEvenWithinTheSameMajor() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
-
-        assertThat(provider("1.2", "1.2").status(user).state()).isEqualTo(State.OUTDATED);
-    }
-
-    @Test
-    void aSignatureOfAHigherMajorIsOutdatedWhenItIsNotAllowed() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "3");
-
-        assertThat(provider("2", "1", "2").status(user).state()).isEqualTo(State.OUTDATED);
-    }
-
-    @Test
-    void theConfiguredVersionIsAlwaysAllowed() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.2");
-
-        assertThat(provider("1.2", "1.0").status(user).state()).isEqualTo(State.SIGNED);
-    }
-
-    @Test
-    void allowedVersionsMatchWhateverTheSpellingOfTheVersion() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1");
-
-        assertThat(provider("2", "1.0.0").status(user).state()).isEqualTo(State.SIGNED);
-        assertThat(provider("2", "1.0").status(user).state()).isEqualTo(State.SIGNED);
-        assertThat(provider("2", "1.0.1").status(user).state()).isEqualTo(State.OUTDATED);
-    }
-
-    @Test
-    void withoutAllowedVersionsTheSameMajorStaysValid() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
-
-        assertThat(provider("1.9").status(user).state()).isEqualTo(State.SIGNED);
-    }
-
-    @Test
-    void anAllowedVersionMatchesWhateverBuildMetadataThePartiesCarry() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.0.0+build5");
-
-        assertThat(provider("2", "1.0.0").status(user).state()).isEqualTo(State.SIGNED);
-        assertThat(provider("2", "1.0.0+other").status(user).state()).isEqualTo(State.SIGNED);
-    }
-
-    /** A signature written by something else is not in the list, so it is outdated and can be signed again. */
-    @Test
-    void aSignatureWhoseVersionCannotBeReadIsOutdated() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "v1");
-
-        assertThat(provider("1").status(user).state()).isEqualTo(State.OUTDATED);
-        assertThat(provider("1", "1.0").status(user).state()).isEqualTo(State.OUTDATED);
-    }
-
-    @Test
-    void allowedVersionsWithoutACurrentVersionDisableAgreementsInsteadOfFailing() {
-        assertThat(provider("", "1.1").enabled()).isFalse();
-    }
-
-    @Test
-    void allowedVersionsAreTrimmed() {
-        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
-
-        assertThat(provider("2", " 1.1 ").status(user).state()).isEqualTo(State.SIGNED);
-    }
-
-    @Test
-    void anInvalidAllowedVersionIsRejectedNamingTheProperty() {
-        for (var allowed : new String[] { "v1", "1.", "99999999999999999999" }) {
-            assertThatThrownBy(() -> provider("1", allowed))
-                    .as(allowed)
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("ovsx.publisher-agreement.allowed-versions");
-        }
-    }
 
     @Test
     void theStatusCarriesWhatWasSigned() {

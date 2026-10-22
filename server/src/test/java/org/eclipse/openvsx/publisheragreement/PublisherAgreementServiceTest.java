@@ -95,7 +95,11 @@ class PublisherAgreementServiceTest {
 
         when(provider.enabled()).thenReturn(true);
         givenStatus(State.NONE);
-        service = new PublisherAgreementService(provider, repositories, extensions, transactions);
+        service = serviceWith(new PublisherAgreementVersions("1.0.0", List.of()));
+    }
+
+    private PublisherAgreementService serviceWith(PublisherAgreementVersions versions) {
+        return new PublisherAgreementService(provider, repositories, extensions, transactions, versions);
     }
 
     private AgreementStatus givenStatus(State state) {
@@ -560,6 +564,76 @@ class PublisherAgreementServiceTest {
 
         assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
         assertThat(service.mayPublish(user)).isFalse();
+    }
+
+    // ---- the service decides which signed versions still count
+
+    @Test
+    void aSignatureOfAVersionThatNoLongerCountsIsOutdated() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(State.SIGNED);
+
+        var thrown = refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+
+        assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
+        var json = new UserJson();
+        service.enrichUserJson(json, user);
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+        assertThat(json.getPublisherAgreement().getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void aSignatureOfAnAllowedVersionStaysSigned() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of("1")));
+        givenStatus(State.SIGNED);
+
+        assertThatCode(() -> service.requireAgreement(user)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void anAgreementTheProviderCallsOutdatedStaysOutdated() {
+        givenStatus(State.OUTDATED);
+
+        refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+    }
+
+    @Test
+    void aSignatureWithoutAVersionStaysSigned() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(new AgreementStatus(State.SIGNED, null, SIGNED_AT, false));
+
+        assertThatCode(() -> service.requireAgreement(user)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void adminsSeeTheSameJudgement() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(State.SIGNED);
+        var json = new UserJson();
+
+        service.enrichUserJsonForAdmin(json, user);
+
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+    }
+
+    @Test
+    void aPublisherWhoseSignatureNoLongerCountsStillCountsAsCompliant() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenStatus(State.SIGNED);
+
+        assertThat(service.compliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
+    }
+
+    /** What the provider signed has to count, or nothing is recorded and nothing is reactivated. */
+    @Test
+    void aSigningOfAVersionThatDoesNotCountIsNotASigning() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+
+        refusedWith(HttpStatus.SERVICE_UNAVAILABLE, () -> service.sign(user, new UserJson()));
+
+        assertThat(events).isEmpty();
+        verify(extensions, never()).reactivateExtensions(any());
     }
 
     // ---- what the steps that change an agreement must hold

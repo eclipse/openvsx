@@ -37,9 +37,10 @@ import org.eclipse.openvsx.util.TimeUtil;
  * Everything about publisher agreements that does not depend on where the agreement is kept, written once so that
  * a {@link PublisherAgreementProvider} does not have to repeat it: who may publish, the block that follows a
  * revocation, the history, the JSON served to clients, the HTTP status of a refusal and the reactivation of
- * extensions after signing. The provider only says what a user's agreement is.
+ * extensions after signing. The provider only says what a user has signed; whether that version still counts is
+ * decided here, by {@link PublisherAgreementVersions}.
  * <p>
- * An outdated agreement, one signed for an earlier major version, keeps the user's extensions published but
+ * An outdated agreement, one signed for a version that no longer counts, keeps the user's extensions published but
  * stops them publishing anything new until they sign the current one. A revocation, or having signed none,
  * also takes the extensions offline.
  * <p>
@@ -70,13 +71,16 @@ public class PublisherAgreementService {
     private final RepositoryService repositories;
     private final ExtensionService extensions;
     private final TransactionTemplate transactions;
+    private final PublisherAgreementVersions versions;
 
     public PublisherAgreementService(
             PublisherAgreementProvider provider,
             RepositoryService repositories,
             ExtensionService extensions,
-            TransactionTemplate transactions
+            TransactionTemplate transactions,
+            PublisherAgreementVersions versions
     ) {
+        this.versions = versions;
         this.provider = provider;
         this.repositories = repositories;
         this.extensions = extensions;
@@ -257,7 +261,7 @@ public class PublisherAgreementService {
     private AgreementStatus signWithProvider(UserData user) {
         AgreementStatus signed;
         try {
-            signed = provider.sign(user);
+            signed = judged(provider.sign(user));
         } catch (PublisherAgreementException exc) {
             throw refusal(exc);
         }
@@ -399,15 +403,31 @@ public class PublisherAgreementService {
     }
 
     /**
-     * What the provider says, or {@link AgreementStatus.State#UNKNOWN} if it fails to say.
+     * What the provider says, with a signature of a version that no longer counts made outdated, or
+     * {@link AgreementStatus.State#UNKNOWN} if it fails to say.
      */
     private AgreementStatus providerStatus(UserData user, boolean admin) {
         try {
-            return admin ? provider.statusForAdmin(user) : provider.status(user);
+            return judged(admin ? provider.statusForAdmin(user) : provider.status(user));
         } catch (RuntimeException exc) {
             logger.warn("Failed to determine the publisher agreement of {}", user.getLoginName(), exc);
             return AgreementStatus.of(AgreementStatus.State.UNKNOWN);
         }
+    }
+
+    /** A provider reports what was signed; whether that version still counts is decided here, once for all. */
+    private @Nullable AgreementStatus judged(@Nullable AgreementStatus status) {
+        if (status == null
+                || status.state() != AgreementStatus.State.SIGNED
+                || status.version() == null
+                || versions.accepts(status.version())) {
+            return status;
+        }
+        return new AgreementStatus(
+                AgreementStatus.State.OUTDATED,
+                status.version(),
+                status.timestamp(),
+                status.loginLinked());
     }
 
     private boolean isBlocked(UserData user) {

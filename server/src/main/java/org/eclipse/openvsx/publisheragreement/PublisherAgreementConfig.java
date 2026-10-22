@@ -32,14 +32,22 @@ public class PublisherAgreementConfig {
     PublisherAgreementProvider simplePublisherAgreementProvider(
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
-            @Value("${ovsx.publisher-agreement.text:}") String text,
-            Environment environment
+            @Value("${ovsx.publisher-agreement.text:}") String text
     ) {
         if (!version.isBlank() && text.isBlank()) {
             LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
                     "ovsx.publisher-agreement.version is set without ovsx.publisher-agreement.text: "
                             + "users have no agreement text to read before signing");
         }
+        return new SimplePublisherAgreementProvider(repositories, version);
+    }
+
+    /** Which signed versions count, for whichever provider is in use; an invalid version stops the startup. */
+    @Bean
+    PublisherAgreementVersions publisherAgreementVersions(
+            @Value("${ovsx.publisher-agreement.version:}") String version,
+            Environment environment
+    ) {
         // Bound rather than read as a placeholder, which does not see a YAML list or an indexed key.
         var allowed = Binder.get(environment)
                 .bind("ovsx.publisher-agreement.allowed-versions", Bindable.listOf(String.class))
@@ -48,6 +56,6 @@ public class PublisherAgreementConfig {
                 .map(String::trim)
                 .filter(allowedVersion -> !allowedVersion.isEmpty())
                 .toList();
-        return new SimplePublisherAgreementProvider(repositories, version, allowed);
+        return new PublisherAgreementVersions(version, allowed);
     }
 }

@@ -35,9 +35,9 @@ public record AgreementStatus(
     public enum State {
         /** The user has not signed. */
         NONE,
-        /** The user signed the current agreement. */
+        /** The user signed a version; the service decides whether that version still counts. */
         SIGNED,
-        /** The user signed an earlier version that no longer counts. */
+        /** The provider itself knows that what the user signed no longer counts. */
         OUTDATED,
         /** The provider could not tell. */
         UNKNOWN

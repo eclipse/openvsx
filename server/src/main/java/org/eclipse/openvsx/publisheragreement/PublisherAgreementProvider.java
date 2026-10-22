@@ -34,7 +34,9 @@ public interface PublisherAgreementProvider {
 
     /**
      * The agreement of the user, determined as that user: an implementation that asks a remote service may
-     * use the user's own credentials. It returns {@link AgreementStatus.State#UNKNOWN} when it cannot tell,
+     * use the user's own credentials. It reports the version the user signed as {@code SIGNED}, without judging
+     * whether that version still counts, which {@link PublisherAgreementService} decides for every provider from
+     * {@code ovsx.publisher-agreement.version} and {@code ovsx.publisher-agreement.allowed-versions}. It returns {@link AgreementStatus.State#UNKNOWN} when it cannot tell,
      * for instance because the remote service is unreachable, rather than guessing {@code NONE}.
      */
     AgreementStatus status(UserData user);
