@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.publisheragreement;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -54,7 +55,7 @@ public class PublisherAgreementAPI {
         }
         return ResponseEntity.ok()
                 .contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
-                .cacheControl(CacheControl.noCache())
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic().mustRevalidate())
                 .body(text);
     }
 }

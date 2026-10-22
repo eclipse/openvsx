@@ -1355,7 +1355,7 @@ The current version of the agreement, such as `1`, `1.0` or `1.0.0`: a semantic 
 | Default       |
 | Compatibility | Since 1.4.0
 
-Location of the agreement text, in Markdown, as any Spring resource location such as `classpath:agreement.md` or `file:/etc/openvsx/agreement.md`. It is served at `/api/publisher-agreement`, which the web UI shows by default.
+Location of the agreement text, in Markdown, as any Spring resource location such as `classpath:agreement.md` or `file:/etc/openvsx/agreement.md`. It is served at `/api/publisher-agreement`, which the web UI shows by default; the response may be cached for five minutes, so a changed text can take that long to show.
 
 | Property      | `ovsx.publisher-agreement.check-compliance-on-start`
 |---------------|-----------------------------------------------------

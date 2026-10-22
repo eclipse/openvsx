@@ -40,10 +40,10 @@ class PublisherAgreementAPITest {
     }
 
     @Test
-    void theTextIsNeverServedFromACache() {
+    void theTextMayBeCachedForAWhile() {
         var response = api("classpath:publisheragreement/agreement.md").getText();
 
-        assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-cache");
+        assertThat(response.getHeaders().getCacheControl()).isEqualTo("max-age=300, must-revalidate, public");
     }
 
     @Test
