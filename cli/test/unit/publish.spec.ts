@@ -233,8 +233,8 @@ describe('publish', () => {
             .map(([message]) => String(message))
             .filter(message => message.startsWith('Ignoring option'));
 
-        const warningsFor = (...flags: string[]): string[] =>
-            flags.map(flag => `Ignoring option '${flag}' for prepackaged extension.`);
+        const warningsFor = (file: string, ...flags: string[]): string[] =>
+            flags.map(flag => `Ignoring option '${flag}' for prepackaged extension '${file}'.`);
 
         it('given as extensionFile, warning once per option and publishing once', async () => {
             const registry = await givenRegistry();
@@ -245,6 +245,7 @@ describe('publish', () => {
             expect(results.map(result => result.status)).toEqual(['fulfilled']);
             expect(registry.publishRequests).toHaveLength(1);
             expect(ignoredWarnings()).toEqual(warningsFor(
+                extensionFile,
                 '--target',
                 '--baseContentUrl',
                 '--baseImagesUrl',
@@ -276,7 +277,7 @@ describe('publish', () => {
 
             await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url, [key]: sampleValues[key] ?? true });
 
-            expect(ignoredWarnings()).toEqual(warningsFor(flag));
+            expect(ignoredWarnings()).toEqual(warningsFor(extensionFile, flag));
         });
 
         it('does not warn about a flag that is explicitly off', async () => {
@@ -310,7 +311,33 @@ describe('publish', () => {
 
             expect(results.map(result => result.status)).toEqual(['fulfilled']);
             expect(registry.publishRequests).toHaveLength(1);
-            expect(ignoredWarnings()).toEqual(warningsFor('--target', '--baseContentUrl'));
+            expect(ignoredWarnings()).toEqual(warningsFor(packagePath, '--target', '--baseContentUrl'));
+        });
+
+        it('naming every file in one warning per option', async () => {
+            const registry = await givenRegistry();
+            const packagePath = [await givenExtensionFile(100), await givenExtensionFile(100)];
+
+            await publish({ packagePath, pat: 'the.pat', registryUrl: registry.url, preRelease: true });
+
+            expect(registry.publishRequests).toHaveLength(2);
+            expect(ignoredWarnings()).toEqual([
+                `Ignoring option '--pre-release' for prepackaged extensions '${packagePath[0]}', '${packagePath[1]}'.`
+            ]);
+        });
+
+        // A slow or failing registry must not keep the user from seeing them.
+        it('before the registry is contacted', async () => {
+            const registry = await givenRegistry();
+            const extensionFile = await givenExtensionFile(100);
+            const versionRequestsAtWarning: number[] = [];
+            vi.mocked(console.warn).mockImplementation(() => {
+                versionRequestsAtWarning.push(registry.versionRequests);
+            });
+
+            await publish({ extensionFile, pat: 'the.pat', registryUrl: registry.url, yarn: true });
+
+            expect(versionRequestsAtWarning).toEqual([0]);
         });
 
         // The options still apply to the directory packaged alongside the .vsix.
@@ -331,7 +358,7 @@ describe('publish', () => {
             expect(registry.publishRequests).toHaveLength(3);
             expect(vi.mocked(createVSIX).mock.calls.map(([options]) => [options!.target, options!.useYarn]))
                 .toEqual([['linux-x64', true], ['darwin-arm64', true]]);
-            expect(ignoredWarnings()).toEqual(warningsFor('--target', '--yarn'));
+            expect(ignoredWarnings()).toEqual(warningsFor(vsix, '--target', '--yarn'));
         });
 
         it('but says nothing when everything is packaged', async () => {
