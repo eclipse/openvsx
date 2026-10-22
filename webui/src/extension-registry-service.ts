@@ -264,7 +264,7 @@ export class ExtensionRegistryService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             method: 'POST',
             payload: review,
@@ -284,7 +284,7 @@ export class ExtensionRegistryService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             method: 'POST',
             credentials: true,
@@ -304,7 +304,7 @@ export class ExtensionRegistryService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             method: 'POST',
             credentials: true,
@@ -374,7 +374,7 @@ export class ExtensionRegistryService {
             { key: 'extension', value: scope?.extension },
             { key: 'publishingOnly', value: scope?.publishingOnly ? 'true' : undefined }
         ]);
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             method: 'POST',
             credentials: true,
@@ -393,7 +393,7 @@ export class ExtensionRegistryService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             method: 'POST',
             credentials: true,
@@ -414,7 +414,7 @@ export class ExtensionRegistryService {
         }
         return await Promise.all(
             tokens.map(token =>
-                sendRequest<SuccessResult | ErrorResult>({
+                sendNonRetriableRequest<SuccessResult | ErrorResult>({
                     abortController,
                     method: 'POST',
                     credentials: true,
@@ -495,7 +495,7 @@ export class ExtensionRegistryService {
             { key: 'provider', value: user.provider },
             { key: 'role', value: role }
         ];
-        return sendRequest({
+        return sendNonRetriableRequest({
             abortController,
             headers,
             method: 'POST',
@@ -577,7 +577,7 @@ export class ExtensionRegistryService {
             const csrfToken = csrfResponse as CsrfTokenJson;
             headers[csrfToken.header] = csrfToken.value;
         }
-        return sendRequest<UserData | ErrorResult>({
+        return sendNonRetriableRequest<UserData | ErrorResult>({
             abortController,
             method: 'POST',
             credentials: true,
