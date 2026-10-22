@@ -646,48 +646,6 @@ Whether to update public ids on startup from the upstream registry instance.
 
 How many of an extension's pre-release versions an `extensionquery` response lists. Regular releases are never capped. A negative value, the default, caps nothing.
 
-## Eclipse
-
-| Property      | `ovsx.eclipse.base-url`
-|---------------|-------------------------
-| Type          | string
-| Default       |
-| Compatibility | Since 0.1.0
-
-Base URL of the Eclipse API.
-
-| Property      | `ovsx.eclipse.publisher-agreement.version`
-|---------------|--------------------------------------------
-| Type          | string
-| Default       |
-| Compatibility | Since 0.1.0
-
-Current version of the Eclipse Publisher Agreement. Since 0.28.0 only used to sign Eclipse Publisher Agreement.
-
-| Property      | `ovsx.eclipse.publisher-agreement.allowed-versions`
-|---------------|--------------------------------------------
-| Type          | string[]
-| Default       |
-| Compatibility | Since 0.28.0
-
-Allowed versions of the Eclipse Publisher Agreement. Used to check Eclipse Publisher Agreement.
-
-| Property      | `ovsx.eclipse.publisher-agreement.timezone`
-|---------------|---------------------------------------------
-| Type          | string
-| Default       |
-| Compatibility | Since 0.1.0, **removed** in 0.15.2
-
-`java.time.ZoneId` for timestamps returned by the Eclipse API.
-
-| Property      | `ovsx.eclipse.check-compliance-on-start`
-|---------------|-------------------------
-| Type          | boolean
-| Default       | `false`
-| Compatibility | Since 0.1.0
-
-Whether to check for publisher compliance on startup. A publisher is compliant when they have signed the Eclipse Publisher Agreement. The `ovsx.eclipse.publisher-agreement.version` property must also be configured for this check to run.
-
 ## Migrations
 
 | Property      | `ovsx.migrations.delay.seconds`
@@ -1378,6 +1336,34 @@ Content type of that response.
 | Compatibility | Since 0.32.0
 
 Body of that response.
+
+## Publisher Agreement
+
+Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing, revocation and reinstatement is recorded with the agreement version, whichever provider keeps the agreement. A signature stays valid within the major version of the configured one, so raising the major version makes everyone sign again; until they do, they cannot publish, but their extensions stay published. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment that keeps the agreement elsewhere supplies its own `PublisherAgreementProvider` (a `@Primary` bean), which replaces the default one and its `ovsx.publisher-agreement.version`; the rest, such as who may publish, the block after a revocation and the history, is the server's and stays.
+
+| Property      | `ovsx.publisher-agreement.version`
+|---------------|-----------------------------------
+| Type          | string
+| Default       |
+| Compatibility | Since 1.4.0
+
+The current version of the agreement, such as `1`, `1.0` or `1.0.0`: a semantic version whose minor and patch numbers may be left out. Empty disables agreements: everyone may publish. An invalid value stops the server from starting.
+
+| Property      | `ovsx.publisher-agreement.text`
+|---------------|--------------------------------
+| Type          | string
+| Default       |
+| Compatibility | Since 1.4.0
+
+Location of the agreement text, in Markdown, as any Spring resource location such as `classpath:agreement.md` or `file:/etc/openvsx/agreement.md`. It is served at `/api/publisher-agreement`, which the web UI shows by default; the response may be cached for five minutes, so a changed text can take that long to show.
+
+| Property      | `ovsx.publisher-agreement.check-compliance-on-start`
+|---------------|-----------------------------------------------------
+| Type          | boolean
+| Default       | `false`
+| Compatibility | Since 1.4.0
+
+Whether to check publishers on startup and deactivate the extension versions of those without an agreement. The agreement provider decides who has one: with the default provider a publisher who never signed or was revoked is not compliant, while an outdated signature still is, as it only keeps them from publishing. A publisher whose status cannot be determined, for instance because a remote service is unreachable, is left alone. Has no effect while agreements are disabled.
 
 ## Trusted Publishing
 

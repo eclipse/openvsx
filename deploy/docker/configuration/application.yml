@@ -138,6 +138,11 @@ bucket4j:
               unit: seconds
 
 ovsx:
+  publisher-agreement:
+    # empty disables the agreement; a version such as 1, 1.0 or 1.0.0 requires signing it (a new major version requires re-signing)
+    version: ''
+    # Markdown text of the agreement, served at /api/publisher-agreement; a Spring resource location such as file:/etc/openvsx/agreement.md
+    text: ''
   databasesearch:
     enabled: false
   elasticsearch:

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020 TypeFox and others
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,15 +10,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.eclipse;
-
-import java.time.LocalDateTime;
+package org.eclipse.openvsx.publisheragreement;
 
 /**
+ * A login a user has to link before signing or being revoked, shown by the web UI as "Log in with ...".
  *
- * @param isActive
- * @param documentId
- * @param version Version of the last signed publisher agreement.
- * @param timestamp Timestamp of the last signed publisher agreement.
+ * @param registrationId the OAuth2 registration of the login, which is also its provider id on a user
+ * @param displayName the name shown to people
  */
-public record PublisherAgreement(boolean isActive, String documentId, String version, LocalDateTime timestamp) {}
+public record ExternalLogin(String registrationId, String displayName) {}

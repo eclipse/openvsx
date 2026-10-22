@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020 TypeFox and others
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,10 +10,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.eclipse;
+package org.eclipse.openvsx.publisheragreement;
 
 import java.util.LinkedHashSet;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +30,11 @@ import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.NamingUtil;
 import org.eclipse.openvsx.util.TimeUtil;
 
+/**
+ * On startup, deactivates the extension versions of every publisher whose agreement service reports them
+ * as {@link PublisherCompliance#NON_COMPLIANT}. A publisher whose compliance is unknown, or cannot be
+ * determined because the service fails, is left alone.
+ */
 @Component
 public class PublisherComplianceChecker {
 
@@ -39,31 +43,31 @@ public class PublisherComplianceChecker {
     private final TransactionTemplate transactions;
     private final RepositoryService repositories;
     private final ExtensionService extensions;
-    private final EclipseService eclipseService;
+    private final PublisherAgreementService publisherAgreements;
 
-    @Value("${ovsx.eclipse.check-compliance-on-start:false}")
+    @Value("${ovsx.publisher-agreement.check-compliance-on-start:false}")
     boolean checkCompliance;
 
     public PublisherComplianceChecker(
             TransactionTemplate transactions,
             RepositoryService repositories,
             ExtensionService extensions,
-            EclipseService eclipseService
+            PublisherAgreementService publisherAgreements
     ) {
         this.transactions = transactions;
         this.repositories = repositories;
         this.extensions = extensions;
-        this.eclipseService = eclipseService;
+        this.publisherAgreements = publisherAgreements;
     }
 
     @EventListener
     public void checkPublishers(ApplicationStartedEvent event) {
-        if (!checkCompliance || !eclipseService.isActive()) {
+        if (!checkCompliance) {
             return;
         }
 
         repositories.findPublishersWithActiveVersions().forEach(user -> {
-            if (!isCompliant(user)) {
+            if (complianceOf(user) == PublisherCompliance.NON_COMPLIANT) {
                 // Found a non-compliant publisher: deactivate all extension versions
                 transactions.<Void>execute(status -> {
                     deactivateExtensions(user);
@@ -73,23 +77,22 @@ public class PublisherComplianceChecker {
         });
     }
 
-    private boolean isCompliant(UserData user) {
-        // Users without authentication provider have been created directly in the DB,
-        // so we skip the agreement check in this case.
-        if (user.getProvider() == null) {
-            return true;
+    private PublisherCompliance complianceOf(UserData user) {
+        try {
+            var compliance = publisherAgreements.compliance(user);
+            if (compliance == PublisherCompliance.UNKNOWN) {
+                logger.warn(
+                        "The publisher agreement of {} could not be determined, keeping their extensions",
+                        user.getLoginName());
+            }
+            return compliance;
+        } catch (RuntimeException e) {
+            logger.warn(
+                    "The publisher agreement of {} could not be checked, keeping their extensions",
+                    user.getLoginName(),
+                    e);
+            return PublisherCompliance.UNKNOWN;
         }
-        if (user.getEclipsePersonId() == null) {
-            // The user has never logged in with Eclipse
-            return false;
-        }
-
-        var profile = eclipseService.getPublicProfile(user.getEclipsePersonId());
-        return Optional.of(profile)
-                .map(EclipseProfile::getPublisherAgreements)
-                .map(EclipseProfile.PublisherAgreements::getOpenVsx)
-                .map(EclipseProfile.PublisherAgreement::getVersion)
-                .isPresent();
     }
 
     private void deactivateExtensions(UserData user) {
@@ -112,9 +115,7 @@ public class PublisherComplianceChecker {
 
         // Update affected extensions
         for (var extension : affectedExtensions) {
-            // findVersionsByUser runs inside checkPublishers' TransactionTemplate, so these
-            // entities (and the versions above) are already managed and merge only handed back the
-            // same instances; the setters are what persist.
+            // Managed already, as findVersionsByUser runs inside the transaction; the setters persist.
             extensions.updateExtension(extension);
         }
     }
