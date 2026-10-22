@@ -22,7 +22,9 @@ export { useReportedQuery } from './hooks/use-reported-query';
 // The registry client, plus the request layer for building a service around endpoints it doesn't cover.
 export * from './extension-registry-service';
 export * from './extension-registry-types';
-export { sendRequest, sendNonRetriableRequest, type ErrorResponse } from './server-request';
+export { sendRequest, isNotFound, type ErrorResponse } from './server-request';
+// Deprecated: `sendRequest` with `signal` replaces both. Kept so a consumer's own service keeps compiling.
+export { sendNonRetriableRequest } from './server-request';
 export { controllerFromSignal } from './query-client';
 export { createRoute, createAbsoluteURL, addQuery } from './utils';
 

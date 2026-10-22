@@ -4,19 +4,26 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Added
+
+- `useReportedQuery` takes an `ignore` predicate for the errors a page renders itself, e.g. `isNotFound` for a 404 shown as a not-found state
+
 ### Changed
 
 - `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
+- `sendRequest` rejects a 200 carrying an error result and no longer retries; retries belong to the query client, which waits out a 429 for queries and never retries a mutation. `sendNonRetriableRequest` and the request's `abortController` are deprecated in favour of `sendRequest` and `signal`
+- `ExtensionRegistryService` query methods take an `AbortSignal` instead of an `AbortController` and write methods take neither; no method resolves an `ErrorResult` any more but rejects with it, as `getUser` does when nobody is logged in. `controllerFromSignal` is deprecated: a `queryFn` passes its `signal` straight through
 
 ### Fixed
 
 - A query reported through `useReportedQuery` (or a page's own error effect) no longer reopens the error dialog in a loop that cannot be closed while the query stays failed (#2348)
-- `sendRequest` stops after 10 retries of a network error or 5xx and after 10 waits on a 429, instead of retrying forever, and an aborted request now settles right away instead of being retried or waiting out a rate limit
+- A failed review post or removal, token revocation or user search no longer leaves its spinner running
 
 ### Dependencies
 
 - Bump vite from 8.3.2 to 8.3.5 (#2357)
 - Bump markdown-it from 14.3.2 to 14.3.3 (#2358)
+- Remove `fetch-retry`; the query client owns retries
 
 ## [1.3.0] - 2026-10-16
 

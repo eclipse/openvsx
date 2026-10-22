@@ -3405,13 +3405,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fetch-retry@npm:^5.0.6":
-  version: 5.0.6
-  resolution: "fetch-retry@npm:5.0.6"
-  checksum: 10/9d64b37f9d179fecf486725ada210d169375803b731304a9500754e094a2a6aa81630d946adbb313d7f9d54457ad0d17c3ed5c115034961a719e8a65faa8b77c
-  languageName: node
-  linkType: hard
-
 "file-entry-cache@npm:^8.0.0":
   version: 8.0.0
   resolution: "file-entry-cache@npm:8.0.0"
@@ -5069,7 +5062,6 @@ __metadata:
     eslint-plugin-testing-library: "npm:^7.16.2"
     express: "npm:^5.1.0"
     express-rate-limit: "npm:^7.4.0"
-    fetch-retry: "npm:^5.0.6"
     jsdom: "npm:^30.0.0"
     luxon: "npm:^3.7.2"
     markdown-it: "npm:^14.1.0"
