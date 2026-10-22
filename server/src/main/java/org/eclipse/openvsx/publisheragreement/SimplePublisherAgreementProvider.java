@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.eclipse.openvsx.entities.PublisherAgreementEvent;
 import org.eclipse.openvsx.entities.SemanticVersion;
 import org.eclipse.openvsx.entities.UserData;
@@ -32,6 +35,8 @@ import org.eclipse.openvsx.util.TimeUtil;
  * configured one, so only a new major version makes signatures outdated. A blank version disables agreements.
  */
 public class SimplePublisherAgreementProvider implements PublisherAgreementProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimplePublisherAgreementProvider.class);
 
     private static final String VERSION_PROPERTY = "ovsx.publisher-agreement.version";
     private static final String ALLOWED_VERSIONS_PROPERTY = "ovsx.publisher-agreement.allowed-versions";
@@ -82,7 +87,9 @@ public class SimplePublisherAgreementProvider implements PublisherAgreementProvi
         try {
             if (SemanticVersion.VERSION_PARSE_PATTERN.matcher(full).matches()) {
                 SemanticVersion.parse(full);
-                return full;
+                // build metadata does not make a version another one
+                var build = full.indexOf('+');
+                return build < 0 ? full : full.substring(0, build);
             }
         } catch (NumberFormatException exc) {
             throw new IllegalArgumentException("Invalid " + property + ": '" + version + "'", exc);
@@ -101,11 +108,20 @@ public class SimplePublisherAgreementProvider implements PublisherAgreementProvi
         if (step == null || step.getType() == PublisherAgreementEvent.Type.REVOKED) {
             return AgreementStatus.of(AgreementStatus.State.NONE);
         }
-        var valid = allowedVersions.isEmpty()
-                ? parse(VERSION_PROPERTY, step.getVersion()).getMajor() >= currentVersion.getMajor()
-                : allowedVersions.contains(full(VERSION_PROPERTY, step.getVersion()));
-        var state = valid ? AgreementStatus.State.SIGNED : AgreementStatus.State.OUTDATED;
+        var state = isValid(step.getVersion()) ? AgreementStatus.State.SIGNED : AgreementStatus.State.OUTDATED;
         return new AgreementStatus(state, step.getVersion(), step.getTimestamp(), false);
+    }
+
+    /** Whether a signature of this version still counts; one that cannot be read does not, so it can be signed again. */
+    private boolean isValid(String signed) {
+        try {
+            return allowedVersions.isEmpty()
+                    ? parse(VERSION_PROPERTY, signed).getMajor() >= currentVersion.getMajor()
+                    : allowedVersions.contains(full(VERSION_PROPERTY, signed));
+        } catch (IllegalArgumentException exc) {
+            logger.warn("The signed publisher agreement version '{}' cannot be read, so it counts as outdated", signed);
+            return false;
+        }
     }
 
     /** The service records the signing, which is all there is to keep. */

@@ -12,12 +12,15 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import org.eclipse.openvsx.repositories.RepositoryService;
 
@@ -30,14 +33,18 @@ public class PublisherAgreementConfig {
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
             @Value("${ovsx.publisher-agreement.text:}") String text,
-            @Value("${ovsx.publisher-agreement.allowed-versions:}") String allowedVersions
+            Environment environment
     ) {
         if (!version.isBlank() && text.isBlank()) {
             LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
                     "ovsx.publisher-agreement.version is set without ovsx.publisher-agreement.text: "
                             + "users have no agreement text to read before signing");
         }
-        var allowed = Arrays.stream(allowedVersions.split(","))
+        // Bound rather than read as a placeholder, which does not see a YAML list or an indexed key.
+        var allowed = Binder.get(environment)
+                .bind("ovsx.publisher-agreement.allowed-versions", Bindable.listOf(String.class))
+                .orElse(List.of())
+                .stream()
                 .map(String::trim)
                 .filter(allowedVersion -> !allowedVersion.isEmpty())
                 .toList();

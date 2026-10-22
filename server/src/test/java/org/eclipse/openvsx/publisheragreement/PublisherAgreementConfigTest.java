@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -21,7 +23,10 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 
+import org.eclipse.openvsx.entities.PublisherAgreementEvent;
+import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,6 +82,59 @@ class PublisherAgreementConfigTest {
                     assertThat(context).hasNotFailed();
                     assertThat(context.getBean(PublisherAgreementProvider.class).enabled()).isTrue();
                 });
+    }
+
+    /** Signed 2.0 while the agreement is 1.1: only the list can make that outdated, the major rule would not. */
+    @Test
+    void theListReachesTheProviderHoweverItIsWritten() {
+        for (var list : new String[][] {
+            { "ovsx.publisher-agreement.allowed-versions=1.1,1.2" },
+            { "ovsx.publisher-agreement.allowed-versions[0]=1.1", "ovsx.publisher-agreement.allowed-versions[1]=1.2" }
+        }) {
+            var repositories = Mockito.mock(RepositoryService.class);
+            var signed = new PublisherAgreementEvent();
+            signed.setType(PublisherAgreementEvent.Type.SIGNED);
+            signed.setVersion("2.0");
+            Mockito.when(repositories.findLatestPublisherAgreementEvent(Mockito.anyLong(), Mockito.any()))
+                    .thenReturn(signed);
+
+            new ApplicationContextRunner()
+                    .withBean(RepositoryService.class, () -> repositories)
+                    .withUserConfiguration(PublisherAgreementConfig.class)
+                    .withPropertyValues("ovsx.publisher-agreement.version=1.1")
+                    .withPropertyValues(list)
+                    .run(
+                            context -> assertThat(
+                                    context.getBean(PublisherAgreementProvider.class).status(new UserData()).state())
+                                    .as(list[0])
+                                    .isEqualTo(AgreementStatus.State.OUTDATED));
+        }
+    }
+
+    @Test
+    void theListIsReadFromAnEnvironmentVariable() {
+        var repositories = Mockito.mock(RepositoryService.class);
+        var signed = new PublisherAgreementEvent();
+        signed.setType(PublisherAgreementEvent.Type.SIGNED);
+        signed.setVersion("2.0");
+        Mockito.when(repositories.findLatestPublisherAgreementEvent(Mockito.anyLong(), Mockito.any()))
+                .thenReturn(signed);
+        var environment = new SystemEnvironmentPropertySource(
+                "systemEnvironment",
+                Map.of(
+                        "OVSX_PUBLISHERAGREEMENT_VERSION",
+                        "1.1",
+                        "OVSX_PUBLISHERAGREEMENT_ALLOWEDVERSIONS",
+                        "1.1,1.2"));
+
+        new ApplicationContextRunner()
+                .withBean(RepositoryService.class, () -> repositories)
+                .withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(environment))
+                .withUserConfiguration(PublisherAgreementConfig.class)
+                .run(
+                        context -> assertThat(
+                                context.getBean(PublisherAgreementProvider.class).status(new UserData()).state())
+                                .isEqualTo(AgreementStatus.State.OUTDATED));
     }
 
     @Test

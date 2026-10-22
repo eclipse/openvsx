@@ -169,6 +169,35 @@ class SimplePublisherAgreementProviderTest {
     }
 
     @Test
+    void anAllowedVersionMatchesWhateverBuildMetadataThePartiesCarry() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.0.0+build5");
+
+        assertThat(provider("2", "1.0.0").status(user).state()).isEqualTo(State.SIGNED);
+        assertThat(provider("2", "1.0.0+other").status(user).state()).isEqualTo(State.SIGNED);
+    }
+
+    /** A signature written by something else is not in the list, so it is outdated and can be signed again. */
+    @Test
+    void aSignatureWhoseVersionCannotBeReadIsOutdated() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "v1");
+
+        assertThat(provider("1").status(user).state()).isEqualTo(State.OUTDATED);
+        assertThat(provider("1", "1.0").status(user).state()).isEqualTo(State.OUTDATED);
+    }
+
+    @Test
+    void allowedVersionsWithoutACurrentVersionDisableAgreementsInsteadOfFailing() {
+        assertThat(provider("", "1.1").enabled()).isFalse();
+    }
+
+    @Test
+    void allowedVersionsAreTrimmed() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
+
+        assertThat(provider("2", " 1.1 ").status(user).state()).isEqualTo(State.SIGNED);
+    }
+
+    @Test
     void anInvalidAllowedVersionIsRejectedNamingTheProperty() {
         for (var allowed : new String[] { "v1", "1.", "99999999999999999999" }) {
             assertThatThrownBy(() -> provider("1", allowed))
