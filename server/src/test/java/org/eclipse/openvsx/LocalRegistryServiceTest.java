@@ -144,7 +144,7 @@ class LocalRegistryServiceTest {
 
         // A permissive default for a void method rather than a per-test expectation: the tests of
         // visibleUntil exercise a pure function and touch no mock at all.
-        lenient().doNothing().when(publisherAgreements).checkPublisherAgreement(any());
+        lenient().doNothing().when(publisherAgreements).requireAgreement(any());
 
         // Publish tests supply a token that is meant to be live; the ones about an unusable token
         // say so for their own value.

@@ -10,16 +10,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.repositories;
+package org.eclipse.openvsx.publisheragreement;
 
-import org.springframework.data.repository.Repository;
-import org.springframework.data.util.Streamable;
-
-import org.eclipse.openvsx.entities.PublisherAgreement;
-
-public interface PublisherAgreementRepository extends Repository<PublisherAgreement, Long> {
-
-    Streamable<PublisherAgreement> findByUserDataIdOrderByIdDesc(long userDataId);
-
-    PublisherAgreement save(PublisherAgreement agreement);
-}
+/**
+ * A login a user has to link before signing or being revoked, shown by the web UI as "Log in with ...".
+ *
+ * @param registrationId the OAuth2 registration of the login, which is also its provider id on a user
+ * @param displayName the name shown to people
+ */
+public record ExternalLogin(String registrationId, String displayName) {}

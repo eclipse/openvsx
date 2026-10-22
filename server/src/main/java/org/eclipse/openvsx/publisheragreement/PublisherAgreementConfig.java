@@ -30,17 +30,17 @@ public class PublisherAgreementConfig {
 
     // A deployment's own bean is @Primary; this stays a candidate so injection by type has a fallback.
     @Bean
-    PublisherAgreementService simplePublisherAgreementService(
+    PublisherAgreementProvider simplePublisherAgreementProvider(
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
             Environment environment,
             ListableBeanFactory beanFactory
     ) {
-        // Counts this bean too: a deployment's own service, which may use ovsx.eclipse.*, makes it more than one.
-        if (beanFactory.getBeanNamesForType(PublisherAgreementService.class, true, false).length <= 1) {
+        // Counts this bean too: a deployment's own provider, which may use ovsx.eclipse.*, makes it more than one.
+        if (beanFactory.getBeanNamesForType(PublisherAgreementProvider.class, true, false).length <= 1) {
             warnAboutEclipseProperties(environment);
         }
-        return new SimplePublisherAgreementService(repositories, version);
+        return new SimplePublisherAgreementProvider(repositories, version);
     }
 
     // The Eclipse agreement is gone and its properties bind to nothing, so enforcement silently stops.
@@ -53,7 +53,7 @@ public class PublisherAgreementConfig {
                         .anyMatch(name -> name.startsWith("ovsx.eclipse."))) {
             LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
                     "ovsx.eclipse.* properties are ignored since the Eclipse publisher agreement was removed; "
-                            + "provide a PublisherAgreementService bean or set ovsx.publisher-agreement.version");
+                            + "provide a PublisherAgreementProvider bean or set ovsx.publisher-agreement.version");
         }
     }
 }

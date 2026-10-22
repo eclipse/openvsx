@@ -1522,26 +1522,26 @@ class AdminAPITest {
         user.setLoginName("test");
         user.setProvider("github");
         when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
-        when(publisherAgreements.publisherAgreementHistory(user)).thenReturn(
+        when(publisherAgreements.history(user)).thenReturn(
                 List.of(
-                        new PublisherAgreementEntryJson("2.0.0", "2026-10-18T10:00:00Z", null, null),
-                        new PublisherAgreementEntryJson(
-                                "1.0.0",
-                                "2026-10-01T10:00:00Z",
-                                "2026-10-10T10:00:00Z",
-                                null)));
+                        new PublisherAgreementEntryJson("reinstated", null, "2026-10-18T10:00:00Z", 9L),
+                        new PublisherAgreementEntryJson("revoked", null, "2026-10-10T10:00:00Z", 9L),
+                        new PublisherAgreementEntryJson("signed", "1.0.0", "2026-10-01T10:00:00Z", 7L)));
         mockMvc.perform(
                 get("/admin/publisher/{provider}/{loginName}/agreement-history", "github", "test")
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].version").value("2.0.0"))
-                .andExpect(jsonPath("$[0].revokedTimestamp").doesNotExist())
-                .andExpect(jsonPath("$[1].revokedTimestamp").value("2026-10-10T10:00:00Z"));
+                .andExpect(jsonPath("$[0].type").value("reinstated"))
+                .andExpect(jsonPath("$[0].version").doesNotExist())
+                .andExpect(jsonPath("$[1].actorId").value(9))
+                .andExpect(jsonPath("$[2].type").value("signed"))
+                .andExpect(jsonPath("$[2].version").value("1.0.0"))
+                .andExpect(jsonPath("$[2].timestamp").value("2026-10-01T10:00:00Z"));
     }
 
     @Test
     void testReinstatePublisherAgreement() throws Exception {
-        mockAdminUser();
+        var admin = mockAdminUser();
         var user = new UserData();
         user.setLoginName("test");
         user.setProvider("github");
@@ -1551,7 +1551,7 @@ class AdminAPITest {
                         .with(user("admin_user").authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk());
-        Mockito.verify(publisherAgreements).reinstatePublisherAgreement(user);
+        Mockito.verify(publisherAgreements).reinstate(user, admin);
     }
 
     @Test

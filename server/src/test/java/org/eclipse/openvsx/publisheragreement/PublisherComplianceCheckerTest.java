@@ -91,7 +91,7 @@ class PublisherComplianceCheckerTest {
         var user = publisher("lapsed");
         var version = activeVersionOf(user);
         when(repositories.findPublishersWithActiveVersions()).thenReturn(Streamable.of(user));
-        when(agreements.publisherCompliance(user)).thenReturn(PublisherCompliance.NON_COMPLIANT);
+        when(agreements.compliance(user)).thenReturn(PublisherCompliance.NON_COMPLIANT);
 
         checker.checkPublishers(null);
 
@@ -105,7 +105,7 @@ class PublisherComplianceCheckerTest {
         var user = publisher("signed");
         var version = activeVersionOf(user);
         when(repositories.findPublishersWithActiveVersions()).thenReturn(Streamable.of(user));
-        when(agreements.publisherCompliance(user)).thenReturn(PublisherCompliance.COMPLIANT);
+        when(agreements.compliance(user)).thenReturn(PublisherCompliance.COMPLIANT);
 
         checker.checkPublishers(null);
 
@@ -119,7 +119,7 @@ class PublisherComplianceCheckerTest {
         var user = publisher("unknown");
         var version = activeVersionOf(user);
         when(repositories.findPublishersWithActiveVersions()).thenReturn(Streamable.of(user));
-        when(agreements.publisherCompliance(user)).thenReturn(PublisherCompliance.UNKNOWN);
+        when(agreements.compliance(user)).thenReturn(PublisherCompliance.UNKNOWN);
 
         checker.checkPublishers(null);
 
@@ -134,8 +134,8 @@ class PublisherComplianceCheckerTest {
         var lapsed = publisher("lapsed");
         var lapsedVersion = activeVersionOf(lapsed);
         when(repositories.findPublishersWithActiveVersions()).thenReturn(Streamable.of(failing, lapsed));
-        when(agreements.publisherCompliance(failing)).thenThrow(new IllegalStateException("provider down"));
-        when(agreements.publisherCompliance(lapsed)).thenReturn(PublisherCompliance.NON_COMPLIANT);
+        when(agreements.compliance(failing)).thenThrow(new IllegalStateException("provider down"));
+        when(agreements.compliance(lapsed)).thenReturn(PublisherCompliance.NON_COMPLIANT);
 
         checker.checkPublishers(null);
 

@@ -429,7 +429,7 @@ public class AdminService {
         var userJson = user.toUserJson();
         userJson.setRole(user.getRoleAsString());
         userPublishInfo.setUser(userJson);
-        publisherAgreements.adminEnrichUserJson(userPublishInfo.getUser(), user);
+        publisherAgreements.enrichUserJsonForAdmin(userPublishInfo.getUser(), user);
         userPublishInfo.setActiveAccessTokenNum(
                 (int) repositories.countActivePersonalAccessTokensAndType(user, PersonalAccessTokenType.LONG_LIVED));
         var extVersions = repositories.findLatestVersions(user);
@@ -580,16 +580,16 @@ public class AdminService {
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
-        return publisherAgreements.publisherAgreementHistory(user);
+        return publisherAgreements.history(user);
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
-    public ResultJson reinstatePublisherAgreement(String provider, String loginName) {
+    public ResultJson reinstatePublisherAgreement(String provider, String loginName, UserData admin) {
         var user = repositories.findUserByLoginName(provider, loginName);
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
-        publisherAgreements.reinstatePublisherAgreement(user);
+        publisherAgreements.reinstate(user, admin);
         return ResultJson.success("Reinstated the publisher agreement of " + loginName + ".");
     }
 
@@ -608,7 +608,7 @@ public class AdminService {
 
         String revokeFailure = null;
         try {
-            publisherAgreements.revokePublisherAgreement(user, admin);
+            publisherAgreements.revoke(user, admin);
         } catch (RuntimeException exc) {
             // A failed revoke must not abort the rest: tokens, extensions and namespace memberships
             // are still revoked, and the failure is reported in the result.

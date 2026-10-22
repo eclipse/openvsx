@@ -126,9 +126,9 @@ public class Sequences {
     public static final Sequence<Long> PERSONAL_ACCESS_TOKEN_SEQ = Internal.createSequence("personal_access_token_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, 50, null, null, false, null);
 
     /**
-     * The sequence <code>public.publisher_agreement_seq</code>
+     * The sequence <code>public.publisher_agreement_event_seq</code>
      */
-    public static final Sequence<Long> PUBLISHER_AGREEMENT_SEQ = Internal.createSequence("publisher_agreement_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
+    public static final Sequence<Long> PUBLISHER_AGREEMENT_EVENT_SEQ = Internal.createSequence("publisher_agreement_event_seq", Public.PUBLIC, SQLDataType.BIGINT.nullable(false), null, null, null, null, false, null);
 
     /**
      * The sequence <code>public.rate_limit_token_seq</code>

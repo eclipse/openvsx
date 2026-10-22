@@ -71,7 +71,7 @@ public class TrustedPublishingAPI {
         }
         try {
             // throws when the user has no signed publisher agreement, and so has to be caught below
-            publisherAgreements.checkPublisherAgreement(user);
+            publisherAgreements.requireAgreement(user);
             if (!StringUtils.hasText(request.getProvider())
                     || !StringUtils.hasText(request.getNamespace()) || !StringUtils.hasText(request.getExtension())
                     || request.getRegistration() == null || request.getRegistration().isEmpty()) {
@@ -189,7 +189,7 @@ public class TrustedPublishingAPI {
             var json = new TrustedPublisherStatusJson();
             if (trustedPublishing.isEnabled()) {
                 json.setEnabled(true);
-                json.setAllowed(publisherAgreements.hasPublisherAgreement(user));
+                json.setAllowed(publisherAgreements.mayPublish(user));
                 if (json.isAllowed()) {
                     json.setTrustedPublisherProviders(
                             trustedPublishing.getTrustedPublisherProviders().values().stream()

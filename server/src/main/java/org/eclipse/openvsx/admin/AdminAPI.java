@@ -1350,8 +1350,8 @@ public class AdminAPI {
             @PathVariable String provider
     ) {
         try {
-            admins.checkPermission(Permission.MANAGE_PUBLISHERS);
-            return ResponseEntity.ok(admins.reinstatePublisherAgreement(provider, loginName));
+            var admin = admins.checkPermission(Permission.MANAGE_PUBLISHERS);
+            return ResponseEntity.ok(admins.reinstatePublisherAgreement(provider, loginName, admin));
         } catch (ErrorResultException exc) {
             return exc.toResponseEntity();
         }

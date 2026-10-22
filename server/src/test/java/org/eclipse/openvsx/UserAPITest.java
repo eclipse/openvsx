@@ -158,11 +158,10 @@ class UserAPITest {
                 })));
     }
 
+    // What signing does besides answering, such as reactivating extensions, is the service's, tested there.
     @Test
-    void testSignPublisherAgreementReactivatesExtensions() throws Exception {
+    void testSignPublisherAgreement() throws Exception {
         var userData = mockUserData();
-        when(repositories.findVersionsByUser(userData, false)).thenReturn(Streamable.empty());
-        when(publisherAgreements.signPublisherAgreement(eq(userData), any())).thenReturn(true);
 
         mockMvc.perform(
                 post("/user/publisher-agreement")
@@ -170,54 +169,20 @@ class UserAPITest {
                         .with(csrf().asHeader()))
                 .andExpect(status().isOk());
 
-        var order = Mockito.inOrder(publisherAgreements, repositories);
-        order.verify(publisherAgreements).signPublisherAgreement(eq(userData), any());
-        order.verify(repositories).findVersionsByUser(userData, false);
+        Mockito.verify(publisherAgreements).sign(eq(userData), any());
     }
 
     @Test
-    void testSignPublisherAgreementAlreadySignedDoesNotReactivateExtensions() throws Exception {
-        var userData = mockUserData();
-        when(publisherAgreements.signPublisherAgreement(eq(userData), any())).thenReturn(false);
-
-        mockMvc.perform(
-                post("/user/publisher-agreement")
-                        .with(user("test_user"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isOk());
-
-        Mockito.verify(repositories, Mockito.never()).findVersionsByUser(userData, false);
-    }
-
-    @Test
-    void testSignPublisherAgreementConcurrentSigningIsNotAnError() throws Exception {
-        var userData = mockUserData();
-        when(publisherAgreements.signPublisherAgreement(eq(userData), any()))
-                .thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"))
-                .thenReturn(false);
-
-        mockMvc.perform(
-                post("/user/publisher-agreement")
-                        .with(user("test_user"))
-                        .with(csrf().asHeader()))
-                .andExpect(status().isOk());
-
-        Mockito.verify(repositories, Mockito.never()).findVersionsByUser(userData, false);
-    }
-
-    @Test
-    void testSignPublisherAgreementFailureDoesNotReactivateExtensions() throws Exception {
+    void testSignPublisherAgreementRefusalIsReported() throws Exception {
         var userData = mockUserData();
         Mockito.doThrow(new ErrorResultException("nope", HttpStatus.BAD_REQUEST))
-                .when(publisherAgreements).signPublisherAgreement(eq(userData), any());
+                .when(publisherAgreements).sign(eq(userData), any());
 
         mockMvc.perform(
                 post("/user/publisher-agreement")
                         .with(user("test_user"))
                         .with(csrf().asHeader()))
                 .andExpect(status().isBadRequest());
-
-        Mockito.verify(repositories, Mockito.never()).findVersionsByUser(userData, false);
     }
 
     @Test

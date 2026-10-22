@@ -80,7 +80,7 @@ public class PublisherComplianceChecker {
 
     private PublisherCompliance complianceOf(UserData user) {
         try {
-            var compliance = publisherAgreements.publisherCompliance(user);
+            var compliance = publisherAgreements.compliance(user);
             if (compliance == PublisherCompliance.UNKNOWN) {
                 logger.warn(
                         "The publisher agreement of {} could not be determined, keeping their extensions",

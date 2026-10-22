@@ -12,76 +12,358 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import org.eclipse.openvsx.ExtensionService;
+import org.eclipse.openvsx.entities.PublisherAgreementEvent;
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.PublisherAgreementEntryJson;
 import org.eclipse.openvsx.json.UserJson;
+import org.eclipse.openvsx.repositories.RepositoryService;
 import org.eclipse.openvsx.util.ErrorResultException;
+import org.eclipse.openvsx.util.TimeUtil;
 
 /**
- * Extension point for deployments that require publishers to sign an agreement. The default
- * implementation ({@link SimplePublisherAgreementService}) keeps a signing history in the database; a deployment replaces it
- * by providing a {@code @Primary} bean of this type.
+ * Everything about publisher agreements that does not depend on where the agreement is kept, written once so that
+ * a {@link PublisherAgreementProvider} does not have to repeat it: who may publish, the block that follows a
+ * revocation, the history, the JSON served to clients, the HTTP status of a refusal and the reactivation of
+ * extensions after signing. The provider only says what a user's agreement is.
  */
-public interface PublisherAgreementService {
+@Service
+public class PublisherAgreementService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PublisherAgreementService.class);
+
+    private static final List<PublisherAgreementEvent.Type> BLOCK_STEPS = List.of(
+            PublisherAgreementEvent.Type.REVOKED,
+            PublisherAgreementEvent.Type.REINSTATED);
+    private static final List<PublisherAgreementEvent.Type> SIGNING_STEPS = List.of(
+            PublisherAgreementEvent.Type.SIGNED,
+            PublisherAgreementEvent.Type.REVOKED);
+
+    /** The provider's states, and a revocation that blocks the user whatever the provider says. */
+    private enum State {
+        NONE, SIGNED, OUTDATED, REVOKED, UNKNOWN
+    }
+
+    private record Assessment(State state, AgreementStatus status) {}
+
+    private final PublisherAgreementProvider provider;
+    private final RepositoryService repositories;
+    private final ExtensionService extensions;
+
+    public PublisherAgreementService(
+            PublisherAgreementProvider provider,
+            RepositoryService repositories,
+            ExtensionService extensions
+    ) {
+        this.provider = provider;
+        this.repositories = repositories;
+        this.extensions = extensions;
+    }
 
     /**
-     * Whether the given user may publish.
+     * Whether this deployment requires an agreement at all.
      */
-    boolean hasPublisherAgreement(UserData user);
+    public boolean enabled() {
+        return provider.enabled();
+    }
+
+    /**
+     * Whether the user may publish.
+     */
+    public boolean mayPublish(UserData user) {
+        return obstacle(user) == null;
+    }
 
     /**
      * @throws ErrorResultException if the user may not publish for lack of an agreement
      */
-    void checkPublisherAgreement(UserData user);
+    public void requireAgreement(UserData user) {
+        var obstacle = obstacle(user);
+        if (obstacle != null) {
+            throw refusal(obstacle);
+        }
+    }
 
     /**
-     * Adds the user's agreement status to the JSON served to that user.
+     * What keeps the user from publishing, or {@code null} if nothing does.
      */
-    void enrichUserJson(UserJson json, UserData user);
+    private @Nullable Assessment obstacle(UserData user) {
+        if (!enabled()) {
+            return null;
+        }
+        if (isBlocked(user)) {
+            return new Assessment(State.REVOKED, AgreementStatus.of(AgreementStatus.State.NONE));
+        }
+        // A user created directly in the database has no login to sign with, so only a revocation holds.
+        if (user.getProvider() == null) {
+            return null;
+        }
+        var assessment = assess(user, false);
+        return assessment.state() == State.SIGNED ? null : assessment;
+    }
+
+    private ErrorResultException refusal(Assessment obstacle) {
+        return switch (obstacle.state()) {
+            case REVOKED -> new ErrorResultException(
+                    "Your publisher agreement was revoked; contact an administrator.",
+                    HttpStatus.FORBIDDEN);
+            case UNKNOWN -> new ErrorResultException(
+                    "Your publisher agreement could not be verified at the moment, please try again later.",
+                    HttpStatus.SERVICE_UNAVAILABLE);
+            case OUTDATED -> new ErrorResultException(
+                    "Your publisher agreement is outdated"
+                            + (obstacle.status().version() == null
+                                    ? ""
+                                    : " (version " + obstacle.status().version() + ")")
+                            + ". Please sign the current publisher agreement before publishing any extension.",
+                    HttpStatus.FORBIDDEN);
+            default -> {
+                var login = provider.requiredLogin();
+                yield new ErrorResultException(
+                        login != null && !obstacle.status().loginLinked()
+                                ? "You must log in with " + login.displayName()
+                                        + " and sign the publisher agreement before publishing any extension."
+                                : "You must sign the publisher agreement before publishing any extension.",
+                        HttpStatus.FORBIDDEN);
+            }
+        };
+    }
 
     /**
-     * Signs the agreement on behalf of the user and adds the resulting status to the JSON.
-     *
-     * Must be idempotent: the caller may repeat the call, e.g. after a concurrent signing.
+     * Adds the user's agreement to the JSON served to that user.
+     */
+    public void enrichUserJson(UserJson json, UserData user) {
+        enrich(json, user, false, null);
+    }
+
+    /**
+     * Adds the user's agreement to the JSON served to administrators, which stays unset where the agreement
+     * could not be determined: it must not be mistaken for none.
+     */
+    public void enrichUserJsonForAdmin(UserJson json, UserData user) {
+        enrich(json, user, true, null);
+    }
+
+    private void enrich(UserJson json, UserData user, boolean admin, @Nullable AgreementStatus known) {
+        if (!enabled()) {
+            return;
+        }
+        var assessment = known != null ? new Assessment(stateOf(known), known) : assess(user, admin);
+        if (admin && assessment.state() == State.UNKNOWN) {
+            return;
+        }
+
+        var agreement = new UserJson.PublisherAgreement();
+        agreement.setStatus(
+                (assessment.state() == State.UNKNOWN ? State.NONE : assessment.state()).name()
+                        .toLowerCase(Locale.ROOT));
+        var login = provider.requiredLogin();
+        if (login != null) {
+            // The web UI sends the user through this login before signing or revoking.
+            agreement.setLoginProvider(login.registrationId());
+            agreement.setLoginProviderName(login.displayName());
+        }
+        if (assessment.state() == State.SIGNED || assessment.state() == State.OUTDATED) {
+            agreement.setVersion(assessment.status().version());
+            if (assessment.status().timestamp() != null) {
+                agreement.setTimestamp(TimeUtil.toUTCString(assessment.status().timestamp()));
+            }
+        }
+        json.setPublisherAgreement(agreement);
+
+        if (!admin && login != null && assessment.status().loginLinked()) {
+            var linked = new UserJson();
+            linked.setProvider(login.registrationId());
+            if (json.getAdditionalLogins() == null) {
+                json.setAdditionalLogins(new ArrayList<>(List.of(linked)));
+            } else {
+                json.getAdditionalLogins().add(linked);
+            }
+        }
+    }
+
+    /**
+     * Signs the agreement on behalf of the user, adds the resulting status to the JSON, and makes the extension
+     * versions hidden while the agreement was missing visible again. Signing what is already signed changes
+     * nothing, so a repeated call, as after a double click, is harmless.
      *
      * @return whether the user signed now; false if the current agreement was already signed
      * @throws ErrorResultException if the user may not sign, e.g. after a revocation
      */
-    boolean signPublisherAgreement(UserData user, UserJson json);
+    public boolean sign(UserData user, UserJson json) {
+        if (!enabled()) {
+            throw new ErrorResultException("Publisher agreements are not supported.", HttpStatus.NOT_FOUND);
+        }
+        if (isBlocked(user)) {
+            throw refusal(new Assessment(State.REVOKED, AgreementStatus.of(AgreementStatus.State.NONE)));
+        }
+        var before = providerStatus(user, false);
+        if (before.state() == AgreementStatus.State.UNKNOWN) {
+            throw refusal(new Assessment(State.UNKNOWN, before));
+        }
 
-    /**
-     * Adds the user's agreement status to the JSON served to administrators.
-     */
-    void adminEnrichUserJson(UserJson json, UserData user);
+        var signedNow = before.state() != AgreementStatus.State.SIGNED;
+        var current = before;
+        if (signedNow) {
+            try {
+                current = provider.sign(user);
+            } catch (PublisherAgreementException exc) {
+                throw refusal(exc);
+            }
+            recordSigning(user, current.version());
+            extensions.reactivateExtensions(user);
+        }
+        // From what the provider just answered, not asked again: it may still show the state before signing.
+        enrich(json, user, false, current);
+        return signedNow;
+    }
 
-    /**
-     * Revokes the user's agreement, using the admin's credentials where the implementation needs any.
-     * Does nothing if there is nothing to revoke.
-     */
-    void revokePublisherAgreement(UserData user, UserData admin);
-
-    /**
-     * Lifts the block of an earlier revocation, so the user may sign again. Does nothing by default.
-     */
-    default void reinstatePublisherAgreement(UserData user) {
+    private void recordSigning(UserData user, @Nullable String version) {
+        var last = repositories.findLatestPublisherAgreementEvent(user.getId(), SIGNING_STEPS);
+        if (last != null
+                && last.getType() == PublisherAgreementEvent.Type.SIGNED
+                && Objects.equals(last.getVersion(), version)) {
+            return;
+        }
+        record(user, PublisherAgreementEvent.Type.SIGNED, version, user);
     }
 
     /**
-     * Whether the user's extensions may stay published, for the check on startup. An implementation that
-     * can fail to tell, for instance because it asks a remote server, overrides this to return
-     * {@link PublisherCompliance#UNKNOWN} then: nobody is deactivated on a guess. By default it follows
-     * {@link #hasPublisherAgreement}.
+     * Revokes the user's agreement: records the block, which holds even where withdrawing at the provider
+     * fails, and then withdraws it there.
+     *
+     * @throws ErrorResultException if the provider failed to withdraw; the block is in place by then
      */
-    default PublisherCompliance publisherCompliance(UserData user) {
-        return hasPublisherAgreement(user) ? PublisherCompliance.COMPLIANT : PublisherCompliance.NON_COMPLIANT;
+    public void revoke(UserData user, UserData admin) {
+        if (!enabled()) {
+            return;
+        }
+        if (!isBlocked(user)) {
+            record(user, PublisherAgreementEvent.Type.REVOKED, null, admin);
+        }
+        // Only what is reliably known to exist is withdrawn: for none or an undetermined status there is
+        // nothing confirmed to withdraw, and asking the provider would be a guess.
+        var status = providerStatus(user, true);
+        if (status.state() == AgreementStatus.State.SIGNED || status.state() == AgreementStatus.State.OUTDATED) {
+            try {
+                provider.withdraw(user, admin);
+            } catch (PublisherAgreementException exc) {
+                throw refusal(exc);
+            }
+        }
     }
 
     /**
-     * The user's signings, latest first, for administrators. Empty unless the implementation keeps a history.
+     * Lifts the block of a revocation, so the user may sign again. Does nothing if the user is not blocked.
      */
-    default List<PublisherAgreementEntryJson> publisherAgreementHistory(UserData user) {
-        return List.of();
+    public void reinstate(UserData user, UserData admin) {
+        if (isBlocked(user)) {
+            record(user, PublisherAgreementEvent.Type.REINSTATED, null, admin);
+        }
+    }
+
+    /**
+     * Whether the user's extensions may stay published, for the check on startup. The user is compliant while
+     * their agreement is current; one the provider cannot tell about is neither.
+     */
+    public PublisherCompliance compliance(UserData user) {
+        if (!enabled()) {
+            return PublisherCompliance.COMPLIANT;
+        }
+        if (isBlocked(user)) {
+            return PublisherCompliance.NON_COMPLIANT;
+        }
+        if (user.getProvider() == null) {
+            return PublisherCompliance.COMPLIANT;
+        }
+        return switch (providerStatus(user, true).state()) {
+            case SIGNED -> PublisherCompliance.COMPLIANT;
+            case UNKNOWN -> PublisherCompliance.UNKNOWN;
+            case NONE, OUTDATED -> PublisherCompliance.NON_COMPLIANT;
+        };
+    }
+
+    /**
+     * What happened to the user's agreement, the latest first.
+     */
+    public List<PublisherAgreementEntryJson> history(UserData user) {
+        return repositories.findPublisherAgreementEvents(user.getId()).stream()
+                .map(
+                        event -> new PublisherAgreementEntryJson(
+                                event.getType().name().toLowerCase(Locale.ROOT),
+                                event.getVersion(),
+                                TimeUtil.toUTCString(event.getTimestamp()),
+                                event.getActorId()))
+                .toList();
+    }
+
+    private Assessment assess(UserData user, boolean admin) {
+        if (isBlocked(user)) {
+            return new Assessment(State.REVOKED, AgreementStatus.of(AgreementStatus.State.NONE));
+        }
+        var status = providerStatus(user, admin);
+        return new Assessment(stateOf(status), status);
+    }
+
+    private static State stateOf(AgreementStatus status) {
+        return switch (status.state()) {
+            case NONE -> State.NONE;
+            case SIGNED -> State.SIGNED;
+            case OUTDATED -> State.OUTDATED;
+            case UNKNOWN -> State.UNKNOWN;
+        };
+    }
+
+    /**
+     * What the provider says, or {@link AgreementStatus.State#UNKNOWN} if it fails to say.
+     */
+    private AgreementStatus providerStatus(UserData user, boolean admin) {
+        try {
+            return admin ? provider.statusForAdmin(user) : provider.status(user);
+        } catch (RuntimeException exc) {
+            logger.warn("Failed to determine the publisher agreement of {}", user.getLoginName(), exc);
+            return AgreementStatus.of(AgreementStatus.State.UNKNOWN);
+        }
+    }
+
+    private boolean isBlocked(UserData user) {
+        var step = repositories.findLatestPublisherAgreementEvent(user.getId(), BLOCK_STEPS);
+        return step != null && step.getType() == PublisherAgreementEvent.Type.REVOKED;
+    }
+
+    private void record(
+            UserData user,
+            PublisherAgreementEvent.Type type,
+            @Nullable String version,
+            UserData actor
+    ) {
+        var event = new PublisherAgreementEvent();
+        event.setUserDataId(user.getId());
+        event.setType(type);
+        event.setVersion(version);
+        event.setTimestamp(TimeUtil.getCurrentUTC());
+        event.setActorId(actor.getId());
+        repositories.savePublisherAgreementEvent(event);
+    }
+
+    private ErrorResultException refusal(PublisherAgreementException exc) {
+        var status = switch (exc.getReason()) {
+            case LOGIN_REQUIRED -> HttpStatus.FORBIDDEN;
+            case REJECTED -> HttpStatus.BAD_REQUEST;
+            case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+            case UNSUPPORTED -> HttpStatus.NOT_FOUND;
+        };
+        return new ErrorResultException(exc.getMessage(), status);
     }
 }

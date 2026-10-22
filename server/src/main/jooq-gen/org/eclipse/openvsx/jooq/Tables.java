@@ -32,7 +32,7 @@ import org.eclipse.openvsx.jooq.tables.NamespaceMembership;
 import org.eclipse.openvsx.jooq.tables.NamespaceSocialLinks;
 import org.eclipse.openvsx.jooq.tables.PersistedLog;
 import org.eclipse.openvsx.jooq.tables.PersonalAccessToken;
-import org.eclipse.openvsx.jooq.tables.PublisherAgreement;
+import org.eclipse.openvsx.jooq.tables.PublisherAgreementEvent;
 import org.eclipse.openvsx.jooq.tables.RateLimitToken;
 import org.eclipse.openvsx.jooq.tables.ScanCheckResult;
 import org.eclipse.openvsx.jooq.tables.ScanJob;
@@ -198,9 +198,9 @@ public class Tables {
     public static final PersonalAccessToken PERSONAL_ACCESS_TOKEN = PersonalAccessToken.PERSONAL_ACCESS_TOKEN;
 
     /**
-     * The table <code>public.publisher_agreement</code>.
+     * The table <code>public.publisher_agreement_event</code>.
      */
-    public static final PublisherAgreement PUBLISHER_AGREEMENT = PublisherAgreement.PUBLISHER_AGREEMENT;
+    public static final PublisherAgreementEvent PUBLISHER_AGREEMENT_EVENT = PublisherAgreementEvent.PUBLISHER_AGREEMENT_EVENT;
 
     /**
      * The table <code>public.rate_limit_token</code>.

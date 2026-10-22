@@ -755,7 +755,7 @@ public class LocalRegistryService implements IExtensionRegistry {
             throw new ErrorResultException(namespaceIssue.get().toString());
         }
 
-        publisherAgreements.checkPublisherAgreement(user);
+        publisherAgreements.requireAgreement(user);
         var namespaceName = repositories.findNamespaceName(json.getName());
         if (namespaceName != null) {
             throw new ErrorResultException("Namespace already exists: " + namespaceName);
@@ -905,7 +905,7 @@ public class LocalRegistryService implements IExtensionRegistry {
                         throw new ErrorResultException(ACCESS_TOKEN_ERROR, HttpStatus.UNAUTHORIZED);
                     }
                     // Check whether the user has a valid publisher agreement
-                    publisherAgreements.checkPublisherAgreement(au.userData());
+                    publisherAgreements.requireAgreement(au.userData());
 
                     // Authorization before disclosure: the limit below is specific to this namespace,
                     // and permission to publish there is otherwise not established until

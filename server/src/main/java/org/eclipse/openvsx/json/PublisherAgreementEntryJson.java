@@ -15,12 +15,9 @@ package org.eclipse.openvsx.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * One signing in a user's publisher agreement history; {@code revokedTimestamp} is absent while it stands.
+ * One step in a user's publisher agreement history: {@code type} is {@code signed}, {@code revoked} or
+ * {@code reinstated}, {@code version} is set for {@code signed}, and {@code actorId} is the user or admin who
+ * caused it, absent once that user is gone.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record PublisherAgreementEntryJson(
-        String version,
-        String signedTimestamp,
-        String revokedTimestamp,
-        String reinstatedTimestamp
-) {}
+public record PublisherAgreementEntryJson(String type, String version, String timestamp, Long actorId) {}

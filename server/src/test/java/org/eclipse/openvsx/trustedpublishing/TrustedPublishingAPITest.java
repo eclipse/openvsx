@@ -152,7 +152,7 @@ class TrustedPublishingAPITest {
                 .andExpect(jsonPath("$.createdTimestamp").value("2026-01-02T03:04:05Z"))
                 .andExpect(jsonPath("$.error").doesNotExist());
 
-        verify(eclipseService).checkPublisherAgreement(user);
+        verify(eclipseService).requireAgreement(user);
     }
 
     @Test
@@ -163,7 +163,7 @@ class TrustedPublishingAPITest {
                         "You must sign a Publisher Agreement with the Eclipse Foundation before publishing any extension.",
                         HttpStatus.FORBIDDEN))
                 .when(eclipseService)
-                .checkPublisherAgreement(user);
+                .requireAgreement(user);
 
         mockMvc.perform(createRequest(NAMESPACE, registrationBody(NAMESPACE, EXTENSION, PROVIDER, REGISTRATION)))
                 .andExpect(status().isForbidden())
@@ -434,7 +434,7 @@ class TrustedPublishingAPITest {
     void getTrustedPublishingStatus_hidesProviders_whenPublisherAgreementIsMissing() throws Exception {
         var user = mockLoggedInUser();
         when(trustedPublishing.isEnabled()).thenReturn(true);
-        when(eclipseService.hasPublisherAgreement(user)).thenReturn(false);
+        when(eclipseService.mayPublish(user)).thenReturn(false);
 
         mockMvc.perform(get("/api/-/trusted-publishing/status"))
                 .andExpect(status().isOk())
@@ -449,7 +449,7 @@ class TrustedPublishingAPITest {
     void getTrustedPublishingStatus_listsActiveProviders() throws Exception {
         var user = mockLoggedInUser();
         when(trustedPublishing.isEnabled()).thenReturn(true);
-        when(eclipseService.hasPublisherAgreement(user)).thenReturn(true);
+        when(eclipseService.mayPublish(user)).thenReturn(true);
 
         // LinkedHashMap so the order of the listed providers is the one asserted below
         var providers = new LinkedHashMap<String, TrustedPublishingProviderSupport>();
@@ -489,7 +489,7 @@ class TrustedPublishingAPITest {
     void getTrustedPublishingStatus_returns404_whenProviderLookupFindsFeatureDisabled() throws Exception {
         var user = mockLoggedInUser();
         when(trustedPublishing.isEnabled()).thenReturn(true);
-        when(eclipseService.hasPublisherAgreement(user)).thenReturn(true);
+        when(eclipseService.mayPublish(user)).thenReturn(true);
         when(trustedPublishing.getTrustedPublisherProviders())
                 .thenThrow(new ErrorResultException("Trusted publishing is not enabled.", HttpStatus.NOT_FOUND));
 

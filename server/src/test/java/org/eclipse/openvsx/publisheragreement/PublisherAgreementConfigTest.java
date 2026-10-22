@@ -34,10 +34,10 @@ class PublisherAgreementConfigTest {
             .withUserConfiguration(PublisherAgreementConfig.class);
 
     @Test
-    void simpleServiceIsTheDefault() {
+    void simpleProviderIsTheDefault() {
         runner.run(
-                context -> assertThat(context.getBean(PublisherAgreementService.class))
-                        .isInstanceOf(SimplePublisherAgreementService.class));
+                context -> assertThat(context.getBean(PublisherAgreementProvider.class))
+                        .isInstanceOf(SimplePublisherAgreementProvider.class));
     }
 
     @Test
@@ -61,34 +61,34 @@ class PublisherAgreementConfigTest {
     }
 
     @Test
-    void primaryDeploymentBeanReplacesTheDefault() {
+    void primaryDeploymentProviderReplacesTheDefault() {
         runner.withUserConfiguration(DeploymentConfig.class).run(context -> {
-            assertThat(context.getBeansOfType(PublisherAgreementService.class)).hasSize(2);
-            assertThat(context.getBean(PublisherAgreementService.class))
+            assertThat(context.getBeansOfType(PublisherAgreementProvider.class)).hasSize(2);
+            assertThat(context.getBean(PublisherAgreementProvider.class))
                     .isSameAs(context.getBean(DeploymentConfig.class).custom);
         });
     }
 
     @Test
-    void warnsAboutLeftoverEclipsePropertiesWithoutADeploymentService(CapturedOutput output) {
+    void warnsAboutLeftoverEclipsePropertiesWithoutADeploymentProvider(CapturedOutput output) {
         runner.withPropertyValues("ovsx.eclipse.base-url=x").run(
                 context -> assertThat(output)
                         .contains("ovsx.eclipse.* properties are ignored"));
     }
 
     @Test
-    void doesNotWarnWhenADeploymentServiceIsPresent(CapturedOutput output) {
+    void doesNotWarnWhenADeploymentProviderIsPresent(CapturedOutput output) {
         runner.withUserConfiguration(DeploymentConfig.class).withPropertyValues("ovsx.eclipse.base-url=x")
                 .run(context -> assertThat(output).doesNotContain("ovsx.eclipse.* properties are ignored"));
     }
 
     @Configuration(proxyBeanMethods = false)
     static class DeploymentConfig {
-        final PublisherAgreementService custom = Mockito.mock(PublisherAgreementService.class);
+        final PublisherAgreementProvider custom = Mockito.mock(PublisherAgreementProvider.class);
 
         @Bean
         @Primary
-        PublisherAgreementService custom() {
+        PublisherAgreementProvider custom() {
             return custom;
         }
     }

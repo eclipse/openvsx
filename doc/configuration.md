@@ -1339,7 +1339,7 @@ Body of that response.
 
 ## Publisher Agreement
 
-Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing is recorded with the agreement version. A signature stays valid within the major version of the configured one, so raising the major version makes everyone sign again. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment with its own agreement service (a `@Primary` `PublisherAgreementService` bean) replaces this one, and these properties then have no effect.
+Requires publishers to sign an agreement before they can publish. Disabled by default. Each signing, revocation and reinstatement is recorded with the agreement version, whichever provider keeps the agreement. A signature stays valid within the major version of the configured one, so raising the major version makes everyone sign again. An admin revocation blocks the user from signing again until an admin reinstates them. A deployment that keeps the agreement elsewhere supplies its own `PublisherAgreementProvider` (a `@Primary` bean), which replaces the default one and its `ovsx.publisher-agreement.version`; the rest, such as who may publish, the block after a revocation and the history, is the server's and stays.
 
 | Property      | `ovsx.publisher-agreement.version`
 |---------------|-----------------------------------
@@ -1363,7 +1363,7 @@ Location of the agreement text, in Markdown, as any Spring resource location suc
 | Default       | `false`
 | Compatibility | Since 1.4.0
 
-Whether to check publishers on startup and deactivate the extension versions of those without a current agreement. The agreement service decides who has one: with the default service a publisher is compliant while their signature is current, so an outdated or revoked one is not. A publisher whose status cannot be determined, for instance because a remote service is unreachable, is left alone. Has no effect while agreements are disabled.
+Whether to check publishers on startup and deactivate the extension versions of those without a current agreement. The agreement provider decides who has one: with the default provider a publisher is compliant while their signature is current, so an outdated or revoked one is not. A publisher whose status cannot be determined, for instance because a remote service is unreachable, is left alone. Has no effect while agreements are disabled.
 Replaces `ovsx.eclipse.check-compliance-on-start`, which is still read while this one is not set.
 
 ## Trusted Publishing

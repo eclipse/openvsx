@@ -183,7 +183,7 @@ class AdminServiceTest {
         when(repositories.findPersonalAccessTokens(user)).thenReturn(Streamable.empty());
         when(repositories.findVersionsByUser(user, true)).thenReturn(Streamable.of(extVersion));
         doThrow(new RuntimeException("Agreement service is down")).when(publisherAgreements)
-                .revokePublisherAgreement(user, admin);
+                .revoke(user, admin);
 
         var result = adminService.revokePublisherContributions("github", "amy", admin);
 
