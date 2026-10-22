@@ -576,6 +576,53 @@ class AdminServiceTest {
     }
 
     @Test
+    void reinstateRefusesAnAdminTargetForANonAdminCaller() {
+        var caller = new UserData();
+        caller.setId(1);
+        caller.getPermissions().add(Permission.MANAGE_PUBLISHERS);
+        var target = new UserData();
+        target.setId(2);
+        target.setLoginName("root");
+        target.setRole(UserData.Role.ADMIN);
+        when(repositories.findUserByLoginName("github", "root")).thenReturn(target);
+
+        assertThatThrownBy(() -> adminService.reinstatePublisherAgreement("github", "root", caller))
+                .isInstanceOf(ErrorResultException.class);
+
+        verify(publisherAgreements, never()).reinstate(any(), any());
+    }
+
+    /** A delegate who was revoked must not be able to lift their own block. */
+    @Test
+    void reinstateRefusesTheCallerReinstatingThemselves() {
+        var caller = new UserData();
+        caller.setId(1);
+        caller.setLoginName("sam");
+        caller.getPermissions().add(Permission.MANAGE_PUBLISHERS);
+        when(repositories.findUserByLoginName("github", "sam")).thenReturn(caller);
+
+        assertThatThrownBy(() -> adminService.reinstatePublisherAgreement("github", "sam", caller))
+                .isInstanceOf(ErrorResultException.class);
+
+        verify(publisherAgreements, never()).reinstate(any(), any());
+    }
+
+    @Test
+    void reinstateLetsAnAdminReinstateAnotherUser() {
+        var caller = new UserData();
+        caller.setId(1);
+        caller.setRole(UserData.Role.ADMIN);
+        var target = new UserData();
+        target.setId(2);
+        target.setLoginName("sam");
+        when(repositories.findUserByLoginName("github", "sam")).thenReturn(target);
+
+        adminService.reinstatePublisherAgreement("github", "sam", caller);
+
+        verify(publisherAgreements).reinstate(target, caller);
+    }
+
+    @Test
     void revokePublisherTokensRefusesAnAdminTargetForANonAdminCaller() {
         var caller = new UserData();
         caller.getPermissions().add(Permission.MANAGE_PUBLISHERS);

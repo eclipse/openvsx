@@ -22,6 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.PublisherAgreementEvent;
@@ -34,6 +36,7 @@ import org.eclipse.openvsx.util.ErrorResultException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -53,6 +56,8 @@ class PublisherAgreementServiceTest {
     private final RepositoryService repositories = mock(RepositoryService.class);
     private final ExtensionService extensions = mock(ExtensionService.class);
     private final PublisherAgreementProvider provider = mock(PublisherAgreementProvider.class);
+    // A real template over a manager that does nothing: it runs the work, and rolls back by rethrowing.
+    private final TransactionTemplate transactions = new TransactionTemplate(mock(PlatformTransactionManager.class));
     private final UserData user = new UserData();
     private final UserData admin = new UserData();
     private PublisherAgreementService service;
@@ -90,7 +95,7 @@ class PublisherAgreementServiceTest {
 
         when(provider.enabled()).thenReturn(true);
         givenStatus(State.NONE);
-        service = new PublisherAgreementService(provider, repositories, extensions);
+        service = new PublisherAgreementService(provider, repositories, extensions, transactions);
     }
 
     private AgreementStatus givenStatus(State state) {
@@ -165,15 +170,6 @@ class PublisherAgreementServiceTest {
         var thrown = refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
 
         assertThat(thrown.getMessage()).doesNotContain("log in with").contains("must sign");
-    }
-
-    @Test
-    void anOutdatedAgreementIsRefusedWithItsVersion() {
-        givenStatus(State.OUTDATED);
-
-        var thrown = refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
-
-        assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
     }
 
     /** Nobody is told to sign because a lookup failed, and nobody publishes on a guess. */
@@ -363,15 +359,15 @@ class PublisherAgreementServiceTest {
     }
 
     @Test
-    void signingWhatIsAlreadySignedChangesNothing() {
+    void signingWhatIsAlreadySignedSignsNothingAgainButReactivatesTheExtensions() {
         givenStatus(State.SIGNED);
         var json = new UserJson();
 
         assertThat(service.sign(user, json)).isFalse();
 
         verify(provider, never()).sign(any());
-        verify(extensions, never()).reactivateExtensions(any());
         assertThat(events).isEmpty();
+        verify(extensions).reactivateExtensions(user);
         assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("signed");
     }
 
@@ -537,6 +533,124 @@ class PublisherAgreementServiceTest {
         assertThat(json.getPublisherAgreement()).isNull();
     }
 
+    // ---- outdated agreements keep nothing new from being published
+
+    @Test
+    void anOutdatedAgreementIsRefusedWithItsVersion() {
+        givenStatus(State.OUTDATED);
+
+        var thrown = refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+
+        assertThat(thrown.getMessage()).contains("outdated").contains("1.0.0");
+        assertThat(service.mayPublish(user)).isFalse();
+    }
+
+    // ---- what the steps that change an agreement must hold
+
+    /** An admin revokes while the provider is signing: the signing is neither recorded nor reactivates anything. */
+    @Test
+    void aRevocationWhileSigningIsNotUndoneByTheSigning() {
+        givenStatus(State.NONE);
+        Mockito.doAnswer(invocation -> {
+            service.revoke(user, admin);
+            return new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false);
+        }).when(provider).sign(any());
+
+        refusedWith(HttpStatus.FORBIDDEN, () -> service.sign(user, new UserJson()));
+
+        assertThat(eventTypes()).containsExactly(PublisherAgreementEvent.Type.REVOKED);
+        verify(extensions, never()).reactivateExtensions(any());
+        assertThat(service.mayPublish(user)).isFalse();
+    }
+
+    @Test
+    void signingRevokingAndReinstatingTakeTheUsersLockBeforeWriting() {
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+
+        service.sign(user, new UserJson());
+        var inOrder = Mockito.inOrder(repositories);
+        inOrder.verify(repositories).lockUser(user);
+        inOrder.verify(repositories).savePublisherAgreementEvent(any());
+
+        Mockito.clearInvocations(repositories);
+        service.revoke(user, admin);
+        inOrder = Mockito.inOrder(repositories);
+        inOrder.verify(repositories).lockUser(user);
+        inOrder.verify(repositories).savePublisherAgreementEvent(any());
+
+        Mockito.clearInvocations(repositories);
+        service.reinstate(user, admin);
+        inOrder = Mockito.inOrder(repositories);
+        inOrder.verify(repositories).lockUser(user);
+        inOrder.verify(repositories).savePublisherAgreementEvent(any());
+    }
+
+    /** The signing is recorded when the reactivation fails; the repeat finds the user signed and must still reactivate. */
+    @Test
+    void aSigningWhoseReactivationFailedReactivatesWhenItIsRepeated() {
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+        Mockito.doThrow(new IllegalStateException("search index down"))
+                .doNothing()
+                .when(extensions).reactivateExtensions(any());
+
+        assertThatThrownBy(() -> service.sign(user, new UserJson())).isInstanceOf(IllegalStateException.class);
+        // the provider now reports what was recorded
+        givenStatus(State.SIGNED);
+        assertThat(service.sign(user, new UserJson())).isFalse();
+
+        verify(extensions, times(2)).reactivateExtensions(user);
+    }
+
+    /** A provider that answers anything but signed has not signed: nothing is recorded, nothing reactivated. */
+    @Test
+    void aProviderThatDoesNotReportSignedHasNotSigned() {
+        var answers = new AgreementStatus[] {
+            AgreementStatus.of(State.UNKNOWN),
+            AgreementStatus.of(State.NONE),
+            AgreementStatus.of(State.OUTDATED),
+            null
+        };
+        for (var answer : answers) {
+            Mockito.doReturn(answer).when(provider).sign(any());
+
+            refusedWith(HttpStatus.SERVICE_UNAVAILABLE, () -> service.sign(user, new UserJson()));
+        }
+
+        assertThat(events).isEmpty();
+        verify(extensions, never()).reactivateExtensions(any());
+    }
+
+    /** The provider kept the agreement, so the reinstated user cannot sign again and would never get them back. */
+    @Test
+    void reinstatingReactivatesWhatTheProviderStillHoldsAsSigned() {
+        givenStatus(State.SIGNED);
+        service.revoke(user, admin);
+
+        service.reinstate(user, admin);
+
+        verify(extensions).reactivateExtensions(user);
+    }
+
+    @Test
+    void reinstatingLeavesAUserWhoMustSignAgainToSignAndReactivate() {
+        givenStatus(State.NONE);
+        service.revoke(user, admin);
+
+        service.reinstate(user, admin);
+
+        verify(extensions, never()).reactivateExtensions(any());
+    }
+
+    @Test
+    void reinstatingAUserWhoIsNotBlockedReactivatesNothing() {
+        givenStatus(State.SIGNED);
+
+        service.reinstate(user, admin);
+
+        verify(extensions, never()).reactivateExtensions(any());
+        assertThat(events).isEmpty();
+    }
+
     // ---- compliance and history
 
     @Test
@@ -547,12 +661,18 @@ class PublisherAgreementServiceTest {
     }
 
     @Test
-    void aPublisherWithoutACurrentAgreementIsNotCompliant() {
-        for (var state : List.of(State.NONE, State.OUTDATED)) {
-            givenStatus(state);
+    void aPublisherWithoutAnAgreementIsNotCompliant() {
+        givenStatus(State.NONE);
 
-            assertThat(service.compliance(user)).as(state.name()).isEqualTo(PublisherCompliance.NON_COMPLIANT);
-        }
+        assertThat(service.compliance(user)).isEqualTo(PublisherCompliance.NON_COMPLIANT);
+    }
+
+    /** Outdated keeps the user from publishing, but never takes extensions offline. */
+    @Test
+    void aPublisherWithAnOutdatedAgreementIsStillCompliant() {
+        givenStatus(State.OUTDATED);
+
+        assertThat(service.compliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
     }
 
     @Test

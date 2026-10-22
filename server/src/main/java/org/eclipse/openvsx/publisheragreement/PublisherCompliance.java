@@ -18,10 +18,10 @@ package org.eclipse.openvsx.publisheragreement;
  */
 public enum PublisherCompliance {
 
-    /** The publisher has a current agreement. */
+    /** The publisher has an agreement, which may be outdated. */
     COMPLIANT,
 
-    /** The publisher has none, or one that is outdated or revoked. */
+    /** The publisher has none, or it was revoked. */
     NON_COMPLIANT,
 
     /** The provider could not tell, for instance because its server is unreachable. */

@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
 import org.eclipse.openvsx.ExtensionService;
@@ -48,11 +50,15 @@ class PublisherAgreementServicePersistenceTest extends AbstractPostgresContainer
     @Autowired
     ExtensionService extensions;
 
+    @Autowired
+    PlatformTransactionManager transactionManager;
+
     private PublisherAgreementService service(String version) {
         return new PublisherAgreementService(
                 new SimplePublisherAgreementProvider(repositories, version),
                 repositories,
-                extensions);
+                extensions,
+                new TransactionTemplate(transactionManager));
     }
 
     private UserData persistUser(String name) {

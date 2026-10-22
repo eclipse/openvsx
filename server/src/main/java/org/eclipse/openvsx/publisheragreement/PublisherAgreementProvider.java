@@ -48,9 +48,9 @@ public interface PublisherAgreementProvider {
     }
 
     /**
-     * Signs the current agreement on behalf of the user and returns the resulting status, whose version is
-     * recorded. Must be idempotent: signing again an agreement that is already signed returns the status
-     * as it is.
+     * Signs the current agreement on behalf of the user and returns the resulting status, which has to be
+     * {@code SIGNED} and whose version is recorded: anything else counts as a failure and is not recorded. Must
+     * be idempotent: signing again an agreement that is already signed returns the status as it is.
      *
      * @throws PublisherAgreementException if the user cannot sign
      */

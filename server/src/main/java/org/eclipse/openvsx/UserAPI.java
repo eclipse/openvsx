@@ -751,6 +751,4 @@ public class UserAPI {
             return exc.toResponseEntity(UserJson.class);
         }
     }
-
-    // A concurrent signing loses to the unique index; the retry then reports the winner's signature.
 }

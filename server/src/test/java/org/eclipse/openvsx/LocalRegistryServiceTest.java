@@ -66,6 +66,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -263,6 +264,21 @@ class LocalRegistryServiceTest {
         // No persistence and no similarity checks should occur when we bail out early.
         verify(entityManager, never()).persist(any(Namespace.class));
         verify(similarityCheckService, never()).findSimilarNamespacesForCreation(any(), any());
+    }
+
+    @Test
+    void shouldRefuseANamespaceToAUserWithoutAValidAgreement() {
+        var json = new NamespaceJson();
+        json.setName("clean-ns");
+        var user = new UserData();
+        when(validator.validateNamespace("clean-ns")).thenReturn(Optional.empty());
+        doThrow(new ErrorResultException("outdated", HttpStatus.FORBIDDEN))
+                .when(publisherAgreements).requireAgreement(user);
+
+        assertThatThrownBy(() -> registryService.createNamespace(json, user))
+                .isInstanceOf(ErrorResultException.class);
+
+        verify(entityManager, never()).persist(any(Namespace.class));
     }
 
     @Test

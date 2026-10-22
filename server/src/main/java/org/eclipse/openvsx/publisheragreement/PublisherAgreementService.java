@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.ExtensionService;
 import org.eclipse.openvsx.entities.PublisherAgreementEvent;
@@ -37,6 +38,14 @@ import org.eclipse.openvsx.util.TimeUtil;
  * a {@link PublisherAgreementProvider} does not have to repeat it: who may publish, the block that follows a
  * revocation, the history, the JSON served to clients, the HTTP status of a refusal and the reactivation of
  * extensions after signing. The provider only says what a user's agreement is.
+ * <p>
+ * An outdated agreement, one signed for an earlier major version, keeps the user's extensions published but
+ * stops them publishing anything new until they sign the current one. A revocation, or having signed none,
+ * also takes the extensions offline.
+ * <p>
+ * The steps that change a user's agreement ({@link #sign}, {@link #revoke}, {@link #reinstate}) take the lock of
+ * the user row, held until the surrounding transaction ends, so that they cannot interleave: a revocation that
+ * commits while the user is signing is seen by the signing instead of being undone by it.
  */
 @Service
 public class PublisherAgreementService {
@@ -60,15 +69,18 @@ public class PublisherAgreementService {
     private final PublisherAgreementProvider provider;
     private final RepositoryService repositories;
     private final ExtensionService extensions;
+    private final TransactionTemplate transactions;
 
     public PublisherAgreementService(
             PublisherAgreementProvider provider,
             RepositoryService repositories,
-            ExtensionService extensions
+            ExtensionService extensions,
+            TransactionTemplate transactions
     ) {
         this.provider = provider;
         this.repositories = repositories;
         this.extensions = extensions;
+        this.transactions = transactions;
     }
 
     /**
@@ -79,14 +91,16 @@ public class PublisherAgreementService {
     }
 
     /**
-     * Whether the user may publish.
+     * Whether the user may publish, which takes a current agreement.
      */
     public boolean mayPublish(UserData user) {
         return obstacle(user) == null;
     }
 
     /**
-     * @throws ErrorResultException if the user may not publish for lack of an agreement
+     * For publishing an extension version, or the namespace for one: the agreement has to be current.
+     *
+     * @throws ErrorResultException if the user may not publish for lack of a current agreement
      */
     public void requireAgreement(UserData user) {
         var obstacle = obstacle(user);
@@ -109,8 +123,11 @@ public class PublisherAgreementService {
         if (user.getProvider() == null) {
             return null;
         }
-        var assessment = assess(user, false);
-        return assessment.state() == State.SIGNED ? null : assessment;
+        var assessment = providerAssessment(user, false);
+        return switch (assessment.state()) {
+            case SIGNED -> null;
+            default -> assessment;
+        };
     }
 
     private ErrorResultException refusal(Assessment obstacle) {
@@ -126,7 +143,7 @@ public class PublisherAgreementService {
                             + (obstacle.status().version() == null
                                     ? ""
                                     : " (version " + obstacle.status().version() + ")")
-                            + ". Please sign the current publisher agreement before publishing any extension.",
+                            + ". Please sign the current publisher agreement before publishing.",
                     HttpStatus.FORBIDDEN);
             default -> {
                 var login = provider.requiredLogin();
@@ -195,8 +212,9 @@ public class PublisherAgreementService {
 
     /**
      * Signs the agreement on behalf of the user, adds the resulting status to the JSON, and makes the extension
-     * versions hidden while the agreement was missing visible again. Signing what is already signed changes
-     * nothing, so a repeated call, as after a double click, is harmless.
+     * versions hidden while the agreement was missing visible again. Signing what is already signed signs
+     * nothing again, so a repeated call, as after a double click, is harmless; it still makes the versions
+     * visible, so that a call that failed after the signing was recorded can be repeated.
      *
      * @return whether the user signed now; false if the current agreement was already signed
      * @throws ErrorResultException if the user may not sign, e.g. after a revocation
@@ -214,19 +232,45 @@ public class PublisherAgreementService {
         }
 
         var signedNow = before.state() != AgreementStatus.State.SIGNED;
-        var current = before;
-        if (signedNow) {
-            try {
-                current = provider.sign(user);
-            } catch (PublisherAgreementException exc) {
-                throw refusal(exc);
+        var current = signedNow ? signWithProvider(user) : before;
+        // The provider may take a while, remote as it can be, so the block is judged again under the lock: an
+        // admin who revoked meanwhile must not have the signing recorded and the extensions reactivated.
+        transactions.executeWithoutResult(status -> {
+            repositories.lockUser(user);
+            if (isBlocked(user)) {
+                throw refusal(new Assessment(State.REVOKED, AgreementStatus.of(AgreementStatus.State.NONE)));
             }
-            recordSigning(user, current.version());
+            if (signedNow) {
+                recordSigning(user, current.version());
+            }
             extensions.reactivateExtensions(user);
-        }
+        });
         // From what the provider just answered, not asked again: it may still show the state before signing.
         enrich(json, user, false, current);
         return signedNow;
+    }
+
+    /**
+     * Signs at the provider, which has to say that the user signed: anything else is not a signing, and is
+     * neither recorded nor allowed to reactivate extensions.
+     */
+    private AgreementStatus signWithProvider(UserData user) {
+        AgreementStatus signed;
+        try {
+            signed = provider.sign(user);
+        } catch (PublisherAgreementException exc) {
+            throw refusal(exc);
+        }
+        if (signed == null || signed.state() != AgreementStatus.State.SIGNED) {
+            logger.warn(
+                    "The publisher agreement provider did not sign for {}, it reported {}",
+                    user.getLoginName(),
+                    signed == null ? "nothing" : signed.state());
+            throw new ErrorResultException(
+                    "The publisher agreement could not be signed at the moment, please try again later.",
+                    HttpStatus.SERVICE_UNAVAILABLE);
+        }
+        return signed;
     }
 
     private void recordSigning(UserData user, @Nullable String version) {
@@ -249,9 +293,14 @@ public class PublisherAgreementService {
         if (!enabled()) {
             return;
         }
-        if (!isBlocked(user)) {
-            record(user, PublisherAgreementEvent.Type.REVOKED, null, admin);
-        }
+        // Inside the surrounding transaction, if there is one, the lock is held until it ends: a user who signs
+        // meanwhile waits for everything the caller revokes along with the agreement.
+        transactions.executeWithoutResult(status -> {
+            repositories.lockUser(user);
+            if (!isBlocked(user)) {
+                record(user, PublisherAgreementEvent.Type.REVOKED, null, admin);
+            }
+        });
         // Only what is reliably known to exist is withdrawn: for none or an undetermined status there is
         // nothing confirmed to withdraw, and asking the provider would be a guess.
         var status = providerStatus(user, true);
@@ -265,17 +314,30 @@ public class PublisherAgreementService {
     }
 
     /**
-     * Lifts the block of a revocation, so the user may sign again. Does nothing if the user is not blocked.
+     * Lifts the block of a revocation, so the user may sign again, and makes the extension versions the
+     * revocation hid visible again if the provider still has the user's agreement: such a user cannot sign again,
+     * and would never get them back. Does nothing if the user is not blocked.
      */
     public void reinstate(UserData user, UserData admin) {
-        if (isBlocked(user)) {
-            record(user, PublisherAgreementEvent.Type.REINSTATED, null, admin);
+        if (!isBlocked(user)) {
+            return;
         }
+        var status = providerStatus(user, true);
+        transactions.executeWithoutResult(transaction -> {
+            repositories.lockUser(user);
+            if (isBlocked(user)) {
+                record(user, PublisherAgreementEvent.Type.REINSTATED, null, admin);
+                if (status.state() == AgreementStatus.State.SIGNED) {
+                    extensions.reactivateExtensions(user);
+                }
+            }
+        });
     }
 
     /**
      * Whether the user's extensions may stay published, for the check on startup. The user is compliant while
-     * their agreement is current; one the provider cannot tell about is neither.
+     * they have an agreement, an outdated one included: it only keeps them from publishing. Having
+     * none, or a revoked one, is not compliant; one the provider cannot tell about is neither.
      */
     public PublisherCompliance compliance(UserData user) {
         if (!enabled()) {
@@ -288,9 +350,9 @@ public class PublisherAgreementService {
             return PublisherCompliance.COMPLIANT;
         }
         return switch (providerStatus(user, true).state()) {
-            case SIGNED -> PublisherCompliance.COMPLIANT;
+            case SIGNED, OUTDATED -> PublisherCompliance.COMPLIANT;
             case UNKNOWN -> PublisherCompliance.UNKNOWN;
-            case NONE, OUTDATED -> PublisherCompliance.NON_COMPLIANT;
+            case NONE -> PublisherCompliance.NON_COMPLIANT;
         };
     }
 
@@ -312,6 +374,10 @@ public class PublisherAgreementService {
         if (isBlocked(user)) {
             return new Assessment(State.REVOKED, AgreementStatus.of(AgreementStatus.State.NONE));
         }
+        return providerAssessment(user, admin);
+    }
+
+    private Assessment providerAssessment(UserData user, boolean admin) {
         var status = providerStatus(user, admin);
         return new Assessment(stateOf(status), status);
     }

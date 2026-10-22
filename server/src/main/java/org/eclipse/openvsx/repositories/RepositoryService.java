@@ -255,6 +255,14 @@ public class RepositoryService {
         namespaceRepo.findByIdForUpdate(namespace.getId());
     }
 
+    /**
+     * Locks the user row, held until the surrounding transaction ends, so that the steps of one user's publisher
+     * agreement serialize against each other, see {@link UserDataRepository#lockById(long)}.
+     */
+    public void lockUser(UserData user) {
+        userDataRepo.lockById(user.getId());
+    }
+
     public Streamable<Namespace> findOrphanNamespaces() {
         return namespaceRepo.findOrphans();
     }

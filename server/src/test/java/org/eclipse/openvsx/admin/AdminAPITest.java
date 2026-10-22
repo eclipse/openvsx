@@ -1543,6 +1543,7 @@ class AdminAPITest {
     void testReinstatePublisherAgreement() throws Exception {
         var admin = mockAdminUser();
         var user = new UserData();
+        user.setId(admin.getId() + 1);
         user.setLoginName("test");
         user.setProvider("github");
         when(repositories.findUserByLoginName("github", "test")).thenReturn(user);
