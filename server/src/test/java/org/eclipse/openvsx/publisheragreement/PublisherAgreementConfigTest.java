@@ -70,25 +70,6 @@ class PublisherAgreementConfigTest {
     }
 
     @Test
-    void warnsAboutLeftoverEclipsePropertiesWithoutADeploymentProvider(CapturedOutput output) {
-        runner.withPropertyValues("ovsx.eclipse.base-url=x").run(
-                context -> assertThat(output)
-                        .contains("ovsx.eclipse.* properties are ignored"));
-    }
-
-    @Test
-    void doesNotWarnWhenADeploymentProviderIsPresent(CapturedOutput output) {
-        runner.withUserConfiguration(DeploymentConfig.class).withPropertyValues("ovsx.eclipse.base-url=x")
-                .run(context -> assertThat(output).doesNotContain("ovsx.eclipse.* properties are ignored"));
-    }
-
-    @Test
-    void warnsAboutLeftoverEclipseEnvironmentVariables(CapturedOutput output) {
-        runner.withPropertyValues("OVSX_ECLIPSE_CLIENT_ID=x").run(
-                context -> assertThat(output).contains("ovsx.eclipse.* properties are ignored"));
-    }
-
-    @Test
     void anOverlongVersionFailsStartupNamingTheProperty() {
         runner.withPropertyValues("ovsx.publisher-agreement.version=99999999999999999999").run(context -> {
             assertThat(context).hasFailed();

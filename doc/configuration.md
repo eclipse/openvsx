@@ -1364,7 +1364,6 @@ Location of the agreement text, in Markdown, as any Spring resource location suc
 | Compatibility | Since 1.4.0
 
 Whether to check publishers on startup and deactivate the extension versions of those without an agreement. The agreement provider decides who has one: with the default provider a publisher who never signed or was revoked is not compliant, while an outdated signature still is, as it only keeps them from publishing. A publisher whose status cannot be determined, for instance because a remote service is unreachable, is left alone. Has no effect while agreements are disabled.
-Replaces `ovsx.eclipse.check-compliance-on-start`, which is still read while this one is not set.
 
 ## Trusted Publishing
 

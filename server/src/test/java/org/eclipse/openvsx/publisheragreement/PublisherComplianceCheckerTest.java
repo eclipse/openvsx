@@ -160,19 +160,4 @@ class PublisherComplianceCheckerTest {
         runner.withPropertyValues("ovsx.publisher-agreement.check-compliance-on-start=true").run(
                 context -> assertThat(context.getBean(PublisherComplianceChecker.class).checkCompliance).isTrue());
     }
-
-    @Test
-    void stillHonoursTheEclipsePropertyItReplaces() {
-        runner.withPropertyValues("ovsx.eclipse.check-compliance-on-start=true").run(
-                context -> assertThat(context.getBean(PublisherComplianceChecker.class).checkCompliance).isTrue());
-    }
-
-    @Test
-    void theAgreementPropertyWinsOverTheEclipseOne() {
-        runner.withPropertyValues(
-                "ovsx.publisher-agreement.check-compliance-on-start=false",
-                "ovsx.eclipse.check-compliance-on-start=true").run(
-                        context -> assertThat(context.getBean(PublisherComplianceChecker.class).checkCompliance)
-                                .isFalse());
-    }
 }

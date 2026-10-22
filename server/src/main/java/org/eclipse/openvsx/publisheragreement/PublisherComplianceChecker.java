@@ -45,8 +45,7 @@ public class PublisherComplianceChecker {
     private final ExtensionService extensions;
     private final PublisherAgreementService publisherAgreements;
 
-    // The Eclipse key this replaces is read as a fallback.
-    @Value("${ovsx.publisher-agreement.check-compliance-on-start:${ovsx.eclipse.check-compliance-on-start:false}}")
+    @Value("${ovsx.publisher-agreement.check-compliance-on-start:false}")
     boolean checkCompliance;
 
     public PublisherComplianceChecker(
