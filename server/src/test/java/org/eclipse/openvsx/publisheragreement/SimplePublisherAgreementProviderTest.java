@@ -54,8 +54,8 @@ class SimplePublisherAgreementProviderTest {
         });
     }
 
-    private SimplePublisherAgreementProvider provider(String version) {
-        return new SimplePublisherAgreementProvider(repositories, version);
+    private SimplePublisherAgreementProvider provider(String version, String... allowedVersions) {
+        return new SimplePublisherAgreementProvider(repositories, version, List.of(allowedVersions));
     }
 
     private void happened(PublisherAgreementEvent.Type type, String version) {
@@ -120,6 +120,62 @@ class SimplePublisherAgreementProviderTest {
 
         assertThat(provider("1.5").status(user).state()).isEqualTo(State.SIGNED);
         assertThat(provider("3").status(user).state()).isEqualTo(State.OUTDATED);
+    }
+
+    // ---- allowed versions decide which signatures stay valid
+
+    @Test
+    void aSignatureOfAnAllowedVersionStaysValidAcrossAMinorChange() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
+
+        assertThat(provider("1.2", "1.1", "1.2").status(user).state()).isEqualTo(State.SIGNED);
+    }
+
+    @Test
+    void aSignatureOfAVersionThatIsNotAllowedIsOutdatedEvenWithinTheSameMajor() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
+
+        assertThat(provider("1.2", "1.2").status(user).state()).isEqualTo(State.OUTDATED);
+    }
+
+    @Test
+    void aSignatureOfAHigherMajorIsOutdatedWhenItIsNotAllowed() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "3");
+
+        assertThat(provider("2", "1", "2").status(user).state()).isEqualTo(State.OUTDATED);
+    }
+
+    @Test
+    void theConfiguredVersionIsAlwaysAllowed() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.2");
+
+        assertThat(provider("1.2", "1.0").status(user).state()).isEqualTo(State.SIGNED);
+    }
+
+    @Test
+    void allowedVersionsMatchWhateverTheSpellingOfTheVersion() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1");
+
+        assertThat(provider("2", "1.0.0").status(user).state()).isEqualTo(State.SIGNED);
+        assertThat(provider("2", "1.0").status(user).state()).isEqualTo(State.SIGNED);
+        assertThat(provider("2", "1.0.1").status(user).state()).isEqualTo(State.OUTDATED);
+    }
+
+    @Test
+    void withoutAllowedVersionsTheSameMajorStaysValid() {
+        happened(PublisherAgreementEvent.Type.SIGNED, "1.1");
+
+        assertThat(provider("1.9").status(user).state()).isEqualTo(State.SIGNED);
+    }
+
+    @Test
+    void anInvalidAllowedVersionIsRejectedNamingTheProperty() {
+        for (var allowed : new String[] { "v1", "1.", "99999999999999999999" }) {
+            assertThatThrownBy(() -> provider("1", allowed))
+                    .as(allowed)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("ovsx.publisher-agreement.allowed-versions");
+        }
     }
 
     @Test

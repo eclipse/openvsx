@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
@@ -55,7 +56,7 @@ class PublisherAgreementServicePersistenceTest extends AbstractPostgresContainer
 
     private PublisherAgreementService service(String version) {
         return new PublisherAgreementService(
-                new SimplePublisherAgreementProvider(repositories, version),
+                new SimplePublisherAgreementProvider(repositories, version, List.of()),
                 repositories,
                 extensions,
                 new TransactionTemplate(transactionManager));

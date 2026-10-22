@@ -70,6 +70,27 @@ class PublisherAgreementConfigTest {
     }
 
     @Test
+    void allowedVersionsCountOnlyTheSignaturesTheyName() {
+        runner.withPropertyValues(
+                "ovsx.publisher-agreement.version=1.2",
+                "ovsx.publisher-agreement.allowed-versions= 1.1 , 1.2 ").run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.getBean(PublisherAgreementProvider.class).enabled()).isTrue();
+                });
+    }
+
+    @Test
+    void anInvalidAllowedVersionFailsStartupNamingTheProperty() {
+        runner.withPropertyValues(
+                "ovsx.publisher-agreement.version=1",
+                "ovsx.publisher-agreement.allowed-versions=1,x").run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasStackTraceContaining("ovsx.publisher-agreement.allowed-versions");
+                });
+    }
+
+    @Test
     void anOverlongVersionFailsStartupNamingTheProperty() {
         runner.withPropertyValues("ovsx.publisher-agreement.version=99999999999999999999").run(context -> {
             assertThat(context).hasFailed();

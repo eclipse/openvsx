@@ -12,6 +12,8 @@
  *****************************************************************************/
 package org.eclipse.openvsx.publisheragreement;
 
+import java.util.Arrays;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,13 +29,18 @@ public class PublisherAgreementConfig {
     PublisherAgreementProvider simplePublisherAgreementProvider(
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
-            @Value("${ovsx.publisher-agreement.text:}") String text
+            @Value("${ovsx.publisher-agreement.text:}") String text,
+            @Value("${ovsx.publisher-agreement.allowed-versions:}") String allowedVersions
     ) {
         if (!version.isBlank() && text.isBlank()) {
             LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
                     "ovsx.publisher-agreement.version is set without ovsx.publisher-agreement.text: "
                             + "users have no agreement text to read before signing");
         }
-        return new SimplePublisherAgreementProvider(repositories, version);
+        var allowed = Arrays.stream(allowedVersions.split(","))
+                .map(String::trim)
+                .filter(allowedVersion -> !allowedVersion.isEmpty())
+                .toList();
+        return new SimplePublisherAgreementProvider(repositories, version, allowed);
     }
 }
