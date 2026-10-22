@@ -46,7 +46,14 @@ export interface ProblemDetail {
     errors?: string[];
 }
 
-export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = true): Promise<Res> {
+/** Caps both fetch-retry's network/5xx retries and the waits for a 429 to clear. */
+const MAX_RETRIES = 10;
+
+export function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = true): Promise<Res> {
+    return send<Res>(req, retry, 0);
+}
+
+async function send<Res>(req: ServerAPIRequest, retry: boolean, rateLimitRetries: number): Promise<Res> {
     req.method ??= 'GET';
     req.headers ??= {};
     if (!req.headers['Accept']) {
@@ -77,11 +84,13 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
 
     // Non-retriable requests bypass fetch-retry entirely: handing it {} would not disable it -
     // its defaults still retry every fetch rejection (network errors, aborts) three times.
+    // A function `retryOn` replaces fetch-retry's `retries` cap, so it enforces the cap itself.
+    const signal = param.signal ?? undefined;
     const response = retry
         ? await fetchBuilder(fetch, {
-              retries: 10,
               retryDelay: attempt => Math.pow(2, attempt) * 1000,
-              retryOn: (attempt, error, response) => error !== null || (response?.status ?? 0) >= 500
+              retryOn: (attempt, error, response) =>
+                  attempt < MAX_RETRIES && !signal?.aborted && (error !== null || (response?.status ?? 0) >= 500)
           })(req.endpoint, param)
         : await fetch(req.endpoint, param);
     if (response.ok) {
@@ -95,7 +104,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
             default:
                 throw new Error(`Unsupported type ${req.headers['Accept']}`);
         }
-    } else if (response.status === 429) {
+    } else if (response.status === 429 && rateLimitRetries < MAX_RETRIES) {
         // if the server uses the bucket4j starter config
         const retryAfterSeconds = response.headers.get('X-Rate-Limit-Retry-After-Seconds');
         // if the server uses the dynamic rate limiting config
@@ -103,9 +112,8 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         const retrySeconds = retryAfterSeconds ?? retryAfter ?? '0';
         const jitter = Math.floor(Math.random() * 100);
         const timeoutMillis = (Number(retrySeconds) + 1) * 1000 + jitter;
-        return new Promise<ServerAPIRequest>(resolve => setTimeout(resolve, timeoutMillis, req)).then(request =>
-            sendRequest(request, retry)
-        );
+        await wait(timeoutMillis, signal);
+        return send<Res>(req, retry, rateLimitRetries + 1);
     } else {
         let err: ErrorResponse;
         try {
@@ -120,6 +128,25 @@ export async function sendRequest<Res>(req: ServerAPIRequest, retry: boolean = t
         }
         throw err;
     }
+}
+
+/** Resolves after `ms`, or rejects with the signal's reason as soon as it aborts, like `fetch`. */
+function wait(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(signal.reason);
+            return;
+        }
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(signal?.reason);
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
 }
 
 /**
