@@ -34,7 +34,7 @@ export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevo
     const [dialogOpen, setDialogOpen] = useState(false);
 
     // A missing publisherAgreement means the backend could not reliably determine the status
-    // (see PublisherAgreementService#adminEnrichUserJson) - treat that the same as 'none':
+    // (see PublisherAgreementService#enrichUserJsonForAdmin) - treat that the same as 'none':
     // only a confirmed 'signed' or 'outdated' agreement needs the additional login to revoke.
     const agreementStatus = props.publisherInfo.user.publisherAgreement?.status;
     const hasAgreement = agreementStatus === 'signed' || agreementStatus === 'outdated';
