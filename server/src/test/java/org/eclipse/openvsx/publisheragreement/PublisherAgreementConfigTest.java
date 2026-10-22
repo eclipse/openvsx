@@ -82,6 +82,38 @@ class PublisherAgreementConfigTest {
                 .run(context -> assertThat(output).doesNotContain("ovsx.eclipse.* properties are ignored"));
     }
 
+    @Test
+    void warnsAboutLeftoverEclipseEnvironmentVariables(CapturedOutput output) {
+        runner.withPropertyValues("OVSX_ECLIPSE_CLIENT_ID=x").run(
+                context -> assertThat(output).contains("ovsx.eclipse.* properties are ignored"));
+    }
+
+    @Test
+    void anOverlongVersionFailsStartupNamingTheProperty() {
+        runner.withPropertyValues("ovsx.publisher-agreement.version=99999999999999999999").run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).hasStackTraceContaining("ovsx.publisher-agreement.version");
+        });
+    }
+
+    @Test
+    void warnsWhenAgreementsAreEnabledWithoutAText(CapturedOutput output) {
+        runner.withPropertyValues("ovsx.publisher-agreement.version=1").run(
+                context -> assertThat(output).contains("without ovsx.publisher-agreement.text"));
+    }
+
+    @Test
+    void doesNotWarnAboutTheTextWhenOneIsSetOrAgreementsAreDisabled(CapturedOutput output) {
+        runner.withPropertyValues(
+                "ovsx.publisher-agreement.version=1",
+                "ovsx.publisher-agreement.text=classpath:agreement.md").run(context -> {
+                });
+        runner.run(context -> {
+        });
+
+        assertThat(output).doesNotContain("without ovsx.publisher-agreement.text");
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class DeploymentConfig {
         final PublisherAgreementProvider custom = Mockito.mock(PublisherAgreementProvider.class);

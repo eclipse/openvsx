@@ -53,7 +53,11 @@ public class SimplePublisherAgreementProvider implements PublisherAgreementProvi
         if (!SemanticVersion.VERSION_PARSE_PATTERN.matcher(full).matches()) {
             throw new IllegalArgumentException("Invalid ovsx.publisher-agreement.version: '" + version + "'");
         }
-        return SemanticVersion.parse(full);
+        try {
+            return SemanticVersion.parse(full);
+        } catch (NumberFormatException exc) {
+            throw new IllegalArgumentException("Invalid ovsx.publisher-agreement.version: '" + version + "'", exc);
+        }
     }
 
     @Override

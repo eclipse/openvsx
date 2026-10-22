@@ -287,12 +287,11 @@ public class PublisherAgreementService {
      * Revokes the user's agreement: records the block, which holds even where withdrawing at the provider
      * fails, and then withdraws it there.
      *
-     * @throws ErrorResultException if the provider failed to withdraw; the block is in place by then
+     * @throws ErrorResultException if the provider failed to withdraw, or could not say whether there is an
+     *         agreement to withdraw; the block is in place by then
      */
     public void revoke(UserData user, UserData admin) {
-        if (!enabled()) {
-            return;
-        }
+        // Recorded even while agreements are disabled, so that enabling them later does not forget it.
         // Inside the surrounding transaction, if there is one, the lock is held until it ends: a user who signs
         // meanwhile waits for everything the caller revokes along with the agreement.
         transactions.executeWithoutResult(status -> {
@@ -301,6 +300,9 @@ public class PublisherAgreementService {
                 record(user, PublisherAgreementEvent.Type.REVOKED, null, admin);
             }
         });
+        if (!enabled()) {
+            return;
+        }
         // Only what is reliably known to exist is withdrawn: for none or an undetermined status there is
         // nothing confirmed to withdraw, and asking the provider would be a guess.
         var status = providerStatus(user, true);
@@ -310,6 +312,11 @@ public class PublisherAgreementService {
             } catch (PublisherAgreementException exc) {
                 throw refusal(exc);
             }
+        } else if (status.state() == AgreementStatus.State.UNKNOWN) {
+            throw new ErrorResultException(
+                    "The user is blocked from signing, but the provider could not say whether an agreement "
+                            + "needs withdrawing there.",
+                    HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 

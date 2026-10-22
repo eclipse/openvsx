@@ -33,12 +33,18 @@ public class PublisherAgreementConfig {
     PublisherAgreementProvider simplePublisherAgreementProvider(
             RepositoryService repositories,
             @Value("${ovsx.publisher-agreement.version:}") String version,
+            @Value("${ovsx.publisher-agreement.text:}") String text,
             Environment environment,
             ListableBeanFactory beanFactory
     ) {
         // Counts this bean too: a deployment's own provider, which may use ovsx.eclipse.*, makes it more than one.
         if (beanFactory.getBeanNamesForType(PublisherAgreementProvider.class, true, false).length <= 1) {
             warnAboutEclipseProperties(environment);
+        }
+        if (!version.isBlank() && text.isBlank()) {
+            LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
+                    "ovsx.publisher-agreement.version is set without ovsx.publisher-agreement.text: "
+                            + "users have no agreement text to read before signing");
         }
         return new SimplePublisherAgreementProvider(repositories, version);
     }
@@ -50,7 +56,7 @@ public class PublisherAgreementConfig {
                         .filter(EnumerablePropertySource.class::isInstance)
                         .map(EnumerablePropertySource.class::cast)
                         .flatMap(source -> Arrays.stream(source.getPropertyNames()))
-                        .anyMatch(name -> name.startsWith("ovsx.eclipse."))) {
+                        .anyMatch(name -> name.startsWith("ovsx.eclipse.") || name.startsWith("OVSX_ECLIPSE_"))) {
             LoggerFactory.getLogger(PublisherAgreementConfig.class).warn(
                     "ovsx.eclipse.* properties are ignored since the Eclipse publisher agreement was removed; "
                             + "provide a PublisherAgreementProvider bean or set ovsx.publisher-agreement.version");

@@ -40,6 +40,13 @@ class PublisherAgreementAPITest {
     }
 
     @Test
+    void theTextIsNeverServedFromACache() {
+        var response = api("classpath:publisheragreement/agreement.md").getText();
+
+        assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-cache");
+    }
+
+    @Test
     void notFoundWhenNotConfigured() {
         assertThat(api("").getText().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }

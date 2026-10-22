@@ -84,6 +84,13 @@ class SimplePublisherAgreementProviderTest {
     }
 
     @Test
+    void aVersionTooLargeToReadIsRejectedNamingTheProperty() {
+        assertThatThrownBy(() -> provider("99999999999999999999"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ovsx.publisher-agreement.version");
+    }
+
+    @Test
     void aVersionNeedsNotSpellOutAllThreeNumbers() {
         for (var version : new String[] { "1", "1.0", "1.1", "1.0.0", "1.2.3", "1.0.0-beta", " 2 " }) {
             assertThat(provider(version).enabled()).as(version).isTrue();

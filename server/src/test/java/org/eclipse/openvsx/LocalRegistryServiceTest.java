@@ -433,6 +433,24 @@ class LocalRegistryServiceTest {
         verifyNoInteractions(extensions);
     }
 
+    /** The agreement is checked for the user the token belongs to, before anything is published. */
+    @Test
+    void shouldRefusePublishingToAUserWhoseAgreementIsRefused() throws IOException {
+        tempFile = new TempFile("extension_", ".vsix");
+        Files.write(tempFile.getPath(), createExtensionPackage("bar", "1.0.0"));
+        var user = new UserData();
+        when(extensions.createExtensionFile(any())).thenReturn(tempFile);
+        when(tokens.useAccessToken(eq("tok"), any()))
+                .thenReturn(new AccessTokenAuthentication(user, PersonalAccessTokenType.LLT, 0, null));
+        doThrow(new ErrorResultException("stop", HttpStatus.FORBIDDEN))
+                .when(publisherAgreements).requireAgreement(user);
+
+        assertThatThrownBy(() -> registryService.publish(new ByteArrayInputStream(new byte[0]), "tok"))
+                .hasMessage("stop");
+
+        verify(extensions, never()).publishVersion(any(ExtensionProcessor.class), any());
+    }
+
     /**
      * The resolved limit is specific to the namespace, and permission to publish there is otherwise
      * not established until {@code PublishExtensionVersionHandler}. Anyone holding a valid token

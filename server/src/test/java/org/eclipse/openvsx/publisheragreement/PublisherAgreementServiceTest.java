@@ -260,14 +260,23 @@ class PublisherAgreementServiceTest {
     }
 
     @Test
-    void revokingDoesNotAskTheProviderToWithdrawWhatIsNotConfirmed() {
-        for (var state : List.of(State.NONE, State.UNKNOWN)) {
-            givenStatus(state);
+    void revokingDoesNotAskTheProviderToWithdrawWhatIsNotThere() {
+        givenStatus(State.NONE);
 
-            service.revoke(user, admin);
+        service.revoke(user, admin);
 
-            verify(provider, never()).withdraw(any(), any());
-        }
+        verify(provider, never()).withdraw(any(), any());
+    }
+
+    /** Nothing is withdrawn on a guess, but the admin is told that the provider may still hold an agreement. */
+    @Test
+    void revokingWhereTheProviderCannotSayIsReportedAfterTheBlockIsInPlace() {
+        givenStatus(State.UNKNOWN);
+
+        refusedWith(HttpStatus.SERVICE_UNAVAILABLE, () -> service.revoke(user, admin));
+
+        verify(provider, never()).withdraw(any(), any());
+        assertThat(eventTypes()).containsExactly(PublisherAgreementEvent.Type.REVOKED);
     }
 
     /** The block does not depend on the provider succeeding. */
@@ -286,13 +295,21 @@ class PublisherAgreementServiceTest {
         refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
     }
 
+    /** The block is kept, so that enabling agreements later does not forget who was revoked. */
     @Test
-    void revokingDoesNothingWhileAgreementsAreDisabled() {
+    void revokingWhileAgreementsAreDisabledOnlyRecordsTheBlock() {
         when(provider.enabled()).thenReturn(false);
 
         service.revoke(user, admin);
 
-        assertThat(events).isEmpty();
+        assertThat(eventTypes()).containsExactly(PublisherAgreementEvent.Type.REVOKED);
+        verify(provider, never()).withdraw(any(), any());
+        verify(provider, never()).statusForAdmin(any());
+        assertThat(service.mayPublish(user)).isTrue();
+
+        when(provider.enabled()).thenReturn(true);
+        givenStatus(State.SIGNED);
+        refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
     }
 
     @Test
@@ -649,6 +666,111 @@ class PublisherAgreementServiceTest {
 
         verify(extensions, never()).reactivateExtensions(any());
         assertThat(events).isEmpty();
+    }
+
+    // ---- admins and users are shown, and judged by, their own view of the provider
+
+    @Test
+    void aUserIsJudgedByWhatTheProviderSaysToThem() {
+        when(provider.status(any())).thenReturn(AgreementStatus.of(State.NONE));
+        when(provider.statusForAdmin(any())).thenReturn(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, false));
+
+        refusedWith(HttpStatus.FORBIDDEN, () -> service.requireAgreement(user));
+        assertThat(service.mayPublish(user)).isFalse();
+    }
+
+    @Test
+    void complianceAndRevocationAskTheProviderAsAnAdmin() {
+        when(provider.status(any())).thenReturn(AgreementStatus.of(State.NONE));
+        when(provider.statusForAdmin(any())).thenReturn(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, false));
+
+        assertThat(service.compliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
+        service.revoke(user, admin);
+
+        verify(provider).withdraw(user, admin);
+    }
+
+    @Test
+    void reinstatingAsksTheProviderAsAnAdmin() {
+        when(provider.status(any())).thenReturn(AgreementStatus.of(State.NONE));
+        when(provider.statusForAdmin(any())).thenReturn(AgreementStatus.of(State.NONE));
+        service.revoke(user, admin);
+        when(provider.statusForAdmin(any())).thenReturn(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, false));
+
+        service.reinstate(user, admin);
+
+        verify(extensions).reactivateExtensions(user);
+    }
+
+    // ---- what is recorded as a signing
+
+    @Test
+    void aNewVersionIsRecordedNextToTheEarlierOne() {
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+        service.sign(user, new UserJson());
+        givenStatus(State.OUTDATED);
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "2.0", SIGNED_AT, false));
+
+        service.sign(user, new UserJson());
+
+        assertThat(events).extracting(PublisherAgreementEvent::getVersion).containsExactly("1.0", "2.0");
+    }
+
+    /** After a revocation and a reinstatement the same version is signed again, which is a signing of its own. */
+    @Test
+    void theSameVersionIsRecordedAgainAfterARevocation() {
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+        service.sign(user, new UserJson());
+        service.revoke(user, admin);
+        service.reinstate(user, admin);
+
+        service.sign(user, new UserJson());
+
+        assertThat(eventTypes()).containsExactly(
+                PublisherAgreementEvent.Type.SIGNED,
+                PublisherAgreementEvent.Type.REVOKED,
+                PublisherAgreementEvent.Type.REINSTATED,
+                PublisherAgreementEvent.Type.SIGNED);
+    }
+
+    /** The provider forgot the signing meanwhile: the repeat is still one signing, as the last one is the same. */
+    @Test
+    void aRepeatedSigningOfTheSameVersionIsNotRecordedEvenIfTheProviderForgotTheFirst() {
+        givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
+        service.sign(user, new UserJson());
+        service.sign(user, new UserJson());
+
+        assertThat(events).hasSize(1);
+        verify(provider, times(2)).sign(user);
+    }
+
+    // ---- what clients are shown, in detail
+
+    @Test
+    void anOutdatedAgreementIsShownWithItsVersionAndTime() {
+        givenStatus(new AgreementStatus(State.OUTDATED, "0.9.0", SIGNED_AT, false));
+        var json = new UserJson();
+
+        service.enrichUserJson(json, user);
+
+        var agreement = json.getPublisherAgreement();
+        assertThat(agreement.getStatus()).isEqualTo("outdated");
+        assertThat(agreement.getVersion()).isEqualTo("0.9.0");
+        assertThat(agreement.getTimestamp()).isEqualTo("2026-10-01T10:00Z");
+    }
+
+    @Test
+    void aLinkedLoginIsAddedToTheLoginsTheUserAlreadyHas() {
+        when(provider.requiredLogin()).thenReturn(new ExternalLogin("eclipse", "Eclipse"));
+        givenStatus(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, true));
+        var other = new UserJson();
+        other.setProvider("github");
+        var json = new UserJson();
+        json.setAdditionalLogins(new ArrayList<>(List.of(other)));
+
+        service.enrichUserJson(json, user);
+
+        assertThat(json.getAdditionalLogins()).extracting(UserJson::getProvider).containsExactly("github", "eclipse");
     }
 
     // ---- compliance and history

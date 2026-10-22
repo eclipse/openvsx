@@ -1494,6 +1494,9 @@ class AdminAPITest {
                     ext1.setVersion("1.0.0");
                     upi.setExtensions(List.of(ext1));
                 })));
+
+        // the agreement is added to what the admin sees by the service
+        Mockito.verify(publisherAgreements).enrichUserJsonForAdmin(any(), eq(user));
     }
 
     @Test

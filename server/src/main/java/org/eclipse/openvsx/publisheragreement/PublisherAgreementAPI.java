@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Serves the agreement text from {@code ovsx.publisher-agreement.text}, any Spring resource location
- * (e.g. {@code classpath:agreement.md}, {@code file:/etc/agreement.md}). Point
- * {@code ovsx.webui.urls.publisher-agreement} at {@code /api/publisher-agreement}.
+ * (e.g. {@code classpath:agreement.md}, {@code file:/etc/agreement.md}). The web UI shows
+ * it from there by default.
  */
 @RestController
 public class PublisherAgreementAPI {

@@ -148,7 +148,7 @@ class UserAPITest {
 
     @Test
     void testLoggedIn() throws Exception {
-        mockUserData();
+        var userData = mockUserData();
         mockMvc.perform(get("/user"))
                 .andExpect(status().isOk())
                 .andExpect(content().json(userJson(u -> {
@@ -156,6 +156,9 @@ class UserAPITest {
                     u.setFullName("Test User");
                     u.setHomepage("http://example.com/test");
                 })));
+
+        // the agreement is added to what the user sees by the service
+        Mockito.verify(publisherAgreements).enrichUserJson(any(), eq(userData));
     }
 
     // What signing does besides answering, such as reactivating extensions, is the service's, tested there.
