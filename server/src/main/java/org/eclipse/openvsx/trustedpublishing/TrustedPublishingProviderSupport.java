@@ -219,6 +219,17 @@ public abstract class TrustedPublishingProviderSupport {
         return value;
     }
 
+    protected static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    /**
+     * Whether the value is a numeric provider ID, as given in a registration instead of being resolved.
+     */
+    protected static boolean isId(String value) {
+        return value != null && value.matches("[0-9]{1,18}");
+    }
+
     /**
      * Helper to require a claim from the JWT, throwing {@link MissingRequiredClaimException} if not present or blank.
      */
