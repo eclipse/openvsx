@@ -17,7 +17,7 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 - Bump vite from 8.3.2 to 8.3.5 (#2357)
 - Bump markdown-it from 14.3.2 to 14.3.3 (#2358)
-- Bump undici from 8.11.2 to 8.12.3
+- Bump undici from 8.11.2 to 8.12.3 (#2362)
 
 ## [1.3.0] - 2026-10-16
 
