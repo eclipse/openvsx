@@ -259,11 +259,26 @@ public class PublisherAgreementService {
      * neither recorded nor allowed to reactivate extensions.
      */
     private AgreementStatus signWithProvider(UserData user) {
-        AgreementStatus signed;
+        AgreementStatus reported;
         try {
-            signed = judged(provider.sign(user));
+            reported = provider.sign(user);
         } catch (PublisherAgreementException exc) {
             throw refusal(exc);
+        }
+        var signed = judged(reported);
+        if (reported != null
+                && reported.state() == AgreementStatus.State.SIGNED
+                && signed.state() == AgreementStatus.State.OUTDATED) {
+            // Retrying cannot help: the same version would be rejected again, so say what is wrong.
+            logger.error(
+                    "The publisher agreement provider signed version '{}' for {}, which ovsx.publisher-agreement.version"
+                            + " and allowed-versions do not accept",
+                    reported.version(),
+                    user.getLoginName());
+            throw new ErrorResultException(
+                    "The publisher agreement was signed with version " + reported.version()
+                            + ", which this registry does not accept; contact an administrator.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         if (signed == null || signed.state() != AgreementStatus.State.SIGNED) {
             logger.warn(
@@ -415,7 +430,10 @@ public class PublisherAgreementService {
         }
     }
 
-    /** A provider reports what was signed; whether that version still counts is decided here, once for all. */
+    /**
+     * A provider reports what was signed; whether that version still counts is decided here, once for all. A
+     * signature without a version counts, as the provider cannot tell it.
+     */
     private @Nullable AgreementStatus judged(@Nullable AgreementStatus status) {
         if (status == null
                 || status.state() != AgreementStatus.State.SIGNED

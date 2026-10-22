@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.eclipse.openvsx.entities.SemanticVersion;
 
@@ -25,23 +27,25 @@ import org.eclipse.openvsx.entities.SemanticVersion;
  * Which signed versions of the agreement still count, whichever provider keeps the signature. A version is a
  * semantic version in which the minor and patch numbers may be left out ({@code 1}, {@code 1.0}), compared
  * without its build metadata. With allowed versions, a signature counts if its version is one of them or the
- * configured one; without, it counts within the major version of the configured one, so only a new major version
+ * configured one; without, it counts within the major version of the configured one or a higher one, so only a new major version
  * makes signatures outdated.
  */
 public class PublisherAgreementVersions {
+
+    private static final Logger logger = LoggerFactory.getLogger(PublisherAgreementVersions.class);
 
     private static final String VERSION_PROPERTY = "ovsx.publisher-agreement.version";
     private static final String ALLOWED_VERSIONS_PROPERTY = "ovsx.publisher-agreement.allowed-versions";
     private static final Pattern SHORT_VERSION = Pattern.compile("\\d+(?:\\.\\d+){0,2}");
 
     private final @Nullable SemanticVersion current;
-    /** The allowed versions in their full form, with the configured one; empty to accept the same major. */
+    /** The allowed versions in their full form, with the configured one; empty to accept the same or a higher major. */
     private final Set<String> allowed;
 
     /**
      * @param version the current version, blank if there is none
      * @param allowedVersions the versions a signature may have, besides the current one; none to accept any
-     *        signature of the same major version
+     *        signature of the same or a higher major version
      * @throws IllegalArgumentException if a version is neither blank nor like 1, 1.0 or a semantic version
      */
     public PublisherAgreementVersions(@Nullable String version, List<String> allowedVersions) {
@@ -69,6 +73,9 @@ public class PublisherAgreementVersions {
                     ? SemanticVersion.parse(full(VERSION_PROPERTY, signedVersion)).getMajor() >= current.getMajor()
                     : allowed.contains(full(VERSION_PROPERTY, signedVersion));
         } catch (IllegalArgumentException exc) {
+            logger.warn(
+                    "The signed publisher agreement version '{}' cannot be read, so it counts as outdated",
+                    signedVersion);
             return false;
         }
     }

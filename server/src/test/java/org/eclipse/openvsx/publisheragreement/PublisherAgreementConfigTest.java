@@ -107,6 +107,21 @@ class PublisherAgreementConfigTest {
     }
 
     @Test
+    void blankEntriesInTheListAreIgnored() {
+        for (var list : new String[][] {
+            { "ovsx.publisher-agreement.allowed-versions=1.1,1.2," },
+            { "ovsx.publisher-agreement.allowed-versions=1.1,,1.2" },
+            { "ovsx.publisher-agreement.allowed-versions[0]=1.2", "ovsx.publisher-agreement.allowed-versions[1]=" }
+        }) {
+            runner.withPropertyValues("ovsx.publisher-agreement.version=1.2").withPropertyValues(list).run(
+                    context -> {
+                        assertThat(context).as(list[0]).hasNotFailed();
+                        assertThat(context.getBean(PublisherAgreementVersions.class).accepts("1.2")).isTrue();
+                    });
+        }
+    }
+
+    @Test
     void withoutAListTheSameMajorStaysValid() {
         runner.withPropertyValues("ovsx.publisher-agreement.version=1.1").run(
                 context -> assertThat(context.getBean(PublisherAgreementVersions.class).accepts("1.7")).isTrue());

@@ -616,24 +616,31 @@ class PublisherAgreementServiceTest {
         assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
     }
 
-    @Test
-    void aPublisherWhoseSignatureNoLongerCountsStillCountsAsCompliant() {
-        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
-        givenStatus(State.SIGNED);
-
-        assertThat(service.compliance(user)).isEqualTo(PublisherCompliance.COMPLIANT);
-    }
-
-    /** What the provider signed has to count, or nothing is recorded and nothing is reactivated. */
+    /** What the provider signed has to count, or nothing is recorded and the cause is named: a retry cannot help. */
     @Test
     void aSigningOfAVersionThatDoesNotCountIsNotASigning() {
         service = serviceWith(new PublisherAgreementVersions("2", List.of()));
         givenSigningBecomes(new AgreementStatus(State.SIGNED, "1.0", SIGNED_AT, false));
 
-        refusedWith(HttpStatus.SERVICE_UNAVAILABLE, () -> service.sign(user, new UserJson()));
+        var thrown = refusedWith(HttpStatus.INTERNAL_SERVER_ERROR, () -> service.sign(user, new UserJson()));
 
+        assertThat(thrown.getMessage()).contains("1.0").contains("does not accept");
         assertThat(events).isEmpty();
         verify(extensions, never()).reactivateExtensions(any());
+    }
+
+    @Test
+    void aSignatureThatNoLongerCountsKeepsItsTimeAndTheLinkedLogin() {
+        service = serviceWith(new PublisherAgreementVersions("2", List.of()));
+        when(provider.requiredLogin()).thenReturn(new ExternalLogin("eclipse", "Eclipse"));
+        givenStatus(new AgreementStatus(State.SIGNED, "1.0.0", SIGNED_AT, true));
+        var json = new UserJson();
+
+        service.enrichUserJson(json, user);
+
+        assertThat(json.getPublisherAgreement().getStatus()).isEqualTo("outdated");
+        assertThat(json.getPublisherAgreement().getTimestamp()).isEqualTo("2026-10-01T10:00Z");
+        assertThat(json.getAdditionalLogins()).extracting(UserJson::getProvider).containsExactly("eclipse");
     }
 
     // ---- what the steps that change an agreement must hold

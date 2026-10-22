@@ -27,7 +27,6 @@ import org.eclipse.openvsx.publisheragreement.AgreementStatus.State;
 import org.eclipse.openvsx.repositories.RepositoryService;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -91,8 +90,6 @@ class SimplePublisherAgreementProviderTest {
     void aUserWhoNeverSignedHasNone() {
         assertThat(provider("1.0.0").status(user).state()).isEqualTo(State.NONE);
     }
-
-    // ---- allowed versions decide which signatures stay valid
 
     @Test
     void theStatusCarriesWhatWasSigned() {

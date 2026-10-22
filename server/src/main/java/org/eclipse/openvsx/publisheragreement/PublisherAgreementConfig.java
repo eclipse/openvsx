@@ -53,7 +53,6 @@ public class PublisherAgreementConfig {
                 .bind("ovsx.publisher-agreement.allowed-versions", Bindable.listOf(String.class))
                 .orElse(List.of())
                 .stream()
-                .map(String::trim)
                 .filter(allowedVersion -> !allowedVersion.isEmpty())
                 .toList();
         return new PublisherAgreementVersions(version, allowed);
