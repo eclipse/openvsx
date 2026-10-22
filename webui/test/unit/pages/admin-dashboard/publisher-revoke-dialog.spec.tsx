@@ -47,7 +47,22 @@ describe('PublisherRevokeContributionsButton', () => {
         );
 
         expect(eclipseLoginButton()).toBeInTheDocument();
-        expect(screen.getByRole('link')).toHaveAttribute('href', 'https://open-vsx.org/oauth2/authorization/eclipse');
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://open-vsx.org/oauth2/authorization/eclipse?redirect=%2F'
+        );
+    });
+
+    it('asks the server to return to the admin page the login was started from', () => {
+        renderWithProviders(
+            <PublisherRevokeContributionsButton publisherInfo={publisherInfo({ status: 'signed' })} />,
+            { mainContext: { service, user: admin() }, route: '/admin-dashboard/publisher-admin' }
+        );
+
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://open-vsx.org/oauth2/authorization/eclipse?redirect=%2Fadmin-dashboard%2Fpublisher-admin'
+        );
     });
 
     it('uses the login provider the server names, not a fixed one', () => {
@@ -63,7 +78,7 @@ describe('PublisherRevokeContributionsButton', () => {
 
         expect(screen.getByRole('link', { name: /log in with acme/i })).toHaveAttribute(
             'href',
-            'https://open-vsx.org/oauth2/authorization/acme'
+            'https://open-vsx.org/oauth2/authorization/acme?redirect=%2F'
         );
     });
 

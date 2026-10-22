@@ -16,6 +16,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 ### Changed
 
 - The Eclipse publisher agreement and OAuth login moved behind the `PublisherAgreementProvider` and `ExternalLoginProvider` extension points, and `UserJson.publisherAgreement` gains `loginProvider` and `loginProviderName` ([#2325](https://github.com/eclipse-openvsx/openvsx/pull/2325))
+- A login of any provider returns to the page that started it, when that page is passed as `redirect`, instead of the `eclipse` login always going to the profile page ([#2325](https://github.com/eclipse-openvsx/openvsx/pull/2325))
 - Signing an agreement that is already signed answers 200 instead of 400, and `additionalLogins[].loginName` of a user is no longer set ([#2325](https://github.com/eclipse-openvsx/openvsx/pull/2325))
 - **Upgrade:** the `ovsx.eclipse.*` properties, their deployment descriptor entries and the Eclipse handling of `generate-properties.sh` (`ECLIPSE_CLIENT_*`, and the `ovsx.publishing.require-license=true` it set) are removed; a deployment that needs Eclipse supplies a `@Primary` `PublisherAgreementProvider`, otherwise everyone may publish unless `ovsx.publisher-agreement.version` is set, and a warning is logged while `ovsx.eclipse.*` or `OVSX_ECLIPSE_*` is still configured ([#2325](https://github.com/eclipse-openvsx/openvsx/pull/2325))
 - `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))

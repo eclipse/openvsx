@@ -21,9 +21,11 @@ import { MainContext } from '../../../context';
 import { cardSurface } from '../../../components/page-primitives';
 import { IconTile } from '../settings/settings-primitives';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useLocation } from 'react-router';
 
 export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
     const { service, pageSettings, updateUser, handleError } = useContext(MainContext);
+    const location = useLocation();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [working, setWorking] = useState(false);
     const [agreementText, setAgreementText] = useState('');
@@ -156,7 +158,12 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
             </>
         );
         action = (
-            <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', loginProvider])}>
+            <Link
+                href={createAbsoluteURL(
+                    [service.serverUrl, 'oauth2', 'authorization', loginProvider],
+                    // the server returns to this page once the login is linked
+                    [{ key: 'redirect', value: location.pathname + location.search + location.hash }]
+                )}>
                 <Button variant='outlined' color='secondary'>
                     Log in with {loginProviderName}
                 </Button>

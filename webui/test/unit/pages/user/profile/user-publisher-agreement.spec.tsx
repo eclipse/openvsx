@@ -39,15 +39,30 @@ describe('UserPublisherAgreement', () => {
 
         expect(screen.getByRole('link', { name: /log in with eclipse/i })).toHaveAttribute(
             'href',
-            'https://open-vsx.org/oauth2/authorization/eclipse'
+            'https://open-vsx.org/oauth2/authorization/eclipse?redirect=%2F'
         );
         expect(screen.queryByRole('button', { name: /review & sign/i })).not.toBeInTheDocument();
+    });
+
+    it('asks the server to return to the page the login was started from', () => {
+        renderWithProviders(<UserPublisherAgreement user={user()} />, {
+            mainContext: { service, pageSettings },
+            route: '/user-settings/profile?tab=agreement'
+        });
+
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://open-vsx.org/oauth2/authorization/eclipse?redirect=%2Fuser-settings%2Fprofile%3Ftab%3Dagreement'
+        );
     });
 
     it('follows a login provider other than eclipse', () => {
         render(user({ publisherAgreement: { status: 'none', loginProvider: 'acme' } }));
 
-        expect(screen.getByRole('link')).toHaveAttribute('href', 'https://open-vsx.org/oauth2/authorization/acme');
+        expect(screen.getByRole('link')).toHaveAttribute(
+            'href',
+            'https://open-vsx.org/oauth2/authorization/acme?redirect=%2F'
+        );
     });
 
     it('labels the login with the display name when the server provides one', () => {

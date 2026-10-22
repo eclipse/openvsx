@@ -19,6 +19,7 @@ import {
     Typography,
     Link
 } from '@mui/material';
+import { useLocation } from 'react-router';
 import { createAbsoluteURL } from '../../utils';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { PublisherInfo } from '../../extension-registry-types';
@@ -28,6 +29,7 @@ import { useRevokePublisherContributions } from './use-publisher-admin';
 
 export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevokeContributionsButtonProps> = props => {
     const { user, service, handleError } = useContext(MainContext);
+    const location = useLocation();
     const updateContext = useContext(UpdateContext);
     const { mutateAsync: revokeContributions, isPending: working } = useRevokePublisherContributions();
 
@@ -43,7 +45,12 @@ export const PublisherRevokeContributionsButton: FunctionComponent<PublisherRevo
     if (hasAgreement && loginProvider && !user?.additionalLogins?.find(login => login.provider === loginProvider)) {
         // The admin must hold the agreement's additional login to revoke it
         return (
-            <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', loginProvider])}>
+            <Link
+                href={createAbsoluteURL(
+                    [service.serverUrl, 'oauth2', 'authorization', loginProvider],
+                    // the server returns to this page once the login is linked
+                    [{ key: 'redirect', value: location.pathname + location.search + location.hash }]
+                )}>
                 <Button variant='contained' color='secondary'>
                     Log in with {user?.publisherAgreement?.loginProviderName || loginProvider}
                 </Button>
