@@ -732,6 +732,7 @@ public class UserAPI {
         path = "/user/publisher-agreement",
         produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @MutatingOperation
     public ResponseEntity<UserJson> signPublisherAgreement() {
         var user = users.findLoggedInUser();
         if (user == null) {

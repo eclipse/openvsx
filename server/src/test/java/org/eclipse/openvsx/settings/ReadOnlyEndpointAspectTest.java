@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.ClassUtils;
 
 import org.eclipse.openvsx.RegistryAPI;
+import org.eclipse.openvsx.UserAPI;
 import org.eclipse.openvsx.json.ResultJson;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,14 @@ class ReadOnlyEndpointAspectTest {
     void classFilterRejectsClassesNotNamedApi() {
         assertThat(advisor.getClassFilter().matches(RegistryAPI.class)).isTrue();
         assertThat(advisor.getClassFilter().matches(ReadOnlyEndpointAspectTest.class)).isFalse();
+    }
+
+    /** Signing records an event and reactivates extensions, so it must be refused while the registry is read-only. */
+    @Test
+    void guardsThePublisherAgreementSigning() throws NoSuchMethodException {
+        var signing = UserAPI.class.getMethod("signPublisherAgreement");
+
+        assertThat(advisor.matches(signing, UserAPI.class)).isTrue();
     }
 
     @Test
