@@ -6,13 +6,14 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ### Added
 
-- `useReportedQuery` takes an `ignore` predicate for the errors a page renders itself, e.g. `isNotFound` for a 404 shown as a not-found state
+- `useReportedQuery` takes an `action` that titles the error dialog with what failed, e.g. "Couldn’t load the namespace members", and an `ignore` predicate for the errors a page renders itself, e.g. `isNotFound` for a 404 shown as a not-found state; `MainContext.handleError` takes the dialog `title` directly
 
 ### Changed
 
 - `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
 - `sendRequest` rejects a 200 carrying an error result and no longer retries; retries belong to the query client, which waits out a 429 for queries and never retries a mutation. `sendNonRetriableRequest` and the request's `abortController` are deprecated in favour of `sendRequest` and `signal`
 - `ExtensionRegistryService` query methods take an `AbortSignal` instead of an `AbortController` and write methods take neither; no method resolves an `ErrorResult` any more but rejects with it, as `getUser` does when nobody is logged in. `controllerFromSignal` is deprecated: a `queryFn` passes its `signal` straight through
+- The error dialog is titled with what failed, e.g. "Couldn’t load the namespace members", instead of a bare "Error"
 - A curated row on the home page that fails to load shows "We couldn’t load extensions at this time." with a Retry button instead of disappearing; `CuratedRow` carries the row's `error` and a `refetch` for custom home pages
 
 ### Fixed
