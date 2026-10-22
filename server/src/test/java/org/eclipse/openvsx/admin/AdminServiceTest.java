@@ -608,6 +608,19 @@ class AdminServiceTest {
     }
 
     @Test
+    void reinstateLetsAnAdminReinstateThemselves() {
+        var caller = new UserData();
+        caller.setId(1);
+        caller.setLoginName("root");
+        caller.setRole(UserData.Role.ADMIN);
+        when(repositories.findUserByLoginName("github", "root")).thenReturn(caller);
+
+        adminService.reinstatePublisherAgreement("github", "root", caller);
+
+        verify(publisherAgreements).reinstate(caller, caller);
+    }
+
+    @Test
     void reinstateLetsAnAdminReinstateAnotherUser() {
         var caller = new UserData();
         caller.setId(1);

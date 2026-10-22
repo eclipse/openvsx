@@ -14,7 +14,7 @@ package org.eclipse.openvsx.publisheragreement;
 
 /**
  * Whether a publisher's extensions may stay published, see
- * {@link PublisherAgreementService#publisherCompliance}.
+ * {@link PublisherAgreementService#compliance}.
  */
 public enum PublisherCompliance {
 

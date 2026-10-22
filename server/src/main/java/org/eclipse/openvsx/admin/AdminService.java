@@ -589,10 +589,10 @@ public class AdminService {
         if (user == null) {
             throw new ErrorResultException(userNotFoundMessage(loginName), HttpStatus.NOT_FOUND);
         }
-        // The same rule as for revoking: whoever may revoke a user with a role or permissions must lift it, and
-        // nobody lifts their own revocation, or it would be worth nothing.
+        // The same rule as for revoking: whoever may revoke a user with a role or permissions must lift it. Only
+        // an admin may lift their own revocation: anyone else could otherwise undo what an admin did to them.
         checkMayStripAccessOf(user, admin);
-        if (user.getId() == admin.getId()) {
+        if (user.getId() == admin.getId() && !UserData.Role.ADMIN.equals(admin.getRole())) {
             throw new ErrorResultException(
                     "You cannot reinstate your own publisher agreement.",
                     HttpStatus.FORBIDDEN);
