@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020 TypeFox and others
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,21 +10,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.entities;
-
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.Set;
+package org.eclipse.openvsx.publisheragreement;
 
 /**
- * This class is not mapped to a database entity, but parsed / serialized to
- * JSON via a column converter.
+ * A login a user has to link before signing or being revoked, shown by the web UI as "Log in with ...".
+ *
+ * @param registrationId the OAuth2 registration of the login, which is also its provider id on a user
+ * @param displayName the name shown to people
  */
-public record AuthToken(
-        String accessToken,
-        Instant issuedAt,
-        Instant expiresAt,
-        Set<String> scopes,
-        String refreshToken,
-        Instant refreshExpiresAt
-) implements Serializable {}
+public record ExternalLogin(String registrationId, String displayName) {}
