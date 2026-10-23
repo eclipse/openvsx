@@ -37,6 +37,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 ### Dependencies
 
 - Remove the direct `guava` dependency ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
+- Bump Spring Boot to 4.0.9, with Jetty 12.1.14, Netty 4.2.19.Final and PostgreSQL driver 42.7.14
 
 ## [1.3.0] - 2026-10-16
 
