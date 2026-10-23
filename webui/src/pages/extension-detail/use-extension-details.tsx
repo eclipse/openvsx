@@ -43,7 +43,7 @@ export const useExtensionDetail = (namespace: string, name: string, target?: str
                 service.getExtensionDetail(signal, service.getExtensionApiUrl({ namespace, name, target, version })),
             enabled: !!namespace && !!name
         }),
-        { ignore: isNotFound }
+        { action: 'load the extension', ignore: isNotFound }
     );
 };
 
@@ -55,7 +55,8 @@ export const useExtensionReadme = (extension: Extension) => {
             queryKey: ['extension-readme', extension.files.readme ?? null],
             queryFn: ({ signal }) => service.getExtensionReadme(signal, extension),
             enabled: !!extension.files.readme
-        })
+        }),
+        { action: 'load the README' }
     );
 };
 
@@ -67,6 +68,7 @@ export const useExtensionChangelog = (extension: Extension) => {
             queryKey: ['extension-changelog', extension.files.changelog ?? null],
             queryFn: ({ signal }) => service.getExtensionChangelog(signal, extension),
             enabled: !!extension.files.changelog
-        })
+        }),
+        { action: 'load the changelog' }
     );
 };
