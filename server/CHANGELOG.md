@@ -22,6 +22,13 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - `ovsx.data.mirror.requests-per-second` now spaces upstream requests evenly instead of allowing a burst of up to one second of requests after an idle period ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
 - A failed namespace change is retried once, instead of ten times as JobRunr does by default ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
 
+### Removed
+
+- `CodedAuthException.ECLIPSE_MISSING_GITHUB_ID` and `ECLIPSE_MISMATCH_GITHUB_ID` are removed; a login provider that needs such codes defines them itself ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- The columns `user_data.eclipse_token` and `user_data.eclipse_person_id` are dropped, with `UserData.eclipseToken`/`eclipsePersonId`, `AuthToken` and `AuthTokenConverter` ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- **Upgrade:** migration `V1_83` fails, and so does the startup, while either column still holds data; a deployment that uses them copies the rows to its own table and sets both columns to `NULL` first, in a migration that sorts before `V1_83` ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- `AdminService.forgetUser` publishes a `UserForgottenEvent(userId)` in the erasure's transaction, whether the row is deleted or anonymized, for a deployment that keeps personal data of a user elsewhere to clear it ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+
 ### Fixed
 
 - Moving extensions into an existing namespace no longer reverts edits made to that namespace while its files were being copied ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))

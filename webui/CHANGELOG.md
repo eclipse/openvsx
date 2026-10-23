@@ -4,8 +4,13 @@ This change log covers only the frontend library (webui) of Open VSX.
 
 ## [next] (unreleased)
 
+### Added
+
+- `PageSettings.elements.errorHelp` adds a deployment's help below the message of the error dialog, given the error code and message, such as a link for the code of a login provider it adds ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+
 ### Changed
 
+- The error dialog no longer has help for the `eclipse-missing-github-id` and `eclipse-mismatch-github-id` login errors, and a failed publisher agreement points to `pageSettings.publisherAgreement.email`, or to the registry's administrators without one, instead of `webmaster@eclipse.org`; the error message itself is still shown ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
 - The publisher agreement panel and the admin revoke dialog take the login they require from the new `publisherAgreement.loginProvider` and `loginProviderName` (display label) fields of `UserData` instead of assuming Eclipse; without it no extra login is asked for; their login links return to the page they were on
 - The publisher agreement panel shows a `revoked` status without a sign action, a different message for an `outdated` one, and admins can reinstate a revoked agreement
 - `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders

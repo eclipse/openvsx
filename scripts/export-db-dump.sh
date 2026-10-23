@@ -20,7 +20,7 @@ OUT_DIR="${2:-${PROJECT_ROOT}/db/dump}"
 command -v psql >/dev/null || { echo "This script needs 'psql' on PATH." >&2; exit 1; }
 
 # The dump holds raw secrets until scrub-db-dump.sh redacts them (personal_access_token.value,
-# signature_key_pair.private_key, user_data.eclipse_token) - keep every file/directory this script
+# signature_key_pair.private_key) - keep every file/directory this script
 # creates readable only by the current user, regardless of the caller's umask.
 umask 077
 
