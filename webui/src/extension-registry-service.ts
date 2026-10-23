@@ -29,7 +29,6 @@ import {
     PublisherInfo,
     RegistryVersion,
     DownloadSeries,
-    DownloadSeriesInterval,
     SearchEntry,
     LoginProviders,
     ScanResultJson,
@@ -65,6 +64,7 @@ import {
     ConsistencyFindingList,
     SearchExplain,
     CacheList,
+    AnalyticsStatus,
     SearchIndex,
     AdminStatistics,
     UserAccess
@@ -104,23 +104,23 @@ export class ExtensionRegistryService {
     }
 
     /**
-     * Fetches the download time series for an extension from the analytics endpoint. The endpoint
-     * only exists when download analytics are enabled server-side (otherwise it responds 404), so
-     * callers should gate on {@link RegistryVersion.analyticsEnabled}. `from`/`to` are UTC dates
-     * (yyyy-MM-dd); `from` is inclusive and `to` is exclusive.
+     * Fetches the download time series for an extension from the analytics endpoint, which responds
+     * 404 where download analytics is not configured. Callers showing it should gate on
+     * {@link SiteSettings.downloadAnalyticsVisible}. The server fixes the window: the daily
+     * downloads of the last 52 weeks, ending today.
      */
     async getExtensionDownloadSeries(
         abortController: AbortController,
-        params: { namespace: string; name: string; from?: string; to?: string; interval?: DownloadSeriesInterval }
+        params: { namespace: string; name: string }
     ): Promise<Readonly<DownloadSeries>> {
-        const endpoint = createAbsoluteURL(
-            [this.serverUrl, 'api', params.namespace, params.name, 'analytics', 'downloads'],
-            [
-                { key: 'from', value: params.from },
-                { key: 'to', value: params.to },
-                { key: 'interval', value: params.interval }
-            ]
-        );
+        const endpoint = createAbsoluteURL([
+            this.serverUrl,
+            'api',
+            params.namespace,
+            params.name,
+            'analytics',
+            'downloads'
+        ]);
         // Non-retriable: retries are owned by the TanStack query that calls this.
         return sendNonRetriableRequest<DownloadSeries>({ abortController, endpoint });
     }
@@ -741,6 +741,7 @@ export interface AdminService {
     ): Promise<Readonly<UserSearchResult>>;
     updateUserAccess(provider: string, login: string, access: UserAccess): Promise<Readonly<SuccessResult>>;
     revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult>>;
+    reinstatePublisherAgreement(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     getAllScans(
@@ -853,6 +854,7 @@ export interface AdminService {
     getCaches(abortController: AbortController): Promise<Readonly<CacheList>>;
     /** Clears one cache, or every cache when no cache is named. */
     clearCaches(cache?: { manager: string; name: string }): Promise<Readonly<SuccessResult>>;
+    getAnalyticsStatus(abortController: AbortController): Promise<Readonly<AnalyticsStatus>>;
     getConsistencyChecks(abortController: AbortController): Promise<Readonly<ConsistencyCheckList>>;
     getConsistencyFindings(
         abortController: AbortController,
@@ -1073,6 +1075,28 @@ export class AdminServiceImpl implements AdminService {
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'revoke']),
+            headers
+        });
+    }
+
+    async reinstatePublisherAgreement(provider: string, login: string): Promise<Readonly<SuccessResult>> {
+        const csrfResponse = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        if (!isError(csrfResponse)) {
+            const csrfToken = csrfResponse as CsrfTokenJson;
+            headers[csrfToken.header] = csrfToken.value;
+        }
+        return sendStrictRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'publisher',
+                provider,
+                login,
+                'reinstate-agreement'
+            ]),
             headers
         });
     }
@@ -1812,6 +1836,14 @@ export class AdminServiceImpl implements AdminService {
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'caches', 'clear'], query),
             headers
+        });
+    }
+
+    async getAnalyticsStatus(abortController: AbortController): Promise<Readonly<AnalyticsStatus>> {
+        return sendNonRetriableRequest({
+            abortController,
+            credentials: true,
+            endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'analytics', 'status'])
         });
     }
 

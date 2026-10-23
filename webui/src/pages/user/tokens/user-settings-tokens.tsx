@@ -169,7 +169,7 @@ export const UserSettingsTokens: FunctionComponent = () => {
     };
 
     const agreement = user?.publisherAgreement;
-    if (agreement && (agreement.status === 'none' || agreement.status === 'outdated')) {
+    if (agreement && agreement.status !== 'signed') {
         const publisherAgreementContact = pageSettings?.publisherAgreement?.email;
         // The deployment may not name its agreement, so drop the empty slot rather than double-spacing.
         const agreementName = [pageSettings?.publisherAgreement?.name, 'Publisher Agreement'].filter(Boolean).join(' ');
@@ -182,13 +182,17 @@ export const UserSettingsTokens: FunctionComponent = () => {
                 />
                 <Alert severity='warning'>
                     <AlertTitle sx={{ fontWeight: 700 }}>Publisher agreement required</AlertTitle>
-                    Tokens can only be created once you have signed the {agreementName}.
-                    <Box sx={{ mt: '0.75rem' }}>
-                        <Link component={RouteLink} to={UserSettingsRoutes.PROFILE}>
-                            Sign it on your profile
-                            <ArrowForwardIcon sx={{ fontSize: '1.125rem' }} />
-                        </Link>
-                    </Box>
+                    {agreement.status === 'revoked'
+                        ? `Your ${agreementName} was revoked, so tokens cannot be created.`
+                        : `Tokens can only be created once you have signed the ${agreementName}.`}
+                    {agreement.status !== 'revoked' && (
+                        <Box sx={{ mt: '0.75rem' }}>
+                            <Link component={RouteLink} to={UserSettingsRoutes.PROFILE}>
+                                Sign it on your profile
+                                <ArrowForwardIcon sx={{ fontSize: '1.125rem' }} />
+                            </Link>
+                        </Box>
+                    )}
                     {publisherAgreementContact !== undefined && (
                         <Box sx={{ mt: '0.75rem', fontSize: '0.8125rem' }}>
                             If you believe this is in error, contact{' '}

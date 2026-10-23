@@ -13,13 +13,16 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { publish } from '../../src/publish';
+import { PACKAGING_OPTIONS, publish } from '../../src/publish';
 import { show } from '../../src/show';
 import { search } from '../../src/search';
 import { verifySignature } from '../../src/verify-signature';
 import { handleError } from '../../src/util';
 
-vi.mock('../../src/publish', () => ({ publish: vi.fn(async () => []) }));
+vi.mock('../../src/publish', async importOriginal => ({
+    ...await importOriginal<typeof import('../../src/publish')>(),
+    publish: vi.fn(async () => [])
+}));
 vi.mock('../../src/show', () => ({ show: vi.fn(async () => undefined) }));
 vi.mock('../../src/search', async importOriginal => ({
     ...await importOriginal<typeof import('../../src/search')>(),
@@ -112,6 +115,24 @@ describe('main', () => {
             dependencies: false,
             skipDuplicate: true
         }));
+    });
+
+    // publish decides what a prepackaged extension ignores, so the options reach it as given.
+    it('passes packaging options for a prepackaged extension through to publish', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        run('publish', 'ext.vsix', '-t', 'linux-x64', '--yarn');
+        expect(warn).not.toHaveBeenCalled();
+        expect(publish).toHaveBeenCalledWith(expect.objectContaining({
+            extensionFile: 'ext.vsix',
+            targets: ['linux-x64'],
+            yarn: true
+        }));
+    });
+
+    // The flag names in publish's warnings are written out there, so they must match a declared option.
+    it.each(PACKAGING_OPTIONS)('declares %s, named in the prepackaged warnings', flag => {
+        expect(() => run('publish', '--help')).toThrow(ExitError);
+        expect(stdout).toMatch(new RegExp(`(^|[ ,])${flag}( |$)`, 'm'));
     });
 
     it('passes options parsed by a custom parser', () => {

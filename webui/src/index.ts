@@ -36,6 +36,7 @@ export { NamespaceDetail } from './pages/namespace-detail/namespace-detail';
 export { UserSettings, type UserSettingsProps } from './pages/user/user-settings';
 export { NotFound } from './not-found';
 export type { AdminPage, AdminPageCategory } from './pages/admin-dashboard/nav-types';
+export type { AdminSettingsSection, AdminSettingsFlag } from './pages/admin-dashboard/settings-sections';
 
 // Building blocks of the built-in home page, for composing a custom one.
 export { HeroSearch, type HeroSearchProps } from './pages/home/hero-search';
@@ -57,6 +58,7 @@ export { Pill } from './components/pill';
 export { KbdKey } from './components/kbd-key';
 export { OpenVsxMark } from './components/openvsx-mark';
 export { PageContainer, type PageContainerProps } from './components/page-container';
+export { ListLoadError, type ListLoadErrorProps } from './components/list-load-error';
 // Also the app's drop target for .vsix packages, so a custom menu keeps drag-and-drop publishing.
 export { PublishButton, type PublishButtonProps } from './components/publish/publish-button';
 

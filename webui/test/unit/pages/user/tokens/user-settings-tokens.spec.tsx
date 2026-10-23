@@ -78,6 +78,22 @@ describe('UserSettingsTokens — unsigned publisher agreement', () => {
     });
 });
 
+describe('UserSettingsTokens — revoked or outdated publisher agreement', () => {
+    it('explains a revocation without offering to sign again', async () => {
+        renderTokens({ user: { ...testUser, publisherAgreement: { status: 'revoked' as const } } });
+
+        expect(await screen.findByText(/was revoked, so tokens cannot be created/)).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /Sign it on your profile/ })).not.toBeInTheDocument();
+    });
+
+    it('blocks an outdated agreement like an unsigned one and points at the profile', async () => {
+        renderTokens({ user: { ...testUser, publisherAgreement: { status: 'outdated' as const } } });
+
+        expect(await screen.findByRole('link', { name: /Sign it on your profile/ })).toBeInTheDocument();
+        expect(screen.queryByText('Generate new token')).not.toBeInTheDocument();
+    });
+});
+
 describe('UserSettingsTokens', () => {
     it('revokes a token only after the confirmation is accepted', async () => {
         const { deleteAccessToken } = renderTokens();

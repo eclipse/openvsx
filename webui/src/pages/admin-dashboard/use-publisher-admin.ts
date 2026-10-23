@@ -35,6 +35,18 @@ export const usePublisherInfo = (login: string, provider = 'github', enabled = t
 };
 
 /**
+ * Lifts the block of a revoked publisher agreement so the user may sign again.
+ */
+export const useReinstatePublisherAgreement = () => {
+    const { service } = useContext(MainContext);
+    return useMutation({
+        mutationKey: [...publisherMutationKey, 'reinstate-agreement'],
+        mutationFn: ({ provider, login }: { provider: string; login: string }) =>
+            service.admin.reinstatePublisherAgreement(provider, login)
+    });
+};
+
+/**
  * Revokes all contributions of a publisher.
  */
 export const useRevokePublisherContributions = () => {
