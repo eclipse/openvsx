@@ -21,10 +21,12 @@ import { MainContext } from '../../../context';
 import { cardSurface } from '../../../components/page-primitives';
 import { IconTile } from '../settings/settings-primitives';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useLocation } from 'react-router';
 import { usePublisherAgreementText, useSignPublisherAgreement } from './use-publisher-agreement';
 
 export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementProps> = props => {
     const { service, pageSettings, handleError } = useContext(MainContext);
+    const location = useLocation();
     const [dialogOpen, setDialogOpen] = useState(false);
     const agreementUrl = pageSettings.urls.publisherAgreement;
     const { data: agreementText } = usePublisherAgreementText(agreementUrl ?? '', {
@@ -62,6 +64,21 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
 
     const publisherAgreementName = pageSettings?.publisherAgreement?.name ?? '';
     const publisherAgreementSigned = user.publisherAgreement.status == 'signed';
+    const loginProvider = user.publisherAgreement.loginProvider;
+    const loginProviderName = user.publisherAgreement.loginProviderName || loginProvider;
+
+    const outdated = user.publisherAgreement.status === 'outdated';
+    const required = outdated ? (
+        <>
+            The {publisherAgreementName} Publisher Agreement changed since you signed it. You need to sign the new
+            version before you can publish any extension to this registry.
+        </>
+    ) : (
+        <>
+            You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any extension to
+            this registry.
+        </>
+    );
 
     let title: string;
     let description: ReactNode;
@@ -81,31 +98,39 @@ export const UserPublisherAgreement: FunctionComponent<UserPublisherAgreementPro
                 View
             </Button>
         );
-    } else if (user.additionalLogins?.find(login => login.provider === 'eclipse')) {
-        title = 'Publisher Agreement required';
+    } else if (user.publisherAgreement.status === 'revoked') {
+        title = 'Publisher Agreement revoked';
         description = (
             <>
-                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any extension
-                to this registry.
+                Your {publisherAgreementName} Publisher Agreement was revoked, so you cannot publish. Contact an
+                administrator to sign it again.
             </>
         );
+        action = null;
+    } else if (!loginProvider || user.additionalLogins?.find(login => login.provider === loginProvider)) {
+        title = outdated ? 'Publisher Agreement updated' : 'Publisher Agreement required';
+        description = required;
         action = (
             <Button onClick={openPublisherAgreement} variant='outlined' color='secondary'>
                 Review &amp; sign
             </Button>
         );
     } else {
-        title = 'Publisher Agreement required';
+        title = outdated ? 'Publisher Agreement updated' : 'Publisher Agreement required';
         description = (
             <>
-                You need to sign the {publisherAgreementName} Publisher Agreement before you can publish any extension
-                to this registry. To start the signing process, please log in with an Eclipse Foundation account.
+                {required} To start the signing process, please log in with {loginProviderName}.
             </>
         );
         action = (
-            <Link href={createAbsoluteURL([service.serverUrl, 'oauth2', 'authorization', 'eclipse'])}>
+            <Link
+                href={createAbsoluteURL(
+                    [service.serverUrl, 'oauth2', 'authorization', loginProvider],
+                    // the server returns to this page once the login is linked
+                    [{ key: 'redirect', value: location.pathname + location.search + location.hash }]
+                )}>
                 <Button variant='outlined' color='secondary'>
-                    Log in with Eclipse
+                    Log in with {loginProviderName}
                 </Button>
             </Link>
         );
