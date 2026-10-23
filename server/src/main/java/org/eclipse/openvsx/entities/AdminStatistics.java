@@ -74,6 +74,12 @@ public class AdminStatistics {
     @Column(name = "downloads")
     private Map<String, Long> topMostDownloadedExtensions;
 
+    /** Keyed by {@link PersonalAccessTokenType} name, or {@code NONE} for web UI and unknown. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @MapKeyColumn(name = "publish_method")
+    @Column(name = "extension_versions")
+    private Map<String, Integer> extensionVersionsByPublishMethod;
+
     public String toCsv() {
         var ratings = 5;
         var headers = new ArrayList<>(
@@ -112,6 +118,10 @@ public class AdminStatistics {
         for (var amount : extensionsPublishedAmounts) {
             values.add(publishersByExtensionsPublished.get(amount));
         }
+        new TreeMap<>(extensionVersionsByPublishMethod).forEach((method, count) -> {
+            headers.add("extension_versions_published_with_" + method.toLowerCase());
+            values.add(count);
+        });
 
         topMapToCsv(headers, values, topMostActivePublishingUsers, "most_active_publishing_users_");
         topMapToCsv(headers, values, topNamespaceExtensions, "namespace_extensions_");
@@ -154,8 +164,23 @@ public class AdminStatistics {
         json.setTopNamespaceExtensions(mapTopNamespaceExtensions());
         json.setTopNamespaceExtensionVersions(mapTopNamespaceExtensionVersions());
         json.setTopMostDownloadedExtensions(mapTopMostDownloadedExtensions());
+        json.setExtensionVersionsByPublishMethod(mapExtensionVersionsByPublishMethod());
 
         return json;
+    }
+
+    private List<AdminStatisticsJson.ExtensionVersionsByPublishMethod> mapExtensionVersionsByPublishMethod() {
+        return extensionVersionsByPublishMethod.entrySet().stream()
+                .map(entry -> {
+                    var mapping = new AdminStatisticsJson.ExtensionVersionsByPublishMethod();
+                    mapping.setPublishMethod(entry.getKey());
+                    mapping.setExtensionVersions(entry.getValue());
+                    return mapping;
+                })
+                .sorted(
+                        Comparator.<AdminStatisticsJson.ExtensionVersionsByPublishMethod>comparingInt(
+                                pe -> pe.getExtensionVersions()).reversed())
+                .collect(Collectors.toList());
     }
 
     private List<AdminStatisticsJson.ExtensionsByRating> mapExtensionsByRating() {
@@ -362,6 +387,14 @@ public class AdminStatistics {
         this.topMostDownloadedExtensions = topMostDownloadedExtensions;
     }
 
+    public Map<String, Integer> getExtensionVersionsByPublishMethod() {
+        return extensionVersionsByPublishMethod;
+    }
+
+    public void setExtensionVersionsByPublishMethod(Map<String, Integer> extensionVersionsByPublishMethod) {
+        this.extensionVersionsByPublishMethod = extensionVersionsByPublishMethod;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -380,7 +413,8 @@ public class AdminStatistics {
                 && Objects.equals(topMostActivePublishingUsers, that.topMostActivePublishingUsers)
                 && Objects.equals(topNamespaceExtensions, that.topNamespaceExtensions)
                 && Objects.equals(topNamespaceExtensionVersions, that.topNamespaceExtensionVersions)
-                && Objects.equals(topMostDownloadedExtensions, that.topMostDownloadedExtensions);
+                && Objects.equals(topMostDownloadedExtensions, that.topMostDownloadedExtensions)
+                && Objects.equals(extensionVersionsByPublishMethod, that.extensionVersionsByPublishMethod);
     }
 
     @Override
@@ -400,6 +434,7 @@ public class AdminStatistics {
                 topMostActivePublishingUsers,
                 topNamespaceExtensions,
                 topNamespaceExtensionVersions,
-                topMostDownloadedExtensions);
+                topMostDownloadedExtensions,
+                extensionVersionsByPublishMethod);
     }
 }

@@ -230,7 +230,21 @@ const NoStatistics: FunctionComponent<{ month: string }> = ({ month }) => (
     </Alert>
 );
 
+const PUBLISH_METHODS = ['Trusted publishing', 'Access token', 'Web UI / unknown'];
+
+/** Groups the token types into the three ways a version can be published, in `PUBLISH_METHODS` order. */
+function countByPublishMethod(statistics: AdminStatistics): number[] {
+    const counts = [0, 0, 0];
+    for (const e of statistics.extensionVersionsByPublishMethod ?? []) {
+        const index = e.publishMethod === 'TPT' ? 0 : e.publishMethod === 'NONE' ? 2 : 1;
+        counts[index] += e.extensionVersions;
+    }
+    return counts;
+}
+
 const StatisticsContent: FunctionComponent<{ statistics: AdminStatistics }> = ({ statistics }) => {
+    const publishMethodCounts = countByPublishMethod(statistics);
+    const versionsPublished = publishMethodCounts.reduce((a, b) => a + b, 0);
     const cards: ReactNode = (
         <Stack direction='row' spacing={2} flexWrap='wrap' useFlexGap sx={{ mb: 3 }}>
             <StatCard label='Extensions' value={numberFormat.format(statistics.extensions)} />
@@ -243,6 +257,14 @@ const StatisticsContent: FunctionComponent<{ statistics: AdminStatistics }> = ({
                 value={statistics.averageReviewsPerExtension.toFixed(2)}
                 hint='average'
             />
+            <StatCard label='Versions published' value={numberFormat.format(versionsPublished)} hint='this month' />
+            <StatCard
+                label='Trusted publishing'
+                value={
+                    versionsPublished > 0 ? `${((100 * publishMethodCounts[0]) / versionsPublished).toFixed(1)}%` : '-'
+                }
+                hint='of versions published this month'
+            />
         </Stack>
     );
 
@@ -250,6 +272,14 @@ const StatisticsContent: FunctionComponent<{ statistics: AdminStatistics }> = ({
         <>
             {cards}
             <Stack direction='row' spacing={2} flexWrap='wrap' useFlexGap>
+                {versionsPublished > 0 ? (
+                    <BreakdownChart
+                        title='Versions published by method'
+                        labels={PUBLISH_METHODS}
+                        values={publishMethodCounts}
+                        seriesLabel='Versions'
+                    />
+                ) : null}
                 <BreakdownChart
                     title='Extensions by rating'
                     labels={(statistics.extensionsByRating ?? []).map(e => `${e.rating}★`)}

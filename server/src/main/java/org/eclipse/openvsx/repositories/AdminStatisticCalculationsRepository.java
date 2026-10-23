@@ -13,6 +13,7 @@
 package org.eclipse.openvsx.repositories;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,8 @@ import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
 public class AdminStatisticCalculationsRepository {
+
+    public static final String PUBLISH_METHOD_NONE = "NONE";
 
     private final DSLContext dsl;
 
@@ -198,6 +201,25 @@ public class AdminStatisticCalculationsRepository {
                     return Map.entry(namespaceName, extensionVersionCount);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Counts the distinct versions (regardless of target platform) published in {@code [from, to)} by
+     * the token type they were published with; {@link #PUBLISH_METHOD_NONE} covers web UI uploads and
+     * versions whose token type was never recorded.
+     */
+    public Map<String, Integer> countExtensionVersionsPublishedGroupedByPublishMethod(
+            LocalDateTime from,
+            LocalDateTime to
+    ) {
+        var method = DSL.coalesce(EXTENSION_VERSION.PUBLISHED_WITH_TT, DSL.inline(PUBLISH_METHOD_NONE));
+        var count = DSL.countDistinct(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.VERSION);
+        return dsl.select(method, count)
+                .from(EXTENSION_VERSION)
+                .where(EXTENSION_VERSION.TIMESTAMP.ge(from))
+                .and(EXTENSION_VERSION.TIMESTAMP.lt(to))
+                .groupBy(method)
+                .fetchMap(method, count);
     }
 
     public Map<String, Long> topMostDownloadedExtensions(int limit) {
