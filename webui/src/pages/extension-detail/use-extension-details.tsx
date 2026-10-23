@@ -41,7 +41,9 @@ export const useExtensionDetail = (namespace: string, name: string, target?: str
             queryKey: extensionDetailKeys.detail(namespace, name, target, version),
             queryFn: ({ signal }) =>
                 service.getExtensionDetail(signal, service.getExtensionApiUrl({ namespace, name, target, version })),
-            enabled: !!namespace && !!name
+            enabled: !!namespace && !!name,
+            // Publishing or deleting a version changes it from other pages, so each visit revalidates.
+            staleTime: 0
         }),
         { ignore: isNotFound }
     );
