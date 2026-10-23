@@ -11,10 +11,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { describe, expect, it } from 'vitest';
-import { controllerFromSignal, queryClient } from '../../src/query-client';
+import { MutationObserver, QueryClient, QueryObserver } from '@tanstack/react-query';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { queryClient } from '../../src/query-client';
 
-const { queries, mutations } = queryClient.getDefaultOptions();
+const { queries } = queryClient.getDefaultOptions();
 const retry = queries?.retry as (failureCount: number, error: unknown) => boolean;
 const retryDelay = queries?.retryDelay as (attempt: number, error: unknown) => number;
 
@@ -38,20 +39,47 @@ describe('queryClient retry policy', () => {
         expect(delay).toBeGreaterThanOrEqual(6000);
         expect(delay).toBeLessThan(6100);
     });
-
-    it('never retries a mutation, even a rate-limited one', () => {
-        expect(mutations?.retry).toBeUndefined();
-    });
 });
 
-describe('controllerFromSignal', () => {
-    it('aborts the controller when the signal aborts', () => {
-        const source = new AbortController();
-        const controller = controllerFromSignal(source.signal);
-        expect(controller.signal.aborted).toBe(false);
+describe('queryClient with a failing request', () => {
+    const newClient = () => new QueryClient({ defaultOptions: queryClient.getDefaultOptions() });
 
-        source.abort();
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
 
-        expect(controller.signal.aborted).toBe(true);
+    it('calls a query once when it fails with a 4xx', async () => {
+        const queryFn = vi.fn().mockRejectedValue({ error: 'Forbidden', status: 403 });
+        const observer = new QueryObserver(newClient(), { queryKey: ['forbidden'], queryFn });
+        const unsubscribe = observer.subscribe(() => {});
+
+        await vi.runAllTimersAsync();
+
+        expect(queryFn).toHaveBeenCalledTimes(1);
+        expect(observer.getCurrentResult().isError).toBe(true);
+        unsubscribe();
+    });
+
+    it('retries a rate-limited query once the registry asked wait is over', async () => {
+        const queryFn = vi.fn().mockRejectedValueOnce({ status: 429, retryAfter: 5 }).mockResolvedValue('done');
+        const observer = new QueryObserver(newClient(), { queryKey: ['limited'], queryFn });
+        const unsubscribe = observer.subscribe(() => {});
+
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(queryFn).toHaveBeenCalledTimes(1);
+
+        await vi.advanceTimersByTimeAsync(1200);
+        expect(queryFn).toHaveBeenCalledTimes(2);
+        expect(observer.getCurrentResult().data).toBe('done');
+        unsubscribe();
+    });
+
+    it('calls a rate-limited mutation once', async () => {
+        const mutationFn = vi.fn().mockRejectedValue({ status: 429, retryAfter: 1 });
+        const settled = new MutationObserver(newClient(), { mutationFn }).mutate().catch(error => error);
+
+        await vi.runAllTimersAsync();
+
+        expect(await settled).toMatchObject({ status: 429 });
+        expect(mutationFn).toHaveBeenCalledTimes(1);
     });
 });

@@ -68,7 +68,7 @@ import {
     UserAccess
 } from './extension-registry-types';
 import { createAbsoluteURL, addQuery } from './utils';
-import { sendRequest } from './server-request';
+import { ErrorResponse, sendRequest } from './server-request';
 
 export class ExtensionRegistryService {
     readonly admin: AdminService;
@@ -281,11 +281,13 @@ export class ExtensionRegistryService {
 
     /** Rejects with the error the last login failed with, which the registry keeps in the session. */
     async getUserAuthError(signal: AbortSignal): Promise<never> {
-        return sendRequest({
+        const loginError = await sendRequest<Partial<ErrorResponse>>({
             signal,
             endpoint: createAbsoluteURL([this.serverUrl, 'user', 'auth-error']),
             credentials: true
         });
+        // The registry answers 200 with no `error` field; the status keeps the query client from retrying it.
+        throw { ...loginError, status: 200 };
     }
 
     async getUserByName(signal: AbortSignal, name: string): Promise<Readonly<UserData>[]> {

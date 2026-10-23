@@ -23,9 +23,6 @@ export { useReportedQuery } from './hooks/use-reported-query';
 export * from './extension-registry-service';
 export * from './extension-registry-types';
 export { sendRequest, isNotFound, type ErrorResponse } from './server-request';
-// Deprecated: `sendRequest` with `signal` replaces both. Kept so a consumer's own service keeps compiling.
-export { sendNonRetriableRequest } from './server-request';
-export { controllerFromSignal } from './query-client';
 export { createRoute, createAbsoluteURL, addQuery } from './utils';
 
 // So a deployment with its own menu content can gate an admin entry the way the built-in menu does.

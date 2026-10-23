@@ -10,7 +10,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { jsonResponse, stubFetch } from './support/fetch';
-import { sendNonRetriableRequest, sendRequest } from '../../src/server-request';
+import { sendRequest } from '../../src/server-request';
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -86,14 +86,5 @@ describe('sendRequest', () => {
         await sendRequest({ endpoint: 'https://open-vsx.org/api/-/search', signal });
 
         expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal });
-    });
-
-    it('still takes the deprecated abortController, through sendNonRetriableRequest too', async () => {
-        const fetchMock = stubFetch(jsonResponse({}));
-        const abortController = new AbortController();
-
-        await sendNonRetriableRequest({ endpoint: 'https://open-vsx.org/api/-/search', abortController });
-
-        expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal: abortController.signal });
     });
 });

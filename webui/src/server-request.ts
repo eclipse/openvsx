@@ -12,8 +12,6 @@ import { isError } from './extension-registry-types';
 
 export interface ServerAPIRequest {
     signal?: AbortSignal;
-    /** @deprecated Pass `signal` instead. */
-    abortController?: AbortController;
     endpoint: string;
     method?: 'GET' | 'DELETE' | 'POST' | 'PUT';
     headers?: Record<string, string>;
@@ -65,7 +63,7 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
 
     const param: RequestInit = {
         method: req.method,
-        signal: req.signal ?? req.abortController?.signal
+        signal: req.signal
     };
 
     if (req.payload) {
@@ -108,11 +106,6 @@ export async function sendRequest<Res>(req: ServerAPIRequest): Promise<Res> {
         err.retryAfter = Number(retryAfter) || 0;
     }
     throw err;
-}
-
-/** @deprecated Use {@link sendRequest}, which no longer retries either and rejects a 200 carrying an error result. */
-export function sendNonRetriableRequest<Res>(req: ServerAPIRequest): Promise<Res> {
-    return sendRequest(req);
 }
 
 function parseBody(response: Response, accept: string): Promise<any> {
