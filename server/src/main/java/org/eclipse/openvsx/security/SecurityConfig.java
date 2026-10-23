@@ -99,6 +99,8 @@ public class SecurityConfig {
             filterChain.oauth2Login(configurer -> {
                 configurer.defaultSuccessUrl(redirectUrl);
                 configurer.successHandler(new CustomAuthenticationSuccessHandler(redirectUrl));
+                configurer.tokenEndpoint(
+                        endpoint -> endpoint.accessTokenResponseClient(TokenResponseClients.authorizationCode()));
                 configurer.failureUrl(redirectUrl + "?auth-error");
                 configurer.userInfoEndpoint(
                         customizer -> customizer.oidcUserService(userServices.getOidc())
