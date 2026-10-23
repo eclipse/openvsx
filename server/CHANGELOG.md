@@ -33,6 +33,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Moving extensions into an existing namespace no longer reverts edits made to that namespace while its files were being copied ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
 - Signing the publisher agreement and the bulk revocation of publishers are refused while the registry is in read-only mode, like the other endpoints that write to the database
+- `namespaceOwnershipConflict` on the admin and own-extension endpoints is no longer reported once the namespace has an owner, which left a stale "Namespace not verified" notice on extensions whose scan had recorded the conflict ([#2380](https://github.com/eclipse-openvsx/openvsx/pull/2380))
 
 ### Dependencies
 
