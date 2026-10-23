@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Streamable;
@@ -82,6 +83,9 @@ class AdminServiceTest {
 
     @Mock
     EntityManager entityManager;
+
+    @Mock
+    ApplicationEventPublisher events;
 
     @InjectMocks
     AdminService adminService;
@@ -212,6 +216,7 @@ class AdminServiceTest {
         adminService.forgetUser("github", "amy", admin);
 
         verify(entityManager).remove(user);
+        verify(events).publishEvent(new UserForgottenEvent(user.getId()));
     }
 
     // Regression: extension_version.published_by_id is documented as permanent - it is never
@@ -245,6 +250,7 @@ class AdminServiceTest {
         verify(entityManager, never()).remove(user);
         assertThat(user.getLoginName()).isEqualTo("deleted-user-" + user.getId());
         assertThat(user.getFullName()).isNull();
+        verify(events).publishEvent(new UserForgottenEvent(user.getId()));
     }
 
     // A tombstone that keeps its permissions would still be an account holding admin access, and one

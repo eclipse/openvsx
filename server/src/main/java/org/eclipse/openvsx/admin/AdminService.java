@@ -35,6 +35,7 @@ import org.jobrunr.scheduling.cron.Cron;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -108,6 +109,7 @@ public class AdminService {
     private final ExtensionSizeLimitService sizeLimits;
     private final LogService logs;
     private final AdminStatisticsService statistics;
+    private final ApplicationEventPublisher events;
 
     public AdminService(
             RepositoryService repositories,
@@ -124,7 +126,8 @@ public class AdminService {
             MailService mail,
             ExtensionSizeLimitService sizeLimits,
             LogService logs,
-            AdminStatisticsService statistics
+            AdminStatisticsService statistics,
+            ApplicationEventPublisher events
     ) {
         this.repositories = repositories;
         this.extensions = extensions;
@@ -141,6 +144,7 @@ public class AdminService {
         this.sizeLimits = sizeLimits;
         this.logs = logs;
         this.statistics = statistics;
+        this.events = events;
     }
 
     @EventListener
@@ -791,13 +795,12 @@ public class AdminService {
             user.setAuthId(null);
             user.setProvider(null);
             user.setProviderUrl(null);
-            user.setEclipsePersonId(null);
-            user.setEclipseToken(null);
             user.setRole(null);
             // Alongside the role for the same reason: a tombstone must not keep admin access of any
             // kind, or it shows up as a "no role" account that still holds capabilities.
             user.getPermissions().clear();
         }
+        events.publishEvent(new UserForgottenEvent(user.getId()));
 
         // The success message deliberately contains no personal data, only the tombstone id and counts.
         var result = ResultJson.success(

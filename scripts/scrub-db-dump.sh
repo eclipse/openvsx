@@ -22,8 +22,8 @@ What gets redacted (see the REDACTION step further down to change this):
   user_data.full_name            -> synthetic, unique per row
   user_data.avatar_url           -> cleared
   user_data.auth_id              -> synthetic, unique per row (only where already non-null)
-  user_data.eclipse_token        -> cleared (has held raw OAuth access/refresh token JSON)
-  user_data.eclipse_person_id    -> cleared
+  user_data.eclipse_token        -> cleared where present, dumps before V1_83 only (raw OAuth token JSON)
+  user_data.eclipse_person_id    -> cleared where present, dumps before V1_83 only
   user_data.login_name is left untouched - it's the public registry username already.
 
 How it works: this dump's exact column layout depends on which Flyway migration was HEAD when
@@ -226,9 +226,17 @@ SET private_key = decode(repeat('00', 32), 'hex');
 UPDATE user_data
 SET email = 'user' || id || '@example.invalid',
     full_name = 'Redacted User ' || id,
-    avatar_url = NULL,
-    eclipse_token = NULL,
-    eclipse_person_id = NULL;
+    avatar_url = NULL;
+
+-- Dumps from before V1_83 still carry the Eclipse columns, which hold raw OAuth tokens.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = 'public' AND table_name = 'user_data' AND column_name = 'eclipse_token') THEN
+        UPDATE user_data SET eclipse_token = NULL, eclipse_person_id = NULL;
+    END IF;
+END
+$$;
 
 -- auth_id is the provider-side account identifier (GitHub's numeric user id, say). It's
 -- nullable and only set for rows that actually went through an OAuth login, so this keeps the

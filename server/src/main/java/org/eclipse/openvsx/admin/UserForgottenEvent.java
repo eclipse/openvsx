@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020 TypeFox and others
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,21 +10,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.entities;
-
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.Set;
+package org.eclipse.openvsx.admin;
 
 /**
- * This class is not mapped to a database entity, but parsed / serialized to
- * JSON via a column converter.
+ * Published when a user is forgotten, whether the {@code user_data} row is deleted or kept as an anonymized
+ * tombstone. Deployments that keep personal data of a user elsewhere clear it on this event, which is
+ * handled in the transaction of the erasure.
  */
-public record AuthToken(
-        String accessToken,
-        Instant issuedAt,
-        Instant expiresAt,
-        Set<String> scopes,
-        String refreshToken,
-        Instant refreshExpiresAt
-) implements Serializable {}
+public record UserForgottenEvent(long userId) {}
