@@ -67,12 +67,7 @@ jobs:
           package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install Yarn
-        working-directory: cli
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
-
+      # The runner's global Yarn 1 delegates to the release committed at .yarnrc.yml's yarnPath.
       - name: Build CLI
         working-directory: cli
         env:
