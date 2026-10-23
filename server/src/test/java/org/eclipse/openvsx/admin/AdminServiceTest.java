@@ -204,6 +204,7 @@ class AdminServiceTest {
     @Test
     void forgetUserDeletesTheUserRowWhenNothingElseReferencesThem() {
         var user = new UserData();
+        user.setId(42L);
         user.setLoginName("amy");
 
         when(repositories.findUserByLoginName("github", "amy")).thenReturn(user);
@@ -228,6 +229,7 @@ class AdminServiceTest {
     @Test
     void forgetUserAnonymizesInsteadOfDeletingWhenAVersionWasAlreadyRemovedBySomeoneElse() {
         var user = new UserData();
+        user.setId(43L);
         user.setLoginName("amy");
         var admin2 = new UserData();
         admin2.setLoginName("staff");

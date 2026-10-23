@@ -24,7 +24,9 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ### Removed
 
-- The columns `user_data.eclipse_token` and `user_data.eclipse_person_id`, with `UserData.eclipseToken`/`eclipsePersonId`, `AuthToken` and `AuthTokenConverter`, now belong to the deployment that uses them; migration `V1_83` fails while they still hold data, so move it first, and `AdminService.forgetUser` publishes a `UserForgottenEvent` for that deployment to clear its own data ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- The columns `user_data.eclipse_token` and `user_data.eclipse_person_id` are dropped, with `UserData.eclipseToken`/`eclipsePersonId`, `AuthToken` and `AuthTokenConverter` ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- **Upgrade:** migration `V1_83` fails, and so does the startup, while either column still holds data; a deployment that uses them copies the rows to its own table and sets both columns to `NULL` first, in a migration that sorts before `V1_83` ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
+- `AdminService.forgetUser` publishes a `UserForgottenEvent(userId)` in the erasure's transaction, whether the row is deleted or anonymized, for a deployment that keeps personal data of a user elsewhere to clear it ([#2369](https://github.com/eclipse-openvsx/openvsx/issues/2369))
 
 ### Fixed
 
