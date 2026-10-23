@@ -624,6 +624,7 @@ export interface AdminService {
     ): Promise<Readonly<UserSearchResult>>;
     updateUserAccess(provider: string, login: string, access: UserAccess): Promise<Readonly<SuccessResult>>;
     revokePublisherContributions(provider: string, login: string): Promise<Readonly<SuccessResult>>;
+    reinstatePublisherAgreement(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     revokeAccessTokens(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     forgetUser(provider: string, login: string): Promise<Readonly<SuccessResult>>;
     getAllScans(
@@ -904,6 +905,25 @@ export class AdminServiceImpl implements AdminService {
             method: 'POST',
             credentials: true,
             endpoint: createAbsoluteURL([this.registry.serverUrl, 'admin', 'publisher', provider, login, 'revoke']),
+            headers
+        });
+    }
+
+    async reinstatePublisherAgreement(provider: string, login: string): Promise<Readonly<SuccessResult>> {
+        const csrfToken = await this.registry.getCsrfToken();
+        const headers: Record<string, string> = {};
+        headers[csrfToken.header] = csrfToken.value;
+        return sendRequest({
+            method: 'POST',
+            credentials: true,
+            endpoint: createAbsoluteURL([
+                this.registry.serverUrl,
+                'admin',
+                'publisher',
+                provider,
+                login,
+                'reinstate-agreement'
+            ]),
             headers
         });
     }

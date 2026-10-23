@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2020 TypeFox and others
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -10,15 +10,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  *****************************************************************************/
-package org.eclipse.openvsx.eclipse;
-
-import java.time.LocalDateTime;
+package org.eclipse.openvsx.admin;
 
 /**
- *
- * @param isActive
- * @param documentId
- * @param version Version of the last signed publisher agreement.
- * @param timestamp Timestamp of the last signed publisher agreement.
+ * Published when a user is forgotten, whether the {@code user_data} row is deleted or kept as an anonymized
+ * tombstone. Deployments that keep personal data of a user elsewhere clear it on this event, which is
+ * handled in the transaction of the erasure.
  */
-public record PublisherAgreement(boolean isActive, String documentId, String version, LocalDateTime timestamp) {}
+public record UserForgottenEvent(long userId) {}
