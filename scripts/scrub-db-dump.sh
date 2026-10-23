@@ -37,8 +37,9 @@ whatever's newly pending), just possibly with extra column-count checks along th
 skip detection and pin a version directly (faster, and necessary if detection is ambiguous - e.g.
 two versions in a row happen to match on count alone).
 
-The scratch database only ever holds these three tables' data (plus whatever they cascade to via
-foreign keys) and is destroyed when the script exits, successfully or not.
+The scratch database only ever holds these three tables' data and is destroyed when the script exits,
+successfully or not. Foreign key checks are switched off while the files are loaded into it, because
+personal_access_token.trusted_publisher_id points into trusted_publisher, which this script does not load.
 
 Options:
   -d <dir>       Dump directory (default: db/dump under the repo root)
@@ -104,8 +105,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# The scratch Postgres user is a superuser, so session_replication_role turns foreign key checks off.
 psql_exec() {
-  docker exec -i "${CONTAINER_NAME}" psql -U openvsx -d postgres -v ON_ERROR_STOP=1 "$@"
+  docker exec -i -e PGOPTIONS="-c session_replication_role=replica" "${CONTAINER_NAME}" psql -U openvsx -d postgres -v ON_ERROR_STOP=1 "$@"
 }
 
 echo "Starting scratch Postgres..."
