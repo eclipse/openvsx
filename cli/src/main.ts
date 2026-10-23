@@ -90,7 +90,8 @@ module.exports = function (argv: string[]): void {
 
                         process.exit(1);
                     }
-                });
+                })
+                .catch(handleError(debug));
         });
 
     const unpublishCmd = program.command('unpublish [namespace.extension]');
@@ -209,7 +210,7 @@ module.exports = function (argv: string[]): void {
         program.help();
     });
 
-    if (process.argv.length <= 2) {
+    if (argv.length <= 2) {
         // Commander 14 would otherwise print this to stderr and exit 1 during program.parse(argv) below.
         program.help();
     }

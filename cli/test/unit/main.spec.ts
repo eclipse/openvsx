@@ -43,10 +43,7 @@ class ExitError extends Error {
 let main: (argv: string[]) => void;
 
 function run(...args: string[]): void {
-    const argv = ['node', 'ovsx', ...args];
-    // main checks process.argv rather than its argument for a missing command.
-    vi.spyOn(process, 'argv', 'get').mockReturnValue(argv);
-    main(argv);
+    main(['node', 'ovsx', ...args]);
 }
 
 describe('main', () => {
@@ -103,6 +100,16 @@ describe('main', () => {
         vi.mocked(handleError).mockClear();
         run('show', 'redhat.java');
         expect(handleError).toHaveBeenCalledWith(undefined);
+    });
+
+    it('reports a publish rejection through the error handler', async () => {
+        const error = new Error('boom');
+        const handler = vi.fn();
+        vi.mocked(handleError).mockReturnValue(handler);
+        vi.mocked(publish).mockRejectedValueOnce(error);
+        run('--debug', 'publish', 'ext.vsix');
+        await vi.waitFor(() => expect(handler).toHaveBeenCalledWith(error));
+        expect(handleError).toHaveBeenCalledWith(true);
     });
 
     it('passes variadic, negatable and camel-cased publish options', () => {
@@ -185,5 +192,16 @@ describe('main', () => {
         expect(() => run()).toThrow(new ExitError(0));
         expect(stdout).toContain('Usage: ovsx <command> [options]');
         expect(stderr).toBe('');
+    });
+
+    // process.argv is set to disagree with the argument, so only the argument can decide.
+    it('decides whether a command was given from its argument, not process.argv', () => {
+        vi.spyOn(process, 'argv', 'get').mockReturnValue(['node', 'ovsx', 'show', 'redhat.java']);
+        expect(() => run()).toThrow(new ExitError(0));
+        expect(stdout).toContain('Usage: ovsx <command> [options]');
+
+        vi.spyOn(process, 'argv', 'get').mockReturnValue(['node', 'ovsx']);
+        run('show', 'redhat.java');
+        expect(show).toHaveBeenCalled();
     });
 });
