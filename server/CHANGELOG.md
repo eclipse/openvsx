@@ -69,6 +69,7 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Stop the scheduled consistency check and the admin "Fix all" holding one transaction and database connection for the whole run, which triggered connection leak warnings and kept row locks open ([#2373](https://github.com/eclipse-openvsx/openvsx/pull/2373))
 - Refuse the trusted publishing endpoints that create or delete a trusted publisher or issue a publish token while the registry is read-only ([#2339](https://github.com/eclipse-openvsx/openvsx/pull/2339))
+- Accept OAuth token responses with long headers, which GitHub now sends and httpcore5 5.4.3+ rejected with `Maximum line length limit exceeded`, breaking login
 - Match secret detection rules case-sensitively unless the rule has an inline `(?i)`, which stops mixed-case words such as `Asiakasdokumentaatio` being flagged as AWS keys, see #2329 ([#2330](https://github.com/eclipse-openvsx/openvsx/pull/2330))
 - Keep polling async scanners through transient errors, confirm an error status on a second poll before failing a scan, and treat every non-2xx scanner response as an error ([#2307](https://github.com/eclipse-openvsx/openvsx/pull/2307))
 - Compare trusted-publishing claims case-insensitively, like the rest of its checks ([#2282](https://github.com/eclipse-openvsx/openvsx/pull/2282))
