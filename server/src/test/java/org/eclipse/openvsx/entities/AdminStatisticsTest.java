@@ -32,8 +32,12 @@ class AdminStatisticsTest {
         statistics.setExtensionVersionsByPublishMethod(Map.of("TPT", 3, "NONE", 5));
 
         var csv = statistics.toCsv().split("\n");
-        assertThat(csv[0]).endsWith(",extension_versions_published_with_none,extension_versions_published_with_tpt");
-        assertThat(csv[1]).endsWith(",5,3");
+        // Every method gets a column, so CSVs of different months line up.
+        assertThat(csv[0]).endsWith(
+                ",extension_versions_published_with_llt,extension_versions_published_with_llp"
+                        + ",extension_versions_published_with_ott,extension_versions_published_with_tpt"
+                        + ",extension_versions_published_with_none");
+        assertThat(csv[1]).endsWith(",0,0,0,3,5");
 
         assertThat(statistics.toJson().getExtensionVersionsByPublishMethod())
                 .extracting(e -> e.getPublishMethod() + "=" + e.getExtensionVersions())

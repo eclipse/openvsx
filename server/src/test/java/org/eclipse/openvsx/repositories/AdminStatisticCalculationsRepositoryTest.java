@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.eclipse.openvsx.AbstractPostgresContainerTest;
+import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.ExtensionVersion;
 import org.eclipse.openvsx.entities.Namespace;
@@ -92,7 +93,7 @@ class AdminStatisticCalculationsRepositoryTest extends AbstractPostgresContainer
         var counts = repo.countExtensionVersionsPublishedGroupedByPublishMethod(MONTH, MONTH.plusMonths(1));
 
         assertThat(counts)
-                .isEqualTo(Map.of("TPT", 1, "LLP", 1, AdminStatisticCalculationsRepository.PUBLISH_METHOD_NONE, 1));
+                .isEqualTo(Map.of("TPT", 1, "LLP", 1, AdminStatistics.PUBLISH_METHOD_NONE, 1));
     }
 
     private Extension persistExtension(Namespace namespace, String name) {

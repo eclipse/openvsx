@@ -23,6 +23,9 @@ import org.eclipse.openvsx.json.AdminStatisticsJson;
 @Table(name = "admin_statistics")
 public class AdminStatistics {
 
+    /** The publish method of versions published without a token, from the web UI or unrecorded. */
+    public static final String PUBLISH_METHOD_NONE = "NONE";
+
     @Id
     @GeneratedValue(generator = "adminStatisticsSeq")
     @SequenceGenerator(name = "adminStatisticsSeq", sequenceName = "admin_statistics_seq")
@@ -74,7 +77,10 @@ public class AdminStatistics {
     @Column(name = "downloads")
     private Map<String, Long> topMostDownloadedExtensions;
 
-    /** Keyed by {@link PersonalAccessTokenType} name, or {@code NONE} for web UI and unknown. */
+    /**
+     * Keyed by {@link PersonalAccessTokenType} name, or {@code NONE} for web UI uploads and unknown; web UI
+     * uploads before 1.2.0 went through a one-time token and are keyed {@code OTT}.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "publish_method")
     @Column(name = "extension_versions")
@@ -118,10 +124,16 @@ public class AdminStatistics {
         for (var amount : extensionsPublishedAmounts) {
             values.add(publishersByExtensionsPublished.get(amount));
         }
-        new TreeMap<>(extensionVersionsByPublishMethod).forEach((method, count) -> {
+        // A fixed set of columns, so CSVs of different months line up.
+        var publishMethods = new ArrayList<String>();
+        for (var type : PersonalAccessTokenType.values()) {
+            publishMethods.add(type.name());
+        }
+        publishMethods.add(PUBLISH_METHOD_NONE);
+        for (var method : publishMethods) {
             headers.add("extension_versions_published_with_" + method.toLowerCase());
-            values.add(count);
-        });
+            values.add(extensionVersionsByPublishMethod.getOrDefault(method, 0));
+        }
 
         topMapToCsv(headers, values, topMostActivePublishingUsers, "most_active_publishing_users_");
         topMapToCsv(headers, values, topNamespaceExtensions, "namespace_extensions_");

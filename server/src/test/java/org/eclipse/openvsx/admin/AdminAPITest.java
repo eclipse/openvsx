@@ -2193,8 +2193,11 @@ class AdminAPITest {
                 99,
                 70,
                 52,
+                0,
                 30,
+                0,
                 12,
+                0,
                 543,
                 93,
                 82,
@@ -2220,7 +2223,9 @@ class AdminAPITest {
                                         "extensions_by_rating_3,extensions_by_rating_4,extensions_by_rating_5," +
                                         "publishers_published_extensions_1,publishers_published_extensions_2," +
                                         "publishers_published_extensions_3,publishers_published_extensions_4," +
-                                        "extension_versions_published_with_llp,extension_versions_published_with_tpt," +
+                                        "extension_versions_published_with_llt,extension_versions_published_with_llp," +
+                                        "extension_versions_published_with_ott,extension_versions_published_with_tpt," +
+                                        "extension_versions_published_with_none," +
                                         "most_active_publishing_users_u_bar,most_active_publishing_users_u_foo,most_active_publishing_users_u_baz,"
                                         +
                                         "namespace_extensions_n_baz,namespace_extensions_n_bar,namespace_extensions_n_foo,"

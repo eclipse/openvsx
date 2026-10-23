@@ -16,6 +16,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DateTime } from 'luxon';
 import { StatisticsAdmin } from '../../../../src/pages/admin-dashboard/statistics/statistics';
+import { countByPublishMethod } from '../../../../src/pages/admin-dashboard/statistics/publish-methods';
 import { ExtensionRegistryService } from '../../../../src/extension-registry-service';
 import { AdminStatistics } from '../../../../src/extension-registry-types';
 import { renderWithProviders } from '../../support/test-providers';
@@ -167,5 +168,22 @@ describe('StatisticsAdmin', () => {
 
         expect(await screen.findByText('Trusted publishing')).toBeInTheDocument();
         expect(screen.queryByText('Versions published by method')).not.toBeInTheDocument();
+    });
+
+    // Before 1.2.0 the web UI published through a one-time token, so OTT is a web UI upload too.
+    it('groups token types into trusted publishing, access token and web UI', () => {
+        const counts = countByPublishMethod(
+            statistics({
+                extensionVersionsByPublishMethod: [
+                    { publishMethod: 'TPT', extensionVersions: 1 },
+                    { publishMethod: 'LLT', extensionVersions: 2 },
+                    { publishMethod: 'LLP', extensionVersions: 4 },
+                    { publishMethod: 'OTT', extensionVersions: 8 },
+                    { publishMethod: 'NONE', extensionVersions: 16 }
+                ]
+            })
+        );
+
+        expect(counts).toEqual([1, 6, 24]);
     });
 });

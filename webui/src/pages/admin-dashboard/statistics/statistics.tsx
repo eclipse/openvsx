@@ -36,6 +36,7 @@ import { DateTime } from 'luxon';
 import { MainContext } from '../../../context';
 import type { AdminStatistics } from '../../../extension-registry-types';
 import { useAdminStatistics } from './use-admin-statistics';
+import { countByPublishMethod, PUBLISH_METHODS } from './publish-methods';
 
 // No explicit locale: every other figure in the web UI is formatted with the viewer's own, from the
 // sibling search-index page to the search result count.
@@ -229,18 +230,6 @@ const NoStatistics: FunctionComponent<{ month: string }> = ({ month }) => (
         before this registry started collecting them have none.
     </Alert>
 );
-
-const PUBLISH_METHODS = ['Trusted publishing', 'Access token', 'Web UI / unknown'];
-
-/** Groups the token types into the three ways a version can be published, in `PUBLISH_METHODS` order. */
-function countByPublishMethod(statistics: AdminStatistics): number[] {
-    const counts = [0, 0, 0];
-    for (const e of statistics.extensionVersionsByPublishMethod ?? []) {
-        const index = e.publishMethod === 'TPT' ? 0 : e.publishMethod === 'NONE' ? 2 : 1;
-        counts[index] += e.extensionVersions;
-    }
-    return counts;
-}
 
 const StatisticsContent: FunctionComponent<{ statistics: AdminStatistics }> = ({ statistics }) => {
     const publishMethodCounts = countByPublishMethod(statistics);

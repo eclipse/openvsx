@@ -85,7 +85,10 @@ export interface AdminStatistics {
     topNamespaceExtensions: { namespace: string; extensions: number }[];
     topNamespaceExtensionVersions: { namespace: string; extensionVersions: number }[];
     topMostDownloadedExtensions: { extensionIdentifier: string; downloads: number }[];
-    /** `publishMethod` is a token type (`TPT` for trusted publishing) or `NONE` for web UI uploads and unknown. */
+    /**
+     * `publishMethod` is a token type (`TPT` for trusted publishing, `OTT` for web UI uploads before 1.2.0)
+     * or `NONE` for later web UI uploads and unknown.
+     */
     extensionVersionsByPublishMethod: { publishMethod: string; extensionVersions: number }[];
     error?: string;
 }

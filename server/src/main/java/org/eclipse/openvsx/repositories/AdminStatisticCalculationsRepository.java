@@ -21,14 +21,13 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 
+import org.eclipse.openvsx.entities.AdminStatistics;
 import org.eclipse.openvsx.entities.NamespaceMembership;
 
 import static org.eclipse.openvsx.jooq.Tables.*;
 
 @Component
 public class AdminStatisticCalculationsRepository {
-
-    public static final String PUBLISH_METHOD_NONE = "NONE";
 
     private final DSLContext dsl;
 
@@ -205,14 +204,14 @@ public class AdminStatisticCalculationsRepository {
 
     /**
      * Counts the distinct versions (regardless of target platform) published in {@code [from, to)} by
-     * the token type they were published with; {@link #PUBLISH_METHOD_NONE} covers web UI uploads and
-     * versions whose token type was never recorded.
+     * the token type they were published with; {@link AdminStatistics#PUBLISH_METHOD_NONE} covers web UI uploads (those
+     * before 1.2.0 are {@code OTT}) and versions whose token type was never recorded.
      */
     public Map<String, Integer> countExtensionVersionsPublishedGroupedByPublishMethod(
             LocalDateTime from,
             LocalDateTime to
     ) {
-        var method = DSL.coalesce(EXTENSION_VERSION.PUBLISHED_WITH_TT, DSL.inline(PUBLISH_METHOD_NONE));
+        var method = DSL.coalesce(EXTENSION_VERSION.PUBLISHED_WITH_TT, DSL.inline(AdminStatistics.PUBLISH_METHOD_NONE));
         var count = DSL.countDistinct(EXTENSION_VERSION.EXTENSION_ID, EXTENSION_VERSION.VERSION);
         return dsl.select(method, count)
                 .from(EXTENSION_VERSION)
