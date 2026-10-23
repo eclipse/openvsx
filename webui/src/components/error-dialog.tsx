@@ -8,10 +8,20 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import { FunctionComponent, ReactNode, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box } from '@mui/material';
+import { FunctionComponent, ReactNode, useContext, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box, Link } from '@mui/material';
+import { styled, Theme } from '@mui/material/styles';
+import { MainContext } from '../context';
+
+const ErrorLink = styled(Link)(({ theme }: { theme: Theme }) => ({
+    textDecoration: 'underline',
+    color: theme.palette.primary.main
+}));
 
 export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
+    const { pageSettings } = useContext(MainContext);
+    const ErrorHelp = pageSettings?.elements.errorHelp;
+
     useEffect(() => {
         document.addEventListener('keydown', handleEnter);
         return () => document.removeEventListener('keydown', handleEnter);
@@ -29,8 +39,21 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
         }
 
         switch (props.errorCode) {
-            case 'publisher-agreement-problem':
-                return <>Please contact the administrators of this registry if this problem persists.</>;
+            case 'publisher-agreement-problem': {
+                const email = pageSettings?.publisherAgreement?.email;
+                return email ? (
+                    <>
+                        Please contact{' '}
+                        <ErrorLink
+                            href={`mailto:${email}?subject=${encodeURIComponent('Publisher agreement problem')}`}>
+                            {email}
+                        </ErrorLink>{' '}
+                        if this problem persists.
+                    </>
+                ) : (
+                    <>Please contact the administrators of this registry if this problem persists.</>
+                );
+            }
             default:
                 return null;
         }
@@ -44,6 +67,7 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
                 <DialogContentText sx={{ color: theme => theme.palette.error.main }}>
                     {props.errorMessage}
                     {codeContent ? <Box mt={2}>{codeContent}</Box> : null}
+                    {ErrorHelp ? <ErrorHelp errorCode={props.errorCode} errorMessage={props.errorMessage} /> : null}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
