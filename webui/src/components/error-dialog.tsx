@@ -9,13 +9,7 @@
  ********************************************************************************/
 
 import { FunctionComponent, ReactNode, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box, Link } from '@mui/material';
-import { styled, Theme } from '@mui/material/styles';
-
-const ErrorLink = styled(Link)(({ theme }: { theme: Theme }) => ({
-    textDecoration: 'underline',
-    color: theme.palette.primary.main
-}));
+import { Dialog, DialogTitle, DialogContent, Button, DialogContentText, DialogActions, Box } from '@mui/material';
 
 export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
     useEffect(() => {
@@ -35,36 +29,8 @@ export const ErrorDialog: FunctionComponent<ErrorDialogProps> = props => {
         }
 
         switch (props.errorCode) {
-            case 'eclipse-missing-github-id':
-                return (
-                    <>
-                        Please fill in the &ldquo;GitHub Username&rdquo; field in{' '}
-                        <ErrorLink href='https://accounts.eclipse.org/user/edit' target='_blank'>
-                            your Eclipse account
-                        </ErrorLink>{' '}
-                        and try again.
-                    </>
-                );
-            case 'eclipse-mismatch-github-id':
-                return (
-                    <>
-                        Please edit the &ldquo;GitHub Username&rdquo; field in{' '}
-                        <ErrorLink href='https://accounts.eclipse.org/user/edit' target='_blank'>
-                            your Eclipse account
-                        </ErrorLink>{' '}
-                        or log in with a different GitHub account.
-                    </>
-                );
             case 'publisher-agreement-problem':
-                return (
-                    <>
-                        Please contact{' '}
-                        <ErrorLink href='mailto:webmaster@eclipse.org?subject=Problem%20With%20open-vsx.org%20Publisher%20Agreement'>
-                            webmaster@eclipse.org
-                        </ErrorLink>{' '}
-                        if this problem persists.
-                    </>
-                );
+                return <>Please contact the administrators of this registry if this problem persists.</>;
             default:
                 return null;
         }
