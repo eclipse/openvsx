@@ -70,16 +70,3 @@ queryClient.getQueryCache().subscribe(event => {
  * the latest server state (e.g. right after publishing or deleting).
  */
 export const NO_CACHE = { staleTime: 0, gcTime: 0 } as const;
-
-/** @deprecated A `queryFn` passes its `signal` straight to the service, which takes an `AbortSignal`. */
-export function controllerFromSignal(signal?: AbortSignal): AbortController {
-    const controller = new AbortController();
-    if (signal) {
-        if (signal.aborted) {
-            controller.abort();
-        } else {
-            signal.addEventListener('abort', () => controller.abort(), { once: true });
-        }
-    }
-    return controller;
-}

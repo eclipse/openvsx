@@ -16,13 +16,17 @@ This change log covers only the frontend library (webui) of Open VSX.
 - The publisher agreement panel shows a `revoked` status without a sign action, a different message for an `outdated` one, and admins can reinstate a revoked agreement
 - `MainContext` keeps its value, `handleError` and `updateUser` stable across renders, so consumers can depend on them in effects and skip needless re-renders
 - The default publisher agreement text URL is now the server's `/api/publisher-agreement`, instead of `/documents/publisher-agreement.md`
-- `sendRequest` rejects a 200 carrying an error result and no longer retries; retries belong to the query client, which waits out a 429 for queries and never retries a mutation. `sendNonRetriableRequest` and the request's `abortController` are deprecated in favour of `sendRequest` and `signal`
-- `ExtensionRegistryService` query methods take an `AbortSignal` instead of an `AbortController` and write methods take neither; no method resolves an `ErrorResult` any more but rejects with it, as `getUser` does when nobody is logged in. `controllerFromSignal` is deprecated: a `queryFn` passes its `signal` straight through
+- `sendRequest` rejects a 200 carrying an error result and no longer retries; retries belong to the query client, which waits out a 429 for queries and never retries a mutation.
+- `ExtensionRegistryService` query methods take an `AbortSignal` instead of an `AbortController` and write methods take neither; no method resolves an `ErrorResult` any more but rejects with it, as `getUser` does when nobody is logged in.
 
 ### Fixed
 
 - A query reported through `useReportedQuery` (or a page's own error effect) no longer reopens the error dialog in a loop that cannot be closed while the query stays failed (#2348)
 - A failed review post or removal, token revocation or user search no longer leaves its spinner running
+
+### Removed
+
+- `sendNonRetriableRequest`, `controllerFromSignal` and the `abortController` field of `ServerAPIRequest`: use `sendRequest` with `signal`, and pass a `queryFn`'s `signal` straight to the service
 
 ### Dependencies
 
