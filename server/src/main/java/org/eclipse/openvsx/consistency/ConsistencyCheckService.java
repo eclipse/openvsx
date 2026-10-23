@@ -21,6 +21,7 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import org.eclipse.openvsx.entities.UserData;
 import org.eclipse.openvsx.json.ResultJson;
@@ -33,6 +34,9 @@ import org.eclipse.openvsx.util.NotFoundException;
  * fixes, and the scheduled sweep's auto-fixing. Adding a new kind of check only requires a new
  * {@code @Component implements ConsistencyCheck} bean - it is picked up here automatically and needs no
  * further wiring.
+ * <p>
+ * Sweeps and "fix all" are deliberately not one transaction: each check's {@code check()}/{@code fix()}
+ * commits on its own, so no connection or row lock is held for the length of the whole run.
  * <p>
  * There is no persisted run history: findings are always computed live, and every fix - whether an
  * admin clicked "Fix"/"Fix all" or the scheduled sweep did it unattended - is recorded as a normal admin
@@ -51,17 +55,20 @@ public class ConsistencyCheckService {
     private final EntityManager entityManager;
     private final RepositoryService repositories;
     private final LogService logs;
+    private final TransactionTemplate transactions;
 
     public ConsistencyCheckService(
             List<ConsistencyCheck> checks,
             EntityManager entityManager,
             RepositoryService repositories,
-            LogService logs
+            LogService logs,
+            TransactionTemplate transactions
     ) {
         this.checksById = checks.stream().collect(Collectors.toMap(ConsistencyCheck::getId, c -> c));
         this.entityManager = entityManager;
         this.repositories = repositories;
         this.logs = logs;
+        this.transactions = transactions;
     }
 
     /**
@@ -88,10 +95,9 @@ public class ConsistencyCheckService {
     /**
      * Fixes every entity the check currently finds inconsistent, logging the outcome.
      */
-    @Transactional
     public int fixAll(String checkId) {
         var check = getCheck(checkId);
-        var fixed = fixAll(check);
+        var fixed = fixAll(check, check.check());
         if (fixed > 0) {
             log("Fixed " + fixed + " finding(s) for consistency check '" + check.getId() + "'.");
         }
@@ -115,10 +121,10 @@ public class ConsistencyCheckService {
      * dashboard's "Fix all" already covers triggering a fix on demand for a single check, so there is no
      * separate "run all checks now" admin action.
      */
-    @Transactional
     public void runAllChecks() {
         for (var check : checksById.values()) {
-            var count = check.check().size();
+            var findings = check.check();
+            var count = findings.size();
             if (count == 0) {
                 continue;
             }
@@ -131,20 +137,19 @@ public class ConsistencyCheckService {
                     .log();
 
             if (check.autoFixOnSchedule()) {
-                var fixed = fixAll(check);
+                var fixed = fixAll(check, findings);
                 log("Auto-fixed " + fixed + " finding(s) for consistency check '" + check.getId() + "'.");
             }
         }
     }
 
     /**
-     * Recomputes findings once more after fixing each one, rather than fixing a stale list, in case
+     * Fixes the given findings, then recomputes them rather than trusting a stale list, in case
      * fixing one finding incidentally resolves another (not expected for any current check, but not
      * something to assume never happens either).
      */
-    private int fixAll(ConsistencyCheck check) {
+    private int fixAll(ConsistencyCheck check, List<ConsistencyFinding> findings) {
         var fixed = 0;
-        var findings = check.check();
         while (!findings.isEmpty()) {
             for (var finding : findings) {
                 check.fix(finding.entityId());
@@ -156,7 +161,7 @@ public class ConsistencyCheckService {
     }
 
     private void log(String message) {
-        logs.logAction(getSystemUser(), ResultJson.success(message));
+        transactions.executeWithoutResult(status -> logs.logAction(getSystemUser(), ResultJson.success(message)));
     }
 
     /**
