@@ -12,6 +12,7 @@
  *****************************************************************************/
 package org.eclipse.openvsx.consistency;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -97,11 +98,7 @@ public class ConsistencyCheckService {
      */
     public int fixAll(String checkId) {
         var check = getCheck(checkId);
-        var fixed = fixAll(check, check.check());
-        if (fixed > 0) {
-            log("Fixed " + fixed + " finding(s) for consistency check '" + check.getId() + "'.");
-        }
-        return fixed;
+        return fixAll(check, check.check(), "Fixed");
     }
 
     /**
@@ -137,25 +134,40 @@ public class ConsistencyCheckService {
                     .log();
 
             if (check.autoFixOnSchedule()) {
-                var fixed = fixAll(check, findings);
-                log("Auto-fixed " + fixed + " finding(s) for consistency check '" + check.getId() + "'.");
+                fixAll(check, findings, "Auto-fixed");
             }
         }
     }
 
     /**
-     * Fixes the given findings, then recomputes them rather than trusting a stale list, in case
-     * fixing one finding incidentally resolves another (not expected for any current check, but not
-     * something to assume never happens either).
+     * Fixes the given findings, then recomputes them rather than trusting a stale list, in case fixing one
+     * finding incidentally resolves another or introduces a new one. A finding that survives its own fix
+     * is not retried, so a fix that cannot resolve it ends the loop. The fixes made are logged even when a
+     * later one throws, since each fix is already committed.
      */
-    private int fixAll(ConsistencyCheck check, List<ConsistencyFinding> findings) {
+    private int fixAll(ConsistencyCheck check, List<ConsistencyFinding> findings, String verb) {
+        var attempted = new HashSet<Long>();
         var fixed = 0;
-        while (!findings.isEmpty()) {
-            for (var finding : findings) {
-                check.fix(finding.entityId());
-                fixed++;
+        try {
+            while (!findings.isEmpty()) {
+                for (var finding : findings) {
+                    check.fix(finding.entityId());
+                    attempted.add(finding.entityId());
+                    fixed++;
+                }
+                var remaining = check.check();
+                findings = remaining.stream().filter(f -> !attempted.contains(f.entityId())).toList();
+                if (findings.isEmpty() && !remaining.isEmpty()) {
+                    logger.warn(
+                            "Consistency check '{}' still finds {} entities inconsistent after fixing them",
+                            check.getId(),
+                            remaining.size());
+                }
             }
-            findings = check.check();
+        } finally {
+            if (fixed > 0) {
+                log(verb + " " + fixed + " finding(s) for consistency check '" + check.getId() + "'.");
+            }
         }
         return fixed;
     }
