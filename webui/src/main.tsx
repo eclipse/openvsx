@@ -17,11 +17,11 @@ import { ErrorDialog } from './components/error-dialog';
 import { handleError } from './utils';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { ReportedError } from './extension-registry-types';
-import { ErrorResponse, isNotFound } from './server-request';
+import { isNotFound } from './server-request';
 import { MainContext } from './context';
 import { PageSettings } from './page-settings';
 import { AppLayout } from './layout/app-layout';
-import { useAuthError, useCurrentUser, useLoginProviders, useRegistryVersion } from './use-main-queries';
+import { isNotLoggedIn, useAuthError, useCurrentUser, useLoginProviders, useRegistryVersion } from './use-main-queries';
 
 import '../src/main.css';
 
@@ -49,8 +49,7 @@ export const Main: FunctionComponent<MainProps> = props => {
     const { data: version } = useRegistryVersion(props.service);
 
     const loginProviders = props.loginProviders ?? registryLoginProviders ?? undefined;
-    // The registry answers "nobody is logged in" with a 200 error result rather than a failure status.
-    const loggedOut = (userError as Partial<ErrorResponse> | null)?.status === 200;
+    const loggedOut = isNotLoggedIn(userError);
 
     const onError = useCallback((err: unknown, options?: { onClose?: () => void; title?: string }) => {
         if (err instanceof DOMException && err.message.trim() === 'The operation was aborted.') {

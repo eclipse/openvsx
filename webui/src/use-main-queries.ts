@@ -14,12 +14,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { ExtensionRegistryService } from './extension-registry-service';
 import { queryClient } from './query-client';
+import { ErrorResponse } from './server-request';
 
 // `Main` builds MainContext and mounts the QueryClientProvider below itself, so these
 // queries take the service as an argument and name the client they run on.
 
 export const useCurrentUser = (service: ExtensionRegistryService) =>
     useQuery({ queryKey: ['user'], queryFn: ({ signal }) => service.getUser(signal) }, queryClient);
+
+/** Whether {@link useCurrentUser} failed because nobody is logged in, which the registry answers with a 200 error result. */
+export const isNotLoggedIn = (error: unknown): boolean => (error as Partial<ErrorResponse> | null)?.status === 200;
 
 /** `data` is `null` when the registry has no login providers configured. */
 export const useLoginProviders = (service: ExtensionRegistryService, options: { enabled: boolean }) =>
@@ -36,7 +40,7 @@ export const useLoginProviders = (service: ExtensionRegistryService, options: { 
 /** Fails with the error the last login failed with, kept by the registry when it redirects back with `?auth-error`. */
 export const useAuthError = (service: ExtensionRegistryService, options: { enabled: boolean }) =>
     useQuery(
-        { queryKey: ['user', 'auth-error'], queryFn: ({ signal }) => service.getUserAuthError(signal), ...options },
+        { queryKey: ['auth-error'], queryFn: ({ signal }) => service.getUserAuthError(signal), ...options },
         queryClient
     );
 

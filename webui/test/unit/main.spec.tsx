@@ -189,7 +189,7 @@ describe('Main', () => {
         const { rejectUser } = renderMain(ContextProbe, { getUserAuthError });
         rejectUser(notLoggedIn);
 
-        await waitFor(() => expect(queryClient.getQueryState(['user', 'auth-error'])?.status).toBe('error'));
+        await waitFor(() => expect(queryClient.getQueryState(['auth-error'])?.status).toBe('error'));
         await waitFor(() => expect(screen.getByTestId('probe')).toHaveTextContent('loading=false user=none'));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
