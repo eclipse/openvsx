@@ -291,6 +291,8 @@ export class Registry {
             send(url, this.getRequestOptions(), undefined, response => {
                 if (response.statusCode !== undefined && (response.statusCode < 200 || response.statusCode > 299)) {
                     response.resume();
+                    // Claimed so a later timeout or reset while draining is ignored; nothing was written, so no cleanup.
+                    failed = true;
                     reject(statusError(response));
                     return;
                 }
