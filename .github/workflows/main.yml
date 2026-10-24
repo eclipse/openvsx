@@ -41,12 +41,7 @@ jobs:
         with:
           node-version: 24.x
 
-      - name: Install Yarn
-        working-directory: cli
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
-
+      # The runner's global Yarn 1 delegates to the release committed at .yarnrc.yml's yarnPath.
       - name: Build CLI
         working-directory: cli
         run: yarn
@@ -244,12 +239,10 @@ jobs:
         with:
           node-version: 24.x
 
-      - name: Install Yarn
+      # The runner's global Yarn 1 delegates to the release committed at .yarnrc.yml's yarnPath.
+      - name: Install dependencies
         working-directory: webui
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
-          yarn install --immutable
+        run: yarn install --immutable
 
       - name: Set up JDK
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1

@@ -64,11 +64,7 @@ jobs:
           node-version: '24.x'
           package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
-      - name: Install Yarn
-        working-directory: webui
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
+      # The runner's global Yarn 1 delegates to the release committed at .yarnrc.yml's yarnPath.
       - name: Prepare webui package
         working-directory: webui
         env:
