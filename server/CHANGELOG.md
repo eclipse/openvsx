@@ -6,6 +6,11 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 ## [next] (unreleased)
 
+### Fixed
+
+- `namespaceOwnershipConflict` on the admin and own-extension endpoints is no longer reported once the namespace has an owner, which left a stale "Namespace not verified" notice on extensions whose scan had recorded the conflict ([#2380](https://github.com/eclipse-openvsx/openvsx/pull/2380))
+- Accept OAuth token responses with long headers, which GitHub now sends and httpcore5 5.4.3+ rejected with `Maximum line length limit exceeded`, breaking login ([#2381](https://github.com/eclipse-openvsx/openvsx/pull/2381))
+
 ## [1.3.0] - 2026-10-16
 
 ### Added
