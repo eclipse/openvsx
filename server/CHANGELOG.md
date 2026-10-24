@@ -33,12 +33,18 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Moving extensions into an existing namespace no longer reverts edits made to that namespace while its files were being copied ([#2353](https://github.com/eclipse-openvsx/openvsx/pull/2353))
 - Signing the publisher agreement and the bulk revocation of publishers are refused while the registry is in read-only mode, like the other endpoints that write to the database
-- `namespaceOwnershipConflict` on the admin and own-extension endpoints is no longer reported once the namespace has an owner, which left a stale "Namespace not verified" notice on extensions whose scan had recorded the conflict ([#2380](https://github.com/eclipse-openvsx/openvsx/pull/2380))
 
 ### Dependencies
 
 - Remove the direct `guava` dependency ([#2324](https://github.com/eclipse-openvsx/openvsx/pull/2324))
 - Bump Spring Boot to 4.0.9, with Jetty 12.1.14, Netty 4.2.19.Final and PostgreSQL driver 42.7.14
+
+## [1.3.1] - 2026-10-24
+
+### Fixed
+
+- `namespaceOwnershipConflict` on the admin and own-extension endpoints is no longer reported once the namespace has an owner, which left a stale "Namespace not verified" notice on extensions whose scan had recorded the conflict ([#2380](https://github.com/eclipse-openvsx/openvsx/pull/2380))
+- Accept OAuth token responses with long headers, which GitHub now sends and httpcore5 5.4.3+ rejected with `Maximum line length limit exceeded`, breaking login ([#2381](https://github.com/eclipse-openvsx/openvsx/pull/2381))
 
 ## [1.3.0] - 2026-10-16
 
@@ -69,7 +75,6 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 
 - Stop the scheduled consistency check and the admin "Fix all" holding one transaction and database connection for the whole run, which triggered connection leak warnings and kept row locks open ([#2373](https://github.com/eclipse-openvsx/openvsx/pull/2373))
 - Refuse the trusted publishing endpoints that create or delete a trusted publisher or issue a publish token while the registry is read-only ([#2339](https://github.com/eclipse-openvsx/openvsx/pull/2339))
-- Accept OAuth token responses with long headers, which GitHub now sends and httpcore5 5.4.3+ rejected with `Maximum line length limit exceeded`, breaking login
 - Match secret detection rules case-sensitively unless the rule has an inline `(?i)`, which stops mixed-case words such as `Asiakasdokumentaatio` being flagged as AWS keys, see #2329 ([#2330](https://github.com/eclipse-openvsx/openvsx/pull/2330))
 - Keep polling async scanners through transient errors, confirm an error status on a second poll before failing a scan, and treat every non-2xx scanner response as an error ([#2307](https://github.com/eclipse-openvsx/openvsx/pull/2307))
 - Compare trusted-publishing claims case-insensitively, like the rest of its checks ([#2282](https://github.com/eclipse-openvsx/openvsx/pull/2282))
@@ -92,6 +97,13 @@ Releases up to and including v1.2.0 were backfilled from the GitHub release note
 - Update other dependencies to newer patch versions ([#2255](https://github.com/eclipse-openvsx/openvsx/pull/2255))
 - Bump tika to 3.3.2 ([#2240](https://github.com/eclipse-openvsx/openvsx/pull/2240))
 - Remove unused `jaxb-api` and `jaxb-impl` dependencies ([#2317](https://github.com/eclipse-openvsx/openvsx/pull/2317))
+
+## [1.2.1] - 2026-10-23
+
+### Fixed
+
+- `namespaceOwnershipConflict` on the admin and own-extension endpoints is no longer reported once the namespace has an owner, which left a stale "Namespace not verified" notice on extensions whose scan had recorded the conflict ([#2380](https://github.com/eclipse-openvsx/openvsx/pull/2380))
+- Accept OAuth token responses with long headers, which GitHub now sends and httpcore5 5.4.3+ rejected with `Maximum line length limit exceeded`, breaking login ([#2381](https://github.com/eclipse-openvsx/openvsx/pull/2381))
 
 ## [v1.2.0] - 2026-09-10
 
